@@ -30,6 +30,8 @@ resize!(i, 5)
 # ForwardDiff
 @test length(i.cache.nlsolver.jac_config.duals[1]) == 5
 @test length(i.cache.nlsolver.jac_config.duals[2]) == 5
+@test length(i.cache.nlsolver.cache.ustep) == 5
+@test length(i.cache.nlsolver.cache.atmp) == 5
 @test size(i.cache.nlsolver.cache.W) == (5,5)
 @test size(i.cache.nlsolver.cache.J) == (5,5)
 solve!(i)
@@ -50,6 +52,8 @@ resize!(i, 5)
 @test length(i.cache.nlsolver.jac_config.x1) == 5
 @test length(i.cache.nlsolver.jac_config.fx) == 5
 @test length(i.cache.nlsolver.jac_config.fx1) == 5
+@test length(i.cache.nlsolver.cache.ustep) == 5
+@test length(i.cache.nlsolver.cache.atmp) == 5
 @test size(i.cache.nlsolver.cache.W) == (5,5)
 @test size(i.cache.nlsolver.cache.J) == (5,5)
 solve!(i)

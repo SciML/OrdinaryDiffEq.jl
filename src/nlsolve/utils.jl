@@ -25,7 +25,9 @@ DiffEqBase.@def iipnlsolve begin
 
   # define additional fields of cache of non-linear solver
   z = similar(u); dz = similar(u); tmp = similar(u); b = similar(u)
-  k = zero(rate_prototype)
+  k = zero(rate_prototype); ustep = similar(u)
+  tstep = zero(t)
+  atmp = similar(u, uEltypeNoUnits)
 
   uTolType = real(uBottomEltypeNoUnits)
 
@@ -47,14 +49,13 @@ DiffEqBase.@def iipnlsolve begin
       end
     end
 
-    nlcache = NLNewtonCache(true,W,J,dt,alg.nlsolve.new_W_dt_cutoff)
+    tType = typeof(t)
+    invγdt = inv(oneunit(t) * one(uTolType))
+
+    nlcache = NLNewtonCache(ustep,tstep,atmp,true,W,J,tType(dt),invγdt,tType(alg.nlsolve.new_W_dt_cutoff))
   elseif alg.nlsolve isa NLFunctional
-    z₊ = similar(z)
-
-    nlcache = NLFunctionalCache(z₊)
+    nlcache = NLFunctionalCache(ustep,tstep,atmp)
   elseif alg.nlsolve isa NLAnderson
-    z₊ = similar(z)
-
     max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, length(z))
     Δz₊s = [zero(z) for i in 1:max_history]
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
@@ -63,7 +64,7 @@ DiffEqBase.@def iipnlsolve begin
     dzold = zero(z)
     z₊old = zero(z)
 
-    nlcache = NLAndersonCache(z₊,dzold,z₊old,Δz₊s,Q,R,γs,alg.nlsolve.aa_start,alg.nlsolve.droptol)
+    nlcache = NLAndersonCache(ustep,tstep,atmp,dzold,z₊old,Δz₊s,Q,R,γs,0,alg.nlsolve.aa_start,alg.nlsolve.droptol)
   end
 
   # define additional fields of cache
@@ -102,6 +103,7 @@ DiffEqBase.@def oopnlsolve begin
 
   # define additional fields of cache of non-linear solver (all aliased)
   z = uprev; dz = z; tmp = z; b = z; k = rate_prototype
+  tstep = zero(t)
 
   uTolType = real(uBottomEltypeNoUnits)
 
@@ -138,11 +140,13 @@ DiffEqBase.@def oopnlsolve begin
       end
     end
 
-    nlcache = NLNewtonConstantCache(W,J,alg.nlsolve.new_W_dt_cutoff)
+    invγdt = inv(oneunit(t) * one(uTolType))
+
+    nlcache = NLNewtonConstantCache(tstep,W,J,invγdt,typeof(t)(alg.nlsolve.new_W_dt_cutoff))
   elseif alg.nlsolve isa NLFunctional
     uf = nothing
 
-    nlcache = NLFunctionalConstantCache()
+    nlcache = NLFunctionalConstantCache(tstep)
   elseif alg.nlsolve isa NLAnderson
     uf = nothing
 
@@ -151,8 +155,10 @@ DiffEqBase.@def oopnlsolve begin
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
     R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
     γs = Vector{uEltypeNoUnits}(undef, max_history)
+    dzold = u
+    z₊old = u
 
-    nlcache = NLAndersonConstantCache(Δz₊s,Q,R,γs,alg.nlsolve.aa_start,alg.nlsolve.droptol)
+    nlcache = NLAndersonConstantCache(tstep,dzold,z₊old,Δz₊s,Q,R,γs,0,alg.nlsolve.aa_start,alg.nlsolve.droptol)
   end
 
   # create non-linear solver
@@ -169,20 +175,21 @@ function iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBott
 
   # define additional fields of cache of non-linear solver
   z = similar(u); dz = similar(u); tmp = similar(u); b = similar(u)
-  k = zero(rate_prototype)
+  k = zero(rate_prototype); ustep = similar(u)
+  tstep = zero(t)
+  atmp = similar(u, uEltypeNoUnits)
 
   uTolType = real(uBottomEltypeNoUnits)
 
   # create cache of non-linear solver
   if alg.nlsolve isa NLNewton
-    nlcache = NLNewtonCache(true,W,J,dt,alg.nlsolve.new_W_dt_cutoff)
+    tType = typeof(t)
+    invγdt = inv(oneunit(t) * one(uTolType))
+
+    nlcache = NLNewtonCache(ustep,tstep,atmp,true,W,J,tType(dt),invγdt,tType(alg.nlsolve.new_W_dt_cutoff))
   elseif alg.nlsolve isa NLFunctional
-    z₊ = similar(z)
-
-    nlcache = NLFunctionalCache(z₊)
+    nlcache = NLFunctionalCache(ustep,tstep,atmp)
   elseif alg.nlsolve isa NLAnderson
-    z₊ = similar(z)
-
     max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, length(z))
     Δz₊s = [zero(z) for i in 1:max_history]
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
@@ -191,7 +198,7 @@ function iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBott
     dzold = zero(z)
     z₊old = zero(z)
 
-    nlcache = NLAndersonCache(z₊,dzold,z₊old,Δz₊s,Q,R,γs,alg.nlsolve.aa_start,alg.nlsolve.droptol)
+    nlcache = NLAndersonCache(ustep,tstep,atmp,dzold,z₊old,Δz₊s,Q,R,γs,0,alg.nlsolve.aa_start,alg.nlsolve.droptol)
   end
 
   # define additional fields of cache
@@ -241,6 +248,7 @@ function oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBott
 
   # define additional fields of cache of non-linear solver (all aliased)
   z = uprev; dz = z; tmp = z; b = z; k = rate_prototype
+  tstep = zero(t)
 
   uTolType = real(uBottomEltypeNoUnits)
 
@@ -249,19 +257,26 @@ function oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBott
     nf = nlsolve_f(f, alg)
     # only use `nf` if the algorithm specializes on split eqs
     uf = oop_get_uf(alg,nf,t,p)
-    nlcache = NLNewtonConstantCache(W,J,alg.nlsolve.new_W_dt_cutoff)
+
+    invγdt = inv(oneunit(t) * one(uTolType))
+
+    nlcache = NLNewtonConstantCache(tstep,W,J,invγdt,typeof(t)(alg.nlsolve.new_W_dt_cutoff))
   elseif alg.nlsolve isa NLFunctional
     uf = nothing
-    nlcache = NLFunctionalConstantCache()
+
+    nlcache = NLFunctionalConstantCache(tstep)
   elseif alg.nlsolve isa NLAnderson
     uf = nothing
+
     max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, length(z))
     Δz₊s = Vector{typeof(z)}(undef, max_history)
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
     R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
     γs = Vector{uEltypeNoUnits}(undef, max_history)
+    dzold = u
+    z₊old = u
 
-    nlcache = NLAndersonConstantCache(Δz₊s,Q,R,γs,alg.nlsolve.aa_start,alg.nlsolve.droptol)
+    nlcache = NLAndersonConstantCache(tstep,dzold,z₊old,Δz₊s,Q,R,γs,0,alg.nlsolve.aa_start,alg.nlsolve.droptol)
   end
 
   # create non-linear solver
@@ -313,6 +328,8 @@ function nlsolve_resize!(integrator::DiffEqBase.DEIntegrator, i::Int)
 end
 
 function nlsolve_cache_resize!(cache::NLNewtonCache, alg, i::Int)
+  resize!(cache.ustep, i)
+  resize!(cache.atmp, i)
   nothing
 end
 
@@ -321,7 +338,8 @@ function nlsolve_cache_resize!(cache::NLNewtonConstantCache, alg, i::Int)
 end
 
 function nlsolve_cache_resize!(cache::NLAndersonCache, alg, i::Int)
-  resize!(cache.z₊, i)
+  resize!(cache.ustep, i)
+  resize!(cache.atmp, i)
   resize!(cache.dzold, i)
   resize!(cache.z₊old, i)
   max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, i)
@@ -348,7 +366,8 @@ function nlsolve_cache_resize!(cache::NLAndersonConstantCache, alg, i::Int)
 end
 
 function nlsolve_cache_resize!(cache::NLFunctionalCache, alg, i::Int)
-  resize!(cache.z₊, i)
+  resize!(cache.ustep, i)
+  resize!(cache.atmp, i)
   nothing
 end
 

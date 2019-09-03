@@ -24,43 +24,64 @@ end
 
 # caches
 
-mutable struct NLNewtonCache{W,J,T,C} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{uType,tType,uNoUnitsType,W,J,G} <: AbstractNLSolverCache
+  ustep::uType
+  tstep::tType
+  atmp::uNoUnitsType
   new_W::Bool
   W::W
   J::J
-  W_dt::T
-  new_W_dt_cutoff::C
+  W_dt::tType
+  invγdt::G
+  new_W_dt_cutoff::tType
 end
 
-mutable struct NLNewtonConstantCache{W,J,C} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{tType,W,J,G} <: AbstractNLSolverCache
+  tstep::tType
   W::W
   J::J
-  new_W_dt_cutoff::C
+  invγdt::G
+  new_W_dt_cutoff::tType
 end
 
-struct NLFunctionalCache{uType} <: AbstractNLSolverCache
-  z₊::uType
+mutable struct NLFunctionalCache{uType,tType,uNoUnitsType} <: AbstractNLSolverCache
+  ustep::uType
+  tstep::tType
+  atmp::uNoUnitsType
 end
 
-struct NLFunctionalConstantCache <: AbstractNLSolverCache end
+mutable struct NLFunctionalConstantCache{tType} <: AbstractNLSolverCache
+  tstep::tType
+end
 
-mutable struct NLAndersonCache{uType,gsType,QType,RType,gType,D} <: AbstractNLSolverCache
-  z₊::uType
-  dzold::uType
+mutable struct NLAndersonCache{uType,tType,uNoUnitsType,uEltypeNoUnits,D} <: AbstractNLSolverCache
+  ustep::uType
+  tstep::tType
+  atmp::uNoUnitsType
+  """value `g(zprev)` of previous fixed-point iteration"""
   z₊old::uType
-  Δz₊s::gsType
-  Q::QType
-  R::RType
-  γs::gType
+  """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
+  dzold::uType
+  Δz₊s::Vector{uType}
+  Q::Matrix{uEltypeNoUnits}
+  R::Matrix{uEltypeNoUnits}
+  γs::Vector{uEltypeNoUnits}
+  history::Int
   aa_start::Int
   droptol::D
 end
 
-mutable struct NLAndersonConstantCache{gsType,QType,RType,gType,D} <: AbstractNLSolverCache
-  Δz₊s::gsType
-  Q::QType
-  R::RType
-  γs::gType
+mutable struct NLAndersonConstantCache{uType,tType,uEltypeNoUnits,D} <: AbstractNLSolverCache
+  tstep::tType
+  """value `g(zprev)` of previous fixed-point iteration"""
+  z₊old::uType
+  """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
+  dzold::uType
+  Δz₊s::Vector{uType}
+  Q::Matrix{uEltypeNoUnits}
+  R::Matrix{uEltypeNoUnits}
+  γs::Vector{uEltypeNoUnits}
+  history::Int
   aa_start::Int
   droptol::D
 end
