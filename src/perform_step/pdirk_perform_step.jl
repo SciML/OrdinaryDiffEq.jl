@@ -28,7 +28,7 @@ function initialize!(integrator, cache::PDIRK44ConstantCache) end
         nlsolver[i].c = cs[2+i]
         nlsolver[i].z = zero(u)
         nlsolver[i].tmp = uprev + α1[i] * k1[1] + α2[i] * k1[2]
-        k2[i] = nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
+        k2[i] = nlsolve!(nlsolver[i], integrator)
       end
     end
     nlsolvefail(nlsolver[1]) && return

@@ -1,11 +1,14 @@
 # solver
 
-mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,C1,C<:AbstractNLSolverCache}
+abstract type AbstractNLSolver{algType,iip} end
+
+mutable struct NLSolver{algType,iip,uType,rateType,uTolType,kType,gType,cType,C1,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
   z::uType
   dz::uType
   tmp::uType
   ztmp::uType
   k::rateType
+  alg::algType
   ηold::uTolType
   κ::kType
   γ::gType

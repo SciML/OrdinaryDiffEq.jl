@@ -1,38 +1,30 @@
 ## initialize!
 
-@muladd function initialize!(nlsolver::NLSolver,
-                             nlcache::Union{NLFunctionalConstantCache,NLFunctionalCache},
-                             integrator)
-  nlcache.tstep = integrator.t + nlsolver.c * integrator.dt
+@muladd function initialize!(nlsolver::NLSolver{<:NLFunctional}, integrator)
+  nlsolver.cache.tstep = integrator.t + nlsolver.c * integrator.dt
 
   nothing
 end
 
-@muladd function initialize!(nlsolver::NLSolver,
-                             nlcache::Union{NLAndersonConstantCache,NLAndersonCache},
-                             integrator)
-  nlcache.history = 0
-  nlcache.tstep = integrator.t + nlsolver.c * integrator.dt
+@muladd function initialize!(nlsolver::NLSolver{<:NLAnderson}, integrator)
+  @unpack cache = nlsolver
+
+  cache.history = 0
+  cache.tstep = integrator.t + nlsolver.c * integrator.dt
 
   nothing
 end
 
 ## initial_η
 
-function initial_η(nlsolver::NLSolver,
-                   nlcache::Union{NLFunctionalCache,NLAndersonCache,
-                                  NLFunctionalConstantCache,NLAndersonConstantCache},
-                   integrator)
+function initial_η(nlsolver::NLSolver{<:Union{NLFunctional,NLAnderson}}, integrator)
   nlsolver.ηold
 end
 
 ## compute_step!
 
 """
-    compute_step!(nlsolver::NLSolver,
-                  nlcache::Union{NLFunctionalCache,NLAndersonCache,
-                                 NLFunctionalConstantCache,NLAndersonConstantCache},
-                  integrator)
+    compute_step!(nlsolver::NLSolver{<:Union{NLFunctional,NLAnderson}}, integrator)
 
 Compute the next step of the fixed-point iteration
 ```math
@@ -42,31 +34,29 @@ and return the norm of ``g(z) - z``.
 
 # References
 
-
 Ernst Hairer and Gerhard Wanner, "Solving Ordinary Differential
 Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
 """
-function compute_step!(nlsolver::NLSolver,
-                       nlcache::Union{NLFunctionalCache,NLFunctionalConstantCache},
-                       integrator)
-  compute_step_fixedpoint!(nlsolver, nlcache, integrator)
+function compute_step!(nlsolver::NLSolver{<:NLFunctional}, integrator)
+  compute_step_fixedpoint!(nlsolver, integrator)
 end
 
-@muladd function compute_step!(nlsolver::NLSolver{false}, nlcache::NLAndersonConstantCache, integrator)
-  @unpack aa_start = nlcache
+@muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson,false}, integrator)
+  @unpack cache = nlsolver
+  @unpack aa_start = cache
 
   # perform Anderson acceleration
   previter = nlsolver.iter - 1
   if previter == aa_start
     # update cached values for next step of Anderson acceleration
-    nlcache.dzold = nlsolver.dz
-    nlcache.z₊old = nlsolver.z
+    cache.dzold = nlsolver.dz
+    cache.z₊old = nlsolver.z
   elseif previter > aa_start
     # actually perform Anderson acceleration
     @unpack z,dz = nlsolver
-    @unpack Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = nlcache
+    @unpack Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = cache
 
     # increase size of history
     history += 1
@@ -93,8 +83,8 @@ end
     qradd!(Q, R, _vec(dz .- dzold), history)
 
     # update cached values
-    nlcache.dzold = dz
-    nlcache.z₊old = z
+    cache.dzold = dz
+    cache.z₊old = z
 
     # define current Q and R matrices
     Qcur, Rcur = view(Q, :, 1:history), UpperTriangular(view(R, 1:history, 1:history))
@@ -122,26 +112,27 @@ end
     nlsolver.z = z
 
     # save updated history
-    nlcache.history = history
+    cache.history = history
   end
 
   # compute next step
-  compute_step_fixedpoint!(nlsolver, nlcache, integrator)
+  compute_step_fixedpoint!(nlsolver, integrator)
 end
 
-@muladd function compute_step!(nlsolver::NLSolver{true}, nlcache::NLAndersonCache, integrator)
-  @unpack aa_start = nlcache
+@muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson,true}, integrator)
+  @unpack cache = nlsolver
+  @unpack aa_start = cache
 
   # perform Anderson acceleration
   previter = nlsolver.iter - 1
   if previter == aa_start
     # update cached values for next step of Anderson acceleration
-    @.. nlcache.dzold = nlsolver.dz
-    @.. nlcache.z₊old = nlsolver.z
+    @.. cache.dzold = nlsolver.dz
+    @.. cache.z₊old = nlsolver.z
   elseif previter > aa_start
     # actually perform Anderson acceleration
     @unpack z,dz = nlsolver
-    @unpack z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = nlcache
+    @unpack z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = cache
 
     # increase size of history
     history += 1
@@ -199,20 +190,19 @@ end
     end
 
     # save updated history
-    nlcache.history = history
+    cache.history = history
   end
 
   # compute next step
-  compute_step_fixedpoint!(nlsolver, nlcache, integrator)
+  compute_step_fixedpoint!(nlsolver, integrator)
 end
 
-@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{false},
-                                          nlcache::Union{NLAndersonConstantCache,
-                                                         NLFunctionalConstantCache},
+@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{<:Union{NLFunctional,
+                                                                     NLAnderson},false},
                                           integrator)
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,γ,cache = nlsolver
-  @unpack tstep = nlcache
+  @unpack tstep = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
@@ -241,12 +231,12 @@ end
   ndz
 end
 
-@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{true},
-                                          nlcache::Union{NLFunctionalCache,NLAndersonCache},
+@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{<:Union{NLFunctional,
+                                                                     NLAnderson},true},
                                           integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,dz,tmp,ztmp,k,γ = nlsolver
-  @unpack ustep,tstep,atmp = nlcache
+  @unpack z,dz,tmp,ztmp,k,γ,cache = nlsolver
+  @unpack ustep,tstep,atmp = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)

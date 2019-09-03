@@ -576,7 +576,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   # nlsolvefail(nlsolver) && return
   gprev = nlsolver.tmp + μs₁*z
 
@@ -608,7 +608,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1 -μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c   = Cⱼ
-    z = nlsolve!(integrator, cache)
+    z = nlsolve!(nlsolver, integrator)
     # ignoring newton method's convergence failure
     # nlsolvefail(nlsolver) && return
     u = nlsolver.tmp + μs₁*z
@@ -704,7 +704,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @.. nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   # ignoring newton method's convergence failure
   # nlsolvefail(nlsolver) && return
   @.. gprev = nlsolver.tmp + μs₁*nlsolver.z
@@ -738,7 +738,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     @.. nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
 
-    z = nlsolve!(integrator, cache)
+    z = nlsolve!(nlsolver, integrator)
     # nlsolvefail(nlsolver) && return
     @.. u = nlsolver.tmp + μs₁*nlsolver.z
     if (iter < mdeg)

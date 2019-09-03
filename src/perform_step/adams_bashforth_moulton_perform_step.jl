@@ -1542,7 +1542,7 @@ function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   nlsolver.z = z = zprev # Constant extrapolation
 
   nlsolver.tmp += γ*zprev
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + 1//2*z
 
@@ -1591,7 +1591,7 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   # initial guess
   @.. z = dt*du₁
   @.. tmp += γ*z
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + 1//2*z
 
@@ -1645,7 +1645,7 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   zprev = dt*du₁
   nlsolver.z = z = zprev # Constant extrapolation
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -1696,7 +1696,7 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
 
   # initial guess
   @.. z = dt*du₁
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 

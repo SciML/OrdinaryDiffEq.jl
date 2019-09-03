@@ -76,7 +76,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,fast_convergence_cutoff,nlcache)
+  NLSolver{typeof(nlalg),true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),
+           typeof(fast_convergence_cutoff),typeof(nlcache)}(
+             z,dz,tmp,b,k,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
+             fast_convergence_cutoff,nlcache)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
@@ -114,7 +117,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,fast_convergence_cutoff,nlcache)
+  NLSolver{typeof(nlalg),false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),
+           typeof(fast_convergence_cutoff),typeof(nlcache)}(
+             z,dz,tmp,b,k,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
+             fast_convergence_cutoff,nlcache)
 end
 
 function nlsolve_resize!(integrator::DiffEqBase.DEIntegrator, i::Int)

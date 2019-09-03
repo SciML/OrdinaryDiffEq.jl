@@ -1,5 +1,5 @@
 """
-    nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator)
+    nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
 Solve
 ```math
@@ -7,11 +7,11 @@ dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator)
+function nlsolve!(nlsolver::AbstractNLSolver, integrator)
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
-  initialize!(nlsolver, nlcache, integrator)
-  η = initial_η(nlsolver, nlcache, integrator)
+  initialize!(nlsolver, integrator)
+  η = initial_η(nlsolver, integrator)
 
   local ndz
   fail_convergence = true
@@ -25,7 +25,7 @@ function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator
 
     # compute next step and calculate norm of residuals
     iter > 1 && (ndzprev = ndz)
-    ndz = compute_step!(nlsolver, nlcache, integrator)
+    ndz = compute_step!(nlsolver, integrator)
 
     # check divergence (not in initial step)
     if iter > 1
@@ -37,7 +37,7 @@ function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator
       end
     end
 
-    apply_step!(nlsolver, nlcache, integrator)
+    apply_step!(nlsolver, integrator)
 
     # check for convergence
     iter > 1 && (η = θ / (1 - θ))
@@ -59,12 +59,12 @@ end
 
 ## default implementations
 
-initialize!(::NLSolver, ::AbstractNLSolverCache, integrator) = nothing
+initialize!(::AbstractNLSolver, integrator) = nothing
 
-initial_η(nlsolver::NLSolver, ::AbstractNLSolverCache, integrator) = 
+initial_η(nlsolver::NLSolver, integrator) = 
   max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 
-function apply_step!(nlsolver::NLSolver{iip}, ::AbstractNLSolverCache, integrator) where iip
+function apply_step!(nlsolver::NLSolver{algType,iip}, integrator) where {algType,iip}
   if iip
     @.. nlsolver.z = nlsolver.ztmp
   else

@@ -1,20 +1,22 @@
 ## initialize!
 
-@muladd function initialize!(nlsolver::NLSolver{false}, nlcache::NLNewtonConstantCache, integrator)
+@muladd function initialize!(nlsolver::NLSolver{<:NLNewton,false}, integrator)
   @unpack dt = integrator
+  @unpack cache = nlsolver
 
-  nlcache.invγdt = inv(dt * nlsolver.γ)
-  nlcache.tstep = integrator.t + nlsolver.c * dt
+  cache.invγdt = inv(dt * nlsolver.γ)
+  cache.tstep = integrator.t + nlsolver.c * dt
 
   nothing
 end
 
-@muladd function initialize!(nlsolver::NLSolver{true}, nlcache::NLNewtonCache, integrator)
+@muladd function initialize!(nlsolver::NLSolver{<:NLNewton,true}, integrator)
   @unpack u,uprev,t,dt,opts = integrator
-  @unpack weight = nlsolver.cache
+  @unpack cache = nlsolver
+  @unpack weight = cache
 
-  nlcache.invγdt = inv(dt * nlsolver.γ)
-  nlcache.tstep = integrator.t + nlsolver.c * dt 
+  cache.invγdt = inv(dt * nlsolver.γ)
+  cache.tstep = integrator.t + nlsolver.c * dt 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, u,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
 
@@ -24,7 +26,7 @@ end
 ## compute_step!
 
 """
-    compute_step!(nlsolver::NLSolver, nlcache::Union{NLNewtonConstantCache,NLNewtonCache}, integrator)
+    compute_step!(nlsolver::NLSolver{<:NLNewton}, integrator)
 
 Compute next iterate of numerically stable modified Newton iteration
 that is specialized for implicit methods.
@@ -60,7 +62,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
 """
-@muladd function compute_step!(nlsolver::NLSolver{false}, nlcache::NLNewtonConstantCache, integrator)
+@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,false}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,tmp,γ,cache = nlsolver
   @unpack tstep,W,invγdt = cache
@@ -92,7 +94,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   ndz
 end
 
-@muladd function compute_step!(nlsolver::NLSolver{true}, nlcache::NLNewtonCache, integrator)
+@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,true}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,dz,tmp,ztmp,k,γ,iter,cache = nlsolver
   @unpack ustep,tstep,atmp,W,new_W,invγdt,linsolve,weight = cache
