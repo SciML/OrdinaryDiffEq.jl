@@ -20,12 +20,7 @@ set_W_dt!(nlsolver::NLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
 set_W_dt!(nlcache::NLNewtonCache, W_dt) = (nlcache.W_dt = W_dt; W_dt)
 set_W_dt!(nlcache::NLNewtonConstantCache, W_dt) = W_dt
 
-# No J version
-function iipnlsolve(alg,u,uprev,p,t,dt,f,W,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  iipnlsolve(alg,u,uprev,p,t,dt,f,W,nothing,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-end
-
-function iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+function iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
   @unpack κ, fast_convergence_cutoff = alg.nlsolve
 
   # define additional fields of cache of non-linear solver
@@ -40,6 +35,8 @@ function iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBott
   if alg.nlsolve isa NLNewton
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
+
+    J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
     nlcache = NLNewtonCache(ustep,tstep,atmp,true,W,J,tType(dt),invγdt,tType(alg.nlsolve.new_W_dt_cutoff))
   elseif alg.nlsolve isa NLFunctional
@@ -87,12 +84,7 @@ function iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBott
   nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(du1),typeof(uf),typeof(jac_config),typeof(linsolve),typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,fast_convergence_cutoff,du1,uf,jac_config,linsolve,weight,nlcache)
 end
 
-# No J version
-function oopnlsolve(alg,u,uprev,p,t,dt,f,W,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  oopnlsolve(alg,u,uprev,p,t,dt,f,W,nothing,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)  
-end
-
-function oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+function oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
   @unpack κ, fast_convergence_cutoff = alg.nlsolve
 
   # define additional fields of cache of non-linear solver (all aliased)
@@ -108,6 +100,8 @@ function oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBott
     uf = oop_get_uf(alg,nf,t,p)
 
     invγdt = inv(oneunit(t) * one(uTolType))
+
+    J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
 
     nlcache = NLNewtonConstantCache(tstep,W,J,invγdt,typeof(t)(alg.nlsolve.new_W_dt_cutoff))
   elseif alg.nlsolve isa NLFunctional

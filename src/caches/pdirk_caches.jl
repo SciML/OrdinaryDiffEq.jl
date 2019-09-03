@@ -48,14 +48,11 @@ end
 function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1.0, 1.0
   if alg.threading
-    J1, W1 = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
-    nlsolver1 = iipnlsolve(alg,u,uprev,p,t,dt,f,W1,J1,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-    J2, W2 = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
-    nlsolver2 = iipnlsolve(alg,u,uprev,p,t,dt,f,W2,J2,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    nlsolver1 = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    nlsolver2 = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
     nlsolver = [nlsolver1, nlsolver2]
   else
-    _J, _W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
-    _nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,_W,_J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)    
+    _nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)    
     nlsolver = [_nlsolver]
   end
   tab = PDIRK44Tableau(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
@@ -67,14 +64,11 @@ end
 function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1.0, 1.0
   if alg.threading
-    J1, W1 = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-    nlsolver1 = oopnlsolve(alg,u,uprev,p,t,dt,f,W1,J1,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-    J2, W2 = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-    nlsolver2 = oopnlsolve(alg,u,uprev,p,t,dt,f,W2,J2,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    nlsolver1 = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    nlsolver2 = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
     nlsolver = [nlsolver1, nlsolver2]
   else
-    _J, _W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-    _nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,_W,_J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    _nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
     nlsolver = [_nlsolver]
   end
   tab = PDIRK44Tableau(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
