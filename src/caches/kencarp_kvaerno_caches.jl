@@ -7,7 +7,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(false))
 
   KenCarp3ConstantCache(nlsolver,tab)
 end
@@ -33,7 +33,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
   if typeof(f) <: SplitFunction
@@ -60,7 +60,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(false))
   Kvaerno4ConstantCache(nlsolver,tab)
 end
 
@@ -82,7 +82,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
@@ -100,7 +100,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(false))
   KenCarp4ConstantCache(nlsolver,tab)
 end
 
@@ -129,7 +129,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
   if typeof(f) <: SplitFunction
@@ -159,7 +159,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(false))
 
   Kvaerno5ConstantCache(nlsolver,tab)
 end
@@ -184,7 +184,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)
@@ -203,7 +203,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(false))
 
   KenCarp5ConstantCache(nlsolver,tab)
 end
@@ -237,7 +237,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
   if typeof(f) <: SplitFunction

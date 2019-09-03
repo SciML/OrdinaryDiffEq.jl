@@ -20,8 +20,12 @@ set_W_dt!(nlsolver::NLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
 set_W_dt!(nlcache::NLNewtonCache, W_dt) = (nlcache.W_dt = W_dt; W_dt)
 set_W_dt!(nlcache::NLNewtonConstantCache, W_dt) = W_dt
 
-function iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @unpack κ, fast_convergence_cutoff = alg.nlsolve
+build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,iip) =
+  build_nlsolver(alg,alg.nlsolve,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,iip)
+
+function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
+                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,::Val{true})
+  @unpack κ, fast_convergence_cutoff = nlalg
 
   # define additional fields of cache of non-linear solver
   z = similar(u); dz = similar(u); tmp = similar(u); b = similar(u)
@@ -32,17 +36,17 @@ function iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEl
   uTolType = real(uBottomEltypeNoUnits)
 
   # create cache of non-linear solver
-  if alg.nlsolve isa NLNewton
+  if nlalg isa NLNewton
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
 
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
-    nlcache = NLNewtonCache(ustep,tstep,atmp,true,W,J,tType(dt),invγdt,tType(alg.nlsolve.new_W_dt_cutoff))
-  elseif alg.nlsolve isa NLFunctional
+    nlcache = NLNewtonCache(ustep,tstep,atmp,true,W,J,tType(dt),invγdt,tType(nlalg.new_W_dt_cutoff))
+  elseif nlalg isa NLFunctional
     nlcache = NLFunctionalCache(ustep,tstep,atmp)
-  elseif alg.nlsolve isa NLAnderson
-    max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, length(z))
+  elseif nlalg isa NLAnderson
+    max_history = min(nlalg.max_history, nlalg.max_iter, length(z))
     Δz₊s = [zero(z) for i in 1:max_history]
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
     R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
@@ -50,11 +54,11 @@ function iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEl
     dzold = zero(z)
     z₊old = zero(z)
 
-    nlcache = NLAndersonCache(ustep,tstep,atmp,dzold,z₊old,Δz₊s,Q,R,γs,0,alg.nlsolve.aa_start,alg.nlsolve.droptol)
+    nlcache = NLAndersonCache(ustep,tstep,atmp,dzold,z₊old,Δz₊s,Q,R,γs,0,nlalg.aa_start,nlalg.droptol)
   end
 
   # define additional fields of cache
-  if alg.nlsolve isa NLNewton
+  if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
 
     if islinear(f)
@@ -81,11 +85,12 @@ function iipnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEl
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(du1),typeof(uf),typeof(jac_config),typeof(linsolve),typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,fast_convergence_cutoff,du1,uf,jac_config,linsolve,weight,nlcache)
+  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(du1),typeof(uf),typeof(jac_config),typeof(linsolve),typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,fast_convergence_cutoff,du1,uf,jac_config,linsolve,weight,nlcache)
 end
 
-function oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @unpack κ, fast_convergence_cutoff = alg.nlsolve
+function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
+                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,::Val{false})
+  @unpack κ, fast_convergence_cutoff = nlalg
 
   # define additional fields of cache of non-linear solver (all aliased)
   z = uprev; dz = z; tmp = z; b = z; k = rate_prototype
@@ -94,7 +99,7 @@ function oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEl
   uTolType = real(uBottomEltypeNoUnits)
 
   # create cache of non-linear solver
-  if alg.nlsolve isa NLNewton
+  if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
     # only use `nf` if the algorithm specializes on split eqs
     uf = oop_get_uf(alg,nf,t,p)
@@ -103,15 +108,15 @@ function oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEl
 
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
 
-    nlcache = NLNewtonConstantCache(tstep,W,J,invγdt,typeof(t)(alg.nlsolve.new_W_dt_cutoff))
-  elseif alg.nlsolve isa NLFunctional
+    nlcache = NLNewtonConstantCache(tstep,W,J,invγdt,typeof(t)(nlalg.new_W_dt_cutoff))
+  elseif nlalg isa NLFunctional
     uf = nothing
 
     nlcache = NLFunctionalConstantCache(tstep)
-  elseif alg.nlsolve isa NLAnderson
+  elseif nlalg isa NLAnderson
     uf = nothing
 
-    max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, length(z))
+    max_history = min(nlalg.max_history, nlalg.max_iter, length(z))
     Δz₊s = Vector{typeof(z)}(undef, max_history)
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
     R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
@@ -119,11 +124,11 @@ function oopnlsolve(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEl
     dzold = u
     z₊old = u
 
-    nlcache = NLAndersonConstantCache(tstep,dzold,z₊old,Δz₊s,Q,R,γs,0,alg.nlsolve.aa_start,alg.nlsolve.droptol)
+    nlcache = NLAndersonConstantCache(tstep,dzold,z₊old,Δz₊s,Q,R,γs,0,nlalg.aa_start,nlalg.droptol)
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),Nothing,typeof(uf),Nothing,Nothing,typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,fast_convergence_cutoff,nothing,uf,nothing,nothing,z,nlcache)
+  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),Nothing,typeof(uf),Nothing,Nothing,typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,fast_convergence_cutoff,nothing,uf,nothing,nothing,z,nlcache)
 end
 
 function nlsolve_resize!(integrator::DiffEqBase.DEIntegrator, i::Int)
