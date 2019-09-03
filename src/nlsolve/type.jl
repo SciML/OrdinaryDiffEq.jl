@@ -10,7 +10,7 @@ mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,C1,C<:Abst
   κ::kType
   γ::gType
   c::cType
-  max_iter::Int
+  maxiters::Int
   iter::Int
   status::NLStatus
   fast_convergence_cutoff::C1

@@ -37,7 +37,7 @@ function loopfooter!(nlsolver::NLSolver{false}, nlcache::NLAndersonConstantCache
     # update cached values for next step of Anderson acceleration
     nlcache.dzold = nlsolver.dz
     nlcache.z₊old = nlsolver.z
-  elseif aa_start < iter < nlsolver.max_iter
+  elseif aa_start < iter < nlsolver.maxiters
     @unpack z,dz = nlsolver
     @unpack Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = nlcache
     # increase size of history
@@ -109,7 +109,7 @@ function loopfooter!(nlsolver::NLSolver{true}, nlcache::NLAndersonCache, integra
     # update cached values for next step of Anderson acceleration
     @.. nlcache.dzold = nlsolver.dz
     @.. nlcache.z₊old = nlsolver.z
-  elseif aa_start < iter < nlsolver.max_iter
+  elseif aa_start < iter < nlsolver.maxiters
     @unpack z,dz = nlsolver
     @unpack z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = nlcache
 

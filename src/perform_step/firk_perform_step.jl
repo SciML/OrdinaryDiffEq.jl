@@ -40,7 +40,7 @@ end
   @unpack κ, cont1, cont2, cont3 = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
-  @unpack max_iter = alg
+  @unpack maxiters = alg
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
 
@@ -87,7 +87,7 @@ end
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
-  while iter < max_iter
+  while iter < maxiters
     iter += 1
     integrator.destats.nnonliniter += 1
 
@@ -131,7 +131,7 @@ end
     if iter > 1
       θ = ndw / ndwprev
       ( diverge = θ > 1 ) && ( cache.status = Divergence )
-      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end
@@ -216,7 +216,7 @@ end
           tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
-  @unpack max_iter = alg
+  @unpack maxiters = alg
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
 
@@ -264,7 +264,7 @@ end
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
-  while iter < max_iter
+  while iter < maxiters
     iter += 1
     integrator.destats.nnonliniter += 1
 
@@ -325,7 +325,7 @@ end
     if iter > 1
       θ = ndw / ndwprev
       ( diverge = θ > 1 ) && ( cache.status = Divergence )
-      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end

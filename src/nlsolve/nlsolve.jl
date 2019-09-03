@@ -8,7 +8,7 @@ dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
 function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator)
-  @unpack max_iter, κ, fast_convergence_cutoff = nlsolver
+  @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
   initialize!(nlsolver, nlcache, integrator)
   η = initial_η(nlsolver, nlcache, integrator)
@@ -16,7 +16,7 @@ function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator
   local ndz
   fail_convergence = true
   iter = 0
-  while iter < max_iter
+  while iter < maxiters
     iter += 1
     nlsolver.iter = iter
     if DiffEqBase.has_destats(integrator)
@@ -31,7 +31,7 @@ function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator
     if iter > 1
       θ = ndz / ndzprev
       ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
-      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κ * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
+      ( veryslowconvergence = ndz * θ^(maxiters - iter) > κ * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end

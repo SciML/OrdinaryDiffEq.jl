@@ -215,7 +215,7 @@ function nlsolve_functional!(integrator, cache::T) where T
     integrator.f(ratetmp, z[1], p, dt+t)
   end
   integrator.destats.nf += 1
-  max_iter = 3
+  maxiters = 3
   div_rate = 2
   # Zero out the difference vector
   isconstcache ? ( cache.Δ = zero(cache.Δ) ) : ( Δ .= zero(eltype(Δ)) )
@@ -226,7 +226,7 @@ function nlsolve_functional!(integrator, cache::T) where T
   # initialize `δ_prev`
   δ_prev = 0
   # Start the functional iteration & store the difference into `Δ`
-  for k in 1:max_iter
+  for k in 1:maxiters
     if isconstcache
       ratetmp = inv(l[2])*muladd.(dt, ratetmp, -z[2])
       integrator.u = ratetmp + z[1]
@@ -250,7 +250,7 @@ function nlsolve_functional!(integrator, cache::T) where T
       return true
     end
     # Divergence criteria
-    if ( (k == max_iter) || (k >= 2 && δ > div_rate * δ_prev) )
+    if ( (k == maxiters) || (k >= 2 && δ > div_rate * δ_prev) )
       return false
     end
     δ_prev = δ
