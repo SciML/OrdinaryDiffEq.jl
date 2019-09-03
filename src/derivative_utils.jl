@@ -65,9 +65,9 @@ function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_com
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    nlsolver.uf.t = t
-    nlsolver.uf.p = p
-    J = jacobian(nlsolver.uf,uprev,integrator)
+    nlsolver.cache.uf.t = t
+    nlsolver.cache.uf.p = p
+    J = jacobian(nlsolver.cache.uf,uprev,integrator)
   end
   integrator.destats.njacs += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
@@ -97,8 +97,7 @@ end
 
 function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du1,uf,jac_config = nlsolver
-  J = nlsolver.cache.J
+  @unpack J,du1,uf,jac_config = nlsolver.cache
   if DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
   else
@@ -560,7 +559,7 @@ end
 
 function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  @unpack uf = nlsolver
+  @unpack uf = nlsolver.cache
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
   # calculate W

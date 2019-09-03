@@ -1,6 +1,6 @@
 # solver
 
-mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,du1Type,ufType,jcType,lsType,C1,C<:AbstractNLSolverCache}
+mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,C1,C<:AbstractNLSolverCache}
   z::uType
   dz::uType
   tmp::uType
@@ -14,32 +14,33 @@ mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,du1Type,uf
   nl_iters::Int
   status::NLStatus
   fast_convergence_cutoff::C1
-  du1::du1Type
-  uf::ufType
-  jac_config::jcType
-  linsolve::lsType
-  weight::uType
   cache::C
 end
 
 # caches
 
-mutable struct NLNewtonCache{uType,tType,uNoUnitsType,W,J,G} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{uType,tType,uNoUnitsType,J,W,du1Type,ufType,jcType,lsType,G} <: AbstractNLSolverCache
   ustep::uType
   tstep::tType
   atmp::uNoUnitsType
-  new_W::Bool
-  W::W
   J::J
+  W::W
+  new_W::Bool
   W_dt::tType
+  du1::du1Type
+  uf::ufType
+  jac_config::jcType
+  linsolve::lsType
+  weight::uType
   invγdt::G
   new_W_dt_cutoff::tType
 end
 
-mutable struct NLNewtonConstantCache{tType,W,J,G} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{tType,J,W,ufType,G} <: AbstractNLSolverCache
   tstep::tType
-  W::W
   J::J
+  W::W
+  uf::ufType
   invγdt::G
   new_W_dt_cutoff::tType
 end

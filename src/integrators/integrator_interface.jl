@@ -152,12 +152,14 @@ function resize_non_user_cache!(integrator::ODEIntegrator,
                       cache::RosenbrockMutableCache,i)
   cache.J = similar(cache.J,i,i)
   cache.W = similar(cache.W,i,i)
-  cache.jac_config = DiffEqBase.resize_jac_config!(cache.jac_config, i)
-  cache.grad_config = resize_grad_config!(cache.grad_config, i)
+  resize_jac_config!(cache.jac_config, i)
+  resize_grad_config!(cache.grad_config, i)
+  nothing
 end
 function resize_non_user_cache!(integrator::ODEIntegrator,
                 cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
   cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.u)
+  nothing
 end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)

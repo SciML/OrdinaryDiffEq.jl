@@ -11,7 +11,7 @@ end
 
 @muladd function initialize!(nlsolver::NLSolver{true}, nlcache::NLNewtonCache, integrator)
   @unpack u,uprev,t,dt,opts = integrator
-  @unpack weight = nlsolver
+  @unpack weight = nlsolver.cache
 
   nlcache.invγdt = inv(dt * nlsolver.γ)
   nlcache.tstep = integrator.t + nlsolver.c * dt 
@@ -94,8 +94,8 @@ end
 
 @muladd function compute_step!(nlsolver::NLSolver{true}, nlcache::NLNewtonCache, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,dz,tmp,ztmp,k,γ,nl_iters,cache,linsolve,weight = nlsolver
-  @unpack ustep,tstep,atmp,W,new_W,invγdt = cache
+  @unpack z,dz,tmp,ztmp,k,γ,nl_iters,cache = nlsolver
+  @unpack ustep,tstep,atmp,W,new_W,invγdt,linsolve,weight = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)

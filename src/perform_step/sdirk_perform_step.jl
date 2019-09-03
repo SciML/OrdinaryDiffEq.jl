@@ -244,7 +244,7 @@ end
 @muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack atmp,nlsolver = cache
-  @unpack z,jac_config,tmp = nlsolver
+  @unpack z,tmp = nlsolver
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.f.mass_matrix
 
@@ -399,7 +399,7 @@ end
     @.. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),W,vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end
@@ -463,7 +463,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,atmp,nlsolver = cache
-  @unpack dz,k,jac_config,tmp = nlsolver
+  @unpack dz,k,tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   alg = unwrap_alg(integrator, true)
   update_W!(integrator, cache, dt, repeat_step)
@@ -503,7 +503,7 @@ end
     @.. dz = z₁/2 - z₂/2
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),W,vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end
@@ -591,7 +591,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK22Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack atmp,nlsolver = cache
-  @unpack z,jac_config,tmp = nlsolver
+  @unpack z,tmp = nlsolver
   @unpack a,α,β = cache.tab
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.f.mass_matrix
@@ -716,7 +716,7 @@ end
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,nlsolver = cache
-  @unpack dz,k,jac_config,tmp = nlsolver
+  @unpack dz,k,tmp = nlsolver
   alg = unwrap_alg(integrator, true)
 
   γ = eltype(u)(1//4)
@@ -934,7 +934,7 @@ end
     @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),W,vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end
@@ -1026,7 +1026,7 @@ end
 @muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,atmp,nlsolver = cache
-  @unpack dz,k,jac_config,tmp = nlsolver
+  @unpack dz,k,tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
@@ -1103,7 +1103,7 @@ end
     end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),W,vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end

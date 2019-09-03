@@ -155,7 +155,7 @@ end
     @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -407,7 +407,7 @@ end
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -570,7 +570,7 @@ end
     @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -928,7 +928,7 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -1138,7 +1138,7 @@ end
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -1590,7 +1590,7 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
