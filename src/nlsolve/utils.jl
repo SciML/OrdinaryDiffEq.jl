@@ -68,9 +68,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       linsolve = alg.linsolve(Val{:init},nf,u)
     else
       du1 = zero(rate_prototype)
-      # if the algorithm specializes on split problems the use `nf`
-      # we pass this `alg` here just for identification purpose, because get_uf would be overloaded in different repos
-      uf = iip_get_uf(alg,nf,t,p)
+      uf = build_uf(alg,nf,t,p,Val(true))
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
       linsolve = alg.linsolve(Val{:init},uf,u)
     end
@@ -101,8 +99,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   # create cache of non-linear solver
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
-    # only use `nf` if the algorithm specializes on split eqs
-    uf = oop_get_uf(alg,nf,t,p)
+    uf = build_uf(alg,nf,t,p,Val(false))
 
     invγdt = inv(oneunit(t) * one(uTolType))
 
