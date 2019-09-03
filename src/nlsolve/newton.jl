@@ -94,7 +94,7 @@ end
 
 @muladd function compute_step!(nlsolver::NLSolver{true}, nlcache::NLNewtonCache, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,dz,tmp,ztmp,k,γ,nl_iters,cache = nlsolver
+  @unpack z,dz,tmp,ztmp,k,γ,iter,cache = nlsolver
   @unpack ustep,tstep,atmp,W,new_W,invγdt,linsolve,weight = cache
 
   mass_matrix = integrator.f.mass_matrix
@@ -118,7 +118,7 @@ end
     update_coefficients!(W, ustep, p, tstep)
   end
 
-  linsolve(vec(dz), W, vec(ztmp), nl_iters == 1 && new_W;
+  linsolve(vec(dz), W, vec(ztmp), iter == 1 && new_W;
            Pl=DiffEqBase.ScaleVector(weight, true),
            Pr=DiffEqBase.ScaleVector(weight, false), tol=integrator.opts.reltol)
   if DiffEqBase.has_destats(integrator)

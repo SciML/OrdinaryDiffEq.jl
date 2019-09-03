@@ -18,7 +18,7 @@ function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator
   iter = 0
   while iter < max_iter
     iter += 1
-    nlsolver.nl_iters = iter
+    nlsolver.iter = iter
     if DiffEqBase.has_destats(integrator)
       integrator.destats.nnonliniter += 1
     end

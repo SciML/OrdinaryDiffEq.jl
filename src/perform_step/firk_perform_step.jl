@@ -161,7 +161,7 @@ end
     return
   end
   cache.ηold = η
-  cache.nl_iters = iter
+  cache.iter = iter
 
   u = @.. uprev + z3
 
@@ -355,7 +355,7 @@ end
     return
   end
   cache.ηold = η
-  cache.nl_iters = iter
+  cache.iter = iter
 
   @.. u = uprev + z3
 
