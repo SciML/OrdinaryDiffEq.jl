@@ -19,9 +19,6 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
   while iter < maxiters
     iter += 1
     nlsolver.iter = iter
-    if DiffEqBase.has_destats(integrator)
-      integrator.destats.nnonliniter += 1
-    end
 
     # compute next step and calculate norm of residuals
     iter > 1 && (ndzprev = ndz)
@@ -49,12 +46,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
     end
   end
 
-  if fail_convergence && DiffEqBase.has_destats(integrator)
-    integrator.destats.nnonlinconvfail += 1
-  end
-  integrator.force_stepfail = fail_convergence
-  nlsolver.ηold = η
-  nlsolver.z
+  postamble!(nlsolver, integrator, η, fail_convergence)
 end
 
 ## default implementations
@@ -72,4 +64,19 @@ function apply_step!(nlsolver::NLSolver{algType,iip}, integrator) where {algType
   end
 
   nothing
+end
+
+function postamble!(nlsolver::NLSolver, integrator, η, fail_convergence)
+  nlsolver.ηold = η
+
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nnonliniter += nlsolver.iter
+    
+    if fail_convergence
+      integrator.destats.nnonlinconvfail += 1
+    end
+  end
+  integrator.force_stepfail = fail_convergence
+
+  nlsolver.z
 end
