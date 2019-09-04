@@ -31,7 +31,7 @@ function initialize!(integrator, cache::Union{ImplicitEulerCache,
                                               ESDIRK54I8L2SACache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -361,7 +361,7 @@ end
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack zprev,zᵧ,atmp,nlsolver = cache
-  @unpack z,k,tmp = nlsolver
+  @unpack z,tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   b = nlsolver.ztmp
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
@@ -464,7 +464,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,atmp,nlsolver = cache
-  @unpack k,tmp = nlsolver
+  @unpack tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   alg = unwrap_alg(integrator, true)
   update_W!(integrator, cache, dt, repeat_step)
@@ -718,7 +718,7 @@ end
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,nlsolver = cache
-  @unpack k,tmp = nlsolver
+  @unpack tmp = nlsolver
   alg = unwrap_alg(integrator, true)
 
   γ = eltype(u)(1//4)
@@ -857,7 +857,7 @@ end
 @muladd function perform_step!(integrator, cache::Cash4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,atmp,nlsolver = cache
-  @unpack k,tmp = nlsolver
+  @unpack tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
@@ -1029,7 +1029,7 @@ end
 @muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,atmp,nlsolver = cache
-  @unpack k,tmp = nlsolver
+  @unpack tmp = nlsolver
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
@@ -1225,7 +1225,7 @@ end
 @muladd function perform_step!(integrator, cache::ESDIRK54I8L2SACache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver = cache
-  @unpack k,tmp = nlsolver
+  @unpack tmp = nlsolver
   @unpack γ,
           a31, a32,
           a41, a42, a43,

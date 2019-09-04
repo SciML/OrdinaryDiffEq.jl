@@ -96,8 +96,8 @@ end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,true}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,tmp,ztmp,k,γ,iter,cache = nlsolver
-  @unpack ustep,tstep,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
+  @unpack z,tmp,ztmp,γ,iter,cache = nlsolver
+  @unpack ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)

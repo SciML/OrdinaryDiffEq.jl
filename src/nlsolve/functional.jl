@@ -127,8 +127,8 @@ end
                                                                      NLAnderson},true},
                                           integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,tmp,ztmp,k,γ,cache = nlsolver
-  @unpack ustep,tstep,atmp,dz = cache
+  @unpack z,tmp,ztmp,γ,cache = nlsolver
+  @unpack ustep,tstep,k,atmp,dz = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)

@@ -1558,7 +1558,7 @@ end
 function initialize!(integrator, cache::CNAB2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1569,10 +1569,10 @@ end
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
   @unpack k1,k2,du₁,nlsolver = cache
-  @unpack z,tmp,k = nlsolver
+  @unpack z,tmp = nlsolver
+  @unpack f1 = f
   cnt = integrator.iter
-  f1 = integrator.f.f1
-  f2 = integrator.f.f2
+
   f1(du₁, uprev, p, t)
   integrator.destats.nf += 1
   @.. k1 = integrator.fsalfirst - du₁
@@ -1596,7 +1596,7 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   @.. u = tmp + 1//2*z
 
   cache.k2 .= k1
-  integrator.f(k,u,p,t+dt)
+  f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
 end
 
@@ -1662,7 +1662,7 @@ end
 function initialize!(integrator, cache::CNLF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1673,10 +1673,10 @@ end
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
   @unpack uprev2,k2,du₁,nlsolver = cache
-  @unpack z,k,tmp = nlsolver
+  @unpack z,tmp = nlsolver
+  @unpack f1 = f
   cnt = integrator.iter
-  f1 = integrator.f.f1
-  f2 = integrator.f.f2
+ 
   f1(du₁, uprev, p, t)
   integrator.destats.nf += 1
   # Explicit part
@@ -1702,6 +1702,6 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
 
   cache.uprev2 .= uprev
   cache.k2 .= du₁
-  integrator.f(k,u,p,t+dt)
+  f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
 end
