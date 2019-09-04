@@ -2,19 +2,19 @@
 
 abstract type AbstractNLSolver{algType,iip} end
 
-mutable struct NLSolver{algType,iip,uType,uTolType,kType,gType,cType,C1,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
+mutable struct NLSolver{algType,iip,uType,uTolType,tTypeNoUnits,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
   z::uType
   tmp::uType
   ztmp::uType
+  γ::uTolType
+  c::tTypeNoUnits
   alg::algType
+  κ::uTolType
+  fast_convergence_cutoff::uTolType
   ηold::uTolType
-  κ::kType
-  γ::gType
-  c::cType
-  maxiters::Int
   iter::Int
+  maxiters::Int
   status::NLStatus
-  fast_convergence_cutoff::C1
   cache::C
 end
 

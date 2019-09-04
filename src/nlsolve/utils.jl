@@ -33,22 +33,28 @@ function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
   end
 end
 
-build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,iip) =
-  build_nlsolver(alg,alg.nlsolve,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,iip)
+function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                        tTypeNoUnits,γ,c,iip)
+  build_nlsolver(alg,alg.nlsolve,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,
+                 uBottomEltypeNoUnits,tTypeNoUnits,γ,c,iip)
+end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
-                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,::Val{true})
-  @unpack κ, fast_convergence_cutoff = nlalg
-
-  # define additional fields of cache of non-linear solver
-  z = similar(u); dz = similar(u); tmp = similar(u); b = similar(u)
-  k = zero(rate_prototype); ustep = similar(u)
-  tstep = zero(t)
-  atmp = similar(u, uEltypeNoUnits)
-
+                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                        γ,c,::Val{true})
+  # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
 
-  # create cache of non-linear solver
+  # define fields of non-linear solver
+  z = similar(u); tmp = similar(u); ztmp = similar(u)
+
+  # build cache of non-linear solver
+  ustep = similar(u)
+  tstep = zero(t)
+  k = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
+  dz = similar(u)
+
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
 
@@ -90,24 +96,26 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
                               nlalg.aa_start,nlalg.droptol)
   end
 
-  # create non-linear solver
-  NLSolver{typeof(nlalg),true,typeof(z),uTolType,typeof(κ),typeof(γ),typeof(c),
-           typeof(fast_convergence_cutoff),typeof(nlcache)}(
-             z,tmp,b,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
-             fast_convergence_cutoff,nlcache)
+  # build non-linear solver
+  ηold = one(uTolType)
+
+  NLSolver{typeof(nlalg),true,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
+    z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
+    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,Convergence,nlcache)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
-                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c,::Val{false})
-  @unpack κ, fast_convergence_cutoff = nlalg
-
-  # define additional fields of cache of non-linear solver (all aliased)
-  z = uprev; tmp = z; b = z
-  tstep = zero(t)
-
+                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                        γ,c,::Val{false})
+  # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
 
-  # create cache of non-linear solver
+  # define fields of non-linear solver
+  z = u; tmp = u; ztmp = u
+
+  # build cache of non-linear solver
+  tstep = zero(t)
+
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
     uf = build_uf(alg,nf,t,p,Val(false))
@@ -133,11 +141,12 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     nlcache = NLAndersonConstantCache(tstep,dz,dzold,z₊old,Δz₊s,Q,R,γs,0,nlalg.aa_start,nlalg.droptol)
   end
 
-  # create non-linear solver
-  NLSolver{typeof(nlalg),false,typeof(z),uTolType,typeof(κ),typeof(γ),typeof(c),
-           typeof(fast_convergence_cutoff),typeof(nlcache)}(
-             z,tmp,b,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
-             fast_convergence_cutoff,nlcache)
+  # build non-linear solver
+  ηold = one(uTolType)
+
+  NLSolver{typeof(nlalg),false,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
+    z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
+    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,Convergence,nlcache)
 end
 
 ## Anderson acceleration
