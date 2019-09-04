@@ -127,6 +127,145 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
              fast_convergence_cutoff,nlcache)
 end
 
+## Anderson acceleration
+
+"""
+    anderson(z, cache, integrator)
+
+Return the next iterate of the fixed-point iteration `z = g(z)` by performing Anderson
+acceleration based on the current iterate `z` and the settings and history in the `cache`.
+"""
+@muladd function anderson(z, cache, integrator)
+  @unpack dz,Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = cache
+
+  # increase size of history
+  history += 1
+
+  # remove oldest history if maximum size is exceeded
+  max_history = length(Δz₊s)
+  if history > max_history
+    # circularly shift differences of z₊
+    for i in 1:(max_history-1)
+      Δz₊s[i] = Δz₊s[i + 1]
+    end
+
+    # delete left-most column of QR decomposition
+    qrdelete!(Q, R, max_history)
+
+    # update size of history
+    history = max_history
+  end
+
+  # update history of differences of z₊
+  Δz₊s[history] = @.. z - z₊old
+
+  # replace/add difference of residuals as right-most column to QR decomposition
+  qradd!(Q, R, _vec(dz .- dzold), history)
+
+  # update cached values
+  cache.dzold = dz
+  cache.z₊old = z
+
+  # define current Q and R matrices
+  Qcur, Rcur = view(Q, :, 1:history), UpperTriangular(view(R, 1:history, 1:history))
+
+  # check condition (TODO: incremental estimation)
+  if droptol !== nothing
+    while cond(R) > droptol && history > 1
+      qrdelete!(Q, R, history)
+      history -= 1
+      Qcur, Rcur = view(Q, :, 1:history), UpperTriangular(view(R, 1:history, 1:history))
+    end
+  end
+
+  # save updated history
+  cache.history = history
+
+  # solve least squares problem
+  γscur = view(γs, 1:history)
+  ldiv!(Rcur, mul!(γscur, Qcur', _vec(dz)))
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nsolve += 1
+  end
+
+  # update next iterate
+  for i in 1:history
+    z = @.. z - γs[i] * Δz₊s[i]
+  end
+
+  z
+end
+
+"""
+    anderson!(z, cache, integrator)
+
+Update the current iterate `z` of the fixed-point iteration `z = g(z)` in-place
+by performing Anderson acceleration based on the settings and history in the `cache`.
+"""
+@muladd function anderson!(z, cache, integrator)
+  @unpack dz,z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = cache
+
+  # increase size of history
+  history += 1
+
+  # remove oldest history if maximum size is exceeded
+  max_history = length(Δz₊s)
+  if history > max_history
+    # circularly shift differences of z₊
+    ptr = Δz₊s[1]
+    for i in 1:(max_history-1)
+      Δz₊s[i] = Δz₊s[i + 1]
+    end
+    Δz₊s[max_history] = ptr
+
+    # delete left-most column of QR decomposition
+    qrdelete!(Q, R, max_history)
+
+    # update size of history
+    history = max_history
+  end
+
+  # update history of differences of z₊
+  @.. Δz₊s[history] = z - z₊old
+
+  # replace/add difference of residuals as right-most column to QR decomposition
+  @.. dzold = dz - dzold
+  qradd!(Q, R, vec(dzold), history)
+
+  # update cached values
+  @.. dzold = dz
+  @.. z₊old = z
+
+  # define current Q and R matrices
+  Qcur, Rcur = view(Q, :, 1:history), UpperTriangular(view(R, 1:history, 1:history))
+
+  # check condition (TODO: incremental estimation)
+  if droptol !== nothing
+    while cond(R) > droptol && history > 1
+      qrdelete!(Q, R, history)
+      history -= 1
+      Qcur, Rcur = view(Q, :, 1:history), UpperTriangular(view(R, 1:history, 1:history))
+    end
+  end
+
+  # save updated history
+  cache.history = history
+
+  # solve least squares problem
+  γscur = view(γs, 1:history)
+  ldiv!(Rcur, mul!(γscur, Qcur', vec(dz)))
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nsolve += 1
+  end
+
+  # update next iterate
+  for i in 1:history
+    @.. z = z - γs[i] * Δz₊s[i]
+  end
+
+  nothing
+end  
+
 function nlsolve_resize!(integrator::DiffEqBase.DEIntegrator, i::Int)
   if !isdefined(integrator.cache, :nlsolver)
     return nothing
