@@ -21,13 +21,13 @@ resize!(i, 5)
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
-@test length(i.cache.nlsolver.dz) == 5
 @test length(i.cache.nlsolver.ztmp) == 5
 @test length(i.cache.nlsolver.tmp) == 5
 @test length(i.cache.nlsolver.k) == 5
-# ForwardDiff
+# nlsolver cache fields
 @test length(i.cache.nlsolver.cache.ustep) == 5
 @test length(i.cache.nlsolver.cache.atmp) == 5
+@test length(i.cache.nlsolver.cache.dz) == 5
 @test size(i.cache.nlsolver.cache.J) == (5,5)
 @test size(i.cache.nlsolver.cache.W) == (5,5)
 @test length(i.cache.nlsolver.cache.du1) == 5
@@ -42,13 +42,13 @@ resize!(i, 5)
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
-@test length(i.cache.nlsolver.dz) == 5
 @test length(i.cache.nlsolver.ztmp) == 5
 @test length(i.cache.nlsolver.tmp) == 5
 @test length(i.cache.nlsolver.k) == 5
-# DiffEqDiffTools
+# nlsolver cache fields
 @test length(i.cache.nlsolver.cache.ustep) == 5
 @test length(i.cache.nlsolver.cache.atmp) == 5
+@test length(i.cache.nlsolver.cache.dz) == 5
 @test size(i.cache.nlsolver.cache.J) == (5,5)
 @test size(i.cache.nlsolver.cache.W) == (5,5)
 @test length(i.cache.nlsolver.cache.du1) == 5

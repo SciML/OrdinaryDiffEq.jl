@@ -59,26 +59,28 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
-    nlcache = NLNewtonCache(ustep,tstep,atmp,J,W,true,tType(dt),du1,uf,jac_config,linsolve,
-                            weight,invγdt,tType(nlalg.new_W_dt_cutoff))
+    nlcache = NLNewtonCache(ustep,tstep,atmp,dz,J,W,true,tType(dt),du1,uf,jac_config,
+                            linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff))
   elseif nlalg isa NLFunctional
-    nlcache = NLFunctionalCache(ustep,tstep,atmp)
+    nlcache = NLFunctionalCache(ustep,tstep,atmp,dz)
   elseif nlalg isa NLAnderson
     max_history = min(nlalg.max_history, nlalg.max_iter, length(z))
     Δz₊s = [zero(z) for i in 1:max_history]
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
     R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
     γs = Vector{uEltypeNoUnits}(undef, max_history)
+
     dzold = zero(z)
     z₊old = zero(z)
 
-    nlcache = NLAndersonCache(ustep,tstep,atmp,dzold,z₊old,Δz₊s,Q,R,γs,0,nlalg.aa_start,nlalg.droptol)
+    nlcache = NLAndersonCache(ustep,tstep,atmp,dz,dzold,z₊old,Δz₊s,Q,R,γs,0,nlalg.aa_start,
+                              nlalg.droptol)
   end
 
   # create non-linear solver
   NLSolver{typeof(nlalg),true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),
            typeof(fast_convergence_cutoff),typeof(nlcache)}(
-             z,dz,tmp,b,k,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
+             z,tmp,b,k,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
              fast_convergence_cutoff,nlcache)
 end
 
@@ -87,7 +89,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   @unpack κ, fast_convergence_cutoff = nlalg
 
   # define additional fields of cache of non-linear solver (all aliased)
-  z = uprev; dz = z; tmp = z; b = z; k = rate_prototype
+  z = uprev; tmp = z; b = z; k = rate_prototype
   tstep = zero(t)
 
   uTolType = real(uBottomEltypeNoUnits)
@@ -110,16 +112,18 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
     R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
     γs = Vector{uEltypeNoUnits}(undef, max_history)
+
+    dz = u
     dzold = u
     z₊old = u
 
-    nlcache = NLAndersonConstantCache(tstep,dzold,z₊old,Δz₊s,Q,R,γs,0,nlalg.aa_start,nlalg.droptol)
+    nlcache = NLAndersonConstantCache(tstep,dz,dzold,z₊old,Δz₊s,Q,R,γs,0,nlalg.aa_start,nlalg.droptol)
   end
 
   # create non-linear solver
   NLSolver{typeof(nlalg),false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),
            typeof(fast_convergence_cutoff),typeof(nlcache)}(
-             z,dz,tmp,b,k,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
+             z,tmp,b,k,nlalg,one(uTolType),κ,γ,c,nlalg.max_iter,10000,Convergence,
              fast_convergence_cutoff,nlcache)
 end
 
@@ -131,20 +135,18 @@ function nlsolve_resize!(integrator::DiffEqBase.DEIntegrator, i::Int)
   if nlsolver isa AbstractArray
     for idx in eachindex(nlsolver) # looping because we may have multiple nlsolver for threaded case
       _nlsolver = nlsolver[idx]
-      @unpack z,dz,tmp,ztmp,k,cache = _nlsolver
+      @unpack z,tmp,ztmp,k,cache = _nlsolver
       # doubt: if these fields are always going to be in alg cache too, then we shouldnt do this here.
       # double resize doesn't do any bad I think though
       resize!(z,i)
-      resize!(dz,i)
       resize!(tmp,i)
       resize!(ztmp,i)
       resize!(k,i)
       nlsolve_cache_resize!(cache,alg,i)
     end
   else
-    @unpack z,dz,tmp,ztmp,k,cache = nlsolver
+    @unpack z,tmp,ztmp,k,cache = nlsolver
     resize!(z,i)
-    resize!(dz,i)
     resize!(tmp,i)
     resize!(ztmp,i)
     resize!(k,i)
@@ -156,6 +158,7 @@ end
 function nlsolve_cache_resize!(cache::NLNewtonCache, alg, i::Int)
   resize!(cache.ustep, i)
   resize!(cache.atmp, i)
+  resize!(cache.dz,i)
   resize!(cache.du1, i)
   if cache.jac_config !== nothing
     resize_jac_config!(cache.jac_config, i)
@@ -172,6 +175,7 @@ end
 function nlsolve_cache_resize!(cache::NLAndersonCache, alg, i::Int)
   resize!(cache.ustep, i)
   resize!(cache.atmp, i)
+  resize!(cache.dz, i)
   resize!(cache.dzold, i)
   resize!(cache.z₊old, i)
   max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, i)
@@ -200,6 +204,7 @@ end
 function nlsolve_cache_resize!(cache::NLFunctionalCache, alg, i::Int)
   resize!(cache.ustep, i)
   resize!(cache.atmp, i)
+  resize!(cache.dz, i)
   nothing
 end
 

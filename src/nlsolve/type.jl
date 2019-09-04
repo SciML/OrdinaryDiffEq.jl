@@ -4,7 +4,6 @@ abstract type AbstractNLSolver{algType,iip} end
 
 mutable struct NLSolver{algType,iip,uType,rateType,uTolType,kType,gType,cType,C1,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
   z::uType
-  dz::uType
   tmp::uType
   ztmp::uType
   k::rateType
@@ -26,6 +25,7 @@ mutable struct NLNewtonCache{uType,tType,uNoUnitsType,J,W,du1Type,ufType,jcType,
   ustep::uType
   tstep::tType
   atmp::uNoUnitsType
+  dz::uType
   J::J
   W::W
   new_W::Bool
@@ -52,6 +52,7 @@ mutable struct NLFunctionalCache{uType,tType,uNoUnitsType} <: AbstractNLSolverCa
   ustep::uType
   tstep::tType
   atmp::uNoUnitsType
+  dz::uType
 end
 
 mutable struct NLFunctionalConstantCache{tType} <: AbstractNLSolverCache
@@ -62,6 +63,7 @@ mutable struct NLAndersonCache{uType,tType,uNoUnitsType,uEltypeNoUnits,D} <: Abs
   ustep::uType
   tstep::tType
   atmp::uNoUnitsType
+  dz::uType
   """value `g(zprev)` of previous fixed-point iteration"""
   z₊old::uType
   """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
@@ -77,6 +79,7 @@ end
 
 mutable struct NLAndersonConstantCache{uType,tType,uEltypeNoUnits,D} <: AbstractNLSolverCache
   tstep::tType
+  dz::uType
   """value `g(zprev)` of previous fixed-point iteration"""
   z₊old::uType
   """residuals `g(zprev) - zprev` of previous fixed-point iteration"""

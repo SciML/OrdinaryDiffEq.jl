@@ -97,7 +97,7 @@ end
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   alg = unwrap_alg(integrator, true)
 
@@ -152,14 +152,15 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+    @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -291,7 +292,7 @@ end
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
   @unpack z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
   @unpack ebtilde1,ebtilde2,ebtilde3,ebtilde4 = cache.tab
@@ -398,20 +399,21 @@ end
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
-      for i in eachindex(dz)
-        @inbounds dz[i] = btilde1*z₁[i]  + btilde2*z₂[i]  + btilde3*z₃[i] + btilde4*z₄[i] + ebtilde1*k1[i] + ebtilde2*k2[i] + ebtilde3*k3[i] + ebtilde4*k4[i]
+      #@.. tmp = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
+      for i in eachindex(tmp)
+        @inbounds tmp[i] = btilde1*z₁[i]  + btilde2*z₂[i]  + btilde3*z₃[i] + btilde4*z₄[i] + ebtilde1*k1[i] + ebtilde2*k2[i] + ebtilde3*k3[i] + ebtilde4*k4[i]
       end
     else
-      @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+      @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -503,7 +505,7 @@ end
 @muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
   @unpack btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
@@ -567,14 +569,15 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -750,7 +753,7 @@ end
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   @unpack k1,k2,k3,k4,k5,k6 = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
@@ -915,24 +918,25 @@ end
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
+      #@.. tmp = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
       for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + ebtilde1*k1[i] + ebtilde3*k3[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i]
+        @inbounds tmp[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + ebtilde1*k1[i] + ebtilde3*k3[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i]
       end
     else
-      # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
+      # @.. tmp = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
       @tight_loop_macros for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i]
+        @inbounds tmp[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i]
       end
     end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -1042,7 +1046,7 @@ end
 @muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
@@ -1132,17 +1136,18 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
+    # @.. tmp = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
     @tight_loop_macros for i in eachindex(u)
-      @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
+      @inbounds tmp[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -1361,7 +1366,7 @@ end
   @unpack t,dt,uprev,u,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver = cache
   @unpack k1,k2,k3,k4,k5,k6,k7,k8 = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
   @unpack btilde1,btilde4,btilde5,btilde6,btilde7,btilde8 = cache.tab
@@ -1576,25 +1581,25 @@ end
   if integrator.opts.adaptive
 
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
+      #@.. tmp =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
       for i in eachindex(u)
-        dz[i] =  btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i] + ebtilde1*k1[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i] + ebtilde7*k7[i] + ebtilde8*k8[i]
+        tmp[i] =  btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i] + ebtilde1*k1[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i] + ebtilde7*k7[i] + ebtilde8*k8[i]
       end
     else
-      # @.. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+      # @.. tmp = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
       @tight_loop_macros for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
+        @inbounds tmp[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
       end
-
     end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 

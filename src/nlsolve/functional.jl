@@ -51,12 +51,12 @@ end
   previter = nlsolver.iter - 1
   if previter == aa_start
     # update cached values for next step of Anderson acceleration
-    cache.dzold = nlsolver.dz
+    cache.dzold = cache.dz
     cache.z₊old = nlsolver.z
   elseif previter > aa_start
     # actually perform Anderson acceleration
-    @unpack z,dz = nlsolver
-    @unpack Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = cache
+    @unpack z = nlsolver
+    @unpack dz,Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = cache
 
     # increase size of history
     history += 1
@@ -127,12 +127,12 @@ end
   previter = nlsolver.iter - 1
   if previter == aa_start
     # update cached values for next step of Anderson acceleration
-    @.. cache.dzold = nlsolver.dz
+    @.. cache.dzold = cache.dz
     @.. cache.z₊old = nlsolver.z
   elseif previter > aa_start
     # actually perform Anderson acceleration
-    @unpack z,dz = nlsolver
-    @unpack z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = cache
+    @unpack z = nlsolver
+    @unpack dz,z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = cache
 
     # increase size of history
     history += 1
@@ -226,7 +226,9 @@ end
 
   # cache results
   nlsolver.ztmp = ztmp
-  nlsolver.dz = dz
+  if isdefined(cache, :dz)
+    cache.dz = dz
+  end
 
   ndz
 end
@@ -235,8 +237,8 @@ end
                                                                      NLAnderson},true},
                                           integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,dz,tmp,ztmp,k,γ,cache = nlsolver
-  @unpack ustep,tstep,atmp = cache
+  @unpack z,tmp,ztmp,k,γ,cache = nlsolver
+  @unpack ustep,tstep,atmp,dz = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)

@@ -361,7 +361,7 @@ end
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack zprev,zᵧ,atmp,nlsolver = cache
-  @unpack dz,z,k,tmp = nlsolver
+  @unpack z,k,tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   b = nlsolver.ztmp
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
@@ -396,14 +396,15 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @.. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
+    @.. tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),W,vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -463,7 +464,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   alg = unwrap_alg(integrator, true)
   update_W!(integrator, cache, dt, repeat_step)
@@ -500,14 +501,15 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @.. dz = z₁/2 - z₂/2
+    @.. tmp = z₁/2 - z₂/2
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),W,vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -716,7 +718,7 @@ end
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   alg = unwrap_alg(integrator, true)
 
   γ = eltype(u)(1//4)
@@ -855,7 +857,7 @@ end
 @muladd function perform_step!(integrator, cache::Cash4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack k,tmp = nlsolver
   W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
@@ -931,14 +933,15 @@ end
       btilde3 = b3hat1-a53; btilde4 = b4hat1-a54; btilde5 = -γ
     end
 
-    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),W,vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -1026,8 +1029,7 @@ end
 @muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
-  W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
+  @unpack k,tmp = nlsolver
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
@@ -1097,17 +1099,18 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    # @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    # @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     @tight_loop_macros for i in eachindex(u)
-      dz[i] = btilde1*z₁[i] + btilde2*z₂[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i]
+      tmp[i] = btilde1*z₁[i] + btilde2*z₂[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i]
     end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
       integrator.destats.nsolve += 1
-      nlsolver.cache.linsolve(vec(tmp),W,vec(dz),false)
     else
-      tmp .= dz
+      est = tmp
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
