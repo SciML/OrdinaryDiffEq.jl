@@ -130,12 +130,12 @@ end
 ## Anderson acceleration
 
 """
-    anderson(z, cache, integrator)
+    anderson(z, cache)
 
 Return the next iterate of the fixed-point iteration `z = g(z)` by performing Anderson
 acceleration based on the current iterate `z` and the settings and history in the `cache`.
 """
-@muladd function anderson(z, cache, integrator)
+@muladd function anderson(z, cache)
   @unpack dz,Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = cache
 
   # increase size of history
@@ -184,9 +184,6 @@ acceleration based on the current iterate `z` and the settings and history in th
   # solve least squares problem
   γscur = view(γs, 1:history)
   ldiv!(Rcur, mul!(γscur, Qcur', _vec(dz)))
-  if DiffEqBase.has_destats(integrator)
-    integrator.destats.nsolve += 1
-  end
 
   # update next iterate
   for i in 1:history
@@ -197,12 +194,12 @@ acceleration based on the current iterate `z` and the settings and history in th
 end
 
 """
-    anderson!(z, cache, integrator)
+    anderson!(z, cache)
 
 Update the current iterate `z` of the fixed-point iteration `z = g(z)` in-place
 by performing Anderson acceleration based on the settings and history in the `cache`.
 """
-@muladd function anderson!(z, cache, integrator)
+@muladd function anderson!(z, cache)
   @unpack dz,z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = cache
 
   # increase size of history
@@ -254,9 +251,6 @@ by performing Anderson acceleration based on the settings and history in the `ca
   # solve least squares problem
   γscur = view(γs, 1:history)
   ldiv!(Rcur, mul!(γscur, Qcur', vec(dz)))
-  if DiffEqBase.has_destats(integrator)
-    integrator.destats.nsolve += 1
-  end
 
   # update next iterate
   for i in 1:history

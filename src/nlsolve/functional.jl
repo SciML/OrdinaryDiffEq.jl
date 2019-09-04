@@ -55,7 +55,10 @@ end
     cache.z₊old = nlsolver.z
   elseif previter > aa_start
     # actually perform Anderson acceleration
-    nlsolver.z = anderson(nlsolver.z, cache, integrator)
+    nlsolver.z = anderson(nlsolver.z, cache)
+    if DiffEqBase.has_destats(integrator)
+      integrator.destats.nsolve += 1
+    end  
   end
 
   # compute next step
@@ -73,7 +76,11 @@ end
     @.. cache.dzold = cache.dz
     @.. cache.z₊old = nlsolver.z
   elseif previter > aa_start
-    anderson!(nlsolver.z, cache, integrator)
+    # actually perform Anderson acceleration
+    anderson!(nlsolver.z, cache)
+    if DiffEqBase.has_destats(integrator)
+      integrator.destats.nsolve += 1
+    end  
   end
 
   # compute next step
