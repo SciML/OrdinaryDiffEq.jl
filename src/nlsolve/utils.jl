@@ -1,22 +1,23 @@
-get_status(nlsolver::NLSolver) = nlsolver.status
-nlsolvefail(nlsolver::NLSolver) = nlsolvefail(get_status(nlsolver))
+get_status(nlsolver::AbstractNLSolver) = nlsolver.status
+
+nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) < 0
 
-isnewton(nlsolver::NLSolver) = isnewton(nlsolver.cache)
-isnewton(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = true
-isnewton(nlcache::AbstractNLSolverCache) = false
+isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
+isnewton(::AbstractNLSolverCache) = false
+isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 
-set_new_W!(nlsolver::NLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
+set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
 set_new_W!(nlcache::NLNewtonCache, val::Bool)::Bool = nlcache.new_W = val
 set_new_W!(nlcache::AbstractNLSolverCache, val::Bool)::Bool = val
 
-get_W(nlsolver::NLSolver) = get_W(nlsolver.cache)
+get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 
-set_W!(nlsolver::NLSolver, W) = set_W!(nlsolver.cache, W)
+set_W!(nlsolver::AbstractNLSolver, W) = set_W!(nlsolver.cache, W)
 set_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W) = (nlcache.W = W; W)
 
-set_W_dt!(nlsolver::NLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
+set_W_dt!(nlsolver::AbstractNLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
 set_W_dt!(nlcache::NLNewtonCache, W_dt) = (nlcache.W_dt = W_dt; W_dt)
 set_W_dt!(nlcache::NLNewtonConstantCache, W_dt) = W_dt
 
