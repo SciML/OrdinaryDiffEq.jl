@@ -42,7 +42,6 @@ end
   alg = unwrap_alg(integrator, true)
   @unpack maxiters = alg
   mass_matrix = integrator.f.mass_matrix
-  is_compos = integrator.alg isa CompositeAlgorithm
 
   # precalculations
   rtol = @.. reltol^(2/3) / 10
@@ -51,7 +50,7 @@ end
   c2m1 = c2-1
   c1mc2= c1-c2
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  J = calc_J(integrator, cache, is_compos)
+  J = calc_J(integrator,  cache)
   if u isa Number
     LU1 = -γdt*mass_matrix + J
     LU2 = -(αdt + βdt*im)*mass_matrix + J

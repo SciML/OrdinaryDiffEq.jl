@@ -36,42 +36,36 @@ function calc_tderivative(integrator, cache)
 end
 
 """
-    calc_J(integrator,cache,is_compos)
+    calc_J(integrator, cache)
 
-Interface for calculating the jacobian.
+Return a new Jacobian object.
 
-For constant caches, a new jacobian object is returned whereas for mutable
-caches `cache.J` is updated. In both cases, if `integrator.f` has a custom
-jacobian update function, then it will be called for the update. Otherwise,
-either ForwardDiff or finite difference will be used depending on the
-`jac_config` of the cache.
+If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
+either automatic or finite differencing will be used depending on the `uf` object of the
+cache.
 """
-function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  if DiffEqBase.has_jac(f)
-    J = f.jac(uprev, p, t)
-  else
-    cache.uf.t = t
-    cache.uf.p = p
-    J = jacobian(cache.uf,uprev,integrator)
-  end
-  integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-  return J
-end
+function calc_J(integrator, cache)
+  @unpack t,uprev,f,p,alg = integrator
 
-function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    nlsolver.cache.uf.t = t
-    nlsolver.cache.uf.p = p
-    J = jacobian(nlsolver.cache.uf,uprev,integrator)
+    @unpack uf = cache
+
+    uf.f = nlsolve_f(f, alg)
+    uf.p = p
+    uf.t = t
+
+    J = jacobian(uf, uprev, integrator)
   end
+
   integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-  return J
+
+  if alg isa CompositeAlgorithm
+    integrator.eigen_est = opnorm(J, Inf)
+  end
+  
+  J
 end
 
 """
@@ -110,7 +104,7 @@ function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCac
 end
 
 function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  nlsolver.cache.J = calc_J(nlsolver,integrator,cache,is_compos)
+  nlsolver.cache.J = calc_J(integrator, nlsolver.cache)
 end
 
 function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
@@ -129,7 +123,7 @@ function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_comp
 end
 
 function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  cache.J = calc_J(integrator,cache,is_compos)
+  cache.J = calc_J(integrator, cache)
 end
 
 """
@@ -530,11 +524,9 @@ end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  @unpack uf = cache
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
   # calculate W
-  uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
     J = f.f1.f
@@ -548,7 +540,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
-    J = calc_J(integrator, cache, is_compos)
+    J = calc_J(integrator, cache)
     W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
                            -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
@@ -559,11 +551,9 @@ end
 
 function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  @unpack uf = nlsolver.cache
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
   # calculate W
-  uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
     J = f.f1.f
@@ -577,7 +567,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgam
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
-    J = calc_J(nlsolver, integrator, cache, is_compos)
+    J = calc_J(integrator, nlsolver.cache)
     W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
                            -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
