@@ -66,10 +66,10 @@ mutable struct NLAndersonCache{uType,tType,rateType,uNoUnitsType,uEltypeNoUnits,
   k::rateType
   atmp::uNoUnitsType
   dz::uType
-  """value `g(zprev)` of previous fixed-point iteration"""
-  z₊old::uType
   """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
   dzold::uType
+  """value `g(zprev)` of previous fixed-point iteration"""
+  z₊old::uType
   Δz₊s::Vector{uType}
   Q::Matrix{uEltypeNoUnits}
   R::Matrix{uEltypeNoUnits}
@@ -82,10 +82,10 @@ end
 mutable struct NLAndersonConstantCache{uType,tType,uEltypeNoUnits,D} <: AbstractNLSolverCache
   tstep::tType
   dz::uType
-  """value `g(zprev)` of previous fixed-point iteration"""
-  z₊old::uType
   """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
   dzold::uType
+  """value `g(zprev)` of previous fixed-point iteration"""
+  z₊old::uType
   Δz₊s::Vector{uType}
   Q::Matrix{uEltypeNoUnits}
   R::Matrix{uEltypeNoUnits}

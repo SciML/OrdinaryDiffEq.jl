@@ -153,3 +153,50 @@ end
 
   ndz
 end
+
+## resize!
+
+function Base.resize!(nlcache::NLFunctionalCache, i::Int)
+  resize!(nlcache.ustep, i)
+  resize!(nlcache.k, i)
+  resize!(nlcache.atmp, i)
+  resize!(nlcache.dz, i)
+  nothing
+end
+
+function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson},
+                      integrator, i::Int)
+  resize!(nlcache, nlsolver.alg, i)
+end
+
+function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
+  @unpack z₊old,Δz₊s = nlcache
+
+  resize!(nlcache.ustep, i)
+  resize!(nlcache.k, i)
+  resize!(nlcache.atmp, i)
+  resize!(nlcache.dz, i)
+  resize!(nlcache.dzold, i)
+  resize!(z₊old, i)
+
+  # update history of Anderson cache
+  max_history_old = length(Δz₊s)
+  max_history = min(nlalg.max_history, nlalg.max_iter, i)
+
+  resize!(nlcache.γs, max_history)
+  resize!(nlcache.Δz₊s, max_history)
+
+  if max_history != max_history_old
+    nlcache.Q = typeof(nlcache.Q)(undef, i, max_history)
+    nlcache.R = typeof(nlcache.R)(undef, max_history, max_history)
+  end
+
+  max_history = length(Δz₊s)
+  if max_history > max_history_old
+    for i in (max_history_old + 1):max_history
+      Δz₊s[i] = zero(z₊old)
+    end
+  end
+
+  nothing
+end

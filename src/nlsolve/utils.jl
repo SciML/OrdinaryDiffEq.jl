@@ -281,90 +281,34 @@ by performing Anderson acceleration based on the settings and history in the `ca
   end
 
   nothing
-end  
+end
 
-function nlsolve_resize!(integrator::DiffEqBase.DEIntegrator, i::Int)
-  if !isdefined(integrator.cache, :nlsolver)
-    return nothing
-  end
-  alg = integrator.alg; nlsolver = integrator.cache.nlsolver
+## resize
+
+function resize_nlsolver!(integrator::DiffEqBase.DEIntegrator, i::Int)
+  isdefined(integrator.cache, :nlsolver) || return
+
+  @unpack nlsolver = integrator.cache
+
   if nlsolver isa AbstractArray
-    for idx in eachindex(nlsolver) # looping because we may have multiple nlsolver for threaded case
-      _nlsolver = nlsolver[idx]
-      @unpack z,tmp,ztmp,cache = _nlsolver
-      # doubt: if these fields are always going to be in alg cache too, then we shouldnt do this here.
-      # double resize doesn't do any bad I think though
-      resize!(z,i)
-      resize!(tmp,i)
-      resize!(ztmp,i)
-      nlsolve_cache_resize!(cache,alg,i)
+    for idx in eachindex(nlsolver)
+      resize!(nlsolver[idx], integrator, i)
     end
   else
-    @unpack z,tmp,ztmp,cache = nlsolver
-    resize!(z,i)
-    resize!(tmp,i)
-    resize!(ztmp,i)
-    nlsolve_cache_resize!(cache,alg,i)
+    resize!(nlsolver, integrator, i)
   end
-  nothing
-end
-
-function nlsolve_cache_resize!(cache::NLNewtonCache, alg, i::Int)
-  resize!(cache.ustep, i)
-  resize!(cache.atmp, i)
-  resize!(cache.k, i)
-  resize!(cache.dz, i)
-  resize!(cache.du1, i)
-  if cache.jac_config !== nothing
-    resize_jac_config!(cache.jac_config, i)
-  end
-  resize!(cache.weight, i)
 
   nothing
 end
 
-function nlsolve_cache_resize!(cache::NLNewtonConstantCache, alg, i::Int)
-  nothing
+function Base.resize!(nlsolver::AbstractNLSolver, integrator, i::Int)
+  resize!(nlsolver.z, i)
+  resize!(nlsolver.tmp, i)
+  resize!(nlsolver.ztmp, i)
+
+  resize!(nlsolver.cache, nlsolver, integrator, i)
 end
 
-function nlsolve_cache_resize!(cache::NLAndersonCache, alg, i::Int)
-  resize!(cache.ustep, i)
-  resize!(cache.atmp, i)
-  resize!(cache.k, i)
-  resize!(cache.dz, i)
-  resize!(cache.dzold, i)
-  resize!(cache.z₊old, i)
-  max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, i)
-  prev_max_history = length(cache.Δz₊s)
-  resize!(cache.γs, max_history)
-  resize!(cache.Δz₊s, max_history)
-  if max_history > prev_max_history
-    for i in (max_history - prev_max_history):max_history
-      cache.Δz₊s[i] = zero(z₊)
-    end
-  end
-  cache.Q = typeof(cache.Q)(undef, i, max_history)
-  cache.R = typeof(cache.R)(undef, max_history, max_history)
-  nothing
-end
-
-function nlsolve_cache_resize!(cache::NLAndersonConstantCache, alg, i::Int)
-  max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, i)
-  resize!(cache.Δz₊s, max_history)
-  cache.Q = typeof(cache.Q)(undef, i, max_history)
-  cache.R = typeof(cache.R)(undef, max_history, max_history)
-  resize!(cache.γs, max_history)
-  nothing
-end
-
-function nlsolve_cache_resize!(cache::NLFunctionalCache, alg, i::Int)
-  resize!(cache.ustep, i)
-  resize!(cache.atmp, i)
-  resize!(cache.k, i)
-  resize!(cache.dz, i)
-  nothing
-end
-
-function nlsolve_cache_resize!(cache::NLFunctionalConstantCache, alg, i::Int)
-  nothing
-end
+## default: dispatch only on the cache
+Base.resize!(cache::AbstractNLSolverCache, nlsolver, integrator, i::Int) =
+  Base.resize!(cache, i)

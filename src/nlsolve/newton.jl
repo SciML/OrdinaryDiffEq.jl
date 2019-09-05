@@ -135,3 +135,22 @@ end
 
   ndz
 end
+
+## resize!
+
+function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i::Int)
+  resize!(nlcache.ustep, i)
+  resize!(nlcache.k, i)
+  resize!(nlcache.atmp, i)
+  resize!(nlcache.dz, i)
+  resize!(nlcache.du1, i)
+  if nlcache.jac_config !== nothing
+    resize_jac_config!(nlcache.jac_config, i)
+  end
+  resize!(nlcache.weight, i)
+
+  # resize J and W (or rather create new ones of appropriate size and type)
+  resize_J_W!(nlcache, integrator, i)
+
+  nothing
+end
