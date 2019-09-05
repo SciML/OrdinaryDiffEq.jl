@@ -15,8 +15,10 @@ get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 
 set_W_dt!(nlsolver::AbstractNLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
-set_W_dt!(nlcache::NLNewtonCache, W_dt) = (nlcache.W_dt = W_dt; W_dt)
-set_W_dt!(nlcache::NLNewtonConstantCache, W_dt) = W_dt
+function set_W_dt!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W_dt)
+  nlcache.W_dt = W_dt
+  W_dt
+end
 
 du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)
 du_cache(::AbstractNLSolverCache) = nothing
