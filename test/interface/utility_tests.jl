@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: WOperator, set_gamma!, calc_W!
+using OrdinaryDiffEq: WOperator, set_gamma!, calc_W, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
 @testset "WOperator" begin
@@ -17,7 +17,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
   end
 end
 
-@testset "calc_W!" begin
+@testset "calc_W and calc_W!" begin
   A = [-1.0 0.0; 0.0 -0.5]; mm = [2.0 0.0; 0.0 1.0]
   u0 = [1.0, 1.0]; tmp = zeros(2)
   tspan = (0.0,1.0); dt = 0.01; dtgamma = 0.5dt
@@ -28,7 +28,7 @@ end
                     mass_matrix=mm,
                     jac=(u,p,t) -> A)
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
-  W = calc_W!(integrator.cache.nlsolver, integrator, integrator.cache, dtgamma, false)
+  W = calc_W(integrator, integrator.cache.nlsolver.cache, dtgamma, false)
   @test convert(AbstractMatrix, W) == concrete_W
   @test W \ u0 ≈ concrete_W \ u0
 

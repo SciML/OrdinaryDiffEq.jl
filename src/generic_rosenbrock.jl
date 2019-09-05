@@ -354,7 +354,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             tf.u = uprev
             dT = ForwardDiff.derivative(tf, t)
 
-            W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+            W = calc_W(integrator, cache, dtgamma, repeat_step, true)
             linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
 
             $(iterexprs...)

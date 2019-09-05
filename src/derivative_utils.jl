@@ -522,7 +522,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
   return nothing
 end
 
-function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
+function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
@@ -541,33 +541,6 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   else
     integrator.destats.nw += 1
     J = calc_J(integrator, cache)
-    W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
-                           -mass_matrix + dtgamma*J
-    W = W_full isa Number ? W_full : lu(W_full)
-  end
-  is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
-  W
-end
-
-function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
-  @unpack t,uprev,p,f = integrator
-  mass_matrix = integrator.f.mass_matrix
-  isarray = typeof(uprev) <: AbstractArray
-  # calculate W
-  is_compos = typeof(integrator.alg) <: CompositeAlgorithm
-  if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
-    J = f.f1.f
-    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
-  elseif DiffEqBase.has_jac(f)
-    J = f.jac(uprev, p, t)
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
-    end
-    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
-    integrator.destats.nw += 1
-  else
-    integrator.destats.nw += 1
-    J = calc_J(integrator, nlsolver.cache)
     W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
                            -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
@@ -595,7 +568,7 @@ end
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
   if isnewton(nlsolver)
-    set_W!(nlsolver, calc_W!(nlsolver, integrator, cache, dt, repeat_step, true))
+    set_W!(nlsolver, calc_W(integrator, nlsolver.cache, dt, repeat_step, true))
   end
   nothing
 end
