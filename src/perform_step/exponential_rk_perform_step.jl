@@ -70,8 +70,7 @@ end
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,G,J,exphA,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   _compute_nl!(G, f, uprev, p, t, A, rtmp)
@@ -120,8 +119,7 @@ end
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack rtmp,J,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   if alg.krylov
@@ -180,8 +178,7 @@ end
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,F2,J,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   if alg.krylov
@@ -286,8 +283,7 @@ end
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,Au,F2,F3,J,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -413,8 +409,7 @@ end
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,Au,F2,F3,F4,J,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -566,8 +561,7 @@ end
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,J,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -701,8 +695,7 @@ end
 function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  calc_J!(integrator,cache,is_compos)
+  calc_J!(integrator, cache)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   ts = [dt/3, 2dt/3, dt]
@@ -784,8 +777,7 @@ end
 function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  calc_J!(integrator,cache,is_compos)
+  calc_J!(integrator, cache)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
@@ -855,8 +847,7 @@ end
 function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  calc_J!(integrator,cache,is_compos)
+  calc_J!(integrator, cache)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
@@ -939,8 +930,7 @@ end
 function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,k,rtmp,rtmp2,J,B,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  calc_J!(integrator,cache,is_compos)
+  calc_J!(integrator, cache)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
@@ -1026,8 +1016,7 @@ end
 function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  calc_J!(integrator,cache,is_compos)
+  calc_J!(integrator, cache)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
@@ -1120,8 +1109,7 @@ end
 function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  calc_J!(integrator,cache,is_compos)
+  calc_J!(integrator, cache)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
@@ -1218,8 +1206,7 @@ end
 function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,dR,K,J,B,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  calc_J!(integrator,cache,is_compos)
+  calc_J!(integrator, cache)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
@@ -1303,8 +1290,7 @@ end
 function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack utilde,tmp,rtmp,F2,J,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -1379,8 +1365,7 @@ end
 function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack utilde,tmp,rtmp,Au,F2,F3,J,KsCache = cache
-  is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = (calc_J!(integrator, cache); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst

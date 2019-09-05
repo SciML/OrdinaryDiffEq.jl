@@ -69,61 +69,46 @@ function calc_J(integrator, cache)
 end
 
 """
-    calc_J!(integrator,cache,is_compos)
+    calc_J!(integrator, cache)
 
-Interface for calculating the jacobian.
+Update the Jacobian object.
 
-For constant caches, a new jacobian object is returned whereas for mutable
-caches `cache.J` is updated. In both cases, if `integrator.f` has a custom
-jacobian update function, then it will be called for the update. Otherwise,
-either ForwardDiff or finite difference will be used depending on the
-`jac_config` of the cache.
+If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
+either automatic or finite differencing will be used depending on the `cache`.
 """
-function calc_J!(integrator, cache::OrdinaryDiffEqCache, is_compos)
+function calc_J!(integrator, cache)
   if isdefined(cache, :nlsolver)
-    calc_J!(cache.nlsolver, integrator, cache, is_compos)
+    _calc_J!(integrator, cache.nlsolver.cache)
   elseif isdefined(cache, :J)
-    calc_J_in_cache!(integrator, cache, is_compos)
+    _calc_J!(integrator, cache)
   else
     error("No J found in the cache")
   end
 end
 
-function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack J,du1,uf,jac_config = nlsolver.cache
+function _calc_J!(integrator, cache)
+  @unpack t,uprev,f,p,alg = integrator
+  @unpack J = cache
+
   if DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
   else
+    @unpack du1, uf, jac_config = cache
+
+    uf.f = nlsolve_f(f, alg)
     uf.t = t
     uf.p = p
+
     jacobian!(J, uf, uprev, du1, integrator, jac_config)
   end
+
   integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-end
 
-function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  nlsolver.cache.J = calc_J(integrator, nlsolver.cache)
-end
-
-function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  J = cache.J
-  if DiffEqBase.has_jac(f)
-    f.jac(J, uprev, p, t)
-  else
-    @unpack du1,uf,jac_config = cache
-    uf.t = t
-    uf.p = p
-    jacobian!(J, uf, uprev, du1, integrator, jac_config)
+  if alg isa CompositeAlgorithm
+    integrator.eigen_est = opnorm(J, Inf)
   end
-  integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-end
 
-function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  cache.J = calc_J(integrator, cache)
+  nothing
 end
 
 """
@@ -410,7 +395,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(integrator, cache, is_compos)
+    new_jac && calc_J!(integrator, cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
@@ -461,7 +446,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     @label J2W
     W[W_index].transform = W_transform; set_gamma!(W[W_index], dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(integrator, cache, is_compos)
+    new_jac && calc_J!(integrator, cache)
     new_W && jacobian2W!(W[W_index], mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
@@ -512,7 +497,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(nlsolver, integrator, cache, is_compos)
+    new_jac && calc_J!(integrator, nlsolver.cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
