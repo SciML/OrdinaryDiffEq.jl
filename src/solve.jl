@@ -164,7 +164,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   tstops_internal, saveat_internal, d_discontinuities_internal =
     tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
 
-  callbacks_internal = CallbackSet(callback,prob.callback)
+  callbacks_internal = CallbackSet(callback)
 
   max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
   if max_len_cb isa VectorContinuousCallback
@@ -306,7 +306,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     else
       SolType = DiffEqBase.AbstractDAESolution
       cacheType =  DAECache
-    end 
+    end
   end
 
   # rate/state = (state/time)/state = 1/t units, internalnorm drops units
