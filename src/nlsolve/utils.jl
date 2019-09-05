@@ -14,9 +14,6 @@ set_new_W!(nlcache::AbstractNLSolverCache, val::Bool)::Bool = val
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 
-set_W!(nlsolver::AbstractNLSolver, W) = set_W!(nlsolver.cache, W)
-set_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W) = (nlcache.W = W; W)
-
 set_W_dt!(nlsolver::AbstractNLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
 set_W_dt!(nlcache::NLNewtonCache, W_dt) = (nlcache.W_dt = W_dt; W_dt)
 set_W_dt!(nlcache::NLNewtonConstantCache, W_dt) = W_dt

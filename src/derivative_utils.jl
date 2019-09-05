@@ -568,7 +568,7 @@ end
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
   if isnewton(nlsolver)
-    set_W!(nlsolver, calc_W(integrator, nlsolver.cache, dt, repeat_step, true))
+    nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dt, repeat_step, true)
   end
   nothing
 end
