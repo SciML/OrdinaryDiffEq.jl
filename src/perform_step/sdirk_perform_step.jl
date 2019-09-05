@@ -387,7 +387,7 @@ end
   @.. z = α1*zprev + α2*zᵧ
   @.. tmp = uprev + ω*zprev + ω*zᵧ
   nlsolver.c = 1
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
   nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
@@ -490,7 +490,7 @@ end
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
   z₂ .= zero(eltype(u))
   nlsolver.z = z₂
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
   @.. tmp = uprev - z₁
   nlsolver.tmp = tmp
   z₂ = nlsolve!(nlsolver, integrator)
@@ -749,7 +749,7 @@ end
 
   @.. tmp = uprev + z₁/2
   nlsolver.tmp = tmp
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
@@ -884,7 +884,7 @@ end
 
   @.. tmp = uprev + a21*z₁
   nlsolver.tmp = tmp
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
   nlsolver.c = c2
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
@@ -1061,7 +1061,7 @@ end
   @.. tmp = uprev + a21*z₁
   nlsolver.tmp = tmp
   nlsolver.c = c2
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
@@ -1255,7 +1255,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 

@@ -119,7 +119,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -339,7 +339,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -530,7 +530,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -806,7 +806,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -1071,7 +1071,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -1420,7 +1420,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 

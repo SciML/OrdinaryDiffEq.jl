@@ -8,8 +8,8 @@ isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 
 set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
-set_new_W!(nlcache::NLNewtonCache, val::Bool)::Bool = nlcache.new_W = val
-set_new_W!(nlcache::AbstractNLSolverCache, val::Bool)::Bool = val
+set_new_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, val::Bool)::Bool =
+  nlcache.new_W = val
 
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
