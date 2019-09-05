@@ -121,11 +121,12 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     nf = nlsolve_f(f, alg)
     uf = build_uf(alg,nf,t,p,Val(false))
 
+    tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
 
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
 
-    nlcache = NLNewtonConstantCache(tstep,J,W,uf,invγdt,typeof(t)(nlalg.new_W_dt_cutoff))
+    nlcache = NLNewtonConstantCache(tstep,J,W,true,tType(dt),uf,invγdt,tType(nlalg.new_W_dt_cutoff))
   elseif nlalg isa NLFunctional
     nlcache = NLFunctionalConstantCache(tstep)
   elseif nlalg isa NLAnderson

@@ -43,6 +43,8 @@ mutable struct NLNewtonConstantCache{tType,J,W,ufType,G} <: AbstractNLSolverCach
   tstep::tType
   J::J
   W::W
+  new_W::Bool
+  W_dt::tType
   uf::ufType
   invγdt::G
   new_W_dt_cutoff::tType
