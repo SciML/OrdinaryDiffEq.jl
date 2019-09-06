@@ -69,26 +69,23 @@ function calc_J(integrator, cache)
 end
 
 """
-    calc_J!(integrator, cache)
+    calc_J!(J, integrator, cache)
 
-Update the Jacobian object.
+Update the Jacobian object `J`.
 
 If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
 either automatic or finite differencing will be used depending on the `cache`.
 """
-function calc_J!(integrator, cache)
+function calc_J!(J, integrator, cache)
   if isdefined(cache, :nlsolver)
-    _calc_J!(integrator, cache.nlsolver.cache)
-  elseif isdefined(cache, :J)
-    _calc_J!(integrator, cache)
+    _calc_J!(J, integrator, cache.nlsolver.cache)
   else
-    error("No J found in the cache")
+    _calc_J!(J, integrator, cache)
   end
 end
 
-function _calc_J!(integrator, cache)
+function _calc_J!(J, integrator, cache)
   @unpack t,uprev,f,p,alg = integrator
-  @unpack J = cache
 
   if DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
@@ -395,7 +392,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(integrator, cache)
+    new_jac && calc_J!(J, integrator, cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
@@ -446,7 +443,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     @label J2W
     W[W_index].transform = W_transform; set_gamma!(W[W_index], dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(integrator, cache)
+    new_jac && calc_J!(J, integrator, cache)
     new_W && jacobian2W!(W[W_index], mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
@@ -497,7 +494,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(integrator, nlsolver.cache)
+    new_jac && calc_J!(J, integrator, nlsolver.cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton

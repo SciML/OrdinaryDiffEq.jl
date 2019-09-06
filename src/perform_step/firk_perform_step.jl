@@ -223,7 +223,7 @@ end
   c2m1 = c2-1
   c1mc2= c1-c2
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(integrator, cache); cache.W_dt = dt)
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(J, integrator, cache); cache.W_dt = dt)
   if (new_W = do_newW(integrator, alg, new_jac, cache.W_dt))
     @inbounds for II in CartesianIndices(J)
       W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
