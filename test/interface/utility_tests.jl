@@ -37,7 +37,7 @@ end
                     mass_matrix=mm,
                     jac_prototype=DiffEqArrayOperator(A))
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
-  calc_W!(integrator.cache.nlsolver, integrator, integrator.cache, dtgamma, false)
+  calc_W!(integrator.cache.nlsolver.cache.W, integrator, integrator.cache.nlsolver, integrator.cache, dtgamma, false)
   @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
   ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0); @test tmp == concrete_W \ u0
 end
