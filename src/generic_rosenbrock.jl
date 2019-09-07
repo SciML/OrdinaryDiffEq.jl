@@ -224,7 +224,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
             tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
             uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-            J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+            J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
             linsolve = alg.linsolve(Val{:init},uf,u)
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
         end
@@ -236,7 +236,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
-            J,W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+            J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -354,7 +354,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             tf.u = uprev
             dT = ForwardDiff.derivative(tf, t)
 
-            W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+            W = calc_W(integrator, cache, dtgamma, repeat_step, true)
             linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
 
             $(iterexprs...)

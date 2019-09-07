@@ -36,101 +36,76 @@ function calc_tderivative(integrator, cache)
 end
 
 """
-    calc_J(integrator,cache,is_compos)
+    calc_J(integrator, cache)
 
-Interface for calculating the jacobian.
+Return a new Jacobian object.
 
-For constant caches, a new jacobian object is returned whereas for mutable
-caches `cache.J` is updated. In both cases, if `integrator.f` has a custom
-jacobian update function, then it will be called for the update. Otherwise,
-either ForwardDiff or finite difference will be used depending on the
-`jac_config` of the cache.
+If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
+either automatic or finite differencing will be used depending on the `uf` object of the
+cache.
 """
-function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
+function calc_J(integrator, cache)
+  @unpack t,uprev,f,p,alg = integrator
+
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    cache.uf.t = t
-    cache.uf.p = p
-    J = jacobian(cache.uf,uprev,integrator)
-  end
-  integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-  return J
-end
+    @unpack uf = cache
 
-function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  if DiffEqBase.has_jac(f)
-    J = f.jac(uprev, p, t)
-  else
-    nlsolver.uf.t = t
-    nlsolver.uf.p = p
-    J = jacobian(nlsolver.uf,uprev,integrator)
+    uf.f = nlsolve_f(f, alg)
+    uf.p = p
+    uf.t = t
+
+    J = jacobian(uf, uprev, integrator)
   end
+
   integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-  return J
+
+  if alg isa CompositeAlgorithm
+    integrator.eigen_est = opnorm(J, Inf)
+  end
+  
+  J
 end
 
 """
-    calc_J!(integrator,cache,is_compos)
+    calc_J!(J, integrator, cache)
 
-Interface for calculating the jacobian.
+Update the Jacobian object `J`.
 
-For constant caches, a new jacobian object is returned whereas for mutable
-caches `cache.J` is updated. In both cases, if `integrator.f` has a custom
-jacobian update function, then it will be called for the update. Otherwise,
-either ForwardDiff or finite difference will be used depending on the
-`jac_config` of the cache.
+If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
+either automatic or finite differencing will be used depending on the `cache`.
 """
-function calc_J!(integrator, cache::OrdinaryDiffEqCache, is_compos)
+function calc_J!(J, integrator, cache)
   if isdefined(cache, :nlsolver)
-    calc_J!(cache.nlsolver, integrator, cache, is_compos)
-  elseif isdefined(cache, :J)
-    calc_J_in_cache!(integrator, cache, is_compos)
+    _calc_J!(J, integrator, cache.nlsolver.cache)
   else
-    error("No J found in the cache")
+    _calc_J!(J, integrator, cache)
   end
 end
 
-function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du1,uf,jac_config = nlsolver
-  J = nlsolver.cache.J
+function _calc_J!(J, integrator, cache)
+  @unpack t,uprev,f,p,alg = integrator
+
   if DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
   else
+    @unpack du1, uf, jac_config = cache
+
+    uf.f = nlsolve_f(f, alg)
     uf.t = t
     uf.p = p
+
     jacobian!(J, uf, uprev, du1, integrator, jac_config)
   end
+
   integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-end
 
-function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  nlsolver.cache.J = calc_J(nlsolver,integrator,cache,is_compos)
-end
-
-function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  J = cache.J
-  if DiffEqBase.has_jac(f)
-    f.jac(J, uprev, p, t)
-  else
-    @unpack du1,uf,jac_config = cache
-    uf.t = t
-    uf.p = p
-    jacobian!(J, uf, uprev, du1, integrator, jac_config)
+  if alg isa CompositeAlgorithm
+    integrator.eigen_est = opnorm(J, Inf)
   end
-  integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(J, Inf))
-end
 
-function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  cache.J = calc_J(integrator,cache,is_compos)
+  nothing
 end
 
 """
@@ -305,7 +280,7 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any cha
   !integrator.opts.adaptive && return true
   !alg_can_repeat_jac(alg) && return true
   isnewton = T <: NewtonAlgorithm
-  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = DiffEqBase.get_status(cache.nlsolver) ))
+  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = get_status(cache.nlsolver) ))
   nlsolvefail(nlstatus) && return true
   # reuse J when there is fast convergence
   fastconvergence = nlstatus === FastConvergence
@@ -376,9 +351,9 @@ end
   return W
 end
 
-function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
+function calc_W!(W, integrator, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack J,W = cache
+  @unpack J = cache
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
@@ -417,70 +392,19 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(integrator, cache, is_compos)
+    new_jac && calc_J!(J, integrator, cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(cache.nlsolver, new_W) && DiffEqBase.set_W_dt!(cache.nlsolver, dt)
+    set_new_W!(cache.nlsolver, new_W) && set_W_dt!(cache.nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
 end
 
-function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_index::Int, W_transform=false)
+function calc_W!(W, integrator, nlsolver::AbstractNLSolver, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack J,W = cache
-  alg = unwrap_alg(integrator, true)
-  mass_matrix = integrator.f.mass_matrix
-  is_compos = integrator.alg isa CompositeAlgorithm
-  isnewton = alg isa NewtonAlgorithm
-
-  if W_transform && DiffEqBase.has_Wfact_t(f)
-    f.Wfact_t(W[W_index], u, p, dtgamma, t)
-    is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W[W_index]), Inf) + inv(dtgamma)) # TODO: better estimate
-    return nothing
-  elseif !W_transform && DiffEqBase.has_Wfact(f)
-    f.Wfact(W[W_index], u, p, dtgamma, t)
-    if is_compos
-      opn = opnorm(LowerTriangular(W[W_index]), Inf)
-      integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
-    end
-    return nothing
-  end
-
-  # fast pass
-  # we only want to factorize the linear operator once
-  new_jac = true
-  new_W = true
-  if (f isa ODEFunction && islinear(f.f)) || (integrator.alg isa SplitAlgorithms && f isa SplitFunction && islinear(f.f1.f))
-    new_jac = false
-    @goto J2W # Jump to W calculation directly, because we already have J
-  end
-
-  # check if we need to update J or W
-  W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
-  new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
-  new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
-
-  # calculate W
-  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing && !ArrayInterface.isstructured(f.jac_prototype)
-    isnewton || DiffEqBase.update_coefficients!(W[W_index],uprev,p,t) # we will call `update_coefficients!` in NLNewton
-    @label J2W
-    W[W_index].transform = W_transform; set_gamma!(W[W_index], dtgamma)
-  else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(integrator, cache, is_compos)
-    new_W && jacobian2W!(W[W_index], mass_matrix, dtgamma, J, W_transform)
-  end
-  if isnewton
-    set_new_W!(cache.nlsolver, new_W) && DiffEqBase.set_W_dt!(cache.nlsolver, dt)
-  end
-  new_W && (integrator.destats.nw += 1)
-  return nothing
-end
-
-function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack J,W = nlsolver.cache
+  @unpack J = nlsolver.cache
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
@@ -519,23 +443,21 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(nlsolver, integrator, cache, is_compos)
+    new_jac && calc_J!(J, integrator, nlsolver.cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(nlsolver, new_W) && DiffEqBase.set_W_dt!(nlsolver, dt)
+    set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
 end
 
-function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
+function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  @unpack uf = cache
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
   # calculate W
-  uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
     J = f.f1.f
@@ -549,36 +471,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
-    J = calc_J(integrator, cache, is_compos)
-    W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
-                           -mass_matrix + dtgamma*J
-    W = W_full isa Number ? W_full : lu(W_full)
-  end
-  is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
-  W
-end
-
-function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
-  @unpack t,uprev,p,f = integrator
-  @unpack uf = nlsolver
-  mass_matrix = integrator.f.mass_matrix
-  isarray = typeof(uprev) <: AbstractArray
-  # calculate W
-  uf.t = t
-  is_compos = typeof(integrator.alg) <: CompositeAlgorithm
-  if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
-    J = f.f1.f
-    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
-  elseif DiffEqBase.has_jac(f)
-    J = f.jac(uprev, p, t)
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
-    end
-    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
-    integrator.destats.nw += 1
-  else
-    integrator.destats.nw += 1
-    J = calc_J(nlsolver, integrator, cache, is_compos)
+    J = calc_J(integrator, cache)
     W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
                            -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
@@ -589,7 +482,7 @@ end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
-  calc_W!(integrator, cache, dtgamma, repeat_step, W_transform)
+  calc_W!(cache.W, integrator, cache, dtgamma, repeat_step, W_transform)
   return nothing
 end
 
@@ -597,20 +490,83 @@ end
 update_W!(integrator, cache, dt, repeat_step) =
   update_W!(cache.nlsolver, integrator, cache, dt, repeat_step)
 
-function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
   if isnewton(nlsolver)
-    calc_W!(nlsolver, integrator, cache, dt, repeat_step, true)
+    calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dt, repeat_step, true)
   end
   nothing
 end
 
-function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dt, repeat_step)
   if isnewton(nlsolver)
-    DiffEqBase.set_W!(nlsolver, calc_W!(nlsolver, integrator, cache, dt, repeat_step, true))
+    nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dt, repeat_step, true)
   end
   nothing
 end
 
+function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{true})
+  if alg isa NewtonAlgorithm
+    if alg.nlsolve isa NLNewton
+      nf = nlsolve_f(f, alg)
+      islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+      if islin
+        J = nf.f
+        if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+          J = DiffEqArrayOperator(J)
+        end
+        W = WOperator(f.mass_matrix, dt, J, true)
+        return J, W
+      end
+    else
+      return nothing, nothing
+    end
+  end
+  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
+    J = similar(f.jac_prototype)
+    W = similar(J)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = W.J
+  else
+    J = false .* vec(u) .* vec(u)'
+    W = similar(J)
+  end
+  J, W
+end
 
-iip_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
-oop_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
+function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{false})
+  islin = false
+  if alg isa NewtonAlgorithm && alg.nlsolve isa NLNewton
+    nf = nlsolve_f(f, alg)
+    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+  end
+  if islin || (DiffEqBase.has_jac(f) && f.jac_prototype isa Nothing)
+    J = islin ? nf.f : f.jac(uprev, p, t)
+    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      J = DiffEqArrayOperator(J)
+    end
+    W = WOperator(f.mass_matrix, dt, J, false)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = W.J
+  # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
+  else
+    # get a "fake" `J`
+    J = false .* _vec(u) .* _vec(u)'
+    W = if u isa StaticArray
+      lu(J)
+      elseif u isa Number
+        u
+      else
+        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                     Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                     zero(LinearAlgebra.BlasInt))
+      end
+  end
+  J, W
+end
+
+build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{true}) =
+  DiffEqDiffTools.UJacobianWrapper(nf,t,p)
+build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{false}) =
+  DiffEqDiffTools.UDerivativeWrapper(nf,t,p)

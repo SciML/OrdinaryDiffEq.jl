@@ -648,7 +648,7 @@ struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   smooth_est::Bool
   extrapolant::Symbol
   κ::Tol
-  max_iter::Int
+  maxiters::Int
   fast_convergence_cutoff::C1
   new_W_dt_cutoff::C2
   controller::Symbol
@@ -656,11 +656,11 @@ end
 RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,
                           extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_dt_cutoff=1//5,
-                          controller=:Predictive,κ=nothing,max_iter=10,smooth_est=true) =
+                          controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
                           RadauIIA5{chunk_size,autodiff,typeof(linsolve),
                           typeof(diff_type),
                           typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_dt_cutoff)}(
-                            linsolve,diff_type,smooth_est,extrapolant,κ,max_iter,fast_convergence_cutoff,new_W_dt_cutoff,controller)
+                            linsolve,diff_type,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_dt_cutoff,controller)
 
 ################################################################################
 

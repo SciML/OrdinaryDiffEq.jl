@@ -3,7 +3,7 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
   tab::Tab
   κ::Tol
   ηold::Tol
-  nl_iters::Int
+  iter::Int
   cont1::U
   cont2::U
   cont3::U
@@ -54,7 +54,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   tab::Tab
   κ::Tol
   ηold::Tol
-  nl_iters::Int
+  iter::Int
   tmp::uType
   atmp::uNoUnitsType
   jac_config::JC

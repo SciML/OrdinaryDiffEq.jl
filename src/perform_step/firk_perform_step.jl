@@ -40,9 +40,8 @@ end
   @unpack κ, cont1, cont2, cont3 = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
-  @unpack max_iter = alg
+  @unpack maxiters = alg
   mass_matrix = integrator.f.mass_matrix
-  is_compos = integrator.alg isa CompositeAlgorithm
 
   # precalculations
   rtol = @.. reltol^(2/3) / 10
@@ -51,7 +50,7 @@ end
   c2m1 = c2-1
   c1mc2= c1-c2
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  J = calc_J(integrator, cache, is_compos)
+  J = calc_J(integrator,  cache)
   if u isa Number
     LU1 = -γdt*mass_matrix + J
     LU2 = -(αdt + βdt*im)*mass_matrix + J
@@ -87,7 +86,7 @@ end
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
-  while iter < max_iter
+  while iter < maxiters
     iter += 1
     integrator.destats.nnonliniter += 1
 
@@ -131,7 +130,7 @@ end
     if iter > 1
       θ = ndw / ndwprev
       ( diverge = θ > 1 ) && ( cache.status = Divergence )
-      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end
@@ -161,7 +160,7 @@ end
     return
   end
   cache.ηold = η
-  cache.nl_iters = iter
+  cache.iter = iter
 
   u = @.. uprev + z3
 
@@ -216,16 +215,15 @@ end
           tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
-  @unpack max_iter = alg
+  @unpack maxiters = alg
   mass_matrix = integrator.f.mass_matrix
-  is_compos = integrator.alg isa CompositeAlgorithm
 
   # precalculations
   c1m1 = c1-1
   c2m1 = c2-1
   c1mc2= c1-c2
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(integrator, cache, is_compos); cache.W_dt = dt)
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(J, integrator, cache); cache.W_dt = dt)
   if (new_W = do_newW(integrator, alg, new_jac, cache.W_dt))
     @inbounds for II in CartesianIndices(J)
       W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
@@ -264,7 +262,7 @@ end
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
-  while iter < max_iter
+  while iter < maxiters
     iter += 1
     integrator.destats.nnonliniter += 1
 
@@ -325,7 +323,7 @@ end
     if iter > 1
       θ = ndw / ndwprev
       ( diverge = θ > 1 ) && ( cache.status = Divergence )
-      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end
@@ -355,7 +353,7 @@ end
     return
   end
   cache.ηold = η
-  cache.nl_iters = iter
+  cache.iter = iter
 
   @.. u = uprev + z3
 

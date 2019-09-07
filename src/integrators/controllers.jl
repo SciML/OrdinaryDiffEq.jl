@@ -8,12 +8,12 @@
       fac = gamma
     else
       if alg isa RadauIIA5
-        @unpack nl_iters = integrator.cache
-        @unpack max_iter = alg
+        @unpack iter = integrator.cache
+        @unpack maxiters = alg
       else
-        @unpack nl_iters, max_iter = integrator.cache.nlsolver
+        @unpack iter, maxiters = integrator.cache.nlsolver
       end
-      fac = min(gamma,(1+2*max_iter)*gamma/(nl_iters+2*max_iter))
+      fac = min(gamma,(1+2*maxiters)*gamma/(iter+2*maxiters))
     end
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qtmp = (integrator.EEst^expo)/fac

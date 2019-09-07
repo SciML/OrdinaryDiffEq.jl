@@ -576,7 +576,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   # nlsolvefail(nlsolver) && return
   gprev = nlsolver.tmp + μs₁*z
 
@@ -608,7 +608,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1 -μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c   = Cⱼ
-    z = nlsolve!(integrator, cache)
+    z = nlsolve!(nlsolver, integrator)
     # ignoring newton method's convergence failure
     # nlsolvefail(nlsolver) && return
     u = nlsolver.tmp + μs₁*z
@@ -653,7 +653,7 @@ function initialize!(integrator, cache::IRKCCache)
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -667,7 +667,7 @@ end
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
   @unpack gprev,gprev2,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,du₁,du₂,atmp,nlsolver = cache
-  @unpack tmp,k,z = nlsolver
+  @unpack tmp,z = nlsolver
   @unpack minm = cache.constantcache
   @unpack f1, f2 = integrator.f
 
@@ -704,7 +704,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @.. nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   # ignoring newton method's convergence failure
   # nlsolvefail(nlsolver) && return
   @.. gprev = nlsolver.tmp + μs₁*nlsolver.z
@@ -738,7 +738,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     @.. nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
 
-    z = nlsolve!(integrator, cache)
+    z = nlsolve!(nlsolver, integrator)
     # nlsolvefail(nlsolver) && return
     @.. u = nlsolver.tmp + μs₁*nlsolver.z
     if (iter < mdeg)
@@ -768,7 +768,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
     @.. gprev = dt*0.5*(du₂ - f2ⱼ₋₁) + dt*(0.5 - μs₁)*(du₁ - f1ⱼ₋₁)
-    nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(gprev),false)
+    nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(gprev),false)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end

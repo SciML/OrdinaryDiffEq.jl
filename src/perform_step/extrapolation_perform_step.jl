@@ -257,7 +257,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   if !integrator.alg.threading
     for index in 1:max_order
       dt_temp = dt/(2^(index-1)) # Romberg sequence
-      calc_W!(integrator, cache, dt_temp, repeat_step, 1)
+      calc_W!(W, integrator, cache, dt_temp, repeat_step, 1)
       @.. k_tmps[1] = integrator.fsalfirst
       @.. u_tmps[1] = uprev
 
@@ -282,7 +282,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         endIndex = (i == 1) ? max_order - 1 : max_order
         for index in startIndex:endIndex
           dt_temp = dt/(2^(index-1)) # Romberg sequence
-          calc_W!(integrator, cache, dt_temp, repeat_step, Threads.threadid())
+          calc_W!(W[Threads.threadid()], integrator, cache, dt_temp, repeat_step)
           @.. k_tmps[Threads.threadid()] = integrator.fsalfirst
           @.. u_tmps[Threads.threadid()] = uprev
           for j in 1:2^(index-1)
@@ -378,7 +378,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
   if !integrator.alg.threading
     for index in 1:max_order
       dt_temp = dt/(2^(index-1)) # Romberg sequence
-      W = calc_W!(integrator, cache, dt_temp, repeat_step)
+      W = calc_W(integrator, cache, dt_temp, repeat_step)
       k_copy = integrator.fsalfirst
       u_tmp = uprev
 
@@ -400,7 +400,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         endIndex = (i==1) ? max_order-1 : max_order
         for index in startIndex:endIndex
           dt_temp = dt/(2^(index-1)) # Romberg sequence
-          W = calc_W!(integrator, cache, dt_temp, repeat_step)
+          W = calc_W(integrator, cache, dt_temp, repeat_step)
           k_copy = integrator.fsalfirst
           u_tmp = uprev
           for j in 1:2^(index-1)
@@ -873,7 +873,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   for i in 0:n_curr
     j_int = 4 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    calc_W!(integrator, cache, dt_int, repeat_step)
+    calc_W!(W, integrator, cache, dt_int, repeat_step)
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int*fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
@@ -1020,7 +1020,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
   for i in 0:n_curr
     j_int = 4 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    W = calc_W!(integrator, cache, dt_int, repeat_step)
+    W = calc_W(integrator, cache, dt_int, repeat_step)
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
     for j in 2:j_int
@@ -1481,7 +1481,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
   for i in 0:n_curr
     j_int = 4 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    W = calc_W!(integrator, cache, dt_int, repeat_step)
+    W = calc_W(integrator, cache, dt_int, repeat_step)
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
     for j in 2:j_int
@@ -1594,7 +1594,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   for i in 0:n_curr
     j_int = 4 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    calc_W!(integrator, cache, dt_int, repeat_step)
+    calc_W!(W, integrator, cache, dt_int, repeat_step)
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int * fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
