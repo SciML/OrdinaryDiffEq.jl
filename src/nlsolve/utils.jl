@@ -1,7 +1,7 @@
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
 
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
-nlsolvefail(status::NLStatus) = Int8(status) < 0
+nlsolvefail(status::NLStatus) = Int8(status) <= 0
 
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
@@ -101,7 +101,8 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   NLSolver{typeof(nlalg),true,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
     z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
-    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,Convergence,nlcache)
+    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,SlowConvergence,
+    nlcache)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
@@ -147,7 +148,8 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   NLSolver{typeof(nlalg),false,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
     z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
-    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,Convergence,nlcache)
+    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,SlowConvergence,
+    nlcache)
 end
 
 ## Anderson acceleration
