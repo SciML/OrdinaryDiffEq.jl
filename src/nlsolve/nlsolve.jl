@@ -12,12 +12,10 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
   initialize!(nlsolver, integrator)
   η = initial_η(nlsolver, integrator)
+  nlsolver.status = SlowConvergence
 
   local ndz
-  fail_convergence = true
-  iter = 0
-  while iter < maxiters
-    iter += 1
+  for iter in 1:maxiters
     nlsolver.iter = iter
 
     # compute next step and calculate norm of residuals
@@ -27,9 +25,16 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
-      ( veryslowconvergence = ndz * θ^(maxiters - iter) > κ * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
-      if diverge || veryslowconvergence
+
+      # divergence
+      if θ > 1
+        nlsolver.status = Divergence
+        break
+      end
+
+      # very slow convergence
+      if ndz * θ^(maxiters - iter) > κ * (1 - θ)
+        nlsolver.status = VerySlowConvergence
         break
       end
     end
@@ -39,14 +44,13 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
     # check for convergence
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κ && (iter > 1 || iszero(ndz) || (isnewton(nlsolver) && !iszero(integrator.success_iter)))
-      # Newton method converges
       nlsolver.status = η < fast_convergence_cutoff ? FastConvergence : Convergence
-      fail_convergence = false
       break
     end
   end
 
-  postamble!(nlsolver, integrator, η, fail_convergence)
+  nlsolver.ηold = η
+  postamble!(nlsolver, integrator)
 end
 
 ## default implementations
@@ -66,17 +70,15 @@ function apply_step!(nlsolver::NLSolver{algType,iip}, integrator) where {algType
   nothing
 end
 
-function postamble!(nlsolver::NLSolver, integrator, η, fail_convergence)
-  nlsolver.ηold = η
-
+function postamble!(nlsolver::NLSolver, integrator)
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nnonliniter += nlsolver.iter
     
-    if fail_convergence
+    if nlsolvefail(nlsolver)
       integrator.destats.nnonlinconvfail += 1
     end
   end
-  integrator.force_stepfail = fail_convergence
+  integrator.force_stepfail = nlsolvefail(nlsolver)
 
   nlsolver.z
 end
