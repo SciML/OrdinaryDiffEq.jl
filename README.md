@@ -65,3 +65,4 @@ Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 ## Available Solvers
 
 For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/ode_solve.html#OrdinaryDiffEq.jl-1), [Dynamical ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/dynamical_solve.html), and the [Split ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/split_ode_solve.html) pages.
+
