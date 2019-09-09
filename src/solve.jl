@@ -23,7 +23,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            callback = nothing,
                            dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
-                                   (prob.callback !== nothing && prob.callback != CallbackSet()) || # Empty prob.callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
                            dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
                            dtmin = typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
@@ -164,7 +163,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   tstops_internal, saveat_internal, d_discontinuities_internal =
     tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
 
-  callbacks_internal = CallbackSet(callback,prob.callback)
+  callbacks_internal = CallbackSet(callback)
 
   max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
   if max_len_cb isa VectorContinuousCallback
@@ -306,7 +305,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     else
       SolType = DiffEqBase.AbstractDAESolution
       cacheType =  DAECache
-    end 
+    end
   end
 
   # rate/state = (state/time)/state = 1/t units, internalnorm drops units
