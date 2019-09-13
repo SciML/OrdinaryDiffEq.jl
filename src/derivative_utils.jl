@@ -387,7 +387,7 @@ function calc_W!(W, integrator, cache, dtgamma, repeat_step, W_transform=false)
   new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
 
   # calculate W
-  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing && !ArrayInterface.isstructured(f.jac_prototype)
+  if W isa WOperator
     isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
@@ -438,14 +438,14 @@ function calc_W!(W, integrator, nlsolver::AbstractNLSolver, cache, dtgamma, repe
   new_W = isnewton ? do_newW(integrator, nlsolver, new_jac, W_dt) : true
 
   # calculate W
-  #if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
-  #  isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
+  if W isa WOperator
+    isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     @label J2W
-  #  W.transform = W_transform; set_gamma!(W, dtgamma)
-  #else # concrete W using jacobian from `calc_J!`
+    W.transform = W_transform; set_gamma!(W, dtgamma)
+  else # concrete W using jacobian from `calc_J!`
     new_jac && calc_J!(J, integrator, nlsolver.cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
-  #end
+  end
   if isnewton
     set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
   end
@@ -462,7 +462,9 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
     J = f.f1.f
     W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
-  elseif DiffEqBase.has_jac(f)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) &&
+         f.jac_prototype !== nothing &&
+         !(ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC)
     J = f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
