@@ -64,7 +64,7 @@ function calc_J(integrator, cache)
   if alg isa CompositeAlgorithm
     integrator.eigen_est = opnorm(J, Inf)
   end
-  
+
   J
 end
 
@@ -438,14 +438,14 @@ function calc_W!(W, integrator, nlsolver::AbstractNLSolver, cache, dtgamma, repe
   new_W = isnewton ? do_newW(integrator, nlsolver, new_jac, W_dt) : true
 
   # calculate W
-  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
-    isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
+  #if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+  #  isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     @label J2W
-    W.transform = W_transform; set_gamma!(W, dtgamma)
-  else # concrete W using jacobian from `calc_J!`
+  #  W.transform = W_transform; set_gamma!(W, dtgamma)
+  #else # concrete W using jacobian from `calc_J!`
     new_jac && calc_J!(J, integrator, nlsolver.cache)
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
-  end
+  #end
   if isnewton
     set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
   end
