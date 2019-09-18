@@ -5,29 +5,6 @@ const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV,"APPVEYOR")
 const is_TRAVIS = haskey(ENV,"TRAVIS")
 
-using LibGit2
-r = LibGit2.GitRepo("..")
-commit = LibGit2.peel(LibGit2.GitCommit, LibGit2.head(r))
-msg = LibGit2.message(commit)
-
-if startswith(msg, "base:")
-  using Pkg
-  lastidx = prevind(msg, findfirst(isequal(' '),msg))
-  branch = msg[6:lastidx]
-  Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
-  println("Running tests on DiffEqBase checked out at $branch")
-elseif occursin(r"^Merge [a-fA-F0-9]{40} into [a-fA-F0-9]{40}\n$", msg)
-  parcommit = LibGit2.GitCommit(r, msg[7:46])
-  parmsg = LibGit2.message(parcommit)
-  if startswith(parmsg, "base:")
-    using Pkg
-    lastidx = prevind(parmsg, findfirst(isequal(' '),parmsg))
-    branch = parmsg[6:lastidx]
-    Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
-    println("Running tests on DiffEqBase checked out at $branch")
-  end
-end
-
 #Start Test Script
 
 @time begin
