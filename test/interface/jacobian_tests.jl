@@ -1,8 +1,13 @@
 using OrdinaryDiffEq, Test, ParameterizedFunctions
 
-d_alembert = @ode_def DAlembert begin
-    dx = a - b*x + c*t
-end a b c
+function d_alembert(du,u,p,t)
+  du[1] = p[1] - p[2]*u[1] + p[3]*t
+end
+
+function d_alembert_jac(J,u,p,t)
+  J[1] = -p[2]
+end
+
 function d_alembert_analytic(u0,p,t::Number)
     a,b,c = p
     ebt = exp(b*t)
@@ -12,8 +17,8 @@ end
 p = (1., 2., 3.)
 u0 = [1.0]
 tspan = (0.0,10.0)
-prob = ODEProblem(ODEFunction(d_alembert.f,
-                              jac = d_alembert.jac,
+prob = ODEProblem(ODEFunction(d_alembert,
+                              jac = d_alembert_jac,
                               analytic=d_alembert_analytic),
                               u0,tspan,p)
 
