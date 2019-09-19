@@ -257,7 +257,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   if !integrator.alg.threading
     for index in 1:max_order
       dt_temp = dt/(2^(index-1)) # Romberg sequence
-      calc_W!(W, integrator, cache, dt_temp, repeat_step, 1)
+      calc_W!(W[1], integrator, cache, dt_temp, repeat_step)
       @.. k_tmps[1] = integrator.fsalfirst
       @.. u_tmps[1] = uprev
 
