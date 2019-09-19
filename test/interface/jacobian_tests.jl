@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, ParameterizedFunctions
+using OrdinaryDiffEq, Test
 
 function d_alembert(du,u,p,t)
   du[1] = p[1] - p[2]*u[1] + p[3]*t

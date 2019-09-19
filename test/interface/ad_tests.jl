@@ -1,10 +1,10 @@
-using ParameterizedFunctions, Test
+using Test
 using OrdinaryDiffEq, Calculus, ForwardDiff
 
-f = @ode_def begin
-    dx = -a
-    dy = b
-end a b
+function f(du,u,p,t)
+  du[1] = -p[1]
+  du[2] = p[2]
+end
 
 cb = ContinuousCallback((u,t,i) -> u[1], (integrator)->(println("Stopped.");integrator.p[2]=zero(integrator.p[2])))
 function test_f(p)
@@ -18,10 +18,10 @@ findiff = Calculus.finite_difference_jacobian(test_f,p)
 fordiff = ForwardDiff.jacobian(test_f,p)
 @test findiff ≈ fordiff
 
-f2 = @ode_def begin
-    dx = -x
-    dy = b
-end a b
+function f2(du,u,p,t)
+  du[1] = -u[1]
+  du[2] = p[2]
+end
 
 function test_f2(p)
   prob = ODEProblem(f2,eltype(p).([1.0,0.0]),eltype(p).((0.0,1.0)),copy(p))
