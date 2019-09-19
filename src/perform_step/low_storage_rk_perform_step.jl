@@ -83,9 +83,9 @@ mutable struct WilliamsonWrapper{kType, dtType, coffType}
   coefficient::coffType
 end
 
-@inline Base.setindex!(a::WilliamsonWrapper{kType, dtType}, b::bType, c::cType) where {kType, dtType, bType, cType} = (a.kref[c] = a.coefficient * a.kref[c] + a.dt * b)
-@inline Base.size(a::WilliamsonWrapper{kType, dtType}) where {kType, dtType} = size(a.kref)
-@inline Base.copyto!(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = @.. a.kref = a.coefficient * a.kref + a.dt * b
+@inline Base.setindex!(a::WilliamsonWrapper, b, c) = (a.kref[c] = a.coefficient * a.kref[c] + a.dt * b)
+@inline Base.size(a::WilliamsonWrapper) = size(a.kref)
+@inline Base.copyto!(a::WilliamsonWrapper, b) = @.. a.kref = a.coefficient * a.kref + a.dt * b
 
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)
