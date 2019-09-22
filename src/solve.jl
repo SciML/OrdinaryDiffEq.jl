@@ -86,7 +86,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
   end
 
-  progress && @logmsg(-1,progress_name,_id=_id = :OrdinaryDiffEq,progress=0)
+  progress && @logmsg(LogLevel(-1),progress_name,_id=_id = :OrdinaryDiffEq,progress=0)
 
   tType = eltype(prob.tspan)
   tspan = prob.tspan
