@@ -1,11 +1,17 @@
-using ParameterizedFunctions, OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test
 
-f = @ode_def begin
+function f(du,u,p,t)
+    Gut, Cent, Periph, Resp = u
+    Ka,CL,Vc,Q,Vp,Kin,Kout,IC50,IMAX,γ = p
     dGut    = -Ka*Gut
     dCent   =  Ka*Gut - CL*(Cent/Vc) -Q*(Cent/Vc) + Q*(Periph/Vp)
     dPeriph =  Q*(Cent/Vc)  - Q*(Periph/Vp)
     dResp   =  Kin*(1-(IMAX*(Cent/Vc)^γ/(IC50^γ+(Cent/Vc)^γ)))  - Kout*Resp
-end Ka CL Vc Q Vp Kin Kout IC50 IMAX γ
+    du[1] = dGut
+    du[2] = dCent
+    du[3] = dPeriph
+    du[4] = dResp
+end
 
 p = (Ka = 2.769674683505292, CL = 0.8315548845614537, Vc = 45.87339297906569,
       Q = 1.4544520084387496, Vp = 9.460961128900388, Kin = 6.360418843010778,

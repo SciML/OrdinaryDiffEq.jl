@@ -1,10 +1,10 @@
-using DiffEqSensitivity, ParameterizedFunctions
+using DiffEqSensitivity
 using OrdinaryDiffEq, Calculus, Test
 
-f = @ode_def AAA begin
-    dx = -a
-    dy = b
-end a b
+function f(du,u,p,t)
+  du[1] = -p[1]
+  du[2] = p[2]
+end
 
 cb = ContinuousCallback((u,t,i) -> u[1], (integrator)->(println("Stopped.");integrator.p[2]=0.0))
 p = [2.0, 1.0]
