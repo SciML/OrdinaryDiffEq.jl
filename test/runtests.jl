@@ -51,6 +51,8 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
   @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
   @time @safetestset "Error Check Tests" begin include("integrators/check_error.jl") end
   @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
+  @time @safetestset "Event Repetition Detection Tests" begin include("integrators/event_repeat_tests.jl") end
+  @time @safetestset "Reverse Directioned Event Tests" begin include("integrators/rev_events_tests.jl") end
   @time @safetestset "Differentiation Direction Tests" begin include("integrators/diffdir_tests.jl") end
   @time @safetestset "Resize Tests" begin include("integrators/resize_tests.jl") end
 end
