@@ -40,7 +40,7 @@ function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
     local tmp
     if alg_autodiff(alg)
-      J,tmp = jacobian_autodiff(f, x, integrator)
+      J,tmp = jacobian_autodiff(f, x, integrator.f)
     else
       if DiffEqBase.has_colorvec(integrator.f)
         J,tmp = jacobian_finitediff(f, x, alg.diff_type, integrator, integrator.f.colorvec)
@@ -52,16 +52,16 @@ function jacobian(f, x, integrator)
     J
 end
 
-jacobian_autodiff(f, x, integrator) = (ForwardDiff.derivative(f,x),1)
-function jacobian_autodiff(f, x::AbstractArray, integrator)
-  if DiffEqBase.has_colorvec(integrator.f)
-    colorvec = integrator.f.colorvec
-    sparsity = integrator.f.jac_prototype
+jacobian_autodiff(f, x, odefun) = (ForwardDiff.derivative(f,x),1)
+function jacobian_autodiff(f, x::AbstractArray, odefun)
+  if DiffEqBase.has_colorvec(odefun)
+    colorvec = odefun.colorvec
+    sparsity = odefun.jac_prototype
   else
     colorvec = 1:length(x)
     sparsity = nothing
   end 
-  (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity, jac_prototype = integrator.f.jac_prototype),1)
+  (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity, jac_prototype = odefun.jac_prototype),1)
 end
 
 function _nfcount(N,diff_type)
