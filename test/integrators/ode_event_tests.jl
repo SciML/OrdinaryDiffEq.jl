@@ -144,7 +144,7 @@ affect_neg! = function (integrator,idx)
   end
 end
 
-callback_single = VectorContinuousCallback(condition_single,affect!,affect_neg!,1,interp_points=100,idxs=1)
+callback_single = VectorContinuousCallback(condition_single,affect!,affect_neg!,1,interp_points=100)
 
 sol = solve(prob,Tsit5(),callback=callback_single,adaptive=false,dt=1/4)
 sol = solve(prob,Tsit5(),callback=callback_single,save_everystep=false)
@@ -161,8 +161,8 @@ sol = solve(prob,Tsit5(),callback=callback_single,saveat=t-eps(t))
 sol = solve(prob,Vern6(),callback=callback)
 sol = solve(prob,Vern6(),callback=vcb)
 #plot(sol,denseplot=true)
-sol = solve(prob,BS3(),callback=callback)
 sol = solve(prob,BS3(),callback=vcb)
+sol = solve(prob,BS3(),callback=callback)
 
 sol33 = solve(prob,Vern7(),callback=callback)
 sol33 = solve(prob,Vern7(),callback=vcb)
@@ -234,8 +234,8 @@ end
 
 terminate_callback = ContinuousCallback(condition,affect!)
 custom_retcode_callback = ContinuousCallback(condition,x->affect!(x,:Custom))
-vterminate_callback = VectorContinuousCallback(condition,affect!,1)
-vcustom_retcode_callback = VectorContinuousCallback(condition,(x,idx)->affect!(x,idx,:Custom),1)
+vterminate_callback = VectorContinuousCallback(vcondition,vaffect!,1)
+vcustom_retcode_callback = VectorContinuousCallback(vcondition,(x,idx)->vaffect!(x,idx,:Custom),1)
 
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
@@ -275,7 +275,7 @@ vaffect2! = function (integrator,idx)
 end
 
 terminate_callback2 = ContinuousCallback(condition,nothing,affect2!,interp_points=100)
-vterminate_callback2 = ContinuousCallback(condition,nothing,vaffect2!,1,interp_points=100)
+vterminate_callback2 = VectorContinuousCallback(vcondition,nothing,vaffect2!,1,interp_points=100)
 
 
 sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
