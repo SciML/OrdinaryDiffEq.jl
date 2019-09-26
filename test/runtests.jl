@@ -39,7 +39,7 @@ if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")
   @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
@@ -52,6 +52,9 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
   @time @safetestset "Error Check Tests" begin include("integrators/check_error.jl") end
   @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
   @time @safetestset "Event Repetition Detection Tests" begin include("integrators/event_repeat_tests.jl") end
+end
+
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II")
   @time @safetestset "Reverse Directioned Event Tests" begin include("integrators/rev_events_tests.jl") end
   @time @safetestset "Differentiation Direction Tests" begin include("integrators/diffdir_tests.jl") end
   @time @safetestset "Resize Tests" begin include("integrators/resize_tests.jl") end
