@@ -8,7 +8,8 @@ julia:
 #  - nightly
 env:
   - GROUP=Interface
-  - GROUP=Integrators
+  - GROUP=Integrators_I
+  - GROUP=Integrators_II
   - GROUP=Regression
   - GROUP=AlgConvergence_I
   - GROUP=AlgConvergence_II
