@@ -86,7 +86,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
   end
 
-  progress && @logmsg(-1,progress_name,_id=_id = :OrdinaryDiffEq,progress=0)
+  progress && @logmsg(LogLevel(-1),progress_name,_id=_id = :OrdinaryDiffEq,progress=0)
 
   tType = eltype(prob.tspan)
   tspan = prob.tspan
@@ -167,7 +167,11 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
   if max_len_cb isa VectorContinuousCallback
-    callback_cache = DiffEqBase.CallbackCache(u,max_len_cb.len,uBottomEltype,uBottomEltype)
+    if isinplace(prob)
+      callback_cache = DiffEqBase.CallbackCache(u,max_len_cb.len,uBottomEltype,uBottomEltype)
+    else
+      callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltype,uBottomEltype)
+    end
   else
     callback_cache = nothing
   end
