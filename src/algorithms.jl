@@ -174,7 +174,7 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
 end
 
 struct ImplicitHairerWannerExtrapolation{CS,AD,F} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
-  linsolve::F  
+  linsolve::F
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
@@ -978,14 +978,17 @@ for Alg in [:Exprb32, :Exprb43]
   @eval $Alg(;m=30, iop=0, autodiff=true, chunksize=0) = $Alg(m, iop, autodiff, chunksize)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
-  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+  @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm
     adaptive_krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
+    diff_type::FDT
   end
-  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, chunksize=0) = $Alg(adaptive_krylov, m, iop, autodiff, chunksize)
+  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true,
+              chunksize=0, diff_type = Val{:forward}) =
+              $Alg(adaptive_krylov, m, iop, autodiff, chunksize, diff_type)
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
