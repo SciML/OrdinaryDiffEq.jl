@@ -108,6 +108,52 @@ function _calc_J!(J, integrator, cache)
   nothing
 end
 
+function calc_J1!(J, integrator, cache, nlsolver)
+  @unpack t,uprev,f,p,alg = integrator
+
+  @unpack du1, duf, jac_config = cache
+
+  duf.f = nlsolve_f(f, alg)
+  duf.t = t
+  duf.p = p
+  duf.u = uprev
+  x = nlsolver.cache.ztmp
+  @.. x = nlsolver.tmp + nlsolver.γ * uprev
+
+  jacobian!(J, duf, x, du1, integrator, jac_config)
+
+  integrator.destats.njacs += 1
+
+  if alg isa CompositeAlgorithm
+    integrator.eigen_est = opnorm(J, Inf)
+  end
+
+  nothing
+end
+
+function calc_J2!(J, integrator, cache, nlsolver)
+  @unpack t,uprev,f,p,alg = integrator
+
+  @unpack du1, uf, jac_config = cache
+
+  uf.f = nlsolve_f(f, alg)
+  uf.t = t
+  uf.p = p
+  x = nlsolver.cache.ztmp
+  @.. x = nlsolver.tmp + nlsolver.γ * uprev
+  uf.du = x
+
+  jacobian!(J, uf, uprev, du1, integrator, jac_config)
+
+  integrator.destats.njacs += 1
+
+  if alg isa CompositeAlgorithm
+    integrator.eigen_est = opnorm(J, Inf)
+  end
+
+  nothing
+end
+
 """
     WOperator(mass_matrix,gamma,J[;transform=false])
 
@@ -329,6 +375,22 @@ end
   return nothing
 end
 
+@inline function jacobian2W!(W::AbstractMatrix, dtgamma::Number, J::AbstractMatrix)::Nothing
+  # check size and dimension
+  iijj = axes(W)
+  @boundscheck (iijj === axes(J) && length(iijj) === 2) || _throwWJerror(W, J)
+  @.. W = dtgamma * J
+  return nothing
+end
+
+@inline function addjacobian2W!(W::AbstractMatrix, dtgamma::Number, J::AbstractMatrix)::Nothing
+  # check size and dimension
+  iijj = axes(W)
+  @boundscheck (iijj === axes(J) && length(iijj) === 2) || _throwWJerror(W, J)
+  @.. W += dtgamma * J
+  return nothing
+end
+
 @inline function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
   mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) === axes(J) || _throwJMerror(J, mass_matrix)
@@ -406,7 +468,10 @@ function calc_W!(W, integrator, nlsolver::AbstractNLSolver, cache, dtgamma, repe
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack J = nlsolver.cache
   alg = unwrap_alg(integrator, true)
-  mass_matrix = integrator.f.mass_matrix
+  isdae = alg isa DAEAlgorithm
+  if !isdae
+    mass_matrix = integrator.f.mass_matrix
+  end
   is_compos = integrator.alg isa CompositeAlgorithm
   isnewton = alg isa NewtonAlgorithm
 
@@ -443,8 +508,15 @@ function calc_W!(W, integrator, nlsolver::AbstractNLSolver, cache, dtgamma, repe
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && calc_J!(J, integrator, nlsolver.cache)
-    new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    if isdae
+      new_jac && calc_J1!(J, integrator, nlsolver.cache)
+      new_W && jacobian2W!(W, dtgamma, J)
+      new_jac && calc_J2!(J, integrator, nlsolver.cache)
+      new_W && addjacobian2W!(W, 1.0, J)
+    else
+      new_jac && calc_J!(J, integrator, nlsolver.cache)
+      new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    end
   end
   if isnewton
     set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
