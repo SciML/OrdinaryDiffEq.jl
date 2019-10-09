@@ -111,16 +111,16 @@ end
 function calc_J1!(J, integrator, cache, nlsolver)
   @unpack t,uprev,f,p,alg = integrator
 
-  @unpack du1, duf, jac_config = cache
+  @unpack du1, duf, duf_jac_config = cache
 
   duf.f = nlsolve_f(f, alg)
   duf.t = t
   duf.p = p
   duf.u = uprev
-  x = nlsolver.cache.ztmp
+  x = nlsolver.ztmp
   @.. x = nlsolver.tmp + nlsolver.γ * uprev
 
-  jacobian!(J, duf, x, du1, integrator, jac_config)
+  jacobian!(J, duf, x, du1, integrator, duf_jac_config)
 
   integrator.destats.njacs += 1
 
@@ -139,9 +139,8 @@ function calc_J2!(J, integrator, cache, nlsolver)
   uf.f = nlsolve_f(f, alg)
   uf.t = t
   uf.p = p
-  x = nlsolver.cache.ztmp
+  x = uf.du
   @.. x = nlsolver.tmp + nlsolver.γ * uprev
-  uf.du = x
 
   jacobian!(J, uf, uprev, du1, integrator, jac_config)
 
@@ -509,9 +508,9 @@ function calc_W!(W, integrator, nlsolver::AbstractNLSolver, cache, dtgamma, repe
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
     if isdae
-      new_jac && calc_J1!(J, integrator, nlsolver.cache)
+      new_jac && calc_J1!(J, integrator, nlsolver.cache, nlsolver)
       new_W && jacobian2W!(W, dtgamma, J)
-      new_jac && calc_J2!(J, integrator, nlsolver.cache)
+      new_jac && calc_J2!(J, integrator, nlsolver.cache, nlsolver)
       new_W && addjacobian2W!(W, 1.0, J)
     else
       new_jac && calc_J!(J, integrator, nlsolver.cache)
@@ -639,7 +638,12 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{false})
   J, W
 end
 
-build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{true}) =
+build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{true}) =
   DiffEqDiffTools.UJacobianWrapper(nf,t,p)
+build_uf(alg::DAEAlgorithm,nf,du,t,p,::Val{true}) =
+  DiffEqDiffTools.DAEUJacobianWrapper(nf,du,t,p)
 build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{false}) =
   DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
+
+build_duf(alg::DAEAlgorithm,nf,u,t,p,::Val{true}) =
+  DiffEqDiffTools.DAEDUJacobianWrapper(nf,u,t,p)

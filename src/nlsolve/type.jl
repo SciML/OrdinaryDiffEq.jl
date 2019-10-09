@@ -20,7 +20,7 @@ end
 
 # caches
 
-mutable struct NLNewtonCache{uType,tType,rateType,uNoUnitsType,J,W,du1Type,ufType,jcType,lsType,G} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{uType,tType,rateType,uNoUnitsType,J,W,du1Type,ufType,dufType,jcType,djcType,lsType,G} <: AbstractNLSolverCache
   ustep::uType
   tstep::tType
   k::rateType
@@ -32,7 +32,9 @@ mutable struct NLNewtonCache{uType,tType,rateType,uNoUnitsType,J,W,du1Type,ufTyp
   W_dt::tType
   du1::du1Type
   uf::ufType
+  duf::dufType
   jac_config::jcType
+  duf_jac_config::djcType
   linsolve::lsType
   weight::uType
   invγdt::G

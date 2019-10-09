@@ -4,6 +4,8 @@ function initialize!(integrator, cache::DImplicitEulerConstantCache) end
 @muladd function perform_step!(integrator, cache::DImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   alg = unwrap_alg(integrator, true)
+  update_W!(integrator, cache, -inv(dt), repeat_step)
+  @show cache.nlsolver.cache.W
 
   # initial guess
   guess = zero(u)
@@ -42,6 +44,8 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack atmp,tmp = cache
   alg = unwrap_alg(integrator, true)
+  update_W!(integrator, cache, -inv(dt), repeat_step)
+  @show cache.nlsolver.cache.W
 
   # initial guess
   guess = tmp
