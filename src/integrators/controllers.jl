@@ -1,3 +1,38 @@
+const FASTPOW_SIZE = 20
+
+# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastlog.h
+function fastlog2(x::Float32)::Float32
+    y = Float32(reinterpret(Int32, x))
+    y *= 1.1920928955078125f-7
+    y - 126.94269504f0
+end
+function fastlog2(x::T) where {T <: AbstractFloat}
+   convert(T,fastlog2(Float32(x)))
+end
+
+# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastexp.h
+function fastpow2(x::Float32)::Float32
+    clipp = ifelse(x < -126.0f0,-126.0f0,x)
+    clipp = @fastmath min(126f0, max(-126f0, x))
+    reinterpret(Float32, UInt32((1 << 23) * (clipp + 126.94269504f0)))
+end
+function fastpow2(x::T) where {T <: AbstractFloat}
+   convert(T,fastpow2(Float32(x)))
+end
+
+# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastpow.h
+function fastpow(x::AbstractFloat, y::AbstractFloat, len)
+  if len > FASTPOW_SIZE
+    fastpow2(y * fastlog2(x))
+  else
+    x ^ y
+  end
+end
+
+function fastpow(x, y, len)
+    x ^ y
+end
+
 @inline function predictive_stepsize_controller!(integrator, alg)
   # Gustafsson predictive stepsize controller
   if iszero(integrator.EEst)
@@ -16,7 +51,8 @@
       fac = min(gamma,(1+2*maxiters)*gamma/(iter+2*maxiters))
     end
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
-    qtmp = (integrator.EEst^expo)/fac
+    len = length(integrator.u)
+    qtmp = fastpow(integrator.EEst,expo,len)/fac
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
     integrator.qold = q
   end
@@ -28,36 +64,12 @@ end
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
-    qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
+    len = length(integrator.u)
+    qtmp = fastpow(integrator.EEst,(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma,len)
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
     integrator.qold = integrator.dt/q
   end
   q
-end
-
-# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastlog.h
-function fastlog2(x::Float32)::Float32
-    y = Float32(reinterpret(Int32, x))
-    y *= 1.1920928955078125f-7
-    y - 126.94269504f0
-end
-function fastlog2(x::Float64)::Float32
-   fastlog2(Float32(x))
-end
-
-# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastexp.h
-function fastpow2(x::Float32)::Float32
-    clipp = ifelse(x < -126.0f0,-126.0f0,x)
-    clipp = @fastmath min(126f0, max(-126f0, x))
-    reinterpret(Float32, UInt32((1 << 23) * (clipp + 126.94269504f0)))
-end
-function fastpow2(x::Float64)::Float32
-   fastpow2(Float32(x))
-end
-
-# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastpow.h
-function fastpow(x::Real, y::Real)::Real
-    fastpow2(y * fastlog2(x))
 end
 
 @inline function PI_stepsize_controller!(integrator, alg)
@@ -66,8 +78,9 @@ end
   if iszero(EEst)
     q = inv(integrator.opts.qmax)
   else
-    q11 = fastpow(EEst,beta1)
-    q = q11/fastpow(qold,beta2)
+    len = length(integrator.u)
+    q11 = fastpow(EEst,beta1,len)
+    q = q11/fastpow(qold,beta2,len)
     integrator.q11 = q11
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
   end
@@ -87,7 +100,7 @@ end
 @inline function predictive_step_accept_controller!(integrator, alg, q)
   if integrator.success_iter > 0
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
-    qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
+    qgus=(integrator.dtacc/integrator.dt)*fastpow((integrator.EEst^2)/integrator.erracc,expo)
     qgus = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qgus/integrator.opts.gamma))
     qacc=max(q,qgus)
   else
