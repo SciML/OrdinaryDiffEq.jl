@@ -35,14 +35,39 @@ end
   q
 end
 
+# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastlog.h
+function fastlog2(x::Float32)::Float32
+    y = Float32(reinterpret(Int32, x))
+    y *= 1.1920928955078125f-7
+    y - 126.94269504f0
+end
+function fastlog2(x::Float64)::Float32
+   fastlog2(Float32(x))
+end
+
+# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastexp.h
+function fastpow2(x::Float32)::Float32
+    clipp = ifelse(x < -126.0f0,-126.0f0,x)
+    clipp = @fastmath min(126f0, max(-126f0, x))
+    reinterpret(Float32, UInt32((1 << 23) * (clipp + 126.94269504f0)))
+end
+function fastpow2(x::Float64)::Float32
+   fastpow2(Float32(x))
+end
+
+# https://github.com/etheory/fastapprox/blob/master/fastapprox/src/fastpow.h
+function fastpow(x::Real, y::Real)::Real
+    fastpow2(y * fastlog2(x))
+end
+
 @inline function PI_stepsize_controller!(integrator, alg)
   # PI-controller
   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
   if iszero(EEst)
     q = inv(integrator.opts.qmax)
   else
-    @fastmath q11 = EEst^beta1
-    @fastmath q = q11/(qold^beta2)
+    q11 = fastpow(EEst,beta1)
+    q = q11/fastpow(qold,beta2)
     integrator.q11 = q11
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
   end
