@@ -456,11 +456,11 @@ end
 function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
   mass_matrix = integrator.f.mass_matrix
-  isarray = typeof(uprev) <: AbstractArray
+  isarray = uprev isa AbstractArray
   # calculate W
-  is_compos = typeof(integrator.alg) <: CompositeAlgorithm
-  if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
-    J = f.f1.f
+  is_compos = integrator.alg isa CompositeAlgorithm
+  if (isode = f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
+    J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
     W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
   elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) &&
          f.jac_prototype !== nothing &&
