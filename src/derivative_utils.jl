@@ -303,11 +303,12 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any cha
   return !fastconvergence
 end
 
-function do_newW(integrator, nlsolver::T, new_jac, W_dt)::Bool where T # any changes here need to be reflected in FIRK
+function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # any changes here need to be reflected in FIRK
+  nlsolver === nothing && return true
   new_jac && return true
   # reuse W when the change in stepsize is small enough
   dt = integrator.dt
-  new_W_dt_cutoff = T <: NLSolver ? nlsolver.cache.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
+  new_W_dt_cutoff = nlsolver isa NLSolver ? nlsolver.cache.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
   smallstepchange = abs((dt-W_dt)/W_dt) <= new_W_dt_cutoff
   return !smallstepchange
 end
@@ -368,8 +369,8 @@ end
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  if nlsolve === nothing
-    @unpack J, nlsolver = cache
+  if nlsolver === nothing
+    @unpack J = cache
   else
     @unpack J = nlsolver.cache
   end
@@ -393,7 +394,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   end
 
   # check if we need to update J or W
-  W_dt = isnewton ? nlsolver.cache.W_dt : dt # TODO: RosW
+  W_dt = nlsolver === nothing ? dt : nlsolver.cache.W_dt # TODO: RosW
   new_jac = do_newJ(integrator, alg, cache, repeat_step)
   new_W = do_newW(integrator, nlsolver, new_jac, W_dt)
 
