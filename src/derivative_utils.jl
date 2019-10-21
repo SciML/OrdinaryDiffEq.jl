@@ -77,14 +77,12 @@ If `integrator.f` has a custom Jacobian update function, then it will be called.
 either automatic or finite differencing will be used depending on the `cache`.
 """
 function calc_J!(J, integrator, cache)
-  islin, isode = islinearfunction(integrator)
-  islin && return (J = isode ? f.f : f.f1.f)
   if isdefined(cache, :nlsolver)
     _calc_J!(J, integrator, cache.nlsolver.cache)
   else
     _calc_J!(J, integrator, cache)
   end
-  return J
+  return nothing
 end
 
 function _calc_J!(J, integrator, cache)
@@ -404,7 +402,8 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
     isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    new_jac && (J = calc_J!(J, integrator, cache))
+    islin, isode = islinearfunction(integrator)
+    islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, cache)) )
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
