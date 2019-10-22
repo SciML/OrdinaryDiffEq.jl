@@ -185,7 +185,7 @@ function stepsize_predictor!(integrator,alg::Union{ExtrapolationMidpointDeuflhar
     integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
     integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(1 // 4),integrator.opts.beta1)
     # Compute new stepsize scaling
-    qtmp = (EEst * DiffEqBase.fastpow(DiffEqBase.fastpow(tol,(1.0 - s_curr / s_new)),integrator.opts.beta1) / integrator.opts.gamma
+    qtmp = EEst * DiffEqBase.fastpow(DiffEqBase.fastpow(tol,(1.0 - s_curr / s_new)),integrator.opts.beta1) / integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   end
   integrator.cache.Q[n_new - alg.n_min + 1] = q
