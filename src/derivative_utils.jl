@@ -486,7 +486,8 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{true})
       return nothing, nothing
     end
   end
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
+  n = length(u)
+  if size(f.jac_prototype) != (n, n) || ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
     J = similar(f.jac_prototype)
     W = similar(J)
   elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
