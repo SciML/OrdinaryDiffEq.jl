@@ -447,7 +447,8 @@ end
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
   nlsolver = nothing
-  calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, W_transform)
+  # we need to skip calculating `W` when a step is repeated
+  repeat_step || calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, W_transform)
   return nothing
 end
 

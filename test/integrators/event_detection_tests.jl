@@ -55,3 +55,51 @@ p = 9.8
 prob = ODEProblem(f,u0,tspan,p)
 sol = solve(prob,Tsit5(),callback=cb2)
 @test minimum(sol') > -40
+
+function fball(du,u,p,t)
+  du[1] = u[2]
+  du[2] = -p
+  du[3] = u[4]
+  du[4] = 0.0
+end
+u0 = [50.0,0.0,0.0,2.0]
+tspan = (0.0,15.0)
+p = 9.8
+prob = ODEProblem(fball,u0,tspan,p)
+
+x = Ref(0)
+y = Ref(0)
+z = Ref(0)
+
+function condition(out,u,t,integrator)
+  out[1] = u[1]
+  out[2] = (10.0 - u[3])u[3]
+end
+
+function affect!(integrator, idx)
+  if idx == 1
+    x[] += 1
+    integrator.u[2] = -0.9integrator.u[2]
+  elseif idx == 2
+    y[] += 1
+    integrator.u[4] = -0.9integrator.u[4]
+  end
+end
+
+function affect_neg!(integrator, idx)
+  z[] += 1
+  @show integrator.u[1]
+  @show integrator.u[3]
+end
+
+cb = VectorContinuousCallback(condition,affect!,2)
+cb2 = VectorContinuousCallback(condition,affect_neg!,affect!,2)
+
+sol = solve(prob,Tsit5(),callback=cb,dt=1e-3,adaptive=false)
+@test x[] == 3
+@test y[] == 2
+
+sol2 = solve(prob,Tsit5(),callback=cb2,dt=1e-3,adaptive=false)
+@test sol.u == sol2.u
+@test z[] == 0
+

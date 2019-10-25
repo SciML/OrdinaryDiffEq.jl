@@ -129,7 +129,7 @@ function _postamble!(integrator)
     resize!(integrator.sol.k,integrator.saveiter_dense)
   end
   if integrator.opts.progress
-    @logmsg(-1,
+    @logmsg(LogLevel(-1),
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
@@ -220,7 +220,7 @@ function _loopfooter!(integrator)
     handle_callbacks!(integrator)
   end
   if integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
-    @logmsg(-1,
+    @logmsg(LogLevel(-1),
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
