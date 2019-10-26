@@ -418,7 +418,7 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   if islin
     J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
     W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
-  elseif DiffEqBase.has_jac(f) && f.jac_prototype isa AbstractDiffEqLinearOperator
+  elseif DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
@@ -471,8 +471,8 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   elseif IIP && f.jac_prototype !== nothing
     J = similar(f.jac_prototype)
     W = similar(J)
-  elseif islin
-    J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
+  elseif islin || DiffEqBase.has_jac(f)
+    J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
