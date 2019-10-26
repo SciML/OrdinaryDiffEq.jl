@@ -463,12 +463,12 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dt, repeat_ste
   nothing
 end
 
-function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{true})
+function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator(f, dt, true)
     J = W.J
-  elseif f.jac_prototype !== nothing
+  elseif IIP && f.jac_prototype !== nothing
     J = similar(f.jac_prototype)
     W = similar(J)
   elseif islin
@@ -478,28 +478,11 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{true})
     end
     W = WOperator(f.mass_matrix, dt, J, true)
   else
-    J = false .* vec(u) .* vec(u)'
-    W = similar(J)
-  end
-  J, W
-end
-
-function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{false})
-  islin, isode = islinearfunction(f, alg)
-  if islin
-    J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
-    end
-    W = WOperator(f.mass_matrix, dt, J, false)
-  elseif f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
-    W = WOperator(f, dt, false)
-    J = W.J
-    # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
-  else
-    # get a "fake" `J`
     J = false .* _vec(u) .* _vec(u)'
-    W = if u isa StaticArray
+    W = if IIP
+      similar(J)
+    else
+      W = if u isa StaticArray
       lu(J)
       elseif u isa Number
         u
@@ -508,8 +491,9 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{false})
                                                      Vector{LinearAlgebra.BlasInt}(undef, 0),
                                                      zero(LinearAlgebra.BlasInt))
       end
+    end # end W
   end
-  J, W
+  return J, W
 end
 
 build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{true}) =
