@@ -16,7 +16,7 @@ end
   @unpack weight = cache
 
   cache.invγdt = inv(dt * nlsolver.γ)
-  cache.tstep = integrator.t + nlsolver.c * dt 
+  cache.tstep = integrator.t + nlsolver.c * dt
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, u,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
 
@@ -80,6 +80,11 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     integrator.destats.nf += 1
   end
 
+  # update W
+  if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    W = update_coefficients!(W, ustep, p, tstep)
+  end
+
   dz = _reshape(W \ _vec(ztmp), axes(ztmp))
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
@@ -88,7 +93,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)
 
-  # compute next iterate  
+  # compute next iterate
   nlsolver.ztmp = z .- dz
 
   ndz
