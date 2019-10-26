@@ -466,17 +466,17 @@ end
 function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
-    W = WOperator(f, dt, true)
+    W = WOperator(f, dt, IIP)
     J = W.J
   elseif IIP && f.jac_prototype !== nothing
     J = similar(f.jac_prototype)
     W = similar(J)
-  elseif islin || DiffEqBase.has_jac(f)
+  elseif islin || (!IIP && DiffEqBase.has_jac(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
-    W = WOperator(f.mass_matrix, dt, J, true)
+    W = WOperator(f.mass_matrix, dt, J, IIP)
   else
     J = false .* _vec(u) .* _vec(u)'
     W = if IIP
