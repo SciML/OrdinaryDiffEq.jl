@@ -42,13 +42,15 @@ sol1 =solve(probnum,DP5())
 sol2 =solve(probnum,tabalg,beta2=0.04,beta1=0.17)
 sol3 =solve(probnum,dopri5())
 
-@test sol1.t ≈ sol2.t ≈ sol3.t
+@test sol1.t ≈ sol2.t
+@test sol1.t ≈ sol3.t atol=1e-6
 
 sol1 =solve(prob,DP5(),dt=1/8)
 sol2 =solve(prob,tabalg,beta2=0.04,beta1=0.17,dt=1/8)
 sol3 =solve(prob,dopri5(),dt=1/8)
 
-@test sol1.t ≈ sol2.t ≈ sol3.t
+@test sol1.t ≈ sol2.t
+@test sol1.t ≈ sol3.t atol=1e-5
 
 sol4 =solve(prob,DP5(),dt=1/8,calck=false)
 
