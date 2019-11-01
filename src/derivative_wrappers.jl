@@ -46,8 +46,8 @@ function jacobian_autodiff(f, x::AbstractArray, odefun)
     colorvec = 1:length(x)
     sparsity = nothing
     jac_prototype = odefun.jac_prototype
-  end   
-  (SparseDiffTools.forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity,
+  end
+  (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity,
    jac_prototype = jac_prototype),
    maximum(colorvec))
 end
@@ -66,7 +66,7 @@ end
 jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
     (DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir),2)
 jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype) =
-    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), 
+    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x),
       dir = dir, colorvec = colorvec, sparsity = sparsity, jac_prototype = jac_prototype),_nfcount(maximum(colorvec),diff_type))
 
 function jacobian(f, x, integrator)
@@ -85,7 +85,7 @@ function jacobian(f, x, integrator)
         jac_prototype = integrator.f.jac_prototype
       end
       dir = diffdir(integrator)
-      J, tmp = jacobian_finitediff(f, x, alg.diff_type, dir, colorvec, sparsity, jac_prototype) 
+      J, tmp = jacobian_finitediff(f, x, alg.diff_type, dir, colorvec, sparsity, jac_prototype)
     end
     integrator.destats.nf += tmp
     J
@@ -111,7 +111,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
         f(forwardcache, x)
         integrator.destats.nf += 1
         tmp=jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache, integrator, colorvec)
-      else # not forward difference 
+      else # not forward difference
         tmp=jacobian_finitediff!(J, f, x, jac_config, integrator, colorvec)
       end
       integrator.destats.nf += tmp
