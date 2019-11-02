@@ -132,7 +132,7 @@ end
 
   f₀ = f(u0,p,t)
   if integrator.opts.verbose && any(x->any(isnan, x), f₀)
-    error("First function call produced NaNs. Exiting.")
+    @warn("First function call produced NaNs. Exiting.")
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)

@@ -78,6 +78,9 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::RadauIIA5,cache) = (cache.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.nlsolver.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,cache) = (cache.tmp,cache.utilde)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,cache) = (cache.tmp,cache.utilde)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqExponentialAlgorithm,cache) = (cache.tmp,cache.dz)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
 full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
@@ -92,55 +95,42 @@ function DiffEqBase.add_saveat!(integrator::ODEIntegrator,t)
   push!(integrator.opts.saveat, integrator.tdir * t)
 end
 
-resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
-function resize!(integrator::ODEIntegrator,cache,i)
+function resize!(integrator::ODEIntegrator, i::Int)
+  @unpack cache = integrator
+
   for c in full_cache(cache)
     resize!(c,i)
   end
-  DiffEqBase.nlsolve_resize!(integrator, i)
-  resize_J_and_W!(integrator, i)
-  resize_non_user_cache!(integrator,cache,i)
+  resize_nlsolver!(integrator, i)
+  resize_J_W!(cache, integrator, i)
+  resize_non_user_cache!(integrator, cache, i)
 end
 
-function resize_J_and_W!(integrator, i)
-  @unpack cache, alg, f, dt = integrator
-  has_newton_nlsolve = isdefined(cache, :nlsolver) && alg.nlsolve isa NLNewton
-  if has_newton_nlsolve
-    nf = nlsolve_f(f, alg)
+function resize_J_W!(cache, integrator, i)
+  (isdefined(cache, :J) && isdefined(cache, :W)) || return
+
+  @unpack f = integrator
+
+  if cache.W isa WOperator
+    nf = nlsolve_f(f, integrator.alg)
     islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
-    nlsolver = cache.nlsolver
-    if nlsolver isa AbstractArray
-      for j in eachindex(nlsolver)
-        _cache = nlsolver[j].cache
-        _cache.J != nothing && ( _cache.J = similar(_cache.J,i,i) )
-        if _cache.W isa WOperator
-          if !islin
-            J = similar(f.jac_prototype, i, i)
-            if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-              J = DiffEqArrayOperator(J; update_func=f.jac)
-            end
-            _cache.W = WOperator(f.mass_matrix, dt, J, true)
-          end
-        else
-          _cache.W = similar(_cache.W, i, i)
-        end
+    if !islin
+      J = similar(f.jac_prototype, i, i)
+      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+        J = DiffEqArrayOperator(J; update_func=f.jac)
       end
-    elseif nlsolver isa NLSolver
-      _cache = nlsolver.cache
-      _cache.J != nothing && ( _cache.J = similar(_cache.J,i,i) )
-      if _cache.W isa WOperator
-        if !islin
-          J = similar(f.jac_prototype, i, i)
-          if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-            J = DiffEqArrayOperator(J; update_func=f.jac)
-          end
-          _cache.W = WOperator(f.mass_matrix, dt, J, true)
-        end
-      else
-        _cache.W = similar(_cache.W, i, i)
-      end
+
+      cache.W = WOperator(f.mass_matrix, integrator.dt, J, true)
+      cache.J = cache.W.J
     end
+  else
+    if cache.J !== nothing
+      cache.J = similar(cache.J, i, i)
+    end
+    cache.W = similar(cache.W, i, i)
   end
+
+  nothing
 end
 
 resize_non_user_cache!(integrator::ODEIntegrator,i::Int) = resize_non_user_cache!(integrator,integrator.cache,i)
@@ -152,8 +142,9 @@ function resize_non_user_cache!(integrator::ODEIntegrator,
                       cache::RosenbrockMutableCache,i)
   cache.J = similar(cache.J,i,i)
   cache.W = similar(cache.W,i,i)
-  cache.jac_config = DiffEqBase.resize_jac_config!(cache.jac_config, i)
-  cache.grad_config = resize_grad_config!(cache.grad_config, i)
+  resize_jac_config!(cache.jac_config, i)
+  resize_grad_config!(cache.grad_config, i)
+  nothing
 end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)

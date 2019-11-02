@@ -160,7 +160,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, γ, repeat_step)
+  W = calc_W(integrator, cache, γ, repeat_step)
   k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
@@ -210,7 +210,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, γ, repeat_step)
+  W = calc_W(integrator, cache, γ, repeat_step)
 
   #f₀ = f(uprev, p, t)
 
@@ -302,7 +302,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W(integrator, cache, dtgamma, repeat_step, true)
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -444,7 +444,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W(integrator, cache, dtgamma, repeat_step, true)
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -648,7 +648,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W(integrator, cache, dtgamma, repeat_step, true)
 
   du = f(uprev, p, t)
   integrator.destats.nf += 1
@@ -926,7 +926,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W(integrator, cache, dtgamma, repeat_step, true)
 
   du1 = f(uprev, p, t)
   integrator.destats.nf += 1

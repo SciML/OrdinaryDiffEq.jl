@@ -48,22 +48,24 @@ struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
 end
 AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
 
-struct ImplicitEulerExtrapolation{CS,AD,F,F2} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+struct ImplicitEulerExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   max_order::Int
   min_order::Int
   init_order::Int
   threading::Bool
+  diff_type::FDT
 end
 
-function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
+function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
+    diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
     max_order=10,min_order=1,init_order=5,threading=true)
     if threading
       @warn "Threading in `ImplicitEulerExtrapolation` is currently disabled. Thus `threading` has been changed from `true` to `false`."
       threading = false
     end
     ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(
-      linsolve,max_order,min_order,init_order,threading)
+      linsolve,max_order,min_order,init_order,threading,diff_type)
 end
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
@@ -101,14 +103,16 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
   ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading)
 end
 
-struct ImplicitDeuflhardExtrapolation{CS,AD,F} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
+  diff_type::FDT
 end
-function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE,
+function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
+  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
@@ -134,7 +138,8 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,linsolve=DEF
   end
 
   # Initialize algorithm
-  ImplicitDeuflhardExtrapolation{chunk_size, autodiff, typeof(linsolve)}(linsolve,n_min,n_init,n_max,sequence)
+  ImplicitDeuflhardExtrapolation{chunk_size, autodiff,
+      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,sequence,diff_type)
 end
 
 struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
@@ -173,14 +178,16 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading)
 end
 
-struct ImplicitHairerWannerExtrapolation{CS,AD,F} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
+  diff_type::FDT
 end
-function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE,
+function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
+  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -207,7 +214,9 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,linsolve=
   end
 
   # Initialize algorithm
-  ImplicitHairerWannerExtrapolation{chunk_size, autodiff, typeof(linsolve)}(linsolve,n_min,n_init,n_max,sequence)
+  ImplicitHairerWannerExtrapolation{chunk_size, autodiff,
+      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,
+      sequence,diff_type)
 end
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
@@ -628,7 +637,7 @@ struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   smooth_est::Bool
   extrapolant::Symbol
   κ::Tol
-  max_iter::Int
+  maxiters::Int
   fast_convergence_cutoff::C1
   new_W_dt_cutoff::C2
   controller::Symbol
@@ -636,11 +645,11 @@ end
 RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,
                           extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_dt_cutoff=1//5,
-                          controller=:Predictive,κ=nothing,max_iter=10,smooth_est=true) =
+                          controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
                           RadauIIA5{chunk_size,autodiff,typeof(linsolve),
                           typeof(diff_type),
                           typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_dt_cutoff)}(
-                            linsolve,diff_type,smooth_est,extrapolant,κ,max_iter,fast_convergence_cutoff,new_W_dt_cutoff,controller)
+                            linsolve,diff_type,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_dt_cutoff,controller)
 
 ################################################################################
 
@@ -928,34 +937,42 @@ RosenbrockW6S4OS(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DE
 ######################################
 
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
-  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+  @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
+    diff_type::FDT
   end
-  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0) = $Alg(krylov, m, iop, autodiff, chunksize)
+  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0,
+            diff_type = Val{:forward}) = $Alg(krylov, m, iop, autodiff,
+            chunksize, diff_type)
 end
-ETD1 = NorsettEuler # alias
+const ETD1 = NorsettEuler # alias
 for Alg in [:Exprb32, :Exprb43]
-  @eval struct $Alg <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
+  @eval struct $Alg{FDT} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
+    diff_type::FDT
   end
-  @eval $Alg(;m=30, iop=0, autodiff=true, chunksize=0) = $Alg(m, iop, autodiff, chunksize)
+  @eval $Alg(;m=30, iop=0, autodiff=true, chunksize=0,
+            diff_type = Val{:forward}) = $Alg(m, iop, autodiff, chunksize, diff_type)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
-  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+  @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm
     adaptive_krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
+    diff_type::FDT
   end
-  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, chunksize=0) = $Alg(adaptive_krylov, m, iop, autodiff, chunksize)
+  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true,
+              chunksize=0, diff_type = Val{:forward}) =
+              $Alg(adaptive_krylov, m, iop, autodiff, chunksize, diff_type)
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end

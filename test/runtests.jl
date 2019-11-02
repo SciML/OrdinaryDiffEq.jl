@@ -20,6 +20,7 @@ if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "Jacobian Tests" begin include("interface/jacobian_tests.jl") end
   @time @safetestset "saveat Tests" begin include("interface/ode_saveat_tests.jl") end
   @time @safetestset "save_idxs Tests" begin include("interface/ode_saveidxs_tests.jl") end
+  @time @safetestset "Scalar Handling Tests" begin include("interface/scalar_handling_tests.jl") end
   @time @safetestset "Static Array Tests" begin include("interface/static_array_tests.jl") end
   @time @safetestset "Data Array Tests" begin include("interface/data_array_test.jl") end
   @time @safetestset "u_modifed Tests" begin include("interface/umodified_test.jl") end
@@ -39,7 +40,7 @@ if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")
   @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
@@ -51,7 +52,13 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
   @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
   @time @safetestset "Error Check Tests" begin include("integrators/check_error.jl") end
   @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
+  @time @safetestset "Event Repetition Detection Tests" begin include("integrators/event_repeat_tests.jl") end
+end
+
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II")
+  @time @safetestset "Reverse Directioned Event Tests" begin include("integrators/rev_events_tests.jl") end
   @time @safetestset "Differentiation Direction Tests" begin include("integrators/diffdir_tests.jl") end
+  @time @safetestset "Resize Tests" begin include("integrators/resize_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression")

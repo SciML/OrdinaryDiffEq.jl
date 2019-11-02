@@ -8,15 +8,15 @@
       fac = gamma
     else
       if alg isa RadauIIA5
-        @unpack nl_iters = integrator.cache
-        @unpack max_iter = alg
+        @unpack iter = integrator.cache
+        @unpack maxiters = alg
       else
-        @unpack nl_iters, max_iter = integrator.cache.nlsolver
+        @unpack iter, maxiters = integrator.cache.nlsolver
       end
-      fac = min(gamma,(1+2*max_iter)*gamma/(nl_iters+2*max_iter))
+      fac = min(gamma,(1+2*maxiters)*gamma/(iter+2*maxiters))
     end
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
-    qtmp = (integrator.EEst^expo)/fac
+    qtmp = DiffEqBase.fastpow(integrator.EEst,expo)/fac
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
     integrator.qold = q
   end
@@ -28,7 +28,7 @@ end
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
-    qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
+    qtmp = DiffEqBase.fastpow(integrator.EEst,1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
     integrator.qold = integrator.dt/q
   end
@@ -41,8 +41,8 @@ end
   if iszero(EEst)
     q = inv(integrator.opts.qmax)
   else
-    @fastmath q11 = EEst^beta1
-    @fastmath q = q11/(qold^beta2)
+    q11 = DiffEqBase.fastpow(EEst,beta1)
+    q = q11/DiffEqBase.fastpow(qold,beta2)
     integrator.q11 = q11
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
   end
@@ -62,7 +62,7 @@ end
 @inline function predictive_step_accept_controller!(integrator, alg, q)
   if integrator.success_iter > 0
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
-    qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
+    qgus=(integrator.dtacc/integrator.dt)*DiffEqBase.fastpow((integrator.EEst^2)/integrator.erracc,expo)
     qgus = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qgus/integrator.opts.gamma))
     qacc=max(q,qgus)
   else
@@ -162,9 +162,9 @@ function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpoi
   else
     # Update gamma and beta1
     integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
-    integrator.opts.gamma = typeof(integrator.opts.gamma)(1 // 4)^integrator.opts.beta1
+    integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(1 // 4),integrator.opts.beta1)
     # Compute new stepsize scaling
-    qtmp = integrator.EEst^integrator.opts.beta1 / integrator.opts.gamma
+    qtmp = DiffEqBase.fastpow(integrator.EEst,integrator.opts.beta1) / integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
   end
   integrator.cache.Q[integrator.cache.n_curr - alg.n_min + 1] = q
@@ -183,9 +183,9 @@ function stepsize_predictor!(integrator,alg::Union{ExtrapolationMidpointDeuflhar
     s_new = stage_number[n_new - alg.n_min + 1]
     # Update gamma and beta1
     integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
-    integrator.opts.gamma = typeof(integrator.opts.gamma)(1 // 4)^integrator.opts.beta1
+    integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(1 // 4),integrator.opts.beta1)
     # Compute new stepsize scaling
-    qtmp = (EEst * tol^(1.0 - s_curr / s_new))^integrator.opts.beta1 / integrator.opts.gamma
+    qtmp = EEst * DiffEqBase.fastpow(DiffEqBase.fastpow(tol,(1.0 - s_curr / s_new)),integrator.opts.beta1) / integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   end
   integrator.cache.Q[n_new - alg.n_min + 1] = q
@@ -253,9 +253,9 @@ function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpoi
   else
     # Update gamma and beta1
     integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
-    integrator.opts.gamma = typeof(integrator.opts.gamma)(65 // 100)^integrator.opts.beta1
+    integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(65 // 100),integrator.opts.beta1)
     # Compute new stepsize scaling
-    qtmp = integrator.EEst^integrator.opts.beta1 / integrator.opts.gamma
+    qtmp = DiffEqBase.fastpow(integrator.EEst,integrator.opts.beta1) / integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
   end
   integrator.cache.Q[integrator.cache.n_curr + 1] = q
