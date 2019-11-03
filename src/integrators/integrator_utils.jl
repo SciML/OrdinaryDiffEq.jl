@@ -193,8 +193,17 @@ function _loopfooter!(integrator)
       # integrator.EEst has unitless type of integrator.t
       if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
         tstop = integrator.tdir * top(integrator.opts.tstops)
-        abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
-                                  (integrator.t = tstop) : (integrator.t = ttmp)
+        if @fastmath abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t)
+          integrator.t = tstop
+          pop!(integrator.opts.tstops)
+          while !isempty(integrator.opts.tstops) &&
+                abs(ttmp - top(integrator.opts.tstops)) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t)
+            integrator.t = top(integrator.opts.tstops)
+            pop!(integrator.opts.tstops)
+          end
+        else
+          integrator.t = ttmp
+        end
       else
         integrator.t = ttmp
       end
@@ -209,8 +218,17 @@ function _loopfooter!(integrator)
     # integrator.EEst has unitless type of integrator.t
     if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
       tstop = integrator.tdir * top(integrator.opts.tstops)
-      abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
-                                  (integrator.t = tstop) : (integrator.t = ttmp)
+      if @fastmath abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t)
+        integrator.t = tstop
+        pop!(integrator.opts.tstops)
+        while !isempty(integrator.opts.tstops) &&
+              abs(ttmp - top(integrator.opts.tstops)) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t)
+          integrator.t = top(integrator.opts.tstops)
+          pop!(integrator.opts.tstops)
+        end
+      else
+        integrator.t = ttmp
+      end
     else
       integrator.t = ttmp
     end
@@ -226,7 +244,7 @@ function _loopfooter!(integrator)
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress=integrator.t/integrator.sol.prob.tspan[2])
   end
-  
+
   # Take value because if t is dual then maxeig can be dual
   if integrator.cache isa CompositeCache
     cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),integrator.t)
