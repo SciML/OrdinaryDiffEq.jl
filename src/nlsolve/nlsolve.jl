@@ -42,6 +42,10 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
     apply_step!(nlsolver, integrator)
 
     # check for convergence
+    if iter == 1 && ndz < 1e-3
+      nlsolver.status = FastConvergence
+      break
+    end
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κ && (iter > 1 || iszero(ndz) || (isnewton(nlsolver) && !iszero(integrator.success_iter)))
       nlsolver.status = η < fast_convergence_cutoff ? FastConvergence : Convergence
@@ -57,7 +61,7 @@ end
 
 initialize!(::AbstractNLSolver, integrator) = nothing
 
-initial_η(nlsolver::NLSolver, integrator) = 
+initial_η(nlsolver::NLSolver, integrator) =
   max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 
 function apply_step!(nlsolver::NLSolver{algType,iip}, integrator) where {algType,iip}
@@ -73,7 +77,7 @@ end
 function postamble!(nlsolver::NLSolver, integrator)
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nnonliniter += nlsolver.iter
-    
+
     if nlsolvefail(nlsolver)
       integrator.destats.nnonlinconvfail += 1
     end
