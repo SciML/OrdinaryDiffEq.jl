@@ -23,7 +23,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            callback = nothing,
                            dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
-                                   (prob.callback !== nothing && prob.callback != CallbackSet()) || # Empty prob.callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
                            dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
                            dtmin = typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
@@ -87,7 +86,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
   end
 
-  progress && @logmsg(-1,progress_name,_id=_id = :OrdinaryDiffEq,progress=0)
+  progress && @logmsg(LogLevel(-1),progress_name,_id=_id = :OrdinaryDiffEq,progress=0)
 
   tType = eltype(prob.tspan)
   tspan = prob.tspan
@@ -164,11 +163,15 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   tstops_internal, saveat_internal, d_discontinuities_internal =
     tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
 
-  callbacks_internal = CallbackSet(callback,prob.callback)
+  callbacks_internal = CallbackSet(callback)
 
   max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
   if max_len_cb isa VectorContinuousCallback
-    callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltype,uBottomEltype)
+    if isinplace(prob)
+      callback_cache = DiffEqBase.CallbackCache(u,max_len_cb.len,uBottomEltype,uBottomEltype)
+    else
+      callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltype,uBottomEltype)
+    end
   else
     callback_cache = nothing
   end
@@ -249,7 +252,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     uprev2 = uprev
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val{isinplace(prob)})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
@@ -306,7 +309,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     else
       SolType = DiffEqBase.AbstractDAESolution
       cacheType =  DAECache
-    end 
+    end
   end
 
   # rate/state = (state/time)/state = 1/t units, internalnorm drops units

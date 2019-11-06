@@ -18,7 +18,7 @@ struct LowStorageRK2NConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
-function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ORK256ConstantCache(T, T2)
   A2 = convert(T, -1.0)
   A3 = convert(T, -1.55798)
   A4 = convert(T, -1.0)
@@ -41,7 +41,8 @@ function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{4,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -51,22 +52,21 @@ function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function CarpenterKennedy2N54ConstantCache(T, T2)
   A2 = convert(T, -567301805773//1357537059087)
   A3 = convert(T, -2404267990393//2016746695238)
   A4 = convert(T, -3550918686646//2091501179385)
@@ -89,7 +89,8 @@ function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{4,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -99,22 +100,21 @@ function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBo
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function HSLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function HSLDDRK64ConstantCache(T, T2)
   #TODO: Solve the order conditions with more accuracy
   A2 = convert(T, -0.4919575)
   A3 = convert(T, -0.8946264)
@@ -141,7 +141,8 @@ function HSLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{5,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = HSLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -151,22 +152,21 @@ function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = HSLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   HSLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function DGLDDRK73_CConstantCache(T, T2)
   A2 = convert(T, -0.8083163874983830)
   A3 = convert(T, -1.503407858773331)
   A4 = convert(T, -1.053064525050744)
@@ -195,7 +195,8 @@ function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{6,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -205,22 +206,21 @@ function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function DGLDDRK84_CConstantCache(T, T2)
   A2  = convert(T, -0.7212962482279240)
   A3  = convert(T, -0.01077336571612980)
   A4  = convert(T, -0.5162584698930970)
@@ -252,7 +252,8 @@ function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{7,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -262,22 +263,21 @@ function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function DGLDDRK84_FConstantCache(T, T2)
   A2  = convert(T, -0.5534431294501569)
   A3  = convert(T, 0.01065987570203490)
   A4  = convert(T, -0.5515812888932000)
@@ -309,7 +309,8 @@ function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{7,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = DGLDDRK84_FConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -319,22 +320,21 @@ function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = DGLDDRK84_FConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   DGLDDRK84_FConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function NDBLSRK124ConstantCache(T, T2)
   A2  = convert(T, -0.0923311242368072)
   A3  = convert(T, -0.9441056581158819)
   A4  = convert(T, -4.3271273247576394)
@@ -378,7 +378,8 @@ function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{11,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -388,22 +389,21 @@ function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function NDBLSRK134ConstantCache(T, T2)
   A2  = convert(T, -0.6160178650170565)
   A3  = convert(T, -0.4449487060774118)
   A4  = convert(T, -1.0952033345276178)
@@ -450,7 +450,8 @@ function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{12,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -460,22 +461,21 @@ function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function NDBLSRK144ConstantCache(T, T2)
   A2  = convert(T, -0.7188012108672410)
   A3  = convert(T, -0.7785331173421570)
   A4  = convert(T, -0.0053282796654044)
@@ -525,7 +525,8 @@ function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{13,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -535,17 +536,16 @@ function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   else
     if williamson_condition
       k = tmp
-      wrapper = WilliamsonWrapper(tmp, dt)
+      wrapper = WilliamsonWrapper(tmp, dt, tab.A2end[1])
     else
       k = zero(rate_prototype)
       wrapper = nothing
     end
   end
-  tab = NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
-function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
@@ -570,7 +570,7 @@ end
 
 
 
-function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function CFRLDDRK64ConstantCache(T, T2)
   A2 = convert(T, 0.17985400977138)
   A3 = convert(T, 0.14081893152111)
   A4 = convert(T, 0.08255631629428)
@@ -596,7 +596,7 @@ function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2CConstantCache{5,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -608,12 +608,12 @@ function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   LowStorageRK2CCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CFRLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
-function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function TSLDDRK74ConstantCache(T, T2)
   A2 = convert(T, 0.241566650129646868)
   A3 = convert(T, 0.0423866513027719953)
   A4 = convert(T, 0.215602732678803776)
@@ -642,7 +642,7 @@ function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2CConstantCache{6,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -654,7 +654,7 @@ function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   LowStorageRK2CCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   TSLDDRK74ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
@@ -682,7 +682,7 @@ struct LowStorageRK3SConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
-function ParsaniKetchesonDeconinck3S32ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
   γ102 = convert(T, -1.2664395576322218e-1)
   γ103 = convert(T, 1.1426980685848858e+0)
   γ12end = SVector(γ102, γ103)
@@ -711,7 +711,7 @@ function ParsaniKetchesonDeconinck3S32ConstantCache(::Type{T}, ::Type{T2}) where
   LowStorageRK3SConstantCache{2,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -723,12 +723,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNo
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S32ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function ParsaniKetchesonDeconinck3S82ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
   γ102 = convert(T, 4.2397552118208004e-1)
   γ103 = convert(T, -2.3528852074619033e-1)
   γ104 = convert(T, 7.9598685017877846e-1)
@@ -787,7 +787,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(::Type{T}, ::Type{T2}) where
   LowStorageRK3SConstantCache{7,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -799,12 +799,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNo
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S82ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function ParsaniKetchesonDeconinck3S53ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S53ConstantCache(T, T2)
   γ102 = convert(T, 2.5876919610938998e-1)
   γ103 = convert(T, -1.3243708384977859e-1)
   γ104 = convert(T, 5.0556648948362981e-2)
@@ -845,7 +845,7 @@ function ParsaniKetchesonDeconinck3S53ConstantCache(::Type{T}, ::Type{T2}) where
   LowStorageRK3SConstantCache{4,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -857,12 +857,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNo
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S53ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function ParsaniKetchesonDeconinck3S173ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
   γ102 = convert(T, 7.9377023961829174e-1)
   γ103 = convert(T, -8.3475116244241754e-2)
   γ104 = convert(T, -1.6706337980062214e-2)
@@ -975,7 +975,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(::Type{T}, ::Type{T2}) wher
   LowStorageRK3SConstantCache{16,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -987,12 +987,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeN
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S173ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function ParsaniKetchesonDeconinck3S94ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
   γ102 = convert(T, -4.6556413837561301e+0)
   γ103 = convert(T, -7.7202649689034453e-1)
   γ104 = convert(T, -4.0244202720632174e+0)
@@ -1057,7 +1057,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(::Type{T}, ::Type{T2}) where
   LowStorageRK3SConstantCache{8,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -1069,12 +1069,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNo
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S94ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function ParsaniKetchesonDeconinck3S184ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
   γ102 = convert(T, 1.1750819811951678e+0)
   γ103 = convert(T, 3.0909017892654811e-1)
   γ104 = convert(T, 1.4409117788115862e+0)
@@ -1193,7 +1193,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(::Type{T}, ::Type{T2}) wher
   LowStorageRK3SConstantCache{17,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -1205,12 +1205,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeN
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S184ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function ParsaniKetchesonDeconinck3S105ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
   γ102 = convert(T,  4.0436600785287713e-1)
   γ103 = convert(T, -8.5034274641295027e-1)
   γ104 = convert(T, -6.9508941671218478e+0)
@@ -1281,7 +1281,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(::Type{T}, ::Type{T2}) wher
   LowStorageRK3SConstantCache{9,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -1293,12 +1293,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeN
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S105ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function ParsaniKetchesonDeconinck3S205ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
   γ102 = convert(T, -1.1682479703229380e+0)
   γ103 = convert(T, -2.5112155037089772e+0)
   γ104 = convert(T, -5.5259960154735988e-1)
@@ -1429,7 +1429,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(::Type{T}, ::Type{T2}) wher
   LowStorageRK3SConstantCache{19,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -1441,7 +1441,7 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeN
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   ParsaniKetchesonDeconinck3S205ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
@@ -1469,7 +1469,7 @@ struct LowStorageRK2RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
-function CKLLSRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK43_2ConstantCache(T, T2)
   A1 = convert(T,Int128(11847461282814)//Int128(36547543011857))
   A2 = convert(T,Int128(3943225443063)//Int128(7078155732230))
   A3 = convert(T,Int128(-346793006927)//Int128(4029903576067))
@@ -1496,7 +1496,7 @@ function CKLLSRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK2RPConstantCache{3,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1511,12 +1511,12 @@ function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK43_2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK54_3CConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK54_3CConstantCache(T, T2)
   A1 = convert(T, BigInt(970286171893)//BigInt(4311952581923))
   A2 = convert(T, BigInt(6584761158862)//BigInt(12103376702013))
   A3 = convert(T, BigInt(2251764453980)//BigInt(15575788980749))
@@ -1547,7 +1547,7 @@ function CKLLSRK54_3CConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK2RPConstantCache{4,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1562,12 +1562,12 @@ function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomElty
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK54_3CConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK95_4SConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK95_4SConstantCache(T, T2)
     A1  = convert(T, BigInt(1107026461565)//BigInt(5417078080134))
   A2  = convert(T, BigInt(38141181049399)//BigInt(41724347789894))
   A3  = convert(T, BigInt(493273079041)//BigInt(11940823631197))
@@ -1614,7 +1614,7 @@ function CKLLSRK95_4SConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK2RPConstantCache{8,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1629,12 +1629,12 @@ function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomElty
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK95_4SConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK95_4CConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK95_4CConstantCache(T, T2)
   A1  = convert(T, BigInt(2756167973529)//BigInt(16886029417639))
   A2  = convert(T, BigInt(11436141375279)//BigInt(13592993952163))
   A3  = convert(T, BigInt(88551658327)//BigInt(2352971381260))
@@ -1681,7 +1681,7 @@ function CKLLSRK95_4CConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK2RPConstantCache{8,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1696,12 +1696,12 @@ function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomElty
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK95_4CConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK95_4MConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK95_4MConstantCache(T, T2)
   A1  = convert(T, BigInt(5573095071601)//BigInt(11304125995793))
   A2  = convert(T, BigInt(315581365608)//BigInt(4729744040249))
   A3  = convert(T, BigInt(8734064225157)//BigInt(30508564569118))
@@ -1748,7 +1748,7 @@ function CKLLSRK95_4MConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK2RPConstantCache{8,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1763,7 +1763,7 @@ function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomElty
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK95_4MConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
@@ -1795,7 +1795,7 @@ struct LowStorageRK3RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
-function CKLLSRK54_3C_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK54_3C_3RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(2365592473904)//BigInt(8146167614645))
   A₁2  = convert(T, BigInt(4278267785271)//BigInt(6823155464066))
   A₁3  = convert(T, BigInt(2789585899612)//BigInt(8986505720531))
@@ -1832,7 +1832,7 @@ function CKLLSRK54_3C_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK3RPConstantCache{4,T,T2}(Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1850,12 +1850,12 @@ function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK54_3C_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK54_3M_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK54_3M_3RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(17396840518954)//BigInt(49788467287365))
   A₁2  = convert(T, BigInt(21253110367599)//BigInt(14558944785238))
   A₁3  = convert(T, BigInt(4293647616769)//BigInt(14519312872408))
@@ -1892,7 +1892,7 @@ function CKLLSRK54_3M_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK3RPConstantCache{4,T,T2}(Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1910,12 +1910,12 @@ function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK54_3M_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK54_3N_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK54_3N_3RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(4745337637855)//BigInt(22386579876409))
   A₁2  = convert(T, BigInt(6808157035527)//BigInt(13197844641179))
   A₁3  = convert(T, BigInt(4367509502613)//BigInt(10454198590847))
@@ -1952,7 +1952,7 @@ function CKLLSRK54_3N_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK3RPConstantCache{4,T,T2}(Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1970,12 +1970,12 @@ function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK54_3N_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK85_4C_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK85_4C_3RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(141236061735)//BigInt(3636543850841))
   A₁2  = convert(T, BigInt(7367658691349)//BigInt(25881828075080))
   A₁3  = convert(T, BigInt(6185269491390)//BigInt(13597512850793))
@@ -2027,7 +2027,7 @@ function CKLLSRK85_4C_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK3RPConstantCache{7,T,T2}(Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2045,12 +2045,12 @@ function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK85_4C_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK85_4M_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK85_4M_3RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(967290102210)//BigInt(6283494269639))
   A₁2  = convert(T, BigInt(852959821520)//BigInt(5603806251467))
   A₁3  = convert(T, BigInt(8043261511347)//BigInt(8583649637008))
@@ -2102,7 +2102,7 @@ function CKLLSRK85_4M_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK3RPConstantCache{7,T,T2}(Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2120,12 +2120,12 @@ function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK85_4M_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK85_4P_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK85_4P_3RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(1298271176151)//BigInt(60748409385661))
   A₁2  = convert(T, BigInt(14078610000243)//BigInt(41877490110127))
   A₁3  = convert(T, BigInt(553998884433)//BigInt(1150223130613))
@@ -2177,7 +2177,7 @@ function CKLLSRK85_4P_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK3RPConstantCache{7,T,T2}(Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2195,7 +2195,7 @@ function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK85_4P_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
@@ -2229,7 +2229,7 @@ struct LowStorageRK4RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
-function CKLLSRK54_3N_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK54_3N_4RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(9435338793489)//BigInt(32856462503258))
   A₁2  = convert(T, BigInt(6195609865473)//BigInt(14441396468602))
   A₁3  = convert(T, BigInt(7502925572378)//BigInt(28098850972003))
@@ -2272,7 +2272,7 @@ function CKLLSRK54_3N_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK4RPConstantCache{4,T,T2}(Aᵢ₁,Aᵢ₂,Aᵢ₃,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2292,12 +2292,12 @@ function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK54_3N_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK54_3M_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK54_3M_4RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(7142524119)//BigInt(20567653057))
   A₁2  = convert(T, BigInt(20567653057)//BigInt(89550000000))
   A₁3  = convert(T, BigInt(7407775)//BigInt(2008982))
@@ -2340,7 +2340,7 @@ function CKLLSRK54_3M_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK4RPConstantCache{4,T,T2}(Aᵢ₁,Aᵢ₂,Aᵢ₃,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2360,12 +2360,12 @@ function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK54_3M_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK65_4M_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK65_4M_4RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(1811061732419)//BigInt(6538712036350))
   A₁2  = convert(T, BigInt(936386506953)//BigInt(6510757757683))
   A₁3  = convert(T, BigInt(8253430823511)//BigInt(9903985211908))
@@ -2414,7 +2414,7 @@ function CKLLSRK65_4M_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK4RPConstantCache{5,T,T2}(Aᵢ₁,Aᵢ₂,Aᵢ₃,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2434,12 +2434,12 @@ function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK65_4M_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
-function CKLLSRK85_4FM_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK85_4FM_4RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(319960152914)//BigInt(39034091721739))
   A₁2  = convert(T, BigInt(16440040368765)//BigInt(7252463661539))
   A₁3  = convert(T, BigInt(1381950791880)//BigInt(6599155371617))
@@ -2500,7 +2500,7 @@ function CKLLSRK85_4FM_4RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK4RPConstantCache{7,T,T2}(Aᵢ₁,Aᵢ₂,Aᵢ₃,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2520,7 +2520,7 @@ function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottom
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK85_4FM_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
@@ -2557,7 +2557,7 @@ struct LowStorageRK5RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
-function CKLLSRK75_4M_5RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK75_4M_5RConstantCache(T, T2)
   A₁1  = convert(T, BigInt(984894634849)//BigInt(6216792334776))
   A₁2  = convert(T, BigInt(984894634849)//BigInt(5526037630912))
   A₁3  = convert(T, BigInt(13256335809797)//BigInt(10977774807827))
@@ -2620,7 +2620,7 @@ function CKLLSRK75_4M_5RConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK5RPConstantCache{6,T,T2}(Aᵢ₁,Aᵢ₂,Aᵢ₃,Aᵢ₄,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -2642,6 +2642,6 @@ function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomE
   LowStorageRK5RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,uᵢ₋₄,fᵢ₋₂,fᵢ₋₃,fᵢ₋₄,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CKLLSRK75_4M_5RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end

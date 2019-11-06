@@ -3,7 +3,7 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
   tab::Tab
   κ::Tol
   ηold::Tol
-  nl_iters::Int
+  iter::Int
   cont1::U
   cont2::U
   cont3::U
@@ -14,17 +14,13 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
 end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   uf  = DiffEqDiffTools.UDerivativeWrapper(f, t, p)
   uToltype = real(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, real(tTypeNoUnits))
 
   κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
-  if rate_prototype isa Number
-    J = 0
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)'
-  end
+  J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
   RadauIIA5ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, Convergence, J)
 end
@@ -58,7 +54,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   tab::Tab
   κ::Tol
   ηold::Tol
-  nl_iters::Int
+  iter::Int
   tmp::uType
   atmp::uNoUnitsType
   jac_config::JC
@@ -72,7 +68,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
 end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   uf = DiffEqDiffTools.UJacobianWrapper(f, t, p)
   uToltype = real(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, real(tTypeNoUnits))

@@ -25,7 +25,7 @@ end
   step_no::Int
 end
 
-function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   utilde = similar(u)
   k = zero(rate_prototype)
@@ -56,7 +56,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps)
 end
 
-function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   dtpropose = zero(dt)
   cur_order = max(alg.init_order, alg.min_order)
   T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
@@ -104,7 +104,7 @@ end
   uf::UF
 end
 
-function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   dtpropose = zero(dt)
   cur_order = max(alg.init_order, alg.min_order)
   T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
@@ -117,7 +117,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf)
 end
 
-function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   u_tmp = similar(u)
   u_tmps = Array{typeof(u_tmp),1}(undef, Threads.nthreads())
 
@@ -213,7 +213,10 @@ struct extrapolation_coefficients{T1,T2,T3}
   extrapolation_scalars_2::T3
 end
 
-function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation}}
+function create_extrapolation_coefficients(T, alg::Union{ExtrapolationMidpointDeuflhard,
+                                                         ExtrapolationMidpointHairerWanner,
+                                                         ImplicitDeuflhardExtrapolation,
+                                                         ImplicitHairerWannerExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -272,7 +275,10 @@ function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algT
       T.(extrapolation_weights_2), T.(extrapolation_scalars_2))
 end
 
-function create_extrapolation_coefficients(::Type{T},alg::algType) where {T<:CompiledFloats,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation}}
+function create_extrapolation_coefficients(T::Type{<:CompiledFloats}, alg::Union{ExtrapolationMidpointDeuflhard,
+                                                                                 ExtrapolationMidpointHairerWanner,
+                                                                                 ImplicitDeuflhardExtrapolation,
+                                                                                 ImplicitHairerWannerExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -315,7 +321,7 @@ end
   stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 end
 
-function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
     # Initialize cache's members
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -362,7 +368,7 @@ end
   stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 end
 
-function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   # Initialize cache's members
   utilde = zero(u)
   u_temp1 = zero(u)
@@ -389,7 +395,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
       k_tmps[i] = zero(rate_prototype)
   end
 
-  cc =  alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+  cc =  alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
   # Initialize cache
   ExtrapolationMidpointDeuflhardCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps, cc.Q, cc.n_curr, cc.n_old, cc.coefficients,cc.stage_number)
 end
@@ -443,7 +449,7 @@ end
   grad_config::GCType
 end
 
-function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -466,7 +472,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   ImplicitDeuflhardExtrapolationConstantCache(Q,n_curr,n_old,coefficients,stage_number,tf,uf)
 end
 
-function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   utilde = zero(u)
   u_temp1 = zero(u)
   u_temp2 = zero(u)
@@ -492,7 +498,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
       k_tmps[i] = zero(rate_prototype)
   end
 
-  cc =  alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+  cc =  alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
 
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
@@ -528,7 +534,7 @@ end
   sigma::Rational{Int} # Parameter for order selection
 end
 
-function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -576,7 +582,7 @@ end
 end
 
 
-function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   # Initialize cache's members
   utilde = zero(u)
   u_temp1 = zero(u)
@@ -601,7 +607,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
       k_tmps[i] = zero(rate_prototype)
   end
 
-  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
 
   # Initialize the cache
   ExtrapolationMidpointHairerWannerCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
@@ -623,7 +629,7 @@ end
   uf::UF
 end
 
-function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -684,7 +690,7 @@ end
 end
 
 
-function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   # Initialize cache's members
   utilde = zero(u)
   u_temp1 = zero(u)
@@ -709,7 +715,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
       k_tmps[i] = zero(rate_prototype)
   end
 
-  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
 
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)

@@ -129,7 +129,7 @@ function _postamble!(integrator)
     resize!(integrator.sol.k,integrator.saveiter_dense)
   end
   if integrator.opts.progress
-    @logmsg(-1,
+    @logmsg(LogLevel(-1),
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
@@ -220,14 +220,18 @@ function _loopfooter!(integrator)
     handle_callbacks!(integrator)
   end
   if integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
-    @logmsg(-1,
+    @logmsg(LogLevel(-1),
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress=integrator.t/integrator.sol.prob.tspan[2])
   end
+  
   # Take value because if t is dual then maxeig can be dual
-  (integrator.cache isa CompositeCache && integrator.eigen_est > integrator.destats.maxeig) && (integrator.destats.maxeig = DiffEqBase.value(integrator.eigen_est))
+  if integrator.cache isa CompositeCache
+    cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),integrator.t)
+    cur_eigen_est > integrator.destats.maxeig && (integrator.destats.maxeig = cur_eigen_est)
+  end
   nothing
 end
 
@@ -375,75 +379,10 @@ function reset_fsal!(integrator)
   # integrator.reeval_fsal = false
 end
 
-nlsolve!(integrator, cache) = DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
-nlsolve!(nlsolver::NLSolver, integrator) = DiffEqBase.nlsolve!(nlsolver, nlsolver.cache, integrator)
-
 DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && issplit(alg) ? f.f1 : f
 DiffEqBase.nlsolve_f(f, alg::DAEAlgorithm) = f
 DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
-
-function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  if alg isa NewtonAlgorithm
-    if alg.nlsolve isa NLNewton
-      nf = nlsolve_f(f, alg)
-      islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
-      if islin
-        J = nf.f
-        if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-          J = DiffEqArrayOperator(J)
-        end
-        W = WOperator(f.mass_matrix, dt, J, true)
-        return J, W
-      end
-    else
-      return nothing, nothing
-    end
-  end
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = W.J
-  else
-    J = false .* vec(u) .* vec(u)'
-    W = similar(J)
-  end
-  J, W
-end
-
-function oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  islin = false
-  if alg isa NewtonAlgorithm && alg.nlsolve isa NLNewton
-    nf = nlsolve_f(f, alg)
-    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
-  end
-  if islin || (DiffEqBase.has_jac(f) && f.jac_prototype isa Nothing)
-    J = islin ? nf.f : f.jac(uprev, p, t)
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
-    end
-    W = WOperator(f.mass_matrix, dt, J, false)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = W.J
-  # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
-  else
-    # get a "fake" `J`
-    J = false .* _vec(u) .* _vec(u)'
-    W = if u isa StaticArray
-      lu(J)
-      elseif u isa Number
-        u
-      else
-        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
-                                                     Vector{LinearAlgebra.BlasInt}(undef, 0),
-                                                     zero(LinearAlgebra.BlasInt))
-      end
-  end
-  J, W
-end
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
   current_interpolant(t,integrator,idxs,deriv)

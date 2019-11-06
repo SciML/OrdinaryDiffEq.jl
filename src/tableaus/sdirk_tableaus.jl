@@ -185,7 +185,7 @@ dt = c2
 ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
 ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
 =#
-function KenCarp3Tableau(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function KenCarp3Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   γ  = convert(T,0.435866521508459)
   a31 = convert(T,0.2576482460664272)
   a32 = -convert(T,0.09351476757488625)

@@ -1,4 +1,4 @@
-function ROCK2ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
+function ROCK2ConstantCache(T, T2, zprev)
   ms = SVector{46, Int}(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
      22,24,26,28,30,33,36,39,43,47,51,56,61,66,72,78,85,93,
      102,112,123,135,148,163,180,198)
@@ -2278,7 +2278,7 @@ function ROCK2ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
   ROCK2ConstantCache{T,T2,typeof(zprev)}(ms, fp1, fp2, recf, zprev, 1, 1, 1, 0, 200)
 end
 
-function ROCK4ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
+function ROCK4ConstantCache(T, T2, zprev)
   ms = SVector{50, Int}(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
         22,24,26,28,30,32,34,36,38,41,44,47,50,53,56,59,63,67,71,76,81,86,
         92,98,105,112,120,129,138,148)
