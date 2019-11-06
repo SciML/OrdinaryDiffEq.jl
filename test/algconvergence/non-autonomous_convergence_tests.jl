@@ -38,10 +38,10 @@ prob2 = SplitODEProblem(SplitFunction{false}(nonauto1,
 testTol = 0.2
 
 for prob in [prob1, prob2]
-  dts = 1 .//2 .^(8:-1:4)
+  dts = 1 .//2 .^(11:-1:7)
   sim = test_convergence(dts,prob,KenCarp3())
   @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
-  dts = 1 .//2 .^(9:-1:5)
+  dts = 1 .//2 .^(11:-1:7)
   sim = test_convergence(dts,prob,KenCarp4())
   @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
   dts = 1 .//2 .^(10:-1:6)
