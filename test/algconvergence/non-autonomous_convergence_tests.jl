@@ -27,27 +27,43 @@ end
 
 u0 = [1.1, 2.2]
 tspan = (0.0,1.0)
-prob1 = SplitODEProblem(SplitFunction{true}((du,u,p,t)->du .= nonauto1(u,p,t),
+prob1 = ODEProblem(ODEFunction{true}((du,u,p,t)->du .= nonauto1(u,p,t) .+ nonauto2(u,p,t),
+                              analytic=analytic),
+                              u0,tspan)
+prob2 = ODEProblem(ODEFunction{false}((u,p,t)-> nonauto1(u,p,t) .+ nonauto2(u,p,t),
+                              analytic=analytic),
+                              u0,tspan)
+prob3 = SplitODEProblem(SplitFunction{true}((du,u,p,t)->du .= nonauto1(u,p,t),
                                        (du,u,p,t)->du .= nonauto2(u,p,t),
                               analytic=analytic),
                               u0,tspan)
-prob2 = SplitODEProblem(SplitFunction{false}(nonauto1,
+prob4 = SplitODEProblem(SplitFunction{false}(nonauto1,
                                         nonauto2,
                               analytic=analytic),
                               u0,tspan)
 testTol = 0.2
 
-for prob in [prob1, prob2]
-  dts = 1 .//2 .^(11:-1:7)
+for prob in [prob1, prob2, prob3, prob4]
+  dts = 1 .//2 .^(12:-1:8)
   sim = test_convergence(dts,prob,KenCarp3())
   @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
-  dts = 1 .//2 .^(11:-1:7)
+  dts = 1 .//2 .^(9:-1:6)
   sim = test_convergence(dts,prob,KenCarp4())
   @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
-  dts = 1 .//2 .^(10:-1:6)
+  dts = 1 .//2 .^(9:-1:6)
   sim = test_convergence(dts,prob,KenCarp5())
   @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
   dts = 1 .//2 .^(10:-1:6)
   sim = test_convergence(dts,prob,ESDIRK54I8L2SA())
   @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 end
+
+#=
+prob = prob2
+dts = 1 .//2 .^(9:-1:6)
+sim = test_convergence(dts,prob,KenCarp4())
+sim.𝒪est[:l∞]
+
+using Plots
+plot(sim)
+=#
