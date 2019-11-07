@@ -1098,7 +1098,7 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
       nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
