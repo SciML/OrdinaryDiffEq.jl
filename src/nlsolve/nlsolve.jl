@@ -42,10 +42,10 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
     apply_step!(nlsolver, integrator)
 
     # check for convergence
-    if iter == 1 && ndz < 1e-3
-      nlsolver.status = FastConvergence
-      break
-    end
+    #if iter == 1 && ndz < 1e-3
+    #  nlsolver.status = FastConvergence
+    #  break
+    #end
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κ && (iter > 1 || iszero(ndz) || (isnewton(nlsolver) && !iszero(integrator.success_iter)))
       nlsolver.status = η < fast_convergence_cutoff ? FastConvergence : Convergence
