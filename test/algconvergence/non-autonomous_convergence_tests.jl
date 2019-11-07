@@ -41,20 +41,24 @@ prob4 = SplitODEProblem(SplitFunction{false}(nonauto1,
                                         nonauto2,
                               analytic=analytic),
                               u0,tspan)
+
 testTol = 0.2
 
+kwargs = (reltol=1e-16, abstol=1e-16)
 for prob in [prob1, prob2, prob3, prob4]
   dts = 1 .//2 .^(12:-1:8)
-  sim = test_convergence(dts,prob,KenCarp3())
+  sim = test_convergence(dts,prob,KenCarp3(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
   dts = 1 .//2 .^(9:-1:6)
-  sim = test_convergence(dts,prob,KenCarp4())
+  sim = test_convergence(dts,prob,KenCarp4(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
-  dts = 1 .//2 .^(9:-1:6)
-  sim = test_convergence(dts,prob,KenCarp5())
+  dts = 1 .//2 .^(7:-1:4)
+  sim = test_convergence(dts,prob,KenCarp5(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
-  dts = 1 .//2 .^(10:-1:6)
-  sim = test_convergence(dts,prob,ESDIRK54I8L2SA())
+end
+for prob in [prob1, prob2]
+  dts = 1 .//2 .^(7:-1:4)
+  sim = test_convergence(dts,prob,ESDIRK54I8L2SA(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 end
 
