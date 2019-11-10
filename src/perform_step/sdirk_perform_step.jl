@@ -280,11 +280,10 @@ end
       r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
       # @.. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
-      @inbounds for i in eachindex(u)
-        DD31 = (u[i] - uprev[i])/dt1 - (uprev[i] - uprev2[i])/dt2
-        DD30 = (uprev[i] - uprev2[i])/dt3 - (uprev2[i] - uprev3[i])/dt4
-        tmp[i] = r*integrator.opts.internalnorm((DD31 - DD30)/dt5,t)
-      end
+      @.. tmp = r*integrator.opts.internalnorm((
+          ((u - uprev)/dt1 - (uprev- uprev2)/dt2) #DD31
+          - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4) #DD30
+      )/dt5,t)
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
       if integrator.EEst <= 1
@@ -1099,10 +1098,7 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    # @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
-    @tight_loop_macros for i in eachindex(u)
-      tmp[i] = btilde1*z₁[i] + btilde2*z₂[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i]
-    end
+    @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
       nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
@@ -1147,7 +1143,7 @@ end
   nlsolver.z = z₂ = zero(z₁)
 
   nlsolver.tmp = uprev + γ*z₁
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
@@ -1252,7 +1248,7 @@ end
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
