@@ -27,7 +27,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
       θ = ndz / ndzprev
 
       # divergence
-      if θ > 1.2
+      if θ > 2
         nlsolver.status = Divergence
         break
       end
@@ -43,7 +43,8 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
     # check for convergence
     if iter == 1 && ndz < 1e-5
-      nlsolver.status = FastConvergence
+      # zero `fast_convergence_cutoff` disables `FastConvergence`
+      nlsolver.status = iszero(fast_convergence_cutoff) ? Convergence : FastConvergence
       break
     end
     iter > 1 && (η = θ / (1 - θ))
