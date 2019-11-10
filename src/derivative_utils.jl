@@ -299,7 +299,7 @@ function do_newJ(integrator, alg, cache, repeat_step)::Bool # any changes here n
   nlsolvefail(nlstatus) && return true
   # no reuse when the cutoff is 0
   fast_convergence_cutoff = isfirk ? alg.fast_convergence_cutoff : cache.nlsolver.fast_convergence_cutoff
-  iszero(fast_convergence_cutoff) && true
+  iszero(fast_convergence_cutoff) && return true
   # reuse J when there is fast convergence
   fastconvergence = nlstatus === FastConvergence
   return !fastconvergence
