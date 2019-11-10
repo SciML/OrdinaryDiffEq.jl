@@ -1,4 +1,7 @@
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
+get_new_W_dt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_dt_cutoff
+# handle FIRK
+get_new_W_dt_cutoff(alg::NewtonAlgorithm) = alg.new_W_dt_cutoff
 
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
