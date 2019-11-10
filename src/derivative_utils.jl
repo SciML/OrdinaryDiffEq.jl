@@ -285,16 +285,21 @@ function islinearfunction(f, alg)::Tuple{Bool,Bool}
   return islin, isode
 end
 
-function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any changes here need to be reflected in FIRK
+function do_newJ(integrator, alg, cache, repeat_step)::Bool # any changes here need to be reflected in FIRK
   integrator.iter <= 1 && return true
   repeat_step && return false
   first(islinearfunction(integrator)) && return false
   integrator.opts.adaptive || return true
   alg_can_repeat_jac(alg) || return true
   integrator.u_modified && return true
-  isnewton = T <: NewtonAlgorithm
-  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = get_status(cache.nlsolver) ))
+  # below is Newton specific logic, so we return non-Newton algs here
+  alg isa NewtonAlgorithm || return true
+  isfirk = alg isa RadauIIA5
+  nlstatus = isfirk ? cache.status : get_status(cache.nlsolver)
   nlsolvefail(nlstatus) && return true
+  # no reuse when the cutoff is 0
+  fast_convergence_cutoff = isfirk ? alg.fast_convergence_cutoff : cache.nlsolver.fast_convergence_cutoff
+  iszero(fast_convergence_cutoff) && return true
   # reuse J when there is fast convergence
   fastconvergence = nlstatus === FastConvergence
   return !fastconvergence
@@ -305,8 +310,7 @@ function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # any changes here n
   new_jac && return true
   # reuse W when the change in stepsize is small enough
   dt = integrator.dt
-  new_W_dt_cutoff = nlsolver isa NLSolver ? nlsolver.cache.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
-  smallstepchange = abs((dt-W_dt)/W_dt) <= new_W_dt_cutoff
+  smallstepchange = abs((dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
   return !smallstepchange
 end
 

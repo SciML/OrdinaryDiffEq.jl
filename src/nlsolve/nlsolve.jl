@@ -43,8 +43,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
     # check for convergence
     if iter == 1 && ndz < 1e-5
-      # zero `fast_convergence_cutoff` disables `FastConvergence`
-      nlsolver.status = iszero(fast_convergence_cutoff) ? Convergence : FastConvergence
+      nlsolver.status = FastConvergence
       break
     end
     iter > 1 && (η = θ / (1 - θ))
