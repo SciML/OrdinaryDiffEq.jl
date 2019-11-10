@@ -47,9 +47,12 @@ function jacobian_autodiff(f, x::AbstractArray, odefun)
     sparsity = nothing
     jac_prototype = odefun.jac_prototype
   end
+  maxcolor = maximum(colorvec)
+  chunksize = getsize(default_chunk_size(maxcolor))
+  num_of_chunks = Int(ceil(maxcolor / chunksize))
   (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity,
    jac_prototype = jac_prototype),
-   maximum(colorvec))
+   num_of_chunks)
 end
 
 function _nfcount(N,diff_type)
@@ -66,7 +69,7 @@ end
 jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
     (DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir),2)
 jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype) =
-    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x),
+    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), diff_type==Val{:forward} ? f(x) : similar(x),
       dir = dir, colorvec = colorvec, sparsity = sparsity, jac_prototype = jac_prototype),_nfcount(maximum(colorvec),diff_type))
 
 function jacobian(f, x, integrator)
