@@ -54,14 +54,15 @@ module OrdinaryDiffEq
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
                                                         K<:Union{Float64,Float32}}}
 
+  include("misc_utils.jl")
+  include("algorithms.jl")
+  include("alg_utils.jl")
+
   include("nlsolve/type.jl")
   include("nlsolve/utils.jl")
   include("nlsolve/nlsolve.jl")
   include("nlsolve/functional.jl")
   include("nlsolve/newton.jl")
-
-  include("misc_utils.jl")
-  include("algorithms.jl")
 
   include("generic_rosenbrock.jl")
 
@@ -88,8 +89,6 @@ module OrdinaryDiffEq
   include("caches/prk_caches.jl")
   include("caches/pdirk_caches.jl")
   include("caches/dae_caches.jl")
-
-  include("alg_utils.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")

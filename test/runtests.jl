@@ -74,6 +74,7 @@ end
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
   @time @safetestset "Partitioned Methods Tests" begin include("algconvergence/partitioned_methods_tests.jl") end
   @time @safetestset "Convergence Tests" begin include("algconvergence/ode_convergence_tests.jl") end
+  @time @safetestset "Non-autonomous Convergence Tests" begin include("algconvergence/non-autonomous_convergence_tests.jl") end
   @time @safetestset "Adams Variable Coefficients Tests" begin include("algconvergence/adams_tests.jl") end
   @time @safetestset "Nordsieck Tests" begin include("algconvergence/nordsieck_tests.jl") end
   @time @safetestset "Linear Methods Tests" begin include("algconvergence/linear_method_tests.jl") end

@@ -27,14 +27,21 @@ sol = solve(prob,Rodas5(),reltol=1e-9,abstol=1e-9)
 @show Veldd4
 sol = solve(prob,Veldd4(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
+@show KenCarp3
+sol = solve(prob,KenCarp3(),reltol=1e-12,abstol=1e-12)
+@test length(sol) > 2
+@test sol.errors[:final] < 1e-10
 @show KenCarp4
 sol = solve(prob,KenCarp4(),reltol=1e-12,abstol=1e-12)
+@test length(sol) > 2
+@test sol.errors[:final] < 1e-10
+@show KenCarp5
+sol = solve(prob,KenCarp5(),reltol=1e-12,abstol=1e-12)
+@test length(sol) > 2
 @test sol.errors[:final] < 1e-10
 @show TRBDF2
 sol = solve(prob,TRBDF2(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
-
-
 sol = solve(prob,ImplicitEuler(),dt=1/10)
 @test sol.errors[:final] < 1e-1
 sol = solve(prob,Trapezoid(),dt=1/10)
