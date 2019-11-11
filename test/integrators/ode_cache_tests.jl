@@ -7,7 +7,8 @@ CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),
   CKLLSRK43_2(),
   ParsaniKetchesonDeconinck3S32(),
   BS3(),BS5(),DP5(),DP8(),Feagin10(),Feagin12(),Feagin14(),TanYam7(),
-  Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9(),OwrenZen3(),OwrenZen4(),OwrenZen5()]
+  Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9(),OwrenZen3(),OwrenZen4(),OwrenZen5(),
+  AutoTsit5(Rosenbrock23()),KenCarp4()]
 
 using InteractiveUtils
 
@@ -49,6 +50,8 @@ println("Check some other integrators")
 @test_nowarn sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 @test_nowarn sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
 @test_nowarn sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
+@test_nowarn sol = solve(prob,KenCarp4(chunk_size=1),callback=callback,dt=1/2)
+@test_nowarn sol = solve(prob,TRBDF2(chunk_size=1),callback=callback,dt=1/2)
 
 for alg in CACHE_TEST_ALGS
   @test_nowarn sol = solve(prob,alg,callback=callback,dt=1/2)
