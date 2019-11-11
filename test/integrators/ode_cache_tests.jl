@@ -49,13 +49,20 @@ println("Check some other integrators")
 @test_nowarn sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 @test_nowarn sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 @test_nowarn sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
 @test_nowarn sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
 @test_nowarn sol = solve(prob,KenCarp4(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
 @test_nowarn sol = solve(prob,TRBDF2(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
 
 for alg in CACHE_TEST_ALGS
   @test_nowarn sol = solve(prob,alg,callback=callback,dt=1/2)
+  @test length(sol[end]) > 1
 end
 
 @test_nowarn sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
 @test_nowarn sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
