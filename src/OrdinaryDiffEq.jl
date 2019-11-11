@@ -46,7 +46,7 @@ module OrdinaryDiffEq
 
   import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear
 
-  import SparseDiffTools: forwarddiff_color_jacobian!, forwarddiff_color_jacobian, ForwardColorJacCache
+  import SparseDiffTools: forwarddiff_color_jacobian!, forwarddiff_color_jacobian, ForwardColorJacCache, default_chunk_size, getsize
 
   using MacroTools
 
