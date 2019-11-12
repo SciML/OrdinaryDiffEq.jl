@@ -80,10 +80,10 @@ end
 jacobian_finitediff(f, x, diff_type, integrator) =
     (DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x), dir = diffdir(integrator)),2)
 jacobian_finitediff(f, x::AbstractArray, diff_type, integrator) =
-    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false}, 
+    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x),
       dir = diffdir(integrator)),_nfcount(length(x),diff_type))
 jacobian_finitediff(f, x::AbstractArray, diff_type, integrator, colorvec) =
-    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false}, 
+    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), 
       dir = diffdir(integrator), colorvec = colorvec, sparsity = integrator.f.jac_prototype),_nfcount(maximum(colorvec),diff_type))
 
 jacobian_finitediff_forward!(J,f,x,jac_config,forwardcache,integrator)=(DiffEqDiffTools.finite_difference_jacobian!(J,f,x,jac_config,forwardcache,dir=diffdir(integrator));length(x))
