@@ -4,7 +4,7 @@ abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
-@cache mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
+mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   caches::T
   choice_function::F
   current::Int
