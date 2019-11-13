@@ -376,12 +376,6 @@ regression_test(Rosenbrock32(), 4e-4, 6e-4; test_diff1 = true, nth_der = 1, dert
 # Rodas4
 regression_test(Rodas4(), 8.5e-6, 2e-5)
 
-# GenericImplicitEuler
-regression_test(GenericImplicitEuler(), 0.2, 0.354)
-
-# GenericTrapezoid
-regression_test(GenericTrapezoid(), 7e-3, 1.4e-2)
-
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)
 

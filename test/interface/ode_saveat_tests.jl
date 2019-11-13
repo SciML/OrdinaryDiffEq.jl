@@ -39,8 +39,8 @@ sol2=solve(prob,Rosenbrock32(),dt=1/2^(2),save_everystep=true,saveat=[.125,.6,.6
 
 @test symdiff(sol.t,sol2.t) == [.125,.6,.61,.8]
 
-sol =solve(prob,GenericTrapezoid(),dt=1/2^(2),save_everystep=true)
-sol2=solve(prob,GenericTrapezoid(),dt=1/2^(2),save_everystep=true,saveat=[.125,.6,.61,.8])
+sol =solve(prob,Trapezoid(),dt=1/2^(2),save_everystep=true)
+sol2=solve(prob,Trapezoid(),dt=1/2^(2),save_everystep=true,saveat=[.125,.6,.61,.8])
 
 @test symdiff(sol.t,sol2.t) == [.125,.6,.61,.8]
 
@@ -61,12 +61,12 @@ sol2=solve(prob,Rosenbrock32(),dt=1/2^(2),save_everystep=true,saveat=[.125,.6,.6
 
 @test symdiff(sol.t,sol2.t) == [.125,.6,.61,.8]
 
-sol =solve(prob,GenericTrapezoid(),dt=1/2^(2),save_everystep=false)
-sol2=solve(prob,GenericTrapezoid(),dt=1/2^(2),saveat=[.125,.6,.61,.8])
+sol =solve(prob,Trapezoid(),dt=1/2^(2),save_everystep=false)
+sol2=solve(prob,Trapezoid(),dt=1/2^(2),saveat=[.125,.6,.61,.8])
 
 @test sort!(symdiff(sol.t,sol2.t)) == [0.0,.125,.6,.61,.8,1.0]
 
-sol=solve(prob,GenericTrapezoid(),dt=1/2^(2),save_everystep=true,dense=false,saveat=[0,.125,.6,.61,.8])
+sol=solve(prob,Trapezoid(),dt=1/2^(2),save_everystep=true,dense=false,saveat=[0,.125,.6,.61,.8])
 
 @test !(sol.t[2] ≈ 0)
 

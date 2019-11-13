@@ -45,8 +45,6 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
-isdtchangeable(alg::GenericIIF1) = false
-isdtchangeable(alg::GenericIIF2) = false
 isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
 
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
@@ -85,8 +83,6 @@ get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
-alg_extrapolates(alg::GenericImplicitEuler) = true
-alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
@@ -194,8 +190,6 @@ alg_order(alg::ERKN4) = 4
 alg_order(alg::ERKN5) = 5
 
 alg_order(alg::Midpoint) = 2
-alg_order(alg::GenericIIF1) = 1
-alg_order(alg::GenericIIF2) = 2
 
 alg_order(alg::ORK256) = 2
 alg_order(alg::CarpenterKennedy2N54) = 4
@@ -266,8 +260,6 @@ alg_order(alg::Vern8) = 8
 alg_order(alg::Vern9) = 9
 alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
-alg_order(alg::GenericImplicitEuler) = 1
-alg_order(alg::GenericTrapezoid) = 2
 alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::MidpointSplitting) = 2
@@ -378,8 +370,6 @@ alg_adaptive_order(alg::RadauIIA5) = 3
 alg_adaptive_order(alg::RKC) = 2
 alg_adaptive_order(alg::IRKC) = 1
 
-alg_adaptive_order(alg::GenericImplicitEuler) = 0
-alg_adaptive_order(alg::GenericTrapezoid) = 1
 alg_adaptive_order(alg::ImplicitEuler) = 0
 alg_adaptive_order(alg::Trapezoid) = 1
 # this is actually incorrect and is purposefully decreased as this tends
@@ -528,7 +518,7 @@ ispredictive(alg::Union{RKC}) = true
 ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
-isstandard(alg::Union{GenericImplicitEuler,GenericTrapezoid,VCABM}) = true
+isstandard(alg::VCABM) = true
 isstandard(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ispi(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = !(ispredictive(alg) || isstandard(alg))
 
