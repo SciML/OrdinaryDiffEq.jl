@@ -148,13 +148,6 @@ end
 
 get_chunksize(jac_config::ForwardDiff.JacobianConfig{T,V,N,D}) where {T,V,N,D} = N
 
-function DiffEqBase.resize_jac_config!(jac_config::ForwardDiff.JacobianConfig, i)
-  for j in eachindex(jac_config.duals)
-    resize!(jac_config.duals[j], i)
-  end
-  jac_config
-end
-
 function DiffEqBase.resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
   resize!(jac_config.fx, i)
   resize!(jac_config.dx, i)
