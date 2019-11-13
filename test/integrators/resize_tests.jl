@@ -31,8 +31,10 @@ resize!(i, 5)
 @test size(i.cache.nlsolver.cache.J) == (5,5)
 @test size(i.cache.nlsolver.cache.W) == (5,5)
 @test length(i.cache.nlsolver.cache.du1) == 5
-@test length(i.cache.nlsolver.cache.jac_config.duals[1]) == 5
-@test length(i.cache.nlsolver.cache.jac_config.duals[2]) == 5
+@test length(i.cache.nlsolver.cache.jac_config.fx) == 5
+@test length(i.cache.nlsolver.cache.jac_config.dx) == 5
+@test length(i.cache.nlsolver.cache.jac_config.t) == 5
+@test length(i.cache.nlsolver.cache.jac_config.p) == 5
 @test length(i.cache.nlsolver.cache.weight) == 5
 solve!(i)
 
@@ -75,8 +77,10 @@ resize!(i, 5)
 @test size(i.cache.J) == (5, 5)
 @test size(i.cache.W) == (5, 5)
 @test length(i.cache.linsolve_tmp) == 5
-@test length(i.cache.jac_config.duals[1]) == 5
-@test length(i.cache.jac_config.duals[2]) == 5
+@test length(i.cache.jac_config.fx) == 5
+@test length(i.cache.jac_config.dx) == 5
+@test length(i.cache.jac_config.t) == 5
+@test length(i.cache.jac_config.p) == 5
 solve!(i)
 
 i = init(prob, Rosenbrock23(;autodiff=false))
