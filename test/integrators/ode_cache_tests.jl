@@ -2,12 +2,14 @@ using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 using Random
 Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),
-  ORK256(), CarpenterKennedy2N54(), HSLDDRK64(), DGLDDRK73_C(),
+  CarpenterKennedy2N54(), HSLDDRK64(),
   CFRLDDRK64(), TSLDDRK74(),
   CKLLSRK43_2(),
   ParsaniKetchesonDeconinck3S32(),
   BS3(),BS5(),DP5(),DP8(),Feagin10(),Feagin12(),Feagin14(),TanYam7(),
-  Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9(),OwrenZen3(),OwrenZen4(),OwrenZen5()]
+  Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9(),OwrenZen3(),OwrenZen4(),OwrenZen5(),
+  AutoTsit5(Rosenbrock23())]
+broken_CACHE_TEST_ALGS = [ORK256(), DGLDDRK73_C(),KenCarp4()]
 
 using InteractiveUtils
 
@@ -45,12 +47,28 @@ for i in 1:10
 end
 
 println("Check some other integrators")
-@test_nowarn sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
-@test_nowarn sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
+sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
+sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
+@test_broken sol = solve(prob,KenCarp4(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
+@test_broken sol = solve(prob,TRBDF2(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
 
 for alg in CACHE_TEST_ALGS
-  @test_nowarn sol = solve(prob,alg,callback=callback,dt=1/2)
+  @show alg
+  sol = solve(prob,alg,callback=callback,dt=1/2)
+  @test length(sol[end]) > 1
 end
 
-@test_nowarn sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
-@test_nowarn sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
+for alg in broken_CACHE_TEST_ALGS
+  @show alg
+  @test_broken length(solve(prob,alg,callback=callback,dt=1/2)[end]) > 1
+end
+
+
+sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
+sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1

@@ -84,6 +84,7 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
 full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
+full_cache(integrator::CompositeCache) = Iterators.flatten(full_cache(c) for c in integrator.caches)
 
 function add_tstop!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < zero(integrator.t) && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
