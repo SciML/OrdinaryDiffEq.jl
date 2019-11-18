@@ -82,7 +82,7 @@ function f2(du,u,p,t)
     if t > 10
       du[i] = -10000*u[i]
     else
-      du[i] = α*u[i]
+      du[i] = 0.3*u[i]
     end
   end
   return du
