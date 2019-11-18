@@ -72,3 +72,39 @@ sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
 @test length(sol[end]) > 1
 sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
 @test length(sol[end]) > 1
+
+
+# Force switching
+
+function f2(du,u,p,t)
+  @assert length(u) == length(du) "length(u) = $(length(u)), length(du) = $(length(du)) at time $(t)"
+  for i in 1:length(u)
+    if t > 10
+      du[i] = -10000*u[i]
+    else
+      du[i] = α*u[i]
+    end
+  end
+  return du
+end
+
+function condition2(u, t, integrator)
+  1-maximum(u)
+end
+
+function affect2!(integrator)
+  u = integrator.u
+  resize!(integrator,length(u)+1)
+  maxidx = findmax(u)[2]
+  Θ = rand()
+  u[maxidx] = Θ
+  u[end] = 1-Θ
+  nothing
+end
+
+callback = ContinuousCallback(condition2,affect2!)
+u0 = [0.2]
+tspan = (0.0,20.0)
+prob = ODEProblem(f2,u0,tspan)
+sol = solve(prob, AutoTsit5(Rosenbrock23()), callback=callback)
+@test length(sol[end]) > 1

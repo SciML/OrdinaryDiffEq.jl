@@ -139,6 +139,25 @@ deleteat_non_user_cache!(integrator::ODEIntegrator,i) = deleteat_non_user_cache!
 addat_non_user_cache!(integrator::ODEIntegrator,i) = addat_non_user_cache!(integrator,integrator.cache,i)
 
 resize_non_user_cache!(integrator::ODEIntegrator,cache,i) = nothing
+
+function resize_non_user_cache!(integrator::ODEIntegrator,cache::CompositeCache,i)
+  for _cache in cache.caches
+    resize_non_user_cache!(integrator,_cache,i)
+  end
+end
+
+function deleteat_non_user_cache!(integrator::ODEIntegrator,cache::CompositeCache,i)
+  for _cache in cache.caches
+    deleteat_non_user_cache!(integrator,_cache,i)
+  end
+end
+
+function addat_non_user_cache!(integrator::ODEIntegrator,cache::CompositeCache,i)
+  for _cache in cache.caches
+    addat_non_user_cache!(integrator,_cache,i)
+  end
+end
+
 function resize_non_user_cache!(integrator::ODEIntegrator,
                       cache::RosenbrockMutableCache,i)
   cache.J = similar(cache.J,i,i)
