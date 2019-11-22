@@ -48,11 +48,11 @@ end
 """
     ODEIntegrator
 Fundamental `struct` allowing interactively stepping through the numerical solving of a differential equation.
-The full documentation is hosted here: [http://docs.juliadiffeq.org/latest/basics/integrator.html](http://docs.juliadiffeq.org/latest/basics/integrator.html). This docstring
+The full documentation is hosted here: [http://docs.juliadiffeq.org/dev/basics/integrator.html](http://docs.juliadiffeq.org/dev/basics/integrator.html). This docstring
 describes basic functionality only!
 
 Initialize using `integrator = init(prob::ODEProblem, alg; kwargs...)`. The keyword args which are accepted are the same
-[Common Solver Options](http://docs.juliadiffeq.org/latest/basics/common_solver_opts.html#Common-Solver-Options-1)
+[Common Solver Options](http://docs.juliadiffeq.org/dev/basics/common_solver_opts.html#Common-Solver-Options-1)
 used by `solve`.
 
 
