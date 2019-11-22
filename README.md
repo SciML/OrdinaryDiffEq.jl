@@ -14,7 +14,7 @@ functionality should check out [DifferentialEquations.jl](https://github.com/Jul
 
 ## API
 
-OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](http://docs.juliadiffeq.org/latest/tutorials/ode_example.html) using the `Tsit5()` algorithm:
+OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](http://docs.juliadiffeq.org/dev/tutorials/ode_example.html) using the `Tsit5()` algorithm:
 
 ```julia
 using OrdinaryDiffEq
@@ -45,7 +45,7 @@ sol = solve(prob,Tsit5())
 using Plots; plot(sol,vars=(1,2,3))
 ```
 
-For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](http://docs.juliadiffeq.org/latest/types/ode_types.html). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](http://docs.juliadiffeq.org/dev/types/ode_types.html). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
 function HH_acceleration(dv,v,u,p,t)
@@ -64,5 +64,5 @@ Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 
 ## Available Solvers
 
-For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/ode_solve.html#OrdinaryDiffEq.jl-1), [Dynamical ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/dynamical_solve.html), and the [Split ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/split_ode_solve.html) pages.
+For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](http://docs.juliadiffeq.org/dev/solvers/ode_solve.html#OrdinaryDiffEq.jl-1), [Dynamical ODE Solvers](http://docs.juliadiffeq.org/dev/solvers/dynamical_solve.html), and the [Split ODE Solvers](http://docs.juliadiffeq.org/dev/solvers/split_ode_solve.html) pages.
 
