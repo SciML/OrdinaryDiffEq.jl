@@ -102,9 +102,9 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   # build non-linear solver
   ηold = one(uTolType)
 
-  NLSolver{typeof(nlalg),true,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
-    z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
-    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,SlowConvergence,
+  NLSolver{true,tTypeNoUnits}(
+    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    nlalg.fast_convergence_cutoff,ηold,10_000,nlalg.max_iter,SlowConvergence,
     nlcache)
 end
 
@@ -149,9 +149,9 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   # build non-linear solver
   ηold = one(uTolType)
 
-  NLSolver{typeof(nlalg),false,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
-    z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
-    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,SlowConvergence,
+  NLSolver{false,tTypeNoUnits}(
+    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    nlalg.fast_convergence_cutoff,ηold,10_000,nlalg.max_iter,SlowConvergence,
     nlcache)
 end
 
