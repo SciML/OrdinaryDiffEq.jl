@@ -40,9 +40,9 @@ module OrdinaryDiffEq
 
   using DiffEqBase: check_error!, @def, @.. , _vec, _reshape
 
-  using DiffEqBase: AbstractNLSolverAlgorithm, AbstractNLSolverCache, NLStatus
+  using DiffEqBase: AbstractNLSolverAlgorithm, AbstractNLSolverCache#, NLStatus
   using DiffEqBase: nlsolve_f, qrdelete!, qradd!, build_jac_config, resize_jac_config!
-  using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
+  #using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
 
   import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear
 

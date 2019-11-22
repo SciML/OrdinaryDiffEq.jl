@@ -368,7 +368,7 @@ end
 
   # FSAL
   @.. zprev = dt*integrator.fsalfirst
-  update_W!(integrator, cache, d*dt, repeat_step)
+  #update_W!(integrator, cache, d*dt, repeat_step)
 
   ##### Solve Trapezoid Step
 
@@ -377,7 +377,7 @@ end
   z .= zᵧ
   @.. tmp = uprev + d*zprev
   nlsolver.c = γ
-  zᵧ .= nlsolve!(nlsolver, integrator)
+  zᵧ .= nlsolve!(nlsolver, integrator, cache, d*dt, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve BDF2 Step
@@ -386,8 +386,8 @@ end
   @.. z = α1*zprev + α2*zᵧ
   @.. tmp = uprev + ω*zprev + ω*zᵧ
   nlsolver.c = 1
-  isnewton(nlsolver) && set_new_W!(nlsolver, false)
-  nlsolve!(nlsolver, integrator)
+  #isnewton(nlsolver) && set_new_W!(nlsolver, false)
+  nlsolve!(nlsolver, integrator, cache, d*dt, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + d*z

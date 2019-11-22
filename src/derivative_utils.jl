@@ -285,33 +285,43 @@ function islinearfunction(f, alg)::Tuple{Bool,Bool}
   return islin, isode
 end
 
-function do_newJ(integrator, alg, cache, repeat_step)::Bool # any changes here need to be reflected in FIRK
-  integrator.iter <= 1 && return true
-  repeat_step && return false
-  first(islinearfunction(integrator)) && return false
-  integrator.opts.adaptive || return true
-  alg_can_repeat_jac(alg) || return true
-  integrator.u_modified && return true
-  # below is Newton specific logic, so we return non-Newton algs here
-  alg isa NewtonAlgorithm || return true
-  isfirk = alg isa RadauIIA5
-  nlstatus = isfirk ? cache.status : get_status(cache.nlsolver)
-  nlsolvefail(nlstatus) && return true
-  # no reuse when the cutoff is 0
-  fast_convergence_cutoff = isfirk ? alg.fast_convergence_cutoff : cache.nlsolver.fast_convergence_cutoff
-  iszero(fast_convergence_cutoff) && return true
-  # reuse J when there is fast convergence
-  fastconvergence = nlstatus === FastConvergence
-  return !fastconvergence
-end
+#function do_newJ(integrator, alg, cache, repeat_step)::Bool # any changes here need to be reflected in FIRK
+#  integrator.iter <= 1 && return true
+#  repeat_step && return false
+#  first(islinearfunction(integrator)) && return false
+#  integrator.opts.adaptive || return true
+#  alg_can_repeat_jac(alg) || return true
+#  integrator.u_modified && return true
+#  # below is Newton specific logic, so we return non-Newton algs here
+#  alg isa NewtonAlgorithm || return true
+#  isfirk = alg isa RadauIIA5
+#  nlstatus = isfirk ? cache.status : get_status(cache.nlsolver)
+#  #@show isjacobiancurrent(integrator, cache.nlsolver)
+#  nlsolvefail(nlstatus) && return true
+#  # no reuse when the cutoff is 0
+#  fast_convergence_cutoff = isfirk ? alg.fast_convergence_cutoff : cache.nlsolver.fast_convergence_cutoff
+#  iszero(fast_convergence_cutoff) && return true
+#  # reuse J when there is fast convergence
+#  fastconvergence = nlstatus === FastConvergence
+#  return !fastconvergence
+#end
+#
+#function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # any changes here need to be reflected in FIRK
+#  nlsolver === nothing && return true
+#  new_jac && return true
+#  # reuse W when the change in stepsize is small enough
+#  dt = integrator.dt
+#  smallstepchange = abs((dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
+#  return !smallstepchange
+#end
 
-function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # any changes here need to be reflected in FIRK
-  nlsolver === nothing && return true
-  new_jac && return true
-  # reuse W when the change in stepsize is small enough
-  dt = integrator.dt
-  smallstepchange = abs((dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
-  return !smallstepchange
+function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
+  repeat_step && return false, false
+  (integrator.iter <= 1 && (isdefined(nlsolver, :iter) && nlsolver.iter <= 1)) && true, true
+  W_dt = nlsolver.cache.W_dt
+  smallstepchange = abs((integrator.dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
+  jbad = nlsolver.status === TryAgain && smallstepchange
+  return jbad, !smallstepchange
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
@@ -392,9 +402,12 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   end
 
   # check if we need to update J or W
-  W_dt = nlsolver === nothing ? dt : nlsolver.cache.W_dt # TODO: RosW
-  new_jac = do_newJ(integrator, alg, cache, repeat_step)
-  new_W = do_newW(integrator, nlsolver, new_jac, W_dt)
+  #W_dt = nlsolver === nothing ? dt : nlsolver.cache.W_dt # TODO: RosW
+  #new_jac = do_newJ(integrator, alg, cache, repeat_step)
+  #new_W = do_newW(integrator, nlsolver, new_jac, W_dt)
+  new_jac, new_W = do_newJW(integrator, alg, cache.nlsolver, repeat_step)
+
+  (new_jac && isdefined(lcache, :J_t)) && (lcache.J_t = t)
 
   # calculate W
   if W isa WOperator

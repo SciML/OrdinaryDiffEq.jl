@@ -7,12 +7,15 @@ dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::AbstractNLSolver, integrator)
+function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_step)
+  @label REDO
+  update_W!(integrator, cache, γdt, repeat_step)
+
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
   initialize!(nlsolver, integrator)
-  η = initial_η(nlsolver, integrator)
-  nlsolver.status = SlowConvergence
+  nlsolver.status = Divergence
+  θ = nlsolver.ηold
 
   local ndz
   for iter in 1:maxiters
@@ -22,38 +25,31 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
     iter > 1 && (ndzprev = ndz)
     ndz = compute_step!(nlsolver, integrator)
 
+    # convergence rate
+    iter > 1 && (θ = max(0.3 * θ, ndz / ndzprev))
+
+    # check for convergence
+    eest = ndz * min(one(θ), θ) / 0.01 # TODO: tune this
+    if eest <= one(eest)
+      nlsolver.status = Convergence
+      break
+    end
+
     # check divergence (not in initial step)
-    if iter > 1
-      θ = ndz / ndzprev
-
-      # divergence
-      if θ > 2
-        nlsolver.status = Divergence
-        break
-      end
-
-      # very slow convergence
-      if ndz * θ^(maxiters - iter) > κ * (1 - θ)
-        nlsolver.status = VerySlowConvergence
-        break
-      end
+    if iter > 1 && θ > 2
+      nlsolver.status = Divergence
+      break
     end
 
     apply_step!(nlsolver, integrator)
-
-    # check for convergence
-    if iter == 1 && ndz < 1e-5
-      nlsolver.status = FastConvergence
-      break
-    end
-    iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κ && (iter > 1 || iszero(ndz) || (isnewton(nlsolver) && !iszero(integrator.success_iter)))
-      nlsolver.status = η < fast_convergence_cutoff ? FastConvergence : Convergence
-      break
-    end
   end
 
-  nlsolver.ηold = η
+  if nlsolver.status == Divergence && !isjacobiancurrent(nlsolver, integrator)
+    nlsolver.status = TryAgain
+    @goto REDO
+  end
+
+  nlsolver.ηold = θ
   postamble!(nlsolver, integrator)
 end
 
@@ -61,8 +57,8 @@ end
 
 initialize!(::AbstractNLSolver, integrator) = nothing
 
-initial_η(nlsolver::NLSolver, integrator) =
-  max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+#initial_η(nlsolver::NLSolver, integrator) =
+#  max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 
 function apply_step!(nlsolver::NLSolver{algType,iip}, integrator) where {algType,iip}
   if iip

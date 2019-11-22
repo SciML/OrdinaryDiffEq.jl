@@ -10,6 +10,8 @@ isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 
+isjacobiancurrent(nlsolver::AbstractNLSolver, integrator) = integrator.t == nlsolver.cache.J_t
+
 set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
 set_new_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, val::Bool)::Bool =
   nlcache.new_W = val
@@ -82,7 +84,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
     nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,tType(dt),du1,uf,jac_config,
-                            linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff))
+                            linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff),t)
   elseif nlalg isa NLFunctional
     nlcache = NLFunctionalCache(ustep,tstep,k,atmp,dz)
   elseif nlalg isa NLAnderson
@@ -104,7 +106,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   NLSolver{true,tTypeNoUnits}(
     z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
-    nlalg.fast_convergence_cutoff,ηold,10_000,nlalg.max_iter,SlowConvergence,
+    nlalg.fast_convergence_cutoff,ηold,10_000,nlalg.max_iter,Divergence,
     nlcache)
 end
 
@@ -151,7 +153,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   NLSolver{false,tTypeNoUnits}(
     z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
-    nlalg.fast_convergence_cutoff,ηold,10_000,nlalg.max_iter,SlowConvergence,
+    nlalg.fast_convergence_cutoff,ηold,10_000,nlalg.max_iter,Divergence,
     nlcache)
 end
 

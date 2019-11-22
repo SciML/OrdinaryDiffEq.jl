@@ -1,3 +1,9 @@
+@enum NLStatus::Int8 begin
+  Convergence = 1
+  TryAgain = 0
+  Divergence = -1
+end
+
 # solver
 
 abstract type AbstractNLSolver{algType,iip} end
@@ -45,6 +51,7 @@ mutable struct NLNewtonCache{uType,tType,rateType,J,W,ufType,jcType,lsType} <: A
   weight::uType
   invγdt::tType
   new_W_dt_cutoff::tType
+  J_t::tType
 end
 
 mutable struct NLNewtonConstantCache{tType,J,W,ufType} <: AbstractNLSolverCache
