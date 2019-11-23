@@ -15,33 +15,66 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_st
 
   initialize!(nlsolver, integrator)
   nlsolver.status = Divergence
-  θ = nlsolver.ηold
+  η = nlsolver.cache.new_W ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
   local ndz
   for iter in 1:maxiters
     nlsolver.iter = iter
+    ## compute next step and calculate norm of residuals
+    #iter > 1 && (ndzprev = ndz)
+    #ndz = compute_step!(nlsolver, integrator)
+
+    ## convergence rate
+    #iter > 1 && (θ = max(0.3 * θ, ndz / ndzprev))
+
+    ## check for convergence
+    ##eest =  # TODO: tune this
+    ##if !(nlsolver.cache.new_W && iter === 1) && eest <= κ
+    ##if !(iter === 1) && ndz * min(one(θ), θ) <= 0.001
+    #if !(iter < 5) && ndz * min(one(θ), θ) <= 0.001
+    #  nlsolver.status = Convergence
+    #  break
+    #end
+
+    ## check divergence (not in initial step)
+    #if iter > 1 && θ > 2
+    #  nlsolver.status = Divergence
+    #  break
+    #end
+
+    #apply_step!(nlsolver, integrator)
 
     # compute next step and calculate norm of residuals
     iter > 1 && (ndzprev = ndz)
     ndz = compute_step!(nlsolver, integrator)
-
-    # convergence rate
-    iter > 1 && (θ = max(0.3 * θ, ndz / ndzprev))
-
-    # check for convergence
-    eest = ndz * min(one(θ), θ) / 0.01 # TODO: tune this
-    if eest <= one(eest)
-      nlsolver.status = Convergence
-      break
-    end
-
-    # check divergence (not in initial step)
-    if iter > 1 && θ > 2
+    if !isfinite(ndz)
       nlsolver.status = Divergence
       break
     end
 
+    # check divergence (not in initial step)
+    if iter > 1
+      θ = ndz / ndzprev
+
+      # divergence
+      if θ > 2
+        nlsolver.status = Divergence
+        break
+      end
+    end
+
     apply_step!(nlsolver, integrator)
+
+    # check for convergence
+    if iter == 1 && ndz < 1e-5
+      nlsolver.status = Convergence
+      break
+    end
+    iter > 1 && (η = θ / (1 - θ))
+    if η > 0 && η * ndz < κ && (iter > 1 || iszero(ndz))
+      nlsolver.status = Convergence
+      break
+    end
   end
 
   if nlsolver.status == Divergence && !isjacobiancurrent(nlsolver, integrator)
@@ -49,7 +82,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_st
     @goto REDO
   end
 
-  nlsolver.ηold = θ
+  nlsolver.ηold = η
   postamble!(nlsolver, integrator)
 end
 
@@ -57,8 +90,8 @@ end
 
 initialize!(::AbstractNLSolver, integrator) = nothing
 
-#initial_η(nlsolver::NLSolver, integrator) =
-#  max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+initial_η(nlsolver::NLSolver, integrator) =
+  max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 
 function apply_step!(nlsolver::NLSolver{algType,iip}, integrator) where {algType,iip}
   if iip

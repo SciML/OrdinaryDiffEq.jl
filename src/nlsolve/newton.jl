@@ -102,7 +102,7 @@ end
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,true}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,tmp,ztmp,γ,iter,cache = nlsolver
-  @unpack ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
+  @unpack W_dt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
@@ -131,6 +131,8 @@ end
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
   end
+
+  W_dt != dt && (rmul!(dz, 2/(1 + dt / W_dt)))
 
   calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)
