@@ -20,29 +20,6 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_st
   local ndz
   for iter in 1:maxiters
     nlsolver.iter = iter
-    ## compute next step and calculate norm of residuals
-    #iter > 1 && (ndzprev = ndz)
-    #ndz = compute_step!(nlsolver, integrator)
-
-    ## convergence rate
-    #iter > 1 && (θ = max(0.3 * θ, ndz / ndzprev))
-
-    ## check for convergence
-    ##eest =  # TODO: tune this
-    ##if !(nlsolver.cache.new_W && iter === 1) && eest <= κ
-    ##if !(iter === 1) && ndz * min(one(θ), θ) <= 0.001
-    #if !(iter < 5) && ndz * min(one(θ), θ) <= 0.001
-    #  nlsolver.status = Convergence
-    #  break
-    #end
-
-    ## check divergence (not in initial step)
-    #if iter > 1 && θ > 2
-    #  nlsolver.status = Divergence
-    #  break
-    #end
-
-    #apply_step!(nlsolver, integrator)
 
     # compute next step and calculate norm of residuals
     iter > 1 && (ndzprev = ndz)
@@ -71,13 +48,13 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_st
       break
     end
     iter > 1 && (η = θ / (1 - θ))
-    if η > 0 && η * ndz < κ && (iter > 1 || iszero(ndz))
+    if η >= zero(η) && η * ndz < κ && (iter > 1 || iszero(ndz))
       nlsolver.status = Convergence
       break
     end
   end
 
-  if nlsolver.status == Divergence && !isjacobiancurrent(nlsolver, integrator)
+  if nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator)
     nlsolver.status = TryAgain
     @goto REDO
   end
@@ -112,6 +89,7 @@ function postamble!(nlsolver::NLSolver, integrator)
     end
   end
   integrator.force_stepfail = nlsolvefail(nlsolver)
+  setfirststage!(nlsolver, false)
 
   nlsolver.z
 end

@@ -92,7 +92,7 @@ for prob in (ODEProblemLibrary.prob_ode_linear,
 
   sim135 = test_convergence(dts,prob,Trapezoid(nlsolve = NLAnderson()))
   @test sim135.𝒪est[:final] ≈ 2 atol=testTol
-  
+
   sim14 = test_convergence(dts,prob,TRBDF2())
   @test sim14.𝒪est[:final] ≈ 2 atol=testTol
 

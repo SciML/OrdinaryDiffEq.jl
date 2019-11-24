@@ -317,11 +317,11 @@ end
 
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
   repeat_step && return false, false
-  (integrator.iter <= 1 && (isdefined(nlsolver, :iter) && nlsolver.iter <= 1)) && true, true
+  (integrator.iter <= 1 && (isdefined(nlsolver, :iter) && nlsolver.iter <= 1)) && return true, true
   W_dt = nlsolver.cache.W_dt
   smallstepchange = abs((integrator.dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
   jbad = nlsolver.status === TryAgain && smallstepchange
-  return jbad, jbad || (!smallstepchange) || (integrator.EEst > one(integrator.EEst))
+  return jbad, (jbad || (!smallstepchange) || (isfirststage(nlsolver) && integrator.EEst > one(integrator.EEst)))
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))

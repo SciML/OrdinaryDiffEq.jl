@@ -43,6 +43,7 @@ mutable struct NLNewtonCache{uType,tType,rateType,J,W,ufType,jcType,lsType} <: A
   J::J
   W::W
   new_W::Bool
+  firststage::Bool
   W_dt::tType
   du1::uType
   uf::ufType
