@@ -15,6 +15,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_st
 
   initialize!(nlsolver, integrator)
   nlsolver.status = Divergence
+  # TODO: test immediate convergence on the first iteration
   η = nlsolver.cache.new_W ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
   local ndz
@@ -43,12 +44,10 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_st
     apply_step!(nlsolver, integrator)
 
     # check for convergence
-    if iter == 1 && ndz < 1e-5
-      nlsolver.status = Convergence
-      break
-    end
     iter > 1 && (η = θ / (1 - θ))
-    if η >= zero(η) && η * ndz < κ && (iter > 1 || iszero(ndz))
+    if (iter == 1 && ndz < 1e-5) ||
+        iszero(ndz) ||
+        (iter > 1 && (η >= zero(η) && η * ndz < κ))
       nlsolver.status = Convergence
       break
     end

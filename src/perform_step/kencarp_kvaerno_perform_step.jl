@@ -761,7 +761,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  update_W!(integrator, cache, γdt, repeat_step)
+  #update_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -792,7 +792,8 @@ end
   end
 
   nlsolver.c = 2γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z₂ = nlsolve!(nlsolver, integrator, cache, γdt, repeat_step)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
@@ -812,7 +813,7 @@ end
   nlsolver.z = z₃
 
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, γdt, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -830,7 +831,7 @@ end
   nlsolver.z = z₄
 
   nlsolver.c = c4
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, γdt, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -848,7 +849,7 @@ end
   nlsolver.z = z₅
 
   nlsolver.c = c5
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, γdt, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -866,7 +867,7 @@ end
   nlsolver.z = z₆
 
   nlsolver.c = 1
-  z₆ = nlsolve!(nlsolver, integrator)
+  z₆ = nlsolve!(nlsolver, integrator, cache, γdt, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₆
