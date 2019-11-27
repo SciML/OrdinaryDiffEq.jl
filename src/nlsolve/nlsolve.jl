@@ -89,6 +89,9 @@ function postamble!(nlsolver::NLSolver, integrator)
   end
   integrator.force_stepfail = nlsolvefail(nlsolver)
   setfirststage!(nlsolver, false)
+  if nlsolver.cache isa NLNewtonCache
+    nlsolver.cache.firstcall = false
+  end
 
   nlsolver.z
 end

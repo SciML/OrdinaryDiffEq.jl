@@ -285,41 +285,11 @@ function islinearfunction(f, alg)::Tuple{Bool,Bool}
   return islin, isode
 end
 
-#function do_newJ(integrator, alg, cache, repeat_step)::Bool # any changes here need to be reflected in FIRK
-#  integrator.iter <= 1 && return true
-#  repeat_step && return false
-#  first(islinearfunction(integrator)) && return false
-#  integrator.opts.adaptive || return true
-#  alg_can_repeat_jac(alg) || return true
-#  integrator.u_modified && return true
-#  # below is Newton specific logic, so we return non-Newton algs here
-#  alg isa NewtonAlgorithm || return true
-#  isfirk = alg isa RadauIIA5
-#  nlstatus = isfirk ? cache.status : get_status(cache.nlsolver)
-#  #@show isjacobiancurrent(integrator, cache.nlsolver)
-#  nlsolvefail(nlstatus) && return true
-#  # no reuse when the cutoff is 0
-#  fast_convergence_cutoff = isfirk ? alg.fast_convergence_cutoff : cache.nlsolver.fast_convergence_cutoff
-#  iszero(fast_convergence_cutoff) && return true
-#  # reuse J when there is fast convergence
-#  fastconvergence = nlstatus === FastConvergence
-#  return !fastconvergence
-#end
-#
-#function do_newW(integrator, nlsolver, new_jac, W_γdt)::Bool # any changes here need to be reflected in FIRK
-#  nlsolver === nothing && return true
-#  new_jac && return true
-#  # reuse W when the change in stepsize is small enough
-#  dt = integrator.dt
-#  smallstepchange = abs((dt-W_γdt)/W_γdt) <= get_new_W_γdt_cutoff(nlsolver)
-#  return !smallstepchange
-#end
-
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
   repeat_step && return false, false
   # TODO: RosW
   isnewton(nlsolver) || return true, true
-  (integrator.iter <= 1 && isfirststage(nlsolver)) && return true, true
+  isfirstcall(nlsolver) && return true, true
   W_iγdt = inv(nlsolver.cache.W_γdt)
   iγdt = inv(nlsolver.γ * integrator.dt)
   smallstepchange = abs(iγdt/W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
@@ -393,10 +363,12 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   # handle Wfact
   if W_transform && DiffEqBase.has_Wfact_t(f)
     f.Wfact_t(W, u, p, dtgamma, t)
+    isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
     is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W), Inf) + inv(dtgamma)) # TODO: better estimate
     return nothing
   elseif !W_transform && DiffEqBase.has_Wfact(f)
     f.Wfact(W, u, p, dtgamma, t)
+    isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
     if is_compos
       opn = opnorm(LowerTriangular(W), Inf)
       integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate

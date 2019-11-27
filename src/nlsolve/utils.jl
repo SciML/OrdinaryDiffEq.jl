@@ -12,6 +12,7 @@ isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 
 isJcurrent(nlsolver::AbstractNLSolver, integrator) = integrator.t == nlsolver.cache.J_t
+isfirstcall(nlsolver::AbstractNLSolver) = nlsolver.cache.firstcall
 isfirststage(nlsolver::AbstractNLSolver) = nlsolver.cache.firststage
 setfirststage!(nlsolver::AbstractNLSolver, val::Bool) = setfirststage!(nlsolver.cache, val)
 setfirststage!(nlcache::AbstractNLSolverCache, val::Bool) = isdefined(nlcache, :firststage) && (nlcache.firststage = val)
@@ -91,7 +92,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
-    nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,false,tType(dt),du1,uf,jac_config,
+    nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,false,true,tType(dt),du1,uf,jac_config,
                             linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff),t)
   elseif nlalg isa NLFunctional
     nlcache = NLFunctionalCache(ustep,tstep,k,atmp,dz)
