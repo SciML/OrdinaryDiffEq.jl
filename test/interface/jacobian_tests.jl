@@ -56,5 +56,5 @@ prob2 = remake(prob, f=ODEFunction(de...; jac=true, Wfact=true))
 sol = solve(prob, TRBDF2())
 
 for Alg in [Rodas5, Rosenbrock23, TRBDF2, KenCarp4]
-  @test Array( solve(prob2, Alg(), tstops=sol.t, adaptive=false) ) ≈ Array( solve(prob, Alg(), tstops=sol.t, adaptive=false) )
+  @test Array( solve(prob2, Alg(), tstops=sol.t, adaptive=false) ) ≈ Array( solve(prob, Alg(), tstops=sol.t, adaptive=false) ) atol=1e-4
 end
