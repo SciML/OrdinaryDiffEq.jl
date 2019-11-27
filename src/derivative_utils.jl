@@ -317,12 +317,15 @@ end
 
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
   repeat_step && return false, false
+  # TODO: RosW
+  isnewton(nlsolver) || return true, true
   (integrator.iter <= 1 && (isdefined(nlsolver, :iter) && nlsolver.iter <= 1)) && return true, true
   W_iγdt = nlsolver.cache.W_iγdt
   iγdt = inv(nlsolver.γ * integrator.dt)
   smallstepchange = abs((iγdt-W_iγdt)/W_iγdt) <= get_new_W_iγdt_cutoff(nlsolver)
   jbad = nlsolver.status === TryAgain && smallstepchange
-  return jbad, (jbad || (!smallstepchange) || (isfirststage(nlsolver) && integrator.EEst > one(integrator.EEst)))
+  errorfail = integrator.EEst > one(integrator.EEst)
+  return jbad, (jbad || (!smallstepchange) || (isfirststage(nlsolver) && errorfail))
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
@@ -386,7 +389,6 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
-  isnewton = alg isa NewtonAlgorithm
 
   # handle Wfact
   if W_transform && DiffEqBase.has_Wfact_t(f)
@@ -403,21 +405,20 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   end
 
   # check if we need to update J or W
-  # TODO: RosW
   new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
 
   (new_jac && isdefined(lcache, :J_t)) && (lcache.J_t = t)
 
   # calculate W
   if W isa WOperator
-    isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
+    isnewton(nlsolver) || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
     islin, isode = islinearfunction(integrator)
     islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, lcache)) )
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
-  if isnewton
+  if isnewton(nlsolver)
     set_new_W!(nlsolver, new_W) && set_W_iγdt!(nlsolver, inv(dtgamma))
   end
   new_W && (integrator.destats.nw += 1)

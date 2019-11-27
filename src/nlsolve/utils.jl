@@ -6,6 +6,7 @@ get_new_W_iγdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_iγdt_cutoff
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
 
+isnewton(::Any) = false
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
