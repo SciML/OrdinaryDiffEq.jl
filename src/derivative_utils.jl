@@ -306,12 +306,12 @@ end
 #  return !fastconvergence
 #end
 #
-#function do_newW(integrator, nlsolver, new_jac, W_iγdt)::Bool # any changes here need to be reflected in FIRK
+#function do_newW(integrator, nlsolver, new_jac, W_γdt)::Bool # any changes here need to be reflected in FIRK
 #  nlsolver === nothing && return true
 #  new_jac && return true
 #  # reuse W when the change in stepsize is small enough
 #  dt = integrator.dt
-#  smallstepchange = abs((dt-W_iγdt)/W_iγdt) <= get_new_W_iγdt_cutoff(nlsolver)
+#  smallstepchange = abs((dt-W_γdt)/W_γdt) <= get_new_W_γdt_cutoff(nlsolver)
 #  return !smallstepchange
 #end
 
@@ -319,10 +319,10 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
   repeat_step && return false, false
   # TODO: RosW
   isnewton(nlsolver) || return true, true
-  (integrator.iter <= 1 && (isdefined(nlsolver, :iter) && nlsolver.iter <= 1)) && return true, true
-  W_iγdt = nlsolver.cache.W_iγdt
+  (integrator.iter <= 1 && isfirststage(nlsolver)) && return true, true
+  W_iγdt = inv(nlsolver.cache.W_γdt)
   iγdt = inv(nlsolver.γ * integrator.dt)
-  smallstepchange = abs((iγdt-W_iγdt)/W_iγdt) <= get_new_W_iγdt_cutoff(nlsolver)
+  smallstepchange = abs(iγdt/W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
   jbad = nlsolver.status === TryAgain && smallstepchange
   errorfail = integrator.EEst > one(integrator.EEst)
   return jbad, (jbad || (!smallstepchange) || (isfirststage(nlsolver) && errorfail))
@@ -419,7 +419,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton(nlsolver)
-    set_new_W!(nlsolver, new_W) && set_W_iγdt!(nlsolver, inv(dtgamma))
+    set_new_W!(nlsolver, new_W) && set_W_γdt!(nlsolver, dtgamma)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing

@@ -34,7 +34,6 @@ end
   d3 = -(ρ-1)*1//3
 
   # calculate W
-  nlargs = (cache, ddt, repeat_step)
   markfirststage!(nlsolver)
 
   zₙ₋₁ = dtₙ*fₙ₋₁
@@ -48,7 +47,7 @@ end
 
   nlsolver.tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
   nlsolver.γ = d
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   uₙ = nlsolver.tmp + d*z
@@ -111,7 +110,6 @@ end
   d2 = -dtmp
   d3 = -(ρ-1)*1//3
 
-  nlargs = (cache, ddt, repeat_step)
   markfirststage!(nlsolver)
 
   @.. zₙ₋₁ = dtₙ*fₙ₋₁
@@ -124,7 +122,7 @@ end
 
   @.. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
   nlsolver.γ = d
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. uₙ = tmp + d*z
@@ -189,7 +187,6 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   # Implicit part
   # precalculations
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
@@ -200,7 +197,7 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   end
   nlsolver.z = z
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -254,7 +251,6 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   # Implicit part
   # precalculations
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
@@ -264,7 +260,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
     @.. z = zero(eltype(u))
   end
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 
@@ -319,14 +315,13 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   nlsolver.tmp = u₀ - ϕ
 
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
   nlsolver.z = dt*integrator.fsalfirst
   nlsolver.γ = γ
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -387,13 +382,12 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @.. tmp = uprev + D[1] - γ * (γ₁*D[1])
 
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
   @.. z = dt*integrator.fsalfirst
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 
@@ -469,13 +463,12 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   nlsolver.tmp = u₀ - ϕ
 
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
   nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -563,13 +556,12 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   @.. tmp = uprev + D[1] + D[2] - γ * (γ₁*D[1] + γ₂*D[2])
 
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
   @.. nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 
@@ -669,12 +661,11 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   ϕ *= γ
   nlsolver.tmp = u₀ - ϕ
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
   # initial guess
   nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -811,12 +802,11 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   @.. nlsolver.tmp = uprev + tm - ϕ
 
   γdt = γ*dt
-  nlargs = (cache, γdt, repeat_step)
   markfirststage!(nlsolver)
   # initial guess
   @.. nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = nlsolver.tmp + γ*z
 
@@ -911,7 +901,6 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
-  nlargs = (cache, dt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
@@ -923,14 +912,14 @@ end
 
 ### STEP 1
   nlsolver.tmp = uprev
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   z₁ = nlsolver.tmp + z
 ### STEP 2
   nlsolver.tmp = z₁
   nlsolver.c = 2
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   z₂ = z₁ + z
 ### STEP 3
@@ -938,7 +927,7 @@ end
   nlsolver.tmp = tmp2
   nlsolver.c = 1
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
-  z = nlsolve!(nlsolver, integrator, nlargs...)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = tmp2 + z
 
@@ -967,7 +956,6 @@ end
   z = nlsolver.z
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
-  nlargs = (cache, dt, repeat_step)
   markfirststage!(nlsolver)
 
   # initial guess
@@ -979,14 +967,14 @@ end
 
 ### STEP 1
  nlsolver.tmp = uprev
- z = nlsolve!(nlsolver, integrator, nlargs...)
+ z = nlsolve!(nlsolver, integrator, cache, repeat_step)
  nlsolvefail(nlsolver) && return
  @.. z₁ = uprev + z
 ### STEP 2
  nlsolver.tmp = z₁
  nlsolver.c = 2
  isnewton(nlsolver) && set_new_W!(nlsolver, false)
- z = nlsolve!(nlsolver, integrator, nlargs...)
+ z = nlsolve!(nlsolver, integrator, cache, repeat_step)
  nlsolvefail(nlsolver) && return
  @.. z₂ = z₁ + z
 ### STEP 3
@@ -995,7 +983,7 @@ end
  nlsolver.tmp = tmp2
  nlsolver.c = 1
  isnewton(nlsolver) && set_new_W!(nlsolver, false)
- z = nlsolve!(nlsolver, integrator, nlargs...)
+ z = nlsolve!(nlsolver, integrator, cache, repeat_step)
  nlsolvefail(nlsolver) && return
  @.. u = tmp2 + z
 

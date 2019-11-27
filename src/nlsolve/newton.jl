@@ -102,7 +102,7 @@ end
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,true}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,tmp,ztmp,γ,iter,cache = nlsolver
-  @unpack W_iγdt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
+  @unpack W_γdt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
 
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
@@ -132,7 +132,8 @@ end
     integrator.destats.nsolve += 1
   end
 
-  !(W_iγdt ≈ invγdt) && (rmul!(dz, 2/(1 + dt / W_iγdt)))
+  γdt = γ * dt
+  !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
 
   calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)

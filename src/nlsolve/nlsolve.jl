@@ -7,9 +7,9 @@ dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_step)
+function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, repeat_step)
   @label REDO
-  update_W!(nlsolver, integrator, cache, γdt, repeat_step)
+  update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
 
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
