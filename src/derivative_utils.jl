@@ -379,7 +379,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   # check if we need to update J or W
   new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
 
-  (new_jac && isdefined(lcache, :J_t)) && (lcache.J_t = t)
+  (new_jac && isnewton(lcache)) && (lcache.J_t = t)
 
   # calculate W
   if W isa WOperator

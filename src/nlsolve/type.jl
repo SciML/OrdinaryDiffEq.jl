@@ -61,10 +61,13 @@ mutable struct NLNewtonConstantCache{tType,J,W,ufType} <: AbstractNLSolverCache
   J::J
   W::W
   new_W::Bool
+  firststage::Bool
+  firstcall::Bool
   W_γdt::tType
   uf::ufType
   invγdt::tType
   new_W_γdt_cutoff::tType
+  J_t::tType
 end
 
 mutable struct NLFunctionalCache{uType,tType,rateType} <: AbstractNLSolverCache
