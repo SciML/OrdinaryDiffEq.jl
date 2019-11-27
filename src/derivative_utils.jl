@@ -306,20 +306,21 @@ end
 #  return !fastconvergence
 #end
 #
-#function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # any changes here need to be reflected in FIRK
+#function do_newW(integrator, nlsolver, new_jac, W_iγdt)::Bool # any changes here need to be reflected in FIRK
 #  nlsolver === nothing && return true
 #  new_jac && return true
 #  # reuse W when the change in stepsize is small enough
 #  dt = integrator.dt
-#  smallstepchange = abs((dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
+#  smallstepchange = abs((dt-W_iγdt)/W_iγdt) <= get_new_W_iγdt_cutoff(nlsolver)
 #  return !smallstepchange
 #end
 
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
   repeat_step && return false, false
   (integrator.iter <= 1 && (isdefined(nlsolver, :iter) && nlsolver.iter <= 1)) && return true, true
-  W_dt = nlsolver.cache.W_dt
-  smallstepchange = abs((integrator.dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
+  W_iγdt = nlsolver.cache.W_iγdt
+  iγdt = inv(nlsolver.γ * integrator.dt)
+  smallstepchange = abs((iγdt-W_iγdt)/W_iγdt) <= get_new_W_iγdt_cutoff(nlsolver)
   jbad = nlsolver.status === TryAgain && smallstepchange
   return jbad, (jbad || (!smallstepchange) || (isfirststage(nlsolver) && integrator.EEst > one(integrator.EEst)))
 end
@@ -402,9 +403,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   end
 
   # check if we need to update J or W
-  #W_dt = nlsolver === nothing ? dt : nlsolver.cache.W_dt # TODO: RosW
-  #new_jac = do_newJ(integrator, alg, cache, repeat_step)
-  #new_W = do_newW(integrator, nlsolver, new_jac, W_dt)
+  # TODO: RosW
   new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
 
   (new_jac && isdefined(lcache, :J_t)) && (lcache.J_t = t)
@@ -419,7 +418,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
+    set_new_W!(nlsolver, new_W) && set_W_iγdt!(nlsolver, inv(dtgamma))
   end
   new_W && (integrator.destats.nw += 1)
   return nothing

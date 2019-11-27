@@ -8,7 +8,7 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
   cont2::U
   cont3::U
   dtprev::Dt
-  W_dt::Dt
+  W_iγdt::Dt
   status::DiffEqBase.NLStatus
   J::JType
 end
@@ -63,7 +63,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   rtol::rTol
   atol::aTol
   dtprev::Dt
-  W_dt::Dt
+  W_iγdt::Dt
   status::DiffEqBase.NLStatus
 end
 

@@ -44,14 +44,14 @@ mutable struct NLNewtonCache{uType,tType,rateType,J,W,ufType,jcType,lsType} <: A
   W::W
   new_W::Bool
   firststage::Bool
-  W_dt::tType
+  W_iγdt::tType
   du1::uType
   uf::ufType
   jac_config::jcType
   linsolve::lsType
   weight::uType
   invγdt::tType
-  new_W_dt_cutoff::tType
+  new_W_iγdt_cutoff::tType
   J_t::tType
 end
 
@@ -60,10 +60,10 @@ mutable struct NLNewtonConstantCache{tType,J,W,ufType} <: AbstractNLSolverCache
   J::J
   W::W
   new_W::Bool
-  W_dt::tType
+  W_iγdt::tType
   uf::ufType
   invγdt::tType
-  new_W_dt_cutoff::tType
+  new_W_iγdt_cutoff::tType
 end
 
 mutable struct NLFunctionalCache{uType,tType,rateType} <: AbstractNLSolverCache

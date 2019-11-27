@@ -1,7 +1,7 @@
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
-get_new_W_dt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_dt_cutoff
+get_new_W_iγdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_iγdt_cutoff
 # handle FIRK
-get_new_W_dt_cutoff(alg::NewtonAlgorithm) = alg.new_W_dt_cutoff
+get_new_W_iγdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_iγdt_cutoff
 
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
@@ -26,10 +26,10 @@ get_new_W!(::AbstractNLSolver)::Bool = true
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 
-set_W_dt!(nlsolver::AbstractNLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
-function set_W_dt!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W_dt)
-  nlcache.W_dt = W_dt
-  W_dt
+set_W_iγdt!(nlsolver::AbstractNLSolver, W_iγdt) = set_W_iγdt!(nlsolver.cache, W_iγdt)
+function set_W_iγdt!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W_iγdt)
+  nlcache.W_iγdt = W_iγdt
+  W_iγdt
 end
 
 du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)

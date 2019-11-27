@@ -47,6 +47,7 @@ end
   nlsolver.z = z
 
   nlsolver.tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
+  nlsolver.γ = d
   z = nlsolve!(nlsolver, integrator, nlargs...)
   nlsolvefail(nlsolver) && return
 
@@ -122,6 +123,7 @@ end
   end
 
   @.. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
+  nlsolver.γ = d
   z = nlsolve!(nlsolver, integrator, nlargs...)
   nlsolvefail(nlsolver) && return
 

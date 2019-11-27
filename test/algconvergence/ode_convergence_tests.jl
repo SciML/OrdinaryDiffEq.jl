@@ -128,7 +128,7 @@ end
   # BDF
   #####################################
 
-  sim = test_convergence(dts3,prob,ABDF2())
+  sim = test_convergence(dts,prob,ABDF2())
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol

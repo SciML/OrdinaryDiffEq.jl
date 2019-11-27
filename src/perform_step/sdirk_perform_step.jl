@@ -102,6 +102,7 @@ end
   end
 
   nlsolver.tmp .= uprev
+  nlsolver.γ = 1
   z = nlsolve!(nlsolver, integrator, nlargs...)
   nlsolvefail(nlsolver) && return
   @.. u = uprev + z
