@@ -1535,14 +1535,14 @@ function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   # precalculations
   γ = 1//2
   γdt = γ*dt
-  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   zprev = dt*du₁
   nlsolver.z = z = zprev # Constant extrapolation
 
   nlsolver.tmp += γ*zprev
-  z = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + 1//2*z
 
@@ -1586,12 +1586,12 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   # precalculations
   γ = 1//2
   γdt = γ*dt
-  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   @.. z = dt*du₁
   @.. tmp += γ*z
-  z = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + 1//2*z
 
@@ -1639,13 +1639,13 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   end
   γdt = γ*dt
   nlsolver.tmp = tmp
-  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   zprev = dt*du₁
   nlsolver.z = z = zprev # Constant extrapolation
 
-  z = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -1676,7 +1676,7 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
   @unpack z,tmp = nlsolver
   @unpack f1 = f
   cnt = integrator.iter
- 
+
   f1(du₁, uprev, p, t)
   integrator.destats.nf += 1
   # Explicit part
@@ -1692,11 +1692,11 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
     @.. tmp += γ*dt*k2
   end
   γdt = γ*dt
-  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   @.. z = dt*du₁
-  z = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 
