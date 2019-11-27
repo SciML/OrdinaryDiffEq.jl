@@ -80,10 +80,10 @@ function initialize!(integrator, cache::PDIRK44Cache) end
       Threads.@threads for i in 1:2
         nlsolver[i].z .= zero(eltype(u))
         nlsolver[i].tmp .= uprev
-        update_W!(nlsolver[i], integrator, cache, γs[i]*dt, repeat_step)
         nlsolver[i].γ = γs[i]
         nlsolver[i].c = cs[i]
-        k1[i] .= nlsolve!(nlsolver[i], integrator)
+        markfirststage!(nlsolver[i])
+        k1[i] .= nlsolve!(nlsolver[i], integrator, cache, γs[i]*dt, repeat_step)
       end
     end
     nlsolvefail(nlsolver[1]) && return
@@ -94,7 +94,7 @@ function initialize!(integrator, cache::PDIRK44Cache) end
         nlsolver[i].c = cs[2+i]
         nlsolver[i].z .= zero(eltype(u))
         @.. nlsolver[i].tmp = uprev + α1[i] * k1[1] + α2[i] * k1[2]
-        k2[i] .= nlsolve!(nlsolver[i], integrator)
+        k2[i] .= nlsolve!(nlsolver[i], integrator, cache, γs[i]*dt, repeat_step)
       end
     end
     nlsolvefail(nlsolver[1]) && return
@@ -102,32 +102,30 @@ function initialize!(integrator, cache::PDIRK44Cache) end
   else
     _nlsolver = nlsolver[1]
     _nlsolver.z .= zero(eltype(u))
-    update_W!(_nlsolver, integrator, cache, γs[1]*dt, repeat_step)
     _nlsolver.tmp .= uprev
     _nlsolver.γ = γs[1]
     _nlsolver.c = cs[1]
-    k1[1] .= nlsolve!(_nlsolver, integrator)
+    markfirststage!(_nlsolver)
+    k1[1] .= nlsolve!(_nlsolver, integrator, cache, γs[1]*dt, repeat_step)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
-    update_W!(_nlsolver, integrator, cache, γs[2]*dt, repeat_step)
     _nlsolver.tmp .= uprev
     _nlsolver.γ = γs[2]
     _nlsolver.c = cs[2]
-    k1[2] .= nlsolve!(_nlsolver, integrator)
+    markfirststage!(_nlsolver)
+    k1[2] .= nlsolve!(_nlsolver, integrator, cache, γs[2]*dt, repeat_step)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
-    update_W!(_nlsolver, integrator, cache, γs[1]*dt, repeat_step)
     @.. _nlsolver.tmp .= uprev + α1[1] * k1[1] + α2[1] * k1[2]
     _nlsolver.γ = γs[1]
     _nlsolver.c = cs[3]
-    k2[1] .= nlsolve!(_nlsolver, integrator)
+    k2[1] .= nlsolve!(_nlsolver, integrator, cache, γs[1]*dt, repeat_step)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
-    update_W!(_nlsolver, integrator, cache, γs[2]*dt, repeat_step)
     @.. _nlsolver.tmp = uprev + α1[2] * k1[1] + α2[2] * k1[2]
     _nlsolver.γ = γs[2]
     _nlsolver.c = cs[4]
-    k2[2] .= nlsolve!(_nlsolver, integrator)
+    k2[2] .= nlsolve!(_nlsolver, integrator, cache, γs[2]*dt, repeat_step)
     nlsolvefail(_nlsolver) && return
   end
   @.. u = uprev + b1 * k1[1] + b2 * k2[1] + b3 * k1[2] + b4 * k2[2]

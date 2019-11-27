@@ -9,14 +9,14 @@ where `dt` is the step size and `γ` and `c` are constants, and return the solut
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, γdt, repeat_step)
   @label REDO
-  update_W!(integrator, cache, γdt, repeat_step)
+  update_W!(nlsolver, integrator, cache, γdt, repeat_step)
 
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
   initialize!(nlsolver, integrator)
   nlsolver.status = Divergence
   # TODO: test immediate convergence on the first iteration
-  η = nlsolver.cache.new_W ? initial_η(nlsolver, integrator) : nlsolver.ηold
+  η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
   local ndz
   for iter in 1:maxiters

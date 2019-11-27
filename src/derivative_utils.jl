@@ -405,7 +405,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   #W_dt = nlsolver === nothing ? dt : nlsolver.cache.W_dt # TODO: RosW
   #new_jac = do_newJ(integrator, alg, cache, repeat_step)
   #new_W = do_newW(integrator, nlsolver, new_jac, W_dt)
-  new_jac, new_W = do_newJW(integrator, alg, cache.nlsolver, repeat_step)
+  new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
 
   (new_jac && isdefined(lcache, :J_t)) && (lcache.J_t = t)
 

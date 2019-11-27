@@ -12,12 +12,16 @@ isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 
 isJcurrent(nlsolver::AbstractNLSolver, integrator) = integrator.t == nlsolver.cache.J_t
 isfirststage(nlsolver::AbstractNLSolver) = nlsolver.cache.firststage
-setfirststage!(nlsolver::AbstractNLSolver, val::Bool) = (nlsolver.cache.firststage = val)
+setfirststage!(nlsolver::AbstractNLSolver, val::Bool) = setfirststage!(nlsolver.cache, val)
+setfirststage!(nlcache::AbstractNLSolverCache, val::Bool) = isdefined(nlcache, :firststage) && (nlcache.firststage = val)
 markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
 
 set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
 set_new_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, val::Bool)::Bool =
   nlcache.new_W = val
+get_new_W!(nlsolver::AbstractNLSolver)::Bool = get_new_W!(nlsolver.cache)
+get_new_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache})::Bool = nlcache.new_W
+get_new_W!(::AbstractNLSolver)::Bool = true
 
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
