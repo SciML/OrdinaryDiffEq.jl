@@ -54,13 +54,13 @@ end
 
 working_sdirk_algs = [ImplicitMidpoint(),
                       ImplicitEuler(),
-                      SSPSDIRK2()]
+                      SSPSDIRK2(), KenCarp5()]
 
 sdirk_algs = [Trapezoid(),
               TRBDF2(), SDIRK2(),
               Kvaerno3(), KenCarp3(),
               Cash4(), Hairer4(), Hairer42(), Kvaerno4(), KenCarp4(),
-              Kvaerno5(), KenCarp5()]
+              Kvaerno5()]
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in working_sdirk_algs
   println(nameof(typeof(alg)))
