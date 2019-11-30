@@ -423,7 +423,7 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
-  W
+  return W
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
@@ -435,19 +435,23 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
 end
 
 # update W matrix (only used in Newton method)
-update_W!(integrator, cache, dt, repeat_step) =
-  update_W!(cache.nlsolver, integrator, cache, dt, repeat_step)
+update_W!(integrator, cache, dtgamma, repeat_step) =
+  update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step)
 
-function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step)
   if isnewton(nlsolver)
-    calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dt, repeat_step, true)
+    calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true)
   end
   nothing
 end
 
-function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dt, repeat_step)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repeat_step)
   if isnewton(nlsolver)
-    nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dt, repeat_step, true)
+    nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dtgamma, repeat_step, true)
+    #TODO: jacobian reuse for oop
+    new_jac, new_W = true, true
+    new_jac && (nlsolver.cache.J_t = integrator.t)
+    set_new_W!(nlsolver, new_W) && set_W_γdt!(nlsolver, dtgamma)
   end
   nothing
 end
