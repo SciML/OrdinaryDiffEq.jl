@@ -290,12 +290,14 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
   # TODO: RosW
   isnewton(nlsolver) || return true, true
   isfirstcall(nlsolver) && return true, true
+  isfs = isfirststage(nlsolver)
+  iszero(nlsolver.fast_convergence_cutoff) && return isfs, isfs
   W_iγdt = inv(nlsolver.cache.W_γdt)
   iγdt = inv(nlsolver.γ * integrator.dt)
   smallstepchange = abs(iγdt/W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
   jbad = nlsolver.status === TryAgain && smallstepchange
   errorfail = integrator.EEst > one(integrator.EEst)
-  return jbad, (jbad || (!smallstepchange) || (isfirststage(nlsolver) && errorfail))
+  return jbad, (jbad || (!smallstepchange) || (isfs && errorfail))
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
