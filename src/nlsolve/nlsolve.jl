@@ -54,7 +54,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
     end
   end
 
-  if nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator) && isnewton(nlsolver)
+  if isnewton(nlsolver) && nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator)
     nlsolver.status = TryAgain
     @goto REDO
   end
