@@ -7,9 +7,12 @@ dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, repeat_step)
+function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_step=false)
   @label REDO
-  update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
+  if isnewton(nlsolver)
+    cache isa Nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
+    update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
+  end
 
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
@@ -51,7 +54,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, repeat_step)
     end
   end
 
-  if nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator)
+  if nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator) && isnewton(nlsolver)
     nlsolver.status = TryAgain
     @goto REDO
   end
