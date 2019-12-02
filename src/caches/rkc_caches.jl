@@ -10,7 +10,7 @@ mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
   min_stage::Int
   max_stage::Int
 end
-@cache struct ROCK2Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache struct ROCK2Cache{uType,rateType,uNoUnitsType,C<:ROCK2ConstantCache} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uᵢ₋₁::uType
@@ -19,7 +19,7 @@ end
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  constantcache::ROCK2ConstantCache
+  constantcache::C
 end
 
 function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -51,7 +51,7 @@ mutable struct ROCK4ConstantCache{T,T2,T3,T4,zType} <: OrdinaryDiffEqConstantCac
   max_stage::Int
 end
 
-@cache struct ROCK4Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache struct ROCK4Cache{uType,rateType,uNoUnitsType,C<:ROCK4ConstantCache} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uᵢ₋₁::uType
@@ -61,7 +61,7 @@ end
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  constantcache::ROCK4ConstantCache
+  constantcache::C
 end
 
 function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -84,7 +84,7 @@ mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache
   #to match the types to call maxeig!
   zprev::zType
 end
-@cache struct RKCCache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache struct RKCCache{uType,rateType,uNoUnitsType,C<:RKCConstantCache} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   gprev::uType
@@ -93,7 +93,7 @@ end
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  constantcache::RKCConstantCache
+  constantcache::C
 end
 
 function alg_cache(alg::RKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -119,7 +119,7 @@ end
   du₂::rateType
 end
 
-@cache mutable struct IRKCCache{uType,rateType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct IRKCCache{uType,rateType,uNoUnitsType,N,C<:IRKCConstantCache} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   gprev::uType
@@ -132,7 +132,7 @@ end
   nlsolver::N
   du₁::rateType
   du₂::rateType
-  constantcache::IRKCConstantCache
+  constantcache::C
 end
 
 function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -172,7 +172,7 @@ mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
   internal_deg::Int
 end
 
-@cache struct ESERK4Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache struct ESERK4Cache{uType,rateType,uNoUnitsType,C<:ESERK4ConstantCache} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uᵢ::uType
@@ -183,7 +183,7 @@ end
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  constantcache::ESERK4ConstantCache
+  constantcache::C
 end
 
 function alg_cache(alg::ESERK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -214,7 +214,7 @@ mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
   internal_deg::Int
 end
 
-@cache struct ESERK5Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache struct ESERK5Cache{uType,rateType,uNoUnitsType,C<:ESERK5ConstantCache} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uᵢ::uType
@@ -225,7 +225,7 @@ end
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  constantcache::ESERK5ConstantCache
+  constantcache::C
 end
 
 function alg_cache(alg::ESERK5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -254,7 +254,7 @@ mutable struct SERK2ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
   internal_deg::Int
 end
 
-@cache struct SERK2Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache struct SERK2Cache{uType,rateType,uNoUnitsType,C<:SERK2ConstantCache} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uᵢ₋₁::uType
@@ -264,7 +264,7 @@ end
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  constantcache::SERK2ConstantCache
+  constantcache::C
 end
 
 function alg_cache(alg::SERK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
