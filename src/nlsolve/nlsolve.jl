@@ -45,9 +45,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, repeat_step)
 
     # check for convergence
     iter > 1 && (η = θ / (1 - θ))
-    if (iter == 1 && ndz < 1e-5) ||
-        iszero(ndz) ||
-        (iter > 1 && (η >= zero(η) && η * ndz < κ))
+    if (iter == 1 && ndz < 1e-5) || iszero(ndz) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
       nlsolver.status = Convergence
       break
     end

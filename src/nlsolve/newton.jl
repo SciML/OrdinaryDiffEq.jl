@@ -132,6 +132,10 @@ end
     integrator.destats.nsolve += 1
   end
 
+  # relaxed Newton
+  # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential
+  # Equations. A Review, by Christopher A. Kennedy and Mark H. Carpenter
+  # page 54.
   γdt = γ * dt
   !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
 
