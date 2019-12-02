@@ -9,6 +9,7 @@ probArr[2] = prob_ode_2Dlinear
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
   Random.seed!(123)
   for iip in [true, false], alg in [ROCK2(), ROCK4(), RKC(), SERK2(), ESERK4(), ESERK5()]
+    println(typeof(alg))
     A = randn(20,20)
     test_f(u,p,t) = A*u
     test_f(du,u,p,t) = mul!(du, A, u)
@@ -28,6 +29,7 @@ probArr[2] = prob_ode_2Dlinear
 
   Random.seed!(123)
   for iip in [true, false], alg in [IRKC()]
+    println(typeof(alg))
     A = randn(20,20)
     B = randn(20,20)
     test_f1 = !iip ? (u,p,t) -> A*u : (du,u,p,t) -> mul!(du, A, u)
@@ -51,6 +53,7 @@ end
   dts = 1 .//2 .^(8:-1:4)
   testTol = 0.1
   for prob in probArr
+    println("ROCK2")
     #default ROCK2
     sim = test_convergence(dts,prob,ROCK2())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
@@ -62,6 +65,7 @@ end
     sim = test_convergence(dts,prob,ROCK2(min_stages=21))
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
     #default ROCK4
+    println("ROCK4")
     sim = test_convergence(dts,prob,ROCK4())
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
     #testing ROCK4 for different minimum stages to insure that the constatns are right
@@ -72,6 +76,7 @@ end
     sim = test_convergence(dts,prob,ROCK4(min_stages=21))
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
+    println("ROCKC")
     sim = test_convergence(dts,prob,RKC())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
     sim = test_convergence(dts,prob,SERK2())

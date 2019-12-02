@@ -7,12 +7,16 @@ dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::AbstractNLSolver, integrator)
+function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache, repeat_step)
+  @label REDO
+  update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
+
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
   initialize!(nlsolver, integrator)
-  η = initial_η(nlsolver, integrator)
-  nlsolver.status = SlowConvergence
+  nlsolver.status = Divergence
+  # TODO: test immediate convergence on the first iteration
+  η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
   local ndz
   for iter in 1:maxiters
@@ -21,6 +25,10 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
     # compute next step and calculate norm of residuals
     iter > 1 && (ndzprev = ndz)
     ndz = compute_step!(nlsolver, integrator)
+    if !isfinite(ndz)
+      nlsolver.status = Divergence
+      break
+    end
 
     # check divergence (not in initial step)
     if iter > 1
@@ -31,26 +39,21 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator)
         nlsolver.status = Divergence
         break
       end
-
-      # very slow convergence
-      if ndz * θ^(maxiters - iter) > κ * (1 - θ)
-        nlsolver.status = VerySlowConvergence
-        break
-      end
     end
 
     apply_step!(nlsolver, integrator)
 
     # check for convergence
-    if iter == 1 && ndz < 1e-5
-      nlsolver.status = FastConvergence
-      break
-    end
     iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κ && (iter > 1 || iszero(ndz) || (isnewton(nlsolver) && !iszero(integrator.success_iter)))
-      nlsolver.status = η < fast_convergence_cutoff ? FastConvergence : Convergence
+    if (iter == 1 && ndz < 1e-5) || iszero(ndz) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
+      nlsolver.status = Convergence
       break
     end
+  end
+
+  if nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator)
+    nlsolver.status = TryAgain
+    @goto REDO
   end
 
   nlsolver.ηold = η
@@ -83,6 +86,8 @@ function postamble!(nlsolver::NLSolver, integrator)
     end
   end
   integrator.force_stepfail = nlsolvefail(nlsolver)
+  setfirststage!(nlsolver, false)
+  isnewton(nlsolver) && (nlsolver.cache.firstcall = false)
 
   nlsolver.z
 end

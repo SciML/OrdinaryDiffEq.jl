@@ -38,7 +38,7 @@ end
   alg = unwrap_alg(integrator, true)
 
   # calculate W
-  update_W!(integrator, cache, γ*dt, repeat_step)
+  markfirststage!(nlsolver)
 
   # FSAL Step 1
   nlsolver.z = z₁ = dt*integrator.fsalfirst
@@ -50,7 +50,7 @@ end
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -60,7 +60,7 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -69,7 +69,7 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = 1
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₄
@@ -104,7 +104,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   # FSAL Step 1
   @.. z₁ = dt*integrator.fsalfirst
@@ -117,7 +117,7 @@ end
 
   @.. tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
@@ -129,7 +129,7 @@ end
 
   @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -144,7 +144,7 @@ end
 
   @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = 1
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₄
@@ -184,7 +184,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -209,7 +209,7 @@ end
   end
 
   nlsolver.c = 2γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -229,7 +229,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = c3
 
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -249,7 +249,7 @@ end
   nlsolver.c = 1
   nlsolver.tmp = tmp
 
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₄
@@ -308,7 +308,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -337,7 +337,7 @@ end
   end
 
   nlsolver.c = 2γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
@@ -357,7 +357,7 @@ end
   nlsolver.z = z₃
 
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -376,7 +376,7 @@ end
   nlsolver.z = z₄
 
   nlsolver.c = 1
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₄
@@ -424,7 +424,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   ##### Step 1
 
@@ -437,7 +437,7 @@ end
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -446,7 +446,7 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -455,7 +455,7 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -465,7 +465,7 @@ end
 
   nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₅
@@ -502,7 +502,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   ##### Step 1
 
@@ -516,7 +516,7 @@ end
 
   @.. tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
@@ -527,7 +527,7 @@ end
 
   @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -538,7 +538,7 @@ end
 
   @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -549,7 +549,7 @@ end
 
   @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₅
@@ -594,7 +594,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -620,7 +620,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = 2γ
 
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -640,7 +640,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = c3
 
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -659,7 +659,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = c4
 
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -679,7 +679,7 @@ end
   nlsolver.c = c5
 
   u = nlsolver.tmp + γ*z₅
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -698,7 +698,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = 1
 
-  z₆ = nlsolve!(nlsolver, integrator)
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₆
@@ -761,7 +761,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   ##### Step 1
 
@@ -792,7 +792,8 @@ end
   end
 
   nlsolver.c = 2γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
@@ -812,7 +813,7 @@ end
   nlsolver.z = z₃
 
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -830,7 +831,7 @@ end
   nlsolver.z = z₄
 
   nlsolver.c = c4
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -848,7 +849,7 @@ end
   nlsolver.z = z₅
 
   nlsolver.c = c5
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -866,7 +867,7 @@ end
   nlsolver.z = z₆
 
   nlsolver.c = 1
-  z₆ = nlsolve!(nlsolver, integrator)
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₆
@@ -915,7 +916,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   ##### Step 1
 
@@ -928,7 +929,7 @@ end
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -937,7 +938,7 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -946,7 +947,7 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -955,7 +956,7 @@ end
 
   nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -964,7 +965,7 @@ end
 
   nlsolver.tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
-  z₆ = nlsolve!(nlsolver, integrator)
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -974,7 +975,7 @@ end
 
   nlsolver.tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlsolver.c = 1
-  z₇ = nlsolve!(nlsolver, integrator)
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₇
@@ -1011,7 +1012,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   ##### Step 1
 
@@ -1025,7 +1026,7 @@ end
 
   @.. tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
@@ -1036,7 +1037,7 @@ end
 
   @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -1047,7 +1048,7 @@ end
 
   @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -1057,7 +1058,7 @@ end
 
   @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -1067,7 +1068,7 @@ end
 
   @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
-  z₆ = nlsolve!(nlsolver, integrator)
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -1078,7 +1079,7 @@ end
 
   @.. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlsolver.c = 1
-  z₇ = nlsolve!(nlsolver, integrator)
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₇
@@ -1124,7 +1125,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   ##### Step 1
 
@@ -1152,7 +1153,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = 2γ
 
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -1172,7 +1173,7 @@ end
   nlsolver.c = c3
   nlsolver.tmp = tmp
 
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -1191,7 +1192,7 @@ end
   nlsolver.c = c4
   nlsolver.tmp = tmp
 
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -1210,7 +1211,7 @@ end
   nlsolver.c = c5
   nlsolver.tmp = tmp
 
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -1229,7 +1230,7 @@ end
   nlsolver.c = c6
   nlsolver.tmp = tmp
 
-  z₆ = nlsolve!(nlsolver, integrator)
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -1248,7 +1249,7 @@ end
   nlsolver.c = c7
   nlsolver.tmp = tmp
 
-  z₇ = nlsolve!(nlsolver, integrator)
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 8
@@ -1267,7 +1268,7 @@ end
   nlsolver.c = 1
   nlsolver.tmp = tmp
 
-  z₈ = nlsolve!(nlsolver, integrator)
+  z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₈
@@ -1331,7 +1332,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  update_W!(integrator, cache, γdt, repeat_step)
+  markfirststage!(nlsolver)
 
   ##### Step 1
 
@@ -1362,7 +1363,7 @@ end
   end
 
   nlsolver.c = 2γ
-  z₂ = nlsolve!(nlsolver, integrator)
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
@@ -1382,7 +1383,7 @@ end
   nlsolver.z = z₃
 
   nlsolver.c = c3
-  z₃ = nlsolve!(nlsolver, integrator)
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -1400,7 +1401,7 @@ end
   nlsolver.z = z₄
 
   nlsolver.c = c4
-  z₄ = nlsolve!(nlsolver, integrator)
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -1418,7 +1419,7 @@ end
   nlsolver.z = z₅
 
   nlsolver.c = c5
-  z₅ = nlsolve!(nlsolver, integrator)
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -1436,7 +1437,7 @@ end
   nlsolver.z = z₆
 
   nlsolver.c = c6
-  z₆ = nlsolve!(nlsolver, integrator)
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -1454,7 +1455,7 @@ end
   nlsolver.z = z₇
 
   nlsolver.c = c7
-  z₇ = nlsolve!(nlsolver, integrator)
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 8
@@ -1472,7 +1473,7 @@ end
   nlsolver.z = z₈
 
   nlsolver.c = 1
-  z₈ = nlsolve!(nlsolver, integrator)
+  z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₈

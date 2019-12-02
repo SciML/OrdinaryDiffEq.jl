@@ -285,33 +285,19 @@ function islinearfunction(f, alg)::Tuple{Bool,Bool}
   return islin, isode
 end
 
-function do_newJ(integrator, alg, cache, repeat_step)::Bool # any changes here need to be reflected in FIRK
-  integrator.iter <= 1 && return true
-  repeat_step && return false
-  first(islinearfunction(integrator)) && return false
-  integrator.opts.adaptive || return true
-  alg_can_repeat_jac(alg) || return true
-  integrator.u_modified && return true
-  # below is Newton specific logic, so we return non-Newton algs here
-  alg isa NewtonAlgorithm || return true
-  isfirk = alg isa RadauIIA5
-  nlstatus = isfirk ? cache.status : get_status(cache.nlsolver)
-  nlsolvefail(nlstatus) && return true
-  # no reuse when the cutoff is 0
-  fast_convergence_cutoff = isfirk ? alg.fast_convergence_cutoff : cache.nlsolver.fast_convergence_cutoff
-  iszero(fast_convergence_cutoff) && return true
-  # reuse J when there is fast convergence
-  fastconvergence = nlstatus === FastConvergence
-  return !fastconvergence
-end
-
-function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # any changes here need to be reflected in FIRK
-  nlsolver === nothing && return true
-  new_jac && return true
-  # reuse W when the change in stepsize is small enough
-  dt = integrator.dt
-  smallstepchange = abs((dt-W_dt)/W_dt) <= get_new_W_dt_cutoff(nlsolver)
-  return !smallstepchange
+function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
+  repeat_step && return false, false
+  # TODO: RosW
+  isnewton(nlsolver) || return true, true
+  isfirstcall(nlsolver) && return true, true
+  isfs = isfirststage(nlsolver)
+  iszero(nlsolver.fast_convergence_cutoff) && return isfs, isfs
+  W_iγdt = inv(nlsolver.cache.W_γdt)
+  iγdt = inv(nlsolver.γ * integrator.dt)
+  smallstepchange = abs(iγdt/W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
+  jbad = nlsolver.status === TryAgain && smallstepchange
+  errorfail = integrator.EEst > one(integrator.EEst)
+  return jbad, (jbad || (!smallstepchange) || (isfs && errorfail))
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
@@ -375,15 +361,16 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
-  isnewton = alg isa NewtonAlgorithm
 
   # handle Wfact
   if W_transform && DiffEqBase.has_Wfact_t(f)
     f.Wfact_t(W, u, p, dtgamma, t)
+    isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
     is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W), Inf) + inv(dtgamma)) # TODO: better estimate
     return nothing
   elseif !W_transform && DiffEqBase.has_Wfact(f)
     f.Wfact(W, u, p, dtgamma, t)
+    isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
     if is_compos
       opn = opnorm(LowerTriangular(W), Inf)
       integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
@@ -392,21 +379,21 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   end
 
   # check if we need to update J or W
-  W_dt = nlsolver === nothing ? dt : nlsolver.cache.W_dt # TODO: RosW
-  new_jac = do_newJ(integrator, alg, cache, repeat_step)
-  new_W = do_newW(integrator, nlsolver, new_jac, W_dt)
+  new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
+
+  (new_jac && isnewton(lcache)) && (lcache.J_t = t)
 
   # calculate W
   if W isa WOperator
-    isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
+    isnewton(nlsolver) || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
     islin, isode = islinearfunction(integrator)
     islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, lcache)) )
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
-  if isnewton
-    set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
+  if isnewton(nlsolver)
+    set_new_W!(nlsolver, new_W) && set_W_γdt!(nlsolver, dtgamma)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -438,7 +425,7 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
-  W
+  return W
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
@@ -450,19 +437,23 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
 end
 
 # update W matrix (only used in Newton method)
-update_W!(integrator, cache, dt, repeat_step) =
-  update_W!(cache.nlsolver, integrator, cache, dt, repeat_step)
+update_W!(integrator, cache, dtgamma, repeat_step) =
+  update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step)
 
-function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step)
   if isnewton(nlsolver)
-    calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dt, repeat_step, true)
+    calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true)
   end
   nothing
 end
 
-function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dt, repeat_step)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repeat_step)
   if isnewton(nlsolver)
-    nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dt, repeat_step, true)
+    nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dtgamma, repeat_step, true)
+    #TODO: jacobian reuse for oop
+    new_jac, new_W = true, true
+    new_jac && (nlsolver.cache.J_t = integrator.t)
+    set_new_W!(nlsolver, new_W) && set_W_γdt!(nlsolver, dtgamma)
   end
   nothing
 end

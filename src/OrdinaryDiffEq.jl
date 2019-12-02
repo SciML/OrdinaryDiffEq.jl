@@ -42,7 +42,8 @@ module OrdinaryDiffEq
 
   using DiffEqBase: AbstractNLSolverAlgorithm, AbstractNLSolverCache, NLStatus
   using DiffEqBase: nlsolve_f, qrdelete!, qradd!, build_jac_config, resize_jac_config!
-  using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
+  using DiffEqBase: Convergence, Divergence
+  const TryAgain = DiffEqBase.SlowConvergence
 
   import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear
 

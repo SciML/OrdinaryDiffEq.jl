@@ -370,7 +370,8 @@ end
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
+  #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
+  maxm = 50
   mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
   mdeg = (mdeg > maxm) ? maxm : mdeg
 
@@ -453,7 +454,8 @@ end
   @unpack k, tmp, gprev2, gprev, atmp = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
+  #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/10eps(t)))))
+  maxm = 50
   mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
   mdeg = (mdeg > maxm) ? maxm : mdeg
 
@@ -544,10 +546,10 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   maxeig!(integrator, cache)
 
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
+  #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
+  maxm = 50
   mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
-  mdeg = (mdeg < minm) ? minm : mdeg
-  mdeg = (mdeg >= maxm) ? maxm : mdeg
+  mdeg = min(maxm, max(minm, mdeg))
 
   ω₀    = 1 + 2/(13 * (mdeg^2))
   temp₁ = ω₀^2 - 1
@@ -563,7 +565,6 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
 
-  update_W!(integrator, cache, μs₁*dt, false)
   # initial guess for implicit part
   # if alg.extrapolant == :linear
   #   nlsolver.z = dt*du₁
@@ -576,7 +577,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z = nlsolve!(nlsolver, integrator, cache, false)
   # nlsolvefail(nlsolver) && return
   gprev = nlsolver.tmp + μs₁*z
 
@@ -608,7 +610,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1 -μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c   = Cⱼ
-    z = nlsolve!(nlsolver, integrator)
+    z = nlsolve!(nlsolver, integrator, cache, false)
     # ignoring newton method's convergence failure
     # nlsolvefail(nlsolver) && return
     u = nlsolver.tmp + μs₁*z
@@ -673,7 +675,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
 
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
+  #maxm = max(2,int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
+  maxm = 50
   mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
   mdeg = (mdeg < minm) ? minm : mdeg
   mdeg = (mdeg >= maxm) ? maxm : mdeg
@@ -692,7 +695,6 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
 
-  update_W!(integrator, cache, μs₁*dt, false)
   # initial guess
   # if alg.extrapolant == :linear
   #   @.. z = dt*du₁
@@ -704,7 +706,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @.. nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z = nlsolve!(nlsolver, integrator)
+  markfirststage!(nlsolver)
+  z = nlsolve!(nlsolver, integrator, cache, false)
   # ignoring newton method's convergence failure
   # nlsolvefail(nlsolver) && return
   @.. gprev = nlsolver.tmp + μs₁*nlsolver.z
@@ -738,7 +741,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     @.. nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
 
-    z = nlsolve!(nlsolver, integrator)
+    z = nlsolve!(nlsolver, integrator, cache, false)
     # nlsolvefail(nlsolver) && return
     @.. u = nlsolver.tmp + μs₁*nlsolver.z
     if (iter < mdeg)

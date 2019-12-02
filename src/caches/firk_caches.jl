@@ -8,7 +8,7 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
   cont2::U
   cont3::U
   dtprev::Dt
-  W_dt::Dt
+  W_γdt::Dt
   status::DiffEqBase.NLStatus
   J::JType
 end
@@ -22,7 +22,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
   J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
-  RadauIIA5ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, Convergence, J)
+  RadauIIA5ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, DiffEqBase.Convergence, J)
 end
 
 mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
@@ -63,7 +63,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   rtol::rTol
   atol::aTol
   dtprev::Dt
-  W_dt::Dt
+  W_γdt::Dt
   status::DiffEqBase.NLStatus
 end
 
@@ -103,5 +103,5 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                  du1, fsalfirst, k, k2, k3, fw1, fw2, fw3,
                  J, W1, W2,
                  uf, tab, κ, one(uToltype), 10000,
-                 tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt, Convergence)
+                 tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt, DiffEqBase.Convergence)
 end

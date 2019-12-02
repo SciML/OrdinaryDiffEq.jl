@@ -1,26 +1,38 @@
 get_status(nlsolver::AbstractNLSolver) = nlsolver.status
-get_new_W_dt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_dt_cutoff
+get_new_W_γdt_cutoff(nlsolver::AbstractNLSolver) = nlsolver.cache.new_W_γdt_cutoff
 # handle FIRK
-get_new_W_dt_cutoff(alg::NewtonAlgorithm) = alg.new_W_dt_cutoff
+get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
 
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
 
+isnewton(::Any) = false
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 
+isJcurrent(nlsolver::AbstractNLSolver, integrator) = integrator.t == nlsolver.cache.J_t
+isfirstcall(nlsolver::AbstractNLSolver) = nlsolver.cache.firstcall
+isfirststage(nlsolver::AbstractNLSolver) = nlsolver.cache.firststage
+setfirststage!(nlsolver::AbstractNLSolver, val::Bool) = setfirststage!(nlsolver.cache, val)
+setfirststage!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, val::Bool) = (nlcache.firststage = val)
+setfirststage!(::Any, val::Bool) = nothing
+markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
+
 set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
 set_new_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, val::Bool)::Bool =
   nlcache.new_W = val
+get_new_W!(nlsolver::AbstractNLSolver)::Bool = get_new_W!(nlsolver.cache)
+get_new_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache})::Bool = nlcache.new_W
+get_new_W!(::AbstractNLSolverCache)::Bool = true
 
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 
-set_W_dt!(nlsolver::AbstractNLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
-function set_W_dt!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W_dt)
-  nlcache.W_dt = W_dt
-  W_dt
+set_W_γdt!(nlsolver::AbstractNLSolver, W_γdt) = set_W_γdt!(nlsolver.cache, W_γdt)
+function set_W_γdt!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W_γdt)
+  nlcache.W_γdt = W_γdt
+  W_γdt
 end
 
 du_cache(nlsolver::AbstractNLSolver) = du_cache(nlsolver.cache)
@@ -81,8 +93,8 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
-    nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,tType(dt),du1,uf,jac_config,
-                            linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff))
+    nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,true,true,tType(dt),du1,uf,jac_config,
+                            linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff),t)
   elseif nlalg isa NLFunctional
     nlcache = NLFunctionalCache(ustep,tstep,k,atmp,dz)
   elseif nlalg isa NLAnderson
@@ -102,9 +114,9 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   # build non-linear solver
   ηold = one(uTolType)
 
-  NLSolver{typeof(nlalg),true,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
-    z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
-    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,SlowConvergence,
+  NLSolver{true,tTypeNoUnits}(
+    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
     nlcache)
 end
 
@@ -129,7 +141,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
 
-    nlcache = NLNewtonConstantCache(tstep,J,W,true,tType(dt),uf,invγdt,tType(nlalg.new_W_dt_cutoff))
+    nlcache = NLNewtonConstantCache(tstep,J,W,true,true,true,tType(dt),uf,invγdt,tType(nlalg.new_W_dt_cutoff),t)
   elseif nlalg isa NLFunctional
     nlcache = NLFunctionalConstantCache(tstep)
   elseif nlalg isa NLAnderson
@@ -149,9 +161,9 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   # build non-linear solver
   ηold = one(uTolType)
 
-  NLSolver{typeof(nlalg),false,typeof(u),uTolType,tTypeNoUnits,typeof(nlcache)}(
-    z,tmp,ztmp,uTolType(γ),tTypeNoUnits(c),nlalg,uTolType(nlalg.κ),
-    uTolType(nlalg.fast_convergence_cutoff),ηold,10_000,nlalg.max_iter,SlowConvergence,
+  NLSolver{false,tTypeNoUnits}(
+    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
     nlcache)
 end
 

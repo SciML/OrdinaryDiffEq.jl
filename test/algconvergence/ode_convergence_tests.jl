@@ -7,15 +7,15 @@ Random.seed!(100)
 ODEProblemLibrary.importodeproblems()
 
 ## Convergence Testing
-dts = 1 .//2 .^(8:-1:4)
 dts1 = 1 .//2 .^(9:-1:5)
 dts2 = 1 .//2 .^(7:-1:3)
 dts3 = 1 .//2 .^(12:-1:7)
 testTol = 0.2
 
-for prob in (ODEProblemLibrary.prob_ode_linear,
-             ODEProblemLibrary.prob_ode_2Dlinear)
-  global dts
+@testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
+  prob = (ODEProblemLibrary.prob_ode_linear,
+          ODEProblemLibrary.prob_ode_2Dlinear)[i]
+  dts = 1 .//2 .^(8:-1:4)
   sim = test_convergence(dts,prob,Euler())
   @test sim.𝒪est[:final] ≈ 1 atol=testTol
   sim2 = test_convergence(dts,prob,Heun())
@@ -61,9 +61,11 @@ for prob in (ODEProblemLibrary.prob_ode_linear,
   @test sim106.𝒪est[:l2] ≈ 5 atol=testTol
   sim160 = test_convergence(dts,prob,Anas5(w=2))
   @test sim160.𝒪est[:l2] ≈ 4 atol=2*testTol
+end
 
-  println("Stiff Solvers")
-
+@testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
+  prob = (ODEProblemLibrary.prob_ode_linear,
+          ODEProblemLibrary.prob_ode_2Dlinear)[i]
   dts = 1 .//2 .^(9:-1:5)
 
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
@@ -92,7 +94,7 @@ for prob in (ODEProblemLibrary.prob_ode_linear,
 
   sim135 = test_convergence(dts,prob,Trapezoid(nlsolve = NLAnderson()))
   @test sim135.𝒪est[:final] ≈ 2 atol=testTol
-  
+
   sim14 = test_convergence(dts,prob,TRBDF2())
   @test sim14.𝒪est[:final] ≈ 2 atol=testTol
 
@@ -126,7 +128,7 @@ for prob in (ODEProblemLibrary.prob_ode_linear,
   # BDF
   #####################################
 
-  sim = test_convergence(dts3,prob,ABDF2())
+  sim = test_convergence(dts,prob,ABDF2())
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol

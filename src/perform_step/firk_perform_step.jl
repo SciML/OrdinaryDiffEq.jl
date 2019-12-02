@@ -1,3 +1,31 @@
+function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
+  integrator.iter <= 1 && return true
+  repeat_step && return false
+  first(islinearfunction(integrator)) && return false
+  integrator.opts.adaptive || return true
+  alg_can_repeat_jac(alg) || return true
+  integrator.u_modified && return true
+  # below is Newton specific logic, so we return non-Newton algs here
+  alg isa NewtonAlgorithm || return true
+  nlstatus = cache.status
+  Int8(nlstatus) < 0 && return true
+  # no reuse when the cutoff is 0
+  fast_convergence_cutoff = alg.fast_convergence_cutoff
+  iszero(fast_convergence_cutoff) && return true
+  # reuse J when there is fast convergence
+  fastconvergence = nlstatus === DiffEqBase.FastConvergence
+  return !fastconvergence
+end
+
+function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # for FIRK
+  nlsolver === nothing && return true
+  new_jac && return true
+  # reuse W when the change in stepsize is small enough
+  dt = integrator.dt
+  smallstepchange = abs((dt-W_dt)/W_dt) <= get_new_W_γdt_cutoff(nlsolver)
+  return !smallstepchange
+end
+
 function initialize!(integrator, cache::RadauIIA5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -129,8 +157,8 @@ end
     # check divergence (not in initial step)
     if iter > 1
       θ = ndw / ndwprev
-      ( diverge = θ > 1 ) && ( cache.status = Divergence )
-      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      ( diverge = θ > 1 ) && ( cache.status = DiffEqBase.Divergence )
+      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = DiffEqBase.VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end
@@ -149,7 +177,7 @@ end
     iter > 1 && (η = θ / (1 - θ))
     if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
       # Newton method converges
-      cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
+      cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence : DiffEqBase.Convergence
       fail_convergence = false
       break
     end
@@ -223,8 +251,8 @@ end
   c2m1 = c2-1
   c1mc2= c1-c2
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(J, integrator, cache); cache.W_dt = dt)
-  if (new_W = do_newW(integrator, alg, new_jac, cache.W_dt))
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(J, integrator, cache); cache.W_γdt = dt)
+  if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
     @inbounds for II in CartesianIndices(J)
       W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
       W2[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
@@ -322,8 +350,8 @@ end
     # check divergence (not in initial step)
     if iter > 1
       θ = ndw / ndwprev
-      ( diverge = θ > 1 ) && ( cache.status = Divergence )
-      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      ( diverge = θ > 1 ) && ( cache.status = DiffEqBase.Divergence )
+      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = DiffEqBase.VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end
@@ -342,7 +370,7 @@ end
     iter > 1 && (η = θ / (1 - θ))
     if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
       # Newton method converges
-      cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
+      cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence : DiffEqBase.Convergence
       fail_convergence = false
       break
     end

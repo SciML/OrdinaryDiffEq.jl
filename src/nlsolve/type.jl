@@ -1,60 +1,80 @@
+#@enum NLStatus::Int8 begin
+#  Convergence = 1
+#  TryAgain = 0
+#  Divergence = -1
+#end
+
 # solver
 
 abstract type AbstractNLSolver{algType,iip} end
 
-mutable struct NLSolver{algType,iip,uType,uTolType,tTypeNoUnits,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
+mutable struct NLSolver{algType,iip,uType,tType,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
   z::uType
   tmp::uType
   ztmp::uType
-  γ::uTolType
-  c::tTypeNoUnits
+  γ::tType
+  c::tType
   alg::algType
-  κ::uTolType
-  fast_convergence_cutoff::uTolType
-  ηold::uTolType
+  κ::tType
+  fast_convergence_cutoff::tType
+  ηold::tType
   iter::Int
   maxiters::Int
   status::NLStatus
   cache::C
 end
 
+NLSolver{iip,tType}(z, tmp, ztmp, γ, c, alg, κ, fast_convergence_cutoff,
+                    ηold, iter, maxiters, status, cache) where {iip,tType} =
+  NLSolver{typeof(alg), iip, typeof(z), tType, typeof(cache)}(z, tmp, ztmp, convert(tType, γ),
+                                                              convert(tType, c), alg, convert(tType, κ),
+                                                              convert(tType, fast_convergence_cutoff),
+                                                              convert(tType, ηold), iter,
+                                                              maxiters, status, cache)
+
 # caches
 
-mutable struct NLNewtonCache{uType,tType,rateType,uNoUnitsType,J,W,du1Type,ufType,jcType,lsType,G} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{uType,tType,rateType,J,W,ufType,jcType,lsType} <: AbstractNLSolverCache
   ustep::uType
   tstep::tType
   k::rateType
-  atmp::uNoUnitsType
+  atmp::uType
   dz::uType
   J::J
   W::W
   new_W::Bool
-  W_dt::tType
-  du1::du1Type
+  firststage::Bool
+  firstcall::Bool
+  W_γdt::tType
+  du1::uType
   uf::ufType
   jac_config::jcType
   linsolve::lsType
   weight::uType
-  invγdt::G
-  new_W_dt_cutoff::tType
+  invγdt::tType
+  new_W_γdt_cutoff::tType
+  J_t::tType
 end
 
-mutable struct NLNewtonConstantCache{tType,J,W,ufType,G} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{tType,J,W,ufType} <: AbstractNLSolverCache
   tstep::tType
   J::J
   W::W
   new_W::Bool
-  W_dt::tType
+  firststage::Bool
+  firstcall::Bool
+  W_γdt::tType
   uf::ufType
-  invγdt::G
-  new_W_dt_cutoff::tType
+  invγdt::tType
+  new_W_γdt_cutoff::tType
+  J_t::tType
 end
 
-mutable struct NLFunctionalCache{uType,tType,rateType,uNoUnitsType} <: AbstractNLSolverCache
+mutable struct NLFunctionalCache{uType,tType,rateType} <: AbstractNLSolverCache
   ustep::uType
   tstep::tType
   k::rateType
-  atmp::uNoUnitsType
+  atmp::uType
   dz::uType
 end
 
@@ -62,11 +82,11 @@ mutable struct NLFunctionalConstantCache{tType} <: AbstractNLSolverCache
   tstep::tType
 end
 
-mutable struct NLAndersonCache{uType,tType,rateType,uNoUnitsType,uEltypeNoUnits,D} <: AbstractNLSolverCache
+mutable struct NLAndersonCache{uType,tType,rateType,uEltypeNoUnits} <: AbstractNLSolverCache
   ustep::uType
   tstep::tType
   k::rateType
-  atmp::uNoUnitsType
+  atmp::uType
   dz::uType
   """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
   dzold::uType
@@ -78,10 +98,10 @@ mutable struct NLAndersonCache{uType,tType,rateType,uNoUnitsType,uEltypeNoUnits,
   γs::Vector{uEltypeNoUnits}
   history::Int
   aa_start::Int
-  droptol::D
+  droptol::Union{Nothing,tType}
 end
 
-mutable struct NLAndersonConstantCache{uType,tType,uEltypeNoUnits,D} <: AbstractNLSolverCache
+mutable struct NLAndersonConstantCache{uType,tType,uEltypeNoUnits} <: AbstractNLSolverCache
   tstep::tType
   dz::uType
   """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
@@ -94,5 +114,5 @@ mutable struct NLAndersonConstantCache{uType,tType,uEltypeNoUnits,D} <: Abstract
   γs::Vector{uEltypeNoUnits}
   history::Int
   aa_start::Int
-  droptol::D
+  droptol::Union{Nothing,tType}
 end
