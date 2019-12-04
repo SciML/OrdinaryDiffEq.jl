@@ -60,13 +60,13 @@
   still works for matrix-free definitions of the mass matrix.
   =#
 
-  if prob.f.mass_matrix != I
+  if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
     ftmp = similar(f₀)
     try
       integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
-      return convert(_tType,oneunit_tType*1//10^(6))
+      return convert(_tType,tdir*oneunit_tType*1//10^(6))
     end
   end
 
@@ -87,7 +87,7 @@
   if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType)*oneunit(_tType)
     # This catches Andreas' non-singular example
     # should act like it's singular
-    return tdir*convert(_tType,oneunit_tType*1//10^(6))
+    return tdir*convert(_tType,tdir*oneunit_tType*1//10^(6))
   end
 
   dt₀_tdir = tdir*dt₀
@@ -97,7 +97,7 @@
   f₁ = similar(f₀)
   f(f₁,u₁,p,t+dt₀_tdir)
 
-  if prob.f.mass_matrix != I
+  if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
     integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
     f₁ .= ftmp
   end
