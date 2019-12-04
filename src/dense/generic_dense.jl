@@ -163,7 +163,7 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   @inbounds for j in idx
     t = tvals[j]
-    i = _searchsortedfirst(@view(ts[i:end]),t,1,length(ts)-i+1,tdir>0) # It's in the interval ts[i-1] to ts[i]
+    i = _searchsortedfirst(@view(ts[i:end]),t,1,length(ts)-i+1,tdir>0)+i-1 # It's in the interval ts[i-1] to ts[i]
     dt = ts[i] - ts[i-1]
     Θ = (t-ts[i-1])/dt
     if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
@@ -206,6 +206,7 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   @inbounds i = _searchsortedfirst(ts,tval,1,length(ts),tdir>0) # It's in the interval ts[i-1] to ts[i]
+  iszero(i) && (i+=1)
   @inbounds dt = ts[i] - ts[i-1]
   @inbounds Θ = (tval-ts[i-1])/dt
   if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
@@ -232,6 +233,7 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   i = _searchsortedfirst(ts,tval,1,length(ts),tdir>0) # It's in the interval ts[i-1] to ts[i]
+  iszero(i) && (i+=1)
   @inbounds begin
     dt = ts[i] - ts[i-1]
     Θ = (tval-ts[i-1])/dt
