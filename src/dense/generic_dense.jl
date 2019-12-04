@@ -216,8 +216,8 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left
     @inbounds DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i]]) # update the kcurrent
     @inbounds val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i]],idxs,deriv)
   else
-    #@inbounds DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
-    #@inbounds val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
+    @inbounds DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
+    @inbounds val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
   end
   val
 end
