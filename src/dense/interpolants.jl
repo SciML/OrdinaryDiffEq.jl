@@ -1129,10 +1129,17 @@ end
   b11Θ = @evalpoly(Θ, 0, 0, r112, r113, r114, r115, r116)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{BS5ConstantCache,BS5Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache,idxs::Nothing,T::Type{Val{0}})
   @bs5pre0
   # return @.. y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
   return @inbounds y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ +
+                              k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
+end
+
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5Cache,idxs::Nothing,T::Type{Val{0}})
+  @bs5pre0
+  # return @.. y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
+  return @inbounds @.. y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ +
                               k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
 end
 
@@ -1236,10 +1243,17 @@ end
   b12Θ = @evalpoly(Θ, 0,    0, r122, r123, r124, r125, r126)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Vern6ConstantCache,Vern6Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache,idxs::Nothing,T::Type{Val{0}})
   @vern6pre0
   #@.. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
   return @inbounds y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ +
+                  k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
+end
+
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6Cache,idxs::Nothing,T::Type{Val{0}})
+  @vern6pre0
+  #@.. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
+  return @inbounds @.. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ +
                   k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
 end
 
@@ -1326,10 +1340,18 @@ end
   b16Θ = @evalpoly(Θ, 0,    0, r162, r163, r164, r165, r166, r167)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Vern7ConstantCache,Vern7Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7ConstantCache,idxs::Nothing,T::Type{Val{0}})
   @vern7pre0
   #@.. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
   return @inbounds y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ +
+                  k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ +
+                  k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
+end
+
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7Cache,idxs::Nothing,T::Type{Val{0}})
+  @vern7pre0
+  #@.. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
+  return @inbounds @.. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ +
                   k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ +
                   k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
 end
@@ -1426,10 +1448,19 @@ end
   b21Θ = @evalpoly(Θ, 0,    0, r212, r213, r214, r215, r216, r217, r218)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Vern8ConstantCache,Vern8Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache,idxs::Nothing,T::Type{Val{0}})
   @vern8pre0
   #@.. y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ)
   return @inbounds y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ +
+                  k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ +
+                  k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ +
+                  k[21]*b21Θ)
+end
+
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8Cache,idxs::Nothing,T::Type{Val{0}})
+  @vern8pre0
+  #@.. y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ)
+  return @inbounds @.. y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ +
                   k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ +
                   k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ +
                   k[21]*b21Θ)
@@ -1535,10 +1566,19 @@ end
   b26Θ = @evalpoly(Θ, 0,    0, r262, r263, r264, r265, r266, r267, r268, r269)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Vern9ConstantCache,Vern9Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9ConstantCache,idxs::Nothing,T::Type{Val{0}})
   @vern9pre0
   #@.. y₀ + dt*(k[1]*b1Θ + k[2]*b8Θ + k[3]*b9Θ + k[4]*b10Θ + k[5]*b11Θ + k[6]*b12Θ + k[7]*b13Θ + k[8]*b14Θ + k[9]*b15Θ + k[11]*b17Θ + k[12]*b18Θ + k[13]*b19Θ + k[14]*b20Θ + k[15]*b21Θ + k[16]*b22Θ + k[17]*b23Θ + k[18]*b24Θ + k[19]*b25Θ + k[20]*b26Θ)
   return @inbounds y₀ + dt*(k[1]*b1Θ + k[2]*b8Θ + k[3]*b9Θ + k[4]*b10Θ + k[5]*b11Θ +
+                  k[6]*b12Θ + k[7]*b13Θ + k[8]*b14Θ + k[9]*b15Θ + k[11]*b17Θ +
+                  k[12]*b18Θ + k[13]*b19Θ + k[14]*b20Θ + k[15]*b21Θ + k[16]*b22Θ +
+                  k[17]*b23Θ + k[18]*b24Θ + k[19]*b25Θ + k[20]*b26Θ)
+end
+
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs::Nothing,T::Type{Val{0}})
+  @vern9pre0
+  #@.. y₀ + dt*(k[1]*b1Θ + k[2]*b8Θ + k[3]*b9Θ + k[4]*b10Θ + k[5]*b11Θ + k[6]*b12Θ + k[7]*b13Θ + k[8]*b14Θ + k[9]*b15Θ + k[11]*b17Θ + k[12]*b18Θ + k[13]*b19Θ + k[14]*b20Θ + k[15]*b21Θ + k[16]*b22Θ + k[17]*b23Θ + k[18]*b24Θ + k[19]*b25Θ + k[20]*b26Θ)
+  return @inbounds @.. y₀ + dt*(k[1]*b1Θ + k[2]*b8Θ + k[3]*b9Θ + k[4]*b10Θ + k[5]*b11Θ +
                   k[6]*b12Θ + k[7]*b13Θ + k[8]*b14Θ + k[9]*b15Θ + k[11]*b17Θ +
                   k[12]*b18Θ + k[13]*b19Θ + k[14]*b20Θ + k[15]*b21Θ + k[16]*b22Θ +
                   k[17]*b23Θ + k[18]*b24Θ + k[19]*b25Θ + k[20]*b26Θ)
