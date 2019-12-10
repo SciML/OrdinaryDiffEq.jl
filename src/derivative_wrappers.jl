@@ -123,7 +123,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
 end
 
 function DiffEqBase.build_jac_config(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},f,uf,du1,uprev,u,tmp,du2)
-  if !DiffEqBase.has_jac(f)
+  if !DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && !DiffEqBase.has_Wfact_t(f)
     if alg_autodiff(alg)
       if DiffEqBase.has_colorvec(f)
         colorvec = f.colorvec
