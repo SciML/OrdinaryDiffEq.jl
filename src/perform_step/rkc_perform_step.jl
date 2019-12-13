@@ -14,7 +14,8 @@ end
 @muladd function perform_step!(integrator, cache::ROCK2ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, fp1, fp2, recf = cache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + abs(dt)*integrator.eigen_est)/0.811) + 1))
   mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
@@ -85,7 +86,8 @@ end
   @unpack k, tmp, uᵢ₋₂, uᵢ₋₁, atmp = cache
   @unpack ms, fp1, fp2, recf = cache.constantcache
   ccache = cache.constantcache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + abs(dt)*integrator.eigen_est)/0.811) + 1))
   mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
@@ -160,7 +162,8 @@ end
 @muladd function perform_step!(integrator, cache::ROCK4ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, fpa, fpb, fpbe, recf = cache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((3 + abs(dt)*integrator.eigen_est)/0.353) + 1))
   mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
@@ -265,7 +268,8 @@ end
   @unpack uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k= cache
   @unpack ms, fpa, fpb, fpbe, recf = cache.constantcache
   ccache = cache.constantcache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((3 + abs(dt)*integrator.eigen_est)/0.353) + 1))
   mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
@@ -368,7 +372,8 @@ end
 
 @muladd function perform_step!(integrator, cache::RKCConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
   # The the number of degree for Chebyshev polynomial
   #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
   maxm = 50
@@ -452,7 +457,8 @@ end
 @muladd function perform_step!(integrator, cache::RKCCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack k, tmp, gprev2, gprev, atmp = cache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
   # The the number of degree for Chebyshev polynomial
   #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/10eps(t)))))
   maxm = 50
@@ -543,7 +549,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg,fsalfirst = integrator
   @unpack minm,du₁,du₂,nlsolver = cache
   @unpack f1, f2 = integrator.f
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
   # The the number of degree for Chebyshev polynomial
   #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
@@ -673,7 +680,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @unpack minm = cache.constantcache
   @unpack f1, f2 = integrator.f
 
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
   # The the number of degree for Chebyshev polynomial
   #maxm = max(2,int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
   maxm = 50
@@ -796,7 +804,8 @@ end
 @muladd function perform_step!(integrator, cache::ESERK4ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, Cᵤ, Cₑ= cache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est))+1)
   mdeg = (mdeg > 4000) ? 4000 : mdeg
@@ -875,7 +884,8 @@ end
   @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
   @unpack ms, Cᵤ, Cₑ = cache.constantcache
   ccache = cache.constantcache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est))+1)
   mdeg = (mdeg > 4000) ? 4000 : mdeg
@@ -954,7 +964,8 @@ end
 @muladd function perform_step!(integrator, cache::ESERK5ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, Cᵤ, Cₑ, Bᵢ= cache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
   mdeg = (mdeg > 2000) ? 2000 : mdeg
@@ -1032,7 +1043,8 @@ end
   @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
   @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
   ccache = cache.constantcache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
   mdeg = (mdeg > 2000) ? 2000 : mdeg
@@ -1111,7 +1123,8 @@ end
 @muladd function perform_step!(integrator, cache::SERK2ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, Bᵢ= cache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.8))+1)
   mdeg = (mdeg > 250) ? 250 : mdeg
@@ -1173,7 +1186,8 @@ end
   @unpack uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
   @unpack ms, Bᵢ = cache.constantcache
   ccache = cache.constantcache
-  maxeig!(integrator, cache)
+  alg = unwrap_alg(integrator, true)
+  alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.8))+1)
   mdeg = (mdeg > 250) ? 250 : mdeg

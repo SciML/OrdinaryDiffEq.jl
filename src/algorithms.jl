@@ -577,29 +577,36 @@ JVODE_Adams(;kwargs...) = JVODE(:Adams;kwargs...)
 JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 
 # ROCK methods
-struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm
+struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
   max_stages::Int
+  eigen_est::E
 end
-ROCK2(;min_stages=0,max_stages=200) = ROCK2(min_stages,max_stages)
+ROCK2(;min_stages=0,max_stages=200,eigen_est=nothing) = ROCK2(min_stages,max_stages,eigen_est)
 
-struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm
+struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
   max_stages::Int
+  eigen_est::E
 end
-ROCK4(;min_stages=0,max_stages=152) = ROCK4(min_stages,max_stages)
+ROCK4(;min_stages=0,max_stages=152,eigen_est=nothing) = ROCK4(min_stages,max_stages,eigen_est)
 
 # SERK methods
-struct ESERK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct SERK2 <: OrdinaryDiffEqAdaptiveAlgorithm
-  controller::Symbol
+for Alg in [:ESERK4, :ESERK5, :RKC]
+  @eval begin
+    struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+      eigen_est::E
+    end
+    $Alg(;eigen_est=nothing) = $Alg(eigen_est)
+  end
 end
-SERK2(;controller=:PI) = SERK2(controller)
+struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+  controller::Symbol
+  eigen_est::E
+end
+SERK2(;controller=:PI,eigen_est=nothing) = SERK2(controller,eigen_est)
 
-# RKC mehtods
-struct RKC <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct IRKC{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
+struct IRKC{CS,AD,F,F2,FDT,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
   diff_type::FDT
@@ -607,12 +614,13 @@ struct IRKC{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   tol::T
   extrapolant::Symbol
   controller::Symbol
+  eigen_est::E
 end
 IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-                 extrapolant=:linear,controller = :Standard) =
-                 IRKC{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),typeof(κ),typeof(tol)}(
-                 linsolve,nlsolve,diff_type,κ,tol,extrapolant,controller)
+                 extrapolant=:linear,controller = :Standard,eigen_est=nothing) =
+  IRKC{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),typeof(κ),typeof(tol),typeof(eigen_est)}(
+                 linsolve,nlsolve,diff_type,κ,tol,extrapolant,controller,eigen_est)
 
 ################################################################################
 
