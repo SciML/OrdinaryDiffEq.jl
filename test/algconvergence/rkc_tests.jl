@@ -8,7 +8,8 @@ probArr[2] = prob_ode_2Dlinear
 
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
   Random.seed!(123)
-  for iip in [true, false], alg in [ROCK2(), ROCK4(), RKC(), SERK2(), ESERK4(), ESERK5()]
+  eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
+  for iip in [true, false], Alg in [ROCK2, ROCK4, RKC, SERK2, ESERK4, ESERK5], alg in [Alg(), Alg(eigen_est=eigen_est)]
     println(typeof(alg))
     A = randn(20,20)
     test_f(u,p,t) = A*u
@@ -28,7 +29,7 @@ probArr[2] = prob_ode_2Dlinear
   end
 
   Random.seed!(123)
-  for iip in [true, false], alg in [IRKC()]
+  for iip in [true, false], Alg in [IRKC], alg in [Alg(), Alg(eigen_est=eigen_est)]
     println(typeof(alg))
     A = randn(20,20)
     B = randn(20,20)
