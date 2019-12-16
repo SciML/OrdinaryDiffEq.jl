@@ -313,7 +313,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   end
 
   # rate/state = (state/time)/state = 1/t units, internalnorm drops units
-  eigen_est = one(uBottomEltypeNoUnits)/one(tType)
+  # we don't want to differentiate through eigenvalue estimation
+  eigen_est = inv(one(tType))
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)
