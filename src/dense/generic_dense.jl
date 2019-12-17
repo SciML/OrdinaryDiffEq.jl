@@ -279,7 +279,7 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left
       val = linear_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
     elseif typeof(cache) <: CompositeCache
       DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache.caches[id.alg_choice[i₊]]) # update the kcurrent
-      val = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₋],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
+      val = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
     else
       DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache) # update the kcurrent
       val = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
