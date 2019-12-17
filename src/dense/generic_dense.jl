@@ -4,10 +4,10 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-function _searchsortedfirst(v::AbstractVector, x, lo::T, hi::T, forward::Bool) where T<:Integer
-    u = T(1)
+function _searchsortedfirst(v::AbstractVector, x, lo::Integer, forward::Bool)
+    u = oftype(lo, 1)
     lo = lo - u
-    hi = hi + u
+    hi = length(v) + u
     @inbounds while lo < hi - u
         m = (lo + hi) >>> 1
         @inbounds if (forward && v[m] < x) || (!forward && v[m] > x)
@@ -17,6 +17,21 @@ function _searchsortedfirst(v::AbstractVector, x, lo::T, hi::T, forward::Bool) w
         end
     end
     return hi
+end
+
+function _searchsortedlast(v::AbstractVector, x, lo::Integer, forward::Bool)
+  u = oftype(lo, 1)
+  lo = lo - u
+  hi = length(v) + u
+  @inbounds while lo < hi - u
+      m = (lo + hi) >>> 1
+      @inbounds if (forward && v[m] > x) || (!forward && v[m] < x)
+          hi = m
+      else
+          lo = m
+      end
+  end
+  return lo
 end
 
 @inline function _ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
@@ -122,7 +137,7 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
-  i = 2 # Start the search thinking it's between ts[1] and ts[2]
+
   if typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(undef, length(tvals))
   elseif typeof(idxs) <: AbstractArray
@@ -130,23 +145,41 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   else
     vals = Vector{eltype(timeseries)}(undef, length(tvals))
   end
+
+  # start the search thinking it's ts[1]
+  i₋ = 1
+  i₊ = 1
   @inbounds for j in idx
     t = tvals[j]
-    i = _searchsortedfirst(@view(ts[i:end]),t,1,length(ts)-i+1,tdir>0)+i-1 # It's in the interval ts[i-1] to ts[i]
-    dt = ts[i] - ts[i-1]
-    Θ = (t-ts[i-1])/dt
-    if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
-      vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
-    elseif !id.dense
-      vals[j] = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
-    elseif typeof(cache) <: CompositeCache
-      DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i]]) # update the kcurrent
-      vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i]],idxs,deriv)
+
+    if continuity === :left
+      # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
+      # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+      i₊ = min(lastindex(ts), _searchsortedfirst(ts,t,i₊,tdir > 0))
+      i₋ = i₊ > 1 ? i₊ - 1 : 1
     else
-      DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
-      vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
+      # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
+      # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
+      i₋ = max(1, _searchsortedlast(ts,t,i₋,tdir > 0))
+      i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
+    end
+
+    dt = ts[i₊] - ts[i₋]
+    Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t-ts[i₋]) / dt
+
+    if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+      vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
+    elseif !id.dense
+      vals[j] = linear_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
+    elseif typeof(cache) <: CompositeCache
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+      vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
+    else
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache) # update the kcurrent
+      vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
     end
   end
+  
   DiffEqArray(vals, tvals)
 end
 
@@ -160,40 +193,58 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
-  i = 2 # Start the search thinking it's between ts[1] and ts[2]
+
+  # start the search thinking it's ts[1]
+  i₋ = 1
+  i₊ = 1
   @inbounds for j in idx
     t = tvals[j]
-    i = _searchsortedfirst(@view(ts[i:end]),t,1,length(ts)-i+1,tdir>0)+i-1 # It's in the interval ts[i-1] to ts[i]
-    dt = ts[i] - ts[i-1]
-    Θ = (t-ts[i-1])/dt
+
+    if continuity === :left
+      # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
+      # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+      i₊ = min(lastindex(ts), _searchsortedfirst(ts,t,i₊,tdir > 0))
+      i₋ = i₊ > 1 ? i₊ - 1 : 1
+    else
+      # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
+      # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
+      i₋ = max(1, _searchsortedlast(ts,t,i₋,tdir > 0))
+      i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
+    end
+
+    dt = ts[i₊] - ts[i₋]
+    Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t-ts[i₋]) / dt
+
     if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
       if eltype(timeseries) <: AbstractArray
-        ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
+        ode_interpolant!(vals[j],Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
       else
-        vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
+        vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
       end
     elseif !id.dense
       if eltype(timeseries) <: AbstractArray
-        linear_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
+        linear_interpolant!(vals[j],Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
       else
-        vals[j] = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
+        vals[j] = linear_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
       end
     elseif typeof(cache) <: CompositeCache
-      DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i]]) # update the kcurrent
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache.caches[id.alg_choice[i₊]]) # update the kcurrent
       if eltype(timeseries) <: AbstractArray
-        ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i]],idxs,deriv)
+        ode_interpolant!(vals[j],Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
       else
-        vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
+        vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
       end
     else
-      DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache) # update the kcurrent
       if eltype(vals[j]) <: AbstractArray
-        ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
+        ode_interpolant!(vals[j],Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
       else
-        vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
+        vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
       end
     end
   end
+
+  vals
 end
 
 """
@@ -205,21 +256,36 @@ times ts (sorted), with values timeseries and derivatives ks
 function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
-  @inbounds i = _searchsortedfirst(ts,tval,1,length(ts),tdir>0) # It's in the interval ts[i-1] to ts[i]
-  iszero(i) && (i+=1)
-  @inbounds dt = ts[i] - ts[i-1]
-  @inbounds Θ = (tval-ts[i-1])/dt
-  if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
-    @inbounds val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
-  elseif !id.dense
-    @inbounds val = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
-  elseif typeof(cache) <: CompositeCache
-    @inbounds DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i]]) # update the kcurrent
-    @inbounds val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i]],idxs,deriv)
+  
+  if continuity === :left
+    # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
+    # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+    i₊ = min(lastindex(ts), _searchsortedfirst(ts,tval,1,tdir > 0))
+    i₋ = i₊ > 1 ? i₊ - 1 : 1
   else
-    @inbounds DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
-    @inbounds val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
+    # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
+    # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
+    i₋ = max(1, _searchsortedlast(ts,tval,1,tdir > 0))
+    i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
   end
+
+  @inbounds begin
+    dt = ts[i₊] - ts[i₋]
+    Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval-ts[i₋]) / dt
+
+    if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+      val = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
+    elseif !id.dense
+      val = linear_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
+    elseif typeof(cache) <: CompositeCache
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+      val = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₋],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
+    else
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache) # update the kcurrent
+      val = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
+    end
+  end
+
   val
 end
 
@@ -232,23 +298,37 @@ times ts (sorted), with values timeseries and derivatives ks
 function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
-  i = _searchsortedfirst(ts,tval,1,length(ts),tdir>0) # It's in the interval ts[i-1] to ts[i]
-  iszero(i) && (i+=1)
+
+  if continuity === :left
+    # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
+    # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
+    i₊ = min(lastindex(ts), _searchsortedfirst(ts,tval,1,tdir > 0))
+    i₋ = i₊ > 1 ? i₊ - 1 : 1
+  else
+    # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
+    # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
+    i₋ = max(1, _searchsortedlast(ts,tval,1,tdir > 0))
+    i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
+  end
+
   @inbounds begin
-    dt = ts[i] - ts[i-1]
-    Θ = (tval-ts[i-1])/dt
+    dt = ts[i₊] - ts[i₋]
+    Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval-ts[i₋]) / dt
+    
     if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
-      ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
+      ode_interpolant!(out,Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
     elseif !id.dense
-      linear_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
+      linear_interpolant!(out,Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
     elseif typeof(cache) <: CompositeCache
-      DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i]]) # update the kcurrent
-      ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i]],idxs,deriv)
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+      ode_interpolant!(out,Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
     else
-      DiffEqBase.addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
-      ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
+      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache) # update the kcurrent
+      ode_interpolant!(out,Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
     end
   end
+
+  out
 end
 
 """
