@@ -104,30 +104,46 @@ end
   @unpack z,tmp,ztmp,γ,iter,cache = nlsolver
   @unpack W_γdt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
 
-  mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
+  isdae = f isa DAEFunction
+
+  if !isdae
+    mass_matrix = integrator.f.mass_matrix
+  end
 
   @.. ustep = tmp + γ * z
-  f(k, ustep, p, tstep)
+  if isdae
+    @.. ztmp = uprev + z
+    f(k, ustep, ztmp, p, tstep)
+  else
+    f(k, ustep, p, tstep)
+  end
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nf += 1
   end
 
-  if mass_matrix === I
-    @.. ztmp = (dt * k - z) * invγdt
+  if isdae
+    @.. ztmp = k
   else
-    mul!(vec(ztmp), mass_matrix, vec(z))
-    @.. ztmp = (dt * k - ztmp) * invγdt
+    if mass_matrix === I
+      @.. ztmp = (dt * k - z) * invγdt
+    else
+      mul!(vec(ztmp), mass_matrix, vec(z))
+      @.. ztmp = (dt * k - ztmp) * invγdt
+    end
   end
 
+  if isdae
+    W = cache.J
   # update W
-  if W isa DiffEqBase.AbstractDiffEqLinearOperator
+  elseif W isa DiffEqBase.AbstractDiffEqLinearOperator
     update_coefficients!(W, ustep, p, tstep)
   end
 
   linsolve(vec(dz), W, vec(ztmp), iter == 1 && new_W;
            Pl=DiffEqBase.ScaleVector(weight, true),
            Pr=DiffEqBase.ScaleVector(weight, false), tol=integrator.opts.reltol)
+
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
   end
@@ -136,8 +152,10 @@ end
   # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential
   # Equations. A Review, by Christopher A. Kennedy and Mark H. Carpenter
   # page 54.
-  γdt = γ * dt
-  !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
+  if !isdae
+    γdt = γ * dt
+    !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
+  end
 
   calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)

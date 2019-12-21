@@ -6,6 +6,15 @@ function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase
   integrator.sol
 end
 
+"""
+    DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem}, args...; kwargs...)
+
+Initializes the `integrator` for a given `OrdinaryDiffEqAlgorithm` or `DAEAlgorithm` `prob` and a given algorithm `alg`
+
+# Arguments
+
+- `prob`:  
+"""
 function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
                            alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},
                            timeseries_init = typeof(prob.u0)[],
@@ -98,6 +107,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
+  isdae = alg isa DAEAlgorithm
+
   f = prob.f
   p = prob.p
 
@@ -107,6 +118,14 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     u = prob.u0
   else
     u = recursivecopy(prob.u0)
+  end
+
+  if isdae
+    if alias_du0
+      du = prob.du0
+    else
+      du = recursivecopy(prob.u0)
+    end
   end
 
   uType = typeof(u)
@@ -145,12 +164,14 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
   # dtmin is all abs => does not care about sign already.
 
-  if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number && uBottomEltypeNoUnits == uBottomEltype # Could this be more efficient for other arrays?
+  if !isdae && isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number && uBottomEltypeNoUnits == uBottomEltype # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
       rate_prototype = recursivecopy(u)
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
+  elseif isdae
+    rate_prototype = prob.du0
   else
     if uBottomEltypeNoUnits == uBottomEltype
       rate_prototype = u
@@ -159,6 +180,15 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     end
   end
   rateType = typeof(rate_prototype) ## Can be different if united
+
+  if isdae
+    if uBottomEltype == uBottomEltypeNoUnits
+      res_prototype = u
+    else
+      res_prototype = one(u)
+    end
+    resType = typeof(res_prototype)
+  end
 
   tstops_internal, saveat_internal, d_discontinuities_internal =
     tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
@@ -252,7 +282,11 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     uprev2 = uprev
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
+  if !isdae
+    cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
+  else
+    cache = alg_cache(alg,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
+  end
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)

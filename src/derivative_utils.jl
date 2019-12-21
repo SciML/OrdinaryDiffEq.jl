@@ -491,7 +491,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   return J, W
 end
 
-build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{true}) =
+build_uf(alg::ßOrdinaryDiffEqAlgorithm,nf,t,p,::Val{true}) =
   DiffEqDiffTools.UJacobianWrapper(nf,t,p)
-build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{false}) =
+build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{false}) =
   DiffEqDiffTools.UDerivativeWrapper(nf,t,p)

@@ -120,6 +120,65 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     nlcache)
 end
 
+function build_nlsolver(alg::DAEAlgorithm,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
+                        f::DAEFunction,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                        γ,c,::Val{true})
+  # define unitless type
+  uTolType = real(uBottomEltypeNoUnits)
+
+  # define fields of non-linear solver
+  z = similar(u); tmp = similar(u); ztmp = similar(u)
+
+  # build cache of non-linear solver
+  ustep = similar(u)
+  tstep = zero(t)
+  k = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
+  dz = similar(u)
+
+  if nlalg isa NLNewton
+    nf = nlsolve_f(f, alg)
+    du1 = zero(rate_prototype)
+    uf = SuperDAEJacobianWrapper(f,p,γ,tmp,uprev,t)
+    jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
+    linsolve = alg.linsolve(Val{:init},uf,u)
+
+    # TODO: check if the solver is iterative
+    weight = similar(u)
+
+    tType = typeof(t)
+    invγdt = inv(oneunit(t) * one(uTolType))
+
+    J = false .* _vec(u) .* _vec(u)'
+    W = nothing
+
+    nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,true,true,tType(dt),du1,uf,jac_config,
+                            linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff),t)
+  elseif nlalg isa NLFunctional
+    nlcache = NLFunctionalCache(ustep,tstep,k,atmp,dz)
+  elseif nlalg isa NLAnderson
+    max_history = min(nlalg.max_history, nlalg.max_iter, length(z))
+    Δz₊s = [zero(z) for i in 1:max_history]
+    Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
+    R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
+    γs = Vector{uEltypeNoUnits}(undef, max_history)
+
+    dzold = zero(z)
+    z₊old = zero(z)
+
+    nlcache = NLAndersonCache(ustep,tstep,atmp,k,dz,dzold,z₊old,Δz₊s,Q,R,γs,0,
+                              nlalg.aa_start,nlalg.droptol)
+  end
+
+  # build non-linear solver
+  ηold = one(uTolType)
+
+  NLSolver{true,tTypeNoUnits}(
+    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
+    nlcache)
+end
+
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
                         f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                         γ,c,::Val{false})
