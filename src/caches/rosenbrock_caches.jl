@@ -74,7 +74,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   linsolve = alg.linsolve(Val{:init},uf,u)
 
   grad_config = build_grad_config(alg,f,tf,du1,t)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
 
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
