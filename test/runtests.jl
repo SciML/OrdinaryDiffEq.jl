@@ -100,6 +100,9 @@ end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
   @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
+  using Pkg
+  Pkg.test("DiffEqCallbacks")
+  Pkg.test("DiffEqSensitivity")
 end
 
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
