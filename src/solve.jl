@@ -70,6 +70,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            allow_extrapolation = alg_extrapolates(alg),
                            initialize_integrator = true,
                            alias_u0 = false,
+                           alias_du0 = false,
                            kwargs...) where recompile_flag
 
   if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm

@@ -120,8 +120,36 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     nlcache)
 end
 
+mutable struct SuperDAEJacobianWrapper{F,pType,duType,uType,gammaType,tmpType,uprevType,tType} <: Function
+  f::F
+  p::pType
+  tmp_du::duType
+  tmp_u::uType
+  γ::gammaType
+  tmp::tmpType
+  uprev::uprevType
+  t::tType
+  function SuperDAEJacobianWrapper(f,p,γ,tmp,uprev,t)
+    X = eltype(uprev)
+    N = ForwardDiff.chunksize(ForwardDiff.Chunk(uprev))
+    tmp_du = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
+    tmp_u  = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
+    new{typeof(f),typeof(p),typeof(tmp_du),typeof(tmp_u),typeof(γ),typeof(tmp),typeof(uprev),typeof(t)}(f,p,tmp_du,tmp_u,γ,tmp,uprev,t)
+  end
+end
+
+function (m::SuperDAEJacobianWrapper)(out,x)
+  @. m.tmp_du = m.γ * x + m.tmp
+  @. m.tmp_u = x + m.uprev
+  m.f(out, m.tmp_du, m.tmp_u, m.p, m.t)
+end
+
+DiffEqBase.has_jac(f::SuperDAEJacobianWrapper) = DiffEqBase.has_jac(f.f)
+DiffEqBase.has_Wfact(f::SuperDAEJacobianWrapper) = DiffEqBase.has_Wfact(f.f)
+DiffEqBase.has_Wfact_t(f::SuperDAEJacobianWrapper) = DiffEqBase.has_Wfact_t(f.f)
+
 function build_nlsolver(alg::DAEAlgorithm,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
-                        f::DAEFunction,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                        f::DAEFunction,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                         γ,c,::Val{true})
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
@@ -132,15 +160,14 @@ function build_nlsolver(alg::DAEAlgorithm,nlalg::Union{NLFunctional,NLAnderson,N
   # build cache of non-linear solver
   ustep = similar(u)
   tstep = zero(t)
-  k = zero(rate_prototype)
+  k = zero(res_prototype)
   atmp = similar(u, uEltypeNoUnits)
   dz = similar(u)
 
   if nlalg isa NLNewton
-    nf = nlsolve_f(f, alg)
-    du1 = zero(rate_prototype)
-    uf = SuperDAEJacobianWrapper(f,p,γ,tmp,uprev,t)
-    jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
+    du1 = zero(res_prototype)
+    uf = SuperDAEJacobianWrapper(f,p,γ*inv(dt),tmp,uprev,t)
+    jac_config = build_jac_config(alg,f,uprev,du1)
     linsolve = alg.linsolve(Val{:init},uf,u)
 
     # TODO: check if the solver is iterative

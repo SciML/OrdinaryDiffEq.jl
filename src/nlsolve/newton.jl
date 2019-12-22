@@ -111,11 +111,12 @@ end
     mass_matrix = integrator.f.mass_matrix
   end
 
-  @.. ustep = tmp + γ * z
   if isdae
+    @.. ustep = tmp + γ * z * inv(dt)
     @.. ztmp = uprev + z
     f(k, ustep, ztmp, p, tstep)
   else
+    @.. ustep = tmp + γ * z
     f(k, ustep, p, tstep)
   end
   if DiffEqBase.has_destats(integrator)
@@ -123,7 +124,7 @@ end
   end
 
   if isdae
-    @.. ztmp = k
+    b = vec(k)
   else
     if mass_matrix === I
       @.. ztmp = (dt * k - z) * invγdt
@@ -131,16 +132,20 @@ end
       mul!(vec(ztmp), mass_matrix, vec(z))
       @.. ztmp = (dt * k - ztmp) * invγdt
     end
+    b = vec(ztmp)
   end
 
   if isdae
-    W = cache.J
-  # update W
-  elseif W isa DiffEqBase.AbstractDiffEqLinearOperator
-    update_coefficients!(W, ustep, p, tstep)
+    A = cache.J
+  else
+    # update W
+    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+      update_coefficients!(W, ustep, p, tstep)
+    end
+    A = W
   end
 
-  linsolve(vec(dz), W, vec(ztmp), iter == 1 && new_W;
+  linsolve(vec(dz), A, b, iter == 1 && new_W;
            Pl=DiffEqBase.ScaleVector(weight, true),
            Pr=DiffEqBase.ScaleVector(weight, false), tol=integrator.opts.reltol)
 

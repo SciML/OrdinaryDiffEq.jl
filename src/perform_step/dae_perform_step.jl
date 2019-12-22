@@ -40,17 +40,14 @@ end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack atmp,tmp = cache
+  @unpack atmp,tmp,nlsolver = cache
   alg = unwrap_alg(integrator, true)
 
-  # initial guess
-  guess = tmp
-  guess .= zero(eltype(u))
-
-  zero_func! = (out, x) -> begin
-                f(out, (x .- uprev) ./ dt, x, p, t)
-              end
-  u .= NLsolve.nlsolve(zero_func!, guess).zero
+  @. nlsolver.tmp = 0
+  nlsolver.γ = 1
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+  @.. u = uprev + z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|

@@ -458,6 +458,17 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
   nothing
 end
 
+function dae_calculate_J!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache)
+  @unpack f, uprev = integrator
+  @unpack uf, J, jac_config, du1 = nlsolver.cache
+  if DiffEqBase.has_jac(f)
+    # todo
+  else
+    uf.γ = nlsolver.γ * inv(integrator.dt)
+    ForwardDiff.jacobian!(J, uf, du1, uprev, jac_config)
+  end
+end
+
 function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
@@ -491,7 +502,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   return J, W
 end
 
-build_uf(alg::ßOrdinaryDiffEqAlgorithm,nf,t,p,::Val{true}) =
+build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{true}) =
   DiffEqDiffTools.UJacobianWrapper(nf,t,p)
 build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{false}) =
   DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
