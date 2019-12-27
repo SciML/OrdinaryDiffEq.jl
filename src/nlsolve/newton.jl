@@ -135,17 +135,12 @@ end
     b = vec(ztmp)
   end
 
-  if isdae
-    A = cache.J
-  else
-    # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
-      update_coefficients!(W, ustep, p, tstep)
-    end
-    A = W
+  # update W
+  if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    update_coefficients!(W, ustep, p, tstep)
   end
 
-  linsolve(vec(dz), A, b, iter == 1 && new_W;
+  linsolve(vec(dz), W, b, iter == 1 && new_W;
            Pl=DiffEqBase.ScaleVector(weight, true),
            Pr=DiffEqBase.ScaleVector(weight, false), tol=integrator.opts.reltol)
 

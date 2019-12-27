@@ -358,8 +358,14 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   @unpack t,dt,uprev,u,f,p = integrator
   lcache = nlsolver === nothing ? cache : nlsolver.cache
   @unpack J = lcache
+  isdae = integrator.alg isa DAEAlgorithm
   alg = unwrap_alg(integrator, true)
-  mass_matrix = integrator.f.mass_matrix
+  if isdae
+    # just alias W to be passed in calc_J!
+    J = lcache.W
+  else
+    mass_matrix = integrator.f.mass_matrix
+  end
   is_compos = integrator.alg isa CompositeAlgorithm
 
   # handle Wfact
@@ -458,14 +464,14 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
   nothing
 end
 
-function dae_calculate_J!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache)
+function dae_calc_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache)
   @unpack f, uprev = integrator
-  @unpack uf, J, jac_config, du1 = nlsolver.cache
+  @unpack uf, W, jac_config, du1 = nlsolver.cache
   if DiffEqBase.has_jac(f)
     # todo
   else
     uf.γ = nlsolver.γ * inv(integrator.dt)
-    ForwardDiff.jacobian!(J, uf, du1, uprev, jac_config)
+    ForwardDiff.jacobian!(W, uf, du1, uprev, jac_config)
   end
 end
 
@@ -485,7 +491,10 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     W = WOperator(f.mass_matrix, dt, J, IIP)
   else
     J = false .* _vec(u) .* _vec(u)'
-    W = if IIP
+    isdae = alg isa DAEAlgorithm
+    W = if isdae
+      J
+    elseif IIP
       similar(J)
     else
       W = if u isa StaticArray

@@ -146,7 +146,7 @@ function DiffEqBase.build_jac_config(alg::OrdinaryDiffEqAlgorithm,f,uf,du1,uprev
   jac_config
 end
 
-function DiffEqBase.build_jac_config(alg::DAEAlgorithm,f,uprev,du1)
+function DiffEqBase.build_jac_config(alg::DAEAlgorithm,f,uf,du1,uprev,u,tmp,du2)
   if !DiffEqBase.has_jac(f)
     if alg_autodiff(alg)
       jac_config = ForwardDiff.JacobianConfig(nothing, du1, uprev)

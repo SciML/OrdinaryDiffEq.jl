@@ -6,15 +6,6 @@ function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase
   integrator.sol
 end
 
-"""
-    DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem}, args...; kwargs...)
-
-Initializes the `integrator` for a given `OrdinaryDiffEqAlgorithm` or `DAEAlgorithm` `prob` and a given algorithm `alg`
-
-# Arguments
-
-- `prob`:  
-"""
 function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
                            alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},
                            timeseries_init = typeof(prob.u0)[],
