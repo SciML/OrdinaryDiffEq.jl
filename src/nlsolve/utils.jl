@@ -76,16 +76,21 @@ DiffEqBase.has_jac(f::DAEResidualJacobianWrapper) = DiffEqBase.has_jac(f.f)
 DiffEqBase.has_Wfact(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact(f.f)
 DiffEqBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
-
 function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                         tTypeNoUnits,γ,c,iip)
+  build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                        tTypeNoUnits,γ,c,1,iip)
+end
+
+function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                        tTypeNoUnits,γ,c,α,iip)
   build_nlsolver(alg,alg.nlsolve,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,
-                 uBottomEltypeNoUnits,tTypeNoUnits,γ,c,iip)
+                 uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,iip)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
                         f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                        γ,c,::Val{true})
+                        γ,c,α,::Val{true})
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
   isdae = alg isa DAEAlgorithm
@@ -111,7 +116,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     else
       du1 = zero(rate_prototype)
       if isdae
-        uf = DAEResidualJacobianWrapper(f,p,γ*inv(dt),tmp,uprev,t)
+        uf = DAEResidualJacobianWrapper(f,p,α*inv(γ*dt),tmp,uprev,t)
       else
         uf = build_uf(alg,nf,t,p,Val(true))
       end
@@ -149,14 +154,14 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   ηold = one(uTolType)
 
   NLSolver{true,tTypeNoUnits}(
-    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    z,tmp,ztmp,γ,c,α,nlalg,nlalg.κ,
     nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
     nlcache)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
                         f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                        γ,c,::Val{false})
+                        γ,c,α,::Val{false})
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
 

@@ -470,7 +470,7 @@ function dae_calc_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiff
   if DiffEqBase.has_jac(f)
     # todo
   else
-    uf.γ = nlsolver.γ * inv(integrator.dt)
+    uf.γ = nlsolver.α * inv(nlsolver.γ * integrator.dt)
     ForwardDiff.jacobian!(W, uf, du1, uprev, jac_config)
   end
 end
