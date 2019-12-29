@@ -175,13 +175,13 @@ end
   @views @.. y₀[idxs]*c00 + y₁[idxs]*c10 + k[1][idxs]*b10dt
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK22Cache,SSPRK33ConstantCache,SSPRK33Cache,SSPRK432ConstantCache,SSPRK432Cache},idxs::Nothing,T::Type{Val{0}})
   @ssprkpre0
   @inbounds @.. out = y₀*c00 + y₁*c10 + k[1]*b10dt
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK22Cache,SSPRK33ConstantCache,SSPRK33Cache,SSPRK432ConstantCache,SSPRK432Cache},idxs,T::Type{Val{0}})
   @ssprkpre0
   @views @.. out = y₀[idxs]*c00 + y₁[idxs]*c10 + k[1][idxs]*b10dt
   out
@@ -202,13 +202,13 @@ end
   @views @.. (y₁[idxs] - y₀[idxs])*c10diffinvdt + k[1][idxs]*b10diff
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs::Nothing,T::Type{Val{1}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK22Cache,SSPRK33ConstantCache,SSPRK33Cache,SSPRK432ConstantCache,SSPRK432Cache},idxs::Nothing,T::Type{Val{1}})
   @ssprkpre1
   @inbounds @.. out = (y₁ - y₀)*c10diffinvdt + k[1]*b10diff
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{1}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK22Cache,SSPRK33ConstantCache,SSPRK33Cache,SSPRK432ConstantCache,SSPRK432Cache},idxs,T::Type{Val{1}})
   @ssprkpre1
   @views @.. out = (y₁[idxs] - y₀[idxs])*c10diffinvdt + k[1][idxs]*b10diff
   out
@@ -230,13 +230,13 @@ end
   @views @.. (y₁[idxs] - y₀[idxs])*c10diff2invdt2 + k[1][idxs]*b10diff2invdt
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs::Nothing,T::Type{Val{2}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK22Cache,SSPRK33ConstantCache,SSPRK33Cache,SSPRK432ConstantCache,SSPRK432Cache},idxs::Nothing,T::Type{Val{2}})
   @ssprkpre2
   @inbounds @.. out = (y₁ - y₀)*c10diff2invdt2 + k[1]*b10diff2invdt
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{2}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK22Cache,SSPRK33ConstantCache,SSPRK33Cache,SSPRK432ConstantCache,SSPRK432Cache},idxs,T::Type{Val{2}})
   @ssprkpre2
   @views @.. out = (y₁[idxs] - y₀[idxs])*c10diff2invdt2 + k[1][idxs]*b10diff2invdt
   out
