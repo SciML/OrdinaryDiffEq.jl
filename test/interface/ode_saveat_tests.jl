@@ -3,7 +3,7 @@ using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproble
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 prob_forward = prob_ode_linear
-prob_reverse = remake(prob,tspan=(1.0,0.0))
+prob_reverse = remake(prob_forward,tspan=(1.0,0.0))
 
 for prob in [prob_forward,prob_reverse]
   tdir = sign(prob.tspan[2] - prob.tspan[1])
