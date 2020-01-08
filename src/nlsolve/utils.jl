@@ -48,28 +48,33 @@ function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
   end
 end
 
-mutable struct DAEResidualJacobianWrapper{F,pType,duType,uType,gammaType,tmpType,uprevType,tType} <: Function
+mutable struct DAEResidualJacobianWrapper{F,pType,duType,uType,alphaType,gammaType,tmpType,uprevType,tType} <: Function
   f::F
   p::pType
   tmp_du::duType
   tmp_u::uType
-  γ::gammaType
+  α::alphaType
+  invγdt::gammaType
   tmp::tmpType
   uprev::uprevType
   t::tType
-  function DAEResidualJacobianWrapper(f,p,γ,tmp,uprev,t)
+  function DAEResidualJacobianWrapper(f,p,α,invγdt,tmp,uprev,t)
     X = eltype(uprev)
     N = ForwardDiff.chunksize(ForwardDiff.Chunk(uprev))
-    tmp_du = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
-    tmp_u  = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
-    new{typeof(f),typeof(p),typeof(tmp_du),typeof(tmp_u),typeof(γ),typeof(tmp),typeof(uprev),typeof(t)}(f,p,tmp_du,tmp_u,γ,tmp,uprev,t)
+    # tmp_du = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
+    tmp_du = DiffEqBase.dualcache(uprev)
+    tmp_u = DiffEqBase.dualcache(uprev)
+    # tmp_u  = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
+    new{typeof(f),typeof(p),typeof(tmp_du),typeof(tmp_u),typeof(α),typeof(invγdt),typeof(tmp),typeof(uprev),typeof(t)}(f,p,tmp_du,tmp_u,α,invγdt,tmp,uprev,t)
   end
 end
 
 function (m::DAEResidualJacobianWrapper)(out,x)
-  @. m.tmp_du = m.γ * x + m.tmp
-  @. m.tmp_u = x + m.uprev
-  m.f(out, m.tmp_du, m.tmp_u, m.p, m.t)
+  tmp_du = DiffEqBase.get_tmp(m.tmp_du, x)
+  tmp_u = DiffEqBase.get_tmp(m.tmp_u, x)
+  @. tmp_du = (m.α * x + m.tmp) * m.invγdt
+  @. tmp_u = x + m.uprev
+  m.f(out, tmp_du, tmp_u, m.p, m.t)
 end
 
 DiffEqBase.has_jac(f::DAEResidualJacobianWrapper) = DiffEqBase.has_jac(f.f)
@@ -116,7 +121,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     else
       du1 = zero(rate_prototype)
       if isdae
-        uf = DAEResidualJacobianWrapper(f,p,α*inv(γ*dt),tmp,uprev,t)
+        uf = DAEResidualJacobianWrapper(f,p,α,inv(γ*dt),tmp,uprev,t)
       else
         uf = build_uf(alg,nf,t,p,Val(true))
       end

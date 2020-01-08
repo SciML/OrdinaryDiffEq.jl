@@ -122,7 +122,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
     nothing
 end
 
-function DiffEqBase.build_jac_config(alg::OrdinaryDiffEqAlgorithm,f,uf,du1,uprev,u,tmp,du2)
+function DiffEqBase.build_jac_config(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},f,uf,du1,uprev,u,tmp,du2)
   if !DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && !DiffEqBase.has_Wfact_t(f)
     if alg_autodiff(alg)
       if DiffEqBase.has_colorvec(f)
@@ -139,20 +139,6 @@ function DiffEqBase.build_jac_config(alg::OrdinaryDiffEqAlgorithm,f,uf,du1,uprev
       else
         jac_config = DiffEqDiffTools.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u))
       end
-    end
-  else
-    jac_config = nothing
-  end
-  jac_config
-end
-
-function DiffEqBase.build_jac_config(alg::DAEAlgorithm,f,uf,du1,uprev,u,tmp,du2)
-  if !DiffEqBase.has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(nothing, du1, uprev)
-    else
-      # todo
-      jac_config = nothing
     end
   else
     jac_config = nothing

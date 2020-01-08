@@ -101,7 +101,7 @@ end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,true}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,tmp,ztmp,γ,iter,cache = nlsolver
+  @unpack z,tmp,ztmp,γ,α,iter,cache = nlsolver
   @unpack W_γdt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
 
   f = nlsolve_f(integrator)
@@ -112,9 +112,9 @@ end
   end
 
   if isdae
-    @.. ustep = tmp + γ * z * inv(dt)
-    @.. ztmp = uprev + z
-    f(k, ustep, ztmp, p, tstep)
+    @.. ztmp = (tmp + α * z) * invγdt
+    @.. ustep = uprev + z
+    f(k, ztmp, ustep, p, tstep)
   else
     @.. ustep = tmp + γ * z
     f(k, ustep, p, tstep)
@@ -152,10 +152,13 @@ end
   # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential
   # Equations. A Review, by Christopher A. Kennedy and Mark H. Carpenter
   # page 54.
-  if !isdae
+  if isdae
+    γdt = α * invγdt
+  else
     γdt = γ * dt
-    !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
   end
+
+  !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
 
   calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)

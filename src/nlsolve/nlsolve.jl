@@ -11,11 +11,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
   @label REDO
   if isnewton(nlsolver)
     cache isa Nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
-    if integrator.alg isa DAEAlgorithm
-      dae_calc_W!(nlsolver, integrator, cache)
-    else
-      update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
-    end
+    update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
   end
 
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
