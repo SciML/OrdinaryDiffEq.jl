@@ -206,7 +206,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   ηold = one(uTolType)
 
   NLSolver{false,tTypeNoUnits}(
-    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    z,tmp,ztmp,γ,c,α,nlalg,nlalg.κ,
     nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
     nlcache)
 end
