@@ -298,6 +298,7 @@ function islinearfunction(f, alg)::Tuple{Bool,Bool}
 end
 
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
+  alg isa DAEAlgorithm && return true, true
   repeat_step && return false, false
   # TODO: RosW
   isnewton(nlsolver) || return true, true

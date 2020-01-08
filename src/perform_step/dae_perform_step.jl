@@ -43,8 +43,8 @@ end
   @unpack atmp,tmp,nlsolver = cache
   alg = unwrap_alg(integrator, true)
 
-  @. nlsolver.z = 0
-  @. nlsolver.tmp = 0
+  @. nlsolver.z = false
+  @. nlsolver.tmp = false
   nlsolver.γ = 1
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
