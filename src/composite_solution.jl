@@ -1,4 +1,4 @@
-struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE} <: DiffEqBase.AbstractODESolution{T,N}
+struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE} <: DiffEqBase.AbstractODESolution{T,N,uType}
   u::uType
   u_analytic::uType2
   errors::EType
