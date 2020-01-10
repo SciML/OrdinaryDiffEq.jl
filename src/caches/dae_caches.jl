@@ -7,11 +7,17 @@
   nlsolver::N
 end
 
-mutable struct DImplicitEulerConstantCache <: OrdinaryDiffEqConstantCache end
+mutable struct DImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+end
 
 function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  DImplicitEulerConstantCache()
+  γ, c = 1, 1
+  α = 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(false))
+
+  DImplicitEulerConstantCache(nlsolver)
 end
 
 function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,

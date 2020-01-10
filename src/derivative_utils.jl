@@ -47,22 +47,32 @@ cache.
 function calc_J(integrator, cache)
   @unpack t,uprev,f,p,alg = integrator
 
-  if DiffEqBase.has_jac(f)
-    J = f.jac(uprev, p, t)
+  if alg isa DAEAlgorithm
+    if DiffEqBase.has_jac(f)
+      J = f.jac(duprev, uprev, p, t)
+    else
+      @unpack uf = cache
+      x = zero(uprev)
+      J = jacobian(uf, x, integrator)
+    end
   else
-    @unpack uf = cache
+    if DiffEqBase.has_jac(f)
+      J = f.jac(uprev, p, t)
+    else
+      @unpack uf = cache
 
-    uf.f = nlsolve_f(f, alg)
-    uf.p = p
-    uf.t = t
+      uf.f = nlsolve_f(f, alg)
+      uf.p = p
+      uf.t = t
 
-    J = jacobian(uf, uprev, integrator)
-  end
+      J = jacobian(uf, uprev, integrator)
+    end
 
-  integrator.destats.njacs += 1
+    integrator.destats.njacs += 1
 
-  if alg isa CompositeAlgorithm
-    integrator.eigen_est = opnorm(J, Inf)
+    if alg isa CompositeAlgorithm
+      integrator.eigen_est = opnorm(J, Inf)
+    end
   end
 
   J
@@ -429,7 +439,10 @@ end
 
 function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  mass_matrix = integrator.f.mass_matrix
+  isdae = integrator.alg isa DAEAlgorithm
+  if !isdae
+    mass_matrix = integrator.f.mass_matrix
+  end
   isarray = uprev isa AbstractArray
   # calculate W
   is_compos = integrator.alg isa CompositeAlgorithm
@@ -447,9 +460,13 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   else
     integrator.destats.nw += 1
     J = calc_J(integrator, cache)
-    W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
-                           -mass_matrix + dtgamma*J
-    W = W_full isa Number ? W_full : lu(W_full)
+    if isdae
+      W = J
+    else
+      W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
+                             -mass_matrix + dtgamma*J
+      W = W_full isa Number ? W_full : lu(W_full)
+    end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
@@ -477,11 +494,24 @@ end
 
 function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repeat_step)
   if isnewton(nlsolver)
+    isdae = integrator.alg isa DAEAlgorithm
+    new_jac, new_W = true, true
+    if isdae && new_jac
+      lcache = nlsolver.cache
+      lcache.uf.α = nlsolver.α
+      lcache.uf.invγdt = inv(dtgamma)
+      lcache.uf.tmp = @. nlsolver.tmp
+      lcache.uf.uprev = @. integrator.uprev
+    end
     nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dtgamma, repeat_step, true)
     #TODO: jacobian reuse for oop
-    new_jac, new_W = true, true
     new_jac && (nlsolver.cache.J_t = integrator.t)
-    set_new_W!(nlsolver, new_W) && set_W_γdt!(nlsolver, dtgamma)
+    set_new_W!(nlsolver, new_W)
+    if new_jac && isdae
+      set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
+    elseif new_W && !isdae
+      set_W_γdt!(nlsolver, dtgamma)
+    end
   end
   nothing
 end

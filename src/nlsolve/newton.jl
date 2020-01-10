@@ -64,18 +64,29 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,false}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,tmp,γ,cache = nlsolver
+  @unpack z,tmp,γ,α,cache = nlsolver
   @unpack tstep,W,invγdt = cache
 
-  mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
+  isdae = f isa DAEFunction
 
-  ustep = @. tmp + γ * z
-  if mass_matrix === I
-    ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
-  else
-    ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+  if !isdae
+    mass_matrix = integrator.f.mass_matrix
   end
+
+  if isdae
+    ustep = @. uprev + z
+    dustep = @. (tmp + α * z) * invγdt
+    ztmp = f(dustep, ustep, p, t)
+  else
+    ustep = @. tmp + γ * z
+    if mass_matrix === I
+      ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+    else
+      ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+    end
+  end
+
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nf += 1
   end

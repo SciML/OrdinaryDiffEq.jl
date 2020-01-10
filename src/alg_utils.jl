@@ -84,6 +84,7 @@ get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::ImplicitEuler) = true
+alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
 alg_extrapolates(alg::TRBDF2) = true

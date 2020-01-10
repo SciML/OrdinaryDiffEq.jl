@@ -59,12 +59,8 @@ mutable struct DAEResidualJacobianWrapper{F,pType,duType,uType,alphaType,gammaTy
   uprev::uprevType
   t::tType
   function DAEResidualJacobianWrapper(f,p,α,invγdt,tmp,uprev,t)
-    X = eltype(uprev)
-    N = ForwardDiff.chunksize(ForwardDiff.Chunk(uprev))
-    # tmp_du = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
     tmp_du = DiffEqBase.dualcache(uprev)
     tmp_u = DiffEqBase.dualcache(uprev)
-    # tmp_u  = similar(uprev, ForwardDiff.Dual{Nothing,X,N})
     new{typeof(f),typeof(p),typeof(tmp_du),typeof(tmp_u),typeof(α),typeof(invγdt),typeof(tmp),typeof(uprev),typeof(t)}(f,p,tmp_du,tmp_u,α,invγdt,tmp,uprev,t)
   end
 end
@@ -77,9 +73,29 @@ function (m::DAEResidualJacobianWrapper)(out,x)
   m.f(out, tmp_du, tmp_u, m.p, m.t)
 end
 
+mutable struct DAEResidualDerivativeWrapper{F,pType,alphaType,gammaType,tmpType,uprevType,tType} <: Function
+  f::F
+  p::pType
+  α::alphaType
+  invγdt::gammaType
+  tmp::tmpType
+  uprev::uprevType
+  t::tType
+end
+
+function (m::DAEResidualDerivativeWrapper)(x)
+  tmp_du = (m.α * x + m.tmp) * m.invγdt
+  tmp_u = x + m.uprev
+  m.f(tmp_du, tmp_u, m.p, m.t)
+end
+
 DiffEqBase.has_jac(f::DAEResidualJacobianWrapper) = DiffEqBase.has_jac(f.f)
 DiffEqBase.has_Wfact(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact(f.f)
 DiffEqBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact_t(f.f)
+
+DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
+DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
+DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
 function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                         tTypeNoUnits,γ,c,iip)
@@ -169,6 +185,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
                         γ,c,α,::Val{false})
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
+  isdae = alg isa DAEAlgorithm
 
   # define fields of non-linear solver
   z = u; tmp = u; ztmp = u
@@ -178,7 +195,11 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
-    uf = build_uf(alg,nf,t,p,Val(false))
+    if isdae
+      uf = DAEResidualDerivativeWrapper(f,p,α,inv(γ*dt),tmp,uprev,t)
+    else
+      uf = build_uf(alg,nf,t,p,Val(false))
+    end
 
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
