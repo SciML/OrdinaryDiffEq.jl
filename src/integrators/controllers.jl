@@ -49,7 +49,7 @@ end
   q
 end
 
-function stepsize_controller!(integrator,alg)
+@inline function stepsize_controller!(integrator,alg)
   if ispredictive(alg)
     predictive_stepsize_controller!(integrator, alg)
   elseif isstandard(alg)
