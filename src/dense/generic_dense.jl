@@ -4,7 +4,7 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-function _searchsortedfirst(v::AbstractVector, x, lo::Integer, forward::Bool)
+@inline function _searchsortedfirst(v::AbstractVector, x, lo::Integer, forward::Bool)
     u = oftype(lo, 1)
     lo = lo - u
     hi = length(v) + u
