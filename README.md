@@ -45,6 +45,19 @@ sol = solve(prob,Tsit5())
 using Plots; plot(sol,vars=(1,2,3))
 ```
 
+Very fast static array versions can be specifically compiled to the size of your model. For example:
+
+```julia
+using OrdinaryDiffEq, StaticArrays
+function lorenz(u,p,t)
+ SA[10.0(u[2]-u[1]),u[1]*(28.0-u[3]) - u[2],u[1]*u[2] - (8/3)*u[3]]
+end
+u0 = SA[1.0;0.0;0.0]
+tspan = (0.0,100.0)
+prob = ODEProblem(lorenz,u0,tspan)
+sol = solve(prob,Tsit5())
+```
+
 For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](http://docs.juliadiffeq.org/dev/types/ode_types.html). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
