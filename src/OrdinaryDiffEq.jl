@@ -164,8 +164,7 @@ module OrdinaryDiffEq
   export OrdinaryDiffEqAlgorithm
 
   #Callback Necessary
-  export ode_addsteps!, addsteps!, ode_interpolant,
-         terminate!, savevalues!, copyat_or_push!, isfsal
+  export addsteps!, ode_interpolant, terminate!, savevalues!, copyat_or_push!, isfsal
 
   export constructDormandPrince
 
