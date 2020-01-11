@@ -42,7 +42,7 @@ end
   else
     DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                   integrator.dt,f,integrator.p,
-                  integrator.cache.caches[integrator.cache.current],
+                  @inbounds(integrator.cache.caches[integrator.cache.current]),
                   always_calc_begin,allow_calc_end,force_calc_end)
   end
 end
@@ -53,7 +53,7 @@ end
   if !(typeof(integrator.cache) <: CompositeCache)
     val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
   else
-    val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
+    val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,@inbounds(integrator.cache.caches[integrator.cache.current]),idxs,deriv)
   end
   val
 end
