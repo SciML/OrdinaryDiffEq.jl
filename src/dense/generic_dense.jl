@@ -146,9 +146,9 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
     vals = Vector{eltype(timeseries)}(undef, length(tvals))
   end
 
-  # start the search thinking it's ts[1]
+  # start the search thinking it's ts[1]-ts[2]
   i₋ = 1
-  i₊ = 1
+  i₊ = 2
   @inbounds for j in idx
     t = tvals[j]
 
@@ -194,9 +194,9 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   @inbounds tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
 
-  # start the search thinking it's ts[1]
+  # start the search thinking it's in ts[1]-ts[2]
   i₋ = 1
-  i₊ = 1
+  i₊ = 2
   @inbounds for j in idx
     t = tvals[j]
 
@@ -269,6 +269,8 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left
     i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
   end
 
+  i₊ == 1 && (i₊ += 1)
+
   @inbounds begin
     dt = ts[i₊] - ts[i₋]
     Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval-ts[i₋]) / dt
@@ -310,6 +312,8 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=
     i₋ = max(1, _searchsortedlast(ts,tval,1,tdir > 0))
     i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
   end
+
+  i₊ == 1 && (i₊ += 1)
 
   @inbounds begin
     dt = ts[i₊] - ts[i₋]
