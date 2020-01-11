@@ -371,7 +371,7 @@ println("Rosenbrocks")
 regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # Rosenbrock32
-regression_test(Rosenbrock32(), 4e-4, 6e-4; test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rosenbrock32(), 6e-4, 9e-4; test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # Rodas4
 regression_test(Rodas4(), 8.5e-6, 2e-5)
