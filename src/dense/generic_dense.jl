@@ -19,7 +19,7 @@
     return hi
 end
 
-function _searchsortedlast(v::AbstractVector, x, lo::Integer, forward::Bool)
+@inline function _searchsortedlast(v::AbstractVector, x, lo::Integer, forward::Bool)
   u = oftype(lo, 1)
   lo = lo - u
   hi = length(v) + u
