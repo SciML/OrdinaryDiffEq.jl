@@ -179,7 +179,7 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
       vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
     end
   end
-  
+
   DiffEqArray(vals, tvals)
 end
 
@@ -256,7 +256,7 @@ times ts (sorted), with values timeseries and derivatives ks
 function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
-  
+
   if continuity === :left
     # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
     # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
@@ -314,7 +314,7 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=
   @inbounds begin
     dt = ts[i₊] - ts[i₋]
     Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval-ts[i₋]) / dt
-    
+
     if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
       ode_interpolant!(out,Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
     elseif !id.dense
