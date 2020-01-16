@@ -64,18 +64,29 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,false}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,tmp,γ,cache = nlsolver
+  @unpack z,tmp,γ,α,cache = nlsolver
   @unpack tstep,W,invγdt = cache
 
-  mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
+  isdae = f isa DAEFunction
 
-  ustep = @. tmp + γ * z
-  if mass_matrix === I
-    ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
-  else
-    ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+  if !isdae
+    mass_matrix = integrator.f.mass_matrix
   end
+
+  if isdae
+    ustep = @. uprev + z
+    dustep = @. (tmp + α * z) * invγdt
+    ztmp = f(dustep, ustep, p, t)
+  else
+    ustep = @. tmp + γ * z
+    if mass_matrix === I
+      ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+    else
+      ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+    end
+  end
+
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nf += 1
   end
@@ -101,23 +112,38 @@ end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,true}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,tmp,ztmp,γ,iter,cache = nlsolver
+  @unpack z,tmp,ztmp,γ,α,iter,cache = nlsolver
   @unpack W_γdt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
 
-  mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
+  isdae = f isa DAEFunction
 
-  @.. ustep = tmp + γ * z
-  f(k, ustep, p, tstep)
+  if !isdae
+    mass_matrix = integrator.f.mass_matrix
+  end
+
+  if isdae
+    @.. ztmp = (tmp + α * z) * invγdt
+    @.. ustep = uprev + z
+    f(k, ztmp, ustep, p, tstep)
+  else
+    @.. ustep = tmp + γ * z
+    f(k, ustep, p, tstep)
+  end
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nf += 1
   end
 
-  if mass_matrix === I
-    @.. ztmp = (dt * k - z) * invγdt
+  if isdae
+    b = vec(k)
   else
-    mul!(vec(ztmp), mass_matrix, vec(z))
-    @.. ztmp = (dt * k - ztmp) * invγdt
+    if mass_matrix === I
+      @.. ztmp = (dt * k - z) * invγdt
+    else
+      mul!(vec(ztmp), mass_matrix, vec(z))
+      @.. ztmp = (dt * k - ztmp) * invγdt
+    end
+    b = vec(ztmp)
   end
 
   # update W
@@ -125,9 +151,10 @@ end
     update_coefficients!(W, ustep, p, tstep)
   end
 
-  linsolve(vec(dz), W, vec(ztmp), iter == 1 && new_W;
+  linsolve(vec(dz), W, b, iter == 1 && new_W;
            Pl=DiffEqBase.ScaleVector(weight, true),
            Pr=DiffEqBase.ScaleVector(weight, false), tol=integrator.opts.reltol)
+
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
   end
@@ -136,7 +163,12 @@ end
   # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential
   # Equations. A Review, by Christopher A. Kennedy and Mark H. Carpenter
   # page 54.
-  γdt = γ * dt
+  if isdae
+    γdt = α * invγdt
+  else
+    γdt = γ * dt
+  end
+
   !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
 
   calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)

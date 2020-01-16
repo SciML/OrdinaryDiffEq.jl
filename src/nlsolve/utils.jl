@@ -48,17 +48,73 @@ function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
   end
 end
 
+mutable struct DAEResidualJacobianWrapper{F,pType,duType,uType,alphaType,gammaType,tmpType,uprevType,tType} <: Function
+  f::F
+  p::pType
+  tmp_du::duType
+  tmp_u::uType
+  α::alphaType
+  invγdt::gammaType
+  tmp::tmpType
+  uprev::uprevType
+  t::tType
+  function DAEResidualJacobianWrapper(f,p,α,invγdt,tmp,uprev,t)
+    tmp_du = DiffEqBase.dualcache(uprev)
+    tmp_u = DiffEqBase.dualcache(uprev)
+    new{typeof(f),typeof(p),typeof(tmp_du),typeof(tmp_u),typeof(α),typeof(invγdt),typeof(tmp),typeof(uprev),typeof(t)}(f,p,tmp_du,tmp_u,α,invγdt,tmp,uprev,t)
+  end
+end
+
+function (m::DAEResidualJacobianWrapper)(out,x)
+  tmp_du = DiffEqBase.get_tmp(m.tmp_du, x)
+  tmp_u = DiffEqBase.get_tmp(m.tmp_u, x)
+  @. tmp_du = (m.α * x + m.tmp) * m.invγdt
+  @. tmp_u = x + m.uprev
+  m.f(out, tmp_du, tmp_u, m.p, m.t)
+end
+
+mutable struct DAEResidualDerivativeWrapper{F,pType,alphaType,gammaType,tmpType,uprevType,tType} <: Function
+  f::F
+  p::pType
+  α::alphaType
+  invγdt::gammaType
+  tmp::tmpType
+  uprev::uprevType
+  t::tType
+end
+
+function (m::DAEResidualDerivativeWrapper)(x)
+  tmp_du = (m.α * x + m.tmp) * m.invγdt
+  tmp_u = x + m.uprev
+  m.f(tmp_du, tmp_u, m.p, m.t)
+end
+
+DiffEqBase.has_jac(f::DAEResidualJacobianWrapper) = DiffEqBase.has_jac(f.f)
+DiffEqBase.has_Wfact(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact(f.f)
+DiffEqBase.has_Wfact_t(f::DAEResidualJacobianWrapper) = DiffEqBase.has_Wfact_t(f.f)
+
+DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
+DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
+DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
+
 function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                         tTypeNoUnits,γ,c,iip)
+  build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                        tTypeNoUnits,γ,c,1,iip)
+end
+
+function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                        tTypeNoUnits,γ,c,α,iip)
   build_nlsolver(alg,alg.nlsolve,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,
-                 uBottomEltypeNoUnits,tTypeNoUnits,γ,c,iip)
+                 uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,iip)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
                         f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                        γ,c,::Val{true})
+                        γ,c,α,::Val{true})
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
+  isdae = alg isa DAEAlgorithm
 
   # define fields of non-linear solver
   z = similar(u); tmp = similar(u); ztmp = similar(u)
@@ -80,7 +136,11 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       linsolve = alg.linsolve(Val{:init},nf,u)
     else
       du1 = zero(rate_prototype)
-      uf = build_uf(alg,nf,t,p,Val(true))
+      if isdae
+        uf = DAEResidualJacobianWrapper(f,p,α,inv(γ*dt),tmp,uprev,t)
+      else
+        uf = build_uf(alg,nf,t,p,Val(true))
+      end
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
       linsolve = alg.linsolve(Val{:init},uf,u)
     end
@@ -115,16 +175,17 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   ηold = one(uTolType)
 
   NLSolver{true,tTypeNoUnits}(
-    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    z,tmp,ztmp,γ,c,α,nlalg,nlalg.κ,
     nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
     nlcache)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
                         f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                        γ,c,::Val{false})
+                        γ,c,α,::Val{false})
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
+  isdae = alg isa DAEAlgorithm
 
   # define fields of non-linear solver
   z = u; tmp = u; ztmp = u
@@ -134,7 +195,11 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
-    uf = build_uf(alg,nf,t,p,Val(false))
+    if isdae
+      uf = DAEResidualDerivativeWrapper(f,p,α,inv(γ*dt),tmp,uprev,t)
+    else
+      uf = build_uf(alg,nf,t,p,Val(false))
+    end
 
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
@@ -162,7 +227,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   ηold = one(uTolType)
 
   NLSolver{false,tTypeNoUnits}(
-    z,tmp,ztmp,γ,c,nlalg,nlalg.κ,
+    z,tmp,ztmp,γ,c,α,nlalg,nlalg.κ,
     nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
     nlcache)
 end
