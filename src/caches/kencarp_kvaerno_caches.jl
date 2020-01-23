@@ -42,7 +42,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
   end
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = nlsolver.z
@@ -140,7 +140,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
     k5 = nothing; k6 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
   end
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)

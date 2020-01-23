@@ -83,7 +83,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
     if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
       uf = nothing
     else
-      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+      uf = FiniteDiff.UDerivativeWrapper(f,t,p)
     end
     return $Cache(ops,uf)
   end
@@ -104,7 +104,7 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm,u,uEltypeNoUnit
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   # Allocate cache for the Jacobian
@@ -159,7 +159,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   # Allocate cache for the Jacobian
@@ -337,7 +337,7 @@ for (Alg, Cache) in [(:Exp4, :Exp4ConstantCache),
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
-      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+      uf = FiniteDiff.UDerivativeWrapper(f,t,p)
     end
     return $Cache(uf)
   end
@@ -367,7 +367,7 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -410,7 +410,7 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -452,7 +452,7 @@ function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -494,7 +494,7 @@ function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -535,7 +535,7 @@ function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -577,7 +577,7 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -620,7 +620,7 @@ function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -652,7 +652,7 @@ for (Alg, Cache) in [(:Exprb32, :Exprb32ConstantCache),
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
-      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+      uf = FiniteDiff.UDerivativeWrapper(f,t,p)
     end
     return $Cache(uf)
   end
@@ -677,7 +677,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,u,uElty
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = FiniteDiff.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   # Allocate cache for the Jacobian

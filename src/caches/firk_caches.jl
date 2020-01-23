@@ -15,7 +15,7 @@ end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  uf  = DiffEqDiffTools.UDerivativeWrapper(f, t, p)
+  uf  = FiniteDiff.UDerivativeWrapper(f, t, p)
   uToltype = real(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, real(tTypeNoUnits))
 
@@ -69,7 +69,7 @@ end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  uf = DiffEqDiffTools.UJacobianWrapper(f, t, p)
+  uf = FiniteDiff.UJacobianWrapper(f, t, p)
   uToltype = real(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, real(tTypeNoUnits))
 

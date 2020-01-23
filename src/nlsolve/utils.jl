@@ -48,7 +48,7 @@ function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
   end
 end
 
-mutable struct DAEResidualJacobianWrapper{F,pType,duType,uType,alphaType,gammaType,tmpType,uprevType,tType} <: Function
+mutable struct DAEResidualJacobianWrapper{AD,F,pType,duType,uType,alphaType,gammaType,tmpType,uprevType,tType} <: Function
   f::F
   p::pType
   tmp_du::duType
@@ -58,16 +58,29 @@ mutable struct DAEResidualJacobianWrapper{F,pType,duType,uType,alphaType,gammaTy
   tmp::tmpType
   uprev::uprevType
   t::tType
-  function DAEResidualJacobianWrapper(f,p,α,invγdt,tmp,uprev,t)
-    tmp_du = DiffEqBase.dualcache(uprev)
-    tmp_u = DiffEqBase.dualcache(uprev)
-    new{typeof(f),typeof(p),typeof(tmp_du),typeof(tmp_u),typeof(α),typeof(invγdt),typeof(tmp),typeof(uprev),typeof(t)}(f,p,tmp_du,tmp_u,α,invγdt,tmp,uprev,t)
+  function DAEResidualJacobianWrapper(alg,f,p,α,invγdt,tmp,uprev,t)
+    isautodiff = alg_autodiff(alg)
+    if isautodiff
+      tmp_du = DiffEqBase.dualcache(uprev)
+      tmp_u = DiffEqBase.dualcache(uprev)
+    else
+      tmp_du = similar(uprev)
+      tmp_u = similar(uprev)
+    end
+    new{isautodiff,typeof(f),typeof(p),typeof(tmp_du),typeof(tmp_u),typeof(α),typeof(invγdt),typeof(tmp),typeof(uprev),typeof(t)}(f,p,tmp_du,tmp_u,α,invγdt,tmp,uprev,t)
   end
 end
 
+is_autodiff(m::DAEResidualJacobianWrapper{AD}) where AD = AD
+
 function (m::DAEResidualJacobianWrapper)(out,x)
-  tmp_du = DiffEqBase.get_tmp(m.tmp_du, x)
-  tmp_u = DiffEqBase.get_tmp(m.tmp_u, x)
+  if is_autodiff(m)
+    tmp_du = DiffEqBase.get_tmp(m.tmp_du, x)
+    tmp_u = DiffEqBase.get_tmp(m.tmp_u, x)
+  else
+    tmp_du = m.tmp_du
+    tmp_u = m.tmp_u
+  end
   @. tmp_du = (m.α * x + m.tmp) * m.invγdt
   @. tmp_u = x + m.uprev
   m.f(out, tmp_du, tmp_u, m.p, m.t)
@@ -137,11 +150,11 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     else
       du1 = zero(rate_prototype)
       if isdae
-        uf = DAEResidualJacobianWrapper(f,p,α,inv(γ*dt),tmp,uprev,t)
+        uf = DAEResidualJacobianWrapper(alg,f,p,α,inv(γ*dt),tmp,uprev,t)
       else
         uf = build_uf(alg,nf,t,p,Val(true))
       end
-      jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
+      jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
       linsolve = alg.linsolve(Val{:init},uf,u)
     end
 

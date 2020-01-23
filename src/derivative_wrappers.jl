@@ -5,7 +5,7 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
         ForwardDiff.derivative!(df, f, fx, x, grad_config)
         integrator.destats.nf += 1
     else
-        DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
+        FiniteDiff.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
         fdtype = alg.diff_type
         if fdtype == Val{:forward} || fdtype == Val{:central}
             tmp *= 2
@@ -27,7 +27,7 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
       integrator.destats.nf += 1
       d = ForwardDiff.derivative(f, x)
     else
-      d = DiffEqDiffTools.finite_difference_derivative(f, x, alg.diff_type, dir = diffdir(integrator))
+      d = FiniteDiff.finite_difference_derivative(f, x, alg.diff_type, dir = diffdir(integrator))
       if alg.diff_type == Val{:central} || alg.diff_type == Val{:forward}
           tmp *= 2
       end
@@ -67,9 +67,9 @@ function _nfcount(N,diff_type)
 end
 
 jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
-    (DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir),2)
+    (FiniteDiff.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir),2)
 jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype) =
-    (DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), diff_type==Val{:forward} ? f(x) : similar(x),
+    (FiniteDiff.finite_difference_jacobian(f, x, diff_type, eltype(x), diff_type==Val{:forward} ? f(x) : similar(x),
       dir = dir, colorvec = colorvec, sparsity = sparsity, jac_prototype = jac_prototype),_nfcount(maximum(colorvec),diff_type))
 
 function jacobian(f, x, integrator)
@@ -95,10 +95,10 @@ function jacobian(f, x, integrator)
 end
 
 jacobian_finitediff_forward!(J,f,x,jac_config,forwardcache,integrator,colorvec)=
-  (DiffEqDiffTools.finite_difference_jacobian!(J,f,x,jac_config,forwardcache,
+  (FiniteDiff.finite_difference_jacobian!(J,f,x,jac_config,forwardcache,
     dir=diffdir(integrator),colorvec=colorvec,sparsity=integrator.f.jac_prototype);maximum(colorvec))
 jacobian_finitediff!(J,f,x,jac_config,integrator,colorvec)=
-  (DiffEqDiffTools.finite_difference_jacobian!(J,f,x,jac_config,
+  (FiniteDiff.finite_difference_jacobian!(J,f,x,jac_config,
     dir=diffdir(integrator),colorvec=colorvec,sparsity=integrator.f.jac_prototype);2*maximum(colorvec))
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
@@ -135,9 +135,9 @@ function DiffEqBase.build_jac_config(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgor
       jac_config = ForwardColorJacCache(uf,uprev,colorvec=colorvec,sparsity=sparsity)
     else
       if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(tmp,du1,du2,alg.diff_type)
+        jac_config = FiniteDiff.JacobianCache(tmp,du1,du2,alg.diff_type)
       else
-        jac_config = DiffEqDiffTools.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u))
+        jac_config = FiniteDiff.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u))
       end
     end
   else
@@ -159,7 +159,7 @@ function DiffEqBase.resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJ
   jac_config
 end
 
-function DiffEqBase.resize_jac_config!(jac_config::DiffEqDiffTools.JacobianCache, i)
+function DiffEqBase.resize_jac_config!(jac_config::FiniteDiff.JacobianCache, i)
   resize!(jac_config, i)
   jac_config
 end
@@ -169,7 +169,7 @@ function resize_grad_config!(grad_config::ForwardDiff.DerivativeConfig, i)
   grad_config
 end
 
-function resize_grad_config!(grad_config::DiffEqDiffTools.GradientCache, i)
+function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
   @unpack fx, c1, c2 = grad_config
   fx !== nothing && resize!(fx, i)
   c1 !== nothing && resize!(c1, i)
@@ -182,7 +182,7 @@ function build_grad_config(alg,f,tf,du1,t)
     if alg_autodiff(alg)
       grad_config = ForwardDiff.DerivativeConfig(tf,du1,t)
     else
-      grad_config = DiffEqDiffTools.GradientCache(du1,t,alg.diff_type)
+      grad_config = FiniteDiff.GradientCache(du1,t,alg.diff_type)
     end
   else
     grad_config = nothing
