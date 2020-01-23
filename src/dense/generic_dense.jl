@@ -269,8 +269,6 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left
     i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
   end
 
-  i₊ == 1 && (i₊ += 1)
-
   @inbounds begin
     dt = ts[i₊] - ts[i₋]
     Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval-ts[i₋]) / dt
@@ -312,8 +310,6 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=
     i₋ = max(1, _searchsortedlast(ts,tval,1,tdir > 0))
     i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
   end
-
-  i₊ == 1 && (i₊ += 1)
 
   @inbounds begin
     dt = ts[i₊] - ts[i₋]
