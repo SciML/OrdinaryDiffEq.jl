@@ -156,7 +156,7 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
       # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
       # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
       i₊ = min(lastindex(ts), _searchsortedfirst(ts,t,i₊,tdir > 0))
-      i₋ = i₊ > 1 ? i₊ - 1 : 1
+      i₋ = i₊ > 1 ? i₊ - 1 : i₊
     else
       # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
       # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -204,7 +204,7 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
       # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
       # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
       i₊ = min(lastindex(ts), _searchsortedfirst(ts,t,i₊,tdir > 0))
-      i₋ = i₊ > 1 ? i₊ - 1 : 1
+      i₋ = i₊ > 1 ? i₊ - 1 : i₊
     else
       # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
       # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
@@ -260,16 +260,14 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left
   if continuity === :left
     # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
     # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
-    i₊ = min(lastindex(ts), _searchsortedfirst(ts,tval,1,tdir > 0))
-    i₋ = i₊ > 1 ? i₊ - 1 : 1
+    i₊ = min(lastindex(ts), _searchsortedfirst(ts,tval,2,tdir > 0))
+    i₋ = i₊ > 1 ? i₊ - 1 : i₊
   else
     # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
     # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
     i₋ = max(1, _searchsortedlast(ts,tval,1,tdir > 0))
     i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
   end
-
-  i₊ == 1 && (i₊ += 1)
 
   @inbounds begin
     dt = ts[i₊] - ts[i₋]
@@ -304,16 +302,14 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=
   if continuity === :left
     # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
     # and otherwise i₋ and i₊ satisfy ts[i₋] < tval ≤ ts[i₊]
-    i₊ = min(lastindex(ts), _searchsortedfirst(ts,tval,1,tdir > 0))
-    i₋ = i₊ > 1 ? i₊ - 1 : 1
+    i₊ = min(lastindex(ts), _searchsortedfirst(ts,tval,2,tdir > 0))
+    i₋ = i₊ > 1 ? i₊ - 1 : i₊
   else
     # we have i₋ = i₊ - 1 = 1 if tval < ts[1], i₊ = i₋ = lastindex(ts) if tval = ts[end],
     # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ tval < ts[i₊]
     i₋ = max(1, _searchsortedlast(ts,tval,1,tdir > 0))
     i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
   end
-
-  i₊ == 1 && (i₊ += 1)
 
   @inbounds begin
     dt = ts[i₊] - ts[i₋]
