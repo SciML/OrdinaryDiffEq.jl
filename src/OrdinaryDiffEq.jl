@@ -17,6 +17,8 @@ module OrdinaryDiffEq
 
   using DiffEqBase: DiffEqArrayOperator, DEFAULT_UPDATE_FUNC
 
+  using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper, UDerivativeWrapper
+
   import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,

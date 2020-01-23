@@ -112,8 +112,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   work = zero(dt)
   A = one(Int)
   step_no = zero(Int)
-  tf = FiniteDiff.TimeDerivativeWrapper(f,u,p)
-  uf = FiniteDiff.UDerivativeWrapper(f,t,p)
+  tf = TimeDerivativeWrapper(f,u,p)
+  uf = UDerivativeWrapper(f,t,p)
   ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf)
 end
 
@@ -171,8 +171,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
     end
   end
 
-  tf = FiniteDiff.TimeGradientWrapper(f,uprev,p)
-  uf = FiniteDiff.UJacobianWrapper(f,t,p)
+  tf = TimeGradientWrapper(f,uprev,p)
+  uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
   linsolve_tmps = Array{typeof(linsolve_tmp),1}(undef, Threads.nthreads())
 
@@ -467,8 +467,8 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
     stage_number[n] = 2 * Int(s) - alg.n_min - n + 1
   end
 
-  tf = FiniteDiff.TimeDerivativeWrapper(f,u,p)
-  uf = FiniteDiff.UDerivativeWrapper(f,t,p)
+  tf = TimeDerivativeWrapper(f,u,p)
+  uf = UDerivativeWrapper(f,t,p)
   ImplicitDeuflhardExtrapolationConstantCache(Q,n_curr,n_old,coefficients,stage_number,tf,uf)
 end
 
@@ -510,8 +510,8 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
     J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
-  tf = FiniteDiff.TimeGradientWrapper(f,uprev,p)
-  uf = FiniteDiff.UJacobianWrapper(f,t,p)
+  tf = TimeGradientWrapper(f,uprev,p)
+  uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
@@ -649,8 +649,8 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   sigma = 9//10
 
   # Initialize the constant cache
-  tf = FiniteDiff.TimeDerivativeWrapper(f,u,p)
-  uf = FiniteDiff.UDerivativeWrapper(f,t,p)
+  tf = TimeDerivativeWrapper(f,u,p)
+  uf = UDerivativeWrapper(f,t,p)
   ImplicitHairerWannerExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf)
 end
 
@@ -727,8 +727,8 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
     J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
-  tf = FiniteDiff.TimeGradientWrapper(f,uprev,p)
-  uf = FiniteDiff.UJacobianWrapper(f,t,p)
+  tf = TimeGradientWrapper(f,uprev,p)
+  uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
