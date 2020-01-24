@@ -1,4 +1,4 @@
-# Default nlsolve behavior, should move to DiffEqDiffTools.jl
+# Default nlsolve behavior, should move to FiniteDiff.jl
 
 Base.@pure determine_chunksize(u,alg::DiffEqBase.DEAlgorithm) = determine_chunksize(u,get_chunksize(alg))
 Base.@pure function determine_chunksize(u,CS)

@@ -222,8 +222,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
 
     quote
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-            tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
-            uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+            tf = TimeDerivativeWrapper(f,u,p)
+            uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
             linsolve = alg.linsolve(Val{:init},uf,u)
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
@@ -241,8 +241,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             atmp = similar(u, uEltypeNoUnits)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
-            tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
-            uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+            tf = TimeGradientWrapper(f,uprev,p)
+            uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
             linsolve = alg.linsolve(Val{:init},uf,u)
             grad_config = build_grad_config(alg,f,tf,du1,t)

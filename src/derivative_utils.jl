@@ -553,6 +553,6 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
 end
 
 build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{true}) =
-  DiffEqDiffTools.UJacobianWrapper(nf,t,p)
+  UJacobianWrapper(nf,t,p)
 build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{false}) =
-  DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
+  UDerivativeWrapper(nf,t,p)
