@@ -122,3 +122,10 @@ sol = solve(prob, DP5(), save_on=false, save_start=false, save_end=false)
 @test isempty(sol.t) && isempty(sol.u)
 sol = solve(prob, DP5(), saveat=0.2, save_on=false, save_start=false, save_end=false)
 @test isempty(sol.t) && isempty(sol.u)
+
+small_f(u,p,t)= u
+u0 = 1.
+tspan = (0.0, 15.0)
+prob = ODEProblem(small_f,u0,tspan)
+sol = solve(prob, Tsit5(), saveat=4.)
+@test sol.t == [0.0,4,8,12,15]
