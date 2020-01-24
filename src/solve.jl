@@ -470,7 +470,7 @@ function tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
         push!(saveat_internal, tdir * t)
       end
     else
-      for t in (t0 + saveat):saveat:(tf - saveat)
+      for t in (t0 + saveat):saveat:tf
         push!(saveat_internal, tdir * t)
       end
     end
