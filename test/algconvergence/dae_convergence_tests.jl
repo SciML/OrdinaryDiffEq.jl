@@ -15,8 +15,11 @@ prob_dae_linear_iip = DAEProblem(
 @testset "DAE Solver Convergence Tests (in-place)" begin
 	prob = prob_dae_linear_iip
 
-	sim1 = test_convergence(dts,prob,DImplicitEuler())
-	@test sim1.𝒪est[:final] ≈ 1 atol=testTol
+	sim11 = test_convergence(dts,prob,DImplicitEuler())
+	@test sim11.𝒪est[:final] ≈ 1 atol=testTol
+
+	sim12 = test_convergence(dts,prob,DImplicitEuler(;autodiff=false))
+	@test sim12.𝒪est[:final] ≈ 1 atol=testTol
 end
 
 f_dae_linear = (du, u, p, t) -> (@. du - u)
@@ -29,6 +32,9 @@ prob_dae_linear_oop = DAEProblem(
 @testset "DAE Solver Convergence Tests (out-of-place)" begin
 	prob = prob_dae_linear_oop
 
-	sim2 = test_convergence(dts,prob,DImplicitEuler())
-	@test sim2.𝒪est[:final] ≈ 1 atol=testTol
+	sim21 = test_convergence(dts,prob,DImplicitEuler())
+	@test sim21.𝒪est[:final] ≈ 1 atol=testTol
+
+	sim22 = test_convergence(dts,prob,DImplicitEuler(;autodiff=false))
+	@test sim22.𝒪est[:final] ≈ 1 atol=testTol
 end
