@@ -48,6 +48,7 @@ test-arm1:
   extends: .test
   variables:
     GROUP: "Interface"
+  tags: 'arm'
   script:
     - julia --project -e "using Pkg; Pkg.test();"
 
@@ -55,6 +56,7 @@ test-arm2:
   extends: .test
   variables:
     GROUP: "Regression"
+  tags: 'arm'
   script:
     - julia --project -e "using Pkg; Pkg.test();"
 
