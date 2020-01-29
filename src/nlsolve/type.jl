@@ -36,7 +36,7 @@ NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff,
 
 # caches
 
-mutable struct NLNewtonCache{uType,tType,rateType,J,W,ufType,jcType,lsType} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{uType,tType,tType2,rateType,J,W,ufType,jcType,lsType} <: AbstractNLSolverCache
   ustep::uType
   tstep::tType
   k::rateType
@@ -53,12 +53,12 @@ mutable struct NLNewtonCache{uType,tType,rateType,J,W,ufType,jcType,lsType} <: A
   jac_config::jcType
   linsolve::lsType
   weight::uType
-  invγdt::tType
+  invγdt::tType2
   new_W_γdt_cutoff::tType
   J_t::tType
 end
 
-mutable struct NLNewtonConstantCache{tType,J,W,ufType} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{tType,tType2,J,W,ufType} <: AbstractNLSolverCache
   tstep::tType
   J::J
   W::W
@@ -67,7 +67,7 @@ mutable struct NLNewtonConstantCache{tType,J,W,ufType} <: AbstractNLSolverCache
   firstcall::Bool
   W_γdt::tType
   uf::ufType
-  invγdt::tType
+  invγdt::tType2
   new_W_γdt_cutoff::tType
   J_t::tType
 end
