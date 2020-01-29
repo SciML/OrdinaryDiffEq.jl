@@ -1081,3 +1081,20 @@ DImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           DImplicitEuler{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),typeof(diff_type)}(linsolve,
                           nlsolve,diff_type,extrapolant,controller)
+
+
+struct DABDF2{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  controller::Symbol
+end
+DABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                          linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                          extrapolant=:constant,
+                          controller=:Standard) =
+                          DABDF2{chunk_size,autodiff,typeof(linsolve),
+                          typeof(nlsolve),typeof(diff_type)}(linsolve,
+                          nlsolve,diff_type,extrapolant,controller)
+
