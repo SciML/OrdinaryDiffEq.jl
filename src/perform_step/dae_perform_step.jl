@@ -128,7 +128,7 @@ end
 
 @muladd function perform_step!(integrator, cache::DABDF2Cache, repeat_step=false)
   @unpack t,dt,f,p = integrator
-  @unpack atmp,dtₙ₋₁,zₙ₋₁,nlsolver = cache
+  @unpack atmp,dtₙ₋₁,nlsolver = cache
   @unpack z,tmp = nlsolver
   alg = unwrap_alg(integrator, true)
   uₙ,uₙ₋₁,uₙ₋₂,dtₙ = integrator.u,integrator.uprev,integrator.uprev2,integrator.dt
@@ -158,8 +158,8 @@ end
   integrator.destats.nf += 1
   if integrator.opts.adaptive
     btilde0 = (dtₙ₋₁+dtₙ)*1//6
-    btilde1 = 1+dtₙ/dtₙ₋₁
-    btilde2 = dtₙ/dtₙ₋₁
+    btilde1 = 1+ρ
+    btilde2 = ρ
     @.. tmp = btilde0*(integrator.fsallast - btilde1*integrator.fsalfirst + btilde2*cache.fsalfirstprev)
     calculate_residuals!(atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)

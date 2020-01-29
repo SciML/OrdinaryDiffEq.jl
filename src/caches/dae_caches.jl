@@ -57,7 +57,6 @@ end
   uₙ₋₂::uType
   fsalfirst::rateType
   fsalfirstprev::rateType
-  zₙ₋₁::uType
   atmp::uNoUnitsType
   nlsolver::N
   eulercache::DImplicitEulerCache
@@ -77,8 +76,7 @@ function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,uEltypeNoUnits,
   eulercache = DImplicitEulerCache(u,uprev,uprev2,atmp,nlsolver)
 
   dtₙ₋₁ = one(dt)
-  zₙ₋₁ = zero(u)
 
-  DABDF2Cache(u,uprev,uprev2,fsalfirst,fsalfirstprev,zₙ₋₁,atmp,
+  DABDF2Cache(u,uprev,uprev2,fsalfirst,fsalfirstprev,atmp,
               nlsolver,eulercache,dtₙ₋₁)
 end
