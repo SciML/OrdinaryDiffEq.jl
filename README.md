@@ -14,7 +14,7 @@ functionality should check out [DifferentialEquations.jl](https://github.com/Jul
 
 ## API
 
-OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](http://docs.juliadiffeq.org/dev/tutorials/ode_example.html) using the `Tsit5()` algorithm:
+OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.juliadiffeq.org/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
 
 ```julia
 using OrdinaryDiffEq
@@ -58,7 +58,7 @@ prob = ODEProblem(lorenz,u0,tspan)
 sol = solve(prob,Tsit5())
 ```
 
-For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](http://docs.juliadiffeq.org/dev/types/ode_types.html). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://docs.juliadiffeq.org/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
 function HH_acceleration(dv,v,u,p,t)
