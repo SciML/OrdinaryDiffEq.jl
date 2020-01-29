@@ -55,6 +55,7 @@ isadaptive(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
 isadaptive(alg::DImplicitEuler) = true
+isadaptive(alg::DABDF2) = true
 
 qmin_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1//5
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
@@ -85,6 +86,7 @@ alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::DImplicitEuler) = true
+alg_extrapolates(alg::DABDF2) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
 alg_extrapolates(alg::TRBDF2) = true
@@ -349,6 +351,7 @@ alg_order(alg::MEBDF2) = 2
 alg_order(alg::PDIRK44) = 4
 
 alg_order(alg::DImplicitEuler) = 1
+alg_order(alg::DABDF2) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
