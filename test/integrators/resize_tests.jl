@@ -135,3 +135,54 @@ prob = ODEProblem(ff, [1.0, 1.0], (0.0, 1.0))
 i = init(prob, ImplicitEuler(), callback=cb)
 resize!(i, 5)
 solve!(i)
+
+
+function dsdt(ds,s,_,t)
+    # state looks like x1,v1, x2,v2, x3,v3,...
+    ds[1:2:end] .= s[2:2:end] # velocity changes position
+    ds[2:2:end] .= -1.0 # (constant downward acceleration)
+end
+
+function splitCheck(s,t,intgr)
+    #If any of the position coordinates are negative, we need to bounce (and resize).
+    if any(s[1:2:end] .< 0.0)
+        return true
+    else
+        return false
+    end
+end
+
+function splitMod!(intgr)
+    s = intgr.u
+
+    # flip the velocity sign
+    for i = 1:2:length(s)
+        if s[i]<0.0
+            s[i] = 0.0
+            s[i+1] = -s[i+1]
+        end
+    end
+
+    # Add a particle to the system.
+    # comment out these lines and it will work with Rosenbrock32.
+    resize!(intgr,length(s)+2) # (resizes s -> intgr.u)
+    s[end-1] = rand() # new position
+    s[end] = rand() # new velocity
+end
+
+function runSim(method)
+    s0 = rand(2)
+    tspan = (0.0,20.0)
+    prob = ODEProblem(dsdt,s0,tspan)
+
+    # callback to bounce / split system.
+    cb = DiscreteCallback(splitCheck,splitMod!)
+
+    solve(prob,method,callback=cb,dtmax=0.01)
+    # setting dtmax here so the discrete callback doesn't miss the zero-crossing too badly.
+    # ...no real reason not to use a continuous callback here, I just chose not to.
+end
+
+runSim(BS3())
+runSim(Rosenbrock23())
+runSim(Rosenbrock23(autodiff=false))
