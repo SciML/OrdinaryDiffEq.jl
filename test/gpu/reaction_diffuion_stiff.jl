@@ -57,8 +57,6 @@ println("BS3")
 @time sol = solve(prob,BS3(),progress=true,save_everystep=false,save_start=false)
 println("ROCK2")
 @time sol = solve(prob,ROCK2(),progress=true,save_everystep=false,save_start=false)
-println("TRBDF2")
-@time sol = solve(prob,TRBDF2(),progress=true,save_everystep=false,save_start=false)
 
 using CuArrays
 gu0 = CuArray(Float32.(u0))
