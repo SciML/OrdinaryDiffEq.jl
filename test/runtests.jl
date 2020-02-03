@@ -128,6 +128,7 @@ if !is_APPVEYOR && GROUP == "GPU"
     include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl"))
   end
   @time @safetestset "Reaction-Diffusion ArrayPartition GPU" begin include("gpu/reaction_diffusion.jl") end
+  @time @safetestset "Reaction-Diffusion ArrayPartition GPU" begin include("gpu/reaction_diffusion_stiff.jl") end
 end
 
 end # @time

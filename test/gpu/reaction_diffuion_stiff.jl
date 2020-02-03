@@ -25,22 +25,19 @@ My[1,2] = 2.0
 My[end,end-1] = 2.0
 
 # Define the initial condition as normal arrays
-A = zeros(N,N); B  = zeros(N,N); C = zeros(N,N); u0 = ArrayPartition((A,B,C))
-#u0 = zeros(Float64,N,N,3)
+u0 = zeros(N,N,3)
 
 const MyA = zeros(N,N);
 const AMx = zeros(N,N);
 const DA = zeros(N,N);
 # Define the discretized PDE as an ODE function
 function f(du,u,p,t)
-  A,B,C = u.x
-  dA,dB,dC = du.x
-  # A = @view  u[:,:,1]
-  # B = @view  u[:,:,2]
-  # C = @view  u[:,:,3]
-  #dA = @view du[:,:,1]
-  #dB = @view du[:,:,2]
-  #dC = @view du[:,:,3]
+   A = @view  u[:,:,1]
+   B = @view  u[:,:,2]
+   C = @view  u[:,:,3]
+  dA = @view du[:,:,1]
+  dB = @view du[:,:,2]
+  dC = @view du[:,:,3]
   mul!(MyA,My,A)
   mul!(AMx,A,Mx)
   @. DA = D*(MyA + AMx)
@@ -52,10 +49,19 @@ end
 # Solve the ODE
 prob = ODEProblem(f,u0,(0.0,100.0))
 sol = solve(prob,BS3(),progress=true,save_everystep=false,save_start=false)
+sol = solve(prob,ROCK2(),progress=true,save_everystep=false,save_start=false)
+sol = solve(prob,TRBDF2(),progress=true,save_everystep=false,save_start=false)
+
+println("CPU Times")
+println("BS3")
+@time sol = solve(prob,BS3(),progress=true,save_everystep=false,save_start=false)
+println("ROCK2")
+@time sol = solve(prob,ROCK2(),progress=true,save_everystep=false,save_start=false)
+println("TRBDF2")
+@time sol = solve(prob,TRBDF2(),progress=true,save_everystep=false,save_start=false)
 
 using CuArrays
-gA = CuArray(Float32.(A)); gB = CuArray(Float32.(B)); gC = CuArray(Float32.(C)); gu0 = ArrayPartition((gA,gB,gC))
-#gu0 = CuArray(Float32.(u0))
+gu0 = CuArray(Float32.(u0))
 const gMx = CuArray(Float32.(Mx))
 const gMy = CuArray(Float32.(My))
 const gα₁ = CuArray(Float32.(α₁))
@@ -66,14 +72,12 @@ const gAMx = CuArray(zeros(Float32,N,N))
 const gDA = CuArray(zeros(Float32,N,N))
 
 function gf(du,u,p,t)
-  A,B,C = u.x
-  dA,dB,dC = du.x
-  # A = @view  u[:,:,1]
-  # B = @view  u[:,:,2]
-  # C = @view  u[:,:,3]
-  #dA = @view du[:,:,1]
-  #dB = @view du[:,:,2]
-  #dC = @view du[:,:,3]
+   A = @view  u[:,:,1]
+   B = @view  u[:,:,2]
+   C = @view  u[:,:,3]
+  dA = @view du[:,:,1]
+  dB = @view du[:,:,2]
+  dC = @view du[:,:,3]
   mul!(gMyA,gMy,A)
   mul!(gAMx,A,gMx)
   @. gDA = D*(gMyA + gAMx)
@@ -83,7 +87,13 @@ function gf(du,u,p,t)
 end
 
 prob2 = ODEProblem(gf,gu0,(0.0,100.0))
-#CuArray.allowslow(false) # makes sure none of the slow fallbacks are used
-CuArrays.allowscalar(false) # so that the error generates
+CuArrays.allowscalar(false)
 sol = solve(prob2,BS3(),save_everystep=false,save_start=false)
+sol = solve(prob2,ROCK2(),save_everystep=false,save_start=false)
 @test sol.t[end] == 100.0
+
+println("GPU Times")
+println("BS3")
+@time sol = solve(prob2,BS3(),progress=true,save_everystep=false,save_start=false)
+println("ROCK2")
+@time sol = solve(prob2,ROCK2(),progress=true,save_everystep=false,save_start=false)
