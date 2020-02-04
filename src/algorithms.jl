@@ -293,6 +293,7 @@ struct ParsaniKetchesonDeconinck3S105 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 
+struct RKO65 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
 
 struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -1097,4 +1098,3 @@ DABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           DABDF2{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),typeof(diff_type)}(linsolve,
                           nlsolve,diff_type,extrapolant,controller)
-
