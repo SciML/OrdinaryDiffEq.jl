@@ -46,8 +46,15 @@ function f(du,u,p,t)
   @. dC = α₃ - β₃*C + r₁*A*B - r₂*C
 end
 
+using SparsityDetection, SparseArrays
+input = rand(N,N,3)
+output = similar(input)
+sparsity_pattern = sparsity!(f,output,input,nothing,0.0)
+jac_sparsity = Float64.(sparse(sparsity_pattern))
+
 # Solve the ODE
 prob = ODEProblem(f,u0,(0.0,100.0))
+
 sol = solve(prob,BS3(),progress=true,save_everystep=false,save_start=false)
 sol = solve(prob,ROCK2(),progress=true,save_everystep=false,save_start=false)
 sol = solve(prob,TRBDF2(),progress=true,save_everystep=false,save_start=false)

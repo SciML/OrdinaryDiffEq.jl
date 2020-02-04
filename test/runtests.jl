@@ -127,8 +127,8 @@ if !is_APPVEYOR && GROUP == "GPU"
     import OrdinaryDiffEq
     include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl"))
   end
-  @time @safetestset "Reaction-Diffusion ArrayPartition GPU" begin include("gpu/reaction_diffusion.jl") end
-  @time @safetestset "Reaction-Diffusion ArrayPartition GPU" begin include("gpu/reaction_diffusion_stiff.jl") end
+  @time @safetestset "Reaction-Diffusion ArrayPartition GPU" begin include("gpu/reaction_diffusion_ap.jl") end
+  @time @safetestset "Reaction-Diffusion Stiff Solver GPU" begin include("gpu/reaction_diffusion_stiff.jl") end
 end
 
 end # @time
