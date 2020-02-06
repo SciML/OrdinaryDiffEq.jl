@@ -946,3 +946,86 @@ end
  integrator.destats.nf += 3
  return nothing
 end
+
+
+function initialize!(integrator, cache::RKO65ConstantCache)
+  integrator.kshortsize = 6
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::RKO65ConstantCache, repeat_step=false)
+  @unpack t, dt, uprev, u, f, p = integrator
+  @unpack α21, α31, α41, α51, α32, α42, α52, α62, α43, α53, α63, α54, α64, α65, β2, β3, β4, β5, β6, c1, c2, c3, c4, c5, c6 = cache
+
+  #k1=integrator.fsalfirst #f(uprev,p,t)
+  k1 = f(uprev, p, t+c1*dt)
+  k2 = f(uprev+α21*dt*k1, p, t+c2*dt)
+  k3 = f(uprev+α31*dt*k1+α32*dt*k2, p, t+c3*dt)
+  k4 = f(uprev+α41*dt*k1+α42*dt*k2+α43*dt*k3, p, t+c4*dt)
+  k5 = f(uprev+α51*dt*k1+α52*dt*k2+α53*dt*k3+α54*dt*k4, p, t+c5*dt)
+  k6 = f(uprev+α62*dt*k2+α63*dt*k3+α64*dt*k4+α65*dt*k5, p, t+c6*dt)
+  u = uprev+dt*(β2*k2+β3*k3+β4*k4+β5*k5+β6*k6)
+
+  integrator.fsallast = f(u, p, t+dt)  # For interpolation, then FSAL'd
+
+  integrator.destats.nf += 6
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4; integrator.k[5]=k5; integrator.k[6]=k6
+  integrator.u = u
+end
+
+
+function initialize!(integrator, cache::RKO65Cache, f=integrator.f)
+  @unpack k,fsalfirst = cache
+  integrator.kshortsize = 6
+  resize!(integrator.k, integrator.kshortsize)
+
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
+
+  integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
+  integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
+  integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
+
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
+
+  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+
+  integrator.destats.nf += 1
+
+end
+
+
+
+@muladd function perform_step!(integrator, cache::RKO65Cache, repeat_step=false)
+  @unpack t, dt, uprev, u, f, p = integrator
+  @unpack tmp, k, k1, k2, k3, k4, k5, k6  = cache
+  @unpack α21, α31, α41, α51, α32, α42, α52, α62, α43, α53, α63, α54, α64, α65, β2, β3, β4, β5, β6, c1, c2, c3, c4, c5, c6 = cache.tab
+  #println("L221: tmp", tmp)
+  f(k1, uprev, p, t+c1*dt)
+  @.. tmp = uprev+α21*dt*k1
+  #println("L224: tmp/k", tmp, k1)
+  f(k2, tmp, p, t+c2*dt)
+  @.. tmp = uprev+α31*dt*k1+α32*dt*k2
+  f(k3, tmp, p, t+c3*dt)
+  @.. tmp = uprev+α41*dt*k1+α42*dt*k2+α43*dt*k3
+  f(k4, tmp, p, t+c4*dt)
+  @.. tmp = uprev+α51*dt*k1+α52*dt*k2+α53*dt*k3+α54*dt*k4
+  f(k5, tmp, p, t+c5*dt)
+  @.. tmp = uprev+α62*dt*k2+α63*dt*k3+α64*dt*k4+α65*dt*k5
+  f(k6, tmp, p, t+c6*dt)
+
+  @.. u = uprev+dt*(β2*k2+β3*k3+β4*k4+β5*k5+β6*k6)
+  #println("L238: tmp/u", tmp, u)
+  integrator.destats.nf += 6
+
+  #return nothing
+end

@@ -174,7 +174,7 @@ module OrdinaryDiffEq
 
   export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
          BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
-         Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
+         Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65
 
   export SSPRK22, SSPRK33, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432,
          SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104

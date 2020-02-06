@@ -506,3 +506,114 @@ end
 function alg_cache(alg::KYK2014DGSSPRK_3S2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   KYK2014DGSSPRK_3S2_ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
+
+
+@cache struct RKO65Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+u_cache(c::RKO65Cache) = ()
+du_cache(c::RKO65Cache) = (c.k,c.du,c.fsalfirst)
+
+struct RKO65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
+  α21::T1
+  α31::T1
+  α41::T1
+  α51::T1
+
+  α32::T1
+  α42::T1
+  α52::T1
+  α62::T1
+
+  α43::T1
+  α53::T1
+  α63::T1
+
+  α54::T1
+  α64::T1
+
+  α65::T1
+
+  β2::T1
+  β3::T1
+  β4::T1
+  β5::T1
+  β6::T1
+
+  c1::T2
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+
+  function RKO65ConstantCache(T1,T2)
+    # elements of Butcher Table
+    α21 = T1(1//6)
+    α31 = T1(-15//8)
+    α41 = T1(-9//1)
+    α51 = T1(-3//1)
+
+    α32 = T1(21//8)
+    α42 = T1(75//7)
+    α52 = T1(34257//8750)
+    α62 = T1(123//380)
+
+    α43 = T1(-5//7)
+    α53 = T1(-114//875)
+    α63 = T1(5//2)
+
+    α54 = T1(19//1250)
+    α64 = T1(3//20)
+
+    α65 = T1(-75//38)
+
+    β2 = T1(54//133)
+    β3 = T1(32//21)
+    β4 = T1(1//18)
+    β5 = T1(-125//114)
+    β6 = T1(1//9)
+
+    c1 = T2(2//3)
+    c2 = T2(1//6)
+    c3 = T2(3//4)
+    c4 = T2(1//1)
+    c5 = T2(4//5)
+    c6 = T2(1//1)
+    new{T1,T2}(α21, α31, α41, α51, α32, α42, α52, α62, α43, α53, α63, α54, α64, α65, β2, β3, β4, β5, β6, c1, c2, c3, c4, c5, c6)
+  end
+end
+
+function alg_cache(alg::RKO65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RKO65ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)) # why not real(tTypeNoUnits)?
+end
+
+function alg_cache(alg::RKO65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+
+  tmp = similar(u)
+
+  k = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+
+  fsalfirst = zero(rate_prototype)
+
+  tab = RKO65ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  RKO65Cache(u,uprev,k, k1,k2,k3,k4,k5,k6, tmp, fsalfirst, tab)
+end
