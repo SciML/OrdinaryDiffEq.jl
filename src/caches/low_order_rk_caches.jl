@@ -569,7 +569,7 @@ struct RKO65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
     α32 = T1(21//8)
     α42 = T1(75//7)
     α52 = T1(34257//8750)
-    α62 = T1(123//300)
+    α62 = T1(123//380)
 
     α43 = T1(-5//7)
     α53 = T1(-114//875)
