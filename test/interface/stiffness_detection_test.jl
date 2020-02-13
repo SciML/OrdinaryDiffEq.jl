@@ -1,9 +1,15 @@
 using OrdinaryDiffEq, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: van
+using ForwardDiff: Dual
 
 prob1 = ODEProblem(van,  [0,2.],(0.0,6),inv(0.003))
-prob2 = ODEProblem(van.f,[0,2.],(0.0,6),inv(0.003))
+function __van(du, u, p, t)
+  μ = p[1]
+  du[1] = μ*((1-u[2]^2)*u[1] - u[2])
+  du[2] = 1*u[1]
+end
+prob2 = ODEProblem(__van,[0,2.],(0.0,6),inv(0.003))
 # out-of-place test
 function _van(u, p, t)
   μ = p[1]
@@ -12,6 +18,12 @@ function _van(u, p, t)
 end
 prob3 = ODEProblem(_van,[0,2.],(0.0,6),inv(0.003))
 probArr = [prob1, prob2, prob3]
+
+for prob in [prob2, prob3], u0 in [prob.u0, Dual.(prob.u0, prob.u0)]
+  prob′ = remake(prob3, u0=u0)
+  @test_nowarn solve(prob′, AutoTsit5(Rosenbrock23(autodiff=false)))
+end
+
 # Test if switching back and forth
 is_switching_fb(sol) = all(i->count(isequal(i), sol.alg_choice[2:end]) > 5, (1, 2))
 for (i, prob) in enumerate(probArr)
