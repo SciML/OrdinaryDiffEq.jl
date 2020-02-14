@@ -618,7 +618,7 @@ function alg_cache(alg::RKO65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   RKO65Cache(u,uprev,k, k1,k2,k3,k4,k5,k6, tmp, fsalfirst, tab)
 end
 
-@cache struct FRK65Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct FRK65Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   utilde::uType
@@ -632,7 +632,7 @@ end
   k8::rateType
   k9::rateType
   tmp::uType
-  fsalfirst::rateType
+  atmp::uNoUnitsType
   tab::TabType
 end
 
@@ -781,7 +781,7 @@ function alg_cache(alg::FRK65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k8 = zero(rate_prototype)
   k9 = zero(rate_prototype)
   utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  fsalfirst = zero(rate_prototype)
-  FRK65Cache(u, uprev, utilde, k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, fsalfirst, tab)
+  FRK65Cache(u, uprev, utilde, k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, atmp, tab)
 end

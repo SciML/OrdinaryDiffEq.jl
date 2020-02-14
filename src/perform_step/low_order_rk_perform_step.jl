@@ -1062,7 +1062,11 @@ end
   u = uprev+dt*(β1*k1+β4*k4+β5*k5+β6*k6+β7*k7+β8*k8)
   integrator.fsallast = f(u, p, t+dt)
   k9 = integrator.fsallast
-
+  if integrator.opts.adaptive
+    utilde = dt*(β1tilde*k1+β4tilde*k4+β5tilde*k5+β6tilde*k6+β7tilde*k7+β8tilde*k8+β9tilde*k9)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
   integrator.destats.nf += 8
   integrator.k[1]=k1
   integrator.k[2]=k2
@@ -1102,7 +1106,7 @@ end
 
 @muladd function perform_step!(integrator, cache::FRK65Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p = integrator
-  @unpack tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde  = cache
+  @unpack tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, atmp  = cache
   @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β4, β5, β6, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9 = cache.tab
   
   @.. tmp = uprev+α21*dt*k1
@@ -1118,12 +1122,18 @@ end
   @.. tmp = uprev+α71*dt*k1+α73*dt*k3+α74*dt*k4+α75*dt*k5+α76*dt*k6
   f(k7, tmp, p, t+c7*dt)
   @.. tmp = uprev+α81*dt*k1+α83*dt*k3+α84*dt*k4+α85*dt*k5+α86*dt*k6+α87*dt*k7
-  f(k8, tmp, p, t+c5*dt)
+  f(k8, tmp, p, t+c8*dt)
   @.. u = uprev+dt*(β1*k1+β4*k4+β5*k5+β6*k6+β7*k7+β8*k8)
   f(k9, u, p, t+dt)
   
   integrator.destats.nf += 8
-
-  #return nothing
+  if integrator.opts.adaptive
+    @.. utilde = dt*(β1tilde*k1+β4tilde*k4+β5tilde*k5+β6tilde*k6+β7tilde*k7+β8tilde*k8+β9tilde*k9)
+    calculate_residuals(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+  return nothing
 end
+
+
 
