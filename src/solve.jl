@@ -6,6 +6,17 @@ function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase
   integrator.sol
 end
 
+tspan2dtmin(tspan) = tspan2dtmin(tspan, one(eltype(tspan)))
+function tspan2dtmin(tspan, ::AbstractFloat)
+  t1, t2 = tspan
+  # handle eps(Inf) -> NaN
+  t1f, t2f = map(isfinite, tspan)
+  !t1f && throw(ArgumentError("t0 in the tspan `(t0, t1)` must be finite"))
+  return t1f & t2f ? max(eps(t1), eps(t2)) : eps(t1)
+end
+tspan2dtmin(tspan, ::Integer) = 0
+tspan2dtmin(tspan, ::Any) = convert(eltype(tspan), 1//10^(10))
+
 function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
                            alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},
                            timeseries_init = typeof(prob.u0)[],
@@ -25,8 +36,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
                            dt = alg isa FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-                           dtmin = typeof(one(eltype(prob.tspan))) <: AbstractFloat ? maximum(map(eps, prob.tspan)) : # tspan is already promoted
-                                   typeof(one(eltype(prob.tspan))) <: Integer ? 0 : eltype(prob.tspan)(1//10^(10)),
+                           dtmin = tspan2dtmin(prob.tspan),
                            dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
                            force_dtmin = false,
                            adaptive = isadaptive(alg),
