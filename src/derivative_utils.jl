@@ -469,7 +469,7 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
     end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
-  is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) : integrator.opts.internalnorm(J))
+  is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) : integrator.opts.internalnorm(J, t))
   return W
 end
 
