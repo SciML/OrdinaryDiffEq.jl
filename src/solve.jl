@@ -6,6 +6,7 @@ function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase
   integrator.sol
 end
 
+# TODO: would be good to have dtmin a function of dt
 tspan2dtmin(tspan) = tspan2dtmin(tspan, one(eltype(tspan)))
 function tspan2dtmin(tspan, ::AbstractFloat)
   t1, t2 = tspan
