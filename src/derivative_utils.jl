@@ -71,7 +71,7 @@ function calc_J(integrator, cache)
     integrator.destats.njacs += 1
 
     if alg isa CompositeAlgorithm
-      integrator.eigen_est = opnorm(J, Inf)
+      integrator.eigen_est = constvalue(opnorm(J, Inf))
     end
   end
 
@@ -115,7 +115,7 @@ function calc_J!(J, integrator, cache)
     integrator.destats.njacs += 1
 
     if alg isa CompositeAlgorithm
-      integrator.eigen_est = opnorm(J, Inf)
+      integrator.eigen_est = constvalue(opnorm(J, Inf))
     end
   end
 
@@ -392,14 +392,14 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   if W_transform && DiffEqBase.has_Wfact_t(f)
     f.Wfact_t(W, u, p, dtgamma, t)
     isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
-    is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W), Inf) + inv(dtgamma)) # TODO: better estimate
+    is_compos && (integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) + inv(dtgamma)) # TODO: better estimate
     return nothing
   elseif !W_transform && DiffEqBase.has_Wfact(f)
     f.Wfact(W, u, p, dtgamma, t)
     isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
     if is_compos
       opn = opnorm(LowerTriangular(W), Inf)
-      integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
+      integrator.eigen_est = (constvalue(opn) + one(opn)) / dtgamma # TODO: better estimate
     end
     return nothing
   end
@@ -469,7 +469,7 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
     end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
-  is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
+  is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) : integrator.opts.internalnorm(J))
   return W
 end
 

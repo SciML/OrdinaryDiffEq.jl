@@ -24,9 +24,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
-                           dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-                           dtmin = typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
-                                   typeof(one(eltype(prob.tspan))) <: Integer ? 0 : eltype(prob.tspan)(1//10^(10)),
+                           dt = alg isa FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+                           dtmin = DiffEqBase.prob2dtmin(prob),
                            dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
                            force_dtmin = false,
                            adaptive = isadaptive(alg),
@@ -218,8 +217,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   alg_choice = Int[]
 
   if !adaptive && save_everystep && tspan[2]-tspan[1] != Inf
-    dt == 0 ? steps = length(tstops) :
-              steps = ceil(Int,internalnorm((tspan[2]-tspan[1])/dt,tspan[1]))
+    if dt == 0
+      steps = length(tstops)
+    else
+      abs(dt) < dtmin && throw(ArgumentError("Supplied dt is smaller than dtmin"))
+      steps = ceil(Int,internalnorm((tspan[2]-tspan[1])/dt,tspan[1]))
+    end
     sizehint!(timeseries,steps+1)
     sizehint!(ts,steps+1)
     sizehint!(ks,steps+1)
