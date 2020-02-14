@@ -25,7 +25,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
                            dt = alg isa FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-                           dtmin = prob2dtmin(prob),
+                           dtmin = DiffEqBase.prob2dtmin(prob),
                            dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
                            force_dtmin = false,
                            adaptive = isadaptive(alg),
