@@ -1029,3 +1029,101 @@ end
 
   #return nothing
 end
+
+function initialize!(integrator, cache::FRK65ConstantCache)
+  integrator.kshortsize = 9
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::FRK65ConstantCache, repeat_step=false)
+  @unpack t, dt, uprev, u, f, p = integrator
+  @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β4, β5, β6, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9 = cache
+  alg = unwrap_alg(integrator, true)
+  omega = alg.omega
+
+  k1 = integrator.fsalfirst
+  k2 = f(uprev+α21*dt*k1, p, t+c2*dt)
+  k3 = f(uprev+α31*dt*k1+α32*dt*k2, p, t+c3*dt)
+  k4 = f(uprev+α41*dt*k1+α43*dt*k3, p, t+c4*dt)
+  k5 = f(uprev+α51*dt*k1+α53*dt*k3+α54*dt*k4, p, t+c5*dt)
+  k6 = f(uprev+α61*dt*k1+α63*dt*k3+α64*dt*k4+α65*dt*k5, p, t+c6*dt)
+  k7 = f(uprev+α71*dt*k1+α73*dt*k3+α74*dt*k4+α75*dt*k5+α76*dt*k6, p, t+c7*dt)
+  k8 = f(uprev+α81*dt*k1+α83*dt*k3+α84*dt*k4+α85*dt*k5+α86*dt*k6+α87*dt*k7, p, t+c8*dt)
+  u = uprev+dt*(β1*k1+β4*k4+β5*k5+β6*k6+β7*k7+β8*k8)
+  integrator.fsallast = f(u, p, t+dt)
+  k9 = integrator.fsallast
+
+  integrator.destats.nf += 8
+  integrator.k[1]=k1
+  integrator.k[2]=k2
+  integrator.k[3]=k3
+  integrator.k[4]=k4
+  integrator.k[5]=k5
+  integrator.k[6]=k6
+  integrator.k[7]=k7
+  integrator.k[8]=k8
+  integrator.k[9]=k9
+  integrator.u = u
+end
+
+
+function initialize!(integrator, cache::FRK65Cache)
+  integrator.kshortsize = 9
+  integrator.fsalfirst = cache.k1
+  integrator.fsallast = cache.k9
+
+  resize!(integrator.k, integrator.kshortsize)
+
+  integrator.k[1]=cache.k1
+  integrator.k[2]=cache.k2
+  integrator.k[3]=cache.k3
+  integrator.k[4]=cache.k4
+  integrator.k[5]=cache.k5
+  integrator.k[6]=cache.k6
+  integrator.k[7]=cache.k7
+  integrator.k[8]=cache.k8
+  integrator.k[9]=cache.k9
+
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+end
+
+
+
+@muladd function perform_step!(integrator, cache::FRK65Cache, repeat_step=false)
+  @unpack t, dt, uprev, u, f, p = integrator
+  @unpack tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde  = cache
+  @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β4, β5, β6, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9 = cache.tab
+  
+  @.. tmp = uprev+α21*dt*k1
+  f(k2, tmp, p, t+c2*dt)
+  @.. tmp = uprev+α31*dt*k1+α32*dt*k2
+  f(k3, tmp, p, t+c3*dt)
+  @.. tmp = uprev+α41*dt*k1+α43*dt*k3
+  f(k4, tmp, p, t+c4*dt)
+  @.. tmp = uprev+α51*dt*k1+α53*dt*k3+α54*dt*k4
+  f(k5, tmp, p, t+c5*dt)
+  @.. tmp = uprev+α61*dt*k1+α63*dt*k3+α64*dt*k4+α65*dt*k5
+  f(k6, tmp, p, t+c6*dt)
+  @.. tmp = uprev+α71*dt*k1+α73*dt*k3+α74*dt*k4+α75*dt*k5+α76*dt*k6
+  f(k7, tmp, p, t+c7*dt)
+  @.. tmp = uprev+α81*dt*k1+α83*dt*k3+α84*dt*k4+α85*dt*k5+α86*dt*k6+α87*dt*k7
+  f(k8, tmp, p, t+c5*dt)
+  @.. u = uprev+dt*(β1*k1+β4*k4+β5*k5+β6*k6+β7*k7+β8*k8)
+  f(k9, u, p, t+dt)
+  
+  integrator.destats.nf += 8
+
+  #return nothing
+end
+

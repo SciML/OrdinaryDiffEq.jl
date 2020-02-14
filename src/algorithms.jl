@@ -398,6 +398,10 @@ struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   Vern9(;lazy=true) = new(lazy)
 end
+struct FRK65 <: OrdinaryDiffEqAdaptiveAlgorithm
+  omega::Float64
+end
+
 
 ################################################################################
 

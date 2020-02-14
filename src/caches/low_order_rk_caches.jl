@@ -617,3 +617,171 @@ function alg_cache(alg::RKO65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   tab = RKO65ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   RKO65Cache(u,uprev,k, k1,k2,k3,k4,k5,k6, tmp, fsalfirst, tab)
 end
+
+@cache struct FRK65Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  utilde::uType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  k8::rateType
+  k9::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
+  
+  α21::T1
+  α31::T1
+  α41::T1
+  α51::T1
+  α61::T1
+  α71::T1
+  α81::T1
+  α91::T1
+
+  α32::T1
+
+  α43::T1
+  α53::T1
+  α63::T1
+  α73::T1
+  α83::T1
+
+  α54::T1
+  α64::T1
+  α74::T1
+  α84::T1
+  α94::T1
+  
+  α65::T1
+  α75::T1
+  α85::T1
+  α95::T1
+
+  α76::T1
+  α86::T1
+  α96::T1
+
+  α87::T1
+  α97::T1
+  
+  α98::T1
+  
+  β1::T1
+  β4::T1
+  β5::T1
+  β6::T1
+  β7::T1
+  β8::T1
+
+  β1tilde::T1
+  β4tilde::T1
+  β5tilde::T1
+  β6tilde::T1
+  β7tilde::T1
+  β8tilde::T1
+  β9tilde::T1
+
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+  c8::T2
+  c9::T2
+
+  function FRK65ConstantCache(T1,T2)
+
+    # elements of Butcher Table
+    α21 = T1(1//89)
+    α31 = T1(-38624//142129)
+    α41 = T1(51//1508)
+    α51 = T1(3259284578//3517556363)
+    α61 = T1(-108363632681//45875676369)
+    α71 = T1(7137368591//11299833148)
+    α81 = T1(8898824396//9828950919)
+    α91 = T1(1026331676//33222204855)
+
+    α32 = T1(51442//142129)
+
+    α43 = T1(153//1508)
+    α53 = T1(-69727055112//19553806387)
+    α63 = T1(80902506271//8700424616)
+    α73 = T1(-33088067061//10572251159)
+    α83 = T1(25673454973//11497947835)
+
+
+    α54 = T1(36230363390//11788838981)
+    α64 = T1(-120088218786//17139312481)
+    α74 = T1(11481363823//3650030081)
+    α84 = T1(-74239028301//15737704666)
+    α94 = T1(1450675392//5936579813)
+   
+    α65 = T1(4533285649//6676940598)
+    α75 = T1(-4096673444//7349814937)
+    α85 = T1(222688842816//44196813415)
+    α95 = T1(4617877550//16762182457)
+    
+    α76 = T1(9911918171//12847192605)
+    α86 = T1(-105204445705//30575217706)
+    α96 = T1(1144867463//6520294355)
+   
+    α87 = T1(8799291910//8966990271)
+    α97 = T1(1822809703//7599996644)
+
+    α98 = T1(79524953//2361253316)
+    
+    β1 = T1(1026331676//33222204855)
+    β4 = T1(1450675392//5936579813)
+    β5 = T1(4617877550//16762182457)
+    β6 = T1(114867463//6520294355)
+    β7 = T1(1822809703//7599996644)
+    β8 = T1(79524953//235125316)
+
+    β1tilde = T1(413034411//13925408836)
+    β4tilde = T1(1865954212//7538591735)
+    β5tilde = T1(4451980162//16576017119)
+    β6tilde = T1(115784320//6320223511)
+    β7tilde = T1(802708729//3404369569)
+    β8tilde = T1(-251398161//17050111121)
+    β9tilde = T1(1//20)
+
+    c2 = T2(1//89)
+    c3 = T2(34//377)
+    c4 = T2(51//377)
+    c5 = T2(14497158//33407747)
+    c6 = T2(9744566553//16002998914)
+    c7 = T2(330//383)
+    c8 = T2(1//1)
+    c9 = T2(1//1)
+    new{T1,T2}(α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β4, β5, β6, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9)
+  end
+end
+
+alg_cache(alg::FRK65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = FRK65ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+
+function alg_cache(alg::FRK65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = FRK65ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+  k7 = zero(rate_prototype)
+  k8 = zero(rate_prototype)
+  k9 = zero(rate_prototype)
+  utilde = similar(u)
+  tmp = similar(u)
+  fsalfirst = zero(rate_prototype)
+  FRK65Cache(u, uprev, utilde, k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, fsalfirst, tab)
+end
