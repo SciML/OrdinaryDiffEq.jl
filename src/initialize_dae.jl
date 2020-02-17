@@ -27,7 +27,7 @@ function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBas
 	end
 end
 
-function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBasicInit, ::Val{true})
+function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBasicInit, ::Val{false})
 	@unpack p, t, f = integrator
 
 	nlequation = (dx,x) -> begin
