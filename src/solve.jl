@@ -385,7 +385,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   if initialize_integrator
     if isdae
       initialize_dae!(integrator, u, du, prob.differential_vars, initializealg, Val(isinplace(prob)))
-      @show du
     end
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
