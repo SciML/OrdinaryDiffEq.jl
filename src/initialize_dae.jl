@@ -30,7 +30,7 @@ end
 function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBasicInit, ::Val{true})
 	@unpack p, t, f = integrator
 
-	nlequation = (x) -> begin
+	nlequation = (dx,x) -> begin
 		for i in 1:length(x)
 			if differential_vars[i]
 				du[i] = x[i]
@@ -51,4 +51,3 @@ function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBas
 		end
 	end
 end
-
