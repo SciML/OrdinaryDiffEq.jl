@@ -61,6 +61,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            initialize_integrator = true,
                            alias_u0 = false,
                            alias_du0 = false,
+                           initializealg = BrownFullBasicInit(),
                            kwargs...) where recompile_flag
 
   if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -382,6 +383,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                              isout,reeval_fsal,
                              u_modified,opts,destats)
   if initialize_integrator
+    if isdae
+      initialize_dae!(integrator, u, du, prob.differential_vars, initializealg, Val(isinplace(prob)))
+      @show du
+    end
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
     save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)

@@ -28,6 +28,7 @@ module OrdinaryDiffEq
 
   using ExponentialUtilities
 
+  using NLsolve
   # Required by temporary fix in not in-place methods with 12+ broadcasts
   # `MVector` is used by Nordsieck forms
   import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray
@@ -61,6 +62,7 @@ module OrdinaryDiffEq
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
+  include("initialize_dae.jl")
 
   include("nlsolve/type.jl")
   include("nlsolve/utils.jl")
