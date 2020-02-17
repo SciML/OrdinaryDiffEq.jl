@@ -38,7 +38,7 @@ function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBas
 				u[i] = x[i]
 			end
 		end
-		f(du, u, p, t)
+		du .= f(u, p, t)
 	end
 
 	r = nlsolve(nlequation, zero(u))
