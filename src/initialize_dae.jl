@@ -83,10 +83,10 @@ function initialize_dae!(integrator, _u, _du, differential_vars, alg::BrownFullB
 	if _u isa Number && _du isa Number
 		# This doesn't fix static arrays!
 		integrator.u = first(u)
-		integrator.du = first(du)
+		integrator.cache.du = first(du)
 	else
 		integrator.u = u
-		integrator.du = du
+		integrator.cache.du = du
 	end
 
 	return
