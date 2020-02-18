@@ -61,6 +61,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II")
   @time @safetestset "Reverse Directioned Event Tests" begin include("integrators/rev_events_tests.jl") end
   @time @safetestset "Differentiation Direction Tests" begin include("integrators/diffdir_tests.jl") end
   @time @safetestset "Resize Tests" begin include("integrators/resize_tests.jl") end
+  @time @safetestset "DAE Initialization Tests" begin include("integrators/dae_initialization_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression")
