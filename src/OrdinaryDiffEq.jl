@@ -48,7 +48,7 @@ module OrdinaryDiffEq
   using DiffEqBase: Convergence, Divergence
   const TryAgain = DiffEqBase.SlowConvergence
 
-  import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear
+  import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear, timedepentdtmin
 
   import SparseDiffTools
   import SparseDiffTools: forwarddiff_color_jacobian!, forwarddiff_color_jacobian, ForwardColorJacCache, default_chunk_size, getsize

@@ -184,7 +184,7 @@ function _loopfooter!(integrator)
   elseif integrator.opts.adaptive
     q = stepsize_controller!(integrator,integrator.alg)
     integrator.isout = integrator.opts.isoutofdomain(integrator.u,integrator.p,ttmp)
-    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
+    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
     if integrator.accept_step # Accept
       integrator.destats.naccept += 1
       integrator.last_stepfail = false
@@ -329,7 +329,7 @@ function calc_dt_propose!(integrator,dtnew)
     (integrator.alg isa ESERK5) && (dtnew = min(dtnew,typeof(dtnew)((0.98*2000*2000/integrator.eigen_est))))
   end
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
-  dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
+  dtpropose = integrator.tdir*max(abs(dtpropose),timedepentdtmin(integrator))
   integrator.dtpropose = dtpropose
 end
 
@@ -339,10 +339,11 @@ function fix_dt_at_bounds!(integrator)
   else
     integrator.dt = max(integrator.opts.dtmax,integrator.dt)
   end
+  dtmin = timedepentdtmin(integrator)
   if integrator.tdir > 0
-    integrator.dt = max(integrator.dt,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+    integrator.dt = max(integrator.dt,dtmin) #abs to fix complex sqrt issue at end
   else
-    integrator.dt = min(integrator.dt,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+    integrator.dt = min(integrator.dt,dtmin) #abs to fix complex sqrt issue at end
   end
 end
 

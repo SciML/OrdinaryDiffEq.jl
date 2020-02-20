@@ -201,7 +201,8 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointDeuf
   tmp = (n_min:n_curr) .- n_min .+ 1 # Index range of quantities computed so far
   dt_new = Vector{eltype(Q)}(undef,length(tmp)+1)
   dt_new[1:end-1] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
-  dt_new[1:end-1] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[1:end-1]))) # Safety scaling
+  dtmin = timedepentdtmin(integrator)
+  dt_new[1:end-1] = max.(dtmin, min.(abs(integrator.opts.dtmax), abs.(dt_new[1:end-1]))) # Safety scaling
 
   # n_new is the most efficient order of the last step
   work = s[tmp] ./ dt_new[1:end-1]
@@ -214,7 +215,7 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointDeuf
 
     # Compute and scale the corresponding stepsize
     dt_new[end] = integrator.dt ./ Q[tmp[end]+1]
-    dt_new[end] = max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs.(dt_new[end])))
+    dt_new[end] = max(dtmin, min(abs(integrator.opts.dtmax), abs.(dt_new[end])))
 
     # Check if (n_new  + 1) would have been more efficient than n_new
     if work[end] > s[tmp[end]+1] / dt_new[end]
@@ -234,7 +235,8 @@ function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointDeu
   end
   integrator.cache.n_curr = integrator.cache.n_old # Reset order for redoing the rejected step
   dt_red = integrator.dt / integrator.cache.Q[integrator.cache.n_old - integrator.alg.n_min + 1]
-  dt_red = integrator.tdir*max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
+  dtmin = timedepentdtmin(integrator)
+  dt_red = integrator.tdir*max(dtmin, min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
   integrator.dt = dt_red
 end
 
@@ -272,7 +274,8 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHair
   tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
   dt_new = fill(zero(eltype(Q)),n_max+1)
   dt_new[tmp] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
-  dt_new[tmp] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
+  dtmin = timedepentdtmin(integrator)
+  dt_new[tmp] = max.(dtmin, min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
   work= Vector{eltype(Q)}(undef,n_max+1) # work[n] is the work for order (n-1)
   work[tmp] = s[tmp] ./ dt_new[tmp]
 
@@ -304,7 +307,7 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHair
   if n_new == n_curr + 1
     # Compute the new stepsize of order n_new based on the optimal stepsize of order n_curr
     dt_new[n_new+1] = s[n_curr + 2]/s[n_curr + 1 ] * dt_new[n_curr+1]
-    dt_new[n_new+1] = max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs(dt_new[n_new+1])))
+    dt_new[n_new+1] = max(dtmin, min(abs(integrator.opts.dtmax), abs(dt_new[n_new+1])))
   end
   dt_new[n_new + 1]
 end
@@ -322,6 +325,7 @@ function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointHai
 
   # Stepsize selection
   dt_red = integrator.dt / Q[n_red + 1]
-  dt_red = integrator.tdir*max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
+  dtmin = timedepentdtmin(integrator)
+  dt_red = integrator.tdir*max(dtmin, min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
   integrator.dt = dt_red
 end
