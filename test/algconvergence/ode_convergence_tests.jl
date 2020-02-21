@@ -37,8 +37,8 @@ testTol = 0.2
   sim3 = test_convergence(dts2,prob,RKO65())
   @test sim3.𝒪est[:l∞] ≈ 5 atol=testTol
 
-  sim3 = test_convergence(dts4,prob,FRK65(0)) #standard value for non zero-dissipation tests
-  @test sim3.𝒪est[:l∞] ≈ 6 atol=testTol
+  sim3 = test_convergence(dts4,prob,FRK65())
+  @test sim3.𝒪est[:l∞] ≈ 6 atol=0.6
 
   sim4 = test_convergence(dts,prob,BS3())
   @test sim4.𝒪est[:l2] ≈ 3 atol=testTol
