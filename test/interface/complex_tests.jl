@@ -6,7 +6,7 @@ using OrdinaryDiffEq, DiffEqBase
 
 H(t) = -im*(@SMatrix [t 1;1 -t])
 
-fun(ψ,p,t) = H(t)*ψ
+fun(ψ,p,t) = oftype(ψ, H(t)*ψ)
 fun_inplace(dψ,ψ,p,t) = (dψ .= H(t)*ψ)
 
 T = 0.1

@@ -25,7 +25,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
                            dt = alg isa FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-                           dtmin = DiffEqBase.prob2dtmin(prob),
+                           dtmin = nothing,
                            dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
                            force_dtmin = false,
                            adaptive = isadaptive(alg),
@@ -221,6 +221,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     if dt == 0
       steps = length(tstops)
     else
+      dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob; use_end_time=true))
       abs(dt) < dtmin && throw(ArgumentError("Supplied dt is smaller than dtmin"))
       steps = ceil(Int,internalnorm((tspan[2]-tspan[1])/dt,tspan[1]))
     end
@@ -293,6 +294,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     beta2 === nothing && ( beta2=beta2_default(alg) )
     beta1 === nothing && ( beta1=beta1_default(alg,beta2) )
   end
+
+  dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob; use_end_time=false))
 
   opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
                    typeof(internalnorm),typeof(internalopnorm),typeof(callbacks_internal),typeof(isoutofdomain),

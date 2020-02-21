@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "5.29.0"
+version = "5.29.1"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -26,7 +26,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 [compat]
 ArrayInterface = "1.1, 2.0"
 DataStructures = "0.17"
-DiffEqBase = "6.15"
+DiffEqBase = "6.17.1"
 ExponentialUtilities = "1.2"
 FiniteDiff = "2"
 ForwardDiff = "0.10.3"

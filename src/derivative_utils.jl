@@ -427,7 +427,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   end
   if isnewton(nlsolver)
     set_new_W!(nlsolver, new_W)
-    if new_jac && isdae 
+    if new_jac && isdae
       set_W_γdt!(nlsolver, nlsolver.α * inv(dtgamma))
     elseif new_W && !isdae
       set_W_γdt!(nlsolver, dtgamma)
