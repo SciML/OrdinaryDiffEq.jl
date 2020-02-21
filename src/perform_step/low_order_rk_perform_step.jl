@@ -1047,9 +1047,13 @@ end
 
 @muladd function perform_step!(integrator, cache::FRK65ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p = integrator
-  @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β4, β5, β6, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9 = cache
+  @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11 = cache
   alg = unwrap_alg(integrator, true)
-  omega = alg.omega
+  ν = alg.omega*dt
+  νsq = ν^2
+  β4 = (d1 + νsq*(d2 + νsq*(d3 + νsq*(d4 + νsq*(d5 + νsq*(d6 + +νsq*d7))))))/(1 + νsq*(d8 + νsq*(d9 + νsq*(d10 + νsq*(d11 + νsq*(d12 + +νsq*d13)))))) 
+  β5 = (e1 + νsq*(e2 + νsq*(e3 + νsq*(e4 + νsq*(e5 + νsq*e6)))))/(1 + νsq*(e8 + νsq*(e9 + νsq*(e10 + νsq*e11))))
+  β6 = (f1 + νsq*(f2 + νsq*(f3 + νsq*(f4 + νsq*(f5 + νsq*f6)))))/(1 + νsq*(f8 + νsq*(f9 + νsq*(f10 + νsq*f11))))
 
   k1 = integrator.fsalfirst
   k2 = f(uprev+α21*dt*k1, p, t+c2*dt)
@@ -1063,7 +1067,7 @@ end
   integrator.fsallast = f(u, p, t+dt)
   k9 = integrator.fsallast
   if integrator.opts.adaptive
-    utilde = dt*(β1tilde*k1+β4tilde*k4+β5tilde*k5+β6tilde*k6+β7tilde*k7+β8tilde*k8+β9tilde*k9)
+    utilde = dt*(β1tilde*k1 + β4tilde*k4 + β5tilde*k5 + β6tilde*k6 + β7tilde*k7 + β8tilde*k8 + β9tilde*k9)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -1107,8 +1111,15 @@ end
 @muladd function perform_step!(integrator, cache::FRK65Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p = integrator
   @unpack tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, atmp  = cache
-  @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β4, β5, β6, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9 = cache.tab
-  
+  @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11 = cache.tab
+  alg = unwrap_alg(integrator, true)
+
+  ν = alg.omega*dt
+  νsq = ν^2
+  β4 = (d1 + νsq*(d2 + νsq*(d3 + νsq*(d4 + νsq*(d5 + νsq*(d6 + +νsq*d7))))))/(1 + νsq*(d8 + νsq*(d9 + νsq*(d10 + νsq*(d11 + νsq*(d12 + +νsq*d13)))))) 
+  β5 = (e1 + νsq*(e2 + νsq*(e3 + νsq*(e4 + νsq*(e5 + νsq*e6)))))/(1 + νsq*(e8 + νsq*(e9 + νsq*(e10 + νsq*e11))))
+  β6 = (f1 + νsq*(f2 + νsq*(f3 + νsq*(f4 + νsq*(f5 + νsq*f6)))))/(1 + νsq*(f8 + νsq*(f9 + νsq*(f10 + νsq*f11))))
+
   @.. tmp = uprev+α21*dt*k1
   f(k2, tmp, p, t+c2*dt)
   @.. tmp = uprev+α31*dt*k1+α32*dt*k2
@@ -1128,8 +1139,8 @@ end
   
   integrator.destats.nf += 8
   if integrator.opts.adaptive
-    @.. utilde = dt*(β1tilde*k1+β4tilde*k4+β5tilde*k5+β6tilde*k6+β7tilde*k7+β8tilde*k8+β9tilde*k9)
-    calculate_residuals(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    @.. utilde = dt*(β1tilde*k1 + β4tilde*k4 + β5tilde*k5 + β6tilde*k6 + β7tilde*k7 + β8tilde*k8 + β9tilde*k9)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   return nothing
