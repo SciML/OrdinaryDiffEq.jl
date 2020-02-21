@@ -399,7 +399,8 @@ struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
   Vern9(;lazy=true) = new(lazy)
 end
 struct FRK65 <: OrdinaryDiffEqAdaptiveAlgorithm
-  omega::Float64 #if not specified set default 0(Basic RK6(5))?
+  omega::Float64
+  FRK65(omega=0.0) = new(omega)
 end
 
 
