@@ -10,6 +10,7 @@ ODEProblemLibrary.importodeproblems()
 dts1 = 1 .//2 .^(9:-1:5)
 dts2 = 1 .//2 .^(7:-1:3)
 dts3 = 1 .//2 .^(12:-1:7)
+dts4 = 1 .//2 .^(5:-1:3) 
 testTol = 0.2
 
 @testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
@@ -35,6 +36,9 @@ testTol = 0.2
 
   sim3 = test_convergence(dts2,prob,RKO65())
   @test sim3.𝒪est[:l∞] ≈ 5 atol=testTol
+
+  sim3 = test_convergence(dts4,prob,FRK65())
+  @test sim3.𝒪est[:l∞] ≈ 6 atol=0.6
 
   sim4 = test_convergence(dts,prob,BS3())
   @test sim4.𝒪est[:l2] ≈ 3 atol=testTol
