@@ -1086,20 +1086,10 @@ struct PFRK87ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
   c7::T2
   c8::T2
   c9::T2
-
-  d1::T1
-  d2::T1
-  d3::T1
-  d4::T1
-  d5::T1
-  d6::T1
-  d7::T1
-  d8::T1
-  d9::T1
-  d10::T1
-  d11::T1
-  d12::T1
-  d13::T1
+  c10::T2
+  c11::T2
+  c12::T2
+  c13::T2
 end
 
 
@@ -1151,7 +1141,7 @@ function PFRK87ConstantCache(T1::Type, T2::Type)
   β9 = convert(T1, -1041891430//1371343529)
   β10 = convert(T1, 760417239//1151165299)
   β11 = convert(T1, 118820643//751138087)
-  β12 = convert(T1, -528747749//220607170)
+  β12 = convert(T1, -528747749//2220607170)
   β13 = convert(T1, 1//4)
 
   β1tilde = convert(T1, 13451932//455176623)
@@ -1171,7 +1161,7 @@ function PFRK87ConstantCache(T1::Type, T2::Type)
   c7 = convert(T2, 59//400)
   c8 = convert(T2, 93//200)
   c9 = convert(T2, 5490023248//9719169821)
-  c10 = convert(T2, 5490023248//9719169821)
+  c10 = convert(T2, 13//20)
   c11 = convert(T2, 1201146811//1299019798)
   c12 = convert(T2, 1//1)
   c13 = convert(T2, 1//1)
