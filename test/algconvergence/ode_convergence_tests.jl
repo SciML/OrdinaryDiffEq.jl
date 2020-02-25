@@ -11,7 +11,17 @@ dts1 = 1 .//2 .^(9:-1:5)
 dts2 = 1 .//2 .^(7:-1:3)
 dts3 = 1 .//2 .^(12:-1:7)
 dts4 = 1 .//2 .^(5:-1:3) 
+dts5 = 1 .//10 .^(6:-1:2)
+dts = 1 .//2 .^(8:-1:4)
 testTol = 0.2
+
+prob = (ODEProblemLibrary.prob_ode_linear,ODEProblemLibrary.prob_ode_2Dlinear)[1]
+sim3 = test_convergence(dts5,prob,RKM())
+using Plots
+plot(sim3)
+println(sim3.𝒪est)
+#@test sim3.𝒪est[:l∞] ≈ 6 atol=testTol1
+
 
 @testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
   prob = (ODEProblemLibrary.prob_ode_linear,
