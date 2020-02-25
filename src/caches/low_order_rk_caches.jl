@@ -862,3 +862,71 @@ function alg_cache(alg::FRK65,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   tmp = similar(u)
   FRK65Cache(u, uprev, utilde, k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, atmp, tab)
 end
+
+@cache struct RKMCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  α6::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β6::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+
+  function RKMConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α2 = T(0.16791846623918)
+    α3 = T(0.48298439719700)
+    α4 = T(0.70546072965982)
+    α5 = T(0.09295870406537)
+    α6 = T(0.76210081248836)
+    β1 = T(-0.15108370762927)
+    β2 = T(0.75384683913851)
+    β3 = T(-0.36016595357907)
+    β4 = T(0.52696773139913)
+    β6 = T(0.23043509067071)
+    c2 = T2(0.16791846623918)
+    c3 = T2(0.48298439719700)
+    c4 = T2(0.70546072965982)
+    c5 = T2(0.09295870406537)
+    c6 = T2(0.76210081248836)
+    new{T,T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6)
+  end
+end
+
+alg_cache(alg::RKM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = RKMConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+
+function alg_cache(alg::RKM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = RKMConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  k = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+  tmp = similar(u)
+  fsalfirst = zero(rate_prototype)
+  RKMCache(u, uprev, k, k1, k2, k3, k4, k5, k6, tmp, fsalfirst, tab)
+end

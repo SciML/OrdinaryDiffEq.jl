@@ -1146,5 +1146,73 @@ end
   return nothing
 end
 
+function initialize!(integrator,cache::RKMConstantCache)
+  integrator.kshortsize = 6
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+	integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 
+	# Avoid undefined entries if k is an array of arrays
+	integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
+end
 
+@muladd function perform_step!(integrator,cache::RKMConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6 = cache
+  
+  k1 = integrator.fsalfirst
+  k2 = f(uprev+α2*dt*k1, p, t+c2*dt)
+  k3 = f(uprev+α3*dt*k2, p, t+c3*dt)
+  k4 = f(uprev+α4*dt*k3, p, t+c4*dt)
+  k5 = f(uprev+α5*dt*k4, p, t+c5*dt)
+  k6 = f(uprev+α6*dt*k5, p, t+c6*dt)
+  u = uprev+dt*(β1*k1+β2*k2+β3*k3+β4*k4+β6*k6)
+
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 5
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4; integrator.k[5]=k5; integrator.k[6]=k6
+  # integrator.k[1] = integrator.fsalfirst
+  # integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+  
+function initialize!(integrator,cache::RKMCache, f=integrator.f)
+  @unpack k,fsalfirst = cache
+  integrator.kshortsize = 6
+  resize!(integrator.k, integrator.kshortsize)
+
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6
+  integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
+  integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
+  integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
+
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
+
+  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+
+  integrator.destats.nf += 1
+end
+  
+@muladd function perform_step!(integrator,cache::RKMCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,fsalfirst,k1,k2,k3,k4,k5,k6 = cache
+  @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β6,c2,c3,c4,c5,c6 = cache.tab
+
+  @.. tmp = uprev+α2*dt*k1
+  f(k2, tmp, p, t+c2*dt)
+  @.. tmp = uprev+α3*dt*k2
+  f(k3, tmp, p, t+c3*dt)
+  @.. tmp = uprev+α4*dt*k3
+  f(k4, tmp, p, t+c4*dt)
+  @.. tmp = uprev+α5*dt*k4
+  f(k5, tmp, p, t+c5*dt)
+  @.. tmp = uprev+α6*dt*k5
+  f(k6, tmp, p, t+c6*dt)
+  @.. u = uprev+dt*(β1*k1+β2*k2+β3*k3+β4*k4+β6*k6)
+  integrator.destats.nf += 5
+end
