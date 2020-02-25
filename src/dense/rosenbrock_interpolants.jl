@@ -15,25 +15,30 @@ end
   c2 = Θ*(Θ-2d)/(1-2d)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},idxs::Nothing,T::Type{Val{0}})
   @rosenbrock2332pre0
-  @. y₀ + dt*(c1*k[1] + c2*k[2])
+  @inbounds y₀ + dt*(c1*k[1] + c2*k[2])
+end
+
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs::Nothing,T::Type{Val{0}})
+  @rosenbrock2332pre0
+  @inbounds @.. y₀ + dt*(c1*k[1] + c2*k[2])
 end
 
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs,T::Type{Val{0}})
   @rosenbrock2332pre0
-  @. y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
+  @.. y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs::Nothing,T::Type{Val{0}})
   @rosenbrock2332pre0
-  @. out = y₀ + dt*(c1*k[1] + c2*k[2])
+  @inbounds @.. out = y₀ + dt*(c1*k[1] + c2*k[2])
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs,T::Type{Val{0}})
   @rosenbrock2332pre0
-  @views @. out = y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
+  @views @.. out = y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
   out
 end
 
@@ -46,47 +51,52 @@ end
 
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs::Nothing,T::Type{Val{1}})
   @rosenbrock2332pre1
-  @. c1diff*k[1] + c2diff*k[2]
+  @.. c1diff*k[1] + c2diff*k[2]
 end
 
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs,T::Type{Val{1}})
   @rosenbrock2332pre1
-  @. c1diff*k[1][idxs] + c2diff*k[2][idxs]
+  @.. c1diff*k[1][idxs] + c2diff*k[2][idxs]
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs::Nothing,T::Type{Val{1}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs::Nothing,T::Type{Val{1}})
   @rosenbrock2332pre1
-  @. out = c1diff*k[1] + c2diff*k[2]
+  @.. out = c1diff*k[1] + c2diff*k[2]
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{1}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs,T::Type{Val{1}})
   @rosenbrock2332pre1
-  @views @. out = c1diff*k[1][idxs] + c2diff*k[2][idxs]
+  @views @.. out = c1diff*k[1][idxs] + c2diff*k[2][idxs]
   out
 end
 
 """
 From MATLAB ODE Suite by Shampine
 """
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4ConstantCache,idxs::Nothing,T::Type{Val{0}})
   Θ1 = 1 - Θ
-  @. Θ1*y₀ + Θ*(y₁ + Θ1*(k[1] + Θ*k[2]))
+  @inbounds Θ1*y₀ + Θ*(y₁ + Θ1*(k[1] + Θ*k[2]))
+end
+
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4Cache,idxs::Nothing,T::Type{Val{0}})
+  Θ1 = 1 - Θ
+  @inbounds @.. Θ1*y₀ + Θ*(y₁ + Θ1*(k[1] + Θ*k[2]))
 end
 
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs,T::Type{Val{0}})
   Θ1 = 1 - Θ
-  @. Θ1*y₀[idxs] + Θ*(y₁[idxs] + Θ1*(k[1][idxs] + Θ*k[2][idxs]))
+  @.. Θ1*y₀[idxs] + Θ*(y₁[idxs] + Θ1*(k[1][idxs] + Θ*k[2][idxs]))
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rodas4Cache,idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs::Nothing,T::Type{Val{0}})
   Θ1 = 1 - Θ
-  @. out = Θ1*y₀ + Θ*(y₁ + Θ1*(k[1] + Θ*k[2]))
+  @.. out = Θ1*y₀ + Θ*(y₁ + Θ1*(k[1] + Θ*k[2]))
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rodas4Cache,idxs,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs,T::Type{Val{0}})
   Θ1 = 1 - Θ
-  @views @. out = Θ1*y₀[idxs] + Θ*(y₁[idxs] + Θ1*(k[1][idxs] + Θ*k[2][idxs]))
+  @views @.. out = Θ1*y₀[idxs] + Θ*(y₁[idxs] + Θ1*(k[1][idxs] + Θ*k[2][idxs]))
   out
 end

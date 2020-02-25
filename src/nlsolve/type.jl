@@ -1,55 +1,120 @@
-abstract type AbstractNLsolveSolver end
-abstract type AbstractNLsolveCache end
-mutable struct NLSolverCache{rateType,uType,W,uToltype,cType,gType,zsType} <: AbstractNLsolveCache
-  κ::uToltype
-  tol::uToltype
-  min_iter::Int
-  max_iter::Int
-  nl_iters::Int
-  new_W::Bool
+#@enum NLStatus::Int8 begin
+#  Convergence = 1
+#  TryAgain = 0
+#  Divergence = -1
+#end
+
+# solver
+
+abstract type AbstractNLSolver{algType,iip} end
+
+mutable struct NLSolver{algType,iip,uType,tType,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
   z::uType
-  W::W # NLNewton -> `W` operator; NLAnderson -> Vectors; NLFunctional -> Nothing
-  γ::gType
-  c::cType
-  ηold::uToltype
-  # The following fields will alias for immutable cache
-  z₊::uType # Only used in `NLAnderson` and `NLFunctional`
-  dz::uType
   tmp::uType
-  b::uType # can be aliased with `k` if no unit
+  ztmp::uType
+  γ::tType
+  c::tType
+  α::tType
+  alg::algType
+  κ::tType
+  fast_convergence_cutoff::tType
+  ηold::tType
+  iter::Int
+  maxiters::Int
+  status::NLStatus
+  cache::C
+end
+
+NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff,
+                    ηold, iter, maxiters, status, cache) where {iip,tType} =
+  NLSolver{typeof(alg), iip, typeof(z), tType, typeof(cache)}(z, tmp, ztmp, convert(tType, γ),
+                                                              convert(tType, c), convert(tType, α),
+                                                              alg, convert(tType, κ),
+                                                              convert(tType, fast_convergence_cutoff),
+                                                              convert(tType, ηold), iter,
+                                                              maxiters, status, cache)
+
+# caches
+
+mutable struct NLNewtonCache{uType,tType,tType2,rateType,J,W,ufType,jcType,lsType} <: AbstractNLSolverCache
+  ustep::uType
+  tstep::tType
   k::rateType
-  zs::zsType
-  gs::zsType
+  atmp::uType
+  dz::uType
+  J::J
+  W::W
+  new_W::Bool
+  firststage::Bool
+  firstcall::Bool
+  W_γdt::tType
+  du1::uType
+  uf::ufType
+  jac_config::jcType
+  linsolve::lsType
+  weight::uType
+  invγdt::tType2
+  new_W_γdt_cutoff::tType
+  J_t::tType
 end
 
-struct NLFunctional{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
-  cache::T
-end
-struct NLAnderson{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
-  cache::T
-  n::Int
-  NLAnderson{iip,T}(nlcache::T, n=5) where {iip, T<:NLSolverCache} = new(nlcache, n)
-end
-struct NLNewton{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
-  cache::T
+mutable struct NLNewtonConstantCache{tType,tType2,J,W,ufType} <: AbstractNLSolverCache
+  tstep::tType
+  J::J
+  W::W
+  new_W::Bool
+  firststage::Bool
+  firstcall::Bool
+  W_γdt::tType
+  uf::ufType
+  invγdt::tType2
+  new_W_γdt_cutoff::tType
+  J_t::tType
 end
 
-NLSolverCache(;κ=nothing, tol=nothing, min_iter=1, max_iter=10) =
-NLSolverCache(κ, tol, min_iter, max_iter, 0, true,
-              ntuple(i->nothing, 4)...,
-              κ === nothing ? κ : zero(κ),
-              ntuple(i->nothing, 7)...)
+mutable struct NLFunctionalCache{uType,tType,rateType} <: AbstractNLSolverCache
+  ustep::uType
+  tstep::tType
+  k::rateType
+  atmp::uType
+  dz::uType
+end
 
-# Default `iip` to `true`, but the whole type will be reinitialized in `alg_cache`
-function NLFunctional(;kwargs...)
-  nlcache = NLSolverCache(;kwargs...)
-  NLFunctional{true, typeof(nlcache)}(nlcache)
+mutable struct NLFunctionalConstantCache{tType} <: AbstractNLSolverCache
+  tstep::tType
 end
-function NLAnderson(n=5; kwargs...)
-  nlcache = NLSolverCache(;kwargs...)
-  NLAnderson{true, typeof(nlcache)}(nlcache, n)
+
+mutable struct NLAndersonCache{uType,tType,rateType,uEltypeNoUnits} <: AbstractNLSolverCache
+  ustep::uType
+  tstep::tType
+  k::rateType
+  atmp::uType
+  dz::uType
+  """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
+  dzold::uType
+  """value `g(zprev)` of previous fixed-point iteration"""
+  z₊old::uType
+  Δz₊s::Vector{uType}
+  Q::Matrix{uEltypeNoUnits}
+  R::Matrix{uEltypeNoUnits}
+  γs::Vector{uEltypeNoUnits}
+  history::Int
+  aa_start::Int
+  droptol::Union{Nothing,tType}
 end
-function NLNewton(;kwargs...)
-  nlcache = NLSolverCache(;kwargs...)
-  NLNewton{true, typeof(nlcache)}(nlcache)
+
+mutable struct NLAndersonConstantCache{uType,tType,uEltypeNoUnits} <: AbstractNLSolverCache
+  tstep::tType
+  dz::uType
+  """residuals `g(zprev) - zprev` of previous fixed-point iteration"""
+  dzold::uType
+  """value `g(zprev)` of previous fixed-point iteration"""
+  z₊old::uType
+  Δz₊s::Vector{uType}
+  Q::Matrix{uEltypeNoUnits}
+  R::Matrix{uEltypeNoUnits}
+  γs::Vector{uEltypeNoUnits}
+  history::Int
+  aa_start::Int
+  droptol::Union{Nothing,tType}
 end

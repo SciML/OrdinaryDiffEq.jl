@@ -17,7 +17,7 @@ constructBogakiShampine3()
 
 Constructs the tableau object for the Bogakai-Shampine Order 2/3 method.
 """
-function BS3ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function BS3ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   a21 = convert(T,0.5)
   a32 = convert(T,0.75)
   a41 = convert(T,0.2222222222222222)
@@ -80,7 +80,7 @@ struct OwrenZen3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r32::T
 end
 
-function OwrenZen3ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function OwrenZen3ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   a21 = convert(T,0.5217391304347826)
   a31 = convert(T,-0.18133333333333335)
   a32 = convert(T,0.9813333333333333)
@@ -104,7 +104,7 @@ function OwrenZen3ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T
                          r13,r12,r23,r22,r33,r32)
 end
 
-function OwrenZen3ConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function OwrenZen3ConstantCache(T, T2)
   a21 = convert(T,12//23)
   a31 = convert(T,-68//375)
   a32 = convert(T,368//375)
@@ -168,7 +168,7 @@ struct OwrenZen4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r62::T
 end
 
-function OwrenZen4ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function OwrenZen4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     a21 = convert(T,0.16666666666666666)
     a31 = convert(T,0.03214024835646457)
     a32 = convert(T,0.26515704894083275)
@@ -215,7 +215,7 @@ function OwrenZen4ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T
                            r54,r53,r52,r64,r63,r62)
 end
 
-function OwrenZen4ConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function OwrenZen4ConstantCache(T, T2)
   a21 = convert(T,1//6)
   a31 = convert(T,44//1369)
   a32 = convert(T,363//1369)
@@ -331,7 +331,7 @@ struct OwrenZen5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r82::T
 end
 
-function OwrenZen5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function OwrenZen5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     a21 = convert(T,0.16666666666666666)
     a31 = convert(T,0.0625)
     a32 = convert(T,0.1875)
@@ -412,7 +412,7 @@ function OwrenZen5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T
                            r62,r75,r74,r73,r72,r85,r84,r83,r82)
 end
 
-function OwrenZen5ConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function OwrenZen5ConstantCache(T, T2)
   a21 = convert(T,1//6)
   a31 = convert(T,1//16)
   a32 = convert(T,3//16)
@@ -553,7 +553,7 @@ struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r74::T
 end
 
-function Tsit5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function Tsit5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   c1 =       convert(T2,0.161)
   c2 =       convert(T2,0.327)
   c3 =       convert(T2,0.9)
@@ -658,7 +658,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function Tsit5Interp(::Type{T}) where {T<:CompiledFloats}
+function Tsit5Interp(T::Type{<:CompiledFloats})
   r11 = convert(T,1.0)
   r12 = convert(T,-2.763706197274826)
   r13 = convert(T,2.9132554618219126)
@@ -866,7 +866,7 @@ end
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 """
-function BS5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function BS5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   c1     =convert(T2,0.16666666666666666)
   c2     =convert(T2,0.2222222222222222)
   c3     =convert(T2,0.42857142857142855)
@@ -999,7 +999,7 @@ Used in the lazy construction of the dense output
 
 k9, k10, k11 are not computed until called in the dense routine
 """
-function BS5Interp(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function BS5Interp(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
 
   c6    = convert(T2,0.5)
   c7    = convert(T2,0.8333333333333334)
@@ -1092,7 +1092,7 @@ Note that RKSuite has an error: r081 should be 0
 and r011 should be 1. This is pretty easy to spot
 since the first order interpolation is linear from y₀.
 """
-function BS5Interp_polyweights(::Type{T}) where T<:CompiledFloats
+function BS5Interp_polyweights(T::Type{<:CompiledFloats})
   r016   = convert(T,-11.547607240534195)
   r015   = convert(T,36.89579791207878)
   r014   = convert(T,-45.470343197183475)
@@ -1269,7 +1269,7 @@ struct DP5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d7::T
 end
 
-function DP5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function DP5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   a21 = convert(T,0.2)
   a31 = convert(T,0.075)
   a32 = convert(T,0.225)
@@ -1312,7 +1312,7 @@ function DP5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:Com
   DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6,d1,d3,d4,d5,d6,d7)
 end
 
-function DP5_dense_ds(::Type{T}) where T<:CompiledFloats
+function DP5_dense_ds(T::Type{<:CompiledFloats})
   d1  = convert(T,-1.1270175653862835)
   d3  = convert(T,2.675424484351598)
   d4  = convert(T,-5.685526961588504)
@@ -1420,7 +1420,7 @@ struct Anas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b6::T
 end
 
-function Anas5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function Anas5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     a21 = convert(T,0.1)
     a31 = convert(T,-0.2222222222222222)
     a32 = convert(T,0.5555555555555556)
@@ -1449,7 +1449,7 @@ function Anas5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:C
     Anas5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6)
 end
 
-function Anas5ConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function Anas5ConstantCache(T, T2)
     a21 = convert(T,1//10)
     a31 = convert(T,-2//9)
     a32 = convert(T,5//9)

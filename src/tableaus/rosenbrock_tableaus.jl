@@ -1,4 +1,26 @@
-struct ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock23Tableau{T}
+  c₃₂::T
+  d::T
+end
+
+function Rosenbrock23Tableau(T)
+  c₃₂ = convert(T,6 + sqrt(2))
+  d = convert(T,1/(2+sqrt(2)))
+  Rosenbrock23Tableau(c₃₂,d)
+end
+
+struct Rosenbrock32Tableau{T}
+  c₃₂::T
+  d::T
+end
+
+function Rosenbrock32Tableau(T)
+  c₃₂ = convert(T,6 + sqrt(2))
+  d = convert(T,1/(2+sqrt(2)))
+  Rosenbrock32Tableau(c₃₂,d)
+end
+
+struct ROS3PTableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -19,7 +41,7 @@ struct ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d3::T
 end
 
-function ROS3PConstantCache(T::Type,T2::Type)
+function ROS3PTableau(T, T2)
   gamma = convert(T,1/2 + sqrt(3)/6)
   igamma = inv(gamma)
   a21 = convert(T,igamma)
@@ -44,10 +66,10 @@ function ROS3PConstantCache(T::Type,T2::Type)
   d1 = convert(T,0.7886751345948129)
   d2 = convert(T,-0.2113248654051871)
   d3 = convert(T,-1.077350269189626)
-  ROS3PConstantCache(a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3)
+  ROS3PTableau(a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3)
 end
 
-struct Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Rodas3Tableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -77,7 +99,7 @@ struct Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d4::T
 end
 
-function Rodas3ConstantCache(T::Type,T2::Type)
+function Rodas3Tableau(T, T2)
   gamma = convert(T,1//2)
   a21 = convert(T,0)
   a31 = convert(T,2)
@@ -106,205 +128,14 @@ function Rodas3ConstantCache(T::Type,T2::Type)
   d2 = convert(T,3//2)
   d3 = convert(T,0)
   d4 = convert(T,0)
-  Rodas3ConstantCache(a21,a31,a32,a41,a42,a43,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
+  Rodas3Tableau(a21,a31,a32,a41,a42,a43,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
-struct Ros4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
-  a21::T
-  a31::T
-  a32::T
-  C21::T
-  C31::T
-  C32::T
-  C41::T
-  C42::T
-  C43::T
-  b1::T
-  b2::T
-  b3::T
-  b4::T
-  btilde1::T
-  btilde2::T
-  btilde3::T
-  btilde4::T
-  gamma::T2
-  c2::T2
-  c3::T2
-  d1::T
-  d2::T
-  d3::T
-  d4::T
-end
+@ROS34PW(:tableau)
 
-function RosShamp4ConstantCache(T::Type,T2::Type)
-  a21=convert(T,2)
-  a31=convert(T,48//25)
-  a32=convert(T,6//25)
-  C21=convert(T,-8)
-  C31=convert(T,372//25)
-  C32=convert(T,12//5)
-  C41=convert(T,-112//125)
-  C42=convert(T,-54//125)
-  C43=convert(T,-2//5)
-  b1=convert(T,19//9)
-  b2=convert(T,1//2)
-  b3=convert(T,25//108)
-  b4=convert(T,125//108)
-  btilde1=convert(T,17//54)
-  btilde2=convert(T,7//36)
-  btilde3=convert(T,0)
-  btilde4=convert(T,125//108)
-  gamma=convert(T2,1//2)
-  c2= convert(T2,1)
-  c3= convert(T2,3//5)
-  d1=convert(T, 1//2)
-  d2=convert(T,-3//2)
-  d3=convert(T, 2.42)
-  d4=convert(T, 0.116)
-  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
-end
+@Rosenbrock4(:tableau)
 
-function Veldd4ConstantCache(T::Type,T2::Type)
-  a21= convert(T,2.000000000000000)
-  a31= convert(T,4.812234362695436)
-  a32= convert(T,4.578146956747842)
-  C21=-convert(T,5.333333333333331)
-  C31= convert(T,6.100529678848254)
-  C32= convert(T,1.804736797378427)
-  C41=-convert(T,2.540515456634749)
-  C42=-convert(T,9.443746328915205)
-  C43=-convert(T,1.988471753215993)
-  b1= convert(T,4.289339254654537)
-  b2= convert(T,5.036098482851414)
-  b3= convert(T,0.6085736420673917)
-  b4= convert(T,1.355958941201148)
-  btilde1= convert(T,2.175672787531755)
-  btilde2= convert(T,2.950911222575741)
-  btilde3=-convert(T,.7859744544887430)
-  btilde4=-convert(T,1.355958941201148)
-  gamma= convert(T2,0.2257081148225682)
-  c2= convert(T2,0.4514162296451364)
-  c3= convert(T2,0.8755928946018455)
-  d1= convert(T,0.2257081148225682)
-  d2=-convert(T,0.04599403502680582)
-  d3= convert(T,0.5177590504944076)
-  d4=-convert(T,0.03805623938054428)
-  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
-end
-
-function Velds4ConstantCache(T::Type,T2::Type)
-  a21= convert(T,2)
-  a31= convert(T,7//4)
-  a32= convert(T,1//4)
-  C21=-convert(T,8)
-  C31=-convert(T,8)
-  C32=-convert(T,1)
-  C41= convert(T,1//2)
-  C42=-convert(T,1//2)
-  C43= convert(T,2)
-  b1= convert(T,4//3)
-  b2= convert(T,2//3)
-  b3=-convert(T,4//3)
-  b4= convert(T,4//3)
-  btilde1=-convert(T,1//3)
-  btilde2=-convert(T,1//3)
-  btilde3=-convert(T,0)
-  btilde4=-convert(T,4//3)
-  gamma= convert(T2,1//2)
-  c2= convert(T2,1)
-  c3= convert(T2,1//2)
-  d1= convert(T,1//2)
-  d2=-convert(T,3//2)
-  d3=-convert(T,3//4)
-  d4= convert(T,1//4)
-  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
-end
-
-function GRK4TConstantCache(T::Type,T2::Type)
-  a21= convert(T,2)
-  a31= convert(T,4.524708207373116)
-  a32= convert(T,4.163528788597648)
-  C21=-convert(T,5.071675338776316)
-  C31= convert(T,6.020152728650786)
-  C32= convert(T,0.1597506846727117)
-  C41=-convert(T,1.856343618686113)
-  C42=-convert(T,8.505380858179826)
-  C43=-convert(T,2.084075136023187)
-  b1= convert(T,3.957503746640777)
-  b2= convert(T,4.624892388363313)
-  b3= convert(T,0.6174772638750108)
-  b4= convert(T,1.282612945269037)
-  btilde1= convert(T,2.302155402932996)
-  btilde2= convert(T,3.073634485392623)
-  btilde3=-convert(T,0.8732808018045032)
-  btilde4=-convert(T,1.282612945269037)
-  gamma= convert(T2,0.231)
-  c2= convert(T2,0.462)
-  c3= convert(T2,0.8802083333333334)
-  d1= convert(T,0.2310000000000000)
-  d2=-convert(T,0.03962966775244303)
-  d3= convert(T,0.5507789395789127)
-  d4=-convert(T,0.05535098457052764)
-  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
-end
-
-function GRK4AConstantCache(T::Type,T2::Type)
-  a21= convert(T,1.108860759493671)
-  a31= convert(T,2.377085261983360)
-  a32= convert(T,0.1850114988899692)
-  C21=-convert(T,4.920188402397641)
-  C31= convert(T,1.055588686048583)
-  C32= convert(T,3.351817267668938)
-  C41= convert(T,3.846869007049313)
-  C42= convert(T,3.427109241268180)
-  C43=-convert(T,2.162408848753263)
-  b1= convert(T,1.845683240405840)
-  b2= convert(T,0.1369796894360503)
-  b3= convert(T,0.7129097783291559)
-  b4= convert(T,0.6329113924050632)
-  btilde1= convert(T,0.04831870177201765)
-  btilde2=-convert(T,0.6471108651049505)
-  btilde3= convert(T,0.2186876660500240)
-  btilde4=-convert(T,0.6329113924050632)
-  gamma= convert(T2,0.3950000000000000)
-  c2= convert(T2,0.4380000000000000)
-  c3= convert(T2,0.8700000000000000)
-  d1= convert(T,0.3950000000000000)
-  d2=-convert(T,0.3726723954840920)
-  d3= convert(T,0.06629196544571492)
-  d4= convert(T,0.4340946962568634)
-  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
-end
-
-function Ros4LStabConstantCache(T::Type,T2::Type)
-  a21= convert(T,2.000000000000000)
-  a31= convert(T,1.867943637803922)
-  a32= convert(T,0.2344449711399156)
-  C21=-convert(T,7.137615036412310)
-  C31= convert(T,2.580708087951457)
-  C32= convert(T,0.6515950076447975)
-  C41=-convert(T,2.137148994382534)
-  C42=-convert(T,0.3214669691237626)
-  C43=-convert(T,0.6949742501781779)
-  b1= convert(T,2.255570073418735)
-  b2= convert(T,0.2870493262186792)
-  b3= convert(T,0.4353179431840180)
-  b4= convert(T,1.093502252409163)
-  btilde1=-convert(T,0.2815431932141155)
-  btilde2=-convert(T,0.07276199124938920)
-  btilde3=-convert(T,0.1082196201495311)
-  btilde4=-convert(T,1.093502252409163)
-  gamma= convert(T2,0.5728200000000000)
-  c2= convert(T2,1.145640000000000)
-  c3= convert(T2,0.6552168638155900)
-  d1= convert(T,0.5728200000000000)
-  d2=-convert(T,1.769193891319233)
-  d3= convert(T,0.7592633437920482)
-  d4=-convert(T,0.1049021087100450)
-  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
-end
-
-struct RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct RodasTableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -350,7 +181,7 @@ struct RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   h35::T
 end
 
-function Rodas4ConstantCache(T::Type,T2::Type)
+function Rodas4Tableau(T, T2)
   gamma=convert(T,1//4)
   #BET2P=0.0317D0
   #BET3P=0.0635D0
@@ -401,13 +232,13 @@ function Rodas4ConstantCache(T::Type,T2::Type)
   h34= convert(T,24.76722511418386)
   h35=-convert(T,6.594389125716872)
 
-  RodasConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  RodasTableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                     C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,
                     gamma,c2,c3,c4,d1,d2,d3,d4,
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
-function Rodas42ConstantCache(T::Type,T2::Type)
+function Rodas42Tableau(T, T2)
   gamma= convert(T,1//4)
   #BET2P=0.0317D0
   #BET3P=0.0047369D0
@@ -456,13 +287,13 @@ function Rodas42ConstantCache(T::Type,T2::Type)
   h34= convert(T,16.61359034616402)
   h35=-convert(T,0.6758691794084156)
 
-  RodasConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  RodasTableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                     C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,
                     gamma,c2,c3,c4,d1,d2,d3,d4,
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
-function Rodas4PConstantCache(T::Type,T2::Type)
+function Rodas4PTableau(T, T2)
   gamma = convert(T,1//4)
   #BET2P=0.D0
   #BET3P=c3*c3*(c3/6.d0-GAMMA/2.d0)/(GAMMA*GAMMA)
@@ -511,13 +342,13 @@ function Rodas4PConstantCache(T::Type,T2::Type)
   h34= convert(T,15.99253148779520)
   h35=-convert(T,1.882352941176471)
 
-  RodasConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  RodasTableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                     C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,
                     gamma,c2,c3,c4,d1,d2,d3,d4,
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
-struct Rodas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Rodas5Tableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -573,7 +404,7 @@ struct Rodas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c5::T2
 end
 
-function Rodas5ConstantCache(T::Type,T2::Type)
+function Rodas5Tableau(T, T2)
   gamma = convert(T2,.19)
   a21 = convert(T,2.0)
   a31 = convert(T,3.040894194418781 )
@@ -652,7 +483,7 @@ function Rodas5ConstantCache(T::Type,T2::Type)
   b8 = convert(T,1)
   =#
 
-  Rodas5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  Rodas5Tableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                       a61,a62,a63,a64,a65,
                       C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,
                       C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,
@@ -660,7 +491,7 @@ function Rodas5ConstantCache(T::Type,T2::Type)
                       gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5)
 end
 
-
+@RosenbrockW6S4OS(:tableau)
 
 #=
 # alpha_ij

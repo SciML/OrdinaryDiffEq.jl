@@ -3,6 +3,7 @@
 [![Join the chat at https://gitter.im/JuliaDiffEq/Lobby](https://badges.gitter.im/JuliaDiffEq/Lobby.svg)](https://gitter.im/JuliaDiffEq/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/JuliaDiffEq/OrdinaryDiffEq.jl.svg?branch=master)](https://travis-ci.org/JuliaDiffEq/OrdinaryDiffEq.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/dpa182s6i8c67awu/branch/master?svg=true)](https://ci.appveyor.com/project/YingboMa/ordinarydiffeq-jl/branch/master)
+[![GitlabCI](https://gitlab.com/juliadiffeq/OrdinaryDiffEq-jl/badges/master/pipeline.svg)](https://gitlab.com/juliadiffeq/OrdinaryDiffEq-jl/pipelines)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaDiffEq/OrdinaryDiffEq.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiffEq/OrdinaryDiffEq.jl?branch=master)
 [![codecov](https://codecov.io/gh/JuliaDiffEq/OrdinaryDiffEq.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiffEq/OrdinaryDiffEq.jl)
 
@@ -13,7 +14,7 @@ functionality should check out [DifferentialEquations.jl](https://github.com/Jul
 
 ## API
 
-OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](http://docs.juliadiffeq.org/latest/tutorials/ode_example.html) using the `Tsit5()` algorithm:
+OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.juliadiffeq.org/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
 
 ```julia
 using OrdinaryDiffEq
@@ -44,7 +45,20 @@ sol = solve(prob,Tsit5())
 using Plots; plot(sol,vars=(1,2,3))
 ```
 
-For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](http://docs.juliadiffeq.org/latest/types/ode_types.html). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
+Very fast static array versions can be specifically compiled to the size of your model. For example:
+
+```julia
+using OrdinaryDiffEq, StaticArrays
+function lorenz(u,p,t)
+ SA[10.0(u[2]-u[1]),u[1]*(28.0-u[3]) - u[2],u[1]*u[2] - (8/3)*u[3]]
+end
+u0 = SA[1.0;0.0;0.0]
+tspan = (0.0,100.0)
+prob = ODEProblem(lorenz,u0,tspan)
+sol = solve(prob,Tsit5())
+```
+
+For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://docs.juliadiffeq.org/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
 function HH_acceleration(dv,v,u,p,t)
@@ -63,4 +77,5 @@ Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 
 ## Available Solvers
 
-For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/ode_solve.html#OrdinaryDiffEq.jl-1), [Dynamical ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/dynamical_solve.html), and the [Split ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/split_ode_solve.html) pages.
+For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://docs.juliadiffeq.org/dev/solvers/ode_solve/), [Dynamical ODE Solvers](http://docs.juliadiffeq.org/dev/solvers/dynamical_solve/), and the [Split ODE Solvers](http://docs.juliadiffeq.org/dev/solvers/split_ode_solve/) pages.
+

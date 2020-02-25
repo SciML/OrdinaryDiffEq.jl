@@ -1,85 +1,3 @@
-######################################
-# IIF Caches
-
-struct GenericIIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
-  uhold::vecuType
-  rhs::rhsType
-  nl_rhs::nl_rhsType
-end
-
-@cache struct GenericIIF1Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  dual_cache::DiffCacheType
-  tmp::uType
-  rhs::rhsType
-  nl_rhs::nl_rhsType
-  rtmp1::rateType
-  fsalfirst::rateType
-  expA::expType
-  k::rateType
-end
-
-dual_cache(c::GenericIIF1Cache) = (c.dual_cache,)
-
-function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uhold = Vector{typeof(u)}(undef, 1)
-  rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits),p)
-  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  GenericIIF1ConstantCache(uhold,rhs,nl_rhs)
-end
-
-function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u); rtmp1 = zero(rate_prototype)
-  dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  A = f.f1.f
-  expA = exp(A*dt)
-  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache,p)
-  k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
-  nl_rhs = alg.nlsolve(Val{:init},rhs,u)
-  GenericIIF1Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
-end
-
-struct GenericIIF2ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
-  uhold::vecuType
-  rhs::rhsType
-  nl_rhs::nl_rhsType
-end
-
-@cache struct GenericIIF2Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  dual_cache::DiffCacheType
-  tmp::uType
-  rhs::rhsType
-  nl_rhs::nl_rhsType
-  rtmp1::rateType
-  fsalfirst::rateType
-  expA::expType
-  k::rateType
-end
-
-dual_cache(c::GenericIIF2Cache) = (c.dual_cache,)
-
-function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uhold = Vector{typeof(u)}(undef, 1)
-  tmp = zero(u)
-  rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2),p)
-  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  GenericIIF2ConstantCache(uhold,rhs,nl_rhs)
-end
-
-function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u); rtmp1 = zero(rate_prototype)
-  dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  A = f.f1.f
-  expA = exp(A*dt)
-  k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
-  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache,p)
-  nl_rhs = alg.nlsolve(Val{:init},rhs,u)
-  GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
-end
-
 #################################################
 # Classical ExpRK method caches
 abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
@@ -154,7 +72,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
   end
 
   @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
     if alg.krylov
       ops = nothing # no caching
     else
@@ -165,7 +83,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
     if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
       uf = nothing
     else
-      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+      uf = UDerivativeWrapper(f,t,p)
     end
     return $Cache(ops,uf)
   end
@@ -186,7 +104,7 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm,u,uEltypeNoUnit
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   # Allocate cache for the Jacobian
@@ -229,7 +147,7 @@ end
   KsCache::KsType
 end
 
-function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                            # uType caches
   rtmp, G, du1 = (zero(rate_prototype) for i = 1:3)             # rateType caches
   # other caches
@@ -241,7 +159,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   # Allocate cache for the Jacobian
@@ -281,7 +199,7 @@ end
   KsCache::KsType
 end
 
-function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                # uType caches
   rtmp, G, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   plist = (1,)
@@ -304,7 +222,7 @@ end
   KsCache::KsType
 end
 
-function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                 # uType caches
   rtmp, F2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   plist = (2,2)
@@ -329,7 +247,7 @@ end
   KsCache::KsType
 end
 
-function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                         # uType caches
   rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i = 1:5) # rateType caches
   plist = (1,3,3,3)
@@ -355,7 +273,7 @@ end
   KsCache::KsType
 end
 
-function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                             # uType caches
   rtmp, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i = 1:6) # rateType caches
   plist = (1,1,3,3,3,3)
@@ -383,7 +301,7 @@ end
   KsCache::KsType
 end
 
-function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                                        # uType caches
   rtmp, rtmp2, Au, F2, F3, F4, F5, du1 = (zero(rate_prototype) for i = 1:8) # rateType caches
   plist = (3,3,3,3,3,3,3,3,3)
@@ -415,11 +333,11 @@ for (Alg, Cache) in [(:Exp4, :Exp4ConstantCache),
     uf::FType   # derivative wrapper
   end
   @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
-      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+      uf = UDerivativeWrapper(f,t,p)
     end
     return $Cache(uf)
   end
@@ -441,7 +359,7 @@ end
   KsCache::KsType
 end
 function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                    # uType caches
   rtmp, rtmp2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   # Allocate jacobian and caches for ForwardDiff
@@ -449,7 +367,7 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -484,7 +402,7 @@ end
   KsCache::KsType
 end
 function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                    # uType caches
   rtmp, rtmp2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   # Allocate jacobian and caches for ForwardDiff
@@ -492,7 +410,7 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -526,7 +444,7 @@ end
   KsCache::KsType
 end
 function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                    # uType caches
   rtmp, rtmp2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   # Allocate jacobian and caches for ForwardDiff
@@ -534,7 +452,7 @@ function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -568,7 +486,7 @@ end
   KsCache::KsType
 end
 function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz, k = (similar(u) for i = 1:3)                 # uType caches
   rtmp, rtmp2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   # Allocate jacobian and caches for ForwardDiff
@@ -576,7 +494,7 @@ function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -609,7 +527,7 @@ end
   KsCache::KsType
 end
 function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                    # uType caches
   rtmp, rtmp2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   # Allocate jacobian and caches for ForwardDiff
@@ -617,7 +535,7 @@ function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -651,7 +569,7 @@ end
   KsCache::KsType
 end
 function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                    # uType caches
   rtmp, rtmp2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   # Allocate jacobian and caches for ForwardDiff
@@ -659,7 +577,7 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -694,7 +612,7 @@ end
   KsCache::KsType
 end
 function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp, dz = (similar(u) for i = 1:2)                        # uType caches
   rtmp, rtmp2, dR, du1 = (zero(rate_prototype) for i = 1:4) # rateType caches
   # Allocate jacobian and caches for ForwardDiff
@@ -702,7 +620,7 @@ function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
@@ -730,11 +648,11 @@ for (Alg, Cache) in [(:Exprb32, :Exprb32ConstantCache),
     uf::FType   # derivative wrapper
   end
   @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
-      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+      uf = UDerivativeWrapper(f,t,p)
     end
     return $Cache(uf)
   end
@@ -759,7 +677,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,u,uElty
     uf = nothing
     jac_config = nothing
   else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   # Allocate cache for the Jacobian
@@ -791,7 +709,7 @@ end
   J::JType
   KsCache::KsType
 end
-function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   utilde, tmp, dz = (similar(u) for i = 1:3)         # uType caches
   rtmp, F2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   plist = (3, 3)
@@ -815,7 +733,7 @@ struct Exprb43Cache{uType,rateType,JCType,FType,JType,KsType} <: ExpRKCache
   J::JType
   KsCache::KsType
 end
-function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   utilde, tmp, dz = (similar(u) for i = 1:3)                 # uType caches
   rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i = 1:5) # rateType caches
   plist = (1,4,4,4)
@@ -849,7 +767,7 @@ struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
   B0::expType # -ϕ2(hA)
 end
 
-function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
   Phi = phi(dt*A, 2)
   ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])
@@ -867,7 +785,7 @@ end
   B0::expType # -ϕ2(hA)
 end
 
-function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
   Phi = phi(dt*A, 2)
   ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),Phi[1],Phi[2],Phi[2]+Phi[3],-Phi[3])

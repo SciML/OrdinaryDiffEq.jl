@@ -1,5 +1,5 @@
 save_idxsinitialize(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) where {uType} =
-                error("This algorithm does not have an initialization function")
+               error("This algorithm does not have an initialization function")
 
 function loopheader!(integrator)
   # Apply right after iterators / callbacks
@@ -33,27 +33,32 @@ function modify_dt_for_tstops!(integrator)
   if !isempty(tstops)
     if integrator.opts.adaptive
       if integrator.tdir > 0
-        integrator.dt = min(abs(integrator.dt),abs(top(tstops)-integrator.t)) # step! to the end
+        integrator.dt = min(abs(integrator.dt), abs(top(tstops) - integrator.t)) # step! to the end
       else
-        integrator.dt = -min(abs(integrator.dt),abs(top(tstops)-integrator.t))
+        integrator.dt = - min(abs(integrator.dt), abs(top(tstops) + integrator.t))
       end
-    elseif integrator.dtcache == zero(integrator.t) && integrator.dtchangeable
+    elseif iszero(integrator.dtcache) && integrator.dtchangeable
       # Use integrator.opts.tstops
-      integrator.dt = integrator.tdir*abs(top(tstops)-integrator.t)
+      integrator.dt = integrator.tdir * abs(top(tstops) - integrator.tdir * integrator.t)
   elseif integrator.dtchangeable && !integrator.force_stepfail
       # always try to step! with dtcache, but lower if a tstops
       # however, if force_stepfail then don't set to dtcache, and no tstop worry
-      integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(tstops)-integrator.t)) # step! to the end
+      integrator.dt = integrator.tdir * min(abs(integrator.dtcache), abs(top(tstops) - integrator.tdir * integrator.t)) # step! to the end
     end
   end
 end
 
-function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true)::Tuple{Bool,Bool}
+# Want to extend savevalues! for DDEIntegrator
+savevalues!(integrator::ODEIntegrator, force_save = false, reduce_size = true) =
+  _savevalues!(integrator, force_save, reduce_size)
+
+function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool,Bool}
   saved, savedexactly = false, false
   !integrator.opts.save_on && return saved, savedexactly
-  while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
+  tdir_t = integrator.tdir * integrator.t
+  while !isempty(integrator.opts.saveat) && top(integrator.opts.saveat) <= tdir_t # Perform saveat
     integrator.saveiter += 1; saved = true
-    curt = pop!(integrator.opts.saveat)
+    curt = integrator.tdir * pop!(integrator.opts.saveat)
     if curt!=integrator.t # If <t, interpolate
       DiffEqBase.addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
@@ -87,7 +92,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       end
     end
   end
-  if force_save || (integrator.opts.save_everystep && integrator.iter%integrator.opts.timeseries_steps==0)
+  if force_save || integrator.opts.save_everystep
     integrator.saveiter += 1; saved, savedexactly = true, true
     if integrator.opts.save_idxs === nothing
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
@@ -113,13 +118,18 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
   return saved, savedexactly
 end
 
-function postamble!(integrator::ODEIntegrator)
+# Want to extend postamble! for DDEIntegrator
+postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
+
+function _postamble!(integrator)
   solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
-  resize!(integrator.sol.k,integrator.saveiter_dense)
+  if !(integrator.sol isa DAESolution)
+    resize!(integrator.sol.k,integrator.saveiter_dense)
+  end
   if integrator.opts.progress
-    @logmsg(-1,
+    @logmsg(LogLevel(-1),
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
@@ -152,157 +162,16 @@ function solution_endpoint_match_cur_integrator!(integrator)
   end
 end
 
-### Default is PI-controller
-function stepsize_controller!(integrator,alg)
-  # PI-controller
-  EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
-  if iszero(EEst)
-    q = inv(integrator.opts.qmax)
-  else
-    @fastmath q11 = EEst^beta1
-    @fastmath q = q11/(qold^beta2)
-    integrator.q11 = q11
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
-  end
-  q
-end
+# Want to extend loopfooter! for DDEIntegrator
+loopfooter!(integrator::ODEIntegrator) = _loopfooter!(integrator)
 
-function step_accept_controller!(integrator,alg,q)
-  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    q = one(q)
-  end
-  integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
-  integrator.dt/q #dtnew
-end
-function step_reject_controller!(integrator,alg)
-  integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
-end
-
-const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM}
-#const NordAlgs = Union{AN5, JVODE}
-
-function stepsize_controller!(integrator, alg::JVODE)
-  #η = choose_η!(integrator, integrator.cache)
-  if iszero(integrator.EEst)
-    η = integrator.opts.qmax
-  else
-    η = integrator.cache.η
-    integrator.qold = η
-  end
-  η
-end
-function step_accept_controller!(integrator,alg::JVODE,η)
-  return η * integrator.dt  # dtnew
-end
-function step_reject_controller!(integrator,alg::JVODE)
-  integrator.dt *= integrator.qold
-end
-
-function stepsize_controller!(integrator, alg::QNDF)
-  cnt = integrator.iter
-  if cnt <= 3
-    # std controller
-    if iszero(integrator.EEst)
-      q = inv(integrator.opts.qmax)
-    else
-      qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
-      @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-      integrator.qold = integrator.dt/q
-    end
-  else
-    q = integrator.dt/integrator.cache.h
-    integrator.qold = integrator.dt/q
-  end
-  q
-end
-
-function step_accept_controller!(integrator,alg::QNDF,q)
-  return integrator.dt/q  # dtnew
-end
-function step_reject_controller!(integrator,alg::QNDF)
-  integrator.dt = integrator.qold
-end
-
-
-function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Standard}}) where {CS, AD}
-  # Standard stepsize controller
-  if iszero(integrator.EEst)
-    q = inv(integrator.opts.qmax)
-  else
-    qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-    integrator.qold = integrator.dt/q
-  end
-  q
-end
-function step_accept_controller!(integrator,alg::Union{StandardControllerAlgs,
-                                 OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Standard}},q) where {CS, AD}
-  integrator.dt/q # dtnew
-end
-function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
-                                 OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Standard}}) where {CS, AD}
-  integrator.dt = integrator.qold
-end
-
-function stepsize_controller!(integrator,
-                              alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}) where {CS, AD}
-
-  # Gustafsson predictive stepsize controller
-
-  if iszero(integrator.EEst)
-    q = inv(integrator.opts.qmax)
-  else
-    gamma = integrator.opts.gamma
-    if alg isa RadauIIA5
-      @unpack nl_iters = integrator.cache
-      @unpack max_iter = alg
-    else
-      @unpack nl_iters, max_iter = integrator.cache.nlsolve.cache
-    end
-    niters = nl_iters
-    fac = min(gamma,(1+2*max_iter)*gamma/(niters+2*max_iter))
-    expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
-    qtmp = (integrator.EEst^expo)/fac
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-    integrator.qold = q
-  end
-  q
-end
-function step_accept_controller!(integrator,
-                                 alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive},q) where {CS, AD}
-  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    q = one(q)
-  end
-  if integrator.success_iter > 0
-    expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
-    qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
-    qgus = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qgus/integrator.opts.gamma))
-    qacc=max(q,qgus)
-  else
-    qacc = q
-  end
-  integrator.dtacc = integrator.dt
-  integrator.erracc = max(1e-2,integrator.EEst)
-  integrator.dt/qacc
-end
-function step_reject_controller!(integrator,
-                                 alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}) where {CS, AD}
-  if integrator.success_iter == 0
-    integrator.dt *= 0.1
-  else
-    integrator.dt = integrator.dt/integrator.qold
-  end
-end
-
-function loopfooter!(integrator)
+function _loopfooter!(integrator)
 
   # Carry-over from callback
   # This is set to true if u_modified requires callback FSAL reset
   # But not set to false when reset so algorithms can check if reset occurred
   integrator.reeval_fsal = false
   integrator.u_modified = false
-
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
       if integrator.opts.adaptive
@@ -315,14 +184,15 @@ function loopfooter!(integrator)
   elseif integrator.opts.adaptive
     q = stepsize_controller!(integrator,integrator.alg)
     integrator.isout = integrator.opts.isoutofdomain(integrator.u,integrator.p,ttmp)
-    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
+    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
     if integrator.accept_step # Accept
+      integrator.destats.naccept += 1
       integrator.last_stepfail = false
       dtnew = step_accept_controller!(integrator,integrator.alg,q)
       integrator.tprev = integrator.t
       # integrator.EEst has unitless type of integrator.t
       if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
-        tstop = top(integrator.opts.tstops)
+        tstop = integrator.tdir * top(integrator.opts.tstops)
         abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
@@ -330,12 +200,15 @@ function loopfooter!(integrator)
       end
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
+    else # Reject
+      integrator.destats.nreject += 1
     end
   elseif !integrator.opts.adaptive #Not adaptive
+    integrator.destats.naccept += 1
     integrator.tprev = integrator.t
     # integrator.EEst has unitless type of integrator.t
     if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
-      tstop = top(integrator.opts.tstops)
+      tstop = integrator.tdir * top(integrator.opts.tstops)
       abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
     else
@@ -347,12 +220,19 @@ function loopfooter!(integrator)
     handle_callbacks!(integrator)
   end
   if integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
-    @logmsg(-1,
+    @logmsg(LogLevel(-1),
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress=integrator.t/integrator.sol.prob.tspan[2])
   end
+  
+  # Take value because if t is dual then maxeig can be dual
+  if integrator.cache isa CompositeCache
+    cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),integrator.t)
+    cur_eigen_est > integrator.destats.maxeig && (integrator.destats.maxeig = cur_eigen_est)
+  end
+  nothing
 end
 
 function handle_callbacks!(integrator)
@@ -364,13 +244,15 @@ function handle_callbacks!(integrator)
   discrete_modified = false
   saved_in_cb = false
   if !(typeof(continuous_callbacks)<:Tuple{})
-    time,upcrossing,event_occurred,idx,counter =
+    time,upcrossing,event_occurred,event_idx,idx,counter =
               DiffEqBase.find_first_continuous_callback(integrator,continuous_callbacks...)
     if event_occurred
       integrator.event_last_time = idx
-      continuous_modified,saved_in_cb = DiffEqBase.apply_callback!(integrator,continuous_callbacks[idx],time,upcrossing)
+      integrator.vector_event_last_time = event_idx
+      continuous_modified,saved_in_cb = DiffEqBase.apply_callback!(integrator,continuous_callbacks[idx],time,upcrossing,event_idx)
     else
       integrator.event_last_time = 0
+      integrator.vector_event_last_time = 1
     end
   end
   if !integrator.force_stepfail && !(typeof(discrete_callbacks)<:Tuple{})
@@ -439,8 +321,15 @@ function handle_discontinuities!(integrator)
 end
 
 function calc_dt_propose!(integrator,dtnew)
+  if (typeof(integrator.alg) <: Union{ROCK2,ROCK4,SERK2,ESERK4,ESERK5}) && integrator.opts.adaptive && (integrator.iter >= 1)
+    (integrator.alg isa ROCK2) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,200)^2.0)*.811 - 1.5)/integrator.eigen_est))))
+    (integrator.alg isa ROCK4) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,152)^2.0)*.353 - 3)/integrator.eigen_est))))
+    (integrator.alg isa SERK2) && (dtnew = min(dtnew,typeof(dtnew)((0.8*250*250/(integrator.eigen_est+1.0)))))
+    (integrator.alg isa ESERK4) && (dtnew = min(dtnew,typeof(dtnew)((0.98*4000*4000/integrator.eigen_est))))
+    (integrator.alg isa ESERK5) && (dtnew = min(dtnew,typeof(dtnew)((0.98*2000*2000/integrator.eigen_est))))
+  end
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
-  dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
+  dtpropose = integrator.tdir*max(abs(dtpropose),timedepentdtmin(integrator))
   integrator.dtpropose = dtpropose
 end
 
@@ -450,24 +339,25 @@ function fix_dt_at_bounds!(integrator)
   else
     integrator.dt = max(integrator.opts.dtmax,integrator.dt)
   end
+  dtmin = timedepentdtmin(integrator)
   if integrator.tdir > 0
-    integrator.dt = max(integrator.dt,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+    integrator.dt = max(integrator.dt,dtmin) #abs to fix complex sqrt issue at end
   else
-    integrator.dt = min(integrator.dt,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+    integrator.dt = min(integrator.dt,dtmin) #abs to fix complex sqrt issue at end
   end
 end
 
 function handle_tstop!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
-    t = integrator.t
-    ts_top = top(tstops)
-    if t == ts_top
+    tdir_t = integrator.tdir * integrator.t
+    tdir_ts_top = top(tstops)
+    if tdir_t == tdir_ts_top
       pop!(tstops)
       integrator.just_hit_tstop = true
-    elseif integrator.tdir*t > integrator.tdir*ts_top
+    elseif tdir_t > tdir_ts_top
       if !integrator.dtchangeable
-        DiffEqBase.change_t_via_interpolation!(integrator, pop!(tstops), Val{true})
+        DiffEqBase.change_t_via_interpolation!(integrator, integrator.tdir * pop!(tstops), Val{true})
         integrator.just_hit_tstop = true
       else
         error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")
@@ -478,6 +368,7 @@ end
 
 function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
+  integrator.destats.nf += 1
   if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache ||
      (typeof(integrator.cache) <: CompositeCache &&
       typeof(integrator.cache.caches[1]) <: OrdinaryDiffEqMutableCache)
@@ -488,6 +379,11 @@ function reset_fsal!(integrator)
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false
 end
+
+DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && issplit(alg) ? f.f1 : f
+DiffEqBase.nlsolve_f(f, alg::DAEAlgorithm) = f
+DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
+  nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
   current_interpolant(t,integrator,idxs,deriv)

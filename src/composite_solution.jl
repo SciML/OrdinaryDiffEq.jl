@@ -1,4 +1,4 @@
-struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: DiffEqBase.AbstractODESolution{T,N}
+struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE} <: DiffEqBase.AbstractODESolution{T,N,uType}
   u::uType
   u_analytic::uType2
   errors::EType
@@ -10,6 +10,7 @@ struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: 
   alg_choice::Vector{Int}
   dense::Bool
   tslocation::Int
+  destats::DE
   retcode::Symbol
 end
 (sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing,continuity=:left) = sol.interp(t,idxs,deriv,sol.prob.p,continuity)
@@ -24,7 +25,7 @@ function DiffEqBase.build_solution(
         k=[],
         du=[],
         interp = !isempty(du) ? HermiteInterpolation(t,u,du) : LinearInterpolation(t,u),
-        alg_choice=[1], retcode = :Default, kwargs...)
+        alg_choice=[1], retcode = :Default, destats=DiffEqBase.DEStats(), kwargs...)
 
   T = eltype(eltype(u))
   if typeof(prob.u0) <: Tuple
@@ -45,28 +46,28 @@ function DiffEqBase.build_solution(
     end
 
     sol = ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
-                       typeof(prob),typeof(alg),typeof(interp)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
+                               typeof(prob),typeof(alg),typeof(interp),typeof(destats)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,destats,retcode)
     if calculate_error
       DiffEqBase.calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
     end
     return sol
   else
     return ODECompositeSolution{T,N,typeof(u),typeof(nothing),typeof(nothing),typeof(t),typeof(k),
-                       typeof(prob),typeof(alg),typeof(interp)}(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
+                                typeof(prob),typeof(alg),typeof(interp),typeof(destats)}(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,destats,retcode)
   end
 end
 
-function DiffEqBase.solution_new_retcode(sol::ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType},retcode) where {T,N,uType,uType2,EType,tType,rateType,P,A,IType}
-  ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType}(
+function DiffEqBase.solution_new_retcode(sol::ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE},retcode) where {T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE}
+  ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE}(
                      sol.u,sol.u_analytic,sol.errors,sol.t,sol.k,sol.prob,
                      sol.alg,sol.interp,sol.alg_choice,sol.dense,sol.tslocation,
-                     retcode)
+                     sol.destats,retcode)
  end
 
  function DiffEqBase.solution_new_tslocation(sol::ODECompositeSolution{
-   T,N,uType,uType2,EType,tType,rateType,P,A,IType},tslocation) where {T,N,uType,uType2,EType,tType,rateType,P,A,IType}
-   ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType}(
+   T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE},tslocation) where {T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE}
+   ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE}(
                       sol.u,sol.u_analytic,sol.errors,sol.t,sol.k,sol.prob,
                       sol.alg,sol.interp,sol.alg_choice,sol.dense,tslocation,
-                      sol.retcode)
+                      sol.destats,sol.retcode)
   end

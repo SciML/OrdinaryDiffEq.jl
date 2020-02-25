@@ -11,6 +11,8 @@ function initialize!(integrator,cache::SymplecticEulerConstantCache)
   kuprev = integrator.f.f2(duprev,uprev,integrator.p,integrator.t)
   @muladd du = duprev + integrator.dt*kdu
   ku = integrator.f.f2(du,uprev,integrator.p,integrator.t)
+  integrator.destats.nf2 += 1
+  integrator.destats.nf += 2
   integrator.fsalfirst = ArrayPartition((kdu,kuprev))
   integrator.fsallast = ArrayPartition((zero(kdu),ku))
 end
@@ -25,6 +27,8 @@ end
   kdu = f.f1(duprev,u,p,t)
   du = duprev + dt*kdu
   ku = f.f2(du,u,p,t)
+  integrator.destats.nf2 += 1
+  integrator.destats.nf += 1
 
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,ku))
@@ -48,8 +52,10 @@ function initialize!(integrator,cache::SymplecticEulerCache)
   kdu,ku = integrator.fsallast.x
   integrator.f.f1(kdu,duprev,uprev,integrator.p,integrator.t)
   integrator.f.f2(kuprev,duprev,uprev,integrator.p,integrator.t)
-  @muladd @. du = duprev + integrator.dt*kdu
+  @muladd @.. du = duprev + integrator.dt*kdu
   integrator.f.f2(ku,du,uprev,integrator.p,integrator.t)
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 2
 end
 
 @muladd function perform_step!(integrator,cache::SymplecticEulerCache,repeat_step=false)
@@ -58,11 +64,13 @@ end
   du,u = integrator.u.x
   kuprev = integrator.fsalfirst.x[2]
   kdu,ku = integrator.fsallast.x
-  @. u = uprev + dt*kuprev
+  @.. u = uprev + dt*kuprev
   # Now actually compute the step
   # Do it at the end for interpolations!
+  integrator.destats.nf2 += 1
+  integrator.destats.nf += 1
   f.f1(kdu,duprev,u,p,t)
-  @. du = duprev + dt*kdu
+  @.. du = duprev + dt*kdu
   f.f2(ku,du,u,p,t)
 end
 
@@ -81,6 +89,8 @@ function initialize!(integrator,cache::C) where
   duprev,uprev = integrator.uprev.x
   integrator.f.f1(integrator.k[2].x[1],duprev,uprev,integrator.p,integrator.t)
   integrator.f.f2(integrator.k[2].x[2],duprev,uprev,integrator.p,integrator.t)
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
 end
 
 function initialize!(integrator,cache::C) where
@@ -95,6 +105,8 @@ function initialize!(integrator,cache::C) where
   duprev,uprev = integrator.uprev.x
   kdu  = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
   ku = integrator.f.f2(duprev,uprev,integrator.p,integrator.t)
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   integrator.fsalfirst = ArrayPartition((kdu,ku))
 end
 
@@ -107,6 +119,7 @@ end
   half = cache.half
   u = uprev + dt*duprev + dtsq*(half*ku)
   kdu = f.f1(duprev,u,p,t+dt)
+  integrator.destats.nf += 2
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
   du = duprev + dt*(half*ku + half*kdu)
 
@@ -125,10 +138,11 @@ end
   f.f1(ku,duprev,uprev,p,t)
   dtsq = dt^2
   half = cache.half
-  @. u = uprev + dt*duprev + dtsq*(half*ku)
+  @.. u = uprev + dt*duprev + dtsq*(half*ku)
   f.f1(kdu,duprev,u,p,t+dt)
+  integrator.destats.nf += 2
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
-  @. du = duprev + dt*(half*ku + half*kdu)
+  @.. du = duprev + dt*(half*ku + half*kdu)
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[1],kdu)
@@ -151,6 +165,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   du = du + dt*a2*kdu
+  integrator.destats.nf += 2
+  integrator.destats.nf2 += 1
 
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
@@ -165,17 +181,19 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
+  integrator.destats.nf += 2
+  integrator.destats.nf2 += 1
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -205,6 +223,8 @@ end
   u = u + dt*b3*ku
 
   kdu = f.f1(du,u,p,tnew)
+  integrator.destats.nf += 3
+  integrator.destats.nf2 += 2
   du = du + dt*a3*kdu
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
@@ -219,25 +239,27 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
+  integrator.destats.nf += 3
+  integrator.destats.nf2 += 2
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -276,6 +298,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   du = du + dt*a4*kdu
+  integrator.destats.nf += 4
+  integrator.destats.nf2 += 3 
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -289,33 +313,35 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
+  integrator.destats.nf += 4
+  integrator.destats.nf2 += 3
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -361,6 +387,8 @@ end
   u = u + dt*b5*ku
 
   kdu = f.f1(du,u,p,tnew)
+  integrator.destats.nf += 5
+  integrator.destats.nf2 += 4
   if typeof(integrator.alg) <: McAte42
     du = du + dt*a5*kdu
   end
@@ -377,42 +405,44 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b5*ku
+  @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
+  integrator.destats.nf += 5
+  integrator.destats.nf2 += 4
   if typeof(integrator.alg) <: McAte42
-    @. du = du + dt*a5*kdu
+    @.. du = du + dt*a5*kdu
   end
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
@@ -467,6 +497,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   du = du + dt*a6*kdu
+  integrator.destats.nf += 6
+  integrator.destats.nf2 += 5
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -480,48 +512,50 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b5*ku
+  @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a5*kdu
+  @.. du = du + dt*a5*kdu
 
   tnew = tnew + t+a5*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b6*ku
+  @.. u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a6*kdu
+  @.. du = du + dt*a6*kdu
+  integrator.destats.nf += 6
+  integrator.destats.nf2 += 5
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -588,7 +622,9 @@ end
   u = u + dt*b8*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @. du = du + dt*a8*kdu
+  # @.. du = du + dt*a8*kdu
+  integrator.destats.nf += 8
+  integrator.destats.nf2 += 7
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -602,62 +638,64 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b5*ku
+  @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a5*kdu
+  @.. du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b6*ku
+  @.. u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a6*kdu
+  @.. du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b7*ku
+  @.. u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a7*kdu
+  @.. du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b8*ku
+  @.. u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @. du = du + dt*a8*kdu
+  # @.. du = du + dt*a8*kdu
+  integrator.destats.nf += 8
+  integrator.destats.nf2 += 7
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -738,7 +776,9 @@ end
   u = u + dt*b10*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @. du = du + dt*a10*kdu
+  # @.. du = du + dt*a10*kdu
+  integrator.destats.nf += 10
+  integrator.destats.nf2 += 9
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -752,76 +792,78 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b5*ku
+  @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a5*kdu
+  @.. du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b6*ku
+  @.. u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a6*kdu
+  @.. du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b7*ku
+  @.. u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a7*kdu
+  @.. du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b8*ku
+  @.. u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a8*kdu
+  @.. du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b9*ku
+  @.. u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a9*kdu
+  @.. du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b10*ku
+  @.. u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @. du = du + dt*a10*kdu
+  # @.. du = du + dt*a10*kdu
+  integrator.destats.nf += 10
+  integrator.destats.nf2 += 9
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -945,7 +987,9 @@ end
   u = u + dt*b16*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @. du = du + dt*a16*kdu
+  # @.. du = du + dt*a16*kdu
+  integrator.destats.nf += 16
+  integrator.destats.nf2 += 15
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -960,118 +1004,120 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b5*ku
+  @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a5*kdu
+  @.. du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b6*ku
+  @.. u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a6*kdu
+  @.. du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b7*ku
+  @.. u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a7*kdu
+  @.. du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b8*ku
+  @.. u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a8*kdu
+  @.. du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b9*ku
+  @.. u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a9*kdu
+  @.. du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b10*ku
+  @.. u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a10*kdu
+  @.. du = du + dt*a10*kdu
 
   tnew = tnew + a10*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b11*ku
+  @.. u = u + dt*b11*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a11*kdu
+  @.. du = du + dt*a11*kdu
 
   tnew = tnew + a11*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b12*ku
+  @.. u = u + dt*b12*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a12*kdu
+  @.. du = du + dt*a12*kdu
 
   tnew = tnew + a12*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b13*ku
+  @.. u = u + dt*b13*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a13*kdu
+  @.. du = du + dt*a13*kdu
 
   tnew = tnew + a13*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b14*ku
+  @.. u = u + dt*b14*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a14*kdu
+  @.. du = du + dt*a14*kdu
 
   tnew = tnew + a14*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b15*ku
+  @.. u = u + dt*b15*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a15*kdu
+  @.. du = du + dt*a15*kdu
 
   tnew = tnew + a15*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b16*ku
+  @.. u = u + dt*b16*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @. du = du + dt*a16*kdu
+  # @.. du = du + dt*a16*kdu
+  integrator.destats.nf += 16
+  integrator.destats.nf2 += 15
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -1209,7 +1255,9 @@ end
   u = u + dt*b18*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @. du = du + dt*a18*kdu
+  # @.. du = du + dt*a18*kdu
+  integrator.destats.nf += 18
+  integrator.destats.nf2 += 17
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -1224,132 +1272,134 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b5*ku
+  @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a5*kdu
+  @.. du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b6*ku
+  @.. u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a6*kdu
+  @.. du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b7*ku
+  @.. u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a7*kdu
+  @.. du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b8*ku
+  @.. u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a8*kdu
+  @.. du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b9*ku
+  @.. u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a9*kdu
+  @.. du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b10*ku
+  @.. u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a10*kdu
+  @.. du = du + dt*a10*kdu
 
   tnew = tnew + a10*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b11*ku
+  @.. u = u + dt*b11*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a11*kdu
+  @.. du = du + dt*a11*kdu
 
   tnew = tnew + a11*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b12*ku
+  @.. u = u + dt*b12*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a12*kdu
+  @.. du = du + dt*a12*kdu
 
   tnew = tnew + a12*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b13*ku
+  @.. u = u + dt*b13*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a13*kdu
+  @.. du = du + dt*a13*kdu
 
   tnew = tnew + a13*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b14*ku
+  @.. u = u + dt*b14*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a14*kdu
+  @.. du = du + dt*a14*kdu
 
   tnew = tnew + a14*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b15*ku
+  @.. u = u + dt*b15*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a15*kdu
+  @.. du = du + dt*a15*kdu
 
   tnew = tnew + a15*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b16*ku
+  @.. u = u + dt*b16*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a16*kdu
+  @.. du = du + dt*a16*kdu
 
   tnew = tnew + a16*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b17*ku
+  @.. u = u + dt*b17*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a17*kdu
+  @.. du = du + dt*a17*kdu
 
   tnew = tnew + a17*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b18*ku
+  @.. u = u + dt*b18*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @. du = du + dt*a18*kdu
+  # @.. du = du + dt*a18*kdu
+  integrator.destats.nf += 18
+  integrator.destats.nf2 += 17
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -1617,7 +1667,9 @@ end
   u = u + dt*b36*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @. du = du + dt*a30*kdu
+  # @.. du = du + dt*a30*kdu
+  integrator.destats.nf += 36
+  integrator.destats.nf2 += 35
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -1636,258 +1688,260 @@ end
   du,u = integrator.u.x
   kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
-  @. u = uprev + dt*b1*duprev
+  @.. u = uprev + dt*b1*duprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @. du = duprev + dt*a1*kdu
+  @.. du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b2*ku
+  @.. u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a2*kdu
+  @.. du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b3*ku
+  @.. u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a3*kdu
+  @.. du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b4*ku
+  @.. u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a4*kdu
+  @.. du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b5*ku
+  @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a5*kdu
+  @.. du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b6*ku
+  @.. u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a6*kdu
+  @.. du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b7*ku
+  @.. u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a7*kdu
+  @.. du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b8*ku
+  @.. u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a8*kdu
+  @.. du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b9*ku
+  @.. u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a9*kdu
+  @.. du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b10*ku
+  @.. u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a10*kdu
+  @.. du = du + dt*a10*kdu
 
   tnew = tnew + a10*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b11*ku
+  @.. u = u + dt*b11*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a11*kdu
+  @.. du = du + dt*a11*kdu
 
   tnew = tnew + a11*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b12*ku
+  @.. u = u + dt*b12*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a12*kdu
+  @.. du = du + dt*a12*kdu
 
   tnew = tnew + a12*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b13*ku
+  @.. u = u + dt*b13*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a13*kdu
+  @.. du = du + dt*a13*kdu
 
   tnew = tnew + a13*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b14*ku
+  @.. u = u + dt*b14*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a14*kdu
+  @.. du = du + dt*a14*kdu
 
   tnew = tnew + a14*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b15*ku
+  @.. u = u + dt*b15*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a15*kdu
+  @.. du = du + dt*a15*kdu
 
   tnew = tnew + a15*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b16*ku
+  @.. u = u + dt*b16*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a16*kdu
+  @.. du = du + dt*a16*kdu
 
   tnew = tnew + a16*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b17*ku
+  @.. u = u + dt*b17*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a17*kdu
+  @.. du = du + dt*a17*kdu
 
   tnew = tnew + a17*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b18*ku
+  @.. u = u + dt*b18*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a18*kdu
+  @.. du = du + dt*a18*kdu
 
   tnew = tnew + a18*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b19*ku
+  @.. u = u + dt*b19*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a19*kdu
+  @.. du = du + dt*a19*kdu
 
   tnew = tnew + a19*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b20*ku
+  @.. u = u + dt*b20*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a20*kdu
+  @.. du = du + dt*a20*kdu
 
   tnew = tnew + a20*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b21*ku
+  @.. u = u + dt*b21*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a21*kdu
+  @.. du = du + dt*a21*kdu
 
   tnew = tnew + a21*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b22*ku
+  @.. u = u + dt*b22*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a22*kdu
+  @.. du = du + dt*a22*kdu
 
   tnew = tnew + a22*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b23*ku
+  @.. u = u + dt*b23*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a23*kdu
+  @.. du = du + dt*a23*kdu
 
   tnew = tnew + a23*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b24*ku
+  @.. u = u + dt*b24*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a24*kdu
+  @.. du = du + dt*a24*kdu
 
   tnew = tnew + a24*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b25*ku
+  @.. u = u + dt*b25*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a25*kdu
+  @.. du = du + dt*a25*kdu
 
   tnew = tnew + a25*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b26*ku
+  @.. u = u + dt*b26*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a26*kdu
+  @.. du = du + dt*a26*kdu
 
   tnew = tnew + a26*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b27*ku
+  @.. u = u + dt*b27*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a27*kdu
+  @.. du = du + dt*a27*kdu
 
   tnew = tnew + a27*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b28*ku
+  @.. u = u + dt*b28*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a28*kdu
+  @.. du = du + dt*a28*kdu
 
   tnew = tnew + a28*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b29*ku
+  @.. u = u + dt*b29*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a29*kdu
+  @.. du = du + dt*a29*kdu
 
   tnew = tnew + a29*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b30*ku
+  @.. u = u + dt*b30*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a30*kdu
+  @.. du = du + dt*a30*kdu
 
   tnew = tnew + a30*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b31*ku
+  @.. u = u + dt*b31*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a31*kdu
+  @.. du = du + dt*a31*kdu
 
   tnew = tnew + a31*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b32*ku
+  @.. u = u + dt*b32*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a32*kdu
+  @.. du = du + dt*a32*kdu
 
   tnew = tnew + a32*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b33*ku
+  @.. u = u + dt*b33*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a33*kdu
+  @.. du = du + dt*a33*kdu
 
   tnew = tnew + a33*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b34*ku
+  @.. u = u + dt*b34*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a34*kdu
+  @.. du = du + dt*a34*kdu
 
   tnew = tnew + a34*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b35*ku
+  @.. u = u + dt*b35*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @. du = du + dt*a35*kdu
+  @.. du = du + dt*a35*kdu
 
   tnew = tnew + a35*dt
   f.f2(ku,du,u,p,tnew)
-  @. u = u + dt*b36*ku
+  @.. u = u + dt*b36*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @. du = du + dt*a30*kdu
+  # @.. du = du + dt*a30*kdu
+  integrator.destats.nf += 36
+  integrator.destats.nf2 += 35
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)

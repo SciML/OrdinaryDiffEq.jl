@@ -185,7 +185,7 @@ dt = c2
 ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
 ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
 =#
-function KenCarp3Tableau(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function KenCarp3Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   γ  = convert(T,0.435866521508459)
   a31 = convert(T,0.2576482460664272)
   a32 = -convert(T,0.09351476757488625)
@@ -1388,3 +1388,82 @@ end
 # ebtilde6 = -Int128(39379526789629)//19018526304540 + Int128(33438840321285)//15594753105479
 # ebtilde7 = Int128(32727382324388)//42900044865799 - Int128(3629800801594)//4656183773603
 # ebtilde8 = Int128(41)//200 - Int128(4035322873751)//18575991585200
+
+struct ESDIRK54I8L2SATableau{T,T2}
+  γ::T
+  a31::T; a32::T
+  a41::T; a42::T; a43::T
+  a51::T; a52::T; a53::T; a54::T
+  a61::T; a62::T; a63::T; a64::T; a65::T
+  a71::T; a72::T; a73::T; a74::T; a75::T; a76::T
+  a81::T; a82::T; a83::T; a84::T; a85::T; a86::T; a87::T
+  c3::T2; c4::T2; c5::T2; c6::T2; c7::T2
+  btilde1::T; btilde2::T; btilde3::T; btilde4::T; btilde5::T; btilde6::T; btilde7::T; btilde8::T
+end
+
+function ESDIRK54I8L2SATableau(T, T2)
+  γ  = convert(T, 1//4)
+  a31 = convert(T, 1748874742213//5795261096931)
+  a32 = convert(T, 1748874742213//5795261096931)
+  a41 = convert(T, 2426486750897//12677310711630)
+  a42 = convert(T, 2426486750897//12677310711630)
+  a43 = convert(T, -783385356511//7619901499812)
+  a51 = convert(T, 1616209367427//5722977998639)
+  a52 = convert(T, 1616209367427//5722977998639)
+  a53 = convert(T, -211896077633//5134769641545)
+  a54 = convert(T, 464248917192//17550087120101)
+  a61 = convert(T, 1860464898611//7805430689312)
+  a62 = convert(T, 1825204367749//7149715425471)
+  a63 = convert(T, -1289376786583//6598860380111)
+  a64 = convert(T, 55566826943//2961051076052)
+  a65 = convert(T, 1548994872005//13709222415197)
+  a71 = convert(T, 1783640092711//14417713428467)
+  a72 = convert(T, -5781183663275//18946039887294)
+  a73 = convert(T, -57847255876685//10564937217081)
+  a74 = convert(T, 29339178902168//9787613280015)
+  a75 = convert(T, 122011506936853//12523522131766)
+  a76 = convert(T, -60418758964762//9539790648093)
+  a81 = convert(T, 3148564786223//23549948766475)
+  a82 = convert(T, -4152366519273//20368318839251)
+  a83 = convert(T, -143958253112335//33767350176582)
+  a84 = convert(T, 16929685656751//6821330976083)
+  a85 = convert(T, 37330861322165//4907624269821)
+  a86 = convert(T, -103974720808012//20856851060343)
+  a87 = convert(T, -93596557767//4675692258479)
+  c3  = convert(T2, (2+sqrt(convert(T, 2)))/4)
+  c4  = convert(T2, 53//100)
+  c5  = convert(T2, 4//5)
+  c6  = convert(T2, 17//25)
+  c7  = convert(T2, 1)
+  btilde1 = convert(T, -206948709334490044469698//10480001459192469358387375)
+  btilde2 = convert(T, -38800234036520698435148405//193732560740235652447264213)
+  btilde3 = convert(T, -42312118141829119927717945//17651296211698462951718982)
+  btilde4 = convert(T, 77601425937783402908082927//76091823354023603930374324)
+  btilde5 = convert(T, 7549135156215231570800855//1787280796764804347348433)
+  btilde6 = convert(T, -401514321964993460839314379//150599863859115530598736650)
+  btilde7 = convert(T, 17761325247710183915293664//33262552787523086832167825)
+  btilde8 = convert(T, -25249389576073//51072051291964)
+  ESDIRK54I8L2SATableau(γ,
+                        a31, a32,
+                        a41, a42, a43,
+                        a51, a52, a53, a54,
+                        a61, a62, a63, a64, a65,
+                        a71, a72, a73, a74, a75, a76,
+                        a81, a82, a83, a84, a85, a86, a87,
+                                  c3,  c4,  c5,  c6,  c7,
+                        btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, btilde8)
+end
+
+struct SDIRK22Tableau{T}
+  a::T
+  α::T
+  β::T
+end
+
+function SDIRK22Tableau(T)
+  a = convert(T, 1-1/sqrt(2))
+  α = convert(T, -sqrt(2))
+  β = convert(T, 1+sqrt(2))
+  SDIRK22Tableau(a, α, β)
+end
+

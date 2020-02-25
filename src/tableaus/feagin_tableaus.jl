@@ -125,7 +125,7 @@ end
 constructFeagin10
 
 """
-function Feagin10ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function Feagin10ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   adaptiveConst = convert(T,0.002777777777777778)
   a0100 = convert(T,0.1)
 
@@ -638,7 +638,7 @@ end
 constructFeagin12
 
 """
-function Feagin12ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function Feagin12ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   adaptiveConst = convert(T,49//640)
   c1 = convert(T2,1//5)
   c2 = convert(T2,5//9)
@@ -1543,7 +1543,7 @@ end
 constructFeagin14
 
 """
-function Feagin14ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
+function Feagin14ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   adaptiveConst = convert(T,1//1000)
   c1 = convert(T2,1//9)
   c2 = convert(T2,5//9)

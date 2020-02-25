@@ -1,7 +1,0 @@
-DiffEqDevTools 0.6.0
-DiffEqProblemLibrary
-ParameterizedFunctions 3.0.0
-StaticArrays
-DiffEqCallbacks
-DiffEqOperators
-SafeTestsets

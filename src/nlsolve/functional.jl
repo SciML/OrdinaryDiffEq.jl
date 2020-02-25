@@ -1,154 +1,221 @@
-"""
-  (S::NLFunctional)(integrator) -> (z, η, iter, fail_convergence)
+## initialize!
 
-Perform functional iteration that is used by implicit methods, where `z` is the
-solution, `η` is used to measure the iteration error (see [^HW96]), `iter` is
-the number of iteration, and `fail_convergence` reports whether the algorithm
-succeed.  It solves
+@muladd function initialize!(nlsolver::NLSolver{<:NLFunctional}, integrator)
+  nlsolver.cache.tstep = integrator.t + nlsolver.c * integrator.dt
 
-```math
-G(z) = dt⋅f(tmp + γ⋅z, p, t+c⋅h)
-z = G(z)
-```
-
-by iterating
-
-```math
-zᵏ⁺¹ = G(zᵏ).
-```
-
-[^HW96]: Ernst Hairer and Gerhard Wanner, "Solving Ordinary Differential
-Equations II, Springer Series in Computational Mathematics. ISBN
-978-3-642-05221-7. Section IV.8.
-[doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
-"""
-@muladd function (S::NLFunctional{false})(integrator)
-  nlcache = S.cache
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
-  mass_matrix = integrator.f.mass_matrix
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-  else
-    f = integrator.f
-  end
-  # precalculations
-  κtol = κ*tol
-
-  # initial step of functional iteration
-  iter = 1
-  tstep = t + c*dt
-  u = @. tmp + γ * z
-  if mass_matrix == I
-    z₊ = dt .* f(u, p, tstep)
-  else
-    mz = mass_matrix * z
-    z₊ = dt .* f(u, p, tstep) .- mz .+ z
-  end
-  ndz = integrator.opts.internalnorm(z₊ .- z)
-  z = z₊
-
-  # check stopping criterion for initial step
-  η = nlcache.ηold
-  do_functional = true # TODO: this makes `min_iter` ≥ 2
-
-  # functional iteration
-  while do_functional && iter < max_iter
-    # compute next iterate
-    iter += 1
-    u = @. tmp + γ * z
-    if mass_matrix == I
-      z₊ = dt .* f(u, p, tstep)
-    else
-      mz = mass_matrix * z
-      z₊ = dt .* f(u, p, tstep) .- mz .+ z
-    end
-
-    # check early stopping criterion
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(z₊ .- z)
-    θ = ndz/ndzprev
-    if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
-      break
-    end
-
-    # update solution
-    z = z₊
-
-    # check stopping criterion
-    η = θ / (1 - θ) # calculated for possible early stopping
-    do_functional = iter < min_iter || η * ndz > κtol
-  end
-
-  integrator.force_stepfail = do_functional
-  z, η, iter, do_functional
+  nothing
 end
 
-@muladd function (S::NLFunctional{true})(integrator)
-  nlcache = S.cache
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
-  ztmp = b
-  mass_matrix = integrator.f.mass_matrix
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-  else
-    f = integrator.f
+@muladd function initialize!(nlsolver::NLSolver{<:NLAnderson}, integrator)
+  @unpack cache = nlsolver
+
+  cache.history = 0
+  cache.tstep = integrator.t + nlsolver.c * integrator.dt
+
+  nothing
+end
+
+## initial_η
+
+function initial_η(nlsolver::NLSolver{<:Union{NLFunctional,NLAnderson}}, integrator)
+  nlsolver.ηold
+end
+
+## compute_step!
+
+"""
+    compute_step!(nlsolver::NLSolver{<:Union{NLFunctional,NLAnderson}}, integrator)
+
+Compute the next step of the fixed-point iteration
+```math
+g(z) = dt⋅f(tmp + γ⋅z, p, t + c⋅dt),
+```
+and return the norm of ``g(z) - z``.
+
+# References
+
+Ernst Hairer and Gerhard Wanner, "Solving Ordinary Differential
+Equations II, Springer Series in Computational Mathematics. ISBN
+978-3-642-05221-7. Section IV.8.
+[doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
+"""
+function compute_step!(nlsolver::NLSolver{<:NLFunctional}, integrator)
+  compute_step_fixedpoint!(nlsolver, integrator)
+end
+
+@muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson,false}, integrator)
+  @unpack cache = nlsolver
+  @unpack aa_start = cache
+
+  # perform Anderson acceleration
+  previter = nlsolver.iter - 1
+  if previter == aa_start
+    # update cached values for next step of Anderson acceleration
+    cache.dzold = cache.dz
+    cache.z₊old = nlsolver.z
+  elseif previter > aa_start
+    # actually perform Anderson acceleration
+    nlsolver.z = anderson(nlsolver.z, cache)
+    if DiffEqBase.has_destats(integrator)
+      integrator.destats.nsolve += 1
+    end  
   end
-  # precalculations
-  κtol = κ*tol
 
-  # initial step of functional iteration
-  iter = 1
-  tstep = t + c*dt
-  @. u = tmp + γ*z
-  f(k, u, p, tstep)
-  if mass_matrix == I
-    @. z₊ = dt*k
-  else
-    @. z₊ = dt*k + z
-    mul!(ztmp, mass_matrix, z)
-    @. z₊ -= ztmp
+  # compute next step
+  compute_step_fixedpoint!(nlsolver, integrator)
+end
+
+@muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson,true}, integrator)
+  @unpack cache = nlsolver
+  @unpack aa_start = cache
+
+  # perform Anderson acceleration
+  previter = nlsolver.iter - 1
+  if previter == aa_start
+    # update cached values for next step of Anderson acceleration
+    @.. cache.dzold = cache.dz
+    @.. cache.z₊old = nlsolver.z
+  elseif previter > aa_start
+    # actually perform Anderson acceleration
+    anderson!(nlsolver.z, cache)
+    if DiffEqBase.has_destats(integrator)
+      integrator.destats.nsolve += 1
+    end  
   end
-  @. dz = z₊ - z
-  ndz = integrator.opts.internalnorm(dz)
-  @. z = z₊
 
-  # check stopping criterion for initial step
-  η = nlcache.ηold
-  do_functional = true # TODO: this makes `min_iter` ≥ 2
+  # compute next step
+  compute_step_fixedpoint!(nlsolver, integrator)
+end
 
-  # functional iteration
-  while do_functional && iter < max_iter
-    # compute next iterate
-    iter += 1
-    @. u = tmp + γ*z
-    f(k, u, p, tstep)
+@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{<:Union{NLFunctional,
+                                                                     NLAnderson},false},
+                                          integrator)
+  @unpack uprev,t,p,dt,opts = integrator
+  @unpack z,γ,α,cache = nlsolver
+  @unpack tstep = cache
+
+  f = nlsolve_f(integrator)
+  isdae = f isa DAEFunction
+
+  if isdae
+    ustep = @.. uprev + z
+    dustep = @.. (nlsolver.tmp + α * z) * inv(γ*dt)
+    dz = f(dustep, ustep, p, t)
+    ztmp = @.. z + dz
+  else
+    mass_matrix = integrator.f.mass_matrix
+    ustep = @.. nlsolver.tmp + γ*z
     if mass_matrix == I
-      @. z₊ = dt*k
+      ztmp = dt .* f(ustep, p, tstep)
+      dz = ztmp .- z
     else
-      @. z₊ = dt*k + z
-      mul!(ztmp, mass_matrix, z)
-      @. z₊ -= ztmp
+      ztmp = _reshape(mass_matrix * _vec(z), axes(z))
+      dz = dt .* f(ustep, p, tstep) .- ztmp
+      ztmp = z .+ dz
     end
-    @. dz = z₊ - z
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-
-    # check early stopping criterion
-    θ = ndz/ndzprev
-    if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
-      break
-    end
-
-    # update solution
-    @. z = z₊
-
-    # check stopping criterion
-    η = θ / (1 - θ) # calculated for possible early stopping
-    do_functional = iter < min_iter || η * ndz > κtol
+  end
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nf += 1
   end
 
-  integrator.force_stepfail = do_functional
-  z, η, iter, do_functional
+  # compute norm of residuals
+  atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
+  ndz = opts.internalnorm(atmp, t)
+
+  # cache results
+  nlsolver.ztmp = ztmp
+  if isdefined(cache, :dz)
+    cache.dz = dz
+  end
+
+  ndz
+end
+
+@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{<:Union{NLFunctional,
+                                                                     NLAnderson},true},
+                                          integrator)
+  @unpack uprev,t,p,dt,opts = integrator
+  @unpack z,tmp,ztmp,γ,α,cache = nlsolver
+  @unpack ustep,tstep,k,atmp,dz = cache
+
+  f = nlsolve_f(integrator)
+  isdae = f isa DAEFunction
+
+  if isdae
+    @.. ustep = uprev + z
+    @.. ztmp = (tmp + α * z) * inv(γ*dt)
+    f(k, ztmp, ustep, p, tstep)
+  else
+    mass_matrix = integrator.f.mass_matrix
+    @.. ustep = tmp + γ*z
+    f(k, ustep, p, tstep)
+  end
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nf += 1
+  end
+  if isdae
+    @.. dz = k
+    @.. ztmp = z + dz
+  else
+    if mass_matrix == I
+      @.. ztmp = dt * k
+      @.. dz = ztmp - z
+    else
+      mul!(vec(ztmp), mass_matrix, vec(z))
+      @.. dz = dt * k - ztmp
+      @.. ztmp = z + dz
+    end
+  end
+  # compute norm of residuals
+  calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
+  ndz = opts.internalnorm(atmp, t)
+
+  ndz
+end
+
+## resize!
+
+function Base.resize!(nlcache::NLFunctionalCache, i::Int)
+  resize!(nlcache.ustep, i)
+  resize!(nlcache.k, i)
+  resize!(nlcache.atmp, i)
+  resize!(nlcache.dz, i)
+  nothing
+end
+
+function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson},
+                      integrator, i::Int)
+  resize!(nlcache, nlsolver.alg, i)
+end
+
+function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
+  @unpack z₊old,Δz₊s = nlcache
+
+  resize!(nlcache.ustep, i)
+  resize!(nlcache.k, i)
+  resize!(nlcache.atmp, i)
+  resize!(nlcache.dz, i)
+  resize!(nlcache.dzold, i)
+  resize!(z₊old, i)
+
+  # update history of Anderson cache
+  max_history_old = length(Δz₊s)
+  max_history = min(nlalg.max_history, nlalg.max_iter, i)
+
+  resize!(nlcache.γs, max_history)
+  resize!(nlcache.Δz₊s, max_history)
+
+  if max_history != max_history_old
+    nlcache.Q = typeof(nlcache.Q)(undef, i, max_history)
+    nlcache.R = typeof(nlcache.R)(undef, max_history, max_history)
+  end
+
+  max_history = length(Δz₊s)
+  if max_history > max_history_old
+    for i in (max_history_old + 1):max_history
+      Δz₊s[i] = zero(z₊old)
+    end
+  end
+
+  nothing
 end

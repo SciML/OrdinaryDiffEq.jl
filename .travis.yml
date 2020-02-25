@@ -1,20 +1,32 @@
 # Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
+# avoid duplicate tests in PRs
+branches:
+  only:
+    - master
 os:
   - linux
 #  - osx
 julia:
-  - 1.0
-  - nightly
+  - 1
+#  - nightly
 env:
   - GROUP=Interface
-  - GROUP=Integrators
+  - GROUP=Integrators_I
+  - GROUP=Integrators_II
   - GROUP=Regression
   - GROUP=AlgConvergence_I
   - GROUP=AlgConvergence_II
-matrix:
-  allow_failures:
-    - julia: nightly
+  - GROUP=AlgConvergence_III
+  - GROUP=Downstream
+  - GROUP=ODEInterfaceRegression
+addons:
+  apt:
+    packages:
+      - gfortran
+#matrix:
+#  allow_failures:
+#    - julia: nightly
 notifications:
   email: false
 after_success:

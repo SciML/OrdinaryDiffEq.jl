@@ -72,29 +72,67 @@ end
 for typ in (OrdinaryDiffEqAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm)
   @eval @inline DiffEqBase.get_tmp_cache(integrator,alg::$typ,cache::OrdinaryDiffEqConstantCache) = nothing
 end
+
+# the ordering of the cache arrays is important!!!
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::RadauIIA5,cache) = (cache.tmp,cache.atmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.nlsolver.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,cache) = (cache.tmp,cache.utilde)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,cache) = (cache.tmp,cache.utilde)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqExponentialAlgorithm,cache) = (cache.tmp,cache.dz)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
+@inline DiffEqBase.get_tmp_cache(integrator,alg::DAEAlgorithm,cache) = (cache.nlsolver.cache.dz,cache.atmp)
 
 full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
+full_cache(integrator::CompositeCache) = Iterators.flatten(full_cache(c) for c in integrator.caches)
 
 function add_tstop!(integrator::ODEIntegrator,t)
-  integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
-  push!(integrator.opts.tstops,t)
+  integrator.tdir * (t - integrator.t) < zero(integrator.t) && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
+  push!(integrator.opts.tstops, integrator.tdir * t)
 end
 
 function DiffEqBase.add_saveat!(integrator::ODEIntegrator,t)
-  integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a saveat that is behind the current time. This is strictly forbidden")
-  push!(integrator.opts.saveat,t)
+  integrator.tdir * (t - integrator.t) < zero(integrator.t) && error("Tried to add a saveat that is behind the current time. This is strictly forbidden")
+  push!(integrator.opts.saveat, integrator.tdir * t)
 end
 
-resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
-function resize!(integrator::ODEIntegrator,cache,i)
+function resize!(integrator::ODEIntegrator, i::Int)
+  @unpack cache = integrator
+
   for c in full_cache(cache)
     resize!(c,i)
   end
-  resize_non_user_cache!(integrator,cache,i)
+  resize_nlsolver!(integrator, i)
+  resize_J_W!(cache, integrator, i)
+  resize_non_user_cache!(integrator, cache, i)
+end
+
+function resize_J_W!(cache, integrator, i)
+  (isdefined(cache, :J) && isdefined(cache, :W)) || return
+
+  @unpack f = integrator
+
+  if cache.W isa WOperator
+    nf = nlsolve_f(f, integrator.alg)
+    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+    if !islin
+      J = similar(f.jac_prototype, i, i)
+      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+        J = DiffEqArrayOperator(J; update_func=f.jac)
+      end
+
+      cache.W = WOperator(f.mass_matrix, integrator.dt, J, true)
+      cache.J = cache.W.J
+    end
+  else
+    if cache.J !== nothing
+      cache.J = similar(cache.J, i, i)
+    end
+    cache.W = similar(cache.W, i, i)
+  end
+
+  nothing
 end
 
 resize_non_user_cache!(integrator::ODEIntegrator,i::Int) = resize_non_user_cache!(integrator,integrator.cache,i)
@@ -102,14 +140,32 @@ deleteat_non_user_cache!(integrator::ODEIntegrator,i) = deleteat_non_user_cache!
 addat_non_user_cache!(integrator::ODEIntegrator,i) = addat_non_user_cache!(integrator,integrator.cache,i)
 
 resize_non_user_cache!(integrator::ODEIntegrator,cache,i) = nothing
+
+function resize_non_user_cache!(integrator::ODEIntegrator,cache::CompositeCache,i)
+  for _cache in cache.caches
+    resize_non_user_cache!(integrator,_cache,i)
+  end
+end
+
+function deleteat_non_user_cache!(integrator::ODEIntegrator,cache::CompositeCache,i)
+  for _cache in cache.caches
+    deleteat_non_user_cache!(integrator,_cache,i)
+  end
+end
+
+function addat_non_user_cache!(integrator::ODEIntegrator,cache::CompositeCache,i)
+  for _cache in cache.caches
+    addat_non_user_cache!(integrator,_cache,i)
+  end
+end
+
 function resize_non_user_cache!(integrator::ODEIntegrator,
-                      cache::Union{RosenbrockMutableCache,SDIRKMutableCache},i)
+                      cache::RosenbrockMutableCache,i)
   cache.J = similar(cache.J,i,i)
   cache.W = similar(cache.W,i,i)
-end
-function resize_non_user_cache!(integrator::ODEIntegrator,
-                cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
-  cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.u)
+  resize_jac_config!(cache.jac_config, i)
+  resize_grad_config!(cache.grad_config, i)
+  nothing
 end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)
@@ -175,9 +231,9 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   integrator.t = t0
   integrator.tprev = t0
 
+  tType = typeof(integrator.t)
   tstops_internal, saveat_internal, d_discontinuities_internal =
-    tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,
-    integrator.tdir,(t0,tf),typeof(integrator.t))
+    tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, (tType(t0), tType(tf)))
 
   integrator.opts.tstops = tstops_internal
   integrator.opts.saveat = saveat_internal
@@ -236,6 +292,7 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
   integrator.dt = ode_determine_initdt(integrator.u,integrator.t,
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
   integrator.opts.internalnorm,integrator.sol.prob,integrator)
+  integrator.destats.nf += 2
 end
 
 function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
@@ -262,3 +319,5 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
   integrator.u = u
   u_modified!(integrator, true)
 end
+
+DiffEqBase.has_destats(i::ODEIntegrator) = true

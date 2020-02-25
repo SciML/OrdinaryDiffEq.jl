@@ -1,54 +1,44 @@
 # bdf_utils
-function U!(k, U)
-  for j = 1:k
-    for r = 1:k
-      if j == 1
-        U[j,r] = -r
-      else
-        U[j,r] = U[j-1,r] * ((j-1) - r)/j
-      end
+@inline function U!(k, U)
+  @inbounds for r = 1:k
+    U[1,r] = -r
+    for j = 2:k
+      U[j,r] = U[j-1,r] * ((j-1) - r)/j
     end
   end
+  nothing
 end
 
 function R!(k, ρ, cache)
   @unpack R = cache
-  for j = 1:k
-    for r = 1:k
-      if j == 1
-        R[j,r] = -r * ρ
-      else
-        R[j,r] = R[j-1,r] * ((j-1) - r * ρ)/j
-      end
+  @inbounds for r = 1:k
+    R[1,r] = -r * ρ
+    for j = 2:k
+      R[j,r] = R[j-1,r] * ((j-1) - r * ρ)/j
     end
   end
+  nothing
 end
 
 # This functions takes help of D2 array to create backward differences array D
 # Ith row of D2 keeps Ith order backward differences (∇ⁱyₙ)
-function backward_diff!(cache, D, D2, k, flag=true)
-  if flag
-    if typeof(cache) <: OrdinaryDiffEqMutableCache
-      D[1] .= D2[1,1]
-    else
-      D[1] = D2[1,1]
-    end
-  end
+function backward_diff!(cache::OrdinaryDiffEqMutableCache, D, D2, k, flag=true)
+  flag && copyto!(D[1], D2[1,1])
   for i = 2:k
     for j = 1:(k-i+1)
-      if typeof(cache) <: OrdinaryDiffEqMutableCache
-        @. D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
-      else
-        D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
-      end
+      @.. D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
     end
-    if flag
-      if typeof(cache) <: OrdinaryDiffEqMutableCache
-        D[i] .= D2[i,1]
-      else
-        D[i] = D2[i,1]
-      end
+    flag && copyto!(D[i], D2[i,1])
+  end
+end
+
+function backward_diff!(cache::OrdinaryDiffEqConstantCache, D, D2, k, flag=true)
+  flag && (D[1] = D2[1,1])
+  for i = 2:k
+    for j = 1:(k-i+1)
+      D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
     end
+    flag && (D[i] = D2[i,1])
   end
 end
 
@@ -57,28 +47,25 @@ end
 # and it is taken from the paper -
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
-function reinterpolate_history!(cache, D, R, k)
-  @unpack tmp = cache
-  if typeof(cache) <: OrdinaryDiffEqMutableCache
-    fill!(tmp,zero(eltype(D[1])))
-  else
-    tmp = zero(eltype(D))
-  end
+function reinterpolate_history!(cache::OrdinaryDiffEqMutableCache, D, R, k)
+  @unpack tmp = cache.nlsolver
+  fill!(tmp,zero(eltype(D[1])))
   for j = 1:k
     for k = 1:k
-      if typeof(cache) <: OrdinaryDiffEqMutableCache
-        @. tmp += D[k] * R[k,j]
-      else
-        tmp += D[k] * R[k,j]
-      end
+      @.. tmp += D[k] * R[k,j]
     end
-    if typeof(cache) <: OrdinaryDiffEqMutableCache
-      D[j] .= tmp
-      fill!(tmp,zero(eltype(D[1])))
-    else
-      D[j] = tmp
-      tmp = zero(eltype(D))
+    D[j] .= tmp
+    fill!(tmp, zero(eltype(tmp)))
+  end
+end
+
+function reinterpolate_history!(cache::OrdinaryDiffEqConstantCache, D, R, k)
+  tmp = zero(D[1])
+  for j = 1:k
+    for k = 1:k
+      tmp += D[k] * R[k,j]
     end
+    D[j] = tmp
   end
 end
 

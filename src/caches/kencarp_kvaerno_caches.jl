@@ -1,25 +1,21 @@
-@cache mutable struct KenCarp3ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+@cache mutable struct KenCarp3ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  @oopnlsolve
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
 
-  KenCarp3ConstantCache(uf,nlsolve,tab)
+  KenCarp3ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct KenCarp3Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F,kType} <: SDIRKMutableCache
+@cache mutable struct KenCarp3Cache{uType,rateType,uNoUnitsType,N,Tab,kType} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
@@ -28,25 +24,17 @@ end
   k2::kType
   k3::kType
   k4::kType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u)
-  z₃ = similar(u); z₄ = z
-  atmp = similar(u,uEltypeNoUnits)
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
 
   if typeof(f) <: SplitFunction
     k1 = similar(u); k2 = similar(u)
@@ -54,98 +42,72 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
   end
-  tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
-  γ, c = tab.γ, tab.c3
-  @iipnlsolve
 
-  KenCarp3Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,k1,k2,k3,k4,dz,b,tmp,atmp,J,
-                W,uf,jac_config,linsolve,nlsolve,tab)
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  KenCarp3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver,tab)
 end
 
-@cache mutable struct Kvaerno4ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+@cache mutable struct Kvaerno4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
-function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  uprev3 = u
-  tprev2 = t
-
-  tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
+function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  @oopnlsolve
-
-  Kvaerno4ConstantCache(uf,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  Kvaerno4ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F} <: SDIRKMutableCache
+@cache mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
   z₄::uType
   z₅::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = z
-  atmp = similar(u,uEltypeNoUnits)
-  tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  @iipnlsolve
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
 
-  Kvaerno4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
-                W,uf,jac_config,linsolve,nlsolve,tab)
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  Kvaerno4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
 
-@cache mutable struct KenCarp4ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+@cache mutable struct KenCarp4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  uprev3 = u
-  tprev2 = t
-  tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  @oopnlsolve
-
-  KenCarp4ConstantCache(uf,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  KenCarp4ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F,kType} <: SDIRKMutableCache
+@cache mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,N,Tab,kType} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
@@ -158,26 +120,17 @@ end
   k4::kType
   k5::kType
   k6::kType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u)
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = z
-  atmp = similar(u,uEltypeNoUnits)
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
 
   if typeof(f) <: SplitFunction
     k1 = similar(u); k2 = similar(u)
@@ -187,40 +140,34 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
     k5 = nothing; k6 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    uf = UJacobianWrapper(f,t,p)
   end
 
-  tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
-  γ, c = tab.γ, tab.c3
-  @iipnlsolve
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)
+  z₆ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
 
-  KenCarp4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,
-                dz,b,tmp,atmp,J,
-                W,uf,jac_config,linsolve,nlsolve,tab)
+  KenCarp4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,atmp,nlsolver,tab)
 end
 
-@cache mutable struct Kvaerno5ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+@cache mutable struct Kvaerno5ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  @oopnlsolve
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
 
-  Kvaerno5ConstantCache(uf,nlsolve,tab)
+  Kvaerno5ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct Kvaerno5Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F} <: SDIRKMutableCache
+@cache mutable struct Kvaerno5Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
@@ -228,57 +175,43 @@ end
   z₅::uType
   z₆::uType
   z₇::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u);
-  z₇ = z
-  atmp = similar(u,uEltypeNoUnits)
-  tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  @iipnlsolve
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
 
-  Kvaerno5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,dz,b,tmp,atmp,J,
-                W,uf,jac_config,linsolve,nlsolve,tab)
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)
+  z₆ = zero(u); z₇ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  Kvaerno5Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,atmp,nlsolver,tab)
 end
 
-@cache mutable struct KenCarp5ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+@cache mutable struct KenCarp5ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = KenCarp5Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
-  @oopnlsolve
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
 
-  KenCarp5ConstantCache(uf,nlsolve,tab)
+  KenCarp5ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F,kType} <: SDIRKMutableCache
+@cache mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,N,Tab,kType} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
@@ -295,27 +228,17 @@ end
   k6::kType
   k7::kType
   k8::kType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u);
-  z₇ = similar(u); z₈ = z
-  atmp = similar(u,uEltypeNoUnits)
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
 
   if typeof(f) <: SplitFunction
     k1 = similar(u); k2 = similar(u)
@@ -327,15 +250,12 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k3 = nothing; k4 = nothing
     k5 = nothing; k6 = nothing
     k7 = nothing; k8 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
 
-  tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  γ, c = tab.γ, tab.c3
-  @iipnlsolve
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
+  z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
 
-  KenCarp5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
-                k1,k2,k3,k4,k5,k6,k7,k8,
-                dz,b,tmp,atmp,J,
-                W,uf,jac_config,linsolve,nlsolve,tab)
+  KenCarp5Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
+                k1,k2,k3,k4,k5,k6,k7,k8,atmp,nlsolver,tab)
 end

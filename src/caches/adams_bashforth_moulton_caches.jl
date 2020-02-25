@@ -16,7 +16,7 @@ end
   step::Int
 end
 
-function alg_cache(alg::AB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::AB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   fsalfirst = zero(rate_prototype)
   k2 = zero(rate_prototype)
   k3 = zero(rate_prototype)
@@ -26,7 +26,7 @@ function alg_cache(alg::AB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AB3Cache(u,uprev,fsalfirst,k2,k3,ralk2,k,tmp,1)
 end
 
-function alg_cache(alg::AB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::AB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   k2 = rate_prototype
   k3 = rate_prototype
   AB3ConstantCache(k2,k3,1)
@@ -50,7 +50,7 @@ end
   step::Int
 end
 
-function alg_cache(alg::ABM32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ABM32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   fsalfirst = zero(rate_prototype)
   k2 = zero(rate_prototype)
   k3 = zero(rate_prototype)
@@ -60,7 +60,7 @@ function alg_cache(alg::ABM32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM32Cache(u,uprev,fsalfirst,k2,k3,ralk2,k,tmp,1)
 end
 
-function alg_cache(alg::ABM32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ABM32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   k2 = rate_prototype
   k3 = rate_prototype
   ABM32ConstantCache(k2,k3,1)
@@ -89,7 +89,7 @@ end
   step::Int
 end
 
-function alg_cache(alg::AB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::AB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   fsalfirst = zero(rate_prototype)
   k2 = zero(rate_prototype)
   k3 = zero(rate_prototype)
@@ -103,7 +103,7 @@ function alg_cache(alg::AB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AB4Cache(u,uprev,fsalfirst,k2,k3,k4,ralk2,k,tmp,t2,t3,t4,1)
 end
 
-function alg_cache(alg::AB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::AB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   k2 = rate_prototype
   k3 = rate_prototype
   k4 = rate_prototype
@@ -136,7 +136,7 @@ end
   step::Int
 end
 
-function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   fsalfirst = zero(rate_prototype)
   k2 = zero(rate_prototype)
   k3 = zero(rate_prototype)
@@ -153,7 +153,7 @@ function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM43Cache(u,uprev,fsalfirst,k2,k3,k4,ralk2,k,tmp,t2,t3,t4,t5,t6,t7,1)
 end
 
-function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   k2 = rate_prototype
   k3 = rate_prototype
   k4 = rate_prototype
@@ -184,7 +184,7 @@ end
   step::Int
 end
 
-function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   fsalfirst = zero(rate_prototype)
   k2 = zero(rate_prototype)
   k3 = zero(rate_prototype)
@@ -198,7 +198,7 @@ function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AB5Cache(u,uprev,fsalfirst,k2,k3,k4,k5,k,tmp,t2,t3,t4,1)
 end
 
-function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   k2 = rate_prototype
   k3 = rate_prototype
   k4 = rate_prototype
@@ -234,7 +234,7 @@ end
   step::Int
 end
 
-function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   fsalfirst = zero(rate_prototype)
   k2 = zero(rate_prototype)
   k3 = zero(rate_prototype)
@@ -252,7 +252,7 @@ function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM54Cache(u,uprev,fsalfirst,k2,k3,k4,k5,k,tmp,t2,t3,t4,t5,t6,t7,t8,1)
 end
 
-function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   k2 = rate_prototype
   k3 = rate_prototype
   k4 = rate_prototype
@@ -294,10 +294,10 @@ end
   step::Int
 end
 
-function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),3)
-  c = fill(zero(typeof(t)), 3, 3)
-  g = fill(zero(typeof(t)), 3)
+function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  dts = fill(zero(dt),3)
+  c = fill(zero(t), 3, 3)
+  g = fill(zero(t), 3)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 3)
@@ -306,14 +306,14 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_nm1[i] = copy(rate_prototype)
     ϕstar_n[i] = copy(rate_prototype)
   end
-  β = fill(zero(typeof(t)),3)
+  β = fill(zero(t),3)
   order = 3
-  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   VCAB3ConstantCache(dts,c,g,ϕ_n,ϕstar_nm1,ϕstar_n,β,order,tab,1)
 end
 
-function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   bk1 = zero(rate_prototype)
   bk2 = zero(rate_prototype)
   bk3 = zero(rate_prototype)
@@ -324,9 +324,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),3)
-  c = fill(zero(typeof(t)), 3, 3)
-  g = fill(zero(typeof(t)), 3)
+  dts = fill(zero(dt),3)
+  c = fill(zero(t), 3, 3)
+  g = fill(zero(t), 3)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 3)
@@ -335,7 +335,7 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_nm1[i] = zero(rate_prototype)
     ϕstar_n[i] = zero(rate_prototype)
   end
-  β = fill(zero(typeof(t)),3)
+  β = fill(zero(t),3)
   order = 3
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -376,10 +376,10 @@ end
   step::Int
 end
 
-function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),4)
-  c = fill(zero(typeof(t)), 4, 4)
-  g = fill(zero(typeof(t)), 4)
+function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  dts = fill(zero(dt),4)
+  c = fill(zero(t), 4, 4)
+  g = fill(zero(t), 4)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 4)
@@ -388,13 +388,13 @@ function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_nm1[i] = copy(rate_prototype)
     ϕstar_n[i] = copy(rate_prototype)
   end
-  β = fill(zero(typeof(t)),4)
+  β = fill(zero(t),4)
   order = 4
   rk4constcache = RK4ConstantCache()
   VCAB4ConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,rk4constcache,1)
 end
 
-function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   rk1 = zero(rate_prototype)
   rk2 = zero(rate_prototype)
   rk3 = zero(rate_prototype)
@@ -404,9 +404,9 @@ function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),4)
-  c = fill(zero(typeof(t)), 4, 4)
-  g = fill(zero(typeof(t)), 4)
+  dts = fill(zero(dt),4)
+  c = fill(zero(t), 4, 4)
+  g = fill(zero(t), 4)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 4)
@@ -415,7 +415,7 @@ function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_nm1[i] = zero(rate_prototype)
     ϕstar_n[i] = zero(rate_prototype)
   end
-  β = fill(zero(typeof(t)),4)
+  β = fill(zero(t),4)
   order = 4
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -458,10 +458,10 @@ end
   step::Int
 end
 
-function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),5)
-  c = fill(zero(typeof(t)), 5, 5)
-  g = fill(zero(typeof(t)), 5)
+function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  dts = fill(zero(dt),5)
+  c = fill(zero(t), 5, 5)
+  g = fill(zero(t), 5)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 5)
@@ -470,13 +470,13 @@ function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_nm1[i] = copy(rate_prototype)
     ϕstar_n[i] = copy(rate_prototype)
   end
-  β = fill(zero(typeof(t)),5)
+  β = fill(zero(t),5)
   order = 5
   rk4constcache = RK4ConstantCache()
   VCAB5ConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,rk4constcache,1)
 end
 
-function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   rk1 = zero(rate_prototype)
   rk2 = zero(rate_prototype)
   rk3 = zero(rate_prototype)
@@ -486,9 +486,9 @@ function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),5)
-  c = fill(zero(typeof(t)), 5, 5)
-  g = fill(zero(typeof(t)), 5)
+  dts = fill(zero(dt),5)
+  c = fill(zero(t), 5, 5)
+  g = fill(zero(t), 5)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 5)
@@ -497,7 +497,7 @@ function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_nm1[i] = zero(rate_prototype)
     ϕstar_n[i] = zero(rate_prototype)
   end
-  β = fill(zero(typeof(t)),5)
+  β = fill(zero(t),5)
   order = 5
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -543,10 +543,10 @@ end
   step::Int
 end
 
-function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),3)
-  c = fill(zero(typeof(t)), 4, 4)
-  g = fill(zero(typeof(t)), 4)
+function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  dts = fill(zero(dt),3)
+  c = fill(zero(t), 4, 4)
+  g = fill(zero(t), 4)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 3)
@@ -556,14 +556,14 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕstar_nm1[i] = copy(rate_prototype)
     ϕstar_n[i] = copy(rate_prototype)
   end
-  β = fill(zero(typeof(t)),3)
+  β = fill(zero(t),3)
   order = 3
-  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   VCABM3ConstantCache(dts,c,g,ϕ_n,ϕ_np1,ϕstar_nm1,ϕstar_n,β,order,tab,1)
 end
 
-function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = BS3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   bk1 = zero(rate_prototype)
   bk2 = zero(rate_prototype)
   bk3 = zero(rate_prototype)
@@ -574,9 +574,9 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),3)
-  c = fill(zero(typeof(t)), 4, 4)
-  g = fill(zero(typeof(t)), 4)
+  dts = fill(zero(dt),3)
+  c = fill(zero(t), 4, 4)
+  g = fill(zero(t), 4)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 3)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 3)
@@ -589,7 +589,7 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   for i in 1:4
     ϕ_np1[i] = zero(rate_prototype)
   end
-  β = fill(zero(typeof(t)),3)
+  β = fill(zero(t),3)
   order = 3
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -634,10 +634,10 @@ end
   step::Int
 end
 
-function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),4)
-  c = fill(zero(typeof(t)), 5, 5)
-  g = fill(zero(typeof(t)), 5)
+function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  dts = fill(zero(dt),4)
+  c = fill(zero(t), 5, 5)
+  g = fill(zero(t), 5)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 4)
@@ -647,13 +647,13 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕstar_nm1[i] = copy(rate_prototype)
     ϕstar_n[i] = copy(rate_prototype)
   end
-  β = fill(zero(typeof(t)),4)
+  β = fill(zero(t),4)
   order = 4
   rk4constcache = RK4ConstantCache()
   VCABM4ConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,rk4constcache,1)
 end
 
-function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   rk1 = zero(rate_prototype)
   rk2 = zero(rate_prototype)
   rk3 = zero(rate_prototype)
@@ -663,9 +663,9 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),4)
-  c = fill(zero(typeof(t)), 5, 5)
-  g = fill(zero(typeof(t)), 5)
+  dts = fill(zero(dt),4)
+  c = fill(zero(t), 5, 5)
+  g = fill(zero(t), 5)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 4)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 4)
@@ -678,7 +678,7 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   for i in 1:5
     ϕ_np1[i] = zero(rate_prototype)
   end
-  β = fill(zero(typeof(t)),4)
+  β = fill(zero(t),4)
   order = 4
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -723,10 +723,10 @@ end
   step::Int
 end
 
-function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),5)
-  c = fill(zero(typeof(t)), 6, 6)
-  g = fill(zero(typeof(t)), 6)
+function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  dts = fill(zero(t),5)
+  c = fill(zero(t), 6, 6)
+  g = fill(zero(t), 6)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 5)
@@ -736,13 +736,13 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕstar_nm1[i] = copy(rate_prototype)
     ϕstar_n[i] = copy(rate_prototype)
   end
-  β = fill(zero(typeof(t)),5)
+  β = fill(zero(t),5)
   order = 5
   rk4constcache = RK4ConstantCache()
   VCABM5ConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,rk4constcache,1)
 end
 
-function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   rk1 = zero(rate_prototype)
   rk2 = zero(rate_prototype)
   rk3 = zero(rate_prototype)
@@ -752,9 +752,9 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),5)
-  c = fill(zero(typeof(t)), 6, 6)
-  g = fill(zero(typeof(t)), 6)
+  dts = fill(zero(dt),5)
+  c = fill(zero(t), 6, 6)
+  g = fill(zero(t), 6)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 5)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 5)
@@ -767,7 +767,7 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   for i in 1:6
     ϕ_np1[i] = zero(rate_prototype)
   end
-  β = fill(zero(typeof(t)),5)
+  β = fill(zero(t),5)
   order = 5
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -822,10 +822,10 @@ end
   step::Int
 end
 
-function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),13)
-  c = fill(zero(typeof(t)), 13, 13)
-  g = fill(zero(typeof(t)), 13)
+function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  dts = fill(zero(dt),13)
+  c = fill(zero(t), 13, 13)
+  g = fill(zero(t), 13)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 13)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 13)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 13)
@@ -835,7 +835,7 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_nm1[i] = copy(rate_prototype)
     ϕstar_n[i] = copy(rate_prototype)
   end
-  β = fill(zero(typeof(t)),13)
+  β = fill(zero(t),13)
   ξ = zero(dt)
   ξ0 = zero(dt)
   order = 1
@@ -843,12 +843,12 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   VCABMConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,ξ,ξ0,order,max_order,1)
 end
 
-function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),13)
-  c = fill(zero(typeof(t)), 13, 13)
-  g = fill(zero(typeof(t)), 13)
+  dts = fill(zero(dt),13)
+  c = fill(zero(t), 13, 13)
+  g = fill(zero(t), 13)
   ϕ_n = Vector{typeof(rate_prototype)}(undef, 13)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(undef, 13)
   ϕstar_n = Vector{typeof(rate_prototype)}(undef, 13)
@@ -861,7 +861,7 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   for i in 1:14
     ϕ_np1[i] = zero(rate_prototype)
   end
-  β = fill(zero(typeof(t)), 13)
+  β = fill(zero(t), 13)
   order = 1
   max_order = 12
   atmp = similar(u,uEltypeNoUnits)
@@ -883,125 +883,97 @@ end
 
 # CNAB2
 
-@cache mutable struct CNAB2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct CNAB2ConstantCache{rateType,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
-  uf::F
-  nlsolve::N
+  nlsolver::N
   uprev3::uType
   tprev2::tType
 end
 
-@cache mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNAB2Cache{uType,rateType,N,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   fsalfirst::rateType
-  k::rateType
   k1::rateType
   k2::rateType
   du₁::rateType
-  du1::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   uprev3::uType
   tprev2::tType
 end
 
-function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  γ, c = 1//2, 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+
   k2 = rate_prototype
   uprev3 = u
   tprev2 = t
 
-  γ, c = 1//2, 1
-  @oopnlsolve
-  CNAB2ConstantCache(k2,uf,nlsolve,uprev3,tprev2)
+  CNAB2ConstantCache(k2,nlsolver,uprev3,tprev2)
 end
 
-function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits)
+function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  γ, c = 1//2, 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-
-  uprev3 = similar(u)
+  uprev3 = zero(u)
   tprev2 = t
 
-  γ, c = 1//2, 1
-  @iipnlsolve
-  CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
+  CNAB2Cache(u,uprev,uprev2,fsalfirst,k1,k2,du₁,nlsolver,uprev3,tprev2)
 end
 
 # CNLF2
 
-@cache mutable struct CNLF2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct CNLF2ConstantCache{rateType,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
-  uf::F
-  nlsolve::N
+  nlsolver::N
   uprev2::uType
   uprev3::uType
   tprev2::tType
 end
 
-@cache mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNLF2Cache{uType,rateType,N,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   fsalfirst::rateType
-  k::rateType
   k1::rateType
   k2::rateType
   du₁::rateType
-  du1::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   uprev3::uType
   tprev2::tType
 end
 
-function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  γ, c = 1//1, 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+
   k2 = rate_prototype
   uprev2 = u
   uprev3 = u
   tprev2 = t
 
-  γ, c = 1//1, 1
-  @oopnlsolve
-  CNLF2ConstantCache(k2,uf,nlsolve,uprev2,uprev3,tprev2)
+  CNLF2ConstantCache(k2,nlsolver,uprev2,uprev3,tprev2)
 end
 
-function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits)
+function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  γ, c = 1//1, 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-
-  uprev2 = similar(u)
-  uprev3 = similar(u)
+  uprev2 = zero(u)
+  uprev3 = zero(u)
   tprev2 = t
 
-  γ, c = 1//1, 1
-  @iipnlsolve
-  CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
+  CNLF2Cache(u,uprev,uprev2,fsalfirst,k1,k2,du₁,nlsolver,uprev3,tprev2)
 end

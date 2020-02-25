@@ -9,8 +9,8 @@
 end
 
 function alg_cache(alg::MidpointSplitting,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  W = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MidpointSplittingCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
 end
@@ -19,14 +19,14 @@ struct MidpointSplittingConstantCache <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::MidpointSplitting,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   MidpointSplittingConstantCache()
 end
 
 struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = LinearExponentialConstantCache()
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = LinearExponentialConstantCache()
 
 @cache struct LinearExponentialCache{uType,rateType,KsType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -37,7 +37,7 @@ alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
 end
 
 function alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
   rtmp = zero(rate_prototype)
   n = length(u)

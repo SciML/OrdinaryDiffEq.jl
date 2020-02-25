@@ -1,571 +1,407 @@
-DiffEqBase.@def iipnlcachefields begin
-  nlcache = alg.nlsolve.cache
-  @unpack κ,tol,max_iter,min_iter,new_W = nlcache
-  z = similar(u)
-  dz = similar(u); tmp = similar(u); b = similar(u)
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  nf = f isa SplitFunction && alg isa SplitAlgorithms ? f.f1 : f
-  islin = (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
-  # check if `nf` is linear
-  if islin && alg.nlsolve isa NLNewton
-    # get the operator
-    J = nf.f
-    W = WOperator(f.mass_matrix, dt, J, true)
-    du1 = rate_prototype
-    uf = nothing
-    jac_config = nothing
-    linsolve = alg.linsolve(Val{:init},nf,u)
-    z₊ = z
-    zs = nothing
-    gs = nothing
-  elseif alg.nlsolve isa NLNewton
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
-      W = WOperator(f, dt, true)
-      J = nothing # is J = W.J better?
-    else
-      J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-      W = similar(J)
-    end
-    du1 = zero(rate_prototype)
-    # if the algorithm specializes on split problems the use `nf`
-    uf = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
-    jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
-    linsolve = alg.linsolve(Val{:init},uf,u)
-    z₊ = z
-    zs = nothing
-    gs = nothing
-  elseif typeof(alg.nlsolve) <: NLFunctional
-    J = nothing
-    W = nothing
-    du1 = rate_prototype
-    uf = nothing
-    jac_config = nothing
-    linsolve = nothing
-    z₊ = similar(z)
-    zs = nothing
-    gs = nothing
-  elseif typeof(alg.nlsolve) <: NLAnderson
-    J = nothing
-    W = nothing
-    du1 = rate_prototype
-    uf = nothing
-    jac_config = nothing
-    linsolve = nothing
-    z₊ = similar(z)
-    zs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
-    gs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
-  end
-
-  if κ !== nothing
-    κ = uToltype(nlcache.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if tol !== nothing
-    tol = uToltype(nlcache.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-end
-DiffEqBase.@def oopnlcachefields begin
-  nlcache = alg.nlsolve.cache
-  @unpack κ,tol,max_iter,min_iter,new_W = nlcache
-  z = uprev
-  nf = f isa SplitFunction && alg isa SplitAlgorithms ? f.f1 : f
-  if alg.nlsolve isa NLNewton
-    # only use `nf` if the algorithm specializes on split eqs
-    uf = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
-  else
-    uf = nothing
-  end
-  islin = (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
-  if (islin || DiffEqBase.has_jac(f)) && typeof(alg.nlsolve) <: NLNewton
-    # get the operator
-    J = islin ? nf.f : f.jac(uprev, p, t)
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
-    end
-    W = WOperator(f.mass_matrix, dt, J, false)
-  else
-    W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
-  end
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if κ !== nothing
-    κ = uToltype(nlcache.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if tol !== nothing
-    tol = uToltype(nlcache.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-  if typeof(alg.nlsolve) <: NLAnderson
-    if typeof(z) <: AbstractArray
-      zs = [vec(z) for i in 1:alg.nlsolve.n+1]
-      gs = [vec(z) for i in 1:alg.nlsolve.n+1]
-    else
-      zs = [z for i in 1:alg.nlsolve.n+1]
-      gs = [z for i in 1:alg.nlsolve.n+1]
-    end
-  else
-    zs = nothing
-    gs = nothing
-  end
-  z₊,dz,tmp,b,k = z,z,z,z,rate_prototype
-end
-
-DiffEqBase.@def iipnlsolve begin
-  _nlsolve = typeof(alg.nlsolve).name.wrapper
-  nlcache = NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,γ,c,ηold,z₊,dz,tmp,b,k,zs,gs)
-  nlsolve = _nlsolve{true, typeof(nlcache)}(nlcache)
-end
-DiffEqBase.@def oopnlsolve begin
-  _nlsolve = typeof(alg.nlsolve).name.wrapper
-  nlcache = NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,γ,c,ηold,z₊,dz,tmp,b,k,zs,gs)
-  nlsolve = _nlsolve{false, typeof(nlcache)}(nlcache)
-end
-
 abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
 
-@cache mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
+@cache mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   uprev2::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  γ, c = 1, 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
   atmp = similar(u,uEltypeNoUnits)
-  γ, c = 1, 1
-  @iipnlsolve
-  ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
+
+  ImplicitEulerCache(u,uprev,uprev2,fsalfirst,atmp,nlsolver)
 end
 
-mutable struct ImplicitEulerConstantCache{F,N} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1, 1
-  @oopnlsolve
-  ImplicitEulerConstantCache(uf,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  ImplicitEulerConstantCache(nlsolver)
 end
 
-mutable struct ImplicitMidpointConstantCache{F,N} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+mutable struct ImplicitMidpointConstantCache{N} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
 end
 
-function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1//2, 1//2
-  @oopnlsolve
-  ImplicitMidpointConstantCache(uf,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  ImplicitMidpointConstantCache(nlsolver)
 end
 
-@cache mutable struct ImplicitMidpointCache{uType,rateType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
+@cache mutable struct ImplicitMidpointCache{uType,rateType,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
 end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1//2, 1//2
-  @iipnlsolve
-  ImplicitMidpointCache(u,uprev,du1,fsalfirst,k,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+  ImplicitMidpointCache(u,uprev,fsalfirst,nlsolver)
 end
 
-mutable struct TrapezoidConstantCache{F,uType,tType,N} <: OrdinaryDiffEqConstantCache
-  uf::F
+mutable struct TrapezoidConstantCache{uType,tType,N} <: OrdinaryDiffEqConstantCache
   uprev3::uType
   tprev2::tType
-  nlsolve::N
+  nlsolver::N
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  γ, c = 1//2, 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+
   uprev3 = u
   tprev2 = t
-  γ, c = 1//2, 1
-  @oopnlsolve
-  TrapezoidConstantCache(uf,uprev3,tprev2,nlsolve)
+
+  TrapezoidConstantCache(uprev3,tprev2,nlsolver)
 end
 
-@cache mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,tType,F,N} <: SDIRKMutableCache
+@cache mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,tType,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   uprev2::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
   uprev3::uType
   tprev2::tType
-  nlsolve::N
+  nlsolver::N
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits)
-  uprev3 = similar(u)
-  tprev2 = t
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1//2, 1
-  @iipnlsolve
-  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,uprev3,tprev2,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  uprev3 = zero(u)
+  tprev2 = t
+  atmp = similar(u,uEltypeNoUnits)
+
+  TrapezoidCache(u,uprev,uprev2,fsalfirst,atmp,uprev3,tprev2,nlsolver)
 end
 
-mutable struct TRBDF2ConstantCache{F,Tab,N} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+mutable struct TRBDF2ConstantCache{Tab,N} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = TRBDF2Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.d, tab.γ
-  @oopnlsolve
-  TRBDF2ConstantCache(uf,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  TRBDF2ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,Tab,F,N} <: SDIRKMutableCache
+@cache mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,Tab,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   zprev::uType
   zᵧ::uType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits); zprev = similar(u);
-  zᵧ = similar(u)
-  tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = TRBDF2Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.d, tab.γ
-  @iipnlsolve
-  TRBDF2Cache(u,uprev,du1,fsalfirst,k,zprev,zᵧ,z,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  atmp = similar(u,uEltypeNoUnits); zprev = similar(u); zᵧ = similar(u)
+
+  TRBDF2Cache(u,uprev,fsalfirst,zprev,zᵧ,atmp,nlsolver,tab)
 end
 
-mutable struct SDIRK2ConstantCache{F,N} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+mutable struct SDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
 end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1, 1
-  @oopnlsolve
-  SDIRK2ConstantCache(uf,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  SDIRK2ConstantCache(nlsolver)
 end
 
-@cache mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
+@cache mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
 end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = z;
-  atmp = similar(u,uEltypeNoUnits)
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1, 1
-  @iipnlsolve
-  SDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  SDIRK2Cache(u,uprev,fsalfirst,z₁,z₂,atmp,nlsolver)
 end
 
-mutable struct SSPSDIRK2ConstantCache{F,N} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+struct SDIRK22ConstantCache{uType,tType,N,Tab} <: OrdinaryDiffEqConstantCache
+  uprev3::uType
+  tprev2::tType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
+  uprev3 = u
+  tprev2 = t
+  γ, c = 1, 1
+
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+
+  SDIRK22ConstantCache(uprev3,tprev2,nlsolver)
+end
+
+@cache mutable struct SDIRK22Cache{uType,rateType,uNoUnitsType,tType,N,Tab} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  fsalfirst::rateType
+  atmp::uNoUnitsType
+  uprev3::uType
+  tprev2::tType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
+  γ, c = 1, 1
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  uprev3 = zero(u)
+  tprev2 = t
+  atmp = similar(u,uEltypeNoUnits)
+
+  SDIRK22(u,uprev,uprev2,fsalfirst,atmp,uprev3,tprev2,nlsolver,tab)
+end
+
+mutable struct SSPSDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
 end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1//4, 1//1
-  @oopnlsolve
-  SSPSDIRK2ConstantCache(uf,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  SSPSDIRK2ConstantCache(nlsolver)
 end
 
-@cache mutable struct SSPSDIRK2Cache{uType,rateType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
+@cache mutable struct SSPSDIRK2Cache{uType,rateType,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
 end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = z;
-  atmp = similar(u,uEltypeNoUnits)
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1//4, 1//1
-  @iipnlsolve
-  SSPSDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,J,
-                W,uf,jac_config,linsolve,nlsolve)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  SSPSDIRK2Cache(u,uprev,fsalfirst,z₁,z₂,nlsolver)
 end
 
-mutable struct Kvaerno3ConstantCache{UF,Tab,N} <: OrdinaryDiffEqConstantCache
-  uf::UF
-  nlsolve::N
+mutable struct Kvaerno3ConstantCache{Tab,N} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = Kvaerno3Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, 2tab.γ
-  @oopnlsolve
-  Kvaerno3ConstantCache(uf,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  Kvaerno3ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,Tab,F,N} <: SDIRKMutableCache
+@cache mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,Tab,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
   z₄::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = z;
-  atmp = similar(u,uEltypeNoUnits)
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, 2tab.γ
-  @iipnlsolve
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
 
-  Kvaerno3Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz,b,tmp,atmp,J,
-                W,uf,jac_config,linsolve,nlsolve,tab)
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  Kvaerno3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,atmp,nlsolver,tab)
 end
 
-mutable struct Cash4ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+mutable struct Cash4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = Cash4Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = Cash4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
-  @oopnlsolve
-  Cash4ConstantCache(uf,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  Cash4ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct Cash4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F} <: SDIRKMutableCache
+@cache mutable struct Cash4Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
   z₄::uType
   z₅::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = z
-  atmp = similar(u,uEltypeNoUnits)
-  tab = Cash4Tableau(uToltype,real(tTypeNoUnits))
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = Cash4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
-  @iipnlsolve
-  Cash4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  Cash4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
 
-mutable struct Hairer4ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolve::N
+mutable struct Hairer4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  if typeof(alg) <: Hairer4
-    tab = Hairer4Tableau(uToltype,real(tTypeNoUnits))
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  if alg isa Hairer4
+    tab = Hairer4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   else
-    tab = Hairer42Tableau(uToltype,real(tTypeNoUnits))
+    tab = Hairer42Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   end
   γ, c = tab.γ, tab.γ
-  @oopnlsolve
-
-  Hairer4ConstantCache(uf,nlsolve,tab)
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  Hairer4ConstantCache(nlsolver,tab)
 end
 
-@cache mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,Tab,F,N} <: SDIRKMutableCache
+@cache mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,Tab,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
   z₄::uType
   z₅::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
+  nlsolver::N
   tab::Tab
 end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = z
-  dz = similar(u)
-  atmp = similar(u,uEltypeNoUnits)
-
-  if typeof(alg) <: Hairer4
-    tab = Hairer4Tableau(uToltype,real(tTypeNoUnits))
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  if alg isa Hairer4
+    tab = Hairer4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   else # Hairer42
-    tab = Hairer42Tableau(uToltype,real(tTypeNoUnits))
+    tab = Hairer42Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   end
   γ, c = tab.γ, tab.γ
-  @iipnlsolve
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
 
-  Hairer4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
-               W,uf,jac_config,linsolve,nlsolve,tab)
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  Hairer4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
+end
+
+@cache mutable struct ESDIRK54I8L2SACache{uType,rateType,uNoUnitsType,Tab,N} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType; z₂::uType; z₃::uType; z₄::uType; z₅::uType; z₆::uType; z₇::uType; z₈::uType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
+  z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  ESDIRK54I8L2SACache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver,tab)
+end
+
+mutable struct ESDIRK54I8L2SAConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  ESDIRK54I8L2SAConstantCache(nlsolver,tab)
 end

@@ -1,6 +1,5 @@
 mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
-  timeseries_steps::Int
   save_everystep::Bool
   adaptive::Bool
   abstol::absType
@@ -49,11 +48,11 @@ end
 """
     ODEIntegrator
 Fundamental `struct` allowing interactively stepping through the numerical solving of a differential equation.
-The full documentation is hosted here: [http://docs.juliadiffeq.org/latest/basics/integrator.html](http://docs.juliadiffeq.org/latest/basics/integrator.html). This docstring
+The full documentation is hosted here: [http://docs.juliadiffeq.org/dev/basics/integrator.html](http://docs.juliadiffeq.org/dev/basics/integrator.html). This docstring
 describes basic functionality only!
 
 Initialize using `integrator = init(prob::ODEProblem, alg; kwargs...)`. The keyword args which are accepted are the same
-[Common Solver Options](http://docs.juliadiffeq.org/latest/basics/common_solver_opts.html#Common-Solver-Options-1)
+[Common Solver Options](http://docs.juliadiffeq.org/dev/basics/common_solver_opts.html#Common-Solver-Options-1)
 used by `solve`.
 
 
@@ -75,7 +74,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType} <: DiffEqBase.AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},IIP,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType,CallbackCacheType} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
   sol::SolType
   u::uType
   k::ksEltype
@@ -102,40 +101,43 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   saveiter::Int
   saveiter_dense::Int
   cache::CacheType
+  callback_cache::CallbackCacheType
   kshortsize::Int
   force_stepfail::Bool
   last_stepfail::Bool
   just_hit_tstop::Bool
   event_last_time::Int
+  vector_event_last_time::Int
   last_event_error::EventErrorType
   accept_step::Bool
   isout::Bool
   reeval_fsal::Bool
   u_modified::Bool
   opts::O
+  destats::DiffEqBase.DEStats
   fsalfirst::FSALType
   fsallast::FSALType
 
-  function ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,CacheType,O,FSALType,EventErrorType}(
+  function ODEIntegrator{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                F,CacheType,O,FSALType,EventErrorType,CallbackCacheType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,cache,
+      iter,saveiter,saveiter_dense,cache,callback_cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,last_event_error,
-      accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                                     F,CacheType,O,FSALType,EventErrorType}
+      event_last_time,vector_event_last_time,last_event_error,
+      accept_step,isout,reeval_fsal,u_modified,opts,destats) where {algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                                     F,CacheType,O,FSALType,EventErrorType,CallbackCacheType}
 
-      new{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  F,CacheType,O,FSALType,EventErrorType}(
+      new{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                  F,CacheType,O,FSALType,EventErrorType,CallbackCacheType}(
                   sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,cache,
+      iter,saveiter,saveiter_dense,cache,callback_cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,last_event_error,
-      accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
+      event_last_time,vector_event_last_time,last_event_error,
+      accept_step,isout,reeval_fsal,u_modified,opts,destats) # Leave off fsalfirst and last
   end
 end
 
