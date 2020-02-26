@@ -403,6 +403,11 @@ struct FRK65{T} <: OrdinaryDiffEqAdaptiveAlgorithm
   FRK65(omega=0.0) = new{typeof(omega)}(omega)
 end
 
+struct PFRK87{T} <: OrdinaryDiffEqAdaptiveAlgorithm
+  omega::T
+  PFRK87(omega=0.0) = new{typeof(omega)}(omega)
+end
+
 
 ################################################################################
 
