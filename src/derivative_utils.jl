@@ -538,23 +538,16 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     elseif IIP
       similar(J)
     else
-      W = if u isa StaticArray
-      lu(J)
+      if u isa StaticArray
+        lu(J)
       elseif u isa Number
         u
+      elseif f.jac_prototype===nothing
+        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                 Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                 zero(LinearAlgebra.BlasInt))
       else
-        # TODO: make this more general, maybe by running calc_W and use its returned value
-        if f.jac_prototype isa SparseMatrixCSC
-          SuiteSparse.UMFPACK.UmfpackLU(Ptr{Cvoid}(), Ptr{Cvoid}(), 1, 1,
-                                        f.jac_prototype.colptr[1:1],
-                                        f.jac_prototype.rowval[1:1],
-                                        f.jac_prototype.nzval[1:1],
-                                        0)
-        else
-          LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
-                                                   Vector{LinearAlgebra.BlasInt}(undef, 0),
-                                                   zero(LinearAlgebra.BlasInt))
-        end
+        ArrayInterface.lu_instance(f.jac_prototype)
       end
     end # end W
   end
