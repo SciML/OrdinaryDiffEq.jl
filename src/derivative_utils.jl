@@ -543,9 +543,18 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
       elseif u isa Number
         u
       else
-        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
-                                                     Vector{LinearAlgebra.BlasInt}(undef, 0),
-                                                     zero(LinearAlgebra.BlasInt))
+        # TODO: make this more general, maybe by running calc_W and use its returned value
+        if f.jac_prototype isa SparseMatrixCSC
+          SuiteSparse.UMFPACK.UmfpackLU(Ptr{Cvoid}(), Ptr{Cvoid}(), 1, 1,
+                                        f.jac_prototype.colptr[1:1],
+                                        f.jac_prototype.rowval[1:1],
+                                        f.jac_prototype.nzval[1:1],
+                                        0)
+        else
+          LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                   Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                   zero(LinearAlgebra.BlasInt))
+        end
       end
     end # end W
   end

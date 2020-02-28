@@ -5,7 +5,7 @@ module OrdinaryDiffEq
 
   using Logging
 
-  using MuladdMacro, SparseArrays
+  using MuladdMacro, SparseArrays, SuiteSparse
 
   using LinearAlgebra
 

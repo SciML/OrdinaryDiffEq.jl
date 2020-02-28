@@ -41,7 +41,7 @@ function jacobian_autodiff(f, x::AbstractArray, odefun)
   if DiffEqBase.has_colorvec(odefun)
     colorvec = odefun.colorvec
     sparsity = odefun.jac_prototype
-    jac_prototype = nothing
+    jac_prototype = odefun.jac_prototype
   else
     colorvec = 1:length(x)
     sparsity = nothing
@@ -71,7 +71,6 @@ jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
 jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype) =
     (FiniteDiff.finite_difference_jacobian(f, x, diff_type, eltype(x), diff_type==Val{:forward} ? f(x) : similar(x),
       dir = dir, colorvec = colorvec, sparsity = sparsity, jac_prototype = jac_prototype),_nfcount(maximum(colorvec),diff_type))
-
 function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
     local tmp
