@@ -48,40 +48,51 @@ colors = repeat(1:3,10)[1:10]
 u0=[1.,2.,3,4,5,5,4,3,2,1]
 tspan=(0.,10.)
 
-for f in [f_ip, f_oop]
+for f in [f_oop, f_ip]
   odefun_std = ODEFunction(f)
   prob_std = ODEProblem(odefun_std,u0,tspan)
 
   for ad in [true, false]
-    for Solver in [Rodas5, Trapezoid] # TODO: add solvers from yet other families?
+    for Solver in [Rodas5, Trapezoid, KenCarp4]
       for tol in [nothing, 1e-10]
-        @show f,ad,Solver,tol
+        # @show f,ad,Solver,tol
         sol_std=solve(prob_std,Solver(autodiff=ad),reltol=tol,abstol=tol)
         @test sol_std.retcode==:Success
         for (i,prob) in enumerate(map(f->ODEProblem(f,u0,tspan),
                         [ODEFunction(f,colorvec=colors,jac_prototype=jac_sp),
                          ODEFunction(f,jac_prototype=jac_sp),
-                         #ODEFunction(f,colorvec=colors) # this one fails both the u[end] and length tests
+                         ODEFunction(f,colorvec=colors)
                          ]))
-          @show i
-          # TODO: not sure why these test with Trapezoid fail
-          if i==2 && f===f_oop && ad==true && Solver==Trapezoid
-            @show "skipping"
-            continue
-          end
-          if i==1 && f===f_oop && ad==false && Solver==Trapezoid
-            @show "skipping"
-            continue
-          end
-
+          isbroken = i==3 && (
+            (f, ad, tol) == (f_oop, true, nothing) ||
+            (f, ad, Solver, tol) == (f_oop, false, Trapezoid, nothing) ||
+            (f, Solver, tol) == (f_ip, Trapezoid, nothing) ||
+            (f, Solver) == (f_oop, Rodas5) ||
+            (f, Solver) == (f_ip, Rodas5) ||
+            (f, Solver) == (f_oop, KenCarp4) ||
+            (f, Solver) == (f_ip, KenCarp4)
+          )
+          # @show i
           sol=solve(prob,Solver(autodiff=ad),reltol=tol,abstol=tol)
           @test sol.retcode==:Success
           if tol !=nothing
-            @test sol_std.u[end]≈sol.u[end] atol=tol
+            if isbroken
+              @test_broken sol_std.u[end]≈sol.u[end] atol=tol
+            else
+              @test sol_std.u[end]≈sol.u[end] atol=tol
+            end
           else
-            @test sol_std.u[end]≈sol.u[end]
+            if isbroken
+              @test_broken sol_std.u[end]≈sol.u[end]
+            else
+              @test sol_std.u[end]≈sol.u[end]
+            end
           end
-          @test length(sol_std.t)==length(sol.t)
+          if isbroken
+            @test_broken length(sol_std.t)==length(sol.t)
+          else
+            @test length(sol_std.t)==length(sol.t)
+          end
         end
       end
     end

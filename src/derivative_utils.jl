@@ -531,7 +531,11 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     end
     W = WOperator(f.mass_matrix, dt, J, IIP)
   else
-    J = false .* _vec(u) .* _vec(u)'
+    J = if f.jac_prototype === nothing
+      false .* _vec(u) .* _vec(u)'
+    else
+      deepcopy(f.jac_prototype)
+    end
     isdae = alg isa DAEAlgorithm
     W = if isdae
       J
