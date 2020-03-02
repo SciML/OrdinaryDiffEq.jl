@@ -115,7 +115,7 @@ function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK53ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-struct LDDRK54ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct SHLDDRK54ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α2::T
   α3::T
   α4::T
@@ -130,7 +130,7 @@ struct LDDRK54ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c4::T2
   c5::T2
 
-  function LDDRK54ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  function SHLDDRK54ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
     α2 = T(-0.6913065)
     α3 = T(-2.655155)
     α4 = T(-0.8147688)
@@ -148,7 +148,7 @@ struct LDDRK54ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   end
 end
 
-alg_cache(alg::LDDRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = LDDRK54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::SHLDDRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = SHLDDRK54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 
 @cache struct SSPRK53_2N1Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache

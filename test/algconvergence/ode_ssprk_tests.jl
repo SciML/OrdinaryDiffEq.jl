@@ -77,8 +77,8 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
-println("LDDRK54")
-alg = LDDRK54()
+println("SHLDDRK54")
+alg = SHLDDRK54()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
