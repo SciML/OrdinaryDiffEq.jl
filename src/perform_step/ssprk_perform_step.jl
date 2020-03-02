@@ -89,6 +89,45 @@ end
   integrator.u = u
 end
 
+function initialize!(integrator,cache::SHLDDRK54Cache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::SHLDDRK54Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,fsalfirst,tmp = cache
+  @unpack α2,α3,α4,α5,β1,β2,β3,β4,β5,c2,c3,c4,c5 = cache.tab
+
+  # u1
+  @. tmp = dt*fsalfirst
+  @. u   = uprev + β1*tmp
+  # u2
+  f( k,  u, p, t+c2*dt)
+  @. tmp = α2*tmp + dt*k
+  @. u   = u + β2*tmp
+  # u3
+  f( k,  u, p, t+c3*dt)
+  @. tmp = α3*tmp + dt*k
+  @. u   = u + β3*tmp
+  # u4
+  f( k,  u, p, t+c4*dt)
+  @. tmp = α4*tmp + dt*k
+  @. u   = u + β4*tmp
+  # u5 = u
+  f( k,  u, p, t+c5*dt)
+  @. tmp = α5*tmp + dt*k
+  @. u   = u + β5*tmp
+
+  f( k,  u, p, t+dt)
+end
+
 function initialize!(integrator,cache::SSPRK33ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
