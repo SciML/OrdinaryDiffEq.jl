@@ -52,13 +52,15 @@ end
 end
 
 function initialize!(integrator,cache::SHLDDRK54ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 1
+  integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator,cache::SHLDDRK54ConstantCache,repeat_step=false)
@@ -83,6 +85,7 @@ end
 
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
 
