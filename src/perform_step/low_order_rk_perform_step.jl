@@ -1181,7 +1181,7 @@ end
   integrator.u = u
 end
   
-function initialize!(integrator,cache::RKMCache, f=integrator.f)
+function initialize!(integrator,cache::RKMCache)
   @unpack k,fsalfirst = cache
   integrator.kshortsize = 6
   resize!(integrator.k, integrator.kshortsize)
@@ -1193,14 +1193,14 @@ function initialize!(integrator,cache::RKMCache, f=integrator.f)
 
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
 
-  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
   integrator.destats.nf += 1
 end
   
 @muladd function perform_step!(integrator,cache::RKMCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,fsalfirst,k1,k2,k3,k4,k5,k6 = cache
+  @unpack tmp,fsalfirst,k,k1,k2,k3,k4,k5,k6 = cache
   @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β6,c2,c3,c4,c5,c6 = cache.tab
 
   @.. tmp = uprev+α2*dt*k1
@@ -1215,4 +1215,5 @@ end
   f(k6, tmp, p, t+c6*dt)
   @.. u = uprev+dt*(β1*k1+β2*k2+β3*k3+β4*k4+β6*k6)
   integrator.destats.nf += 5
+  return nothing
 end
