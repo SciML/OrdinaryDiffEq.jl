@@ -320,6 +320,11 @@ struct SSPRK53_2N2{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   step_limiter!::StepLimiter
 end
 SSPRK53_2N2(stage_limiter! = trivial_limiter!) = SSPRK53_2N2(stage_limiter!, trivial_limiter!)
+struct SSPRK53_H{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRK53_H(stage_limiter! = trivial_limiter!) = SSPRK53_H(stage_limiter!, trivial_limiter!)
 struct SSPRK63{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
