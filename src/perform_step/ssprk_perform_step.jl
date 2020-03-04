@@ -357,19 +357,19 @@ end
   @unpack α30,α32,α40,α41,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache
   #stores in u for all intermediate stages
   # u1
-  u1 = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u1, p, t+c1*dt)
+  temp = uprev + β10 * dt * integrator.fsalfirst
+  k = f(temp, p, t+c1*dt)
   # u2
-  u2 = u1 + β21 * dt * k
-  k = f(u2, p, t+c2*dt)
+  u = temp + β21 * dt * k
+  k = f(u, p, t+c2*dt)
   # u3
-  u3 = α30 * uprev + α32 * u2 + β32 * dt * k
-  k = f(u3, p, t+c3*dt)
+  u = α30 * uprev + α32 * u + β32 * dt * k
+  k = f(u, p, t+c3*dt)
   # u4
-  u4 = α40 * uprev + α41 * u1 + α43 * u3 + β43 * dt * k
-  k = f(u4, p, t+c4*dt)
+  u = α40 * uprev + α41 * temp + α43 * u + β43 * dt * k
+  k = f(u, p, t+c4*dt)
   # u
-  u =  u4 + β54 * dt * k
+  u =  u + β54 * dt * k
 
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.destats.nf += 5
@@ -393,23 +393,23 @@ end
   @unpack α30,α32,α40,α41,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache.tab
   #stores in u for all intermediate stages
   # u1
-  @. u1 = uprev + β10 * dt * fsalfirst
-  stage_limiter!(u1, f, t+c1*dt)
-  f( k,  u1, p, t+c1*dt)
+  @. temp = uprev + β10 * dt * fsalfirst
+  stage_limiter!(temp, f, t+c1*dt)
+  f( k,  temp, p, t+c1*dt)
   # u2
-  @. u2 = u1 + β21 * dt * k
-  stage_limiter!(u2, f, t+c2*dt)
-  f( k,  u2, p, t+c2*dt)
+  @. u = temp + β21 * dt * k
+  stage_limiter!(u, f, t+c2*dt)
+  f( k,  u, p, t+c2*dt)
   # u3
-  @. u3 = α30 * uprev + α32 * u2 + β32 * dt * k
-  stage_limiter!(u3, f, t+c3*dt)
-  f( k,  u3, p, t+c3*dt)
+  @. u = α30 * uprev + α32 * u + β32 * dt * k
+  stage_limiter!(u, f, t+c3*dt)
+  f( k,  u, p, t+c3*dt)
   # u4
-  @. u4 = α40 * uprev + α41 * u1 + α43 * u3 + β43 * dt * k
-  stage_limiter!(u4, f, t+c4*dt)
-  f( k,  u4, p, t+c4*dt)
+  @. u = α40 * uprev + α41 * temp + α43 * u + β43 * dt * k
+  stage_limiter!(u, f, t+c4*dt)
+  f( k,  u, p, t+c4*dt)
   # u
-  @.u = u4 + β54 * dt * k
+  @.u = u + β54 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 5
