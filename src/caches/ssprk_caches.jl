@@ -263,7 +263,7 @@ struct SSPRK53_HConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c3::T2
   c4::T2
 
-  function SSPRK53_HConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  function SSPRK53_HConstantCache(T,T2)
 
 
     α30 = T(0.308684154602513)
@@ -288,7 +288,11 @@ end
 function alg_cache(alg::SSPRK53_H,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = SSPRK53_HConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   SSPRK53_HCache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
