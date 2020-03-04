@@ -199,6 +199,11 @@ end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
 @test all(sol.u .>= 0)
+# test storage
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 #reverting back to original dts
