@@ -72,7 +72,6 @@ for f in [f_oop, f_ip]
             (f, Solver) == (f_oop, KenCarp4) ||
             (f, Solver) == (f_ip, KenCarp4)
           )
-          # @show i
           sol=solve(prob,Solver(autodiff=ad),reltol=tol,abstol=tol)
           @test sol.retcode==:Success
           if tol !=nothing
