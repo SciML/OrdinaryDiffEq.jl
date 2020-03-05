@@ -55,7 +55,6 @@ for f in [f_oop, f_ip]
   for ad in [true, false]
     for Solver in [Rodas5, Trapezoid, KenCarp4]
       for tol in [nothing, 1e-10]
-        # @show f,ad,Solver,tol
         sol_std=solve(prob_std,Solver(autodiff=ad),reltol=tol,abstol=tol)
         @test sol_std.retcode==:Success
         for (i,prob) in enumerate(map(f->ODEProblem(f,u0,tspan),
@@ -63,6 +62,8 @@ for f in [f_oop, f_ip]
                          ODEFunction(f,jac_prototype=jac_sp),
                          ODEFunction(f,colorvec=colors)
                          ]))
+          # TODO: these broken test-cases need to be investigated.
+          #       Note they only happen for prob=ODEFunction(f,colorvec=colors).
           isbroken = i==3 && (
             (f, ad, tol) == (f_oop, true, nothing) ||
             (f, ad, Solver, tol) == (f_oop, false, Trapezoid, nothing) ||

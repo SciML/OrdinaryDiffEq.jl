@@ -542,18 +542,8 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     elseif IIP
       similar(J)
     else
-      if u isa StaticArray
-        lu(J)
-      elseif u isa Number
-        u
-      elseif f.jac_prototype===nothing
-        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
-                                                 Vector{LinearAlgebra.BlasInt}(undef, 0),
-                                                 zero(LinearAlgebra.BlasInt))
-      else
-        ArrayInterface.lu_instance(f.jac_prototype)
-      end
-    end # end W
+      ArrayInterface.lu_instance(J)
+    end
   end
   return J, W
 end
