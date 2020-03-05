@@ -51,21 +51,21 @@ function calc_J(integrator, cache)
     if DiffEqBase.has_jac(f)
       J = f.jac(duprev, uprev, p, t)
     else
-      @unpack uf = cache
+      @unpack uf, jac_config = cache
       x = zero(uprev)
-      J = jacobian(uf, x, integrator)
+      J = jacobian(uf, x, integrator, jac_config)
     end
   else
     if DiffEqBase.has_jac(f)
       J = f.jac(uprev, p, t)
     else
-      @unpack uf = cache
+      @unpack uf, jac_config = cache
 
       uf.f = nlsolve_f(f, alg)
       uf.p = p
       uf.t = t
 
-      J = jacobian(uf, uprev, integrator)
+      J = jacobian(uf, uprev, integrator, jac_config)
     end
 
     integrator.destats.njacs += 1
