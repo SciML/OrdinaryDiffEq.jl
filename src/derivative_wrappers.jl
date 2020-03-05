@@ -38,15 +38,9 @@ end
 
 jacobian_autodiff(f, x, odefun) = (ForwardDiff.derivative(f,x),1)
 function jacobian_autodiff(f, x::AbstractArray, odefun)
-  if DiffEqBase.has_colorvec(odefun)
-    colorvec = odefun.colorvec
-    sparsity = odefun.jac_prototype
-    jac_prototype = nothing
-  else
-    colorvec = 1:length(x)
-    sparsity = nothing
-    jac_prototype = odefun.jac_prototype
-  end
+  colorvec = DiffEqBase.has_colorvec(odefun) ? odefun.colorvec : 1:length(x)
+  sparsity = odefun.sparsity
+  jac_prototype = odefun.jac_prototype
   maxcolor = maximum(colorvec)
   chunksize = getsize(default_chunk_size(maxcolor))
   num_of_chunks = Int(ceil(maxcolor / chunksize))
@@ -71,22 +65,15 @@ jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
 jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype) =
     (FiniteDiff.finite_difference_jacobian(f, x, diff_type, eltype(x), diff_type==Val{:forward} ? f(x) : similar(x),
       dir = dir, colorvec = colorvec, sparsity = sparsity, jac_prototype = jac_prototype),_nfcount(maximum(colorvec),diff_type))
-
 function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
     local tmp
     if alg_autodiff(alg)
       J, tmp = jacobian_autodiff(f, x, integrator.f)
     else
-      if DiffEqBase.has_colorvec(integrator.f)
-        colorvec = integrator.f.colorvec
-        sparsity = integrator.f.jac_prototype
-        jac_prototype = nothing
-      else
-        colorvec = 1:length(x)
-        sparsity = nothing
-        jac_prototype = integrator.f.jac_prototype
-      end
+      colorvec = DiffEqBase.has_colorvec(integrator.f) ? integrator.f.colorvec : 1:length(x)
+      sparsity = integrator.f.sparsity
+      jac_prototype = integrator.f.jac_prototype
       dir = diffdir(integrator)
       J, tmp = jacobian_finitediff(f, x, alg.diff_type, dir, colorvec, sparsity, jac_prototype)
     end
@@ -96,10 +83,10 @@ end
 
 jacobian_finitediff_forward!(J,f,x,jac_config,forwardcache,integrator,colorvec)=
   (FiniteDiff.finite_difference_jacobian!(J,f,x,jac_config,forwardcache,
-    dir=diffdir(integrator),colorvec=colorvec,sparsity=integrator.f.jac_prototype);maximum(colorvec))
+    dir=diffdir(integrator),colorvec=colorvec,sparsity=integrator.f.sparsity);maximum(colorvec))
 jacobian_finitediff!(J,f,x,jac_config,integrator,colorvec)=
   (FiniteDiff.finite_difference_jacobian!(J,f,x,jac_config,
-    dir=diffdir(integrator),colorvec=colorvec,sparsity=integrator.f.jac_prototype);2*maximum(colorvec))
+    dir=diffdir(integrator),colorvec=colorvec,sparsity=integrator.f.sparsity);2*maximum(colorvec))
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
     alg = unwrap_alg(integrator, true)
@@ -125,13 +112,9 @@ end
 function DiffEqBase.build_jac_config(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},f,uf,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where transform
   if !DiffEqBase.has_jac(f) && ((!transform && !DiffEqBase.has_Wfact(f)) || (transform && !DiffEqBase.has_Wfact_t(f)))
     if alg_autodiff(alg)
-      if DiffEqBase.has_colorvec(f)
-        colorvec = f.colorvec
-        sparsity = f.jac_prototype
-      else
-        colorvec = 1:length(uprev)
-        sparsity = nothing
-      end
+      colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec : 1:length(uprev)
+      sparsity = f.sparsity
+      jac_prototype = f.jac_prototype
       jac_config = ForwardColorJacCache(uf,uprev,colorvec=colorvec,sparsity=sparsity)
     else
       if alg.diff_type != Val{:complex}
