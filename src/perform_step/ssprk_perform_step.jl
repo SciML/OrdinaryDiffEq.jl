@@ -357,16 +357,16 @@ end
   @unpack α30,α32,α40,α41,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache
   #stores in u for all intermediate stages
   # u1
-  temp = uprev + β10 * dt * integrator.fsalfirst
-  k = f(temp, p, t+c1*dt)
+  tmp = uprev + β10 * dt * integrator.fsalfirst
+  k = f(tmp, p, t+c1*dt)
   # u2
-  u = temp + β21 * dt * k
+  u = tmp + β21 * dt * k
   k = f(u, p, t+c2*dt)
   # u3
   u = α30 * uprev + α32 * u + β32 * dt * k
   k = f(u, p, t+c3*dt)
   # u4
-  u = α40 * uprev + α41 * temp + α43 * u + β43 * dt * k
+  u = α40 * uprev + α41 * tmp + α43 * u + β43 * dt * k
   k = f(u, p, t+c4*dt)
   # u
   u =  u + β54 * dt * k
@@ -393,23 +393,23 @@ end
   @unpack α30,α32,α40,α41,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache.tab
   #stores in u for all intermediate stages
   # u1
-  @. temp = uprev + β10 * dt * fsalfirst
-  stage_limiter!(temp, f, t+c1*dt)
-  f( k,  temp, p, t+c1*dt)
+  @.. tmp = uprev + β10 * dt * fsalfirst
+  stage_limiter!(tmp, f, t+c1*dt)
+  f( k,  tmp, p, t+c1*dt)
   # u2
-  @. u = temp + β21 * dt * k
+  @.. u = tmp + β21 * dt * k
   stage_limiter!(u, f, t+c2*dt)
   f( k,  u, p, t+c2*dt)
   # u3
-  @. u = α30 * uprev + α32 * u + β32 * dt * k
+  @.. u = α30 * uprev + α32 * u + β32 * dt * k
   stage_limiter!(u, f, t+c3*dt)
   f( k,  u, p, t+c3*dt)
   # u4
-  @. u = α40 * uprev + α41 * temp + α43 * u + β43 * dt * k
+  @.. u = α40 * uprev + α41 * tmp + α43 * u + β43 * dt * k
   stage_limiter!(u, f, t+c4*dt)
   f( k,  u, p, t+c4*dt)
   # u
-  @.u = u + β54 * dt * k
+  @.. u = u + β54 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 5
