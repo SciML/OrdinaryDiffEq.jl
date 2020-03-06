@@ -36,6 +36,19 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
     end
 end
 
+jacobian_autodiff(f, x, odefun, alg) = (ForwardDiff.derivative(f,x),1, alg)
+function jacobian_autodiff(f, x::AbstractArray, odefun, alg)
+  colorvec = DiffEqBase.has_colorvec(odefun) ? odefun.colorvec : 1:length(x)
+  sparsity = odefun.sparsity
+  jac_prototype = odefun.jac_prototype
+  maxcolor = maximum(colorvec)
+  chunk_size = get_chunksize(alg)==0 ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
+  num_of_chunks = chunk_size==nothing ? Int(ceil(maxcolor / getsize(default_chunk_size(maxcolor)))) :
+                                        Int(ceil(maxcolor / chunk_size))
+  (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity,
+                              jac_prototype = jac_prototype, chunksize=chunk_size),
+   num_of_chunks)
+end
 
 function _nfcount(N,diff_type)
   if diff_type==Val{:complex}
@@ -53,20 +66,19 @@ jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
 jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype) =
     (FiniteDiff.finite_difference_jacobian(f, x, diff_type, eltype(x), diff_type==Val{:forward} ? f(x) : similar(x),
       dir = dir, colorvec = colorvec, sparsity = sparsity, jac_prototype = jac_prototype),_nfcount(maximum(colorvec),diff_type))
-function jacobian(f, x, integrator, jac_config)
+function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
     local tmp
-  if alg_autodiff(alg)
-      J = forwarddiff_color_jacobian(J,f,x,jac_config)
-      integrator.destats.nf += 1
+    if alg_autodiff(alg)
+      J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
     else
       colorvec = DiffEqBase.has_colorvec(integrator.f) ? integrator.f.colorvec : 1:length(x)
       sparsity = integrator.f.sparsity
       jac_prototype = integrator.f.jac_prototype
       dir = diffdir(integrator)
       J, tmp = jacobian_finitediff(f, x, alg.diff_type, dir, colorvec, sparsity, jac_prototype)
-      integrator.destats.nf += tmp
     end
+    integrator.destats.nf += tmp
     J
 end
 

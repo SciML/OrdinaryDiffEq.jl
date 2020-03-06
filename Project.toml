@@ -37,7 +37,7 @@ NLsolve = "4.3"
 Parameters = "0.10, 0.11, 0.12"
 RecursiveArrayTools = "2"
 Reexport = "0.2"
-SparseDiffTools = "0.10, 1.0"
+SparseDiffTools = "1.4"
 StaticArrays = "0.11, 0.12"
 julia = "1"
 
