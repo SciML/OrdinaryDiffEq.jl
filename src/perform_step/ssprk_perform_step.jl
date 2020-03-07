@@ -51,7 +51,7 @@ end
   f( k,  u, p, t+dt)
 end
 
-function initialize!(integrator,cache::SHLDDRK54ConstantCache)
+function initialize!(integrator,cache::SHLDDRK52ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -63,7 +63,7 @@ function initialize!(integrator,cache::SHLDDRK54ConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::SHLDDRK54ConstantCache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::SHLDDRK52ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α2,α3,α4,α5,β1,β2,β3,β4,β5,c2,c3,c4,c5 = cache
 
@@ -89,7 +89,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SHLDDRK54Cache)
+function initialize!(integrator,cache::SHLDDRK52Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -100,7 +100,7 @@ function initialize!(integrator,cache::SHLDDRK54Cache)
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
 end
 
-@muladd function perform_step!(integrator,cache::SHLDDRK54Cache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::SHLDDRK52Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,tmp = cache
   @unpack α2,α3,α4,α5,β1,β2,β3,β4,β5,c2,c3,c4,c5 = cache.tab
