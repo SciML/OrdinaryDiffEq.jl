@@ -1,4 +1,4 @@
-  @cache mutable struct ABDF2ConstantCache{N,dtType,rate_prototype} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ABDF2ConstantCache{N,dtType,rate_prototype} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   eulercache::ImplicitEulerConstantCache
   dtₙ₋₁::dtType
