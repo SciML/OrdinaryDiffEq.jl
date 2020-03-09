@@ -1165,7 +1165,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6 = cache
   
-  k1 = integrator.fsalfirst
+  k1 = f(uprev, p, t)
   k2 = f(uprev+α2*dt*k1, p, t+c2*dt)
   k3 = f(uprev+α3*dt*k2, p, t+c3*dt)
   k4 = f(uprev+α4*dt*k3, p, t+c4*dt)
@@ -1185,8 +1185,6 @@ function initialize!(integrator,cache::RKMCache)
   @unpack k,fsalfirst = cache
   integrator.kshortsize = 6
   resize!(integrator.k, integrator.kshortsize)
-
-  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
@@ -1203,6 +1201,7 @@ end
   @unpack tmp,fsalfirst,k,k1,k2,k3,k4,k5,k6 = cache
   @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β6,c2,c3,c4,c5,c6 = cache.tab
 
+  f(k1, uprev, p, t)
   @.. tmp = uprev+α2*dt*k1
   f(k2, tmp, p, t+c2*dt)
   @.. tmp = uprev+α3*dt*k2
