@@ -21,7 +21,7 @@ module OrdinaryDiffEq
 
   import RecursiveArrayTools: chain, recursivecopy!
 
-  using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
+  using UnPack, GenericSVD, ForwardDiff, RecursiveArrayTools,
         DataStructures, FiniteDiff, ArrayInterface
 
   import ForwardDiff.Dual
@@ -178,11 +178,11 @@ module OrdinaryDiffEq
          BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87, RKM
 
-  export SSPRK22, SSPRK33, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432,
+  export SSPRK22, SSPRK33, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63, SSPRK73, SSPRK83, SSPRK432,
          SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104
 
   export ORK256, CarpenterKennedy2N54, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
-         CFRLDDRK64, TSLDDRK74,
+         CFRLDDRK64, TSLDDRK74,SHLDDRK52,
          CKLLSRK43_2,CKLLSRK54_3C,CKLLSRK95_4S,CKLLSRK95_4C,CKLLSRK95_4M,
          CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
          CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,

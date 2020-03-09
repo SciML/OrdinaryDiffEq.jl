@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, ForwardDiff, Test
 
 function d_alembert(du,u,p,t)
   du[1] = p[1] - p[2]*u[1] + p[3]*t
@@ -69,3 +69,27 @@ sol = solve(lotka_only_Wfact, TRBDF2())
 sol = solve(lotka_only_Wfact_t, TRBDF2())
 sol = solve(lotka_only_Wfact, Rosenbrock23())
 sol = solve(lotka_only_Wfact_t, Rosenbrock23())
+
+## check chunk_size handling in ForwardDiff Jacobians
+const chunksize = 1
+function rober(du,u,p,t)
+
+  y₁,y₂,y₃ = u
+  k₁,k₂,k₃,check = p
+  if check && eltype(u) <: ForwardDiff.Dual && ForwardDiff.npartials(u[1])!=chunksize
+    @show ForwardDiff.npartials(u[1]), chunksize
+    error("chunk_size is not as specifed")
+  end
+
+
+  du[1] = -k₁*y₁+k₃*y₂*y₃
+  du[2] =  k₁*y₁-k₂*y₂^2-k₃*y₂*y₃
+  du[3] =  k₂*y₂^2
+  nothing
+end
+prob1 = ODEProblem(rober,[1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4,true))
+sol1 = solve(prob1, TRBDF2(chunk_size=chunksize))
+prob = ODEProblem(rober,[1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4,false))
+sol = solve(prob, TRBDF2())
+@test sol.u[end]==sol1.u[end]
+@test length(sol.t)==length(sol1.t)

@@ -162,11 +162,12 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   D = Array{typeof(u)}(undef, 1, 1)
   D2 = Array{typeof(u)}(undef, 1, 2)
+
   R = fill(zero(t), 1, 1)
   U = fill(zero(t), 1, 1)
 
-  D[1] = similar(u)
-  D2[1] = similar(u); D2[2] = similar(u)
+  D[1] = zero(u)
+  D2[1] = zero(u); D2[2] = zero(u)
 
   U!(1,U)
 
@@ -236,8 +237,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   R = fill(zero(t), 2, 2)
   U = fill(zero(t), 2, 2)
 
-  D[1] = similar(u); D[2] = similar(u)
-  D2[1] = similar(u);  D2[2] = similar(u); D2[3] = similar(u)
+  D[1] = zero(u); D[2] = zero(u)
+  D2[1] = zero(u);  D2[2] = zero(u); D2[3] = zero(u)
 
   U!(2,U)
 
