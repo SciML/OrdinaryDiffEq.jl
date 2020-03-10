@@ -1173,8 +1173,8 @@ end
   k6 = f(uprev+α6*dt*k5, p, t+c6*dt)
   u = uprev+dt*(β1*k1+β2*k2+β3*k3+β4*k4+β6*k6)
 
-  integrator.fsallast = f(u, p, t+dt)
-  integrator.destats.nf += 5
+  integrator.fsallast = f(u, p, t+dt) #interpolation then FSAL'd
+  integrator.destats.nf += 6
   integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4; integrator.k[5]=k5; integrator.k[6]=k6
   # integrator.k[1] = integrator.fsalfirst
   # integrator.k[2] = integrator.fsallast
@@ -1213,6 +1213,6 @@ end
   @.. tmp = uprev+α6*dt*k5
   f(k6, tmp, p, t+c6*dt)
   @.. u = uprev+dt*(β1*k1+β2*k2+β3*k3+β4*k4+β6*k6)
-  integrator.destats.nf += 5
+  integrator.destats.nf += 6
   return nothing
 end
