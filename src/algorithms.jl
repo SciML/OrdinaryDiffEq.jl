@@ -224,6 +224,7 @@ struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RKM <: OrdinaryDiffEqAlgorithm end
 struct Anas5{T} <: OrdinaryDiffEqAlgorithm
   w::T
 end

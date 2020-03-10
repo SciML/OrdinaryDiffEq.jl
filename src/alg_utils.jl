@@ -26,6 +26,7 @@ isfsal(alg::PDIRK44) = false
 isfsal(alg::DImplicitEuler) = false
 isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
+#isfsal(alg::RKM) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
@@ -253,6 +254,7 @@ alg_order(alg::SSPRK54) = 4
 alg_order(alg::SSPRK104) = 4
 
 alg_order(alg::RK4) = 4
+alg_order(alg::RKM) = 4
 alg_order(alg::ExplicitRK) = alg.tableau.order
 
 alg_order(alg::BS3) = 3

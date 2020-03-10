@@ -12,6 +12,7 @@ dts2 = 1 .//2 .^(7:-1:3)
 dts3 = 1 .//2 .^(12:-1:7)
 dts4 = 1 .//2 .^(5:-1:3) 
 dts5 = 1 .//2 .^(3:-1:1)
+dts6 = 1 .//10 .^(5:-1:1)
 testTol = 0.2
 
 @testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
@@ -43,6 +44,9 @@ testTol = 0.2
 
   sim3 = test_convergence(dts5,prob,PFRK87())
   @test sim3.𝒪est[:l∞] ≈ 8.4 atol=0.2
+
+  sim3 = test_convergence(dts,prob,RKM())
+  @test sim3.𝒪est[:l∞] ≈ 4 atol=0.2
 
   sim4 = test_convergence(dts,prob,BS3())
   @test sim4.𝒪est[:l2] ≈ 3 atol=testTol
