@@ -1165,7 +1165,8 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6 = cache
   
-  k1 = f(uprev, p, t)
+  #k1 = f(uprev, p, t)
+  k1 = integrator.fsalfirst
   k2 = f(uprev+α2*dt*k1, p, t+c2*dt)
   k3 = f(uprev+α3*dt*k2, p, t+c3*dt)
   k4 = f(uprev+α4*dt*k3, p, t+c4*dt)
@@ -1189,7 +1190,7 @@ function initialize!(integrator,cache::RKMCache)
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
 
-  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
+  integrator.fsalfirst = cache.k1; integrator.fsallast = zero(integrator.fsalfirst)  # setup pointers
 
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
@@ -1201,7 +1202,6 @@ end
   @unpack tmp,fsalfirst,k,k1,k2,k3,k4,k5,k6 = cache
   @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β6,c2,c3,c4,c5,c6 = cache.tab
 
-  f(k1, uprev, p, t)
   @.. tmp = uprev+α2*dt*k1
   f(k2, tmp, p, t+c2*dt)
   @.. tmp = uprev+α3*dt*k2
@@ -1213,6 +1213,7 @@ end
   @.. tmp = uprev+α6*dt*k5
   f(k6, tmp, p, t+c6*dt)
   @.. u = uprev+dt*(β1*k1+β2*k2+β3*k3+β4*k4+β6*k6)
+  f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 6
   return nothing
 end
