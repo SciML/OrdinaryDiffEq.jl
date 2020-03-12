@@ -22,14 +22,14 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
 
   copyto!(tmp, uprev)
   for B in reverse(Bs)
-    u .= exp((dt/2)*B)*tmp
+    @.. u = exp((dt/2)*B)*tmp
     @swap!(tmp,u)
   end
 
-  u .= exp(dt*A)*tmp
+  @.. u = exp(dt*A)*tmp
 
   for B in Bs
-    tmp .= exp((dt/2)*B)*u
+    @.. tmp = exp((dt/2)*B)*u
     @swap!(u,tmp)
   end
 
