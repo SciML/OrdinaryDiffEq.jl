@@ -1,22 +1,22 @@
-using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators
+using OrdinaryDiffEq, Test, DiffEqDevTools
 using LinearAlgebra, Random
 
-Random.seed!(0); u0 = rand(2)
-A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
+# Build an ODE defined by a time-dependent linear operator
+function update_func(A,u,p,t)
+    A[1,1] = cos(t)
+    A[2,1] = sin(t)
+    A[1,2] = cos(t)*sin(t)
+    A[2,2] = sin(t)^2
+end
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (ti, 5.))
+dts = 1 ./2 .^(10:-1:1)
+sol  = solve(prob,OrdinaryDiffEq.MagnusMidpoint(),dt=1/4)
 
-# B = DiffEqArrayOperator(ones(2,2))
-# L = AffineDiffEqOperator{Float64}((A,B),(),rand(2))
-# function (p::typeof(L))(::Type{Val{:analytic}},u0,p,t)
-#     exp((p.As[1].A+p.As[2].A)*t)*u0
-# end
+#sim  = test_convergence(dts,prob,OrdinaryDiffEq.MagnusMidpoint())
+#@test sim.𝒪est[:l2] ≈ 2 atol=0.2
 
-# # Midpoint splitting
-
-# prob = ODEProblem(L,u0,(0.0,1.0))
-# sol = solve(prob,MidpointSplitting(),dt=1/10)
-# # using Plots; pyplot; plot(sol)
-
-
+#=
 ## Midpoint splitting convergence
 ##
 ## We use the inhomogeneous Lorentz equation for an electron in a
@@ -31,20 +31,24 @@ A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
 ##
 ## We can then write the Lorentz equation as q̇ = [A + f(t)B]q.
 
-f = t -> -sin(2pi*t)
-F = t -> cos(2pi*t)/2pi # Primitive function of f(t)
+f = (A,u,p,t) -> -sin(2pi*t)
+F = (A,u,p,t) -> cos(2pi*t)/2pi # Primitive function of f(t)
 
-A = map(f,[0 1 0 0
+A = DiffEqArrayOperator([0 1 0 0
            0 0 0 0
            0 0 0 0
            0 0 0 0])
 
-B = map(f,[0 0 0 0
+B = DiffEqArrayOperator([0 0 0 0
            0 0 1 0
            0 0 0 0
-           0 0 0 0])
+           0 0 0 0],update_func=f)
 
 H = AffineDiffEqOperator{Float64}((A,B),(),rand(4))
+
+update_coefficients!(H,nothing,nothing,1)
+H
+
 function p(::Type{Val{:analytic}},u0,p,t)
     x0,v0 = u0[1:2]
     ti = u0[end]
@@ -56,8 +60,9 @@ end
 x0,v0,ti = rand(3)
 prob = ODEProblem(H, [x0, v0, 1, ti], (ti, 5.))
 dts = 1 ./2 .^(10:-1:1)
-sim  = test_convergence(dts,prob,MidpointSplitting())
+sim  = test_convergence(dts,prob,OrdinaryDiffEq.MagnusMidpoint(krylov=true))
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
+=#
 
 # Linear exponential solvers
 prob = ODEProblem(A,u0,(0.0,1.0))

@@ -644,7 +644,14 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Linear Methods
 
-struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
+for Alg in [:MagnusMidpoint]
+  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+    krylov::Bool
+    m::Int
+    iop::Int
+  end
+  @eval $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
+end
 
 struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
   krylov::Symbol

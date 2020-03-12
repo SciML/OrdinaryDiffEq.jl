@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::MidpointSplittingCache)
+function initialize!(integrator, cache::MagnusMidpointCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -9,31 +9,21 @@ function initialize!(integrator, cache::MidpointSplittingCache)
   integrator.destats.nf += 1
 end
 
-function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=false)
-  @unpack t,dt,uprev,u = integrator
+function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
-  L = integrator.f
+  L = integrator.f.f
   update_coefficients!(L,u,p,t+dt/2)
 
-  A = L.As[1]
-  Bs = L.As[2:end]
-
-  copyto!(tmp, uprev)
-  for B in reverse(Bs)
-    @.. u = exp((dt/2)*B)*tmp
-    @swap!(tmp,u)
+  if integrator.alg.krylov
+    u = expv(dt, A, v; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
+    u .= exp(dt*L) * u
   end
-
-  @.. u = exp(dt*A)*tmp
-
-  for B in Bs
-    @.. tmp = exp((dt/2)*B)*u
-    @swap!(u,tmp)
-  end
-
-  f(integrator.fsallast,u,p,t+dt)
+  #f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
 end
 

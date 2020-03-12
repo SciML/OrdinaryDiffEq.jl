@@ -1,4 +1,4 @@
-@cache struct MidpointSplittingCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+@cache struct MagnusMidpointCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -8,19 +8,19 @@
   k::rateType
 end
 
-function alg_cache(alg::MidpointSplitting,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MidpointSplittingCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusMidpointCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
 end
 
-struct MidpointSplittingConstantCache <: OrdinaryDiffEqConstantCache
+struct MagnusMidpointConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MidpointSplitting,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  MidpointSplittingConstantCache()
+  MagnusMidpointConstantCache()
 end
 
 struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end
