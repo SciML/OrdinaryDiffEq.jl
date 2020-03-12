@@ -1,7 +1,9 @@
 using OrdinaryDiffEq, Test, DiffEqDevTools
 using LinearAlgebra, Random
 
+
 # Linear exponential solvers
+A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
 prob = ODEProblem(A,u0,(0.0,1.0))
 sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
 sol2 = solve(prob, LinearExponential(krylov=:simple))(1.0)
