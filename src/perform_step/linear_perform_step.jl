@@ -23,7 +23,8 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
     A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
     u .= exp(dt*L) * u
   end
-  #f(integrator.fsallast,u,p,t+dt)
+
+  integrator.f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
 end
 

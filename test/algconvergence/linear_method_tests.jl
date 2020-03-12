@@ -4,6 +4,7 @@ using LinearAlgebra, Random
 
 # Linear exponential solvers
 A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
+u0 = ones(2)
 prob = ODEProblem(A,u0,(0.0,1.0))
 sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
 sol2 = solve(prob, LinearExponential(krylov=:simple))(1.0)
@@ -23,7 +24,7 @@ function update_func(A,u,p,t)
     A[2,2] = sin(t)^2
 end
 A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
-prob = ODEProblem(A, ones(2), (ti, 5.))
+prob = ODEProblem(A, ones(2), (0.0, 5.))
 dts = 1 ./2 .^(10:-1:1)
 sol  = solve(prob,OrdinaryDiffEq.MagnusMidpoint(),dt=1/4)
 
