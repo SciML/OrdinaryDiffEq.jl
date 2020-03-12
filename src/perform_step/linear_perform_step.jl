@@ -18,7 +18,7 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   update_coefficients!(L,u,p,t+dt/2)
 
   if integrator.alg.krylov
-    u = expv(dt, A, v; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+    u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
     u .= exp(dt*L) * u
