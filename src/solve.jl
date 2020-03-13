@@ -99,7 +99,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
-  isdae = alg isa DAEAlgorithm
+  isdae = alg isa DAEAlgorithm || (prob.f.mass_matrix != I && !(typeof(prob.f.mass_matrix)<:Tuple) && issingular(prob.f.mass_matrix))
 
   f = prob.f
   p = prob.p
@@ -112,12 +112,14 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     u = recursivecopy(prob.u0)
   end
 
-  if isdae
+  if alg isa DAEAlgorithm
     if alias_du0
       du = prob.du0
     else
       du = recursivecopy(prob.u0)
     end
+  else
+    du = nothing
   end
 
   uType = typeof(u)
@@ -279,10 +281,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     uprev2 = uprev
   end
 
-  if !isdae
-    cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
-  else
+  if prob isa DAEProblem
     cache = alg_cache(alg,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
+  else
+    cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
   end
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
@@ -369,28 +371,33 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   success_iter = 0
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
+  reinitiailize = true
 
-  integrator = ODEIntegrator{typeof(alg),isinplace(prob),uType,tType,typeof(p),typeof(eigen_est),
+  integrator = ODEIntegrator{typeof(alg),isinplace(prob),uType,typeof(du),
+                             tType,typeof(p),
+                             typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
-                             typeof(last_event_error),typeof(callback_cache)}(
-                             sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
+                             typeof(last_event_error),typeof(callback_cache),
+                             typeof(initializealg)}(
+                             sol,u,du,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,cache,callback_cache,
                              kshortsize,force_stepfail,last_stepfail,
-                             just_hit_tstop,event_last_time,vector_event_last_time,last_event_error,
-                             accept_step,
+                             just_hit_tstop,event_last_time,vector_event_last_time,
+                             last_event_error,accept_step,
                              isout,reeval_fsal,
-                             u_modified,opts,destats)
+                             u_modified,reinitiailize,isdae,
+                             opts,destats,initializealg)
   if initialize_integrator
-    if isdae
-      initialize_dae!(integrator, u, du, prob.differential_vars, initializealg, Val(isinplace(prob)))
-    end
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
+    if isdae
+      initialize_dae!(integrator, prob, u, du, initializealg, Val(isinplace(prob)))
+    end
     save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
   end
 

@@ -5,8 +5,20 @@ struct BrownFullBasicInit{T} <: DAEInitializationAlgorithm
 end
 BrownFullBasicInit() = BrownFullBasicInit(1e-10)
 
-function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBasicInit, ::Val{true})
+function initialize_dae!(integrator, prob::ODEProblem, u, du,
+						 alg, ::Val{true})
+
+end
+
+function initialize_dae!(integrator, prob::ODEProblem, u, du,
+						 alg, ::Val{false})
+
+end
+
+function initialize_dae!(integrator, prob::DAEProblem, u, du,
+						 alg::BrownFullBasicInit, ::Val{true})
 	@unpack p, t, f = integrator
+	differential_vars = prob.differential_vars
 
 	tmp = get_tmp_cache(integrator)[1]
 	f(tmp, du, u, p, t)
@@ -41,8 +53,10 @@ function initialize_dae!(integrator, u, du, differential_vars, alg::BrownFullBas
 	return
 end
 
-function initialize_dae!(integrator, _u, _du, differential_vars, alg::BrownFullBasicInit, ::Val{false})
+function initialize_dae!(integrator, prob::DAEProblem, _u, _du,
+						 differential_vars, alg::BrownFullBasicInit, ::Val{false})
 	@unpack p, t, f = integrator
+	differential_vars = prob.differential_vars
 
 	if integrator.opts.internalnorm(f(_du, _u, p, t),t) <= alg.abstol
 		return
