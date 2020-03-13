@@ -115,6 +115,96 @@ function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK53ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
+@cache mutable struct SHLDDRK_2NCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+  step::Int
+end
+
+mutable struct SHLDDRK_2NConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
+  α21::T1
+  α31::T1
+  α41::T1
+  α51::T1
+  β11::T1
+  β21::T1
+  β31::T1
+  β41::T1
+  β51::T1
+  c21::T2
+  c31::T2
+  c41::T2
+  c51::T2
+
+  α22::T1
+  α32::T1
+  α42::T1
+  α52::T1
+  α62::T1
+  β12::T1
+  β22::T1
+  β32::T1
+  β42::T1
+  β52::T1
+  β62::T1
+  c22::T2
+  c32::T2
+  c42::T2
+  c52::T2
+  c62::T2
+
+  step::Int
+end
+
+function SHLDDRK_2NConstantCache(T1,T2)
+  α21 = T1(-0.6051226)
+  α31 = T1(-2.0437564)
+  α41 = T1(-0.7406999)
+  α51 = T1(-4.4231765)
+  β11 = T1(0.2687454)
+  β21 = T1(0.8014706)
+  β31 = T1(0.5051570)
+  β41 = T1(0.5623568)
+  β51 = T1(0.0590065)
+  c21 = T2(0.2687454)
+  c31 = T2(0.5852280)
+  c41 = T2(0.6827066)
+  c51 = T2(1.1646854)
+
+  α22 = T1(-0.4412737)
+  α32 = T1(-1.0739820)
+  α42 = T1(-1.7063570)
+  α52 = T1(-2.7979293)
+  α62 = T1(-4.0913537)
+  β12 = T1(0.1158488)
+  β22 = T1(0.3728769)
+  β32 = T1(0.7379536)
+  β42 = T1(0.5798110)
+  β52 = T1(1.0312849)
+  β62 = T1(0.15)
+  c22 = T2(0.1158485)
+  c32 = T2(0.3241850)
+  c42 = T2(0.6193208)
+  c52 = T2(0.8034472)
+  c62 = T2(0.9184166)
+  SHLDDRK_2NConstantCache(α21, α31, α41, α51, β11, β21, β31, β41, β51, c21, c31, c41, c51, α22, α32, α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32, c42, c52, c62, 1)
+end
+
+function alg_cache(alg::SHLDDRK_2N,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+function alg_cache(alg::SHLDDRK_2N,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = SHLDDRK_2NConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SHLDDRK_2NCache(u,uprev,k,tmp,fsalfirst,tab,1)
+end
 
 @cache struct SSPRK53_2N1Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
