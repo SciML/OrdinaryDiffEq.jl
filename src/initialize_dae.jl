@@ -188,27 +188,16 @@ function initialize_dae!(integrator, prob::ODEProblem, u, du,
 	tmp .= (differential_vars .== false) .* tmp
 
 	integrator.opts.internalnorm(tmp,t) <= alg.abstol && return
+	alg_u = @view u[!differential_vars]
 
 	nlequation = (out, x) -> begin
-		for i in 1:length(x)
-			if differential_vars[i]
-				du[i] = x[i]
-			else
-				u[i] = x[i]
-			end
-		end
-		f(out, du, u, p, t)
+		alg_u .= x
+		du = f(u, p, t)
+		out .= @view du[!differential_vars]
 	end
 
-	r = nlsolve(nlequation, zero(u))
-
-	for i in 1:length(u)
-		if differential_vars[i]
-			du[i] = r.zero[i]
-		else
-			u[i] = r.zero[i]
-		end
-	end
+	r = nlsolve(nlequation, u[!differential_vars])
+	alg_u .= r.zero
 
 	recursivecopy!(integrator.uprev,integrator.u)
 	if alg_extrapolates(integrator.alg)
