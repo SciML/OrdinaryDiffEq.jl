@@ -1,5 +1,49 @@
 using OrdinaryDiffEq, StaticArrays, Test
 
+## Mass Matrix
+
+function rober_oop(u,p,t)
+  y₁,y₂,y₃ = u
+  k₁,k₂,k₃ = p
+  du1 = -k₁*y₁ + k₃*y₂*y₃
+  du2 =  k₁*y₁ - k₃*y₂*y₃ - k₂*y₂^2
+  du3 =  y₁ + y₂ + y₃ - 1
+  [du1,du2,du3]
+end
+M = [1. 0  0
+     0  1. 0
+     0  0  0]
+f_oop = ODEFunction(rober_oop,mass_matrix=M)
+prob_mm = ODEProblem(f_oop,[1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4))
+sol = solve(prob_mm,Rosenbrock23(),reltol=1e-8,abstol=1e-8)
+@test sol[1] == [1.0,0.0,0.0] # Ensure initialization is unchanged if it works at the start!
+
+prob_mm = ODEProblem(f_oop,[1.0,0.0,0.2],(0.0,1e5),(0.04,3e7,1e4))
+sol = solve(prob_mm,Rosenbrock23(),reltol=1e-8,abstol=1e-8)
+@test sum(sol[1]) ≈ 1
+
+function rober(du,u,p,t)
+  y₁,y₂,y₃ = u
+  k₁,k₂,k₃ = p
+  du[1] = -k₁*y₁ + k₃*y₂*y₃
+  du[2] =  k₁*y₁ - k₃*y₂*y₃ - k₂*y₂^2
+  du[3] =  y₁ + y₂ + y₃ - 1
+  nothing
+end
+M = [1. 0  0
+     0  1. 0
+     0  0  0]
+f = ODEFunction(rober,mass_matrix=M)
+prob_mm = ODEProblem(f,[1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4))
+sol = solve(prob_mm,Rodas5(),reltol=1e-8,abstol=1e-8)
+@test sol[1] == [1.0,0.0,0.0] # Ensure initialization is unchanged if it works at the start!
+
+prob_mm = ODEProblem(f,[1.0,1.0,1.0],(0.0,1e5),(0.04,3e7,1e4))
+sol = solve(prob_mm,Rodas5(),reltol=1e-8,abstol=1e-8)
+@test sum(sol[1]) ≈ 1
+
+## DAEProblem
+
 f = function (out,du,u,p,t)
   out[1] = - 0.04u[1]              + 1e4*u[2]*u[3] - du[1]
   out[2] = + 0.04u[1] - 3e7*u[2]^2 - 1e4*u[2]*u[3] - du[2]

@@ -270,12 +270,6 @@ end
 
 function handle_callback_modifiers!(integrator::ODEIntegrator)
   integrator.reeval_fsal = true
-  if integrator.isdae && integrator.reinitialize
-    initialize_dae!(integrator, integrator.prob, integrator.u, integrator.du,
-                    integrator.initializealg, Val(isinplace(integrator.sol.prob)))
-  else
-    integrator.reinitialize = true
-  end
 end
 
 function apply_step!(integrator)

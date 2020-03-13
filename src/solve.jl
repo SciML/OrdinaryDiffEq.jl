@@ -61,7 +61,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            initialize_integrator = true,
                            alias_u0 = false,
                            alias_du0 = false,
-                           initializealg = BrownFullBasicInit(),
+                           initializealg = DefaultInit(),
                            kwargs...) where recompile_flag
 
   if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -247,26 +247,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     sizehint!(ks,2)
   end
 
-  if save_start
-    saveiter = 1 # Starts at 1 so first save is at 2
-    saveiter_dense = 1
-    copyat_or_push!(ts,1,t)
-    if save_idxs === nothing
-      copyat_or_push!(timeseries,1,u)
-      copyat_or_push!(ks,1,[rate_prototype])
-    else
-      copyat_or_push!(timeseries,1,u_initial,Val{false})
-      copyat_or_push!(ks,1,[ks_prototype])
-    end
-
-    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-      copyat_or_push!(alg_choice,1,1)
-    end
-  else
-    saveiter = 0 # Starts at 0 so first save is at 1
-    saveiter_dense = 0
-  end
-
   QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
 
   k = rateType[]
@@ -375,6 +355,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
   reinitiailize = true
+  saveiter = 0 # Starts at 0 so first save is at 1
+  saveiter_dense = 0
 
   integrator = ODEIntegrator{typeof(alg),isinplace(prob),uType,typeof(du),
                              tType,typeof(p),
@@ -396,12 +378,32 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                              u_modified,reinitiailize,isdae,
                              opts,destats,initializealg)
   if initialize_integrator
-    initialize_callbacks!(integrator, initialize_save)
-    initialize!(integrator,integrator.cache)
     if isdae
       initialize_dae!(integrator, prob, u, du, initializealg, Val(isinplace(prob)))
     end
-    save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
+    initialize_callbacks!(integrator, initialize_save)
+    initialize!(integrator,integrator.cache)
+  end
+
+  if save_start
+    integrator.saveiter += 1 # Starts at 1 so first save is at 2
+    integrator.saveiter_dense += 1
+    copyat_or_push!(ts,1,t)
+    if save_idxs === nothing
+      copyat_or_push!(timeseries,1,integrator.u)
+      copyat_or_push!(ks,1,[rate_prototype])
+    else
+      copyat_or_push!(timeseries,1,u_initial,Val{false})
+      copyat_or_push!(ks,1,[ks_prototype])
+    end
+
+    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+      copyat_or_push!(alg_choice,1,1)
+    end
+    typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
+  else
+    saveiter = 0 # Starts at 0 so first save is at 1
+    saveiter_dense = 0
   end
 
   handle_dt!(integrator)
