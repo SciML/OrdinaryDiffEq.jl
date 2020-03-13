@@ -92,6 +92,21 @@ for prob in test_problems_nonlinear
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 
+println("SHLDDRK_2N")
+alg = SHLDDRK_2N()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+
 println("SSPRK33")
 alg = SSPRK33()
 for prob in test_problems_only_time
