@@ -167,7 +167,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
-  elseif isdae
+  elseif prob isa DAEProblem
     rate_prototype = prob.du0
   else
     if uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits
