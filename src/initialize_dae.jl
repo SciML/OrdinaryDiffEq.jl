@@ -13,6 +13,19 @@ struct BrownFullBasicInit{T} <: DAEInitializationAlgorithm
 end
 BrownFullBasicInit() = BrownFullBasicInit(1e-10)
 
+## Notes
+
+#=
+differential_vars = [any(!iszero,x) for x in eachcol(M)]
+
+A column should be zero for an algebraic variable, since that means that the
+derivative term doesn't show up in any equations (i.e. is an algebraic variable).
+The rows are not necessarily non-zero, for example a flux condition between two
+differential variables. But if it's a condition that doesn't involve the algebraic
+variable, then the system is not Index 1!
+
+=#
+
 ## Default algorithms
 
 function initialize_dae!(integrator, prob::ODEProblem, u, du,
@@ -59,6 +72,14 @@ end
 
 ## ShampineCollocationInit
 
+#=
+The method:
+
+du = (u-u0)/h
+Solve for `u`
+
+=#
+
 function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 						 alg::ShampineCollocationInit, ::Val{true})
 
@@ -79,7 +100,7 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 		nothing
  	end
 
-	differential_vars = [any(!iszero,x) for x in eachrow(M)]
+	differential_vars = [any(!iszero,x) for x in eachcol(M)]
 	f(tmp,u0,p,t)
 	tmp .= (differential_vars .== false) .* tmp
 
@@ -103,9 +124,9 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 
 	dt = t != 0 ? min(t/1000,dtmax/10) : dtmax # Haven't implemented norm reduction
 
-	differential_vars = [any(!iszero,x) for x in eachrow(M)]
+	differential_vars = [any(!iszero,x) for x in eachcol(M)]
 	du = f(u0,p,t)
-	resid = (differential_vars .== false) .* du
+	resid = du[!differential_vars]
 
 	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
@@ -179,10 +200,18 @@ end
 
 ## BrownFullBasic
 
+#=
+The method:
+
+Keep differential variables constant
+Solve for the algebraic variables
+
+=#
+
 function initialize_dae!(integrator, prob::ODEProblem, u, du,
 						 alg::BrownFullBasicInit, ::Val{true})
 	@unpack p, t, f = integrator
-	differential_vars = [any(!iszero,x) for x in eachrow(M)]
+	differential_vars = [any(!iszero,x) for x in eachcol(M)]
 
 	f(tmp,u0,p,t)
 	tmp .= (differential_vars .== false) .* tmp
@@ -208,13 +237,14 @@ function initialize_dae!(integrator, prob::ODEProblem, u, du,
 end
 
 function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
-						 differential_vars, alg::BrownFullBasicInit, ::Val{false})
+						 alg::BrownFullBasicInit, ::Val{false})
 	@unpack p, t, f = integrator
 
 	du = f(u0,p,t)
-	resid = (differential_vars .== false) .* du
+	resid = du[!differential_vars]
 
 	integrator.opts.internalnorm(resid,t) <= alg.abstol && return
+	alg_u = @view u[!differential_vars]
 
 	if u0 isa Number && du0 isa Number
 		# This doesn't fix static arrays!
@@ -226,29 +256,13 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 	end
 
 	nlequation = (out,x) -> begin
-		differential_vars .* x .+ u0
-		du = f(x,p,t)
-		resid = (differential_vars .== false) .* du
-
-		for i in 1:length(x)
-			if differential_vars[i]
-				du[i] = x[i]
-			else
-				u[i] = x[i]
-			end
-		end
-		out .= f(du, u, p, t)
+		alg_u .= x
+		du = f(u,p,t)
+		out .= du[!differential_vars]
 	end
 
-	r = nlsolve(nlequation, zero(u))
-
-	for i in 1:length(u)
-		if differential_vars[i]
-			du[i] = r.zero[i]
-		else
-			u[i] = r.zero[i]
-		end
-	end
+	r = nlsolve(nlequation, u0[!differential_vars])
+	alg_u .= x
 
 	if _u isa Number && _du isa Number
 		# This doesn't fix static arrays!
