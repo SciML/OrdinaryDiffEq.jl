@@ -201,7 +201,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
 	nlequation! = (out,u) -> out .= nlequation_oop(u)
 
-	resid = f(du,u0,p,t)
+	resid = f(integrator.du,u0,p,t)
 	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
 	integrator.u = nlsolve(nlequation!, u0).zero
@@ -357,7 +357,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 		error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions or differential_vars")
 	end
 
-	if _u isa Number && _du isa Number
+	if integrator.u isa Number && integrator.du isa Number
 		# This doesn't fix static arrays!
 		u = [integrator.u]
 		du = [integrator.du]
@@ -387,7 +387,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 		end
 	end
 
-	if _u isa Number && _du isa Number
+	if integrator.u isa Number && integrator.du isa Number
 		# This doesn't fix static arrays!
 		integrator.u = first(u)
 		integrator.du = first(du)

@@ -241,4 +241,6 @@ module OrdinaryDiffEq
          ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation
 
   export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
+
+  export ShampineCollocationInit, BrownFullBasicInit
 end # module
