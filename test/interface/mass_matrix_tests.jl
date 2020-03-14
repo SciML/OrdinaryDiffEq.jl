@@ -1,43 +1,71 @@
 using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
-@testset "Mass Matrix Accuracy Tests" begin
-
-  # create mass matrix problems
-  function make_mm_probs(mm_A, ::Val{iip}) where iip
-    # iip
+# create mass matrix problems
+function make_mm_probs(mm_A, ::Val{iip}) where iip
+  # iip
+  function mm_f(du,u,p,t)
+    update_coefficients(mm_A,u,p,t)
     mm_b = vec(sum(mm_A; dims=2))
-    function mm_f(du,u,p,t)
-      mul!(du,mm_A,u)
-      du .+= t * mm_b
-      nothing
-    end
-    mm_g(du,u,p,t) = (@. du = u + t; nothing)
-
-    # oop
-    mm_f(u,p,t) = mm_A * (u .+ t)
-    mm_g(u,p,t) = u .+ t
-
-    mm_analytic(u0, p, t) = @. 2 * u0 * exp(t) - t - 1
-
-    u0 = ones(3)
-    tspan = (0.0, 1.0)
-
-    prob = ODEProblem(ODEFunction{iip,true}(mm_f, analytic=mm_analytic, mass_matrix=mm_A), u0, tspan)
-    prob2 = ODEProblem(ODEFunction{iip,true}(mm_g, analytic=mm_analytic), u0, tspan)
-
-    prob, prob2
+    mul!(du,mm_A,u)
+    du .+= t * mm_b
+    nothing
   end
+  mm_g(du,u,p,t) = (@. du = u + t; nothing)
 
-  function _norm_dsol(alg,prob,prob2)
-    sol = solve(prob,  alg,dt=1/10,adaptive=false)
-    sol2 = solve(prob2,alg,dt=1/10,adaptive=false)
-    norm(sol .- sol2)
-  end
+  # oop
+  mm_f(u,p,t) = mm_A * (u .+ t)
+  mm_g(u,p,t) = u .+ t
 
+  mm_analytic(u0, p, t) = @. 2 * u0 * exp(t) - t - 1
+
+  u0 = ones(3)
+  tspan = (0.0, 1.0)
+
+  prob = ODEProblem(ODEFunction{iip,true}(mm_f, analytic=mm_analytic, mass_matrix=mm_A), u0, tspan)
+  prob2 = ODEProblem(ODEFunction{iip,true}(mm_g, analytic=mm_analytic), u0, tspan)
+
+  prob, prob2
+end
+
+function _norm_dsol(alg,prob,prob2,dt=1/10)
+  sol = solve(prob,  alg,dt=dt,adaptive=false)
+  sol2 = solve(prob2,alg,dt=dt,adaptive=false)
+  norm(sol .- sol2)
+end
+
+function update_func1(A,u,p,t)
+    A[1,1] = cos(t)
+    A[2,1] = sin(t)*u[1]
+    A[3,1] = t^2
+    A[1,2] = cos(t)*sin(t)
+    A[2,2] = cos(t)^2 + u[3]
+    A[3,2] = sin(t)*u[2]
+    A[1,3] = sin(t)
+    A[2,3] = t^2
+    A[3,3] = t*cos(t) + 1
+end
+
+function update_func2(A,u,p,t)
+    A[1,1] = cos(t)
+    A[2,1] = sin(t)
+    A[3,1] = t^2
+    A[1,2] = cos(t)*sin(t)
+    A[2,2] = cos(t)^2
+    A[3,2] = sin(t)
+    A[1,3] = sin(t)
+    A[2,3] = t^2
+    A[3,3] = t*cos(t) + 1
+end
+
+almost_I = Matrix{Float64}(1.01I, 3, 3)
+mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
+dependent_M1 = DiffEqArrayOperator(ones(3,3),update_func=update_func1)
+dependent_M2 = DiffEqArrayOperator(ones(3,3),update_func=update_func2)
+
+@testset "Mass Matrix Accuracy Tests" for mm in (almost_I, mm_A)
   # test each method for exactness
   for iip in (false, true)
-    mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
-    prob, prob2 = make_mm_probs(mm_A, Val(iip))
+    prob, prob2 = make_mm_probs(mm, Val(iip))
 
     @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
     @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
@@ -65,7 +93,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
   # test functional iteration
   for iip in (false, true)
-    prob, prob2 = make_mm_probs(Matrix{Float64}(1.01I, 3, 3), Val(iip))
+    prob, prob2 = make_mm_probs(mm, Val(iip))
 
     sol = solve(prob,ImplicitEuler(
                           nlsolve=NLFunctional()),dt=1/10,adaptive=false,reltol=1e-7,abstol=1e-10)
@@ -126,3 +154,23 @@ end
   @test sol1[end] ≈ sol2[end] atol=1e-9
   @test sol1[end] ≈ sol3[end] atol=1e-9
 end
+
+prob, prob2 = make_mm_probs(dependent_M1, Val(true))
+_norm_dsol(ImplicitEuler(),prob,prob2,1/100000)
+_norm_dsol(RadauIIA5(),prob,prob2,1/100000)
+_norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2,1/1000000)
+_norm_dsol(Rosenbrock23(),prob,prob2,1/100000)
+_norm_dsol(Rodas4(),prob,prob2,1/100000)
+_norm_dsol(Rodas5(),prob,prob2,1/1000000)
+_norm_dsol(ROS34PW1a(),prob,prob2,1/100000)
+_norm_dsol(RosenbrockW6S4OS(),prob,prob2,1/10000)
+
+prob, prob2 = make_mm_probs(dependent_M2, Val(true))
+_norm_dsol(ImplicitEuler(),prob,prob2,1/100000)
+_norm_dsol(RadauIIA5(),prob,prob2,1/100000)
+_norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2,1/1000000)
+_norm_dsol(Rosenbrock23(),prob,prob2,1/100000)
+_norm_dsol(Rodas4(),prob,prob2,1/100000)
+_norm_dsol(Rodas5(),prob,prob2,1/1000000)
+_norm_dsol(ROS34PW1a(),prob,prob2,1/100000)
+_norm_dsol(RosenbrockW6S4OS(),prob,prob2,1/10000)
