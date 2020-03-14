@@ -26,47 +26,55 @@ variable, then the system is not Index 1!
 
 =#
 
+## Expansion
+
+function initialize_dae!(integrator)
+	_initialize_dae!(integrator, integrator.sol.prob,
+					 integrator.initializealg,
+					 Val(DiffEqBase.isinplace(integrator.sol.prob)))
+end
+
 ## Default algorithms
 
-function initialize_dae!(integrator, prob::ODEProblem, u, du,
+function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::DefaultInit, x::Val{true})
-	initialize_dae!(integrator, prob, u, du,
-					ShampineCollocationInit(), x)
-end
-
-function initialize_dae!(integrator, prob::ODEProblem, u, du,
-						 alg::DefaultInit, x::Val{false})
-	initialize_dae!(integrator, prob, u, du,
-					ShampineCollocationInit(), x)
-end
-
-function initialize_dae!(integrator, prob::DAEProblem, u, du,
-						 alg::DefaultInit, x::Val{false})
-	initialize_dae!(integrator, prob, u, du,
+	_initialize_dae!(integrator, prob,
 					BrownFullBasicInit(), x)
 end
 
-function initialize_dae!(integrator, prob::DAEProblem, u, du,
+function _initialize_dae!(integrator, prob::ODEProblem,
+						 alg::DefaultInit, x::Val{false})
+	_initialize_dae!(integrator, prob,
+					BrownFullBasicInit(), x)
+end
+
+function _initialize_dae!(integrator, prob::DAEProblem,
+						 alg::DefaultInit, x::Val{false})
+	_initialize_dae!(integrator, prob,
+					BrownFullBasicInit(), x)
+end
+
+function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::DefaultInit, x::Val{true})
-	initialize_dae!(integrator, prob, u, du,
+	_initialize_dae!(integrator, prob,
 					BrownFullBasicInit(), x)
 end
 
 ## NoInit
 
-function initialize_dae!(integrator, prob::ODEProblem, u, du,
+function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::NoInit, x::Val{true})
 end
 
-function initialize_dae!(integrator, prob::ODEProblem, u, du,
+function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::NoInit, x::Val{false})
 end
 
-function initialize_dae!(integrator, prob::DAEProblem, u, du,
+function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::NoInit, x::Val{false})
 end
 
-function initialize_dae!(integrator, prob::DAEProblem, u, du,
+function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::NoInit, x::Val{true})
 end
 
@@ -80,18 +88,19 @@ Solve for `u`
 
 =#
 
-function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
+function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::ShampineCollocationInit, ::Val{true})
 
 	@unpack p, t, f = integrator
  	M = integrator.f.mass_matrix
 	dtmax = integrator.opts.dtmax
- 	update_coefficients!(M,u,p,t)
 	tmp = first(get_tmp_cache(integrator))
+	u0 = integrator.u
 
 	dt = t != 0 ? min(t/1000,dtmax) : dtmax # Haven't implemented norm reduction
 
  	nlequation! = function (out,u)
+		update_coefficients!(M,u,p,t)
  		#M * (u-u0)/dt - f(u,p,t)
 		@. tmp = (u - u0)/dt
 		mul!(out,M,tmp)
@@ -100,6 +109,7 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 		nothing
  	end
 
+	update_coefficients!(M,u0,p,t)
 	differential_vars = [any(!iszero,x) for x in eachcol(M)]
 	f(tmp,u0,p,t)
 	tmp .= (differential_vars .== false) .* tmp
@@ -114,16 +124,17 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 
 end
 
-function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
+function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::ShampineCollocationInit, ::Val{false})
 
 	@unpack p, t, f = integrator
+	u0 = integrator.u
 	M = integrator.f.mass_matrix
 	dtmax = integrator.opts.dtmax
-	update_coefficients!(M,u,p,t)
 
 	dt = t != 0 ? min(t/1000,dtmax/10) : dtmax # Haven't implemented norm reduction
 
+	update_coefficients!(M,u0,p,t)
 	differential_vars = [any(!iszero,x) for x in eachcol(M)]
 	du = f(u0,p,t)
 	resid = du[!differential_vars]
@@ -131,6 +142,7 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
 	nlequation_oop = function (u)
+		update_coefficients!(M,u,p,t)
 		M * (u-u0)/dt - f(u,p,t)
 	end
 
@@ -143,12 +155,13 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 	end
 end
 
-function initialize_dae!(integrator, prob::DAEProblem, u0, du0,
+function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::ShampineCollocationInit, ::Val{true})
 
 	@unpack p, t, f = integrator
+	u0 = integrator.u
+
 	dtmax = integrator.opts.dtmax
- 	update_coefficients!(M,u,p,t)
 	tmp = get_tmp_cache(integrator)[1]
 	resid = get_tmp_cache(integrator)[2]
 
@@ -173,12 +186,12 @@ function initialize_dae!(integrator, prob::DAEProblem, u0, du0,
 
 end
 
-function initialize_dae!(integrator, prob::DAEProblem, u0, du0,
+function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::ShampineCollocationInit, ::Val{false})
 
 	@unpack p, t, f = integrator
+	u0 = integrator.u
 	dtmax = integrator.opts.dtmax
-	update_coefficients!(M,u,p,t)
 
 	dt = t != 0 ? min(t/1000,dtmax/10) : dtmax # Haven't implemented norm reduction
 
@@ -208,12 +221,14 @@ Solve for the algebraic variables
 
 =#
 
-function initialize_dae!(integrator, prob::ODEProblem, u, du,
+function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::BrownFullBasicInit, ::Val{true})
 	@unpack p, t, f = integrator
+	u0 = integrator.u
+	update_coefficients!(M,u0,p,t)
 	differential_vars = [any(!iszero,x) for x in eachcol(M)]
-
 	f(tmp,u0,p,t)
+
 	tmp .= (differential_vars .== false) .* tmp
 
 	integrator.opts.internalnorm(tmp,t) <= alg.abstol && return
@@ -236,9 +251,13 @@ function initialize_dae!(integrator, prob::ODEProblem, u, du,
 	return
 end
 
-function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
+function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::BrownFullBasicInit, ::Val{false})
 	@unpack p, t, f = integrator
+
+	u0 = integrator.u
+	update_coefficients!(M,u0,p,t)
+	differential_vars = [any(!iszero,x) for x in eachcol(M)]
 
 	du = f(u0,p,t)
 	resid = du[!differential_vars]
@@ -281,10 +300,12 @@ function initialize_dae!(integrator, prob::ODEProblem, u0, du0,
 	return
 end
 
-function initialize_dae!(integrator, prob::DAEProblem, u, du,
+function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::BrownFullBasicInit, ::Val{true})
 	@unpack p, t, f = integrator
 	differential_vars = prob.differential_vars
+	u = integrator.u
+	du = integrator.du
 
 	tmp = get_tmp_cache(integrator)[1]
 	f(tmp, du, u, p, t)
@@ -324,7 +345,7 @@ function initialize_dae!(integrator, prob::DAEProblem, u, du,
 	return
 end
 
-function initialize_dae!(integrator, prob::DAEProblem, _u, _du,
+function _initialize_dae!(integrator, prob::DAEProblem,
 						 differential_vars, alg::BrownFullBasicInit, ::Val{false})
 	@unpack p, t, f = integrator
 	differential_vars = prob.differential_vars
@@ -337,11 +358,11 @@ function initialize_dae!(integrator, prob::DAEProblem, _u, _du,
 
 	if _u isa Number && _du isa Number
 		# This doesn't fix static arrays!
-		u = [_u]
-		du = [_du]
+		u = [integrator.u]
+		du = [integrator.du]
 	else
-		u = _u
-		du = _du
+		u = integrator.u
+		du = integrator.du
 	end
 
 	nlequation = (out,x) -> begin
