@@ -235,7 +235,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	@unpack p, t, f = integrator
 	u = integrator.u
 	M = integrator.f.mass_matrix
-	update_coefficients!(M,u0,p,t)
+	update_coefficients!(M,u,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	tmp = get_tmp_cache(integrator)[1]
 
