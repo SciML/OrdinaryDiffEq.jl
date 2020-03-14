@@ -381,29 +381,31 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     if isdae
       DiffEqBase.initialize_dae!(integrator)
     end
+
+    if save_start
+      integrator.saveiter += 1 # Starts at 1 so first save is at 2
+      integrator.saveiter_dense += 1
+      copyat_or_push!(ts,1,t)
+      if save_idxs === nothing
+        copyat_or_push!(timeseries,1,integrator.u)
+        @show ks
+        copyat_or_push!(ks,1,[rate_prototype])
+      else
+        copyat_or_push!(timeseries,1,u_initial,Val{false})
+        copyat_or_push!(ks,1,[ks_prototype])
+      end
+
+      if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+        copyat_or_push!(alg_choice,1,1)
+      end
+      typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
+    else
+      saveiter = 0 # Starts at 0 so first save is at 1
+      saveiter_dense = 0
+    end
+    
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
-  end
-
-  if save_start
-    integrator.saveiter += 1 # Starts at 1 so first save is at 2
-    integrator.saveiter_dense += 1
-    copyat_or_push!(ts,1,t)
-    if save_idxs === nothing
-      copyat_or_push!(timeseries,1,integrator.u)
-      copyat_or_push!(ks,1,[rate_prototype])
-    else
-      copyat_or_push!(timeseries,1,u_initial,Val{false})
-      copyat_or_push!(ks,1,[ks_prototype])
-    end
-
-    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-      copyat_or_push!(alg_choice,1,1)
-    end
-    typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
-  else
-    saveiter = 0 # Starts at 0 so first save is at 1
-    saveiter_dense = 0
   end
 
   handle_dt!(integrator)
