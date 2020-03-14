@@ -332,7 +332,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 		f(out, du, u, p, t)
 	end
 
-	r = nlsolve(nlequation, zero(u))
+	r = nlsolve(nlequation, ifelse.(differential_vars,du,u))
 
 	@. du = ifelse(differential_vars,r.zero,du)
 	@. u  = ifelse(differential_vars,u,r.zero)
@@ -371,11 +371,11 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 		out .= f(du, u, p, t)
 	end
 
-	r = nlsolve(nlequation, zero(u))
+	r = nlsolve(nlequation, ifelse.(differential_vars,du,u))
 
 	@. du = ifelse(differential_vars,r.zero,du)
 	@. u  = ifelse(differential_vars,u,r.zero)
-	
+
 	if integrator.u isa Number && integrator.du isa Number
 		# This doesn't fix static arrays!
 		integrator.u = first(u)
