@@ -36,6 +36,11 @@ function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegra
       DiffEqBase.addsteps!(integrator,integrator.f,true,false)
     end
   end
+
+  if integrator.isdae
+    DiffEqBase.initialize_dae!(integrator)
+  end
+
   integrator.u_modified = false
 end
 

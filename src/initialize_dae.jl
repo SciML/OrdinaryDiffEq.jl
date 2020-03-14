@@ -1,14 +1,12 @@
-abstract type DAEInitializationAlgorithm end
+struct DefaultInit <: DiffEqBase.DAEInitializationAlgorithm end
+struct NoInit <: DiffEqBase.DAEInitializationAlgorithm end
 
-struct DefaultInit <: DAEInitializationAlgorithm end
-struct NoInit <: DAEInitializationAlgorithm end
-
-struct ShampineCollocationInit{T} <: DAEInitializationAlgorithm
+struct ShampineCollocationInit{T} <: DiffEqBase.DAEInitializationAlgorithm
 	initdt::T
 end
 ShampineCollocationInit() = ShampineCollocationInit(nothing)
 
-struct BrownFullBasicInit{T} <: DAEInitializationAlgorithm
+struct BrownFullBasicInit{T} <: DiffEqBase.DAEInitializationAlgorithm
 	abstol::T
 end
 BrownFullBasicInit() = BrownFullBasicInit(1e-10)
@@ -28,9 +26,10 @@ variable, then the system is not Index 1!
 
 ## Expansion
 
-function initialize_dae!(integrator)
+function DiffEqBase.initialize_dae!(integrator::ODEIntegrator,
+									initializealg = integrator.initializealg)
 	_initialize_dae!(integrator, integrator.sol.prob,
-					 integrator.initializealg,
+					 initializealg,
 					 Val(DiffEqBase.isinplace(integrator.sol.prob)))
 end
 
