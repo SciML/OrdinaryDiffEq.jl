@@ -62,7 +62,6 @@ module OrdinaryDiffEq
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
-  include("initialize_dae.jl")
 
   include("nlsolve/type.jl")
   include("nlsolve/utils.jl")
@@ -112,6 +111,7 @@ module OrdinaryDiffEq
   include("integrators/integrator_utils.jl")
   include("cache_utils.jl")
   include("integrators/integrator_interface.jl")
+  include("initialize_dae.jl")
 
   include("perform_step/fixed_timestep_perform_step.jl")
   include("perform_step/symplectic_perform_step.jl")

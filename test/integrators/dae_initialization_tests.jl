@@ -88,6 +88,11 @@ integrator = init(prob, DABDF2())
 integrator = init(prob, DABDF2(), initializealg = ShampineCollocationInit())
 @test !(integrator.u ≈ [1.0, 0, 0.0])
 
+u₀ = [1.0, 0, 0.2]
+prob = DAEProblem(f,du₀,u₀,tspan)
+integrator = init(prob, DABDF2())
+@test !(integrator.u ≈ [1.0, 0, 0.0])
+
 f = function (out,du,u,p,t)
   out[1] = - 0.04u[1]              + 1e4*u[2]*u[3] - du[1]
   out[2] = + 0.04u[1] - 3e7*u[2]^2 - 1e4*u[2]*u[3] - du[2]
@@ -116,9 +121,12 @@ prob = DAEProblem(f,du₀,u₀,tspan,differential_vars=differential_vars)
 integrator = init(prob, DABDF2())
 @test integrator.u ≈ [1.0, 0, 0.0] atol=1e-9
 integrator = init(prob, DABDF2(), initializealg = ShampineCollocationInit())
-@test !(integrator.u ≈ [1.0, 0, 0.0]) atol=1e-9
+@test !(integrator.u ≈ [1.0, 0, 0.0])
 
-
+u₀ = [1.0, 0, 0.2]
+prob = DAEProblem(f,du₀,u₀,tspan)
+integrator = init(prob, DABDF2())
+@test !(integrator.u ≈ [1.0, 0, 0.0])
 
 # Need to be able to find the consistent solution of this problem, broken right now
 # analytical solution:

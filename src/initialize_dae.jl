@@ -49,14 +49,24 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::DefaultInit, x::Val{false})
-	_initialize_dae!(integrator, prob,
-					BrownFullBasicInit(), x)
+	if prob.differential_vars === nothing
+		_initialize_dae!(integrator, prob,
+						ShampineCollocationInit(), x)
+	else
+		_initialize_dae!(integrator, prob,
+						BrownFullBasicInit(), x)
+	end
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
 						 alg::DefaultInit, x::Val{true})
-	_initialize_dae!(integrator, prob,
-					BrownFullBasicInit(), x)
+	if prob.differential_vars === nothing
+		_initialize_dae!(integrator, prob,
+						ShampineCollocationInit(), x)
+	else
+		_initialize_dae!(integrator, prob,
+						BrownFullBasicInit(), x)
+	end
 end
 
 ## NoInit
