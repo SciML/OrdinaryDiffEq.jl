@@ -110,9 +110,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
  	end
 
 	update_coefficients!(M,u0,p,t)
-	differential_vars = [any(!iszero,x) for x in eachcol(M)]
+	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	f(tmp,u0,p,t)
-	tmp .= (differential_vars .== false) .* tmp
+	tmp .= algebraic_vars .* tmp
 
  	integrator.opts.internalnorm(tmp,t) <= integrator.opts.abstol && return
 
@@ -135,9 +135,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	dt = t != 0 ? min(t/1000,dtmax/10) : dtmax # Haven't implemented norm reduction
 
 	update_coefficients!(M,u0,p,t)
-	differential_vars = [any(!iszero,x) for x in eachcol(M)]
+	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	du = f(u0,p,t)
-	resid = du[!differential_vars]
+	resid = du[algebraic_vars]
 
 	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
@@ -224,23 +224,26 @@ Solve for the algebraic variables
 function _initialize_dae!(integrator, prob::ODEProblem,
 						 alg::BrownFullBasicInit, ::Val{true})
 	@unpack p, t, f = integrator
-	u0 = integrator.u
+	u = integrator.u
+	M = integrator.f.mass_matrix
 	update_coefficients!(M,u0,p,t)
-	differential_vars = [any(!iszero,x) for x in eachcol(M)]
-	f(tmp,u0,p,t)
+	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+	tmp = get_tmp_cache(integrator)[1]
 
-	tmp .= (differential_vars .== false) .* tmp
+	f(tmp,u,p,t)
+
+	tmp .= algebraic_vars .* tmp
 
 	integrator.opts.internalnorm(tmp,t) <= alg.abstol && return
-	alg_u = @view u[!differential_vars]
+	alg_u = @view u[algebraic_vars]
 
 	nlequation = (out, x) -> begin
 		alg_u .= x
-		du = f(u, p, t)
-		out .= @view du[!differential_vars]
+		f(tmp, u, p, t)
+		out .= @view tmp[algebraic_vars]
 	end
 
-	r = nlsolve(nlequation, u[!differential_vars])
+	r = nlsolve(nlequation, u[algebraic_vars])
 	alg_u .= r.zero
 
 	recursivecopy!(integrator.uprev,integrator.u)
@@ -256,40 +259,38 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	@unpack p, t, f = integrator
 
 	u0 = integrator.u
+	M = integrator.f.mass_matrix
 	update_coefficients!(M,u0,p,t)
-	differential_vars = [any(!iszero,x) for x in eachcol(M)]
+	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 
 	du = f(u0,p,t)
-	resid = du[!differential_vars]
+	resid = du[algebraic_vars]
 
 	integrator.opts.internalnorm(resid,t) <= alg.abstol && return
-	alg_u = @view u[!differential_vars]
 
-	if u0 isa Number && du0 isa Number
+	if u0 isa Number
 		# This doesn't fix static arrays!
 		u = [u0]
-		du = [_du]
 	else
 		u = u0
-		du = _du
 	end
+
+	alg_u = @view u[algebraic_vars]
 
 	nlequation = (out,x) -> begin
 		alg_u .= x
 		du = f(u,p,t)
-		out .= du[!differential_vars]
+		out .= @view du[algebraic_vars]
 	end
 
-	r = nlsolve(nlequation, u0[!differential_vars])
-	alg_u .= x
+	r = nlsolve(nlequation, u0[algebraic_vars])
+	alg_u .= r.zero
 
-	if _u isa Number && _du isa Number
+	if u0 isa Number
 		# This doesn't fix static arrays!
 		integrator.u = first(u)
-		integrator.cache.du = first(du)
 	else
 		integrator.u = u
-		integrator.cache.du = du
 	end
 
 	integrator.uprev = integrator.u
@@ -346,11 +347,11 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-						 differential_vars, alg::BrownFullBasicInit, ::Val{false})
+						  alg::BrownFullBasicInit, ::Val{false})
 	@unpack p, t, f = integrator
 	differential_vars = prob.differential_vars
 
-	if integrator.opts.internalnorm(f(_du, _u, p, t),t) <= alg.abstol
+	if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t),t) <= alg.abstol
 		return
 	elseif differential_vars === nothing
 		error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions or differential_vars")
@@ -389,10 +390,10 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 	if _u isa Number && _du isa Number
 		# This doesn't fix static arrays!
 		integrator.u = first(u)
-		integrator.cache.du = first(du)
+		integrator.du = first(du)
 	else
 		integrator.u = u
-		integrator.cache.du = du
+		integrator.du = du
 	end
 
 	integrator.uprev = integrator.u
