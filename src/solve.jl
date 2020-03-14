@@ -393,11 +393,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
         copyat_or_push!(timeseries,1,u_initial,Val{false})
         copyat_or_push!(ks,1,[ks_prototype])
       end
-
-      if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-        copyat_or_push!(alg_choice,1,1)
-      end
-      typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
     else
       saveiter = 0 # Starts at 0 so first save is at 1
       saveiter_dense = 0
@@ -405,6 +400,13 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
+
+    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm && save_start
+      # Loop to get all of the extra possible saves in callback initialization
+      for i in 1:integrator.saveiter
+        copyat_or_push!(alg_choice,i,integrator.cache.current)
+      end
+    end
   end
 
   handle_dt!(integrator)
