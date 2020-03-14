@@ -323,29 +323,19 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 	if integrator.opts.internalnorm(tmp,t) <= alg.abstol
 		return
 	elseif differential_vars === nothing
-		error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions or differential_vars")
+		error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
 	end
 
 	nlequation = (out, x) -> begin
-		for i in 1:length(x)
-			if differential_vars[i]
-				du[i] = x[i]
-			else
-				u[i] = x[i]
-			end
-		end
+		@. du = ifelse(differential_vars,x,du)
+		@. u  = ifelse(differential_vars,u,x)
 		f(out, du, u, p, t)
 	end
 
 	r = nlsolve(nlequation, zero(u))
 
-	for i in 1:length(u)
-		if differential_vars[i]
-			du[i] = r.zero[i]
-		else
-			u[i] = r.zero[i]
-		end
-	end
+	@. du = ifelse(differential_vars,r.zero,du)
+	@. u  = ifelse(differential_vars,u,r.zero)
 
 	recursivecopy!(integrator.uprev,integrator.u)
 	if alg_extrapolates(integrator.alg)
@@ -363,7 +353,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 	if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t),t) <= alg.abstol
 		return
 	elseif differential_vars === nothing
-		error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions or differential_vars")
+		error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
 	end
 
 	if integrator.u isa Number && integrator.du isa Number
@@ -376,26 +366,16 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 	end
 
 	nlequation = (out,x) -> begin
-		for i in 1:length(x)
-			if differential_vars[i]
-				du[i] = x[i]
-			else
-				u[i] = x[i]
-			end
-		end
+		@. du = ifelse(differential_vars,x,du)
+		@. u  = ifelse(differential_vars,u,x)
 		out .= f(du, u, p, t)
 	end
 
 	r = nlsolve(nlequation, zero(u))
 
-	for i in 1:length(u)
-		if differential_vars[i]
-			du[i] = r.zero[i]
-		else
-			u[i] = r.zero[i]
-		end
-	end
-
+	@. du = ifelse(differential_vars,r.zero,du)
+	@. u  = ifelse(differential_vars,u,r.zero)
+	
 	if integrator.u isa Number && integrator.du isa Number
 		# This doesn't fix static arrays!
 		integrator.u = first(u)
