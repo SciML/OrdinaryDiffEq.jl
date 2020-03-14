@@ -184,7 +184,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
  	end
 
 	nlequation!(tmp,u0)
-	f(resid,tmp,u0,p,t)
+	f(resid,integrator.du,u0,p,t)
  	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
 	integrator.u .= nlsolve(nlequation!, u0).zero
