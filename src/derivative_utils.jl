@@ -448,7 +448,7 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   # calculate W
   is_compos = integrator.alg isa CompositeAlgorithm
   islin, isode = islinearfunction(integrator)
-  update_coefficients!(mass_matrix,u,p,t)
+  update_coefficients!(mass_matrix,uprev,p,t)
 
   if islin
     J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
