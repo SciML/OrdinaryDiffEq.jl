@@ -58,7 +58,7 @@ end
     nlsolver.z = anderson(nlsolver.z, cache)
     if DiffEqBase.has_destats(integrator)
       integrator.destats.nsolve += 1
-    end  
+    end
   end
 
   # compute next step
@@ -80,7 +80,7 @@ end
     anderson!(nlsolver.z, cache)
     if DiffEqBase.has_destats(integrator)
       integrator.destats.nsolve += 1
-    end  
+    end
   end
 
   # compute next step
@@ -161,6 +161,7 @@ end
       @.. ztmp = dt * k
       @.. dz = ztmp - z
     else
+      update_coefficients!(mass_matrix,ustep, p, tstep)
       mul!(vec(ztmp), mass_matrix, vec(z))
       @.. dz = dt * k - ztmp
       @.. ztmp = z + dz

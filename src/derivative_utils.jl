@@ -185,7 +185,7 @@ function WOperator(f::DiffEqBase.AbstractODEFunction, gamma, inplace; transform=
 end
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
+DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
 function Base.convert(::Type{AbstractMatrix}, W::WOperator)
   if W._concrete_form === nothing || !W.inplace
     # Allocating
@@ -423,6 +423,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   else # concrete W using jacobian from `calc_J!`
     islin, isode = islinearfunction(integrator)
     islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, lcache)) )
+    !(isdae) && update_coefficients!(mass_matrix,uprev,p,t)
     new_W && !(isdae) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton(nlsolver)
@@ -447,6 +448,8 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   # calculate W
   is_compos = integrator.alg isa CompositeAlgorithm
   islin, isode = islinearfunction(integrator)
+  !isdae && update_coefficients!(mass_matrix,uprev,p,t)
+
   if islin
     J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
     W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
