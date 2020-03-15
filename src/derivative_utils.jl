@@ -340,7 +340,7 @@ end
       λ = -mass_matrix.λ
       @.. @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
     else
-      @.. W = muladd(-mass_matrix.A, invdtgamma, J)
+      @.. W = muladd(-mass_matrix, invdtgamma, J)
     end
   else
     if MT <: UniformScaling
@@ -349,7 +349,7 @@ end
       λ = -mass_matrix.λ
       @.. @view(W[idxs]) = @view(W[idxs]) + λ
     else
-      @.. W = muladd(dtgamma, J, -mass_matrix.A)
+      @.. W = muladd(dtgamma, J, -mass_matrix)
     end
   end
   return nothing
