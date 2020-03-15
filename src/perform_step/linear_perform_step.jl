@@ -28,6 +28,36 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   integrator.destats.nf += 1
 end
 
+function initialize!(integrator, cache::MMUT)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::MMUT, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  L = integrator.f.f
+  update_coefficients!(L,u,p,t)
+
+  if integrator.alg.krylov
+    u .= expv(2*dt, L, uprev; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
+    u .= exp(2*dt*L) * uprev
+  end
+
+  integrator.f(integrator.fsallast,u,p,t+2*dt)
+  integrator.destats.nf += 1
+end
+
 function initialize!(integrator, cache::LinearExponentialConstantCache)
   # Pre-start fsal
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
