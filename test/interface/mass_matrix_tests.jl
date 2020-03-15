@@ -155,22 +155,50 @@ end
   @test sol1[end] ≈ sol3[end] atol=1e-9
 end
 
+@testset "Mass Matrix Accuracy Tests" for mm in (dependent_M1, dependent_M2)
+  # test each method for exactness
+  for iip in (false, true)
+    prob, prob2 = make_mm_probs(mm, Val(iip))
+
+    @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
+    @test _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2) ≈ 0 atol=1e-10
+  end
+
+  # test functional iteration
+  for iip in (false, true)
+    prob, prob2 = make_mm_probs(mm, Val(iip))
+
+    sol = solve(prob,ImplicitEuler(
+                          nlsolve=NLFunctional()),dt=1/10,adaptive=false,reltol=1e-7,abstol=1e-10)
+    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLFunctional()),dt=1/10,adaptive=false,reltol=1e-7,abstol=1e-10)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+
+    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant,
+                          nlsolve=NLFunctional()),dt=1/10,reltol=1e-7,abstol=1e-10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLFunctional()),dt=1/10,reltol=1e-7,abstol=1e-10)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+
+    sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
+
+    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,reltol=1e-7,abstol=1e-10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,reltol=1e-7,abstol=1e-10)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
+  end
+end
+
+
+# Current scratch work
 prob, prob2 = make_mm_probs(dependent_M1, Val(true))
-_norm_dsol(ImplicitEuler(),prob,prob2,1/100000)
-_norm_dsol(RadauIIA5(),prob,prob2,1/100000)
-_norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2,1/1000000)
-_norm_dsol(Rosenbrock23(),prob,prob2,1/100000)
-_norm_dsol(Rodas4(),prob,prob2,1/100000)
-_norm_dsol(Rodas5(),prob,prob2,1/1000000)
-_norm_dsol(ROS34PW1a(),prob,prob2,1/100000)
-_norm_dsol(RosenbrockW6S4OS(),prob,prob2,1/10000)
+@show _norm_dsol(ImplicitEuler(),prob,prob2,1/100000)
+@show _norm_dsol(RadauIIA5(),prob,prob2,1/100000)
+@show _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2,1/1000000)
 
 prob, prob2 = make_mm_probs(dependent_M2, Val(true))
-_norm_dsol(ImplicitEuler(),prob,prob2,1/100000)
-_norm_dsol(RadauIIA5(),prob,prob2,1/100000)
-_norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2,1/1000000)
-_norm_dsol(Rosenbrock23(),prob,prob2,1/100000)
-_norm_dsol(Rodas4(),prob,prob2,1/100000)
-_norm_dsol(Rodas5(),prob,prob2,1/1000000)
-_norm_dsol(ROS34PW1a(),prob,prob2,1/100000)
-_norm_dsol(RosenbrockW6S4OS(),prob,prob2,1/10000)
+@show _norm_dsol(ImplicitEuler(),prob,prob2,1/100000)
+@show _norm_dsol(RadauIIA5(),prob,prob2,1/10)
+@show _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2,1/1000000)
