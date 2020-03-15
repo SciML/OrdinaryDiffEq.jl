@@ -23,7 +23,7 @@ function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,
   MagnusMidpointConstantCache()
 end
 
-@cache struct MMUT{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+@cache struct MMUTCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -37,15 +37,15 @@ function alg_cache(alg::MMUT,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MMUT(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MMUTCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
 end
 
-struct MMUT <: OrdinaryDiffEqConstantCache
+struct MMUTConstantCache <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::MMUT,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  MMUT()
+  MMUTConstantCache()
 end
 
 struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end

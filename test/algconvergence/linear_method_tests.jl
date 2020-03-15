@@ -34,3 +34,15 @@ sim = analyticless_test_convergence(dts,prob,MagnusMidpoint(),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
 sim = analyticless_test_convergence(dts,prob,MagnusMidpoint(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
+
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (0.0, 5.))
+dts = 1 ./2 .^(10:-1:1)
+sol  = solve(prob,OrdinaryDiffEq.MMUT(),dt=1/4)
+
+dts = 1 ./2 .^(10:-1:1)
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,MMUT(),test_setup)
+@test sim.𝒪est[:l2] ≈ 2 atol=0.2
+sim = analyticless_test_convergence(dts,prob,MMUT(krylov=true),test_setup)
+@test sim.𝒪est[:l2] ≈ 2 atol=0.2
