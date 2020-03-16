@@ -39,45 +39,10 @@ function initialize!(integrator, cache::MMUTCache)
   integrator.destats.nf += 1
 end
 
-function perform_step!(integrator, cache::MMUTCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+function perform_step!(integrator, cache::MMUTCache, repeat_step=false, alg_extrapolates=true)
+  @unpack t,dt,uprev,uprev2,u,p,alg = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
-  uprev=u
-  uprev2=u
-  flag=false
-  i=0
-  if i==0 && flag==false
-    L = integrator.f.f
-    update_coefficients!(L,u,p,t+dt/2)
-
-    if integrator.alg.krylov
-      u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
-    else
-      A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
-      u .= exp(dt*L) * u
-    end
-  
-    integrator.f(integrator.fsallast,u,p,t+dt)
-    integrator.destats.nf += 1
-    uprev2=u
-    i+=1
-    flag=true
-  elseif mod(i,2)==1 && flag==true
-    L = integrator.f.f
-    update_coefficients!(L,u,p,t)
-
-    if integrator.alg.krylov
-      u .= expv(2*dt, L, uprev; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
-    else
-      A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
-      u .= exp(2*dt*L) * uprev
-    end
-    uprev=u
-    i += 1
-    integrator.f(integrator.fsallast,u,p,t+dt)
-    integrator.destats.nf += 1
-  else
     L = integrator.f.f
     update_coefficients!(L,u,p,t)
 
@@ -87,12 +52,10 @@ function perform_step!(integrator, cache::MMUTCache, repeat_step=false)
       A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
       u .= exp(2*dt*L) * uprev2
     end
-    uprev2=u
-    i += 1
+    uprev=u
     integrator.f(integrator.fsallast,u,p,t+dt)
     integrator.destats.nf += 1
-
-  end
+  
 end
 
 function initialize!(integrator, cache::LinearExponentialConstantCache)

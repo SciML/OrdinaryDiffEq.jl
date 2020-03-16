@@ -113,6 +113,7 @@ alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
 alg_extrapolates(alg::IRKC) = true
+alg_extrapolates(alg::MMUT) = true
 
 alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("Order is not defined for this algorithm")
 get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},cache) = alg_order(alg)
