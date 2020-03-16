@@ -39,13 +39,25 @@ function initialize!(integrator, cache::MMUTCache)
   integrator.destats.nf += 1
 end
 
-function perform_step!(integrator, cache::MMUTCache, repeat_step=false, alg_extrapolates=true)
-  @unpack t,dt,uprev,uprev2,u,p,alg = integrator
+function perform_step!(integrator, cache::MMUTCache, repeat_step=false, alg_extrapolates=true, iter=1)
+  @unpack t,dt,uprev,uprev2,u,p,alg,iter = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
     L = integrator.f.f
     update_coefficients!(L,u,p,t)
-
+    # println("iter   : $iter")
+  if iter==1
+    if integrator.alg.krylov
+      u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+    else
+      A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
+      u .= exp(dt*L) * u
+    end
+  
+    integrator.f(integrator.fsallast,u,p,t+dt)
+    integrator.destats.nf += 1
+    iter += 1
+  else
     if integrator.alg.krylov
       u .= expv(2*dt, L, uprev2; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     else
@@ -55,7 +67,7 @@ function perform_step!(integrator, cache::MMUTCache, repeat_step=false, alg_extr
     uprev=u
     integrator.f(integrator.fsallast,u,p,t+dt)
     integrator.destats.nf += 1
-  
+  end
 end
 
 function initialize!(integrator, cache::LinearExponentialConstantCache)
