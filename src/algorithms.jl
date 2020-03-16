@@ -644,7 +644,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Linear Methods
 
-for Alg in [:MagnusMidpoint]
+for Alg in [:MagnusMidpoint,:MagnusLeapfrog]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int

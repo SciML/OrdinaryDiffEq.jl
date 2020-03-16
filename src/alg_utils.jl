@@ -113,6 +113,7 @@ alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
 alg_extrapolates(alg::IRKC) = true
+alg_extrapolates(alg::MagnusLeapfrog) = true
 
 alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("Order is not defined for this algorithm")
 get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},cache) = alg_order(alg)
@@ -275,6 +276,7 @@ alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::MagnusMidpoint) = 2
 alg_order(alg::LinearExponential) = 1
+alg_order(alg::MagnusLeapfrog) = 2
 alg_order(alg::Trapezoid) = 2
 alg_order(alg::ImplicitMidpoint) = 2
 alg_order(alg::TRBDF2) = 2
