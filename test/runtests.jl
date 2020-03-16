@@ -40,7 +40,7 @@ if GROUP == "All" || GROUP == "InterfaceI"
   @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
 end
 
-if GROUP == "All" || GROUP == "Interface II"
+if GROUP == "All" || GROUP == "InterfaceII"
   @time @safetestset "Mass Matrix Tests" begin include("interface/mass_matrix_tests.jl") end
   @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
 end
