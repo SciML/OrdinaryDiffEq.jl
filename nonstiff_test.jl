@@ -78,6 +78,7 @@ end
   γ = γ*α5 + dt*f(u, p, t + c5*dt)
   u = u + β5*γ
 
+  fsallast = γ
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
