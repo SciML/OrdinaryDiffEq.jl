@@ -656,7 +656,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   u₀ = uprev + sum(D)  # u₀ is predicted value
   ϕ = zero(u)
   for i = 1:k
-    ϕ .+= γₖ[i]*D[i] # Done .+ because of +(::Rational{Int64}, ::Array{Float64,1}) use case
+    ϕ += γₖ[i]*D[i] # Done .+ because of +(::Rational{Int64}, ::Array{Float64,1}) use case
   end
   ϕ *= γ
   nlsolver.tmp = u₀ - ϕ
