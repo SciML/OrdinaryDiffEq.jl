@@ -43,10 +43,10 @@ function perform_step!(integrator, cache::MMUTCache, repeat_step=false, alg_extr
   @unpack t,dt,uprev,uprev2,u,p,alg,iter = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
-    L = integrator.f.f
-    update_coefficients!(L,u,p,t)
     # println("iter   : $iter")
   if iter==1
+    L = integrator.f.f
+    update_coefficients!(L,u,p,t+dt/2)
     if integrator.alg.krylov
       u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     else
@@ -58,6 +58,8 @@ function perform_step!(integrator, cache::MMUTCache, repeat_step=false, alg_extr
     integrator.destats.nf += 1
     iter += 1
   else
+    L = integrator.f.f
+    update_coefficients!(L,u,p,t)
     if integrator.alg.krylov
       u .= expv(2*dt, L, uprev2; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     else
