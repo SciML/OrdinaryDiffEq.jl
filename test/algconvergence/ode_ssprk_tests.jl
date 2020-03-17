@@ -79,33 +79,33 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 
 println("SHLDDRK52")
 alg = SHLDDRK52()
-dts_SHLDDRK_2N = (1/2) .^ (0:3)
 for prob in test_problems_only_time
-  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-  @test sim.𝒪est[:final] ≈ 4 atol=1
+  sim = test_convergence(dts, prob, alg)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
-  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-  @test sim.𝒪est[:final] ≈ 4 atol=1
+  sim = test_convergence(dts, prob, alg)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
-  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-  @test sim.𝒪est[:final] ≈ 4 atol=1
+  sim = test_convergence(dts, prob, alg)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 
 println("SHLDDRK_2N")
+dts_SHLDDRK_2N  = (1/2) .^ (0:3)
 alg = SHLDDRK_2N()
 for prob in test_problems_only_time
-  sim = test_convergence(dts, prob, alg)
-  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+  @test sim.𝒪est[:final] ≈ 4 atol=1
 end
 for prob in test_problems_linear
-  sim = test_convergence(dts, prob, alg)
-  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+  @test sim.𝒪est[:final] ≈ 4 atol=1
 end
 for prob in test_problems_nonlinear
-  sim = test_convergence(dts, prob, alg)
-  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+  @test sim.𝒪est[:final] ≈ 4 atol=1
 end
 
 println("SSPRK33")
