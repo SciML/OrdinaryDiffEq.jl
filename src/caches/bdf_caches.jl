@@ -115,10 +115,10 @@ end
 
 # QNDF1
 
-@cache mutable struct QNDF1ConstantCache{N,coefType,coefType1,dtType,uType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDF1ConstantCache{N,coefType,coefType1,coefType2,dtType,uType} <: OrdinaryDiffEqConstantCache
   nlsolver::N
-  D::coefType
-  D2::coefType1
+  D::coefType1
+  D2::coefType2
   R::coefType
   U::coefType
   uprev2::uType
@@ -181,12 +181,12 @@ end
 
 # QNDF2
 
-@cache mutable struct QNDF2ConstantCache{N,coefType,coefType1,uType,dtType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDF2ConstantCache{N,coefType,coefType1,coefType2,uType,dtType} <: OrdinaryDiffEqConstantCache
   nlsolver::N
-  D::coefType
-  D2::coefType
-  R::coefType1
-  U::coefType1
+  D::coefType1
+  D2::coefType2
+  R::coefType
+  U::coefType
   uprev2::uType
   uprev3::uType
   dtₙ₋₁::dtType
@@ -266,7 +266,7 @@ end
   c::Int
 end
 
-@cache mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDFCache{uType,rateType,coefType,coefType1,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
   D::coefType3
   D2::coefType2
