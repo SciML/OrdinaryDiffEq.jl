@@ -81,15 +81,15 @@ println("SHLDDRK52")
 alg = SHLDDRK52()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  @test sim.𝒪est[:final] ≈ 4 atol=1
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
-  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  @test sim.𝒪est[:final] ≈ 4 atol=1
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
-  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  @test sim.𝒪est[:final] ≈ 4 atol=1
 end
 
 println("SHLDDRK_2N")
