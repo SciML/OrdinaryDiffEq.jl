@@ -238,6 +238,7 @@ struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   CarpenterKennedy2N54(;williamson_condition=true) = new(williamson_condition)
 end
+struct LDDRK25 <: OrdinaryDiffEqAlgorithm end
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
 struct HSLDDRK64 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool

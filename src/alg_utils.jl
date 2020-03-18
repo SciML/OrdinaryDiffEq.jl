@@ -15,6 +15,7 @@ isfsal(alg::Vern9) = false
 # Pseudo Non-FSAL
 isfsal(alg::ORK256) = false
 isfsal(alg::CarpenterKennedy2N54) = false
+isfsal(alg::LDDRK25) = false
 isfsal(alg::HSLDDRK64) = false
 isfsal(alg::DGLDDRK73_C) = false
 isfsal(alg::DGLDDRK84_C) = false
@@ -201,6 +202,7 @@ alg_order(alg::Midpoint) = 2
 
 alg_order(alg::ORK256) = 2
 alg_order(alg::CarpenterKennedy2N54) = 4
+alg_order(alg::LDDRK25) = 2
 alg_order(alg::SHLDDRK52) = 2
 alg_order(alg::HSLDDRK64) = 4
 alg_order(alg::DGLDDRK73_C) = 3
@@ -500,6 +502,7 @@ end
 uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}, adaptive::Bool) = true
 uses_uprev(alg::ORK256, adaptive::Bool) = false
 uses_uprev(alg::CarpenterKennedy2N54, adaptive::Bool) = false
+uses_uprev(alg::LDDRK25, adaptive::Bool) = false
 uses_uprev(alg::HSLDDRK64, adaptive::Bool) = false
 uses_uprev(alg::DGLDDRK73_C, adaptive::Bool) = false
 uses_uprev(alg::DGLDDRK84_C, adaptive::Bool) = false

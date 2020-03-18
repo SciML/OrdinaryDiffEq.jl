@@ -18,7 +18,7 @@ struct LowStorageRK2NConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 struct LDDRK25ConstantCache{T} <: OrdinaryDiffEqConstantCache
-  α::T
+  α1::T
   α2::T
   α3::T
   α4::T
