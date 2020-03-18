@@ -17,6 +17,29 @@ struct LowStorageRK2NConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
   c2end::SVector{N,T2} # c1 is always zero
 end
 
+@cache struct LDDRK25Cache{uType,rateType,TabType,WrapperType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  ω::rateType
+  tab::TabType
+end
+
+struct LDDRK25ConstantCache{T} <: OrdinaryDiffEqConstantCache
+  α::T
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  c1::T
+  c2::T
+  c3::T
+  c4::T
+  c5::T
+end
 
 function ORK256ConstantCache(T, T2)
   A2 = convert(T, -1.0)
@@ -111,6 +134,29 @@ end
 
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+function LDDRK25ConstantCache(T)
+  α1 = T(0.0)
+  α2 = T(-0.6913065)
+  α3 = T(-2.655155)
+  α4 = T(-0.8147688)
+  α5 = T(-0.6686587)
+  β1 = T(0.1)
+  β2 = T(0.75)
+  β3 = T(0.7)
+  β4 = T(0.479313)
+  β5 = T(0.310392)
+  c1 = T(0.0)
+  c2 = T(0.1)
+  c3 = T(0.3315201)
+  c4 = T(0.4577796)
+  c5 = T(0.8666528)
+  LDDRK25ConstantCache(α1, α2, α3, α4, α5, β1, β2, β3, β4, β5, c1, c2, c3, c4, c5)
+end
+
+function alg_cache(alg::LDDRK25,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  LDDRK25ConstantCache(real(uBottomEltypeNoUnits))
 end
 
 

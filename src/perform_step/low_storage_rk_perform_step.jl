@@ -614,3 +614,39 @@ end
 
   f(k, u, p, t+dt)
 end
+
+function initialize!(integrator,cache::LDDRK25ConstantCache)
+
+	integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+	integrator.kshortsize = 1
+	integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+	integrator.fsallast = zero(integrator.fsalfirst)
+	integrator.k[1] = integrator.fsalfirst
+
+end
+
+@muladd function perform_step!(integrator,cache::LDDRK25ConstantCache,repeat_step=false)
+
+	@unpack t,dt,uprev,u,f,p = integrator
+	@unpack α1,α2,α3,α4,α5,β1,β2,β3,β4,β5,c1c2,c3,c4,c5 = cache
+
+	γ = integrator.fsalfirst
+	u   = uprev + β1*dt*γ
+
+  γ = α2*ω + dt*f(u, p, t+c2*dt)
+	u   = u + β2*dt*γ
+
+  γ = α3*ω + dt*f(u, p, t+c3*dt)
+	u   = u + β3*dt*γ
+
+  γ = α2*ω + dt*f(u, p, t+c4*dt)
+	u   = u + β4*dt*γ
+	# u
+  γ = α2*ω + dt*f(u, p, t+c5*dt)
+	u   = u + β5*dt*γ
+
+	integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+	integrator.k[1] = integrator.fsalfirst
+	integrator.u = u
+
+end
