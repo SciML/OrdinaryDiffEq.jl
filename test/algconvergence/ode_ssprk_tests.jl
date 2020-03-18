@@ -92,6 +92,24 @@ for prob in test_problems_nonlinear
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 
+println("SHLDDRK_2N")
+dts_SHLDDRK_2N  = (1/2) .^ (0:3)
+alg = SHLDDRK_2N()
+for prob in test_problems_only_time
+  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+  @test sim.𝒪est[:final] ≈ 4 atol=0.46
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+  @test sim.𝒪est[:final] ≈ 4 atol=0.46
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
+  @test sim.𝒪est[:final] ≈ 4 atol=1
+  # due to unusual saturation towards high dts(0.5 and onwards) and
+  # saturation towards low dts due to less precision in the provided values of weights , tolerance is kept so high
+end
+
 println("SSPRK33")
 alg = SSPRK33()
 for prob in test_problems_only_time

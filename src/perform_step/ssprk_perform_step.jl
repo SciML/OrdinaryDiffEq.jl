@@ -128,6 +128,143 @@ end
   f( k,  u, p, t+dt)
 end
 
+function initialize!(integrator,cache::SHLDDRK_2NConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::SHLDDRK_2NConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack α21,α31,α41,α51,β11,β21,β31,β41,β51,c21,c31,c41,c51,α22,α32,α42,α52,α62,β12,β22,β32,β42,β52,β62,c22,c32,c42,c52,c62= cache
+
+  if integrator.u_modified
+    cache.step = 1
+  end
+  # cnt = cache.step
+
+  if cache.step % 2 == 1
+    cache.step += 1
+    # u1
+    tmp = dt*integrator.fsalfirst
+    u   = uprev + β11*tmp
+    # u2
+    tmp = α21*tmp + dt*f(u, p, t+c21*dt)
+    u   = u + β21*tmp
+    # u3
+    tmp = α31*tmp + dt*f(u, p, t+c31*dt)
+    u   = u + β31*tmp
+    # u4
+    tmp = α41*tmp + dt*f(u, p, t+c41*dt)
+    u   = u + β41*tmp
+    # u5 = u
+    tmp = α51*tmp + dt*f(u, p, t+c51*dt)
+    u   = u + β51*tmp
+
+  else
+    cache.step += 1
+    # u1
+    tmp = dt*integrator.fsalfirst
+    u   = uprev + β12*tmp
+    # u2
+    tmp = α22*tmp + dt*f(u, p, t+c22*dt)
+    u   = u + β22*tmp
+    # u3
+    tmp = α32*tmp + dt*f(u, p, t+c32*dt)
+    u   = u + β32*tmp
+    # u4
+    tmp = α42*tmp + dt*f(u, p, t+c42*dt)
+    u   = u + β42*tmp
+    # u5 = u
+    tmp = α52*tmp + dt*f(u, p, t+c52*dt)
+    u   = u + β52*tmp
+    tmp = α62*tmp + dt*f(u, p, t+c62*dt)
+    u   = u + β62*tmp
+  end
+
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::SHLDDRK_2NCache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::SHLDDRK_2NCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,fsalfirst,tmp = cache
+  @unpack α21,α31,α41,α51,β11,β21,β31,β41,β51,c21,c31,c41,c51,α22,α32,α42,α52,α62,β12,β22,β32,β42,β52,β62,c22,c32,c42,c52,c62 = cache.tab
+
+  if integrator.u_modified
+    cache.step = 1
+  end
+
+  if cache.step % 2 == 1
+    # u1
+    @. tmp = dt*fsalfirst
+    @. u   = uprev + β11*tmp
+    # u2
+    f( k,  u, p, t+c21*dt)
+    @. tmp = α21*tmp + dt*k
+    @. u   = u + β21*tmp
+    # u3
+    f( k,  u, p, t+c31*dt)
+    @. tmp = α31*tmp + dt*k
+    @. u   = u + β31*tmp
+    # u4
+    f( k,  u, p, t+c41*dt)
+    @. tmp = α41*tmp + dt*k
+    @. u   = u + β41*tmp
+    # u5 = u
+    f( k,  u, p, t+c51*dt)
+    @. tmp = α51*tmp + dt*k
+    @. u   = u + β51*tmp
+
+    f( k,  u, p, t+dt)
+  else
+    # u1
+    @. tmp = dt*fsalfirst
+    @. u   = uprev + β12*tmp
+    # u2
+    f( k,  u, p, t+c22*dt)
+    @. tmp = α22*tmp + dt*k
+    @. u   = u + β22*tmp
+    # u3
+    f( k,  u, p, t+c32*dt)
+    @. tmp = α32*tmp + dt*k
+    @. u   = u + β32*tmp
+    # u4
+    f( k,  u, p, t+c42*dt)
+    @. tmp = α42*tmp + dt*k
+    @. u   = u + β42*tmp
+    # u5 = u
+    f( k,  u, p, t+c52*dt)
+    @. tmp = α52*tmp + dt*k
+    @. u   = u + β52*tmp
+    # u6 = u
+    f( k,  u, p, t+c62*dt)
+    @. tmp = α62*tmp + dt*k
+    @. u   = u + β62*tmp
+
+    f( k,  u, p, t+dt)
+  end
+end
+
 function initialize!(integrator,cache::SSPRK33ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
