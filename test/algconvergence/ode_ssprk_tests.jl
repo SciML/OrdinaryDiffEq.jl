@@ -97,16 +97,16 @@ dts_SHLDDRK_2N  = (1/2) .^ (0:3)
 alg = SHLDDRK_2N()
 for prob in test_problems_only_time
   sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-  @test sim.𝒪est[:final] ≈ 4 atol=0.65
+  @test sim.𝒪est[:final] ≈ 4 atol=0.46
 end
 for prob in test_problems_linear
   sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
-  @test sim.𝒪est[:final] ≈ 4 atol=0.65
+  @test sim.𝒪est[:final] ≈ 4 atol=0.46
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts_SHLDDRK_2N, prob, alg)
   @test sim.𝒪est[:final] ≈ 4 atol=1
-  #due to unusual super-convergence for non-linear problems, tolerance is kept so high 
+  #due to unusual super-convergence for non-linear problems, tolerance is kept so high
 end
 
 println("SSPRK33")
