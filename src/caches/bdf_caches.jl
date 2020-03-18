@@ -143,7 +143,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
 
   uprev2 = u
-  dtₙ₋₁ = t
+  dtₙ₋₁ = zero(t)
 
   D = fill(zero(u), 1, 1)
   D2 = fill(zero(u), 1, 2)
@@ -174,7 +174,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   atmp = similar(u,uEltypeNoUnits)
   utilde = similar(u)
   uprev2 = zero(u)
-  dtₙ₋₁ = one(dt)
+  dtₙ₋₁ = zero(dt)
 
   QNDF1Cache(uprev2,fsalfirst,D,D2,R,U,atmp,utilde,nlsolver,dtₙ₋₁)
 end
