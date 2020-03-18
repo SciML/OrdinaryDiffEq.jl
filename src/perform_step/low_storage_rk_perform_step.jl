@@ -633,19 +633,19 @@ end
 	γ = integrator.fsalfirst
 	u   = uprev + β1*dt*γ
 
-  γ = α2*ω + dt*f(u, p, t+c2*dt)
+  γ = α2*γ + dt*f(u, p, t+c2*dt)
 	u   = u + β2*dt*γ
 
-  γ = α3*ω + dt*f(u, p, t+c3*dt)
+  γ = α3*γ + dt*f(u, p, t+c3*dt)
 	u   = u + β3*dt*γ
 
-  γ = α2*ω + dt*f(u, p, t+c4*dt)
+  γ = α2*γ + dt*f(u, p, t+c4*dt)
 	u   = u + β4*dt*γ
-	# u
-  γ = α2*ω + dt*f(u, p, t+c5*dt)
+
+  γ = α4*γ + dt*f(u, p, t+c5*dt)
 	u   = u + β5*dt*γ
 
-	integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+	integrator.fsallast = f(u, p, t+dt)
 	integrator.k[1] = integrator.fsalfirst
 	integrator.u = u
 
