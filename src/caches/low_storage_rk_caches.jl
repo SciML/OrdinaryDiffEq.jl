@@ -17,12 +17,6 @@ struct LowStorageRK2NConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
   c2end::SVector{N,T2} # c1 is always zero
 end
 
-@cache struct LDDRK25Cache{uType,rateType,TabType,WrapperType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  ω::rateType
-  tab::TabType
-end
-
 struct LDDRK25ConstantCache{T} <: OrdinaryDiffEqConstantCache
   α::T
   α2::T
