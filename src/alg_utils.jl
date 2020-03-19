@@ -277,6 +277,7 @@ alg_order(alg::TsitPap8) = 8
 alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::MagnusMidpoint) = 2
+alg_order(alg::MagnusGauss4) = 4
 alg_order(alg::LinearExponential) = 1
 alg_order(alg::MagnusLeapfrog) = 2
 alg_order(alg::Trapezoid) = 2
