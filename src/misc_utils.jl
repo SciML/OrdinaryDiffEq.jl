@@ -50,5 +50,3 @@ function diffdir(integrator::DiffEqBase.DEIntegrator)
           integrator.t > integrator.sol.prob.tspan[2] - difference ? -true :  true :
           integrator.t < integrator.sol.prob.tspan[2] + difference ?  true : -true
 end
-
-issingular(A) = !issuccess(lu(A, check=false))
