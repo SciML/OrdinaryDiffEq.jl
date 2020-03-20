@@ -44,17 +44,16 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step=false)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
-  L1 = integrator.f.f
-  update_coefficients!(L1,u,p,t+dt*(1/2+sqrt(3)/6))
-  L2 = integrator.f.f
-  update_coefficients!(L2,u,p,t+dt*(1/2-sqrt(3)/6))
-  A = Matrix(L1)
-  B = Matrix(L2)
+  L = integrator.f.f
+  update_coefficients!(L,u,p,t+dt*(1/2+sqrt(3)/6))
+  A = Matrix(L)
+  update_coefficients!(L,u,p,t+dt*(1/2-sqrt(3)/6))
+  B = Matrix(L)
   # println("Here a $A")
   # println("Here b $B")
 
   if integrator.alg.krylov
-    u .= expv(dt,(A+B) ./ 2 + (dt*sqrt(3)) .* (B*A-A*B) ./ 12, u; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+    u .= expv(dt,(A+B) ./ 2 + (dt*sqrt(3)) .* (B*A-A*B) ./ 12, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     #A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
     u .= exp((dt/2) .* (A+B)+((dt^2)*(sqrt(3)/12)) .* (B*A-A*B)) * u
