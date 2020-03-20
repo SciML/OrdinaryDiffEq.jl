@@ -102,7 +102,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   isdae = alg isa DAEAlgorithm || (!(typeof(prob)<:DiscreteProblem) &&
                                      prob.f.mass_matrix != I &&
                                      !(typeof(prob.f.mass_matrix)<:Tuple) &&
-                                     issingular(prob.f.mass_matrix))
+                                     ArrayInterface.issingular(prob.f.mass_matrix))
 
   f = prob.f
   p = prob.p

@@ -24,9 +24,9 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
-ArrayInterface = "1.1, 2.0"
+ArrayInterface = "2.6"
 DataStructures = "0.17"
-DiffEqBase = "6.21"
+DiffEqBase = "6.25"
 ExponentialUtilities = "1.2"
 FiniteDiff = "2"
 ForwardDiff = "0.10.3"
