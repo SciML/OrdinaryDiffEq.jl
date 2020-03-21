@@ -67,20 +67,24 @@ dependent_M2 = DiffEqArrayOperator(ones(3,3),update_func=update_func2)
   for iip in (false, true)
     prob, prob2 = make_mm_probs(mm, Val(iip))
 
+    println("SDIRKs")
     @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
     @test_broken _norm_dsol(Trapezoid(),prob,prob2) ≈ 0 atol=1e-7
     @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
     @test _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2) ≈ 0 atol=1e-10
+
+    println("BDFs")
     @test _norm_dsol(ABDF2(),prob,prob2) ≈ 0 atol=1e-7
 
-    @test_skip _norm_dsol(QBDF1(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(QBDF1(),prob,prob2) ≈ 0 atol=1e-7
     @test _norm_dsol(QBDF2(),prob,prob2) ≈ 0 atol=1e-7
-    @test_skip _norm_dsol(QBDF(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(QBDF(),prob,prob2) ≈ 0 atol=1e-7
 
-    @test_skip _norm_dsol(QNDF1(),prob,prob2) ≈ 0 atol=1e-5
-    @test_skip _norm_dsol(QNDF2(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(QNDF1(),prob,prob2) ≈ 0 atol=1e-5
+    @test _norm_dsol(QNDF2(),prob,prob2) ≈ 0 atol=1e-7
     @test_skip _norm_dsol(QNDF(),prob,prob2) ≈ 0 atol=1e-7
 
+    println("Rosenbrocks")
     @test _norm_dsol(Rosenbrock23(),prob,prob2) ≈ 0 atol=1e-11
     @test _norm_dsol(Rosenbrock32(),prob,prob2) ≈ 0 atol=1e-11
     @test _norm_dsol(ROS3P(),prob,prob2) ≈ 0 atol=1e-11
@@ -105,6 +109,7 @@ end
 
 @testset "Mass Matrix Functional Iteration Tests" for mm in (almost_I,) # Requires contraction map
   for iip in (false, true)
+    @show iip
     prob, prob2 = make_mm_probs(mm, Val(iip))
 
     sol = solve(prob,ImplicitEuler(
@@ -160,12 +165,15 @@ end
   u0 = zeros(2)
 
   m_ode_prob = ODEProblem(ODEFunction(f2!;mass_matrix=M), u0, tspan)
+  println("Rosenbrocks")
   sol1  = @test_nowarn solve(m_ode_prob, Rosenbrock23(), reltol=1e-10, abstol=1e-10)
   sol2  = @test_nowarn solve(m_ode_prob, RadauIIA5(), reltol=1e-10, abstol=1e-10)
   sol3  = @test_nowarn solve(m_ode_prob, Cash4(), reltol=1e-10, abstol=1e-10)
+  println("SDIRKs")
   sol4  = @test_nowarn solve(m_ode_prob, ImplicitEuler(), reltol=1e-10, abstol=1e-10)
   sol5  = @test_nowarn solve(m_ode_prob, ImplicitMidpoint(), dt = 1/1000, reltol=1e-10, abstol=1e-10)
   sol6  = @test_nowarn solve(m_ode_prob, Trapezoid(), reltol=1e-10, abstol=1e-10)
+  println("BDFs")
   sol7  = @test_nowarn solve(m_ode_prob, QNDF1(), reltol=1e-10, abstol=1e-10)
   sol8  = @test_nowarn solve(m_ode_prob, QBDF1(), reltol=1e-10, abstol=1e-10)
   sol9  = @test_nowarn solve(m_ode_prob, QNDF2(), reltol=1e-10, abstol=1e-10)
@@ -191,6 +199,7 @@ end
 @testset "Dependent Mass Matrix Tests" for mm in (dependent_M1, dependent_M2)
   # test each method for exactness
   for iip in (false, true)
+    @show iip
     prob, prob2 = make_mm_probs(mm, Val(iip))
 
     @test_broken _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
@@ -208,6 +217,7 @@ end
 
   # test functional iteration
   @test_skip for iip in (false, true)
+    @show iip
     prob, prob2 = make_mm_probs(mm, Val(iip))
 
     sol = solve(prob,ImplicitEuler(

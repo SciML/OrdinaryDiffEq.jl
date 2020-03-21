@@ -8,14 +8,13 @@ const is_TRAVIS = haskey(ENV,"TRAVIS")
 #Start Test Script
 
 @time begin
-if GROUP == "All" || GROUP == "Interface"
+if GROUP == "All" || GROUP == "InterfaceI"
   #@time @safetestset "Linear Solver Tests" begin include("interface/linear_solver_test.jl") end
   @time @safetestset "Discrete Algorithm Tests" begin include("interface/discrete_algorithm_test.jl") end
   @time @safetestset "Tstops Tests" begin include("interface/ode_tstops_tests.jl") end
   @time @safetestset "Backwards Tests" begin include("interface/ode_backwards_test.jl") end
   @time @safetestset "Initdt Tests" begin include("interface/ode_initdt_tests.jl") end
   @time @safetestset "Linear Tests" begin include("interface/ode_twodimlinear_tests.jl") end
-  @time @safetestset "Mass Matrix Tests" begin include("interface/mass_matrix_tests.jl") end
   @time @safetestset "Differentiation Trait Tests" begin include("interface/differentiation_traits_tests.jl") end
   @time @safetestset "Inf Tests" begin include("interface/inf_handling.jl") end
   @time @safetestset "Jacobian Tests" begin include("interface/jacobian_tests.jl") end
@@ -35,11 +34,15 @@ if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "Derivative Utilities Tests" begin include("interface/type_handling.jl") end
   @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
   @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
-  @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
   @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
   @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
   @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
   @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
+end
+
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
+  @time @safetestset "Mass Matrix Tests" begin include("interface/mass_matrix_tests.jl") end
+  @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")

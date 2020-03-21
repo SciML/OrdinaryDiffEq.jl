@@ -240,6 +240,7 @@ struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm
 end
 struct LDDRK25 <: OrdinaryDiffEqAlgorithm end
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
+struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
 struct HSLDDRK64 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   HSLDDRK64(;williamson_condition=true) = new(williamson_condition)
@@ -645,7 +646,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Linear Methods
 
-for Alg in [:MagnusMidpoint]
+for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int

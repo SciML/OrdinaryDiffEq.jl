@@ -115,10 +115,10 @@ end
 
 # QNDF1
 
-@cache mutable struct QNDF1ConstantCache{N,coefType,coefType1,dtType,uType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDF1ConstantCache{N,coefType,coefType1,coefType2,dtType,uType} <: OrdinaryDiffEqConstantCache
   nlsolver::N
-  D::coefType
-  D2::coefType1
+  D::coefType1
+  D2::coefType2
   R::coefType
   U::coefType
   uprev2::uType
@@ -143,7 +143,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
 
   uprev2 = u
-  dtₙ₋₁ = t
+  dtₙ₋₁ = zero(t)
 
   D = fill(zero(u), 1, 1)
   D2 = fill(zero(u), 1, 2)
@@ -174,19 +174,19 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   atmp = similar(u,uEltypeNoUnits)
   utilde = similar(u)
   uprev2 = zero(u)
-  dtₙ₋₁ = one(dt)
+  dtₙ₋₁ = zero(dt)
 
   QNDF1Cache(uprev2,fsalfirst,D,D2,R,U,atmp,utilde,nlsolver,dtₙ₋₁)
 end
 
 # QNDF2
 
-@cache mutable struct QNDF2ConstantCache{N,coefType,coefType1,uType,dtType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDF2ConstantCache{N,coefType,coefType1,coefType2,uType,dtType} <: OrdinaryDiffEqConstantCache
   nlsolver::N
-  D::coefType
-  D2::coefType
-  R::coefType1
-  U::coefType1
+  D::coefType1
+  D2::coefType2
+  R::coefType
+  U::coefType
   uprev2::uType
   uprev3::uType
   dtₙ₋₁::dtType
@@ -266,7 +266,7 @@ end
   c::Int
 end
 
-@cache mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDFCache{uType,rateType,coefType,coefType1,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
   D::coefType3
   D2::coefType2

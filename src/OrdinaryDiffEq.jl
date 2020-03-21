@@ -182,7 +182,7 @@ module OrdinaryDiffEq
          SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104
 
   export ORK256, CarpenterKennedy2N54, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
-         CFRLDDRK64, TSLDDRK74,SHLDDRK52,
+         CFRLDDRK64, TSLDDRK74,SHLDDRK52,SHLDDRK_2N,
          CKLLSRK43_2,CKLLSRK54_3C,CKLLSRK95_4S,CKLLSRK95_4C,CKLLSRK95_4M,
          CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
          CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,
@@ -198,7 +198,7 @@ module OrdinaryDiffEq
          Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
          Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA
 
-  export MagnusMidpoint, LinearExponential
+  export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5,

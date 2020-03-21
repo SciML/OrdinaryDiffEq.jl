@@ -23,6 +23,56 @@ function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,
   MagnusMidpointConstantCache()
 end
 
+@cache struct LieEulerCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+end
+
+function alg_cache(alg::LieEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  LieEulerCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+end
+
+struct LieEulerConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::LieEuler,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  LieEulerConstantCache()
+end
+
+@cache struct MagnusLeapfrogCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+end
+
+function alg_cache(alg::MagnusLeapfrog,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  MagnusLeapfrogCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+end
+
+struct MagnusLeapfrogConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::MagnusLeapfrog,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  MagnusLeapfrogConstantCache()
+end
+
 struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
