@@ -327,7 +327,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
   atmp = similar(u,uEltypeNoUnits)
-  utilde = nlsolver.tmp
+  utilde = similar(u)
 
   QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0)
 end

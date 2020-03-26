@@ -82,7 +82,7 @@ dependent_M2 = DiffEqArrayOperator(ones(3,3),update_func=update_func2)
 
     @test _norm_dsol(QNDF1(),prob,prob2) ≈ 0 atol=1e-5
     @test _norm_dsol(QNDF2(),prob,prob2) ≈ 0 atol=1e-7
-    @test_skip _norm_dsol(QNDF(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(QNDF(),prob,prob2) ≈ 0 atol=1e-7
 
     println("Rosenbrocks")
     @test _norm_dsol(Rosenbrock23(),prob,prob2) ≈ 0 atol=1e-11

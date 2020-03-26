@@ -625,7 +625,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       break
     end
   end
-  if cnt > 2
+  if cnt > k
     if flag
       ρ = dt/dts[1]
       # backward diff
@@ -653,8 +653,6 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       end
       backward_diff!(cache,D,D2,k)
     end
-  else
-    γ = 1//1
   end
   nlsolver.γ = γ
   # precalculations
@@ -762,7 +760,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       break
     end
   end
-  if cnt > 2
+  if cnt > k
     if flag
       ρ = dt/dts[1]
       # backward diff
@@ -790,8 +788,6 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       end
       backward_diff!(cache,D,D2,k)
     end
-  else
-    γ = one(γ)
   end
   nlsolver.γ = γ
   # precalculations
