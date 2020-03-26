@@ -172,7 +172,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   U!(1,U)
 
   atmp = similar(u,uEltypeNoUnits)
-  utilde = similar(u)
+  utilde = zero(u)
   uprev2 = zero(u)
   dtₙ₋₁ = zero(dt)
 
@@ -243,7 +243,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   U!(2,U)
 
   atmp = similar(u,uEltypeNoUnits)
-  utilde = similar(u)
+  utilde = zero(u)
   uprev2 = zero(u)
   uprev3 = zero(u)
   dtₙ₋₁ = zero(dt)
@@ -327,7 +327,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
   atmp = similar(u,uEltypeNoUnits)
-  utilde = similar(u)
+  utilde = zero(u)
 
   QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0)
 end
