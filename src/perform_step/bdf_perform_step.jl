@@ -303,6 +303,8 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
       R .= R * U
       D[1] = D[1] * R[1,1]
     end
+  else
+    κ = zero(alg.kappa)
   end
 
   # precalculations
@@ -313,11 +315,10 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   ϕ = γ * (γ₁*D[1])
   nlsolver.tmp = u₀ - ϕ
 
-  γdt = γ*dt
   markfirststage!(nlsolver)
 
   # initial guess
-  nlsolver.z = dt*integrator.fsalfirst
+  nlsolver.z = (uprev + sum(D) - nlsolver.tmp)*inv(γ)
   nlsolver.γ = γ
 
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -375,6 +376,8 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
       R .= R * U
       @.. D[1] = D[1] * R[1,1]
     end
+  else
+    κ = zero(alg.kappa)
   end
 
   # precalculations
@@ -382,11 +385,10 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   nlsolver.γ = γ = inv((1-κ)*γ₁)
   @.. tmp = uprev + D[1] - γ * (γ₁*D[1])
 
-  γdt = γ*dt
   markfirststage!(nlsolver)
 
   # initial guess
-  @.. z = dt*integrator.fsalfirst
+  @.. z = (uprev + D[1] - nlsolver.tmp)*inv(γ)
 
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
@@ -408,7 +410,6 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   end
   cache.uprev2 .= uprev
   cache.dtₙ₋₁ = dt
-  cache.uprev2 .= uprev
   f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
   return
@@ -467,11 +468,10 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   ϕ = γ * (γ₁*D[1] + γ₂*D[2])
   nlsolver.tmp = u₀ - ϕ
 
-  γdt = γ*dt
   markfirststage!(nlsolver)
 
   # initial guess
-  nlsolver.z = dt*integrator.fsalfirst
+  nlsolver.z = (uprev + sum(D) - nlsolver.tmp)*inv(γ)
 
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
@@ -560,11 +560,10 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   nlsolver.γ = γ = inv((1-κ)*γ₂)
   @.. tmp = uprev + D[1] + D[2] - γ * (γ₁*D[1] + γ₂*D[2])
 
-  γdt = γ*dt
   markfirststage!(nlsolver)
 
   # initial guess
-  @.. nlsolver.z = dt*integrator.fsalfirst
+  @.. nlsolver.z = (uprev + D[1] + D[2] - nlsolver.tmp)*inv(γ)
 
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
