@@ -67,11 +67,14 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II")
   @time @safetestset "DAE Initialization Tests" begin include("integrators/dae_initialization_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_I")
   @time @safetestset "Dense Tests" begin include("regression/ode_dense_tests.jl") end
   @time @safetestset "Special Interp Tests" begin include("regression/special_interps.jl") end
   @time @safetestset "Inplace Tests" begin include("regression/ode_inplace_tests.jl") end
   @time @safetestset "Adaptive Tests" begin include("regression/ode_adaptive_tests.jl") end
+end
+
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II")
   @time @safetestset "PSOS Energy Conservation Tests" begin include("regression/psos_and_energy_conservation.jl") end
   @time @safetestset "Unrolled Tests" begin include("regression/ode_unrolled_comparison_tests.jl") end
   @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
