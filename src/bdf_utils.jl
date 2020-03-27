@@ -69,7 +69,7 @@ function reinterpolate_history!(cache::OrdinaryDiffEqConstantCache, D, R, k)
   end
 end
 
-#global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
+global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
 
 # this stepsize and order controller is taken from
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
