@@ -616,8 +616,8 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   k = order
   cnt = integrator.iter
   κ = integrator.alg.kappa[k]
-  γ = inv((1-κ)*γₖ[k])
   flag = true
+  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
   for i in 2:k
     if dts[i] != dts[1]
       flag = false
@@ -652,7 +652,13 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       end
       backward_diff!(cache,D,D2,k)
     end
+  else
+    κ = zero(integrator.alg.kappa[k])
+    for i = 1:k
+      γₖ[i] = 1//1
+    end
   end
+  γ = inv((1-κ)*γₖ[k])
   nlsolver.γ = γ
   # precalculations
   u₀ = uprev + sum(D)  # u₀ is predicted value
@@ -665,8 +671,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   γdt = γ*dt
   markfirststage!(nlsolver)
   # initial guess
-  nlsolver.z = dt*integrator.fsalfirst
-
+  nlsolver.z = (uprev + sum(D) -nlsolver.tmp)*inv(γ)
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
@@ -751,7 +756,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   cnt = integrator.iter
   k = order
   κ = integrator.alg.kappa[k]
-  γ = inv((1-κ)*γₖ[k])
+  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
   flag = true
   for i in 2:k
     if dts[i] != dts[1]
@@ -787,7 +792,13 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       end
       backward_diff!(cache,D,D2,k)
     end
+  else
+    κ = zero(integrator.alg.kappa[k])
+    for i = 1:k
+      γₖ[i] = 1//1
+    end
   end
+  γ = inv((1-κ)*γₖ[k])
   nlsolver.γ = γ
   # precalculations
   ϕ = fill!(utilde, zero(eltype(u)))
@@ -804,8 +815,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   γdt = γ*dt
   markfirststage!(nlsolver)
   # initial guess
-  @.. nlsolver.z = dt*integrator.fsalfirst
-
+  @.. nlsolver.z = (uprev + tmp -nlsolver.tmp)*inv(γ)
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = nlsolver.tmp + γ*z
