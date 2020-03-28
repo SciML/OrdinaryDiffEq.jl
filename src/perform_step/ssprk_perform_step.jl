@@ -73,10 +73,10 @@ end
   @. u₂ = α20*uprev + α21*u + dt*β21*k
   f(u₂, p, t)
   # u3
-  @. tmp = α30*uprev + α32*u2 + dt*β30*integrator.fsalfirst + dt*β32*k
+  @.. tmp = α30*uprev + α32*u2 + dt*β30*integrator.fsalfirst + dt*β32*k
   f(tmp, p, t)
   # u
-  @. u = α40*uprev + α43*tmp + dt*β40*integrator.fsalfirst + dt*β43*k
+  @.. u = α40*uprev + α43*tmp + dt*β40*integrator.fsalfirst + dt*β43*k
   f(u, p, t+dt)
 end
 
