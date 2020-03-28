@@ -15,7 +15,8 @@ env:
   - GROUP=InterfaceII
   - GROUP=Integrators_I
   - GROUP=Integrators_II
-  - GROUP=Regression
+  - GROUP=Regression_I
+  - GROUP=Regression_II
   - GROUP=AlgConvergence_I
   - GROUP=AlgConvergence_II
   - GROUP=AlgConvergence_III
