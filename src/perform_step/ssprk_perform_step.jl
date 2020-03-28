@@ -51,6 +51,66 @@ end
   f( k,  u, p, t+dt)
 end
 
+function initialize!(integrator,cache::KYKSSPRK42Cache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::KYKSSPRK42Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,tmp,u2,fsalfirst = cache
+  @unpack α10, α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43 = cache.tab
+
+  # u1 -> stored as u
+  @. u = α10*uprev + dt*β10*integrator.fsalfirst
+  f(u, p, t)
+  # u2
+  @. u₂ = α20*uprev + α21*u + dt*β21*k
+  f(u₂, p, t)
+  # u3
+  @. tmp = α30*uprev + α32*u2 + dt*β30*integrator.fsalfirst + dt*β32*k
+  f(tmp, p, t)
+  # u
+  @. u = α40*uprev + α43*u3 + dt*β40*integrator.fsalfirst + dt*β43*k
+  f(u, p, t+dt)
+end
+
+function initialize!(integrator,cache::KYKSSPRK42ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.kshortsize = 1
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::KYKSSPRK42ConstantCache)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack α10, α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43 = cache
+
+  #u1
+  u = α10*uprev + dt*β10*integrator.fsalfirst
+  k = f(u, p, t)
+  #u2
+  u₂ = α20*uprev + α21*u + dt*β21*k
+  k = f(u₂, p, t)
+  #u3
+  tmp = α30*uprev + α32*u₂ + dt*β30*integrator.fsalfirst + dt*β32*k
+  k = f(tmp, p, t)
+  #u
+  u = α40*uprev + α43*tmp + dt*β40*integrator.fsalfirst + dt*β43*k
+
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+end
+
 function initialize!(integrator,cache::SHLDDRK52ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)

@@ -4,3 +4,5 @@
 *.jl.*.mem
 Manifest.toml
 *.DS_Store
+.DS_Store
+.DS_Store
