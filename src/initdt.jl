@@ -60,13 +60,15 @@
   still works for matrix-free definitions of the mass matrix.
   =#
 
+  dtmin = nextfloat(integrator.opts.dtmin)
+  smalldt = convert(_tType,oneunit_tType*1//10^(6))
   if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
     ftmp = similar(f₀)
     try
       integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
-      return convert(_tType,tdir*oneunit_tType*1//10^(6))
+      return tdir*max(smalldt, dtmin)
     end
   end
 
@@ -78,7 +80,7 @@
   d₁ = internalnorm(tmp,t)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = convert(_tType,oneunit_tType*1//10^(6))
+    dt₀ = smalldt
   else
     dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
   end
@@ -87,7 +89,7 @@
   if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType)*oneunit(_tType)
     # This catches Andreas' non-singular example
     # should act like it's singular
-    return tdir*convert(_tType,oneunit_tType*1//10^(6))
+    return tdir*max(smalldt, dtmin)
   end
 
   dt₀_tdir = tdir*dt₀
@@ -105,7 +107,7 @@
   # Constant zone before callback
   # Just return first guess
   # Avoids AD issues
-  f₀ == f₁ && return tdir*100dt₀
+  f₀ == f₁ && return tdir*max(dtmin, 100dt₀)
 
   @.. tmp = (f₁-f₀)/sk*oneunit_tType
   d₂ = internalnorm(tmp,t)/dt₀*oneunit_tType
@@ -117,7 +119,7 @@
   else
     dt₁ = convert(_tType,oneunit_tType*10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
-  dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
+  return tdir*max(dtmin, min(100dt₀,dt₁,dtmax_tdir))
 end
 
 @muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractODEProblem{uType,tType,false},integrator) where {uType,tType}
@@ -137,8 +139,11 @@ end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
 
+  dtmin = nextfloat(integrator.opts.dtmin)
+  smalldt = convert(_tType,oneunit_tType*1//10^(6))
+
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = convert(_tType,oneunit_tType*1//10^(6))
+    dt₀ = smalldt
   else
     dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
   end
@@ -151,17 +156,17 @@ end
   # Constant zone before callback
   # Just return first guess
   # Avoids AD issues
-  f₀ == f₁ && return tdir*100dt₀
+  f₀ == f₁ && return tdir*max(dtmin, 100dt₀)
 
   d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType,t) / dt₀ * oneunit_tType
 
   max_d₁d₂ = max(d₁, d₂)
   if max_d₁d₂ <= 1//Int64(10)^(15)
-    dt₁ = max(convert(_tType,oneunit_tType*1//10^(6)),dt₀*1//10^(3))
+    dt₁ = max(smalldt,dt₀*1//10^(3))
   else
     dt₁ = _tType(oneunit_tType*10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
-  dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
+  return tdir*max(dtmin, min(100dt₀,dt₁,dtmax_tdir))
 end
 
 @inline function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractDAEProblem{duType,uType,tType},integrator) where {duType,uType,tType}
