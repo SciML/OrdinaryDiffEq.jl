@@ -1,7 +1,7 @@
 # OrdinaryDiffEq.jl
 
 [![Join the chat at https://gitter.im/JuliaDiffEq/Lobby](https://badges.gitter.im/JuliaDiffEq/Lobby.svg)](https://gitter.im/JuliaDiffEq/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/JuliaDiffEq/OrdinaryDiffEq.jl.svg?branch=master)](https://travis-ci.org/JuliaDiffEq/OrdinaryDiffEq.jl)
+[![Build Status](https://travis-ci.org/SciML/OrdinaryDiffEq.jl.svg?branch=master)](https://travis-ci.org/SciML/OrdinaryDiffEq.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/dpa182s6i8c67awu/branch/master?svg=true)](https://ci.appveyor.com/project/YingboMa/ordinarydiffeq-jl/branch/master)
 [![GitlabCI](https://gitlab.com/juliadiffeq/OrdinaryDiffEq-jl/badges/master/pipeline.svg)](https://gitlab.com/juliadiffeq/OrdinaryDiffEq-jl/pipelines)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaDiffEq/OrdinaryDiffEq.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiffEq/OrdinaryDiffEq.jl?branch=master)

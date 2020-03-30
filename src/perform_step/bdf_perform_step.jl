@@ -815,7 +815,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   γdt = γ*dt
   markfirststage!(nlsolver)
   # initial guess
-  @.. nlsolver.z = (uprev + tmp -nlsolver.tmp)*inv(γ)
+  @.. nlsolver.z = (uprev + tm -nlsolver.tmp)*inv(γ)
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = nlsolver.tmp + γ*z
