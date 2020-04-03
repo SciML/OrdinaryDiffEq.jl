@@ -1,3 +1,104 @@
+mutable struct RadauIIA3ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqConstantCache
+  uf::F
+  tab::Tab
+  κ::Tol
+  ηold::Tol
+  iter::Int
+  cont1::U
+  cont2::U
+  cont3::U
+  dtprev::Dt
+  W_γdt::Dt
+  status::DiffEqBase.NLStatus
+  J::JType
+end
+
+function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  uf  = UDerivativeWrapper(f, t, p)
+  uToltype = real(uBottomEltypeNoUnits)
+  tab = RadauIIA3Tableau(uToltype, real(tTypeNoUnits))
+
+  κ = convert(uToltype, 1//100)
+  J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
+
+  RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, DiffEqBase.Convergence, J)
+end
+
+mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  z1::uType
+  z2::uType
+  w1::uType
+  w2::uType
+  dw12::cuType
+  cont1::uType
+  cont2::uType
+  du1::rateType
+  fsalfirst::rateType
+  k::rateType
+  k2::rateType
+  fw1::rateType
+  fw2::rateType
+  J::JType
+  W1::W1Type
+  W2::W2Type
+  uf::UF
+  tab::Tab
+  κ::Tol
+  ηold::Tol
+  iter::Int
+  tmp::uType
+  atmp::uNoUnitsType
+  jac_config::JC
+  linsolve1::F1
+  linsolve2::F2
+  rtol::rTol
+  atol::aTol
+  dtprev::Dt
+  W_γdt::Dt
+  status::DiffEqBase.NLStatus
+end
+
+function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  uf = UJacobianWrapper(f, t, p)
+  uToltype = real(uBottomEltypeNoUnits)
+  tab = RadauIIA3Tableau(uToltype, real(tTypeNoUnits))
+
+  κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
+
+  z1 = similar(u); z2 = similar(u);
+  w1 = similar(u); w2 = similar(u);
+  dw12 = similar(u, Complex{eltype(u)})
+  cont1 = similar(u); cont2 = similar(u);
+
+  fsalfirst = similar(rate_prototype)
+  k = similar(rate_prototype); k2 = similar(rate_prototype);
+  fw1 = similar(rate_prototype); fw2 = similar(rate_prototype);
+
+  J, W1 = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+  W2 = similar(J, Complex{eltype(W1)})
+
+  du1 = similar(rate_prototype)
+
+  tmp = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
+  linsolve1 = alg.linsolve(Val{:init}, uf, u)
+  rtol = reltol isa Number ? reltol : similar(reltol)
+  atol = reltol isa Number ? reltol : similar(reltol)
+
+  RadauIIA3Cache(u, uprev,
+                 z1, z2, w1, w2,
+                 dw12, cont1, cont2,
+                 du1, fsalfirst, k, k2, fw1, fw2,
+                 J, W1, W2,
+                 uf, tab, κ, one(uToltype), 10000,
+                 tmp, atmp, jac_config, linsolve1, rtol, atol, dt, dt, DiffEqBase.Convergence)
+end
+
 mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqConstantCache
   uf::F
   tab::Tab
