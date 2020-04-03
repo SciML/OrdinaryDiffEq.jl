@@ -92,7 +92,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                  z1, z2, w1, w2,
                  dw12, cont1, cont2,
                  du1, fsalfirst, k, k2, fw1, fw2,
-                 J, W1, W2,
+                 J, W1,
                  uf, tab, κ, one(uToltype), 10000,
                  tmp, atmp, jac_config, linsolve1, rtol, atol, dt, dt, DiffEqBase.Convergence)
 end
