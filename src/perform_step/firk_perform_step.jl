@@ -88,6 +88,12 @@ end
   atol = @. rtol * (abstol / reltol)
   αdt, βdt = α/dt, β/dt
   J = calc_J(integrator,  cache)
+  if u isa Number
+    LU1 = -(αdt + βdt*im)*mass_matrix + J
+  else
+    LU1 = lu(-(αdt + βdt*im)*mass_matrix + J)
+  end
+
 
   cache.dtprev = one(cache.dtprev)
   z1 = w1 = map(zero, u)
