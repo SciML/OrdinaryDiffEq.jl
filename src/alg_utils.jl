@@ -293,6 +293,7 @@ alg_order(alg::KenCarp3) = 3
 alg_order(alg::KenCarp4) = 4
 alg_order(alg::KenCarp5) = 5
 alg_order(alg::Cash4) = 4
+alg_order(alg::SFSDIRK4) = 4
 alg_order(alg::Hairer4) = 4
 alg_order(alg::Hairer42) = 4
 alg_order(alg::Feagin10) = 10

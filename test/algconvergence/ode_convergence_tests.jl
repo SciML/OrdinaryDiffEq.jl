@@ -10,7 +10,7 @@ ODEProblemLibrary.importodeproblems()
 dts1 = 1 .//2 .^(9:-1:5)
 dts2 = 1 .//2 .^(7:-1:3)
 dts3 = 1 .//2 .^(12:-1:7)
-dts4 = 1 .//2 .^(5:-1:3) 
+dts4 = 1 .//2 .^(5:-1:3)
 dts5 = 1 .//2 .^(3:-1:1)
 dts6 = 1 .//10 .^(5:-1:1)
 testTol = 0.2
@@ -193,6 +193,9 @@ end
 
   dts = 1 .//2 .^(7:-1:4)
   println("Higher Order")
+
+  sim17 = test_convergence(dts,prob,SFSDIRK4())
+  @test sim17.𝒪est[:final] ≈ 4 atol=testTol
 
   sim18 = test_convergence(dts,prob,Cash4())
   @test sim18.𝒪est[:final] ≈ 4 atol=testTol

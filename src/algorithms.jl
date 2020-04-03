@@ -837,6 +837,19 @@ Cash4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  Cash4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,embedding,controller)
 
+
+struct SFSDIRK4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+end
+SFSDIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:linear) =
+                      SFSDIRK4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                      linsolve,nlsolve,diff_type,extrapolant)
+
 struct Hairer4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
