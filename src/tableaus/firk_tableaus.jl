@@ -1,3 +1,37 @@
+struct RadauIIA3Tableau{T,T2}
+  T11::T
+  T12::T
+  T21::T
+  T22::T
+  TI11::T
+  TI12::T
+  TI21::T
+  TI22::T
+  c1::T2
+  c2::T2
+  α::T
+  β::T
+end
+
+function RadauIIA3Tableau(T,T2)
+  T11 = T(0.10540925533894596)
+  T12 = T(0.29814239699997197)
+  T21 = T(0.9486832980505138)
+  T22 = T(0.0)
+  TI11 = T(0.0)
+  TI12 = T(1.0540925533894598)
+  TI21 = T(3.3541019662496843)
+  TI22 = T(-0.3726779962499649)
+  c1 = T2(1/3)
+  c2 = T2(1.0)
+  α  = T(1/3)
+  β  = T(-0.23570226039551578)
+  RadauIIA3Tableau{T,T2}(T11, T12, T21, T22,
+  TI11, TI12, TI21, TI22,
+  c1, c2,   α,    β)
+end
+
+
 struct RadauIIA5Tableau{T,T2}
   T11::T
   T12::T

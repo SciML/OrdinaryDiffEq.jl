@@ -192,7 +192,7 @@ module OrdinaryDiffEq
          ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
          KYK2014DGSSPRK_3S2
 
-  export RadauIIA5
+  export RadauIIA3, RadauIIA5
 
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
          Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,

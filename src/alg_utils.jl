@@ -274,6 +274,7 @@ alg_order(alg::Vern8) = 8
 alg_order(alg::Vern9) = 9
 alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
+alg_order(alg::RadauIIA3) = 3
 alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::MagnusMidpoint) = 2
