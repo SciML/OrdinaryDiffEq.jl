@@ -92,10 +92,8 @@ end
   cache.dtprev = one(cache.dtprev)
   z1 = w1 = map(zero, u)
   z2 = w2 = map(zero, u)
-  z3 = w3 = map(zero, u)
   cache.cont1 = map(zero, u)
   cache.cont2 = map(zero, u)
-  cache.cont3 = map(zero, u)
 
   # Newton iteration
   local ndw
