@@ -111,6 +111,11 @@ end
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
   @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
   using Pkg
+  if is_TRAVIS
+    using Pkg
+    Pkg.add("DiffEqCallbacks")
+    Pkg.add("DiffEqSensitivity")
+  end
   Pkg.test("DiffEqCallbacks")
   Pkg.test("DiffEqSensitivity")
 end
