@@ -6,7 +6,6 @@ mutable struct RadauIIA3ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
   iter::Int
   cont1::U
   cont2::U
-  cont3::U
   dtprev::Dt
   W_γdt::Dt
   status::DiffEqBase.NLStatus
