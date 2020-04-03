@@ -44,10 +44,11 @@ rk_algs = [Euler(),Midpoint(),Heun(),Ralston(),RK4(),SSPRK104(),SSPRK22(),SSPRK3
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rk_algs
   println(nameof(typeof(alg)))
-  sol_ip = solve(prob_ip, alg, dt = 0.1)
-  sol_scalar = solve(prob_scalar, alg, dt = 0.1)
+  adaptive = OrdinaryDiffEq.alg_order(alg) <= 5
+  sol_ip = solve(prob_ip, alg, dt = 0.1, adaptive=adaptive)
+  sol_scalar = solve(prob_scalar, alg, dt = 0.1, adaptive=adaptive)
 
-  @test sol_ip(ts, idxs=1) ≈ sol_scalar(ts) rtol=1e-12
+  @test sol_ip(ts, idxs=1) ≈ sol_scalar(ts)
   @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
 end
 
