@@ -34,8 +34,9 @@ function f_ip(du, u, p, t)
 end
 f_scalar(u, p, t) = -u
 
-prob_ip = ODEProblem(f_ip, [1.0], (0.0, 10.0))
-prob_scalar = ODEProblem(f_scalar, 1.0, (0.0, 10.0))
+tspan = (0.0, 10.0)
+prob_ip = ODEProblem(f_ip, [1.0], tspan)
+prob_scalar = ODEProblem(f_scalar, 1.0, tspan)
 ts = 0:0.1:10.0
 
 rk_algs = [Euler(),Midpoint(),Heun(),Ralston(),RK4(),SSPRK104(),SSPRK22(),SSPRK33(),
@@ -44,9 +45,16 @@ rk_algs = [Euler(),Midpoint(),Heun(),Ralston(),RK4(),SSPRK104(),SSPRK22(),SSPRK3
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rk_algs
   println(nameof(typeof(alg)))
-  adaptive = OrdinaryDiffEq.alg_order(alg) <= 5
-  sol_ip = solve(prob_ip, alg, dt = 0.1, adaptive=adaptive)
-  sol_scalar = solve(prob_scalar, alg, dt = 0.1, adaptive=adaptive)
+  high_order = OrdinaryDiffEq.alg_order(alg) > 5
+  if high_order
+    _prob_ip = remake(prob_ip, tspan=big.(tspan), u0=[big(1.0)])
+    _prob_scalar = remake(prob_scalar, tspan=big.(tspan), u0=big(1.0))
+  else
+    _prob_ip = prob_ip
+    _prob_scalar = prob_scalar
+  end
+  sol_ip = solve(_prob_ip, alg, dt = 0.1)
+  sol_scalar = solve(_prob_scalar, alg, dt = 0.1)
 
   @test sol_ip(ts, idxs=1) ≈ sol_scalar(ts)
   @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
