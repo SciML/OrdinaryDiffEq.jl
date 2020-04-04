@@ -949,7 +949,7 @@ end
 dts = 1 ./ 2 .^(6:-1:3)
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=1
 end
 
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
