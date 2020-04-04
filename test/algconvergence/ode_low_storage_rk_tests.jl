@@ -946,7 +946,7 @@ for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-dts = 1 ./ 2 .^(7:-1:3)
+dts = 1 ./ 2 .^(6:-1:3)
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
