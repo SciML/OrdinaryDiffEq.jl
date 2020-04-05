@@ -163,6 +163,12 @@ end
     end
   end
 
+  if fail_convergence
+    integrator.force_stepfail = true
+    integrator.destats.nnonlinconvfail += 1
+    return
+  end
+
   cache.ηold = η
   cache.iter = iter
 
