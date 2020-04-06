@@ -321,6 +321,46 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Cash4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
 
+mutable struct SFSDIRK4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = SFSDIRK4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  SFSDIRK4ConstantCache(nlsolver,tab)
+end
+
+@cache mutable struct SFSDIRK4Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  z₅::uType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = SFSDIRK4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  SFSDIRK4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
+end
+
 mutable struct Hairer4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   tab::Tab

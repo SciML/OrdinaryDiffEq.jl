@@ -374,6 +374,42 @@ function Cash4Tableau(T,T2)
                b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2,c2,c3,c4)
 end
 
+struct SFSDIRK4Tableau{T,T2}
+  γ::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  c2::T2
+  c3::T2
+  c4::T2
+end
+
+function SFSDIRK4Tableau(T,T2)
+  γ = convert(T,0.097961082941)
+  a21 = convert(T,0.262318069183)
+  a31 = convert(T,0.230169419019)
+  a32 = convert(T,0.294466719347)
+  a41 = convert(T,0.210562684389)
+  a42 = convert(T,0.269382888280)
+  a43 = convert(T,0.307008634881)
+  a51 = convert(T,0.222119403264)
+  a52 = convert(T,0.282060762166)
+  a53 = convert(T,0.236881213175)
+  a54 = convert(T,0.258938621395)
+  c2 = convert(T2,0.360279152124)
+  c3 = convert(T2,0.622597221298)
+  c4 = convert(T2,0.884915290491)
+  SFSDIRK4Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4)
+end
+
+
 struct Hairer4Tableau{T,T2}
   γ::T
   a21::T
@@ -1466,4 +1502,3 @@ function SDIRK22Tableau(T)
   β = convert(T, 1+sqrt(2))
   SDIRK22Tableau(a, α, β)
 end
-
