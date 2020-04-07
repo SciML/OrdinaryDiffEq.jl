@@ -535,7 +535,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     W = WOperator(f.mass_matrix, dt, J, IIP)
   else
     J = if f.jac_prototype === nothing
-      false .* _vec(u) .* _vec(u)'
+      ArrayInterface.zeromatrix(u)
     else
       deepcopy(f.jac_prototype)
     end
