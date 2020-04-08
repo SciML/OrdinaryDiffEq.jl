@@ -368,6 +368,11 @@ end
 
 function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
+  if integrator.f isa DAEFunction
+    set_current_du!(integrator, integrator.cache)
+    integrator.fsalfirst .= integrator.du
+    return
+  end
   integrator.destats.nf += 1
   if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache ||
      (typeof(integrator.cache) <: CompositeCache &&

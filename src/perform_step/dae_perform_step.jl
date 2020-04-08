@@ -1,3 +1,12 @@
+# default fallback methods, also this is the formula for DImplicitEuler
+function set_current_du!(integrator, cache::OrdinaryDiffEqConstantCache)
+  integrator.du = (integrator.u - integrator.uprev) / integrator.dt
+end
+
+function set_current_du!(integrator, cache::OrdinaryDiffEqMutableCache)
+  @.. integrator.du = (integrator.u - integrator.uprev) / integrator.dt
+end
+
 function initialize!(integrator, cache::DImplicitEulerCache) end
 function initialize!(integrator, cache::DImplicitEulerConstantCache) end
 
@@ -121,6 +130,15 @@ function initialize!(integrator, cache::DABDF2ConstantCache) end
   return
 end
 
+function set_current_du!(integrator, cache::DABDF2ConstantCache)
+  dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
+  dtₙ₋₁ = cache.dtₙ₋₁
+  ρ = dtₙ/dtₙ₋₁
+  γ = (1+ρ)/(1+2ρ)
+  c1 = ρ^2/(1+2ρ)
+  integrator.du = γ * uₙ - (c1 + γ) * uₙ₋₁ + c1 * uₙ₋₂ 
+end
+
 function initialize!(integrator, cache::DABDF2Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
@@ -174,4 +192,11 @@ end
   return
 end
 
-
+function set_current_du!(integrator, cache::DABDF2Cache)
+  dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
+  dtₙ₋₁ = cache.dtₙ₋₁
+  ρ = dtₙ/dtₙ₋₁
+  γ = (1+ρ)/(1+2ρ)
+  c1 = ρ^2/(1+2ρ)
+  @.. integrator.du = γ * uₙ - (c1 + γ) * uₙ₋₁ + c1 * uₙ₋₂ 
+end
