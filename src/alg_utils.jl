@@ -290,6 +290,7 @@ alg_order(alg::Kvaerno4) = 4
 alg_order(alg::Kvaerno5) = 5
 alg_order(alg::ESDIRK54I8L2SA) = 5
 alg_order(alg::KenCarp3) = 3
+alg_order(alg::CFNLIRK3) = 3
 alg_order(alg::KenCarp4) = 4
 alg_order(alg::KenCarp5) = 5
 alg_order(alg::Cash4) = 4
@@ -553,7 +554,7 @@ isWmethod(alg::RosenbrockW6S4OS) = true
 isesdirk(alg::TRBDF2) = true
 isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5,
                     Kvaerno3, Kvaerno4, Kvaerno5,
-                    ESDIRK54I8L2SA}) = true
+                    ESDIRK54I8L2SA, CFNLIRK3}) = true
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 
 is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false

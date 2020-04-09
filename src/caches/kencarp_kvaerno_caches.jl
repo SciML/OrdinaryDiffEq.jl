@@ -51,6 +51,53 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   KenCarp3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver,tab)
 end
 
+@cache mutable struct CFNLIRK3ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::CFNLIRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = CFNLIRK3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+
+  CFNLIRK3ConstantCache(nlsolver,tab)
+end
+
+@cache mutable struct CFNLIRK3Cache{uType,rateType,uNoUnitsType,N,Tab,kType} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  k1::kType
+  k2::kType
+  k3::kType
+  k4::kType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::CFNLIRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = CFNLIRK3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  k1 = similar(u); k2 = similar(u)
+  k3 = similar(u); k4 = similar(u)
+
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  CFNLIRK3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver,tab)
+end
+
 @cache mutable struct Kvaerno4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   tab::Tab
