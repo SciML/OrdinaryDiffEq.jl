@@ -68,16 +68,16 @@ end
 
   δ = fsalfirst
   # u1 -> stored as u
-  @. u = uprev + dt*β10*δ
+  @.. u = uprev + dt*β10*δ
   f(k, u, p, t+c1*dt)
   # u2
-  @. tmp = α20*uprev + α21*u + dt*β21*k
+  @.. tmp = α20*uprev + α21*u + dt*β21*k
   f(k, tmp, p, t+c2*dt)
   # u3
-  @. tmp = α30*uprev + α32*tmp + dt*β30*δ + dt*β32*k
+  @.. tmp = α30*uprev + α32*tmp + dt*β30*δ + dt*β32*k
   f(k, tmp, p, t+c3*dt)
   # u
-  @. u = α40*uprev + α43*tmp + dt*β40*δ + dt*β43*k
+  @.. u = α40*uprev + α43*tmp + dt*β40*δ + dt*β43*k
   f(k, u, p, t+dt)
 end
 
