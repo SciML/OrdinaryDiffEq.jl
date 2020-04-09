@@ -63,7 +63,7 @@ end
 
 @muladd function perform_step!(integrator,cache::KYKSSPRK42Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,tmp,u₂,fsalfirst = cache
+  @unpack k,tmp,fsalfirst = cache
   @unpack α10, α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43 = cache.tab
 
   δ = fsalfirst
@@ -71,10 +71,10 @@ end
   @. u = α10*uprev + dt*β10*δ
   f(k, u, p, t)
   # u2
-  @. u₂ = α20*uprev + α21*u + dt*β21*k
-  f(k, u₂, p, t)
+  @. tmp = α20*uprev + α21*u + dt*β21*k
+  f(k, tmp, p, t)
   # u3
-  @.. tmp = α30*uprev + α32*u₂ + dt*β30*δ + dt*β32*k
+  @.. tmp = α30*uprev + α32*tmp + dt*β30*δ + dt*β32*k
   f(k, tmp, p, t)
   # u
   @.. u = α40*uprev + α43*tmp + dt*β40*δ + dt*β43*k
@@ -93,18 +93,18 @@ end
 
 @muladd function perform_step!(integrator,cache::KYKSSPRK42ConstantCache)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack α10, α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43 = cache
+  @unpack α10, α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1, c2, c3 = cache
 
   #u1
   δ = integrator.fsalfirst
   u = α10*uprev + dt*β10*δ
-  k = f(u, p, t)
+  k = f(u, p, t + c1*dt)
   #u2
-  u₂ = α20*uprev + α21*u + dt*β21*k
-  k = f(u₂, p, t)
+  tmp = α20*uprev + α21*u + dt*β21*k
+  k = f(tmp, p, t + c2*dt)
   #u3
-  tmp = α30*uprev + α32*u₂ + dt*β30*δ + dt*β32*k
-  k = f(tmp, p, t)
+  tmp = α30*uprev + α32*tmp + dt*β30*δ + dt*β32*k
+  k = f(tmp, p, t + c3*dt)
   #u
   u = α40*uprev + α43*tmp + dt*β40*δ + dt*β43*k
 
