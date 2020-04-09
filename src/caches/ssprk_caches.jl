@@ -99,11 +99,10 @@ end
 
 function alg_cache(alg::KYKSSPRK42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u)
-  u₂ = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-  KYKSSPRK42Cache(u,uprev,k,tmp, u₂, fsalfirst,tab)
+  KYKSSPRK42Cache(u,uprev,k,tmp, fsalfirst,tab)
 end
 
 function alg_cache(alg::KYKSSPRK42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
