@@ -77,7 +77,7 @@ struct KYKSSPRK42ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
   c3::T2
 end
 
-function KYKSSPRK42ConstantCache(T)
+function KYKSSPRK42ConstantCache(T, T2)
   α10 = T(1.000000000000000)
   α20 = T(0.394806441339829)
   α21 = T(0.605193558660171)
