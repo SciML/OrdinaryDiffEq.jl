@@ -79,15 +79,10 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 
 println("KYKSSPRK42")
 alg = KYKSSPRK42()
-prob1 = prob_ode_sin
-sim = test_convergence(dts, prob1, alg)
-println("out of place")
-@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
-
-prob2 = prob_ode_sin_inplace
-sim = test_convergence(dts, prob2, alg)
-println("in place")
-@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
 
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)

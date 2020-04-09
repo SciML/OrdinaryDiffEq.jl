@@ -59,7 +59,6 @@ alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTyp
  end
 
 struct KYKSSPRK42ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
-  α10::T
   α20::T
   α21::T
   α30::T
@@ -78,7 +77,6 @@ struct KYKSSPRK42ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function KYKSSPRK42ConstantCache(T, T2)
-  α10 = T(1.000000000000000)
   α20 = T(0.394806441339829)
   α21 = T(0.605193558660171)
   α30 = T(0.002797307087390)
@@ -94,7 +92,7 @@ function KYKSSPRK42ConstantCache(T, T2)
   c1 = T2(0.406584463657504)
   c2 = T2(0.4921245969136438)
   c3 = T2(0.9098323119879613)
-  KYKSSPRK42ConstantCache(α10, α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1, c2, c3)
+  KYKSSPRK42ConstantCache(α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1, c2, c3)
 end
 
 function alg_cache(alg::KYKSSPRK42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
