@@ -49,7 +49,7 @@ end
 
 alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = SSPRK33ConstantCache()
 
-@cache struct KYKSSPRK42CacheT1{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct KYKSSPRK42Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
    u::uType
    uprev::uType
    k::rateType
