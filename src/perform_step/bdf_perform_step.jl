@@ -530,7 +530,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   if cnt <=2
     κ = zero(alg.kappa)
     γ₁ = 1//1
-    γ₂ = 1//1 + 1//2
+    γ₂ = 1//1
   elseif dtₙ₋₁ != dtₙ₋₂
     κ = alg.kappa
     γ₁ = 1//1
@@ -794,9 +794,9 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     end
   else
     κ = zero(integrator.alg.kappa[k])
-    # for i = 1:k
-    #   γₖ[i] = 1//1
-    # end
+    for i = 1:k
+      γₖ[i] = 1//1
+    end
   end
   γ = inv((1-κ)*γₖ[k])
   nlsolver.γ = γ
