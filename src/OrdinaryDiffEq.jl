@@ -198,7 +198,7 @@ module OrdinaryDiffEq
          Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
          Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA, SFSDIRK4
 
-  export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler
+  export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, RKMK2
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5,

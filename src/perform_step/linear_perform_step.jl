@@ -58,6 +58,45 @@ function perform_step!(integrator, cache::LieEulerCache, repeat_step=false)
   integrator.destats.nf += 1
 end
 
+function initialize!(integrator, cache::RKMK2Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::RKMK2Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  L = integrator.f.f
+  update_coefficients!(L,u,p,t)
+  A = Matrix(L)
+  if integrator.alg.krylov
+    uprev .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
+    uprev .= exp(dt*L) * u
+  end
+
+  update_coefficients!(L,uprev,p,t)
+  B=Matrix(L)
+  if integrator.alg.krylov
+    u .= expv(dt/2, A+B, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
+    u .= exp((dt/2)*(A+B)) * u
+  end
+
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+end
+
 function initialize!(integrator, cache::MagnusLeapfrogCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst

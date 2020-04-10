@@ -48,6 +48,31 @@ function alg_cache(alg::LieEuler,u,rate_prototype,uEltypeNoUnits,
   LieEulerConstantCache()
 end
 
+@cache struct RKMK2Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+end
+
+function alg_cache(alg::RKMK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  RKMK2Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+end
+
+struct RKMK2ConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::RKMK2,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RKMK2ConstantCache()
+end
+
 @cache struct MagnusLeapfrogCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

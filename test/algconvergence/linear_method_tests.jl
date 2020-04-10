@@ -64,3 +64,15 @@ sim = analyticless_test_convergence(dts,prob,LieEuler(),test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol=0.2
 sim = analyticless_test_convergence(dts,prob,LieEuler(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol=0.2
+
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (0.5, 5.))
+dts = 1 ./2 .^(10:-1:1)
+sol  = solve(prob,OrdinaryDiffEq.RKMK2(),dt=1/4)
+
+dts = 1 ./2 .^(10:-1:1)
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,RKMK2(),test_setup)
+@test sim.𝒪est[:l2] ≈ 2 atol=0.2
+sim = analyticless_test_convergence(dts,prob,RKMK2(krylov=true),test_setup)
+@test sim.𝒪est[:l2] ≈ 2 atol=0.2
