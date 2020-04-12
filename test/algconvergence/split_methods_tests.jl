@@ -51,7 +51,7 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
-sol = solve(prob,CFNLIRK3())
+# sol = solve(prob,CFNLIRK3())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
@@ -119,7 +119,7 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
-sol = solve(prob,CFNLIRK3())
+# sol = solve(prob,CFNLIRK3())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
