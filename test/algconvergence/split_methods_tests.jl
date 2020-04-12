@@ -51,6 +51,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
+sol = solve(prob,CFNLIRK3())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,CFNLIRK3())
+@test sim.𝒪est[:l∞] ≈ 3 atol=testTol
+
 sol = solve(prob,KenCarp3(nlsolve=NLFunctional()))
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
@@ -112,6 +117,11 @@ prob = SplitODEProblem(ff_split2,1.0,(0.0,1.0))
 sol = solve(prob,KenCarp3())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
+@test sim.𝒪est[:l∞] ≈ 3 atol=testTol
+
+sol = solve(prob,CFNLIRK3())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
 sol = solve(prob,KenCarp4())
