@@ -28,3 +28,8 @@ for iip in (true, false)
   @test length(solve(remake(vanstiff, p=1e9), RadauIIA5())) < 170
   @test length(solve(remake(vanstiff, p=1e10), RadauIIA5())) < 190
 end
+
+for prob in [prob_ode_linear, prob_ode_2Dlinear]
+  sim = test_convergence(1 .//2 .^(6:-1:3),prob,RadauIIA3())
+  @test sim.𝒪est[:final] ≈ 3 atol=testTol
+end
