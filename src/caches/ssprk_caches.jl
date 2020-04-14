@@ -49,6 +49,63 @@ end
 
 alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = SSPRK33ConstantCache()
 
+@cache struct KYKSSPRK42Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+   u::uType
+   uprev::uType
+   k::rateType
+   tmp::uType
+   fsalfirst::rateType
+   tab::TabType
+ end
+
+struct KYKSSPRK42ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+  α20::T
+  α21::T
+  α30::T
+  α32::T
+  α40::T
+  α43::T
+  β10::T
+  β21::T
+  β30::T
+  β32::T
+  β40::T
+  β43::T
+  c1::T2
+  c2::T2
+  c3::T2
+end
+
+function KYKSSPRK42ConstantCache(T, T2)
+  α20 = T(0.394806441339829)
+  α21 = T(0.605193558660171)
+  α30 = T(0.002797307087390)
+  α32 = T(0.997202692912610)
+  α40 = T(0.252860909354373)
+  α43 = T(0.747139090645627)
+  β10 = T(0.406584463657504)
+  β21 = T(0.246062298456822)
+  β30 = T(0.013637216641451)
+  β32 = T(0.405447122055692)
+  β40 = T(0.016453567333598)
+  β43 = T(0.303775146447707)
+  c1 = T2(0.406584463657504)
+  c2 = T2(0.4921245969136438)
+  c3 = T2(0.9098323119879613)
+  KYKSSPRK42ConstantCache(α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1, c2, c3)
+end
+
+function alg_cache(alg::KYKSSPRK42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+  KYKSSPRK42Cache(u,uprev,k,tmp, fsalfirst,tab)
+end
+
+function alg_cache(alg::KYKSSPRK42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
 
 @cache struct SSPRK53Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
