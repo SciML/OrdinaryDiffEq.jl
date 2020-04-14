@@ -76,20 +76,18 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step=false)
 
   L = integrator.f.f
   update_coefficients!(L,u,p,t)
-  A = Matrix(L)
+  A = Matrix(deepcopy(L))
   if integrator.alg.krylov
     uprev .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
-    A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
     uprev .= exp(dt*L) * u
   end
 
   update_coefficients!(L,uprev,p,t)
-  B=Matrix(L)
+  B = Matrix(deepcopy(L))
   if integrator.alg.krylov
     u .= expv(dt/2, A+B, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
-    A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
     u .= exp((dt/2)*(A+B)) * u
   end
 
