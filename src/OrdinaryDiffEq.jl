@@ -105,6 +105,8 @@ module OrdinaryDiffEq
   include("tableaus/firk_tableaus.jl")
   include("tableaus/rkn_tableaus.jl")
   include("tableaus/rkc_tableaus.jl")
+  include("tableaus/tsrk_tableaus.jl")
+
 
   include("integrators/type.jl")
   include("integrators/controllers.jl")
@@ -218,7 +220,7 @@ module OrdinaryDiffEq
 
   export ROCK2, ROCK4, RKC, IRKC, ESERK4, ESERK5, SERK2
 
-  export AB3, AB4, AB5, ABM32, ABM43, ABM54
+  export AB3, AB4, AB5, ABM32, ABM43, ABM54, VTSRK
 
   export VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5
 

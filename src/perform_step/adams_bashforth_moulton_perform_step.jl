@@ -3,7 +3,8 @@ function initialize!(integrator,cache::Union{AB3ConstantCache,
                                              AB5ConstantCache,
                                              ABM32ConstantCache,
                                              ABM43ConstantCache,
-                                             ABM54ConstantCache})
+                                              ABM54ConstantCache})#,
+                                             # VTSRKConstantCache})
 
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
@@ -21,7 +22,8 @@ function initialize!(integrator,cache::Union{AB3Cache,
                                              AB5Cache,
                                              ABM32Cache,
                                              ABM43Cache,
-                                             ABM54Cache})
+                                             ABM54Cache})#,
+                                             #VTSRKCache})
 
   @unpack fsalfirst,k = cache
   integrator.fsalfirst = fsalfirst
@@ -96,36 +98,88 @@ end
   integrator.destats.nf += 1
 end
 
-@muladd function perform_step!(integrator,cache::ABM32ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3 = cache
-  k1 = integrator.fsalfirst
-  if integrator.u_modified
-    cache.step = 1
-  end
-  cnt = cache.step
-  if cache.step == 1
-    cache.step += 1
-    ttmp = t + (2/3)*dt
-    ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)     #Ralston Method
-    integrator.destats.nf += 1
-    u = uprev + (dt/4)*(k1 + 3*ralk2)
-    k2 = k1
-  else
-    perform_step!(integrator, AB3ConstantCache(k2,k3,cnt))
-    k = integrator.fsallast
-    u = uprev + (dt/12)*(5*k + 8*k1 - k2)
-    k3 = k2
-    k2 = k1
-  end
-  cache.k2 = k2
-  cache.k3 = k3
-  integrator.fsallast = f(u, p, t+dt)
-  integrator.destats.nf += 1
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.u = u
-end
+# @muladd function perform_step!(integrator,cache::VTSRKConstantCache,repeat_step=false)
+#   @unpack t,dt,uprev,u,f,p = integrator
+#   @unpack k1,k2,k3,k4,k1hat,k2hat,k3hat,k4hat = cache
+#   @unpack a11,a12,a13,a14,a21,a22,a23,a24,a31,a32,a33,a34,a41,a42,a43,a44,b21,b31,b32,b41,b42,b43 = cache.tab
+#   @unpack v1,v2,v3,v4,w1,w2,w3,w4 = cache.tab
+#   @unpack c1,c2,c3,c4 = cache.tab
+#
+#   u = uprev + dt*(a11*k1hat + a12*k2hat + a13*k3hat +a14*k4hat)
+#   k1 = f(u,p,t+c1*dt)
+#   u = uprev + dt*(a21*k1hat + a22*k2hat + a23*k3hat +a24*k4hat+ b21*k1)
+#   k2 = f(u,p,t+c2*dt)
+#   u = uprev + dt*(a31*k1hat + a32*k2hat + a33*k3hat +a34*k4hat + b31*k1+ b32*k2)
+#   k3 = f(u,p,t+c3*dt)
+#   u = uprev + dt*(a41*k1hat + a42*k2hat + a43*k3hat +a44*k4hat + b41*k1 + b42*k2 + b43*k3)
+#   k4 = f(u,p,t+c4*dt)
+#   u = uprev + dt*(v1*k1hat + v2*k2hat + v3*k3hat + v4*k4hat + w1*k1 + w2*k2 + w3*k3 + w4*k4)
+#   # k1 = integrator.fsalfirst
+#   # if integrator.u_modified
+#   #   cache.step = 1
+#   # end
+#   # cnt = cache.step
+#   # if cache.step <= 2
+#   #   cache.step += 1
+#   #   ttmp = t + (2/3)*dt
+#   #   ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)       #Ralston Method
+#   #   integrator.destats.nf += 1
+#   #   u = uprev + (dt/4)*(k1 + 3*ralk2)
+#   #   if cnt == 1
+#   #     k3 = k1
+#   #   else
+#   #     k2 = k1
+#   #   end
+#   # else
+#   #   u  = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3)
+#   #   k3 = k2
+#   #   k2 = k1
+#   # end
+#   cache.k1 = k1
+#   cache.k2 = k2
+#   cache.k3 = k3
+#   cache.k4 = k4
+#   cache.k1hat = k1
+#   cache.k2hat = k2
+#   cache.k3hat = k3
+#   cache.k4hat = k4
+#   integrator.fsallast = f(u, p, t+dt)
+#   integrator.destats.nf += 1
+#   integrator.k[1] = integrator.fsalfirst
+#   integrator.k[2] = integrator.fsallast
+#   integrator.u = u
+# end
+#
+# @muladd function perform_step!(integrator,cache::ABM32ConstantCache,repeat_step=false)
+#   @unpack t,dt,uprev,u,f,p = integrator
+#   @unpack k2,k3 = cache
+#   k1 = integrator.fsalfirst
+#   if integrator.u_modified
+#     cache.step = 1
+#   end
+#   cnt = cache.step
+#   if cache.step == 1
+#     cache.step += 1
+#     ttmp = t + (2/3)*dt
+#     ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)     #Ralston Method
+#     integrator.destats.nf += 1
+#     u = uprev + (dt/4)*(k1 + 3*ralk2)
+#     k2 = k1
+#   else
+#     perform_step!(integrator, AB3ConstantCache(k2,k3,cnt))
+#     k = integrator.fsallast
+#     u = uprev + (dt/12)*(5*k + 8*k1 - k2)
+#     k3 = k2
+#     k2 = k1
+#   end
+#   cache.k2 = k2
+#   cache.k3 = k3
+#   integrator.fsallast = f(u, p, t+dt)
+#   integrator.destats.nf += 1
+#   integrator.k[1] = integrator.fsalfirst
+#   integrator.k[2] = integrator.fsallast
+#   integrator.u = u
+# end
 
 @muladd function perform_step!(integrator,cache::ABM32Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
