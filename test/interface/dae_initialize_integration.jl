@@ -15,7 +15,6 @@ connections = [
     0 ~ n2.F - D * max(n2.v - n1.v, 0)
 ]
 connected = ODESystem(connections,t,[],[D,Dk],systems=[n1,n2],name=:connected)
-equations(connected)
 
 u0 = [
     n1.v => -2,
