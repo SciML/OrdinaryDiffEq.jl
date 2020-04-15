@@ -120,8 +120,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
 	f(tmp,u0,p,t)
-	tmp .= algebraic_vars .* tmp
+	tmp .= algebraic_eqs .* tmp
 
  	integrator.opts.internalnorm(tmp,t) <= integrator.opts.abstol && return
 
@@ -145,8 +146,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
 	du = f(u0,p,t)
-	resid = du[algebraic_vars]
+	resid = du[algebraic_eqs]
 
 	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
@@ -237,11 +239,12 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	M = integrator.f.mass_matrix
 	update_coefficients!(M,u,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
 	tmp = get_tmp_cache(integrator)[1]
 
 	f(tmp,u,p,t)
 
-	tmp .= algebraic_vars .* tmp
+	tmp .= algebraic_eqs .* tmp
 
 	integrator.opts.internalnorm(tmp,t) <= alg.abstol && return
 	alg_u = @view u[algebraic_vars]
@@ -249,7 +252,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	nlequation = (out, x) -> begin
 		alg_u .= x
 		f(tmp, u, p, t)
-		out .= @view tmp[algebraic_vars]
+		out .= @view tmp[algebraic_eqs]
 	end
 
 	r = nlsolve(nlequation, u[algebraic_vars])
@@ -271,9 +274,10 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	M = integrator.f.mass_matrix
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
 
 	du = f(u0,p,t)
-	resid = du[algebraic_vars]
+	resid = du[algebraic_eqs]
 
 	integrator.opts.internalnorm(resid,t) <= alg.abstol && return
 
@@ -289,7 +293,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	nlequation = (out,x) -> begin
 		alg_u .= x
 		du = f(u,p,t)
-		out .= @view du[algebraic_vars]
+		out .= @view du[algebraic_eqs]
 	end
 
 	r = nlsolve(nlequation, u0[algebraic_vars])
