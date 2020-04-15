@@ -108,8 +108,8 @@ end
 
 ######################
 # DEDataMatrix
-mutable struct SimTypeg{T,T2} <: DEDataMatrix{T}
-  x::Array{T,2} # two dimensional
+mutable struct SimTypeg{T,T2,N} <: DEDataArray{T,N}
+  x::Array{T,N} # two dimensional
   f1::T2
 end
 
@@ -158,8 +158,70 @@ end
 
   tstop =[tstop1;tstop2]
   sol = solve(prob,Tsit5(),callback = cbs, tstops=tstop)
-  @test_broken sol = solve(prob,Rodas4(),callback = cbs, tstops=tstop)
-  @test_broken sol = solve(prob,Kvaerno3(),callback = cbs, tstops=tstop)
-  @test_broken sol = solve(prob,Rodas4(autodiff=false),callback = cbs, tstops=tstop)
-  @test_broken sol = solve(prob,Kvaerno3(autodiff=false),callback = cbs, tstops=tstop)
+  @test_broken solve(prob,Rodas4(),callback = cbs, tstops=tstop) isa ODESolution
+  @test_broken sol = solve(prob,Kvaerno3(),callback = cbs, tstops=tstop) isa ODESolution
+  sol = solve(prob,Rodas4(autodiff=false),callback = cbs, tstops=tstop)
+  sol = solve(prob,Kvaerno3(autodiff=false),callback = cbs, tstops=tstop)
+end
+
+mutable struct CtrlSimTypeScalar{T,T2} <: DEDataVector{T}
+    x::Vector{T}
+    ctrl_x::T2 # controller state
+    ctrl_u::T2 # controller output
+end
+
+@testset "Interpolation Sides" begin
+  function f(x,p,t)
+      x.ctrl_u .- x
+  end
+  function f(dx,x,p,t)
+      dx[1] = x.ctrl_u - x[1]
+  end
+
+  ctrl_f(e, x) = 0.85(e + 1.2x)
+
+  x0 = CtrlSimTypeScalar([0.0], 0.0, 0.0)
+  prob = ODEProblem{false}(f, x0, (0.0, 8.0))
+
+  function ctrl_fun(int)
+      e = 1 - int.u[1] # control error
+
+      # pre-calculate values to avoid overhead in iteration over cache
+      x_new = int.u.ctrl_x + e
+      u_new = ctrl_f(e, x_new)
+
+      # iterate over cache...
+      if DiffEqBase.isinplace(int.sol.prob)
+        for c in full_cache(int)
+            c.ctrl_x = x_new
+            c.ctrl_u = u_new
+        end
+      end
+  end
+
+  integrator = init(prob, Tsit5())
+
+  # take 8 steps with a sampling time of 1s
+  Ts = 1.0
+  for i in 1:8
+      ctrl_fun(integrator)
+      DiffEqBase.step!(integrator,Ts,true)
+  end
+
+  sol = integrator.sol
+  @test [u.ctrl_u for u in sol.u[2:end]] == [sol(t).ctrl_u for t in sol.t[2:end]]
+
+  prob = ODEProblem{true}(f, x0, (0.0, 8.0))
+
+  integrator = init(prob, Rosenbrock23())
+
+  # take 8 steps with a sampling time of 1s
+  Ts = 1.0
+  for i in 1:8
+      ctrl_fun(integrator)
+      DiffEqBase.step!(integrator,Ts,true)
+  end
+
+  sol = integrator.sol
+  @test [u.ctrl_u for u in sol.u[2:end]] == [sol(t).ctrl_u for t in sol.t[2:end]]
 end

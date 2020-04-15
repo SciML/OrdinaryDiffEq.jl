@@ -372,9 +372,9 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idx
                      typeof(oneunit_Θ * oneunit(dt) * oneunit(eltype(k[1])))) # Θ*dt*k
     end
     if typeof(idxs) <: Nothing
-      out = similar(y₀, S)
+      out = similar(y₁, S)
     else
-      out = similar(y₀, S, axes(idxs))
+      out = similar(y₁, S, axes(idxs))
     end
     _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
   end
