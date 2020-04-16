@@ -43,6 +43,7 @@ end
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
   @time @safetestset "Mass Matrix Tests" begin include("interface/mass_matrix_tests.jl") end
   @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
+  @time @safetestset "DAE Initialize Integration" begin include("interface/dae_initialize_integration.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")
