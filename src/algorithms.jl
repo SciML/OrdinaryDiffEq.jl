@@ -1098,7 +1098,7 @@ const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   AB3,AB4,AB5,ABM32,ABM43,ABM54}
 
 const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
-                              KenCarp3,KenCarp4,KenCarp5}
+                              KenCarp3,KenCarp4,KenCarp5,CFNLIRK3}
 
 
 # DAE Specific Algorithms
