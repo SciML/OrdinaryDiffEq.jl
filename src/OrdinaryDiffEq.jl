@@ -196,7 +196,7 @@ module OrdinaryDiffEq
 
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
          Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
-         Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA, SFSDIRK4, CFNLIRK3
+         Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA, SFSDIRK4, CFNLIRK4
 
   export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler
 

@@ -821,16 +821,16 @@ KenCarp3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  KenCarp3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
-struct CFNLIRK3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+struct CFNLIRK4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
   diff_type::FDT
   extrapolant::Symbol
 end
-CFNLIRK3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+CFNLIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CFNLIRK3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                      CFNLIRK4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                       linsolve,nlsolve,diff_type,extrapolant)
 
 struct Cash4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
@@ -1098,7 +1098,7 @@ const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   AB3,AB4,AB5,ABM32,ABM43,ABM54}
 
 const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
-                              KenCarp3,KenCarp4,KenCarp5,CFNLIRK3}
+                              KenCarp3,KenCarp4,KenCarp5,CFNLIRK4}
 
 
 # DAE Specific Algorithms

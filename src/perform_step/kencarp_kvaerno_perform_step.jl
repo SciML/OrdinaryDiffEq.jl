@@ -4,7 +4,7 @@ function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,
                                               KenCarp4ConstantCache,
                                               Kvaerno5ConstantCache,
                                               KenCarp5ConstantCache,
-                                              CFNLIRK3ConstantCache})
+                                              CFNLIRK4ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -22,7 +22,7 @@ function initialize!(integrator, cache::Union{Kvaerno3Cache,
                                               KenCarp4Cache,
                                               Kvaerno5Cache,
                                               KenCarp5Cache,
-                                              CFNLIRK3Cache})
+                                              CFNLIRK4Cache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
@@ -414,10 +414,10 @@ end
   end
 end
 
-@muladd function perform_step!(integrator, cache::CFNLIRK3ConstantCache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::CFNLIRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
   nlsolver = cache.nlsolver
-  @unpack γ,a31,a32,a41,a42,a43,c2,c3,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65,eb1,eb2,eb3,eb4,eb5,eb6 = cache.tab
   alg = unwrap_alg(integrator, true)
 
   if typeof(integrator.f) <: SplitFunction
@@ -491,17 +491,55 @@ end
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
   nlsolver.z = z₄
-  nlsolver.c = 1
+  nlsolver.c = c4
   nlsolver.tmp = tmp
 
   z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
-  u = nlsolver.tmp + γ*z₄
+  ################################## Solve Step 5
+
   if typeof(integrator.f) <: SplitFunction
-    k4 = dt*f2(u,p,t+dt)
+    z₅ = z₄
+    u = nlsolver.tmp + γ*z₄
+    k4 = dt*f2( u,p,t+c4*dt)
     integrator.destats.nf2 += 1
-    u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
+    tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ +a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
+  else
+    z₅ = z₄
+    tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ +a54*z₄
+  end
+  nlsolver.z = z₅
+  nlsolver.c = c5
+  nlsolver.tmp = tmp
+
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  if typeof(integrator.f) <: SplitFunction
+    z₆ = z₅
+    u = nlsolver.tmp + γ*z₅
+    k5 = dt*f2( u,p,t+c5*dt)
+    integrator.destats.nf2 += 1
+    tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ +a64*z₄+ a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
+  else
+    z₆ = z₅
+    tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ +a64*z₄+ a65*z₅
+  end
+  nlsolver.z = z₆
+  nlsolver.c = 1
+  nlsolver.tmp = tmp
+
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  u = nlsolver.tmp + γ*z₆
+  if typeof(integrator.f) <: SplitFunction
+    k6 = dt*f2(u,p,t+dt)
+    integrator.destats.nf2 += 1
+    u = uprev + a61*z₁ + a62*z₂ + a63*z₃ +a64*z₄+ a65*z₅ + γ*z₆ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
   end
 
   ################################### Finalize
@@ -511,19 +549,19 @@ end
     integrator.fsallast = integrator.f(u, p, t+dt)
     integrator.k[2] = integrator.fsallast
   else
-    integrator.fsallast = z₄./dt
+    integrator.fsallast = z₆./dt
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
   end
   integrator.u = u
 end
 
-@muladd function perform_step!(integrator, cache::CFNLIRK3Cache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::CFNLIRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
-  @unpack z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver = cache
+  @unpack z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,atmp,nlsolver = cache
   @unpack tmp = nlsolver
-  @unpack γ,a31,a32,a41,a42,a43,c2,c3 = cache.tab
-  @unpack ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65,eb1,eb2,eb3,eb4,eb5,eb6 = cache.tab
+
 
   alg = unwrap_alg(integrator, true)
 
@@ -603,21 +641,57 @@ end
   end
   nlsolver.z = z₄
 
-  nlsolver.c = 1
+  nlsolver.c = c4
   z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
-  @.. u = tmp + γ*z₄
+  ################################## Solve Step 5
+
   if typeof(integrator.f) <: SplitFunction
-    f2( k4, u,p,t+dt); k4 .*= dt
+    z₅ .= z₄
+    @.. u = tmp + γ*z₄
+    f2( k4, u,p,t+c4*dt); k4 .*= dt
     integrator.destats.nf2 += 1
-    @.. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
+    @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
+  else
+    @.. z₅ = z₄
+    @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  end
+  nlsolver.z = z₅
+
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  if typeof(integrator.f) <: SplitFunction
+    z₆ .= z₅
+    @.. u = tmp + γ*z₅
+    f2( k5, u,p,t+c5*dt); k5 .*= dt
+    integrator.destats.nf2 += 1
+    @.. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
+  else
+    @.. z₆ = z₅
+    @.. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  end
+  nlsolver.z = z₆
+
+  nlsolver.c = 1
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  @.. u = tmp + γ*z₆
+  if typeof(integrator.f) <: SplitFunction
+    f2( k6, u,p,t+dt); k6 .*= dt
+    integrator.destats.nf2 += 1
+    @.. u = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅+ γ*z₆ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
   end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
   else
-    @.. integrator.fsallast = z₄/dt
+    @.. integrator.fsallast = z₆/dt
   end
 end
 
