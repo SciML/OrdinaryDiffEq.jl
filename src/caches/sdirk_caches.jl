@@ -361,6 +361,173 @@ function alg_cache(alg::SFSDIRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   SFSDIRK4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
 
+mutable struct SFSDIRK5ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = SFSDIRK5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  SFSDIRK5ConstantCache(nlsolver,tab)
+end
+
+@cache mutable struct SFSDIRK5Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  z₅::uType
+  z₆::uType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = SFSDIRK5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u); z₆ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  SFSDIRK5Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver,tab)
+end
+
+mutable struct SFSDIRK6ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = SFSDIRK6Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  SFSDIRK6ConstantCache(nlsolver,tab)
+end
+
+@cache mutable struct SFSDIRK6Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  z₅::uType
+  z₆::uType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = SFSDIRK6Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u); z₆ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  SFSDIRK6Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver,tab)
+end
+
+mutable struct SFSDIRK7ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = SFSDIRK7Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  SFSDIRK7ConstantCache(nlsolver,tab)
+end
+
+@cache mutable struct SFSDIRK7Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  z₅::uType
+  z₆::uType
+  z₇::uType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = SFSDIRK7Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u);z₆ = similar(u); z₇ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  SFSDIRK7Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,atmp,nlsolver,tab)
+end
+
+mutable struct SFSDIRK8ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tab = SFSDIRK8Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+  SFSDIRK8ConstantCache(nlsolver,tab)
+end
+
+@cache mutable struct SFSDIRK8Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  z₅::uType
+  z₆::uType
+  z₇::uType
+  z₈::uType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SFSDIRK8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = SFSDIRK8Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+  fsalfirst = zero(rate_prototype)
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u);z₆ = similar(u);z₇ = similar(u); z₈ = nlsolver.z
+  atmp = similar(u,uEltypeNoUnits)
+
+  SFSDIRK8Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver,tab)
+end
+
 mutable struct Hairer4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   tab::Tab

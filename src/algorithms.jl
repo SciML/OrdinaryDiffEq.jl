@@ -851,6 +851,57 @@ SFSDIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       SFSDIRK4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                       linsolve,nlsolve,diff_type,extrapolant)
 
+                      struct SFSDIRK5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+                        linsolve::F
+                        nlsolve::F2
+                        diff_type::FDT
+                        extrapolant::Symbol
+                      end
+SFSDIRK5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:linear) =
+                      SFSDIRK5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                      linsolve,nlsolve,diff_type,extrapolant)
+
+struct SFSDIRK6{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+end
+
+SFSDIRK6(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:linear) =
+                      SFSDIRK6{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                      linsolve,nlsolve,diff_type,extrapolant)
+
+struct SFSDIRK7{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+end
+
+SFSDIRK7(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:linear) =
+                      SFSDIRK7{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                      linsolve,nlsolve,diff_type,extrapolant)
+
+struct SFSDIRK8{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+linsolve::F
+nlsolve::F2
+diff_type::FDT
+extrapolant::Symbol
+end
+
+SFSDIRK8(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                    extrapolant=:linear) =
+                    SFSDIRK8{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                    linsolve,nlsolve,diff_type,extrapolant)
+
 struct Hairer4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
