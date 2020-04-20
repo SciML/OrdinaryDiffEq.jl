@@ -105,8 +105,6 @@ module OrdinaryDiffEq
   include("tableaus/firk_tableaus.jl")
   include("tableaus/rkn_tableaus.jl")
   include("tableaus/rkc_tableaus.jl")
-  include("tableaus/tsrk_tableaus.jl")
-
 
   include("integrators/type.jl")
   include("integrators/controllers.jl")
