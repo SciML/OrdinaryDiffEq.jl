@@ -191,14 +191,15 @@ end
 
 function perform_step!(integrator, cache::CayleyEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,p,alg = integrator
-  @unpack W,k,tmp = cache
+  @unpack W,k,V,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
-  update_coefficients!(L,1/2*(u+uprev),p,t)
+  update_coefficients!(L,uprev,p,t)
 
-  cay!(tmp, L*dt)
-  u .= tmp*uprev*transpose(tmp)
+  cay!(V, L*dt)
+  mul!(tmp, uprev, transpose(V))
+  mul!(u, V, tmp)
 
   # Update integrator state
   integrator.f(integrator.fsallast,u,p,t+dt)

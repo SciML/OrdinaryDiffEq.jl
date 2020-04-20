@@ -53,6 +53,7 @@ end
   uprev::uType
   uprev2::uType
   tmp::uType
+  V::uType
   fsalfirst::rateType
   W::WType
   k::rateType
@@ -62,7 +63,7 @@ function alg_cache(alg::CayleyEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  CayleyEulerCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  CayleyEulerCache(u,uprev,uprev2,similar(u),similar(u),fsalfirst,W,k)
 end
 
 struct CayleyEulerConstantCache <: OrdinaryDiffEqConstantCache
