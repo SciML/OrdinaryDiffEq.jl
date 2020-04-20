@@ -83,7 +83,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step=false
       A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
       u .= exp(dt*L) * u
     end
-  
+
     integrator.f(integrator.fsallast,u,p,t+dt)
     integrator.destats.nf += 1
     iter += 1
@@ -174,4 +174,33 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=fa
   f(integrator.fsallast, u, p, t + dt)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
+end
+
+cay!(tmp, A) = mul!(tmp, inv(I - 1/2 * A), (I + 1/2 * A))
+
+function initialize!(integrator, cache::CayleyEulerCache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::CayleyEulerCache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  L = integrator.f.f
+  update_coefficients!(L,1/2*(u+uprev),p,t)
+
+  cay!(tmp, L*dt)
+  u .= tmp*uprev*transpose(tmp)
+
+  # Update integrator state
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
 end
