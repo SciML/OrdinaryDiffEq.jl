@@ -11,7 +11,7 @@ using OrdinaryDiffEq: alg_order
 
   Random.seed!(100)
   dts = 1 ./2 .^(7:-1:4) #14->7 good plot
-  for Alg in [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2,KenCarp3]
+  for Alg in [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2,KenCarp3,CFNLIRK3]
     sim  = test_convergence(dts,prob,Alg())
     @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
   end
@@ -31,9 +31,9 @@ end
   prob = SplitODEProblem(linnonlin_fun_iip,u0,(0.0,1.0))
 
   dts = 1 ./2 .^(8:-1:4) #14->7 good plot
-  for Alg in [LawsonEuler(),NorsettEuler(),ETDRK2(),ETDRK3(),ETDRK4(),HochOst4(),ETD2(),KenCarp3(linsolve=LinSolveGMRES(tol=1e-6))]
+  for Alg in [LawsonEuler(),NorsettEuler(),ETDRK2(),ETDRK3(),ETDRK4(),HochOst4(),ETD2(),KenCarp3(linsolve=LinSolveGMRES(tol=1e-6)),CFNLIRK3()]
     sim  = test_convergence(dts,prob,Alg)
-    @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol=0.1
+    @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol=0.15
   end
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
   @test sim.𝒪est[:l2] ≈  4 atol=0.1

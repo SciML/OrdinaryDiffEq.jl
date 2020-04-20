@@ -882,6 +882,52 @@ struct KenCarp4Tableau{T,T2}
   ebtilde6::T
 end
 
+struct CFNLIRK3Tableau{T,T2}
+    γ::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    c2::T2
+    c3::T2
+    ea21::T
+    ea31::T
+    ea32::T
+    ea41::T
+    ea42::T
+    ea43::T
+    eb1::T
+    eb2::T
+    eb3::T
+    eb4::T
+end
+
+function CFNLIRK3Tableau(T,T2)
+  #Implicit Tableau
+  γ  = convert(T,0.43586652150846)
+  a31 = convert(T,0.0)
+  a32 = convert(T,(1-γ)/2)
+  a41 = convert(T,0.0)
+  a42 = convert(T,1.20849664917601276)
+  a43 = convert(T,-0.64436317068447276)
+  c3 = (1+γ)/2
+  c2 = γ
+
+  # Explicit Tableau
+  ea21 = convert(T,γ)
+  ea31 = convert(T,(1.7+γ)/2)
+  ea32 = convert(T,-0.35)
+  ea41 = convert(T,0.0)
+  ea42 = convert(T,1.9891757246798590)
+  ea43 = convert(T,-0.9891757246798590)
+  eb1 = convert(T,0.0)
+  eb2 = convert(T,1.20849664917601276)
+  eb3 = convert(T,-0.64436317068447276)
+  eb4 = convert(T,γ)
+  CFNLIRK3Tableau(γ,a31,a32,a41,a42,a43,c2,c3,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4)
+end
+
 #=
 # KenCarp4
 # Predict z3 from Hermite z2 and z1
