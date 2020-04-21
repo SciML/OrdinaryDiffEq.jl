@@ -579,7 +579,6 @@ end
     integrator.destats.nf2 += 1
     @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
-    # Guess is from Hermite derivative on z₁ and z₂
     @.. z₃ = z₂
     @.. tmp = uprev + a31*z₁ + a32*z₂
   end
