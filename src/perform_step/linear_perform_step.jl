@@ -190,11 +190,16 @@ function initialize!(integrator, cache::CayleyEulerCache)
 end
 
 function perform_step!(integrator, cache::CayleyEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p,f,alg = integrator
   @unpack W,k,V,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
-  L = integrator.f.f
+  if f isa SplitFunction
+    L = f.f1.f
+  else  # f isa ODEFunction
+    L = f.f
+  end
+
   update_coefficients!(L,uprev,p,t)
 
   cay!(V, L*dt)
