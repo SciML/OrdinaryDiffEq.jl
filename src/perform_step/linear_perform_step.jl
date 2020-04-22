@@ -191,7 +191,7 @@ end
 
 function perform_step!(integrator, cache::CayleyEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,p,f,alg = integrator
-  @unpack W,k,V,tmp = cache
+  @unpack k,V,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
   if f isa SplitFunction
