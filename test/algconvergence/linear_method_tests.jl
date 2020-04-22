@@ -96,9 +96,25 @@ A = DiffEqArrayOperator(Matrix{eltype(η)}(I(size(η,1))), update_func=update_fu
 dts = 1 ./2 .^(10:-1:2)
 tspan = (0., 20.)
 
+# IIP
 f = SplitFunction(A, (du,u,p,t)->du.=-u*B(u), _func_cache=similar(η))
 prob = SplitODEProblem(f, η, tspan)
 sol = solve(prob, CayleyEuler(), dt=1/10)
+
+@test sol.retcode == :Success
+eig_err = [norm(eigvals(sol[i])-eigvals(η)) for i in eachindex(sol)]
+@test all(≈(e,0, atol=1e-13) for e in eig_err)
+
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
+
+sim = analyticless_test_convergence(dts,prob,CayleyEuler(),test_setup)
+@test sim.𝒪est[:l2] ≈ 1 atol=0.2
+
+# OOP
+f = SplitFunction(A, (u,p,t)->-u*B(u), _func_cache=similar(η))
+prob = SplitODEProblem(f, η, tspan)
+sol = solve(prob, CayleyEuler(), dt=1/10)
+
 @test sol.retcode == :Success
 eig_err = [norm(eigvals(sol[i])-eigvals(η)) for i in eachindex(sol)]
 @test all(≈(e,0, atol=1e-13) for e in eig_err)

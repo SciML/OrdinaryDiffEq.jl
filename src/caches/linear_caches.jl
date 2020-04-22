@@ -66,10 +66,8 @@ end
 struct CayleyEulerConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::CayleyEuler,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  CayleyEulerConstantCache()
-end
+alg_cache(alg::CayleyEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = CayleyEulerConstantCache()
 
 @cache struct MagnusLeapfrogCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
