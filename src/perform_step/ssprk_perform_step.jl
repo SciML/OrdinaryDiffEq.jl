@@ -1509,6 +1509,84 @@ end
   f( k,  u, p, t+dt)
 end
 
+function initialize!(integrator,cache::VTSRKConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::VTSRKConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1hat,c2hat,c3hat,c4hat = cache
+
+  # u₁
+  u₂ = uprev + β10 * dt * integrator.fsalfirst
+  k = f(u₂,p,t+c1hat*dt)
+  # u₂
+  u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
+  k = f(u₂,p,t+c2hat*dt)
+  # u₃
+  u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
+  k₃ = f(u₃,p,t+c3hat*dt)
+  # u₄ -> stored as tmp
+  tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
+  k = f(tmp, p, t+c4hat*dt)
+  # u
+  u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
+
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 5
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::VTSRKCache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.destats.nf += 1
+end
+
+@muladd function perform_step!(integrator,cache::VTSRKCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,k₃,u₂,u₃,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
+  @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1hat,c2hat,c3hat,c4hat = cache.tab
+
+  # u₁
+  @.. u₂ = uprev + β10 * dt * integrator.fsalfirst
+  stage_limiter!(u₂, f, t+c1hat*dt)
+  f(k,u₂,p,t+c1hat*dt)
+  # u₂
+  @.. u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
+  stage_limiter!(u₂, f, t+c2hat*dt)
+  f(k,u₂,p,t+c2*dt)
+  # u₃
+  @.. u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
+  stage_limiter!(u₃, f, t+c3hat*dt)
+  f(k₃,u₃,p,t+c3*dt)
+  # u₄ -> stored as tmp
+  @.. tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
+  stage_limiter!(tmp, f, t+c4hat*dt)
+  f( k,  tmp, p, t+c4hat*dt)
+  # u
+  @.. u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
+  stage_limiter!(u, f, t+dt)
+  step_limiter!(u, f, t+dt)
+  integrator.destats.nf += 5
+  f( k,  u, p, t+dt)
+end
 
 function initialize!(integrator,cache::SSPRK104ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal

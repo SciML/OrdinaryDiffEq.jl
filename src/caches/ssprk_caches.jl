@@ -953,6 +953,88 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK54ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
+@cache struct VTSRKCache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  k₃::rateType
+  u₂::uType
+  u₃::uType
+  tmp::uType # should be u₄, but tmp is needed for callbacks
+  fsalfirst::rateType
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  tab::TabType
+end
+
+struct VTSRKConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  β10::T
+  α20::T
+  α21::T
+  β21::T
+  α30::T
+  α32::T
+  β32::T
+  α40::T
+  α43::T
+  β43::T
+  α52::T
+  α53::T
+  β53::T
+  α54::T
+  β54::T
+  d7::T
+  n2::T
+  n3::T
+  n6::T
+  n8::T
+  q20::T
+  q21::T
+
+  c1hat::T2
+  c2hat::T2
+  c3hat::T2
+  c4hat::T2
+
+  function VTSRKConstantCache(T, T2)
+    β10 = T(0.391752226571890)
+    α20 = T(0.444370493651235)
+    α21 = T(0.555629506348765)
+    β21 = T(0.368410593050371)
+    α30 = T(0.620101851488403)
+    α32 = T(0.379898148511597)
+    β32 = T(0.251891774271694)
+    α40 = T(0.178079954393132)
+    α43 = T(0.821920045606868)
+    β43 = T(0.544974750228521)
+    α52 = T(0.517231671970585)
+    α53 = T(0.096059710526147)
+    β53 = T(0.063692468666290)
+    α54 = T(0.386708617503269)
+    β54 = T(0.226007483236906)
+    c1hat = T2(0.391752226571890)
+    c2hat = T2(0.586079689311540)
+    c3hat = T2(0.474542363121400)
+    c4hat = T2(0.935010630967653)
+
+    new{T,T2}(β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54, β54, c1hat, c2hat, c3hat, c4hat)
+  end
+end
+
+function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  u₂ = similar(u)
+  u₃ = similar(u)
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  k₃ = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = VTSRKConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  VTSRKCache(u,uprev,k,k₃,u₂,u₃,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
+end
+
+function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  VTSRKConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
 
 @cache struct SSPRK104Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType

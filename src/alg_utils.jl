@@ -255,6 +255,7 @@ alg_order(alg::SSPRK432) = 3
 alg_order(alg::SSPRKMSVS43) = 3
 alg_order(alg::SSPRK932) = 3
 alg_order(alg::SSPRK54) = 4
+alg_order(alg::VTSRK) = 5
 alg_order(alg::SSPRK104) = 4
 
 alg_order(alg::RK4) = 4
@@ -471,6 +472,7 @@ ssp_coefficient(alg::SSPRKMSVS32) = 0.5
 ssp_coefficient(alg::SSPRKMSVS43) = 0.33
 ssp_coefficient(alg::SSPRK932) = 6
 ssp_coefficient(alg::SSPRK54) = 1.508
+ssp_coefficient(alg::VTSRK) = 1.508
 ssp_coefficient(alg::SSPRK104) = 6
 ssp_coefficient(alg::KYK2014DGSSPRK_3S2) =  0.8417
 
