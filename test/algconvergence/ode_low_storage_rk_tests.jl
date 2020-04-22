@@ -32,7 +32,7 @@ test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 u0_large = rand(10^6)
 prob_ode_large = ODEProblem((du,u,p,t)-> du .= u, u0_large, (0.0,1.0))
 
-
+@info "ORK256"
 alg = ORK256()
 alg2 = ORK256(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
@@ -68,7 +68,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CarpenterKennedy2N54"
 alg = CarpenterKennedy2N54()
 alg2 = CarpenterKennedy2N54(;williamson_condition=false)
 dts = 1 ./ 2 .^(7:-1:3)
@@ -104,7 +104,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "HSLDDRK64"
 alg = HSLDDRK64()
 alg2 = HSLDDRK64(;williamson_condition=true)
 dts = 1 ./ 2 .^(8:-1:4)
@@ -140,7 +140,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "DGLDDRK73_C"
 alg = DGLDDRK73_C()
 alg2 = DGLDDRK73_C(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
@@ -176,7 +176,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "DGLDDRK84_C"
 alg = DGLDDRK84_C()
 alg2 = DGLDDRK84_C(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
@@ -212,7 +212,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "DGLDDRK84_F"
 alg = DGLDDRK84_F()
 alg2 = DGLDDRK84_F(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
@@ -248,7 +248,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "NDBLSRK124"
 alg = NDBLSRK124()
 alg2 = NDBLSRK124(;williamson_condition=false)
 dts = 1 ./ 2 .^(7:-1:3)
@@ -284,7 +284,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "NDBLSRK134"
 alg = NDBLSRK134()
 alg2 = NDBLSRK134(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
@@ -320,7 +320,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "NDBLSRK144"
 alg = NDBLSRK144()
 alg2 = NDBLSRK144(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
@@ -356,7 +356,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CFRLDDRK64"
 alg = CFRLDDRK64()
 dts = 1 ./ 2 .^(7:-1:4)
 for prob in test_problems_only_time
@@ -381,7 +381,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "TSLDDRK74"
 alg = TSLDDRK74()
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
@@ -423,6 +423,7 @@ f = (du,u,p,t)->du[1]=sin(u[1])
 prob_nonlinear_B = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->[2*acot(exp(-t)*cot(BigFloat(0.5)))]),[BigFloat(1.)],(BigFloat(0.),BigFloat(0.5)))
 test_problems_nonlinear_BigFloat = [prob_nonlinear_A,prob_nonlinear_B]
 
+@info "CKLLSRK43_2"
 alg = CKLLSRK43_2()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -449,7 +450,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK54_3C"
 alg = CKLLSRK54_3C()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -476,7 +477,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK95_4S"
 alg = CKLLSRK95_4S()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -503,7 +504,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK95_4C"
 alg = CKLLSRK95_4C()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -530,7 +531,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK95_4M"
 alg = CKLLSRK95_4M()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -557,7 +558,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK54_3C_3R"
 alg = CKLLSRK54_3C_3R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -584,7 +585,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK54_3M_3R"
 alg = CKLLSRK54_3M_3R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -611,7 +612,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK54_3N_3R"
 alg = CKLLSRK54_3N_3R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -638,7 +639,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK85_4C_3R"
 alg = CKLLSRK85_4C_3R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -665,7 +666,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK85_4M_3R"
 alg = CKLLSRK85_4M_3R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -692,7 +693,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK85_4P_3R"
 alg = CKLLSRK85_4P_3R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -719,7 +720,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK54_3N_4R"
 alg = CKLLSRK54_3N_4R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -746,7 +747,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK54_3M_4R"
 alg = CKLLSRK54_3M_4R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -773,7 +774,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK65_4M_4R"
 alg = CKLLSRK65_4M_4R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -800,7 +801,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK85_4FM_4R"
 alg = CKLLSRK85_4FM_4R()
 dts = BigFloat(1) ./ 2 .^(10:-1:6)
 for prob in test_problems_only_time_BigFloat
@@ -827,7 +828,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "CKLLSRK75_4M_5R"
 alg = CKLLSRK75_4M_5R()
 dts = BigFloat(1) ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time_BigFloat
@@ -857,6 +858,7 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 println("Methods from Parsani, Ketcheson, Deconinck (2013)")
 
+@info "ParsaniKetchesonDeconinck3S32"
 alg = ParsaniKetchesonDeconinck3S32()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
@@ -882,7 +884,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "ParsaniKetchesonDeconinck3S82"
 alg = ParsaniKetchesonDeconinck3S82()
 dts = 1 ./ 2 .^(8:-1:5)
 for prob in test_problems_only_time
@@ -908,7 +910,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "ParsaniKetchesonDeconinck3S53"
 alg = ParsaniKetchesonDeconinck3S53()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
@@ -934,7 +936,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "ParsaniKetchesonDeconinck3S173"
 alg = ParsaniKetchesonDeconinck3S173()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
@@ -962,7 +964,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "ParsaniKetchesonDeconinck3S94"
 alg = ParsaniKetchesonDeconinck3S94()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
@@ -987,7 +989,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "ParsaniKetchesonDeconinck3S184"
 alg = ParsaniKetchesonDeconinck3S184()
 dts = 1 ./ 2 .^(6:-1:2)
 for prob in test_problems_only_time
@@ -1013,7 +1015,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "ParsaniKetchesonDeconinck3S105"
 alg = ParsaniKetchesonDeconinck3S105()
 dts = 1 ./ 1.95 .^(5:-1:1)
 for prob in test_problems_only_time
@@ -1040,7 +1042,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-
+@info "ParsaniKetchesonDeconinck3S205"
 alg = ParsaniKetchesonDeconinck3S205()
 dts = 1 ./ 1.95 .^(5:-1:1)
 for prob in test_problems_only_time
