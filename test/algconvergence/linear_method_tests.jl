@@ -93,7 +93,7 @@ end
 
 η = diagm([1.,2,3,4,5])
 A = DiffEqArrayOperator(Matrix{eltype(η)}(I(size(η,1))), update_func=update_func)
-dts = 1 ./2 .^(10:-1:1)
+dts = 1 ./2 .^(10:-1:2)
 tspan = (0., 20.)
 
 f = SplitFunction(A, (du,u,p,t)->du.=-u*B(u), _func_cache=similar(η))
@@ -106,4 +106,4 @@ eig_err = [norm(eigvals(sol[i])-eigvals(η)) for i in eachindex(sol)]
 test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 
 sim = analyticless_test_convergence(dts,prob,CayleyEuler(),test_setup)
-@test sim.𝒪est[:l2] ≈ 2 atol=0.2
+@test sim.𝒪est[:l2] ≈ 1 atol=0.2
