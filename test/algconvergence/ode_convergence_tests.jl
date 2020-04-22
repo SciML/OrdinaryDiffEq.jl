@@ -133,6 +133,9 @@ end
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test sim17.𝒪est[:final] ≈ 3 atol=testTol
 
+  sim019 = test_convergence(dts,prob,CFNLIRK3())
+  @test sim019.𝒪est[:final] ≈ 3 atol=testTol
+
   sim18 = test_convergence(dts,prob,PDIRK44())
   @test sim18.𝒪est[:final] ≈ 4 atol=testTol
 
