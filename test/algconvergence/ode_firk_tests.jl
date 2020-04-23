@@ -35,7 +35,7 @@ f = (u,p,t)->cos(t)
 prob_ode_sin = ODEProblem(ODEFunction(f; analytic=(u0,p,t)->sin(t)), 0.,(0.0,1.0))
 
 f = (u,p,t)-> -exp(-t)
-prob_ode_exp = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->exp(t)), 1.,(0.,0.5))
+prob_ode_exp = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->exp(-t)), 1.,(0.,0.5))
 
 probs_oop = [prob_ode_sin, prob_ode_exp]
 
