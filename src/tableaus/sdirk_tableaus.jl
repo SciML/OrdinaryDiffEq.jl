@@ -988,6 +988,97 @@ y₁-y₀ = a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
 (-2θ + 3θ^2 + γ*(6θ*(1-θ)/dt))
 
 =#
+
+struct CFNLIRK4Tableau{T,T2}
+    γ::T
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    ea21::T
+    ea31::T
+    ea32::T
+    ea41::T
+    ea42::T
+    ea43::T
+    ea51::T
+    ea52::T
+    ea53::T
+    ea54::T
+    ea61::T
+    ea62::T
+    ea63::T
+    ea64::T
+    ea65::T
+    eb1::T
+    eb2::T
+    eb3::T
+    eb4::T
+    eb5::T
+    eb6::T
+end
+
+function CFNLIRK4Tableau(T,T2)
+  #Implicit Tableau
+  γ  = convert(T,1/4)
+  a21  = convert(T,0)
+  a31  = convert(T,0)
+  a32  = convert(T,1/2)
+  a41  = convert(T,0)
+  a42  = convert(T,17/50)
+  a43  = convert(T,-1/25)
+  a51  = convert(T,0)
+  a52  = convert(T,371/1360)
+  a53  = convert(T,-137/2720)
+  a54  = convert(T,15/544)
+  a61  = convert(T,0.0)
+  a62  = convert(T,25/24)
+  a63  = convert(T,-49/48)
+  a64  = convert(T,125/16)
+  a65  = convert(T,-85/12)
+  c2  = convert(T2,1/4)
+  c3  = convert(T2,3/4)
+  c4  = convert(T2,11/20)
+  c5  = convert(T2,1/2)
+  ea21  = convert(T,1/4)
+  ea31  = convert(T,-1/4)
+  ea32  = convert(T,1)
+  ea41  = convert(T,-13/100)
+  ea42  = convert(T,43/75)
+  ea43  = convert(T,8/75)
+  ea51  = convert(T,-6/85)
+  ea52  = convert(T,42/85)
+  ea53  = convert(T,179/1360)
+  ea54  = convert(T,-15/272)
+  ea61  = convert(T,0.0)
+  ea62  = convert(T,79/24)
+  ea63  = convert(T,-5/8)
+  ea64  = convert(T,25/2)
+  ea65  = convert(T,-85/6)
+  eb1  = convert(T,0.0)
+  eb2  = convert(T,25/24)
+  eb3  = convert(T,-49/48)
+  eb4  = convert(T,125/16)
+  eb5  = convert(T,-85/12)
+  eb6  = convert(T,1/4)
+  CFNLIRK4Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65,eb1,eb2,eb3,eb4,eb5,eb6)
+end
+
 function KenCarp4Tableau(T,T2)
   γ = convert(T,1//4)
   a31 = convert(T,8611//62500)

@@ -55,6 +55,10 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,CFNLIRK4())
+@test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+
 sol = solve(prob,KenCarp3(nlsolve=NLFunctional()))
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
@@ -122,6 +126,10 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,CFNLIRK4())
+@test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+
 sol = solve(prob,KenCarp4())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp4())
@@ -183,6 +191,10 @@ sim = test_convergence(dts,prob,KenCarp3())
 dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
+
+dts = (1/2) .^ (8:-1:1)
+sim = test_convergence(dts,prob,CFNLIRK4())
+@test sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 sol = solve(prob,KenCarp4())
 dts = 1 .//2 .^(8:-1:4)
@@ -246,6 +258,10 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,CFNLIRK4())
+@test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+
 sol = solve(prob,KenCarp4())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp4())
@@ -308,6 +324,10 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
 
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,CFNLIRK4())
+@test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+
 sol = solve(prob,KenCarp4())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp4())
@@ -369,6 +389,10 @@ sim = test_convergence(dts,prob,KenCarp3())
 dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,CFNLIRK3())
 @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
+
+dts = (1/2) .^ (8:-1:1)
+sim = test_convergence(dts,prob,CFNLIRK4())
+@test sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 sol = solve(prob,KenCarp4())
 dts = 1 .//2 .^(8:-1:4)

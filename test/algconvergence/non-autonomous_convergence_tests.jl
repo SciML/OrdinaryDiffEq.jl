@@ -52,6 +52,8 @@ for prob in [prob1, prob2, prob3, prob4]
   dts = 1 .//2 .^(9:-1:6)
   sim = test_convergence(dts,prob,CFNLIRK3(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
+  sim = test_convergence(dts,prob,CFNLIRK4(); kwargs...)
+  @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
   sim = test_convergence(dts,prob,KenCarp4(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
   dts = 1 .//2 .^(7:-1:4)
