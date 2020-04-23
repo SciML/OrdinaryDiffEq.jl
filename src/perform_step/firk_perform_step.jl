@@ -88,18 +88,18 @@ end
   atol = @. rtol * (abstol / reltol)
   αdt, βdt = α/dt, β/dt
   J = calc_J(integrator,  cache)
-  if u isa Number
-    LU1 = -(αdt + βdt*im)*mass_matrix + J
-  else
-    LU1 = lu(-(αdt + βdt*im)*mass_matrix + J)
-  end
-
 
   cache.dtprev = one(cache.dtprev)
   z1 = w1 = map(zero, u)
   z2 = w2 = map(zero, u)
   cache.cont1 = map(zero, u)
   cache.cont2 = map(zero, u)
+
+  if u isa Number
+    LU1 = -(αdt + βdt*im)*mass_matrix + J
+  else
+    LU1 = lu(-(αdt + βdt*im)*mass_matrix + J)
+  end
 
   # Newton iteration
   local ndw
@@ -161,12 +161,6 @@ end
       fail_convergence = false
       break
     end
-  end
-
-  if fail_convergence
-    integrator.force_stepfail = true
-    integrator.destats.nnonlinconvfail += 1
-    return
   end
 
   cache.ηold = η

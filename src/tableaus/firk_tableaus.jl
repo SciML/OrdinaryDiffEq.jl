@@ -25,7 +25,7 @@ function RadauIIA3Tableau(T,T2)
   c1 = T2(1/3)
   c2 = T2(1.0)
   α  = T(2.0)
-  β  = T(sqrt(2))
+  β  = T(-sqrt(2))
   RadauIIA3Tableau{T,T2}(T11, T12, T21, T22,
   TI11, TI12, TI21, TI22,
   c1, c2,   α,    β)

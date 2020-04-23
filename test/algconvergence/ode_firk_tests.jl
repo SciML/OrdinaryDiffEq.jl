@@ -29,7 +29,19 @@ for iip in (true, false)
   @test length(solve(remake(vanstiff, p=1e10), RadauIIA5())) < 190
 end
 
-for prob in [prob_ode_linear, prob_ode_2Dlinear]
-  sim = test_convergence(1 .//2 .^(6:-1:3),prob,RadauIIA3())
-  @test sim.𝒪est[:final] ≈ 3 atol=testTol
+##Tests fot RadauIIA3
+
+f = (u,p,t)->cos(t)
+prob_ode_sin = ODEProblem(ODEFunction(f; analytic=(u0,p,t)->sin(t)), 0.,(0.0,1.0))
+
+f = (u,p,t)-> -exp(-t)
+prob_ode_exp = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->exp(t)), 1.,(0.,0.5))
+
+probs_oop = [prob_ode_sin, prob_ode_exp]
+
+alg = RadauIIA3()
+
+for prob in provs_oop
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
 end
