@@ -953,9 +953,10 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK54ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-@cache struct VTSRKCache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VTSRKCache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
+  uprev2::uType
   k::rateType
   k₃::rateType
   u₂::uType
@@ -965,9 +966,10 @@ end
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   tab::TabType
+  step::Int
 end
 
-struct VTSRKConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+mutable struct VTSRKConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   β10::T
   α20::T
   α21::T
@@ -1016,60 +1018,61 @@ struct VTSRKConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c2hat::T2
   c3hat::T2
   c4hat::T2
-
-  function VTSRKConstantCache(T, T2)
-    β10 = T(0.391752226571890)
-    α20 = T(0.444370493651235)
-    α21 = T(0.555629506348765)
-    β21 = T(0.368410593050371)
-    α30 = T(0.620101851488403)
-    α32 = T(0.379898148511597)
-    β32 = T(0.251891774271694)
-    α40 = T(0.178079954393132)
-    α43 = T(0.821920045606868)
-    β43 = T(0.544974750228521)
-    α52 = T(0.517231671970585)
-    α53 = T(0.096059710526147)
-    β53 = T(0.063692468666290)
-    α54 = T(0.386708617503269)
-    β54 = T(0.226007483236906)
-    d7 = T(0.003674184820260)
-    n2 = T(0.179502832154858)
-    n3 = T(0.073789956884809)
-    n6 = T(0.017607159013167)
-    n8 = T(0.729100051947166)
-    q20 = T(0.085330772947643)
-    q21 = T(0.914669227052357)
-    q30 = T(0.058121281984411)
-    q32 = T(0.941878718015589)
-    q41 = T(0.036365639242841)
-    q43 = T(0.802870131352638)
-    q51 = T(0.491214340660555)
-    q54 = T(0.508785659339445)
-    q61 = T(0.566135231631241)
-    q65 = T(0.433864768368758)
-    q70 = T(0.020705281786630)
-    q71 = T(0.091646079651566)
-    q76 = T(0.883974453741544)
-    q80 = T(0.008506650138784)
-    q81 = T(0.110261531523242)
-    q82 = T(0.030113037742445)
-    q87 = T(0.851118780595529)
-    c2 = T2(0.19404565885657)
-    c3 = T2(0.40402262622011853)
-    c4 = T2(0.5588403940142084)
-    c5 = T2(0.5637064101382472)
-    c6 = T2(0.5239487828668272)
-    c7 = T2(0.7171278236757)
-    c8 = T2(0.887074044732322)
-    c1hat = T2(0.391752226571890)
-    c2hat = T2(0.586079689311540)
-    c3hat = T2(0.474542363121400)
-    c4hat = T2(0.935010630967653)
-
-    new{T,T2}(β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54, β54, c1hat, c2hat, c3hat, c4hat)
-  end
+  step::Int
 end
+function VTSRKConstantCache(T, T2)
+  β10 = convert(T,0.391752226571890)
+  α20 = convert(T,0.444370493651235)
+  α21 = convert(T,0.555629506348765)
+  β21 = convert(T,0.368410593050371)
+  α30 = convert(T,0.620101851488403)
+  α32 = convert(T,0.379898148511597)
+  β32 = convert(T,0.251891774271694)
+  α40 = convert(T,0.178079954393132)
+  α43 = convert(T,0.821920045606868)
+  β43 = convert(T,0.544974750228521)
+  α52 = convert(T,0.517231671970585)
+  α53 = convert(T,0.096059710526147)
+  β53 = convert(T,0.063692468666290)
+  α54 = convert(T,0.386708617503269)
+  β54 = convert(T,0.226007483236906)
+  d7 = convert(T,0.003674184820260)
+  n2 = convert(T,0.179502832154858)
+  n3 = convert(T,0.073789956884809)
+  n6 = convert(T,0.017607159013167)
+  n8 = convert(T,0.729100051947166)
+  q20 = convert(T,0.085330772947643)
+  q21 = convert(T,0.914669227052357)
+  q30 = convert(T,0.058121281984411)
+  q32 = convert(T,0.941878718015589)
+  q41 = convert(T,0.036365639242841)
+  q43 = convert(T,0.802870131352638)
+  q51 = convert(T,0.491214340660555)
+  q54 = convert(T,0.508785659339445)
+  q61 = convert(T,0.566135231631241)
+  q65 = convert(T,0.433864768368758)
+  q70 = convert(T,0.020705281786630)
+  q71 = convert(T,0.091646079651566)
+  q76 = convert(T,0.883974453741544)
+  q80 = convert(T,0.008506650138784)
+  q81 = convert(T,0.110261531523242)
+  q82 = convert(T,0.030113037742445)
+  q87 = convert(T,0.851118780595529)
+  c2 = convert(T2,0.19404565885657)
+  c3 = convert(T2,0.40402262622011853)
+  c4 = convert(T2,0.5588403940142084)
+  c5 = convert(T2,0.5637064101382472)
+  c6 = convert(T2,0.5239487828668272)
+  c7 = convert(T2,0.7171278236757)
+  c8 = convert(T2,0.887074044732322)
+  c1hat = convert(T2,0.391752226571890)
+  c2hat = convert(T2,0.586079689311540)
+  c3hat = convert(T2,0.474542363121400)
+  c4hat = convert(T2,0.935010630967653)
+
+  VTSRKConstantCache(β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54, β54, d7, n2, n3, n6, n8, q20, q21, q30, q32, q41, q43, q51, q54, q61, q65, q70, q71, q76, q80, q81, q82, q87, c2,c3, c4, c5, c6, c7, c8, c1hat, c2hat, c3hat, c4hat,1)
+end
+
 
 function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   u₂ = similar(u)
@@ -1079,7 +1082,7 @@ function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k₃ = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = VTSRKConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  VTSRKCache(u,uprev,k,k₃,u₂,u₃,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
+  VTSRKCache(u,uprev,uprev2,k,k₃,u₂,u₃,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab,1)
 end
 
 function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})

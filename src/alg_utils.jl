@@ -95,6 +95,7 @@ alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
 alg_extrapolates(alg::TRBDF2) = true
 alg_extrapolates(alg::SSPSDIRK2) = true
+alg_extrapolates(alg::VTSRK) = true
 alg_extrapolates(alg::SDIRK2) = true
 alg_extrapolates(alg::SDIRK22) = true
 alg_extrapolates(alg::Kvaerno3) = true
