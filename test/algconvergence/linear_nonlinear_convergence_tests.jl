@@ -33,7 +33,7 @@ end
   dts = 1 ./2 .^(7:-1:4) #14->7 good plot
   for Alg in [LawsonEuler(),NorsettEuler(),ETDRK2(),ETDRK3(),ETDRK4(),HochOst4(),ETD2(),KenCarp3(linsolve=LinSolveGMRES(tol=1e-6)),CFNLIRK3(),CFNLIRK4()]
     sim  = test_convergence(dts,prob,Alg)
-    @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol=0.15
+    @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol=0.17
   end
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
   @test sim.𝒪est[:l2] ≈  4 atol=0.1
