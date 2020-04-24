@@ -25,7 +25,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, DiffEqBase.Convergence, J)
 end
 
-mutable struct RadauIIA3CacheT{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
+mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   z1::uType
@@ -89,7 +89,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   rtol = reltol isa Number ? reltol : similar(reltol)
   atol = reltol isa Number ? reltol : similar(reltol)
 
-  RadauIIA3CacheT(u, uprev,
+  RadauIIA3Cache(u, uprev,
                  z1, z2, w1, w2,
                  dw12, cont1, cont2,
                  du1, fsalfirst, k, k2, fw1, fw2,
