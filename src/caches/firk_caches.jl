@@ -25,7 +25,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, DiffEqBase.Convergence, J)
 end
 
-mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
+mutable struct RadauIIA3CacheT{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   z1::uType
@@ -43,7 +43,6 @@ mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   fw2::rateType
   J::JType
   W1::W1Type
-  W2::W2Type
   uf::UF
   tab::Tab
   κ::Tol
@@ -84,18 +83,19 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits)
-  jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
+  jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
   linsolve1 = alg.linsolve(Val{:init}, uf, u)
+  linsolve2 = alg.linsolve(Val{:init}, uf, u)
   rtol = reltol isa Number ? reltol : similar(reltol)
   atol = reltol isa Number ? reltol : similar(reltol)
 
-  RadauIIA3Cache(u, uprev,
+  RadauIIA3CacheT(u, uprev,
                  z1, z2, w1, w2,
                  dw12, cont1, cont2,
                  du1, fsalfirst, k, k2, fw1, fw2,
-                 J, W1, W2,
+                 J, W1,
                  uf, tab, κ, one(uToltype), 10000,
-                 tmp, atmp, jac_config, linsolve1, rtol, atol, dt, dt, DiffEqBase.Convergence)
+                 tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt, DiffEqBase.Convergence)
 end
 
 mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqConstantCache
