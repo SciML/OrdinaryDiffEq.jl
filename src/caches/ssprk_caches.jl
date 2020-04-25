@@ -961,6 +961,14 @@ end
   k₃::rateType
   u₂::uType
   u₃::uType
+  y1::uType
+  y2::uType
+  y3::uType
+  y4::uType
+  y5::uType
+  y6::uType
+  y7::uType
+  y8::uType
   tmp::uType # should be u₄, but tmp is needed for callbacks
   fsalfirst::rateType
   stage_limiter!::StageLimiter
@@ -1007,6 +1015,7 @@ mutable struct VTSRKConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   q81::T
   q82::T
   q87::T
+  r::T
   c2::T2
   c3::T2
   c4::T2
@@ -1058,6 +1067,7 @@ function VTSRKConstantCache(T, T2)
   q81 = convert(T,0.110261531523242)
   q82 = convert(T,0.030113037742445)
   q87 = convert(T,0.851118780595529)
+  r = convert(T,3.5794)
   c2 = convert(T2,0.19404565885657)
   c3 = convert(T2,0.40402262622011853)
   c4 = convert(T2,0.5588403940142084)
@@ -1070,11 +1080,19 @@ function VTSRKConstantCache(T, T2)
   c3hat = convert(T2,0.474542363121400)
   c4hat = convert(T2,0.935010630967653)
 
-  VTSRKConstantCache(β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54, β54, d7, n2, n3, n6, n8, q20, q21, q30, q32, q41, q43, q51, q54, q61, q65, q70, q71, q76, q80, q81, q82, q87, c2,c3, c4, c5, c6, c7, c8, c1hat, c2hat, c3hat, c4hat,1)
+  VTSRKConstantCache(β10, α20, α21, β21, α30, α32, β32, α40, α43, β43, α52, α53, β53, α54, β54, d7, n2, n3, n6, n8, q20, q21, q30, q32, q41, q43, q51, q54, q61, q65, q70, q71, q76, q80, q81, q82, q87,r, c2,c3, c4, c5, c6, c7, c8, c1hat, c2hat, c3hat, c4hat,1)
 end
 
 
 function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  y1 = similar(u)
+  y2 = similar(u)
+  y3 = similar(u)
+  y4 = similar(u)
+  y5 = similar(u)
+  y6 = similar(u)
+  y7 = similar(u)
+  y8 = similar(u)
   u₂ = similar(u)
   u₃ = similar(u)
   tmp = similar(u)
@@ -1082,7 +1100,7 @@ function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k₃ = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = VTSRKConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  VTSRKCache(u,uprev,uprev2,k,k₃,u₂,u₃,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab,1)
+  VTSRKCache(u,uprev,uprev2,k,k₃,u₂,u₃,y1,y2,y3,y4,y5,y6,y7,y8,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab,1)
 end
 
 function alg_cache(alg::VTSRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})

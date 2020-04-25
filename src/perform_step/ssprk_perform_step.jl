@@ -1523,25 +1523,63 @@ end
 
 @muladd function perform_step!(integrator,cache::VTSRKConstantCache,repeat_step=false)
   @unpack t,dt,uprev2,uprev,u,f,p = integrator
-  @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,d7,n2,n3,n6,n8,q20,q30,q70,q80,q21,q41,q51,q61,q71,q81,q32,q82,q43,q54,q65,q76,q87,c2,c3,c4,c5,c6,c7,c8,c1hat,c2hat,c3hat,c4hat = cache
+  @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,d7,n2,n3,n6,n8,q20,q30,q70,q80,q21,q41,q51,q61,q71,q81,q32,q82,q43,q54,q65,q76,q87,r,c2,c3,c4,c5,c6,c7,c8,c1hat,c2hat,c3hat,c4hat = cache
 
+  if integrator.u_modified
+      cache.step = 1
+    end
   # u₁
-  u₂ = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u₂,p,t+c1hat*dt)
-  # u₂
-  u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
-  k = f(u₂,p,t+c2hat*dt)
-  # u₃
-  u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
-  k₃ = f(u₃,p,t+c3hat*dt)
-  # u₄ -> stored as tmp
-  tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
-  k = f(tmp, p, t+c4hat*dt)
-  # u
-  u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
+  if cache.step == 1
+    u₂ = uprev + β10 * dt * integrator.fsalfirst*0.25
+    k = f(u₂,p,t+c1hat*dt*0.25)
+    # u₂
+    u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k * 0.25
+    k = f(u₂,p,t+c2hat*dt*0.25)
+    # u₃
+    u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k * 0.25
+    k₃ = f(u₃,p,t+c3hat*dt*0.25)
+    # u₄ -> stored as tmp
+    tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃*0.25
+    k = f(tmp, p, t+c4hat*dt*0.25)
+    # u
+    u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k*0.25
 
+    u₃ = u
+
+    y2 = (1 - q20 - q21)*u + q20*(uprev + dt*0.25*f(uprev,p,t)/r) + q21*(u + dt*0.25*f(u,p,t + 0.25*dt)/r)
+    y3 = (1 - q30 - q32)*u + q30*(uprev + dt*0.25*f(uprev,p,t)/r) + q32*(y2 + dt*0.25*f(y2,p,t + 0.25*dt + c2*0.25*dt)/r)
+    y4 = (1 - q41 - q43)*u + q41*(u + dt*0.25*f(u,p,t + 0.25*dt)/r) + q43*(y3 + dt*0.25*f(y3,p,t + 0.25*dt + c3*0.25*dt)/r)
+    y5 = (1 - q51 - q54)*u + q51*(u + dt*0.25*f(u,p,t + 0.25*dt)/r) + q54*(y4 + dt*0.25*f(y4,p,t + 0.25*dt + c4*0.25*dt)/r)
+    y6 = (1 - q61 - q65)*u + q61*(u + dt*0.25*f(u,p,t + 0.25*dt)/r) + q65*(y5 + dt*0.25*f(y5,p,t + 0.25*dt + c5*0.25*dt)/r)
+    y7 = d7*uprev + (1 - d7 - q70 - q71 - q76)*u + q70*(uprev + dt*0.25*f(uprev,p,t)/r) + q71*(u + dt*0.25*f(u,p,t + 0.25*dt)/r) + q76*(y6 + dt*0.25*f(y6,p,t + 0.25*dt + c6*0.25*dt)/r)
+    y8 = (1 - q80 - q81 - q82 - q87)*u + q80*(uprev + dt*0.25*f(uprev,p,t)/r) +  q81*(u + dt*0.25*f(u,p,t + 0.25*dt)/r) + q82*(y2 + dt*0.25*f(y2,p,t + 0.25*dt + c2*0.25*dt)/r) + q87*(y7 + dt*0.25*f(y7,p,t + 0.25*dt + c7*0.25*dt)/r)
+
+    u = (1 - n2 - n3 - n6 - n8)*u + n2*(y2 + dt*0.25*f(y2,p,t + 0.25*dt + c2*0.25*dt)/r) + n3*(y3 + dt*0.25*f(y3,p,t + 0.25*dt + c3*0.25*dt)/r) + n6*(y6 + dt*0.25*f(y6,p,t + 0.25*dt + c6*0.25*dt)/r) + n8*(y8 + dt*0.25*f(y8,p,t + 0.25*dt + c8*0.25*dt)/r)
+
+    y2 = (1 - q20 - q21)*u + q20*(u₃ + dt*0.5*f(u₃,p,t)/r) + q21*(u + dt*0.5*f(u,p,t + 0.5*dt)/r)
+    y3 = (1 - q30 - q32)*u + q30*(u₃ + dt*0.5*f(u₃,p,t)/r) + q32*(y2 + dt*0.5*f(y2,p,t + 0.5*dt + c2*0.5*dt)/r)
+    y4 = (1 - q41 - q43)*u + q41*(u + dt*0.5*f(u,p,t + 0.5*dt)/r) + q43*(y3 + dt*0.5*f(y3,p,t + 0.5*dt + c3*0.5*dt)/r)
+    y5 = (1 - q51 - q54)*u + q51*(u + dt*0.5*f(u,p,t + 0.5*dt)/r) + q54*(y4 + dt*0.5*f(y4,p,t + 0.5*dt + c4*0.5*dt)/r)
+    y6 = (1 - q61 - q65)*u + q61*(u + dt*0.5*f(u,p,t + 0.5*dt)/r) + q65*(y5 + dt*0.5*f(y5,p,t + 0.5*dt + c5*0.5*dt)/r)
+    y7 = d7*u₃ + (1 - d7 - q70 - q71 - q76)*u + q70*(u₃ + dt*0.5*f(u₃,p,t)/r) + q71*(u + dt*0.5*f(u,p,t + 0.5*dt)/r) + q76*(y6 + dt*0.5*f(y6,p,t + 0.5*dt + c6*0.5*dt)/r)
+    y8 = (1 - q80 - q81 - q82 - q87)*u + q80*(u₃ + dt*0.5*f(u₃,p,t)/r) +  q81*(u + dt*0.5*f(u,p,t + 0.5*dt)/r) + q82*(y2 + dt*0.5*f(y2,p,t + 0.5*dt + c2*0.5*dt)/r) + q87*(y7 + dt*0.5*f(y7,p,t + 0.5*dt + c7*0.5*dt)/r)
+
+    u = (1 - n2 - n3 - n6 - n8)*u + n2*(y2 + dt*0.5*f(y2,p,t + 0.5*dt + c2*0.5*dt)/r) + n3*(y3 + dt*0.5*f(y3,p,t + 0.5*dt + c3*0.5*dt)/r) + n6*(y6 + dt*0.5*f(y6,p,t + 0.5*dt + c6*0.5*dt)/r) + n8*(y8 + dt*0.5*f(y8,p,t + 0.5*dt + c8*0.5*dt)/r)
+
+  else
+    y2 = (1 - q20 - q21)*uprev + q20*(uprev2 + dt*f(uprev2,p,t-dt)/r) + q21*(uprev + dt*f(uprev,p,t)/r)
+    y3 = (1 - q30 - q32)*uprev + q30*(uprev2 + dt*f(uprev2,p,t-dt)/r) + q32*(y2 + dt*f(y2,p,t + c2*dt)/r)
+    y4 = (1 - q41 - q43)*uprev + q41*(uprev + dt*f(uprev,p,t)/r) + q43*(y3 + dt*f(y3,p,t + c3*dt)/r)
+    y5 = (1 - q51 - q54)*uprev + q51*(uprev + dt*f(uprev,p,t)/r) + q54*(y4 + dt*f(y4,p,t + c4*dt)/r)
+    y6 = (1 - q61 - q65)*uprev + q61*(uprev + dt*f(uprev,p,t)/r) + q65*(y5 + dt*f(y5,p,t + c5*dt)/r)
+    y7 = d7*uprev2 + (1 - d7 - q70 - q71 - q76)*uprev + q70*(uprev2 + dt*f(uprev2,p,t-dt)/r) + q71*(uprev + dt*f(uprev,p,t)/r) + q76*(y6 + dt*f(y6,p,t + c6*dt)/r)
+    y8 = (1 - q80 - q81 - q82 - q87)*uprev + q80*(uprev2 + dt*f(uprev2,p,t-dt)/r) +  q81*(uprev + dt*f(uprev,p,t)/r) + q82*(y2 + dt*f(y2,p,t + c2*dt)/r) + q87*(y7 + dt*f(y7,p,t + c7*dt)/r)
+
+    u = (1 - n2 - n3 - n6 - n8)*uprev + n2*((y2 + dt*f(y2,p,t + c2*dt)/r)) + n3*((y3 + dt*f(y3,p,t + c3*dt)/r)) + n6*(y6 + dt*f(y6,p,t + c6*dt)/r) + n8*(y8 + dt*f(y8,p,t + c8*dt)/r)
+  end
+
+  cache.step += 1
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
-  integrator.destats.nf += 5
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -1560,9 +1598,9 @@ function initialize!(integrator,cache::VTSRKCache)
 end
 
 @muladd function perform_step!(integrator,cache::VTSRKCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,k₃,u₂,u₃,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
-  @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1hat,c2hat,c3hat,c4hat = cache.tab
+  @unpack t,dt,uprev2,uprev,u,f,p = integrator
+  @unpack k,k₃,u₂,u₃,y1,y2,y3,y4,y5,y6,y7,y8,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
+  @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,d7,n2,n3,n6,n8,q20,q30,q70,q80,q21,q41,q51,q61,q71,q81,q32,q82,q43,q54,q65,q76,q87,c2,c3,c4,c5,c6,c7,c8,c1hat,c2hat,c3hat,c4hat = cache
 
   # u₁
   @.. u₂ = uprev + β10 * dt * integrator.fsalfirst
