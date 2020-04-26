@@ -188,7 +188,7 @@ function _loopfooter!(integrator)
     if integrator.accept_step # Accept
       integrator.destats.naccept += 1
       integrator.last_stepfail = false
-      dtnew = DiffEqBase.value(step_accept_controller!(integrator,integrator.alg,q))
+      dtnew = DiffEqBase.value(step_accept_controller!(integrator,integrator.alg,q)) * oneunit(integrator.dt)
       integrator.tprev = integrator.t
       # integrator.EEst has unitless type of integrator.t
       if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
