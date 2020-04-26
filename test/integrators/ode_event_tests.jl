@@ -19,6 +19,7 @@ end
 callback = ContinuousCallback(condition,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback)
+@test length(sol) < 20
 
 condition= function (out, u,t,integrator) # Event when event_f(u,t,k) == 0
   out[1] = - t - 2.95

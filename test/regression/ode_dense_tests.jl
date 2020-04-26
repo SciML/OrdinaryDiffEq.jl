@@ -30,7 +30,7 @@ const deriv_test_points = range(0, stop=1, length=5)
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
 function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false, nth_der = 1, dertol=1e-6)
-  PRINT_TESTS && println("\n", alg)
+  println("\n", alg)
 
   sol = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
   sol(interpolation_results_1d, interpolation_points)
