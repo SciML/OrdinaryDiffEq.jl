@@ -48,6 +48,27 @@ function alg_cache(alg::LieEuler,u,rate_prototype,uEltypeNoUnits,
   LieEulerConstantCache()
 end
 
+@cache struct CayleyEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  V::uType
+  fsalfirst::rateType
+  k::rateType
+end
+
+function alg_cache(alg::CayleyEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  CayleyEulerCache(u,uprev,similar(u),similar(u),fsalfirst,k)
+end
+
+struct CayleyEulerConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+alg_cache(alg::CayleyEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = CayleyEulerConstantCache()
+
 @cache struct MagnusLeapfrogCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

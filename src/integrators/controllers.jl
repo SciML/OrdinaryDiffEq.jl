@@ -17,7 +17,7 @@
     end
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qtmp = DiffEqBase.fastpow(integrator.EEst,expo)/fac
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+    @fastmath q = DiffEqBase.value(max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp)))
     integrator.qold = q
   end
   q
@@ -29,7 +29,7 @@ end
     q = inv(integrator.opts.qmax)
   else
     qtmp = DiffEqBase.fastpow(integrator.EEst,1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+    @fastmath q = DiffEqBase.value(max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp)))
     integrator.qold = integrator.dt/q
   end
   q
@@ -41,10 +41,10 @@ end
   if iszero(EEst)
     q = inv(integrator.opts.qmax)
   else
-    q11 = DiffEqBase.fastpow(EEst,beta1)
+    q11 = DiffEqBase.value(DiffEqBase.fastpow(EEst,beta1))
     q = q11/DiffEqBase.fastpow(qold,beta2)
     integrator.q11 = q11
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
+    @fastmath q = DiffEqBase.value(max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma)))
   end
   q
 end
@@ -64,12 +64,12 @@ end
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qgus=(integrator.dtacc/integrator.dt)*DiffEqBase.fastpow((integrator.EEst^2)/integrator.erracc,expo)
     qgus = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qgus/integrator.opts.gamma))
-    qacc=max(q,qgus)
+    qacc= DiffEqBase.value(max(q,qgus))
   else
-    qacc = q
+    qacc = DiffEqBase.value(q)
   end
   if integrator.opts.qsteady_min <= qacc <= integrator.opts.qsteady_max
-    qacc = one(qacc)
+    qacc = DiffEqBase.value(one(qacc))
   end
   integrator.dtacc = integrator.dt
   integrator.erracc = max(1e-2,integrator.EEst)

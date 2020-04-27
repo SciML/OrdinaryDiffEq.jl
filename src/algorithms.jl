@@ -662,6 +662,8 @@ struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
 end
 LinearExponential(;krylov=:off, m=10, iop=0) = LinearExponential(krylov, m, iop)
 
+struct CayleyEuler <: OrdinaryDiffEqAlgorithm end  
+
 ################################################################################
 
 # FIRK Methods
