@@ -417,7 +417,7 @@ end
 @muladd function perform_step!(integrator, cache::CFNLIRK3ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
   nlsolver = cache.nlsolver
-  @unpack γ,a31,a32,a41,a42,a43,c2,c3,ea21,ea31,ea32,α41,α42,ea41,ea42,ea43,eb1,eb2,eb3,eb4,α31,α32 = cache.tab
+  @unpack γ,a31,a32,a41,a42,a43,c2,c3,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
   alg = unwrap_alg(integrator, true)
 
   if typeof(integrator.f) <: SplitFunction
@@ -468,7 +468,7 @@ end
     integrator.destats.nf2 += 1
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
-    z₃ = α31*z₁ + α32*z₂
+    z₃ = z₂
     tmp = uprev + a31*z₁ + a32*z₂
   end
   nlsolver.z = z₃
@@ -487,7 +487,7 @@ end
     integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
-    z₄ = α41*z₁ + α42*z₂
+    z₄ = z₃
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
   nlsolver.z = z₄
