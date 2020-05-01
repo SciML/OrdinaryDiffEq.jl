@@ -151,6 +151,11 @@ function DiffEqBase.resize_jac_config!(jac_config::FiniteDiff.JacobianCache, i)
   jac_config
 end
 
+function resize_grad_config!(grad_config::AbstractArray, i)
+  resize!(grad_config, i)
+  grad_config
+end
+
 function resize_grad_config!(grad_config::ForwardDiff.DerivativeConfig, i)
   resize!(grad_config.duals, i)
   grad_config
