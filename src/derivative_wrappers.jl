@@ -2,7 +2,9 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivtive for all elements in gradient
     if alg_autodiff(alg)
-        ForwardDiff.derivative!(df, f, fx, x, grad_config)
+        xdual = Dual{typeof(ForwardDiff.Tag(f,eltype(x)))}(x,(1,))
+        f(grad_config,xdual)
+        df .= first.(ForwardDiff.partials.(grad_config))
         integrator.destats.nf += 1
     else
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
@@ -165,7 +167,7 @@ end
 function build_grad_config(alg,f,tf,du1,t)
   if !DiffEqBase.has_tgrad(f)
     if alg_autodiff(alg)
-      grad_config = ForwardDiff.DerivativeConfig(tf,du1,t)
+      grad_config = Dual{typeof(ForwardDiff.Tag(f,eltype(du1)))}.(du1, du1)
     else
       grad_config = FiniteDiff.GradientCache(du1,t,alg.diff_type)
     end
