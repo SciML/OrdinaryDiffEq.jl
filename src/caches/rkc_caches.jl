@@ -23,7 +23,7 @@ end
 end
 
 function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  constantcache = ROCK2ConstantCache(uEltypeNoUnits, uEltypeNoUnits, u)
+  constantcache = ROCK2ConstantCache(real(uEltypeNoUnits), real(tTypeNoUnits), u)
   uᵢ₋₁ = similar(u)
   uᵢ₋₂ = similar(u)
   tmp = similar(u)
@@ -65,7 +65,7 @@ end
 end
 
 function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  constantcache = ROCK4ConstantCache(real(uEltypeNoUnits), real(uEltypeNoUnits), u)
+  constantcache = ROCK4ConstantCache(real(uEltypeNoUnits), real(tTypeNoUnits), u)
   uᵢ₋₁ = similar(u)
   uᵢ₋₂ = similar(u)
   uᵢ₋₃ = similar(u)
