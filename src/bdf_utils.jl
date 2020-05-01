@@ -139,7 +139,7 @@ function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
     if cache.c >= 1  # postfail
       cache.h = h/2
       cache.order = k
-      return
+      return false
     end
     if 1.2 < z <= 10
       hₖ = F * h
