@@ -136,8 +136,10 @@ end
 
 function stepsize_controller!(integrator, alg::QNDF)
   cnt = integrator.iter
-  if cnt <= 3
-    q = standard_stepsize_controller!(integrator, alg)
+  #@show (cnt)
+  if cnt < 3
+    q = 1
+    #q = standard_stepsize_controller!(integrator, alg)
   else
     q = integrator.dt/integrator.cache.h
     integrator.qold = integrator.dt/q

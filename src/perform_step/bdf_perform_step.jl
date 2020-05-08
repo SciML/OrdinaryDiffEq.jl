@@ -751,7 +751,7 @@ end
 
 function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack udiff,dts,order,max_order,D,D2,R,U,utilde,atmp,nlsolver = cache
+  @unpack udiff,dts,order,max_order,D,D2,R,U,utilde,atmp,nlsolver,nconsteps = cache
   tmp = nlsolver.tmp
   cnt = integrator.iter
   k = order
@@ -836,13 +836,12 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       end
       @.. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      integrator.EEst = integrator.opts.internalnorm(atmp,t)
+      EEst = integrator.opts.internalnorm(atmp,t)
+      integrator.EEst = one(integrator.EEst)
     end
 
-    if cnt == 1
-      cache.order = 1
-    elseif cnt <= 3
-      cache.order = 2
+    if cache.nconsteps < (cache.order + 2)
+      cache.nconsteps = cache.nconsteps + 1
     else
       errm1 = 0
       if k > 1
@@ -858,13 +857,19 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       errp1 = integrator.opts.internalnorm(atmp,t)
-      step_success = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
+      prev_order = cache.order
+      prev_dt = dt
+      step_success = stepsize_and_order!(cache, EEst, errm1, errp1, dt, k)
       if !step_success
         #counting no. of failed steps
         cache.c = cache.c + 1
       else
         cache.c = 0
       end
+      # if(prev_order != cache.order || prev_dt !=cache.h)
+      #   cache.nconsteps = 0
+      # end
+      cache.nconsteps = 0
     end # cnt == 1
   end # integrator.opts.adaptive
   if step_success
