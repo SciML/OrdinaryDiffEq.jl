@@ -19,7 +19,7 @@ function sir_abm!(du,u,p,t)
         elseif u[i]==Susceptible
             ncontacts = pois_rand(c*δt)
             while ncontacts > 0
-                j = sample(1:N)
+                j = rand(1:N)
                 if j==i
                     continue
                 end
