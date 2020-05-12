@@ -703,6 +703,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
         utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
         atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         errm1 = integrator.opts.internalnorm(atmpm1, t)
+        cache.EEst1 = integrator.opts.internalnorm(atmpm1, t)
       end
       backward_diff!(cache,D,D2,k+1,false)
       δ = u - uprev
@@ -712,14 +713,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
       atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       errp1 = integrator.opts.internalnorm(atmpp1, t)
-      pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
-      if pass == false
-        cache.c = cache.c + 1
-        fill!(D, zero(u)); fill!(D2, zero(u))
-        fill!(R, zero(t)); fill!(U, zero(t))
-        return
-      end
-      cache.c = 0
+      cache.EEst2 = integrator.opts.internalnorm(atmpp1, t)
     end # cnt == 1
   end # integrator.opts.adaptive
   for i = 6:-1:2
@@ -860,13 +854,6 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.EEst2 = integrator.opts.internalnorm(atmp,t)
       errp1 = integrator.opts.internalnorm(atmp,t)
-      # step_success = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
-      # if !step_success
-      #   #counting no. of failed steps
-      #   cache.c = cache.c + 1
-      # else
-      #   cache.c = 0
-      # end
     end # cnt == 1
   end # integrator.opts.adaptive
 
@@ -889,37 +876,6 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
 
-  # if step_success
-  #   swap_tmp = udiff[6]
-  #   for i = 6:-1:2
-  #     dts[i] = dts[i-1]
-  #     udiff[i] = udiff[i-1]
-  #   end
-  #   udiff[1] = swap_tmp
-  #   dts[1] = dt
-  #   @.. udiff[1] = u - uprev
-  #   for i = 1:5
-  #     fill!(D[i], zero(eltype(u)))
-  #   end
-  #   for i = 1:6, j = 1:6
-  #     fill!(D2[i,j], zero(eltype(u)))
-  #   end
-  #   fill!(R, zero(t)); fill!(U, zero(t))
-
-  #   f(integrator.fsallast, u, p, t+dt)
-  #   integrator.destats.nf += 1
-  # else
-  #   for i = 1:5
-  #     fill!(D[i], zero(eltype(u)))
-  #   end
-  #   for i = 1:6
-  #     for j = 1:6
-  #       fill!(D2[i,j], zero(eltype(u)))
-  #     end
-  #   end
-  #   fill!(R, zero(t)); fill!(U, zero(t))
-  #   integrator.force_stepfail = true
-  # end
 end
 
 ### MEBDF2
