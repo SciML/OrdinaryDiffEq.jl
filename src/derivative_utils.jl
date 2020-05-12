@@ -468,7 +468,7 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
     else
       W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
                              -mass_matrix + dtgamma*J
-      W = W_full isa Number ? W_full : lu(W_full)
+      W = W_full isa Number ? W_full : DiffEqBase.default_factorize(W_full)
     end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton

@@ -83,7 +83,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step=false
       A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
       u .= exp(dt*L) * u
     end
-  
+
     integrator.f(integrator.fsallast,u,p,t+dt)
     integrator.destats.nf += 1
     iter += 1
@@ -174,4 +174,75 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=fa
   f(integrator.fsallast, u, p, t + dt)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
+end
+
+cay!(tmp, A) = mul!(tmp, inv(I - 1/2 * A), (I + 1/2 * A))
+cay(A) = inv(I - 1/2 * A) * (I + 1/2 * A)
+
+function initialize!(integrator, cache::CayleyEulerConstantCache)
+  # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
+  integrator.fsallast = zero(integrator.fsalfirst)
+
+  # Initialize interpolation derivatives
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
+
+  if f isa SplitFunction
+    A = f.f1.f
+  else  # f isa ODEFunction
+    A = f.f
+  end
+
+  L = update_coefficients(A, uprev, p, t)
+  V = cay(L*dt)
+  u = V * uprev * transpose(V)
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::CayleyEulerCache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::CayleyEulerCache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,f,alg = integrator
+  @unpack k,V,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  if f isa SplitFunction
+    L = f.f1.f
+  else  # f isa ODEFunction
+    L = f.f
+  end
+
+  update_coefficients!(L, uprev, p, t)
+
+  cay!(V, L*dt)
+  mul!(tmp, uprev, transpose(V))
+  mul!(u, V, tmp)
+
+  # Update integrator state
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
 end

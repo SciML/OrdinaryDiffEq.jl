@@ -758,6 +758,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   κ = integrator.alg.kappa[k]
   γₖ = [sum(1//j for j in 1:k) for k in 1:6]
   flag = true
+  step_success = true
   for i in 2:k
     if dts[i] != dts[1]
       flag = false
@@ -857,41 +858,46 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       errp1 = integrator.opts.internalnorm(atmp,t)
-      pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
-      if pass == false
-        for i = 1:5
-          fill!(D[i], zero(eltype(u)))
-        end
-        for i = 1:6
-          for j = 1:6
-            fill!(D2[i,j], zero(eltype(u)))
-          end
-        end
-        fill!(R, zero(t)); fill!(U, zero(t))
+      step_success = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
+      if !step_success
+        #counting no. of failed steps
         cache.c = cache.c + 1
-        return
+      else
+        cache.c = 0
       end
-      cache.c = 0
     end # cnt == 1
   end # integrator.opts.adaptive
-  swap_tmp = udiff[6]
-  for i = 6:-1:2
-    dts[i] = dts[i-1]
-    udiff[i] = udiff[i-1]
-  end
-  udiff[1] = swap_tmp
-  dts[1] = dt
-  @.. udiff[1] = u - uprev
-  for i = 1:5
-    fill!(D[i], zero(eltype(u)))
-  end
-  for i = 1:6, j = 1:6
-    fill!(D2[i,j], zero(eltype(u)))
-  end
-  fill!(R, zero(t)); fill!(U, zero(t))
+  if step_success
+    swap_tmp = udiff[6]
+    for i = 6:-1:2
+      dts[i] = dts[i-1]
+      udiff[i] = udiff[i-1]
+    end
+    udiff[1] = swap_tmp
+    dts[1] = dt
+    @.. udiff[1] = u - uprev
+    for i = 1:5
+      fill!(D[i], zero(eltype(u)))
+    end
+    for i = 1:6, j = 1:6
+      fill!(D2[i,j], zero(eltype(u)))
+    end
+    fill!(R, zero(t)); fill!(U, zero(t))
 
-  f(integrator.fsallast, u, p, t+dt)
-  integrator.destats.nf += 1
+    f(integrator.fsallast, u, p, t+dt)
+    integrator.destats.nf += 1
+  else
+    for i = 1:5
+      fill!(D[i], zero(eltype(u)))
+    end
+    for i = 1:6
+      for j = 1:6
+        fill!(D2[i,j], zero(eltype(u)))
+      end
+    end
+    fill!(R, zero(t)); fill!(U, zero(t))
+    integrator.force_stepfail = true
+  end
 end
 
 ### MEBDF2

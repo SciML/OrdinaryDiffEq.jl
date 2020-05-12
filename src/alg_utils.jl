@@ -49,7 +49,7 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
-isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,LieEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
+isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,LieEuler,CayleyEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
 
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
@@ -149,6 +149,7 @@ alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::LieEuler) = 1
+alg_order(alg::CayleyEuler) = 2
 alg_order(alg::ETDRK2) = 2
 alg_order(alg::ETDRK3) = 3
 alg_order(alg::ETDRK4) = 4
@@ -297,6 +298,10 @@ alg_order(alg::KenCarp4) = 4
 alg_order(alg::KenCarp5) = 5
 alg_order(alg::Cash4) = 4
 alg_order(alg::SFSDIRK4) = 4
+alg_order(alg::SFSDIRK5) = 4
+alg_order(alg::SFSDIRK6) = 4
+alg_order(alg::SFSDIRK7) = 4
+alg_order(alg::SFSDIRK8) = 4
 alg_order(alg::Hairer4) = 4
 alg_order(alg::Hairer42) = 4
 alg_order(alg::Feagin10) = 10

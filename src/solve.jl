@@ -135,7 +135,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   tTypeNoUnits   = typeof(one(tType))
 
   if typeof(alg) <: FunctionMap
-    abstol_internal = real.(zero.(u))
+    abstol_internal = false
   elseif abstol === nothing
     if uBottomEltypeNoUnits == uBottomEltype
       abstol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^6))
@@ -147,7 +147,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   end
 
   if typeof(alg) <: FunctionMap
-    reltol_internal = real.(zero(first(u)/t))
+    reltol_internal = false
   elseif reltol === nothing
     if uBottomEltypeNoUnits == uBottomEltype
       reltol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^3))
@@ -170,7 +170,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   elseif prob isa DAEProblem
     rate_prototype = prob.du0
   else
-    if uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits
+    if (uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits) || eltype(u) <: Enum
       rate_prototype = u
     else # has units!
       rate_prototype = u/oneunit(tType)
@@ -348,7 +348,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   last_stepfail = false
   event_last_time = 0
   vector_event_last_time = 1
-  last_event_error = zero(uBottomEltypeNoUnits)
+  last_event_error = typeof(alg) <: FunctionMap ? false : zero(uBottomEltypeNoUnits)
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
   success_iter = 0
