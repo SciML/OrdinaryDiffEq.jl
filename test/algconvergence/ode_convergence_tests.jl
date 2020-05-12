@@ -194,9 +194,25 @@ end
   sim23 = test_convergence(dts,prob,MEBDF2(nlsolve = NLAnderson()),reltol=1e-2)
   @test sim23.𝒪est[:final] ≈ 2 atol=testTol
 
-  dts = 1 .//2 .^(7:-1:4)
   println("Higher Order")
 
+  dts = (1/2) .^ (5:-1:1)
+  sim13 = test_convergence(dts,prob,SFSDIRK8())
+  @test sim13.𝒪est[:final] ≈ 4 atol=testTol
+
+  dts = (1/2) .^ (5:-1:1)
+  sim14 = test_convergence(dts,prob,SFSDIRK7())
+  @test sim14.𝒪est[:final] ≈ 4 atol=testTol
+
+  dts = (1/2) .^ (8:-1:1)
+  sim15 = test_convergence(dts,prob,SFSDIRK6())
+  @test sim15.𝒪est[:final] ≈ 4 atol=testTol
+
+  dts = (1/2) .^ (6:-1:1)
+  sim16 = test_convergence(dts,prob,SFSDIRK5())
+  @test sim16.𝒪est[:final] ≈ 4 atol=testTol
+
+  dts = 1 .//2 .^(7:-1:4)
   sim17 = test_convergence(dts,prob,SFSDIRK4())
   @test sim17.𝒪est[:final] ≈ 4 atol=testTol
 

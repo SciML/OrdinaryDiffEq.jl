@@ -8,7 +8,11 @@ function initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
                                               Cash4ConstantCache,
                                               Hairer4ConstantCache,
                                               ESDIRK54I8L2SAConstantCache,
-                                              SFSDIRK4ConstantCache})
+                                              SFSDIRK4ConstantCache,
+                                              SFSDIRK5ConstantCache,
+                                              SFSDIRK6ConstantCache,
+                                              SFSDIRK7ConstantCache,
+                                              SFSDIRK8ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -30,7 +34,11 @@ function initialize!(integrator, cache::Union{ImplicitEulerCache,
                                               Cash4Cache,
                                               Hairer4Cache,
                                               ESDIRK54I8L2SACache,
-                                              SFSDIRK4Cache})
+                                              SFSDIRK4Cache,
+                                              SFSDIRK5Cache,
+                                              SFSDIRK6Cache,
+                                              SFSDIRK7Cache,
+                                              SFSDIRK8Cache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
@@ -1070,6 +1078,710 @@ end
 
   ################################### Finalize
   @.. integrator.fsallast = z₄/dt
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK5ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5 = cache.tab
+  nlsolver = cache.nlsolver
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ = zero(u)
+  nlsolver.z = z₁
+
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ = zero(u)
+  nlsolver.z = z₂
+
+  nlsolver.tmp = uprev + a21*z₁
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  z₃ = z₁
+  nlsolver.z = z₃
+
+  nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  z₄ = z₃
+  nlsolver.z = z₄
+
+  nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  z₅ = z₄
+  nlsolver.z = z₅
+
+  nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Final Step
+
+  u = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄+ a65*z₅
+
+  integrator.fsallast = z₅./dt
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK5Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack z₁,z₂,z₃,z₄,z₅,nlsolver = cache
+  @unpack tmp = nlsolver
+  W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5 = cache.tab
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ .= zero(eltype(z₁))
+  nlsolver.z = z₁
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+
+  # initial step of NLNewton iteration
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ .= zero(eltype(z₂))
+  nlsolver.z = z₂
+
+  @.. tmp = uprev + a21*z₁
+  nlsolver.tmp = tmp
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  @.. z₃ = z₁
+  nlsolver.z = z₃
+  @.. tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  @.. z₄ = z₃
+  nlsolver.z = z₄
+
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  @.. z₅ = z₄
+  nlsolver.z = z₅
+
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+################################### Finalize
+  @.. u = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+
+  @.. integrator.fsallast = z₅/dt
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK6ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,c2,c3,c4,c5,c6 = cache.tab
+  nlsolver = cache.nlsolver
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ = zero(u)
+  nlsolver.z = z₁
+
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ = zero(u)
+  nlsolver.z = z₂
+
+  nlsolver.tmp = uprev + a21*z₁
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  z₃ = z₁
+  nlsolver.z = z₃
+
+  nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  z₄ = z₃
+  nlsolver.z = z₄
+
+  nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  z₅ = z₄
+  nlsolver.z = z₅
+
+  nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  z₆ = z₅
+  nlsolver.z = z₆
+
+  nlsolver.tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Final Step
+
+  u = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄+ a75*z₅ + a76*z₆
+
+  integrator.fsallast = z₆./dt
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK6Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack z₁,z₂,z₃,z₄,z₅,z₆,nlsolver = cache
+  @unpack tmp = nlsolver
+  W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,c2,c3,c4,c5,c6 = cache.tab
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ .= zero(eltype(z₁))
+  nlsolver.z = z₁
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+
+  # initial step of NLNewton iteration
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ .= zero(eltype(z₂))
+  nlsolver.z = z₂
+
+  @.. tmp = uprev + a21*z₁
+  nlsolver.tmp = tmp
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  @.. z₃ = z₁
+  nlsolver.z = z₃
+  @.. tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  @.. z₄ = z₃
+  nlsolver.z = z₄
+
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  @.. z₅ = z₄
+  nlsolver.z = z₅
+
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  # Use constant z prediction
+  @.. z₆ = z₅
+  nlsolver.z = z₆
+
+  @.. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################### Finalize
+  @.. u = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+
+  @.. integrator.fsallast = z₆/dt
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK7ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a82,a83,a84,a85,a86,a87,c2,c3,c4,c5,c6,c7 = cache.tab
+  nlsolver = cache.nlsolver
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ = zero(u)
+  nlsolver.z = z₁
+
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ = zero(u)
+  nlsolver.z = z₂
+
+  nlsolver.tmp = uprev + a21*z₁
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  z₃ = z₁
+  nlsolver.z = z₃
+
+  nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  z₄ = z₃
+  nlsolver.z = z₄
+
+  nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  z₅ = z₄
+  nlsolver.z = z₅
+
+  nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  # Use constant z prediction
+  z₆ = z₅
+  nlsolver.z = z₆
+
+  nlsolver.tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 7
+
+  # Use constant z prediction
+  z₇ = z₆
+  nlsolver.z = z₇
+
+  nlsolver.tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  nlsolver.c = c7
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Final Step
+
+  u = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄+ a85*z₅ + a86*z₆ + a87*z₇
+
+  integrator.fsallast = z₇./dt
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK7Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,nlsolver = cache
+  @unpack tmp = nlsolver
+  W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a82,a83,a84,a85,a86,a87,c2,c3,c4,c5,c6,c7 = cache.tab
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ .= zero(eltype(z₁))
+  nlsolver.z = z₁
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+
+  # initial step of NLNewton iteration
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ .= zero(eltype(z₂))
+  nlsolver.z = z₂
+
+  @.. tmp = uprev + a21*z₁
+  nlsolver.tmp = tmp
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  @.. z₃ = z₁
+  nlsolver.z = z₃
+  @.. tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  @.. z₄ = z₃
+  nlsolver.z = z₄
+
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  @.. z₅ = z₄
+  nlsolver.z = z₅
+
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  # Use constant z prediction
+  @.. z₆ = z₅
+  nlsolver.z = z₆
+
+  @.. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 7
+
+  # Use constant z prediction
+  @.. z₇ = z₆
+  nlsolver.z = z₇
+
+  @.. tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  nlsolver.c = c7
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################### Finalize
+  @.. u = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+
+  @.. integrator.fsallast = z₇/dt
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK8ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a82,a83,a84,a85,a86,a87,a91,a92,a93,a94,a95,a96,a97,a98,c2,c3,c4,c5,c6,c7,c8 = cache.tab
+  nlsolver = cache.nlsolver
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ = zero(u)
+  nlsolver.z = z₁
+
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ = zero(u)
+  nlsolver.z = z₂
+
+  nlsolver.tmp = uprev + a21*z₁
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  z₃ = z₁
+  nlsolver.z = z₃
+
+  nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  z₄ = z₃
+  nlsolver.z = z₄
+
+  nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  z₅ = z₄
+  nlsolver.z = z₅
+
+  nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  # Use constant z prediction
+  z₆ = z₅
+  nlsolver.z = z₆
+
+  nlsolver.tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 7
+
+  # Use constant z prediction
+  z₇ = z₆
+  nlsolver.z = z₇
+
+  nlsolver.tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  nlsolver.c = c7
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 8
+
+  # Use constant z prediction
+  z₈ = z₇
+  nlsolver.z = z₈
+
+  nlsolver.tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+  nlsolver.c = c8
+  z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+
+  ################################## Final Step
+
+  u = uprev + a91*z₁ + a92*z₂ + a93*z₃ + a94*z₄+ a95*z₅ + a96*z₆ + a97*z₇ + a98*z₈
+
+  integrator.fsallast = z₈./dt
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+@muladd function perform_step!(integrator, cache::SFSDIRK8Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,nlsolver = cache
+  @unpack tmp = nlsolver
+  W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a82,a83,a84,a85,a86,a87,a91,a92,a93,a94,a95,a96,a97,a98,c2,c3,c4,c5,c6,c7,c8 = cache.tab
+  alg = unwrap_alg(integrator, true)
+  markfirststage!(nlsolver)
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  z₁ .= zero(eltype(z₁))
+  nlsolver.z = z₁
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+
+  # initial step of NLNewton iteration
+  z₁ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ .= zero(eltype(z₂))
+  nlsolver.z = z₂
+
+  @.. tmp = uprev + a21*z₁
+  nlsolver.tmp = tmp
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
+  nlsolver.c = c2
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  # Guess starts from z₁
+  @.. z₃ = z₁
+  nlsolver.z = z₃
+  @.. tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  @.. z₄ = z₃
+  nlsolver.z = z₄
+
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  # Use constant z prediction
+  @.. z₅ = z₄
+  nlsolver.z = z₅
+
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  # Use constant z prediction
+  @.. z₆ = z₅
+  nlsolver.z = z₆
+
+  @.. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 7
+
+  # Use constant z prediction
+  @.. z₇ = z₆
+  nlsolver.z = z₇
+
+  @.. tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  nlsolver.c = c7
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 8
+
+  # Use constant z prediction
+  @.. z₈ = z₇
+  nlsolver.z = z₈
+
+  @.. tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+  nlsolver.c = c8
+  z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################### Finalize
+  @.. u = uprev + a91*z₁ + a92*z₂ + a93*z₃ + a94*z₄ + a95*z₅ + a96*z₆ + a97*z₇ + a98*z₈
+
+  @.. integrator.fsallast = z₈/dt
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)

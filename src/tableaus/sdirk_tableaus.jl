@@ -409,6 +409,285 @@ function SFSDIRK4Tableau(T,T2)
   SFSDIRK4Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4)
 end
 
+struct SFSDIRK5Tableau{T,T2}
+  γ::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+end
+
+function SFSDIRK5Tableau(T,T2)
+  γ = convert(T,0.078752939968)
+  a21 = convert(T,0.222465723027)
+  a31 = convert(T,0.203192361700)
+  a32 = convert(T,0.230847263068)
+  a41 = convert(T,0.188022704389)
+  a42 = convert(T,0.191735630027)
+  a43 = convert(T,0.209922288451)
+  a51 = convert(T,0.188025114093)
+  a52 = convert(T,0.191739898281)
+  a53 = convert(T,0.209907601860)
+  a54 = convert(T,0.252726086329)
+  a61 = convert(T,0.192143833571)
+  a62 = convert(T,0.200935182974)
+  a63 = convert(T,0.205799262036)
+  a64 = convert(T,0.200553844640)
+  a65 = convert(T,0.200567876778)
+  c2 = convert(T2,0.301218662995)
+  c3 = convert(T2,0.512792564736)
+  c4 = convert(T2,0.668433562835)
+  c5 = convert(T2,0.921151640531)
+  SFSDIRK5Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5)
+end
+
+struct SFSDIRK6Tableau{T,T2}
+  γ::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a72::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+end
+
+function SFSDIRK6Tableau(T,T2)
+  γ = convert(T,0.067410767219)
+  a21 = convert(T,0.194216850802)
+  a31 = convert(T,0.194216850802)
+  a32 = convert(T,0.199861501713)
+  a41 = convert(T,0.162188551749)
+  a42 = convert(T,0.166902343330)
+  a43 = convert(T,0.145120313717)
+  a51 = convert(T,0.165176818500)
+  a52 = convert(T,0.169977460026)
+  a53 = convert(T,0.150227711763)
+  a54 = convert(T,0.181214258555)
+  a61 = convert(T,0.165176818500)
+  a62 = convert(T,0.169977460026)
+  a63 = convert(T,0.150227711763)
+  a64 = convert(T,0.181214258555)
+  a65 = convert(T,0.199861501713)
+  a71 = convert(T,0.168954170460)
+  a72 = convert(T,0.173864595628)
+  a73 = convert(T,0.156683775305)
+  a74 = convert(T,0.157643002581)
+  a75 = convert(T,0.173864725004)
+  a76 = convert(T,0.168989731022)
+  c2 = convert(T2,0.261627618021)
+  c3 = convert(T2,0.461489119734)
+  c4 = convert(T2,0.541621976015)
+  c5 = convert(T2,0.734007016063)
+  c6 = convert(T2,0.933868517776)
+  SFSDIRK6Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,c2,c3,c4,c5,c6)
+end
+
+struct SFSDIRK7Tableau{T,T2}
+  γ::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a72::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  a81::T
+  a82::T
+  a83::T
+  a84::T
+  a85::T
+  a86::T
+  a87::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+end
+
+function SFSDIRK7Tableau(T,T2)
+  γ = convert(T,0.056879041592)
+  a21 = convert(T,0.172205581756)
+  a31 = convert(T,0.135485903539)
+  a32 = convert(T,0.135485903539)
+  a41 = convert(T,0.133962606568)
+  a42 = convert(T,0.133962606568)
+  a43 = convert(T,0.170269437596)
+  a51 = convert(T,0.133962606568)
+  a52 = convert(T,0.133962606568)
+  a53 = convert(T,0.170269437596)
+  a54 = convert(T,0.172205581756)
+  a61 = convert(T,0.138004377067)
+  a62 = convert(T,0.133084723451)
+  a63 = convert(T,0.152274237527)
+  a64 = convert(T,0.154005757170)
+  a65 = convert(T,0.154005757170)
+  a71 = convert(T,0.139433665640)
+  a72 = convert(T,0.134719607258)
+  a73 = convert(T,0.145910607076)
+  a74 = convert(T,0.147569765489)
+  a75 = convert(T,0.147569765489)
+  a76 = convert(T,0.165009008641)
+  a81 = convert(T,0.138370770799)
+  a82 = convert(T,0.134572540279)
+  a83 = convert(T,0.150642940425)
+  a84 = convert(T,0.152355910489)
+  a85 = convert(T,0.152355910489)
+  a86 = convert(T,0.132951737506)
+  a87 = convert(T,0.138750190012)
+  c2 = convert(T2,0.229084623348)
+  c3 = convert(T2,0.32785084867)
+  c4 = convert(T2,0.495073692324)
+  c5 = convert(T2,0.66727927408)
+  c6 = convert(T2,0.788253893977)
+  c7 = convert(T2,0.937091461185)
+  SFSDIRK7Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a82,a83,a84,a85,a86,a87,c2,c3,c4,c5,c6,c7)
+end
+
+struct SFSDIRK8Tableau{T,T2}
+  γ::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a72::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  a81::T
+  a82::T
+  a83::T
+  a84::T
+  a85::T
+  a86::T
+  a87::T
+  a91::T
+  a92::T
+  a93::T
+  a94::T
+  a95::T
+  a96::T
+  a97::T
+  a98::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+  c8::T2
+end
+
+function SFSDIRK8Tableau(T,T2)
+  γ = convert(T,0.050353353407)
+  a21 = convert(T,0.147724666662)
+  a31 = convert(T,0.114455029802)
+  a32 = convert(T,0.114455029802)
+  a41 = convert(T,0.114147680771)
+  a42 = convert(T,0.114147680771)
+  a43 = convert(T,0.147327977820)
+  a51 = convert(T,0.114163314686)
+  a52 = convert(T,0.114163314686)
+  a53 = convert(T,0.147259379853)
+  a54 = convert(T,0.147655883990)
+  a61 = convert(T,0.114163314686)
+  a62 = convert(T,0.114163314686)
+  a63 = convert(T,0.147259379853)
+  a64 = convert(T,0.147655883990)
+  a65 = convert(T,0.147724666662)
+  a71 = convert(T,0.118472990244)
+  a72 = convert(T,0.118472990244)
+  a73 = convert(T,0.128349529304)
+  a74 = convert(T,0.128695117609)
+  a75 = convert(T,0.128755067770)
+  a76 = convert(T,0.128755067770)
+  a81 = convert(T,0.118472990244)
+  a82 = convert(T,0.118472990244)
+  a83 = convert(T,0.128349529304)
+  a84 = convert(T,0.128695117609)
+  a85 = convert(T,0.128755067770)
+  a86 = convert(T,0.128755067770)
+  a87 = convert(T,0.147724666662)
+  a91 = convert(T,0.117592883046)
+  a92 = convert(T,0.117592883046)
+  a93 = convert(T,0.132211234288)
+  a94 = convert(T,0.132567220450)
+  a95 = convert(T,0.132628974356)
+  a96 = convert(T,0.132293123539)
+  a97 = convert(T,0.117556840638)
+  a98 = convert(T,0.117556840638)
+  c2 = convert(T2,0.198078020069)
+  c3 = convert(T2,0.279263413011)
+  c4 = convert(T2,0.425976692769)
+  c5 = convert(T2,0.573595246622)
+  c6 = convert(T2,0.721319913284)
+  c7 = convert(T2,0.801854116348)
+  c8 = convert(T2,0.94957878301)
+  SFSDIRK8Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a82,a83,a84,a85,a86,a87,a91,a92,a93,a94,a95,a96,a97,a98,c2,c3,c4,c5,c6,c7,c8)
+end
 
 struct Hairer4Tableau{T,T2}
   γ::T
