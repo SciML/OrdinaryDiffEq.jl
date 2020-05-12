@@ -41,6 +41,7 @@ if GROUP == "All" || GROUP == "InterfaceI"
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
+  @time @safetestset "Enum Tests" begin include("interface/enums.jl") end
   @time @safetestset "Mass Matrix Tests" begin include("interface/mass_matrix_tests.jl") end
   @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
   @time @safetestset "DAE Initialize Integration" begin include("interface/dae_initialize_integration.jl") end
