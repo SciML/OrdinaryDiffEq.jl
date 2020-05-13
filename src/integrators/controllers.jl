@@ -140,7 +140,7 @@ function stepsize_controller!(integrator, alg::QNDF)
   EEst2 = integrator.cache.EEst2
   if cnt <= 3
     # q = standard_stepsize_controller!(integrator, alg)
-    q = 1 #quasi-contsant steps    
+    q = one(integrator.qold) #quasi-contsant steps    
   else
     dt_optim_success, dt_optim_failed = QNDF_stepsize_and_order!(integrator.cache, integrator.EEst, EEst1, EEst2, integrator.dt, integrator.cache.order)
     q = integrator.dt/dt_optim_success
