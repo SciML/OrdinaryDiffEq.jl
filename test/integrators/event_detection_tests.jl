@@ -38,6 +38,8 @@ sol=solve(prob, Vern9(), abstol=1e-14, reltol=1e-14, save_everystep=false, save_
 
 @test length(sol) > 1500
 
+@info "Bouncing Ball"
+
 f = function (du,u,p,t)
   du[1] = u[2]
   du[2] = -p[1]
@@ -102,4 +104,3 @@ sol = solve(prob,Tsit5(),callback=cb,dt=1e-3,adaptive=false)
 sol2 = solve(prob,Tsit5(),callback=cb2,dt=1e-3,adaptive=false)
 @test sol.u == sol2.u
 @test z[] == 0
-

@@ -19,6 +19,7 @@ testTol = 0.2
   prob = (ODEProblemLibrary.prob_ode_linear,
           ODEProblemLibrary.prob_ode_2Dlinear)[i]
   dts = 1 .//2 .^(8:-1:4)
+  @info "Very low order"
   sim = test_convergence(dts,prob,Euler())
   @test sim.𝒪est[:final] ≈ 1 atol=testTol
   sim2 = test_convergence(dts,prob,Heun())
@@ -50,6 +51,8 @@ testTol = 0.2
 
   sim4 = test_convergence(dts,prob,BS3())
   @test sim4.𝒪est[:l2] ≈ 3 atol=testTol
+
+  @info "Multistep"
   sim5 = test_convergence(dts, prob, AB3())
   @test sim5.𝒪est[:l2] ≈ 3 atol=testTol
   sim6 = test_convergence(dts,prob,ABM32())
@@ -82,6 +85,8 @@ end
   prob = (ODEProblemLibrary.prob_ode_linear,
           ODEProblemLibrary.prob_ode_2Dlinear)[i]
   dts = 1 .//2 .^(9:-1:5)
+
+  @show "Very low order"
 
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test sim11.𝒪est[:final] ≈ 1 atol=testTol
@@ -124,6 +129,8 @@ end
   sim152 = test_convergence(dts,prob,SSPSDIRK2())
   @test sim152.𝒪est[:final] ≈ 2 atol=testTol
 
+  @show "Mid SDIRKs"
+
   sim16 = test_convergence(dts,prob,Kvaerno3())
   @test sim16.𝒪est[:final] ≈ 3 atol=testTol
 
@@ -145,6 +152,8 @@ end
   #####################################
   # BDF
   #####################################
+
+  @info "BDFs"
 
   sim = test_convergence(dts,prob,ABDF2())
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
