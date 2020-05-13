@@ -42,7 +42,8 @@ jacobian_autodiff(f, x, odefun, alg) = (ForwardDiff.derivative(f,x),1, alg)
 function jacobian_autodiff(f, x::AbstractArray, odefun, alg)
   sparsity = odefun.sparsity
   jac_prototype = odefun.jac_prototype
-  colorvec = DiffEqBase.has_colorvec(odefun) ? odefun.colorvec : (isnothing(sparsity) ? 1:length(x) : matrix_colors(sparsity))
+  colorvec = DiffEqBase.has_colorvec(odefun) ? odefun.colorvec :
+                  (isnothing(sparsity) ? (1:length(x)) : matrix_colors(sparsity))
   maxcolor = maximum(colorvec)
   chunk_size = get_chunksize(alg)==0 ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
   num_of_chunks = chunk_size==nothing ? Int(ceil(maxcolor / getsize(default_chunk_size(maxcolor)))) :
@@ -76,7 +77,8 @@ function jacobian(f, x, integrator)
     else
       sparsity = integrator.f.sparsity
       jac_prototype = integrator.f.jac_prototype
-      colorvec = DiffEqBase.has_colorvec(integrator.f) ? integrator.f.colorvec : (isnothing(sparsity) ? 1:length(x) : matrix_colors(sparsity))
+      colorvec = DiffEqBase.has_colorvec(integrator.f) ? integrator.f.colorvec :
+                    (isnothing(sparsity) ? (1:length(x)) : matrix_colors(sparsity))
       dir = diffdir(integrator)
       J, tmp = jacobian_finitediff(f, x, alg.diff_type, dir, colorvec, sparsity, jac_prototype)
     end
@@ -116,7 +118,8 @@ function DiffEqBase.build_jac_config(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgor
     if alg_autodiff(alg)
       sparsity = f.sparsity
       jac_prototype = f.jac_prototype
-      colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec : (isnothing(sparsity) ? 1:length(u) : matrix_colors(sparsity))
+      colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
+                    (isnothing(sparsity) ? (1:length(u)) : matrix_colors(sparsity))
       _chunksize = get_chunksize(alg)==0 ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
       jac_config = ForwardColorJacCache(uf,uprev,_chunksize;colorvec=colorvec,sparsity=sparsity)
     else
