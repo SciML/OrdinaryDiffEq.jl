@@ -263,7 +263,7 @@ end
   udiff::uType
   dts::dtsType
   h::dtType
-  c::Int
+  consfailcnt::Int #Consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
 end
@@ -282,7 +282,7 @@ end
   utilde::uType
   nlsolver::N
   h::dtType
-  c::Int
+  consfailcnt::Int #consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
 end

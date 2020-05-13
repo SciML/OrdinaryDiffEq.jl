@@ -151,7 +151,7 @@ end
 
 function step_accept_controller!(integrator,alg::QNDF,q)
   #step is accepted, reset count of consecutive failed steps
-  integrator.cache.c = 0
+  integrator.cache.consfailcnt = 0
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
@@ -160,7 +160,7 @@ end
 
 function step_reject_controller!(integrator,alg::QNDF)
   #append no. of consecutive failed steps
-  integrator.cache.c += 1
+  integrator.cache.consfailcnt += 1
   integrator.dt = integrator.dt/integrator.qold
 end
 
@@ -237,7 +237,7 @@ function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
     # fail step calcuator
 
     # step is not successful
-    if cache.c >= 1  # postfail
+    if cache.consfailcnt >= 1  # postfail
       dt_optim_failed = h/2
       cache.order = k
     end
