@@ -180,7 +180,7 @@ end
 
 function sparsity_colorvec(f,x)
   sparsity = f.sparsity
-  colorvec = DiffEqBase.has_colorvec(integrator.f) ? integrator.f.colorvec :
+  colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
               (isnothing(sparsity) ? (1:length(x)) : matrix_colors(sparsity))
   sparsity,colorvec
 end
