@@ -60,39 +60,16 @@ for f in [f_oop, f_ip]
         for (i,prob) in enumerate(map(f->ODEProblem(f,u0,tspan),
                         [ODEFunction(f,colorvec=colors,jac_prototype=jac_sp),
                          ODEFunction(f,jac_prototype=jac_sp),
-                         ODEFunction(f,colorvec=colors)
+                         ODEFunction(f,colorvec=colors,sparsity=jac_sp)
                          ]))
-          # TODO: these broken test-cases need to be investigated.
-          #       Note they only happen for prob=ODEFunction(f,colorvec=colors).
-          isbroken = i==3 && (
-            (f, ad, tol) == (f_oop, true, nothing) ||
-            (f, ad, Solver, tol) == (f_oop, false, Trapezoid, nothing) ||
-            (f, Solver, tol) == (f_ip, Trapezoid, nothing) ||
-            (f, Solver) == (f_oop, Rodas5) ||
-            (f, Solver) == (f_ip, Rodas5) ||
-            (f, Solver) == (f_oop, KenCarp4) ||
-            (f, Solver) == (f_ip, KenCarp4)
-          )
           sol=solve(prob,Solver(autodiff=ad),reltol=tol,abstol=tol)
           @test sol.retcode==:Success
           if tol !=nothing
-            if isbroken
-              @test_broken sol_std.u[end]≈sol.u[end] atol=tol
-            else
-              @test sol_std.u[end]≈sol.u[end] atol=tol
-            end
+            @test sol_std.u[end]≈sol.u[end] atol=tol
           else
-            if isbroken
-              @test_broken sol_std.u[end]≈sol.u[end]
-            else
-              @test sol_std.u[end]≈sol.u[end]
-            end
+            @test sol_std.u[end]≈sol.u[end]
           end
-          if isbroken
-            @test_broken length(sol_std.t)==length(sol.t)
-          else
-            @test length(sol_std.t)==length(sol.t)
-          end
+          @test length(sol_std.t)==length(sol.t)
         end
       end
     end

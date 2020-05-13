@@ -10,6 +10,7 @@ function affect!(integrator)
 	c[] += 1
 end
 cb = ContinuousCallback(cond, affect!)
+@info "Event Repeat Test 1"
 sol = solve(prob, Tsit5(); adaptive=false,callback=cb,dt=dt,save_everystep=false)
 @test c[] == 1
 
@@ -42,6 +43,7 @@ function affect_v!(integrator, idx)
 end
 
 cb = VectorContinuousCallback(condition_v, affect_v!, 5)
+@info "Event Repeat Test 2"
 sol = solve(prob, Tsit5(); adaptive=false,callback=cb,dt=dt,save_everystep=false)
 
 @test c1[] == 1

@@ -85,7 +85,7 @@ end
 jacobian_finitediff_forward!(J,f,x,jac_config,forwardcache,integrator)=
   (FiniteDiff.finite_difference_jacobian!(J,f,x,jac_config,forwardcache,
     dir=diffdir(integrator));maximum(jac_config.colorvec))
-jacobian_finitediff!(J,f,x,jac_config,integrator,colorvec)=
+jacobian_finitediff!(J,f,x,jac_config,integrator)=
   (FiniteDiff.finite_difference_jacobian!(J,f,x,jac_config,
     dir=diffdir(integrator));2*maximum(jac_config.colorvec))
 
