@@ -109,18 +109,18 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
     nothing
 end
 
-function DiffEqBase.build_jac_config(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},f,uf,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where transform
+function DiffEqBase.build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where transform
   if !DiffEqBase.has_jac(f) && ((!transform && !DiffEqBase.has_Wfact(f)) || (transform && !DiffEqBase.has_Wfact_t(f)))
+    jac_prototype = f.jac_prototype
+    sparsity,colorvec = sparsity_colorvec(f,u)
     if alg_autodiff(alg)
-      jac_prototype = f.jac_prototype
-      sparsity,colorvec = sparsity_colorvec(f,u)
       _chunksize = get_chunksize(alg)==0 ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
       jac_config = ForwardColorJacCache(uf,uprev,_chunksize;colorvec=colorvec,sparsity=sparsity)
     else
       if alg.diff_type != Val{:complex}
-        jac_config = FiniteDiff.JacobianCache(tmp,du1,du2,alg.diff_type)
+        jac_config = FiniteDiff.JacobianCache(tmp,du1,du2,alg.diff_type,colorvec=colorvec,sparsity=sparsity)
       else
-        jac_config = FiniteDiff.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u))
+        jac_config = FiniteDiff.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u),colorvec=colorvec,sparsity=sparsity)
       end
     end
   else
