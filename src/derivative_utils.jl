@@ -551,7 +551,5 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   return J, W
 end
 
-build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{true}) =
-  UJacobianWrapper(nf,t,p)
-build_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p,::Val{false}) =
-  UDerivativeWrapper(nf,t,p)
+build_uf(alg,nf,t,p,::Val{true}) = UJacobianWrapper(nf,t,p)
+build_uf(alg,nf,t,p,::Val{false}) = UDerivativeWrapper(nf,t,p)
