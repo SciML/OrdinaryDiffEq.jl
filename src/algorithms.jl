@@ -1022,7 +1022,7 @@ ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Rosenbrock Methods
 
-for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas5]
+for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROSWASSP3P3S1C, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas5]
   @eval begin
     struct $Alg{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
       linsolve::F

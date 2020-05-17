@@ -9,6 +9,25 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinea
 dts = (1/2) .^ (6:-1:3)
 testTol = 0.2
 
+function _test_adaptive(alg,testTol=0.2)
+    dts = (1/2) .^ (6:-1:3)
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts,prob,alg)
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+    
+    sol = solve(prob,alg)
+    @test length(sol) < 20
+    
+    prob = prob_ode_2Dlinear
+    
+    sim = test_convergence(dts,prob,alg)
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+    
+    sol = solve(prob,alg)
+    @test length(sol) < 20
+end
+
 ### Rosenbrock23()
 
 prob = prob_ode_linear
@@ -35,242 +54,27 @@ sim = test_convergence(dts,prob,Rosenbrock23(linsolve=LinSolveFactorize(qr!)))
 sol = solve(prob,Rosenbrock23(linsolve=LinSolveFactorize(qr!)))
 @test length(sol) < 20
 
-### Rosenbrock32()
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,Rosenbrock32())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,Rosenbrock32())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,Rosenbrock32())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,Rosenbrock32())
-@test length(sol) < 20
-
-### ROS3P()
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,ROS3P())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS3P())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,ROS3P())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS3P())
-@test length(sol) < 20
-
-### Rodas3()
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,Rodas3())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,Rodas3())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,Rodas3())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,Rodas3())
-@test length(sol) < 20
+_test_adaptive(Rosenbrock32())
+_test_adaptive(ROS3P())
+_test_adaptive(Rodas3())
 
 println("4th order Rosenbrocks")
 
-### RosShamp4
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,RosShamp4())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,RosShamp4())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,RosShamp4())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,RosShamp4())
-@test length(sol) < 20
-
-### Veldd4
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,Veldd4())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,Veldd4())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,Veldd4())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,Veldd4())
-@test length(sol) < 20
-
-### Velds4
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,Velds4())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,Velds4())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,Velds4())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,Velds4())
-@test length(sol) < 20
-
-### GRK4T
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,GRK4T())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,GRK4T())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,GRK4T())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,GRK4T())
-@test length(sol) < 20
-
-### GRK4A
-dts = (1/2) .^ (7:-1:4)
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,GRK4A())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,GRK4A())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,GRK4A())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,GRK4A())
-@test length(sol) < 20
-
-### Ros4LStab
-
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,Ros4LStab())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,Ros4LStab())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,Ros4LStab())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,Ros4LStab())
-@test length(sol) < 20
+_test_adaptive(RosShamp4())
+_test_adaptive(Veldd4())
+_test_adaptive(Velds4())
+_test_adaptive(GRK4T())
+_test_adaptive(GRK4A(),0.3)
+_test_adaptive(Ros4LStab())
 
 ### Rosenbrock-W Algorithms
 
 println("Rosenbrock-W")
-
-### ROS34PW1a
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,ROS34PW1a())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS34PW1a())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,ROS34PW1a())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS34PW1a())
-@test length(sol) < 20
-
-### ROS34PW1b
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,ROS34PW1b())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS34PW1b())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,ROS34PW1b())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS34PW1b())
-@test length(sol) < 20
-
-### ROS34PW2
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,ROS34PW2())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS34PW2())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,ROS34PW2())
-@test sim.𝒪est[:final] ≈ 3 atol=testTol
-
-sol = solve(prob,ROS34PW2())
-@test length(sol) < 20
-
-### ROS34PW3
-prob = prob_ode_linear
-
-sim = test_convergence(dts,prob,ROS34PW3())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,ROS34PW3())
-@test length(sol) < 20
-
-prob = prob_ode_2Dlinear
-
-sim = test_convergence(dts,prob,ROS34PW3())
-@test sim.𝒪est[:final] ≈ 4 atol=testTol
-
-sol = solve(prob,ROS34PW3())
-@test length(sol) < 20
+_test_adaptive(ROSWASSP3P3S1C())
+_test_adaptive(ROS34PW1a())
+_test_adaptive(ROS34PW1b())
+_test_adaptive(ROS34PW2())
+_test_adaptive(ROS34PW3())
 
 ### RosenbrockW6S4OS
 sim = test_convergence(dts,prob,RosenbrockW6S4OS())#test inplace

@@ -297,11 +297,12 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     unpacktabexpr=:(@unpack ()=cache.tab)
     unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
     dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tabmask.C)]
-    dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tabmask.d)]
+    dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in findall(!iszero,tabmask.d)]
     iterexprs=[]
     for i in 1:n_normalstep
         aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
         Cijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
+        dtdjdT=tabmask.d[i+1] ? :($(Symbol(:dtd,i+1))*dT) : :0
         push!(iterexprs,
         quote
             $(Symbol(:k,i)) = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
@@ -310,9 +311,9 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             du = f(u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
             if mass_matrix == I
-                linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
+                linsolve_tmp=+(du,$dtdjdT,$(Cijkj...))
             else
-                linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+($(Cijkj...)))
+                linsolve_tmp=du+$dtdjdT+mass_matrix*(+($(Cijkj...)))
             end
         end)
     end
@@ -382,13 +383,13 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     unpacktabexpr=:(@unpack ()=cache.tab)
     unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
     dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tabmask.C)]
-    dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tabmask.d)]
+    dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in findall(!iszero,tabmask.d)]
     iterexprs=[]
     for i in 1:n_normalstep
         ki=Symbol(:k,i)
-        dtdj=Symbol(:dtd,i+1)
         aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
         dtCijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
+        dtdjdT=tabmask.d[i+1] ? :($(Symbol(:dtd,i+1))*dT) : :0
         repeatstepexpr=[]
         if i==1
             repeatstepexpr=[:(!repeat_step)]
@@ -401,11 +402,11 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
             if mass_matrix == I
-                @.. linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
+                @.. linsolve_tmp = +(du,$dtdjdT,$(dtCijkj...))
             else
                 @.. du1 = +($(dtCijkj...))
                 mul!(du2,mass_matrix,du1)
-                @.. linsolve_tmp = du + $dtdj*dT + du2
+                @.. linsolve_tmp = du + $dtdjdT + du2
             end
         end)
     end
@@ -764,6 +765,70 @@ macro Rosenbrock4(part)
         constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep,specialstepconst)
         performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep,specialstep)
         return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+    else
+        throw(ArgumentError("Unknown parameter!"))
+        nothing
+    end
+end
+
+#ROSW3 methods
+"""
+    ROSWASSP3P3S1CTableau()
+
+A-stable Rosenbrock-W method with SSP explicit part (suitable for hyperbolic PDEs),
+third order, three stages, CFL 1 (eff = 1/3)
+
+References: Petsc
+"""
+function ROSWASSP3P3S1CTableau()
+    s3=3
+    gamma=(3+s3)//6
+    Alpha=[0 0 0;
+           1 0 0;
+           1//4 1//4 0]
+    Gamma=[1 0 0;
+           (-3-s3)//6  gamma 0;
+           (-3-s3)//24 (-3-s3)//8 gamma]
+    B=[1//6,1//6,2//3]
+    Bhat=[1//4,1//4,1//2]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+"""
+    @ROSW3(part)
+
+Generate code for the Rosenbrock methods with 3 stages: ROSWASSP3P3S1C.
+`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`@ROSW3(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
+`@ROSW3(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
+`@ROSW3(:init)` and `@ROSW3(:performstep)` should be placed in
+`perform_step/rosenbrock_perform_step.jl`.
+"""
+macro ROSW3(part)
+    ROSWASSP3P3S1Ctab=ROSWASSP3P3S1CTableau()
+    ROSWASSP3P3S1Ctabname=:ROSWASSP3P3S1CTableau
+    tabmask=_masktab(ROSWASSP3P3S1Ctab)
+    cachename=:ROSW3Cache
+    constcachename=:ROSW3ConstantCache
+    n_normalstep=length(tabmask.b)-1
+    if part.value==:tableau
+        tabstructexpr=gen_tableau_struct(tabmask,:ROSW3Tableau)
+        tabexprs=Array{Expr,1}([tabstructexpr])
+        push!(tabexprs,gen_tableau(ROSWASSP3P3S1Ctab,tabstructexpr,ROSWASSP3P3S1Ctabname))
+        return esc(quote $(tabexprs...) end)
+    elseif part.value==:cache
+        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
+        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROSWASSP3P3S1C,ROSWASSP3P3S1Ctabname))
+        return esc(quote $(cacheexprs...) end)
+    elseif part.value==:init
+        return esc(gen_initialize(cachename,constcachename))
+    elseif part.value==:performstep
+        performstepexprs=Array{Expr,1}()
+        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
+        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
+        return esc(quote $(performstepexprs...) end)
     else
         throw(ArgumentError("Unknown parameter!"))
         nothing

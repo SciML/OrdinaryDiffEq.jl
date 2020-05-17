@@ -312,6 +312,7 @@ alg_order(alg::Rosenbrock23) = 2
 alg_order(alg::Rosenbrock32) = 3
 alg_order(alg::ROS3P) = 3
 alg_order(alg::Rodas3) = 3
+alg_order(alg::ROSWASSP3P3S1C) = 3
 alg_order(alg::ROS34PW1a) = 3
 alg_order(alg::ROS34PW1b) = 3
 alg_order(alg::ROS34PW2) = 3
