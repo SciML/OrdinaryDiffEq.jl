@@ -61,7 +61,7 @@ isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
 isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 
-qmin_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1//5
+qmin_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = isadaptive(alg) ? 1//5 : 0
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 qmin_default(alg::DP8) = 1//3
 
@@ -407,7 +407,7 @@ alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
 alg_adaptive_order(alg::AN5) = 5
 
-beta2_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 2//(5alg_order(alg))
+beta2_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = isadaptive(alg) ? 2//(5alg_order(alg)) : 0
 beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
 beta2_default(alg::DP5) = 4//100
@@ -416,7 +416,7 @@ beta2_default(alg::ImplicitDeuflhardExtrapolation) = 0//1
 beta2_default(alg::ExtrapolationMidpointHairerWanner) = 0//1
 beta2_default(alg::ImplicitHairerWannerExtrapolation) = 0//1
 
-beta1_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},beta2) = 7//(10alg_order(alg))
+beta1_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},beta2) = isadaptive(alg) ? 7//(10alg_order(alg)) : 0
 beta1_default(alg::FunctionMap,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
@@ -425,7 +425,7 @@ beta1_default(alg::ImplicitDeuflhardExtrapolation,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ImplicitHairerWannerExtrapolation,beta2) =  1//(2alg.n_init+1)
 
-gamma_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 9//10
+gamma_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = isadaptive(alg) ? 9//10 : 0
 gamma_default(alg::RKC) = 8//10
 gamma_default(alg::IRKC) = 8//10
 gamma_default(alg::ExtrapolationMidpointDeuflhard) = (1//4)^beta1_default(alg,beta2_default(alg))
@@ -437,7 +437,7 @@ qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
-qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
+qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1//1 : 0
 qsteady_max_default(alg::AN5) = 3//2
 qsteady_max_default(alg::JVODE) = 3//2
 qsteady_max_default(alg::QNDF1) = 2//1
