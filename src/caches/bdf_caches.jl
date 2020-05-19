@@ -307,7 +307,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
 
-  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
+  γₖ = [sum(tTypeNoUnits(1//j) for j in 1:k) for k in 1:6]
 
   QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0, EEst1, EEst2, γₖ)
 end
@@ -343,7 +343,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   EEst1 = tTypeNoUnits(1)
   EEst2 = tTypeNoUnits(1)
 
-  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
+  γₖ = [sum(tTypeNoUnits(1//j) for j in 1:k) for k in 1:6]
 
   QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0, EEst1, EEst2, γₖ)
 end
