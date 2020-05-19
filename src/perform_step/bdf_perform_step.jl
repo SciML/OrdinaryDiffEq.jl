@@ -613,11 +613,11 @@ end
 function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack udiff,dts,order,max_order,D,D2,R,U,nlsolver = cache
+  γₖ = cache.γₖ
   k = order
   cnt = integrator.iter
   κ = integrator.alg.kappa[k]
   flag = true
-  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
   for i in 2:k
     if dts[i] != dts[1]
       flag = false

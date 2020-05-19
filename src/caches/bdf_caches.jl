@@ -252,7 +252,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   QNDF2Cache(uprev2,uprev3,fsalfirst,D,D2,R,U,atmp,utilde,nlsolver,dtₙ₋₁,dtₙ₋₂)
 end
 
-@cache mutable struct QNDFConstantCache{N,coefType1,coefType2,coefType3,uType,dtType,dtsType,EEstType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDFConstantCache{N,coefType1,coefType2,coefType3,uType,dtType,dtsType,EEstType,gammaType} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   D::coefType3
   D2::coefType2
@@ -266,9 +266,10 @@ end
   consfailcnt::Int #Consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
+  γₖ::gammaType
 end
 
-@cache mutable struct QNDFCache{uType,rateType,coefType,coefType1,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N,EEstType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDFCache{uType,rateType,coefType,coefType1,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N,EEstType,gammaType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
   D::coefType3
   D2::coefType2
@@ -285,6 +286,7 @@ end
   consfailcnt::Int #consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
+  γₖ::gammaType
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -305,7 +307,9 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
 
-  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0, EEst1, EEst2)
+  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
+
+  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0, EEst1, EEst2, γₖ)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -339,7 +343,9 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   EEst1 = tTypeNoUnits(1)
   EEst2 = tTypeNoUnits(1)
 
-  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0,EEst1, EEst2)
+  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
+
+  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0, EEst1, EEst2, γₖ)
 end
 
 
