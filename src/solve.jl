@@ -79,7 +79,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   elseif !(typeof(prob)<:DiscreteProblem) &&
          !(typeof(prob)<:DiffEqBase.AbstractDAEProblem) &&
          !is_mass_matrix_alg(alg) &&
-         prob.f.mass_matrix != I
+         (prob.f.mass_matrix !== I && prob.f.mass_matrix !== (I,I))
     error("This solver is not able to use mass matrices.")
   end
 
