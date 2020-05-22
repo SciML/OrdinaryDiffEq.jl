@@ -65,7 +65,7 @@ end
 jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
     (FiniteDiff.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir),2)
 function jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype)
-  f_in = diff_type==Val{:forward} ? f(x) : similar(x)
+  f_in = diff_type === Val{:forward} ? f(x) : similar(x)
   ret_eltype = eltype(f_in)
   J = FiniteDiff.finite_difference_jacobian(f, x, diff_type, ret_eltype, f_in,
                                             dir = dir, colorvec = colorvec, sparsity = sparsity, jac_prototype = jac_prototype)
