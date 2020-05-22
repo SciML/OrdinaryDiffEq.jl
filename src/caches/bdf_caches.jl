@@ -267,6 +267,7 @@ end
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
   γₖ::gammaType
+  tmp::coefType1
 end
 
 @cache mutable struct QNDFCache{uType,rateType,coefType,coefType1,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N,EEstType,gammaType} <: OrdinaryDiffEqMutableCache
@@ -287,6 +288,7 @@ end
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
   γₖ::gammaType
+  tmp::coefType1
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -302,14 +304,16 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   R = fill(zero(t), 5, 5)
   U = fill(zero(t), 5, 5)
 
+  tmp = similar(R)
+
   EEst1 = tTypeNoUnits(1)
   EEst2 = tTypeNoUnits(1)
 
   max_order = 5
 
-  γₖ = [sum(tTypeNoUnits(1//j) for j in 1:k) for k in 1:6]
+  γₖ = [sum(tTypeNoUnits(inv(j)) for j in 1:k) for k in 1:6]
 
-  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0, EEst1, EEst2, γₖ)
+  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0, EEst1, EEst2, γₖ, tmp)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -325,6 +329,8 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   D2 = Array{typeof(u)}(undef, 6, 6)
   R = fill(zero(t), 5, 5)
   U = fill(zero(t), 5, 5)
+
+  tmp = similar(R)
 
   for i = 1:5
     D[i] = zero(u)
@@ -343,9 +349,9 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   EEst1 = tTypeNoUnits(1)
   EEst2 = tTypeNoUnits(1)
 
-  γₖ = [sum(tTypeNoUnits(1//j) for j in 1:k) for k in 1:6]
+  γₖ = [sum(tTypeNoUnits(inv(j)) for j in 1:k) for k in 1:6]
 
-  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0, EEst1, EEst2, γₖ)
+  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0, EEst1, EEst2, γₖ, tmp)
 end
 
 
