@@ -59,8 +59,8 @@ for Alg in [Rodas5, Rosenbrock23, TRBDF2, KenCarp4]
   @test Array( solve(prob2, Alg(), tstops=sol.t, adaptive=false) ) ≈ Array( solve(prob, Alg(), tstops=sol.t, adaptive=false) ) atol=1e-4
 end
 
-_Wfact = eval(ModelingToolkit.generate_factorized_W(de[1])[1][2])
-_Wfact_t = eval(ModelingToolkit.generate_factorized_W(de[1])[2][2])
+_Wfact = eval(ModelingToolkit.generate_factorized_W(de)[1][2])
+_Wfact_t = eval(ModelingToolkit.generate_factorized_W(de)[2][2])
 
 lotka_only_Wfact   = remake(prob,f=ODEFunction(lotka,Wfact=_Wfact))
 lotka_only_Wfact_t = remake(prob,f=ODEFunction(lotka,Wfact_t=_Wfact_t))
