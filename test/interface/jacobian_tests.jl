@@ -51,7 +51,7 @@ end
 
 prob = ODEProblem(lotka,[1.0,1.0],(0.0,1.0),[1.5,1.0,3.0,1.0])
 de = ModelingToolkit.modelingtoolkitize(prob)
-prob2 = remake(prob, f=ODEFunction(de...; jac=true, Wfact=true))
+prob2 = remake(prob, f=ODEFunction(de; jac=true, Wfact=true))
 
 sol = solve(prob, TRBDF2())
 
