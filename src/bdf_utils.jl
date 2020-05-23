@@ -52,7 +52,7 @@ function reinterpolate_history!(cache::OrdinaryDiffEqMutableCache, D, R, k)
   fill!(tmp,zero(eltype(D[1])))
   for j = 1:k
     for k = 1:k
-      @.. tmp += D[k] * R[k,j]
+      @. tmp += D[k] * R[k,j]
     end
     D[j] .= tmp
     fill!(tmp, zero(eltype(tmp)))

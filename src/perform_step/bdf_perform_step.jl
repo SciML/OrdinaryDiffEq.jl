@@ -750,7 +750,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   cnt = integrator.iter
   k = order
   κ = integrator.alg.kappa[k]
-  γₖ = [sum(1//j for j in 1:k) for k in 1:6]
+  γₖ = cache.γₖ
   flag = true
   step_success = true
   for i in 2:k
@@ -774,8 +774,8 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       if ρ != 1
         U!(k,U)
         R!(k,ρ,cache)
-        R .= R * U
-        reinterpolate_history!(cache,D,R,k)
+        mul!(cache.tmp,R,U)
+        reinterpolate_history!(cache,D,cache.tmp,k)
       end
     else
       n = k+1
@@ -798,13 +798,15 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   # precalculations
   ϕ = fill!(utilde, zero(eltype(u)))
   for i = 1:k
-    @.. ϕ += γₖ[i]*D[i]
+    @. ϕ += γₖ[i]*D[i]
   end
-  @.. ϕ *= γ
+  #@.. ϕ *= γ
+  lmul!(γ,ϕ)
   tm = fill!(nlsolver.ztmp, zero(eltype(u)))
   for i = 1:k
-    @.. tm += D[i]
+    @. tm += D[i]
   end
+  #@show tmp 
   @.. nlsolver.tmp = uprev + tm - ϕ
 
   γdt = γ*dt
@@ -826,7 +828,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     else
       @.. tmp = u - uprev
       for i = 1:k
-        @.. tmp -= D[i]
+        @. tmp -= D[i]
       end
       @.. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -848,7 +850,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       backward_diff!(cache,D,D2,k+1,false)
       @.. tmp = u - uprev
       for i = 1:(k+1)
-        @.. tmp -= D2[i,1]
+        @. tmp -= D2[i,1]
       end
       @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
