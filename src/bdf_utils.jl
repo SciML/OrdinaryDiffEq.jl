@@ -52,7 +52,7 @@ function reinterpolate_history!(cache::OrdinaryDiffEqMutableCache, D, R, k)
   fill!(tmp,zero(eltype(D[1])))
   for j = 1:k
     for k = 1:k
-      @.. tmp += D[k] * R[k,j]
+      @. tmp += D[k] * R[k,j]
     end
     D[j] .= tmp
     fill!(tmp, zero(eltype(tmp)))
@@ -70,101 +70,3 @@ function reinterpolate_history!(cache::OrdinaryDiffEqConstantCache, D, R, k)
 end
 
 global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
-
-# this stepsize and order controller is taken from
-# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
-# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
-function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
-  zₛ = 1.2
-  zᵤ = 0.1
-  Fᵤ = 10
-
-  expo = 1/(k+1)
-  z = zₛ * ((est)^expo)
-  F = inv(z)
-
-  hₖ₋₁ = 0.0
-  hₖ₊₁ = 0.0
-
-  if z <= zₛ
-    # step is successful
-    # precalculations
-    if z <= zᵤ
-      hₖ = Fᵤ * h
-    elseif zᵤ < z <= zₛ
-      hₖ = F * h
-    end
-
-    if k > 1
-      expo = 1/k
-      zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
-      Fₖ₋₁ = inv(zₖ₋₁)
-      if zₖ₋₁ <= 0.1
-        hₖ₋₁ = 10 * h
-      elseif 0.1 < zₖ₋₁ <= 1.3
-        hₖ₋₁ = Fₖ₋₁ * h
-      end
-    end
-
-    expo = 1/(k+2)
-    zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
-    Fₖ₊₁ = inv(zₖ₊₁)
-
-    if zₖ₊₁<= 0.1
-      hₖ₊₁ = 10 * h
-    elseif 0.1 < zₖ₊₁ <= 1.4
-      hₖ₊₁ = Fₖ₊₁ * h
-    end
-    # adp order and step conditions
-    if hₖ₋₁ > hₖ
-      hₙ = hₖ₋₁
-      kₙ = max(k-1,1)
-    else
-      hₙ = hₖ
-      kₙ = k
-    end
-    if hₖ₊₁ > hₙ
-      hₙ = hₖ₊₁
-      kₙ = min(k+1,5)
-    end
-    if hₙ < h
-      hₙ = h
-      kₙ = k
-    end
-    cache.h = hₙ
-    cache.order = kₙ
-    return true
-  else
-    # step is not successful
-    if cache.c >= 1  # postfail
-      cache.h = h/2
-      cache.order = k
-      return false
-    end
-    if 1.2 < z <= 10
-      hₖ = F * h
-    elseif z > 10
-      hₖ = 0.1 * h
-    end
-    hₙ = hₖ
-    kₙ = k
-    if k > 1
-      expo = 1/k
-      zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
-      Fₖ₋₁ = inv(zₖ₋₁)
-      if 1.3 < zₖ₋₁ <= 10
-        hₖ₋₁ = Fₖ₋₁ * h
-      elseif zₖ₋₁ > 10
-        hₖ₋₁ = 0.1 * h
-      end
-
-      if hₖ₋₁ > hₖ
-        hₙ = min(h,hₖ₋₁)
-        kₙ = max(k-1,1)
-      end
-    end
-    cache.h = hₙ
-    cache.order = kₙ
-    return false
-  end
-end
