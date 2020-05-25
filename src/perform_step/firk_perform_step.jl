@@ -51,6 +51,30 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
   nothing
 end
 
+function initialize!(integrator, cache::RadauIIA3Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
+  #=
+  if integrator.opts.adaptive
+    @unpack abstol, reltol = integrator.opts
+    if reltol isa Number
+      cache.rtol = reltol^(2/3) / 10
+      cache.atol = cache.rtol * (abstol / reltol)
+    else
+      @.. cache.rtol = reltol^(2/3) / 10
+      @.. cache.atol = cache.rtol * (abstol / reltol)
+    end
+  end
+  =#
+  nothing
+end
+
 function initialize!(integrator, cache::RadauIIA5Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
@@ -194,7 +218,7 @@ end
   (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(J, integrator, cache); cache.W_γdt = dt)
   if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
       @inbounds for II in CartesianIndices(J)
-        W1[II] = -(αdt - βdt*im) * mass_matrix[Tuple(II)...] + J[II]
+        W1[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
       end
   end
 

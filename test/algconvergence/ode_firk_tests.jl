@@ -43,7 +43,7 @@ alg = RadauIIA3()
 
 dts = 1 ./2 .^(8:-1:1)
 
-for prob in probs_oop
+for prob in [probs_oop; prob_ode_2Dlinear]
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ 3 atol = 0.25
 end

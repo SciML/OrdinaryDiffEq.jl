@@ -78,6 +78,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   fw1 = similar(rate_prototype); fw2 = similar(rate_prototype);
 
   J, W1 = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+  W1 = similar(J, Complex{eltype(W1)})
 
   du1 = similar(rate_prototype)
 
