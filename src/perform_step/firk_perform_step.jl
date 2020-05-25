@@ -189,25 +189,31 @@ end
   alg = unwrap_alg(integrator, true)
   @unpack maxiters = alg
   mass_matrix = integrator.f.mass_matrix
-
   # precalculations
   αdt, βdt = α/dt, β/dt
   (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(J, integrator, cache); cache.W_γdt = dt)
   if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
       @inbounds for II in CartesianIndices(J)
         W1[II] = -(αdt - βdt*im) * mass_matrix[Tuple(II)...] + J[II]
-    end
+      end
   end
+
+  #better initial guess
+  uzero = zero(eltype(z1))
+  @. z1 = uzero
+  @. z2 = uzero
+  @. w1 = uzero
+  @. w2 = uzero
+  @. cache.cont1 = uzero
+  @. cache.cont2 = uzero
 
   # Newton iteration
   local ndw
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
-  while iter < maxiters
+  while iter < 2
     iter += 1
-    integrator.destats.nnonliniter += 1
-
     # evaluate function
     @. tmp = uprev + z1
     f(fsallast, tmp, p, t+c1*dt)
@@ -249,9 +255,8 @@ end
     # check divergence (not in initial step)
     if iter > 1
       θ = ndw / ndwprev
-      ( diverge = θ > 1 ) && ( cache.status = DiffEqBase.Divergence )
-      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = DiffEqBase.VerySlowConvergence )
-      if diverge || veryslowconvergence
+      ( diverge = θ > 2 ) && ( cache.status = DiffEqBase.Divergence )
+      if diverge
         break
       end
     end
@@ -261,7 +266,7 @@ end
 
     # transform `w` to `z`
     @. z1 = T11 * w1 + T12 * w2
-    @. z2 = T21 * w1 + T22 * w2        # T32 = 1, T33 = 0
+    @. z2 = T21 * w1 + T22 * w2
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
@@ -274,16 +279,13 @@ end
   end
   if fail_convergence
     integrator.force_stepfail = true
-    integrator.destats.nnonlinconvfail += 1
     return
   end
   cache.ηold = η
   cache.iter = iter
 
   @. u = uprev + z2
-
   f(fsallast, u, p, t+dt)
-  integrator.destats.nf += 1
   return
 end
 
