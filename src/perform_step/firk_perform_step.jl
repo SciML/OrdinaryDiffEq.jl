@@ -26,6 +26,18 @@ function do_newW(integrator, nlsolver, new_jac, W_dt)::Bool # for FIRK
   return !smallstepchange
 end
 
+function initialize!(integrator,cache::RadauIIA3ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  nothing
+end
+
 function initialize!(integrator, cache::RadauIIA5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -36,6 +48,30 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+  nothing
+end
+
+function initialize!(integrator, cache::RadauIIA3Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
+  #=
+  if integrator.opts.adaptive
+    @unpack abstol, reltol = integrator.opts
+    if reltol isa Number
+      cache.rtol = reltol^(2/3) / 10
+      cache.atol = cache.rtol * (abstol / reltol)
+    else
+      @.. cache.rtol = reltol^(2/3) / 10
+      @.. cache.atol = cache.rtol * (abstol / reltol)
+    end
+  end
+  =#
   nothing
 end
 
@@ -59,6 +95,222 @@ function initialize!(integrator, cache::RadauIIA5Cache)
     end
   end
   nothing
+end
+
+@muladd function perform_step!(integrator,cache::RadauIIA3ConstantCache)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
+  @unpack c1, c2, α, β = cache.tab
+  @unpack κ, cont1, cont2 = cache
+  @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+  alg = unwrap_alg(integrator, true)
+  @unpack maxiters = alg
+  mass_matrix = integrator.f.mass_matrix
+
+  # precalculations
+  rtol = @. reltol^(2/3) / 10
+  atol = @. rtol * (abstol / reltol)
+  αdt, βdt = α/dt, β/dt
+  J = calc_J(integrator,  cache)
+
+  cache.dtprev = one(cache.dtprev)
+  z1 = w1 = map(zero, u)
+  z2 = w2 = map(zero, u)
+  cache.cont1 = map(zero, u)
+  cache.cont2 = map(zero, u)
+
+  if u isa Number
+    LU1 = -(αdt + βdt*im)*mass_matrix + J
+  else
+    LU1 = lu(-(αdt + βdt*im)*mass_matrix + J)
+  end
+
+  # Newton iteration
+  local ndw
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  fail_convergence = true
+  iter = 0
+  while iter < maxiters
+    iter += 1
+
+    # evaluate function
+    ff1 = f(uprev+z1, p, t+c1*dt)
+    ff2 = f(uprev+z2, p, t+c2*dt)
+
+    fw1 = @. TI11 * ff1 + TI12 * ff2
+    fw2 = @. TI21 * ff1 + TI22 * ff2
+
+    if mass_matrix isa UniformScaling
+      Mw1 = @. mass_matrix.λ * w1
+      Mw2 = @. mass_matrix.λ * w2
+    else
+      Mw1 = mass_matrix*w1
+      Mw2 = mass_matrix*w2
+    end
+
+    rhs1 = @. fw1 - αdt*Mw1 + βdt*Mw2
+    rhs2 = @. fw2 - βdt*Mw1 - αdt*Mw2
+    dw12 = LU1 \ (@. rhs1 + rhs2*im)
+    dw1 = real(dw12)
+    dw2 = imag(dw12)
+
+    # compute norm of residuals
+    iter > 1 && (ndwprev = ndw)
+    atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
+    atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
+    ndw = internalnorm(atmp1, t) + internalnorm(atmp2, t)
+
+    # check divergence (not in initial step)
+    if iter > 1
+      θ = ndw / ndwprev
+      ( diverge = θ > 1 ) && ( cache.status = DiffEqBase.Divergence )
+      ( veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ) ) && ( cache.status = DiffEqBase.VerySlowConvergence )
+      if diverge || veryslowconvergence
+        break
+      end
+    end
+
+    w1 = @. w1 - dw1
+    w2 = @. w2 - dw2
+
+    # transform `w` to `z`
+    z1 = @. T11 * w1 + T12 * w2
+    z2 = @. T21 * w1 + T22 * w2
+
+    # check stopping criterion
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+      # Newton method converges
+      cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence : DiffEqBase.Convergence
+      fail_convergence = false
+      break
+    end
+  end
+
+  cache.ηold = η
+  cache.iter = iter
+
+  u = @. uprev + z2
+
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+  return
+end
+
+@muladd function perform_step!(integrator, cache::RadauIIA3Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p,fsallast,fsalfirst = integrator
+  @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
+  @unpack c1, c2, α, β = cache.tab
+  @unpack κ, cont1, cont2 = cache
+  @unpack z1, z2, w1, w2,
+          dw12,
+          k, k2, fw1, fw2,
+          J, W1,
+          tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
+  @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+  alg = unwrap_alg(integrator, true)
+  @unpack maxiters = alg
+  mass_matrix = integrator.f.mass_matrix
+  # precalculations
+  αdt, βdt = α/dt, β/dt
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(J, integrator, cache); cache.W_γdt = dt)
+  if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
+      @inbounds for II in CartesianIndices(J)
+        W1[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
+      end
+  end
+
+  #better initial guess
+  uzero = zero(eltype(z1))
+  @. z1 = uzero
+  @. z2 = uzero
+  @. w1 = uzero
+  @. w2 = uzero
+  @. cache.cont1 = uzero
+  @. cache.cont2 = uzero
+
+  # Newton iteration
+  local ndw
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  fail_convergence = true
+  iter = 0
+  while iter < 2
+    iter += 1
+    # evaluate function
+    @. tmp = uprev + z1
+    f(fsallast, tmp, p, t+c1*dt)
+    @. tmp = uprev + z2
+    f(k2, tmp, p, t+c2*dt)
+
+    @. fw1 = TI11 * fsallast + TI12 * k2
+    @. fw2 = TI21 * fsallast + TI22 * k2
+
+    if mass_matrix == I
+      Mw1 = w1
+      Mw2 = w2
+    elseif mass_matrix isa UniformScaling
+      mul!(z1, mass_matrix.λ, w1)
+      mul!(z2, mass_matrix.λ, w2)
+      Mw1 = z1
+      Mw2 = z2
+    else
+      mul!(z1, mass_matrix, w1)
+      mul!(z2, mass_matrix, w2)
+      Mw1 = z1
+      Mw2 = z2
+    end
+
+    @. dw12 = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
+    needfactor = iter==1
+    linsolve2(vec(dw12), W1, vec(dw12), needfactor)
+    dw1 = real(dw12)
+    dw2 = imag(dw12)
+
+    # compute norm of residuals
+    iter > 1 && (ndwprev = ndw)
+    calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
+    ndw1 = internalnorm(atmp, t)
+    calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
+    ndw2 = internalnorm(atmp, t)
+    ndw = ndw1 + ndw2
+
+    # check divergence (not in initial step)
+    if iter > 1
+      θ = ndw / ndwprev
+      ( diverge = θ > 2 ) && ( cache.status = DiffEqBase.Divergence )
+      if diverge
+        break
+      end
+    end
+
+    @. w1 = w1 - dw1
+    @. w2 = w2 - dw2
+
+    # transform `w` to `z`
+    @. z1 = T11 * w1 + T12 * w2
+    @. z2 = T21 * w1 + T22 * w2
+
+    # check stopping criterion
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+      # Newton method converges
+      cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence : DiffEqBase.Convergence
+      fail_convergence = false
+      break
+    end
+  end
+  if fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+  cache.ηold = η
+  cache.iter = iter
+
+  @. u = uprev + z2
+  f(fsallast, u, p, t+dt)
+  return
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5ConstantCache, repeat_step=false)
