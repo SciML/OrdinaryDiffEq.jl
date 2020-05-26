@@ -832,31 +832,23 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       end
       @.. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      EEst = integrator.opts.internalnorm(atmp,t)
-      integrator.EEst = one(integrator.EEst)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
 
-    # if cache.nconsteps <= (cache.order + 2)
-    #   cache.nconsteps = cache.nconsteps + 1
-    # else
-    if(true)
-      errm1 = 0
-      if k > 1
-        @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
-        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-        errm1 = integrator.opts.internalnorm(atmp,t)
-        cache.EEst1 = integrator.opts.internalnorm(atmp,t)
-      end
-      backward_diff!(cache,D,D2,k+1,false)
-      @.. tmp = u - uprev
-      for i = 1:(k+1)
-        @. tmp -= D2[i,1]
-      end
-      @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+    if k > 1
+      @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      cache.EEst2 = integrator.opts.internalnorm(atmp,t)
-      errp1 = integrator.opts.internalnorm(atmp,t)
-    end # cnt == 1
+      cache.EEst1 = integrator.opts.internalnorm(atmp,t)
+    end
+    backward_diff!(cache,D,D2,k+1,false)
+    @.. tmp = u - uprev
+    for i = 1:(k+1)
+      @. tmp -= D2[i,1]
+    end
+    @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    cache.EEst2 = integrator.opts.internalnorm(atmp,t)
+    # cnt == 1
   end # integrator.opts.adaptive
 
   swap_tmp = udiff[6]
