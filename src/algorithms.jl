@@ -668,6 +668,27 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 
 # FIRK Methods
 
+struct RadauIIA3{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
+  linsolve::F
+  diff_type::FDT
+  smooth_est::Bool
+  extrapolant::Symbol
+  κ::Tol
+  maxiters::Int
+  fast_convergence_cutoff::C1
+  new_W_γdt_cutoff::C2
+  controller::Symbol
+end
+
+RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                                linsolve=DEFAULT_LINSOLVE,
+                                extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
+                                controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
+                                RadauIIA3{chunk_size,autodiff,typeof(linsolve),
+                                typeof(diff_type),
+                                typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
+                                  linsolve,diff_type,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+
 struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT

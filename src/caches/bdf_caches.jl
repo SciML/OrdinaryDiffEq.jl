@@ -252,7 +252,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   QNDF2Cache(uprev2,uprev3,fsalfirst,D,D2,R,U,atmp,utilde,nlsolver,dtₙ₋₁,dtₙ₋₂)
 end
 
-@cache mutable struct QNDFConstantCache{N,coefType1,coefType2,coefType3,uType,dtType,dtsType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDFConstantCache{N,coefType1,coefType2,coefType3,uType,dtType,dtsType,EEstType,gammaType} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   D::coefType3
   D2::coefType2
@@ -263,11 +263,14 @@ end
   udiff::uType
   dts::dtsType
   h::dtType
-  c::Int
-  nconsteps::Int
+  consfailcnt::Int #Consecutive failed steps count
+  EEst1::EEstType #Error Estimator for k-1 order
+  EEst2::EEstType #Error Estimator for k+1 order
+  γₖ::gammaType
+  tmp::coefType1
 end
 
-@cache mutable struct QNDFCache{uType,rateType,coefType,coefType1,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDFCache{uType,rateType,coefType,coefType1,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N,EEstType,gammaType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
   D::coefType3
   D2::coefType2
@@ -281,8 +284,11 @@ end
   utilde::uType
   nlsolver::N
   h::dtType
-  c::Int
-  nconsteps::Int
+  consfailcnt::Int #consecutive failed steps count
+  EEst1::EEstType #Error Estimator for k-1 order
+  EEst2::EEstType #Error Estimator for k+1 order
+  γₖ::gammaType
+  tmp::coefType1
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -298,10 +304,17 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   R = fill(zero(t), 5, 5)
   U = fill(zero(t), 5, 5)
 
+  tmp = similar(R)
+
+  EEst1 = tTypeNoUnits(1)
+  EEst2 = tTypeNoUnits(1)
+
   max_order = 5
   nconsteps = 1
 
-  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0,nconsteps)
+  γₖ = [sum(tTypeNoUnits(inv(j)) for j in 1:k) for k in 1:6]
+
+  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0, EEst1, EEst2, γₖ, tmp)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -318,6 +331,8 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   R = fill(zero(t), 5, 5)
   U = fill(zero(t), 5, 5)
 
+  tmp = similar(R)
+
   for i = 1:5
     D[i] = zero(u)
     udiff[i] = zero(u)
@@ -332,7 +347,12 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   atmp = similar(u,uEltypeNoUnits)
   utilde = zero(u)
 
-  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0,1)
+  EEst1 = tTypeNoUnits(1)
+  EEst2 = tTypeNoUnits(1)
+
+  γₖ = [sum(tTypeNoUnits(inv(j)) for j in 1:k) for k in 1:6]
+
+  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0, EEst1, EEst2, γₖ, tmp)
 end
 
 

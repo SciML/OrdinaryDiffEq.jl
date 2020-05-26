@@ -136,17 +136,139 @@ end
 
 function stepsize_controller!(integrator, alg::QNDF)
   cnt = integrator.iter
-  #@show (cnt)
-  if cnt < 3
-    q = 1
-    #q = standard_stepsize_controller!(integrator, alg)
+  EEst1 = integrator.cache.EEst1
+  EEst2 = integrator.cache.EEst2
+  if cnt <= 3
+    # q = standard_stepsize_controller!(integrator, alg)
+    q = one(integrator.qold) #quasi-contsant steps    
   else
-    q = integrator.dt/integrator.cache.h
-    integrator.qold = integrator.dt/q
+    dt_optim_success, dt_optim_failed = QNDF_stepsize_and_order!(integrator.cache, integrator.EEst, EEst1, EEst2, integrator.dt, integrator.cache.order)
+    q = integrator.dt/dt_optim_success
+    integrator.qold = integrator.dt/dt_optim_failed
   end
   q
 end
 
+function step_accept_controller!(integrator,alg::QNDF,q)
+  #step is accepted, reset count of consecutive failed steps
+  integrator.cache.consfailcnt = 0
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
+  return integrator.dt/q  # dtnew
+end
+
+function step_reject_controller!(integrator,alg::QNDF)
+  #append no. of consecutive failed steps
+  integrator.cache.consfailcnt += 1
+  integrator.dt = integrator.dt/integrator.qold
+end
+
+
+# this stepsize and order controller is taken from
+# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
+# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
+function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
+
+  dt_optim_success = h
+  dt_optim_failed = h
+  zₛ = 1.2
+  zᵤ = 0.1
+  Fᵤ = 10
+
+  expo = 1/(k+1)
+  z = zₛ * ((est)^expo)
+  F = inv(z)
+
+  hₖ₋₁ = 0.0
+  hₖ₊₁ = 0.0
+
+  # step is successful
+  # precalculations
+  # calculating for successful step
+  if z <= zₛ
+
+    if z <= zᵤ
+      hₖ = Fᵤ * h
+    elseif zᵤ < z <= zₛ
+      hₖ = F * h
+    end
+
+    if k > 1
+      expo = 1/k
+      zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
+      Fₖ₋₁ = inv(zₖ₋₁)
+      if zₖ₋₁ <= 0.1
+        hₖ₋₁ = 10 * h
+      elseif 0.1 < zₖ₋₁ <= 1.3
+        hₖ₋₁ = Fₖ₋₁ * h
+      end
+    end
+
+    expo = 1/(k+2)
+    zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
+    Fₖ₊₁ = inv(zₖ₊₁)
+
+    if zₖ₊₁<= 0.1
+      hₖ₊₁ = 10 * h
+    elseif 0.1 < zₖ₊₁ <= 1.4
+      hₖ₊₁ = Fₖ₊₁ * h
+    end
+    # adp order and step conditions
+    if hₖ₋₁ > hₖ
+      hₙ = hₖ₋₁
+      kₙ = max(k-1,1)
+    else
+      hₙ = hₖ
+      kₙ = k
+    end
+    if hₖ₊₁ > hₙ
+      hₙ = hₖ₊₁
+      kₙ = min(k+1,5)
+    end
+    if hₙ < h
+      hₙ = h
+      kₙ = k
+    end
+    dt_optim_success = hₙ
+    cache.order = kₙ
+
+  else
+    # fail step calcuator
+
+    # step is not successful
+    if cache.consfailcnt >= 1  # postfail
+      dt_optim_failed = h/2
+      cache.order = k
+    end
+    
+    if 1.2 < z <= 10
+      hₖ = F * h
+    elseif z > 10
+      hₖ = 0.1 * h
+    end
+    hₙ = hₖ
+    kₙ = k
+    if k > 1
+      expo = 1/k
+      zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
+      Fₖ₋₁ = inv(zₖ₋₁)
+      if 1.3 < zₖ₋₁ <= 10
+        hₖ₋₁ = Fₖ₋₁ * h
+      elseif zₖ₋₁ > 10
+        hₖ₋₁ = 0.1 * h
+      end
+
+      if hₖ₋₁ > hₖ
+        hₙ = min(h,hₖ₋₁)
+        kₙ = max(k-1,1)
+      end
+    end
+    dt_optim_failed = hₙ
+    cache.order = kₙ
+  end
+  return dt_optim_success, dt_optim_failed
+end
 
 @inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
   # Dummy function

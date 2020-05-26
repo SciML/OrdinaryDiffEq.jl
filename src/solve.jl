@@ -8,13 +8,13 @@ end
 
 function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
                            alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},
-                           timeseries_init = typeof(prob.u0)[],
-                           ts_init = eltype(prob.tspan)[],
-                           ks_init = [],
+                           timeseries_init = (),
+                           ts_init = (),
+                           ks_init = (),
                            recompile::Type{Val{recompile_flag}} = Val{true};
-                           saveat = eltype(prob.tspan)[],
-                           tstops = eltype(prob.tspan)[],
-                           d_discontinuities= eltype(prob.tspan)[],
+                           saveat = (),
+                           tstops = (),
+                           d_discontinuities = (),
                            save_idxs = nothing,
                            save_everystep = isempty(saveat),
                            save_on = true,
@@ -22,8 +22,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            save_end = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat,
                            callback = nothing,
                            dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
-                           calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
-                                   (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
+                           calck = (callback !== nothing && callback != CallbackSet()) || (dense), # and no dense output
                            dt = alg isa FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
                            dtmin = nothing,
                            dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
@@ -36,7 +35,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            qmax = qmax_default(alg),
                            qsteady_min = qsteady_min_default(alg),
                            qsteady_max = qsteady_max_default(alg),
-                           qoldinit = 1//10^4,
+                           qoldinit = isadaptive(alg) ? 1//10^4 : 0,
                            fullnormalize = true,
                            failfactor = 2,
                            beta1 = nothing,
@@ -213,14 +212,16 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   # Have to convert incase passed in wrong.
   if save_idxs === nothing
-    timeseries = convert(Vector{uType},timeseries_init)
+    timeseries = timeseries_init === () ? uType[] : convert(Vector{uType},timeseries_init)
   else
     u_initial = u[save_idxs]
-    timeseries = convert(Vector{typeof(u_initial)},timeseries_init)
+    timeseries = timeseries_init === () ? typeof(u_initial)[] :
+                                          convert(Vector{uType},timeseries_init)
   end
-  ts = convert(Vector{tType},ts_init)
-  ks = convert(Vector{ksEltype},ks_init)
-  alg_choice = Int[]
+
+  ts = ts_init === () ? tType[]    : convert(Vector{tType},ts_init)
+  ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype},ks_init)
+  alg_choice = typeof(alg) <: CompositeAlgorithm ? Int[] : ()
 
   if !adaptive && save_everystep && tspan[2]-tspan[1] != Inf
     if dt == 0

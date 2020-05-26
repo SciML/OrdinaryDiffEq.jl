@@ -4,17 +4,17 @@
 [![Build Status](https://travis-ci.org/SciML/OrdinaryDiffEq.jl.svg?branch=master)](https://travis-ci.org/SciML/OrdinaryDiffEq.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/dpa182s6i8c67awu/branch/master?svg=true)](https://ci.appveyor.com/project/YingboMa/ordinarydiffeq-jl/branch/master)
 [![GitlabCI](https://gitlab.com/juliadiffeq/OrdinaryDiffEq-jl/badges/master/pipeline.svg)](https://gitlab.com/juliadiffeq/OrdinaryDiffEq-jl/pipelines)
-[![Coverage Status](https://coveralls.io/repos/github/JuliaDiffEq/OrdinaryDiffEq.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiffEq/OrdinaryDiffEq.jl?branch=master)
-[![codecov](https://codecov.io/gh/JuliaDiffEq/OrdinaryDiffEq.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiffEq/OrdinaryDiffEq.jl)
+[![Coverage Status](https://coveralls.io/repos/github/SciML/OrdinaryDiffEq.jl/badge.svg?branch=master)](https://coveralls.io/github/SciML/OrdinaryDiffEq.jl?branch=master)
+[![codecov](https://codecov.io/gh/SciML/OrdinaryDiffEq.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/SciML/OrdinaryDiffEq.jl)
 
 OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the
 ordinary differential equation solvers and utilities. While completely independent
 and usable on its own, users interested in using this
-functionality should check out [DifferentialEquations.jl](https://github.com/JuliaDiffEq/DifferentialEquations.jl).
+functionality should check out [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl).
 
 ## API
 
-OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.juliadiffeq.org/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
+OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.juliadiffeq.org/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
 
 ```julia
 using OrdinaryDiffEq
@@ -58,7 +58,7 @@ prob = ODEProblem(lorenz,u0,tspan)
 sol = solve(prob,Tsit5())
 ```
 
-For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://docs.juliadiffeq.org/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://docs.juliadiffeq.org/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
 function HH_acceleration(dv,v,u,p,t)
