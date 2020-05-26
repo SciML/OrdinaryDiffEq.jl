@@ -165,7 +165,9 @@ mutable struct WOperator{IIP,T,
   _func_cache::F           # cache used in `mul!`
   _concrete_form::C        # non-lazy form (matrix/number) of the operator
 
-  function WOperator{IIP}(mass_matrix, gamma, J; transform=false) where IIP
+  function WOperator{IIP}(mass_matrix, gamma, J, u; transform=false) where IIP
+    # TODO: there is definitely a missing interface.
+    # Tentative interface: `has_concrete` and `concertize(A)`
     if J isa Union{Number,DiffEqScalar}
       if transform
         _concrete_form = -mass_matrix / gamma + convert(Number,J)
@@ -174,12 +176,17 @@ mutable struct WOperator{IIP,T,
       end
       _func_cache = nothing
     else
-      if transform
-        _concrete_form = -mass_matrix / gamma + convert(AbstractMatrix,J)
+      if J isa Union{AbstractMatrix,DiffEqArrayOperator}
+        AJ = convert(AbstractMatrix,J)
+        if transform
+          _concrete_form = -mass_matrix / gamma + AJ
+        else
+          _concrete_form = -mass_matrix + gamma * AJ
+        end
       else
-        _concrete_form = -mass_matrix + gamma * convert(AbstractMatrix,J)
+        _concrete_form = nothing
       end
-      _func_cache = similar(_concrete_form, axes(_concrete_form, 1))
+      _func_cache = similar(u)
     end
     T = eltype(_concrete_form)
     MType = typeof(mass_matrix)
@@ -190,13 +197,13 @@ mutable struct WOperator{IIP,T,
     return new{IIP,T,MType,GType,JType,F,C}(mass_matrix,gamma,J,transform,_func_cache,_concrete_form)
   end
 end
-function WOperator{IIP}(f, gamma; transform=false) where IIP
+function WOperator{IIP}(f, u, gamma; transform=false) where IIP
   @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
   if isa(f, Union{SplitFunction, DynamicalODEFunction})
     error("WOperator does not support $(typeof(f)) yet")
   end
-  # Convert mass matrix, if needed
   mass_matrix = f.mass_matrix
+  # TODO: does this play nicely with time-state dependent mass matrix?
   if !isa(mass_matrix, Union{AbstractMatrix,UniformScaling})
     mass_matrix = convert(AbstractMatrix, mass_matrix)
   end
@@ -205,7 +212,7 @@ function WOperator{IIP}(f, gamma; transform=false) where IIP
   if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
     J = DiffEqArrayOperator(J; update_func=f.jac)
   end
-  return WOperator{IIP}(mass_matrix, gamma, J; transform=transform)
+  return WOperator{IIP}(mass_matrix, gamma, J, u; transform=transform)
 end
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
@@ -472,13 +479,13 @@ end
 
   if islin
     J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
-    W = WOperator{false}(mass_matrix, dtgamma, J; transform=W_transform)
+    W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
   elseif DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
-    W = WOperator{false}(mass_matrix, dtgamma, J; transform=W_transform)
+    W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
@@ -542,7 +549,7 @@ end
 function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
-    W = WOperator{IIP}(f, dt)
+    W = WOperator{IIP}(f, u, dt)
     J = W.J
   elseif IIP && f.jac_prototype !== nothing
     J = similar(f.jac_prototype)
@@ -552,7 +559,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
-    W = WOperator{IIP}(f.mass_matrix, dt, J)
+    W = WOperator{IIP}(f.mass_matrix, dt, J, u)
   else
     J = if f.jac_prototype === nothing
       ArrayInterface.zeromatrix(u)

@@ -8,7 +8,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
   for _J in [rand(2, 2), Diagonal(rand(2))]
     _Ws = [-mm + 2.0 * _J, -mm/2.0 + _J]
     for inplace in (true, false), (_W, W_transform) in zip(_Ws, [false, true])
-      W = WOperator{inplace}(mm, 1.0, DiffEqArrayOperator(_J), transform=W_transform)
+      W = WOperator{inplace}(mm, 1.0, DiffEqArrayOperator(_J), b, transform=W_transform)
       set_gamma!(W, 2.0)
       @test convert(AbstractMatrix,W) ≈ _W
       @test W * b ≈ _W * b
