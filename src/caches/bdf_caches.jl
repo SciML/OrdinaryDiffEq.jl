@@ -263,6 +263,7 @@ end
   udiff::uType
   dts::dtsType
   h::dtType
+  nconsteps::Int
   consfailcnt::Int #Consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
@@ -284,6 +285,7 @@ end
   utilde::uType
   nlsolver::N
   h::dtType
+  nconsteps::Int
   consfailcnt::Int #consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
@@ -314,7 +316,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   γₖ = [sum(tTypeNoUnits(inv(j)) for j in 1:k) for k in 1:6]
 
-  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0, EEst1, EEst2, γₖ, tmp)
+  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,1,0, EEst1, EEst2, γₖ, tmp)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -352,7 +354,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   γₖ = [sum(tTypeNoUnits(inv(j)) for j in 1:k) for k in 1:6]
 
-  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,0, EEst1, EEst2, γₖ, tmp)
+  QNDFCache(fsalfirst,D,D2,R,U,1,max_order,udiff,dts,atmp,utilde,nlsolver,h,1,0, EEst1, EEst2, γₖ, tmp)
 end
 
 

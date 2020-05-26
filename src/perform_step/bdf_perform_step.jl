@@ -836,9 +836,10 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       integrator.EEst = one(integrator.EEst)
     end
 
-    if cache.nconsteps < (cache.order + 2)
-      cache.nconsteps = cache.nconsteps + 1
-    else
+    # if cache.nconsteps <= (cache.order + 2)
+    #   cache.nconsteps = cache.nconsteps + 1
+    # else
+    if(true)
       errm1 = 0
       if k > 1
         @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
