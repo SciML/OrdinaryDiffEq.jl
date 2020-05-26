@@ -151,22 +151,37 @@ to be a diffeq operator --- it will automatically be converted to one.
 internal cache (can be specified in the constructor; default to regular `Vector`).
 It supports all of `AbstractDiffEqLinearOperator`'s interface.
 """
-mutable struct WOperator{T,
+mutable struct WOperator{IIP,T,
   MType <: Union{UniformScaling,AbstractMatrix},
   GType <: Real,
-  JType <: DiffEqBase.AbstractDiffEqLinearOperator{T}
+  JType <: DiffEqBase.AbstractDiffEqLinearOperator,
+  F,
+  C,
   } <: DiffEqBase.AbstractDiffEqLinearOperator{T}
   mass_matrix::MType
   gamma::GType
   J::JType
-  transform::Bool       # true => W = mm/gamma - J; false => W = mm - gamma*J
-  inplace::Bool
-  _func_cache           # cache used in `mul!`
-  _concrete_form         # non-lazy form (matrix/number) of the operator
-  WOperator(mass_matrix, gamma, J, inplace; transform=false) = new{eltype(J),typeof(mass_matrix),
-    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,inplace,nothing,nothing)
+  transform::Bool          # true => W = mm/gamma - J; false => W = mm - gamma*J
+  _func_cache::F           # cache used in `mul!`
+  _concrete_form::C        # non-lazy form (matrix/number) of the operator
+
+  function WOperator{IIP}(mass_matrix, gamma, J; transform=false) where IIP
+    if transform
+      _concrete_form = -mass_matrix / gamma + convert(AbstractMatrix,J)
+    else
+      _concrete_form = -mass_matrix + gamma * convert(AbstractMatrix,J)
+    end
+    T = eltype(_concrete_form)
+    _func_cache = similar(_concrete_form, axes(_concrete_form, 1))
+    MType = typeof(mass_matrix)
+    GType = typeof(gamma)
+    JType = typeof(J)
+    F = typeof(_func_cache)
+    C = typeof(_concrete_form)
+    return new{IIP,T,MType,GType,JType,F,C}(mass_matrix,gamma,J,transform,_func_cache,_concrete_form)
+  end
 end
-function WOperator(f, gamma, inplace; transform=false)
+function WOperator{IIP}(f, gamma; transform=false) where IIP
   @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
   if isa(f, Union{SplitFunction, DynamicalODEFunction})
     error("WOperator does not support $(typeof(f)) yet")
@@ -181,13 +196,13 @@ function WOperator(f, gamma, inplace; transform=false)
   if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
     J = DiffEqArrayOperator(J; update_func=f.jac)
   end
-  return WOperator(mass_matrix, gamma, J, inplace; transform=transform)
+  return WOperator{IIP}(mass_matrix, gamma, J; transform=transform)
 end
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
-function Base.convert(::Type{AbstractMatrix}, W::WOperator)
-  if W._concrete_form === nothing || !W.inplace
+function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where IIP
+  if !IIP
     # Allocating
     if W.transform
       W._concrete_form = -W.mass_matrix / W.gamma + convert(AbstractMatrix,W.J)
@@ -218,7 +233,7 @@ function Base.convert(::Type{AbstractMatrix}, W::WOperator)
       end
     end
   end
-  W._concrete_form
+  return W._concrete_form
 end
 function Base.convert(::Type{Number}, W::WOperator)
   if W.transform
@@ -226,7 +241,7 @@ function Base.convert(::Type{Number}, W::WOperator)
   else
     W._concrete_form = -W.mass_matrix + W.gamma * convert(Number,W.J)
   end
-  W._concrete_form
+  return W._concrete_form
 end
 Base.size(W::WOperator, args...) = size(W.J, args...)
 function Base.getindex(W::WOperator, i::Int)
@@ -438,7 +453,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   return nothing
 end
 
-function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
+@noinline function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
   isdae = integrator.alg isa DAEAlgorithm
   if !isdae
@@ -452,13 +467,13 @@ function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
 
   if islin
     J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
-    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
+    W = WOperator{false}(mass_matrix, dtgamma, J; transform=W_transform)
   elseif DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
-    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
+    W = WOperator{false}(mass_matrix, dtgamma, J; transform=W_transform)
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
@@ -522,7 +537,7 @@ end
 function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
-    W = WOperator(f, dt, IIP)
+    W = WOperator{IIP}(f, dt)
     J = W.J
   elseif IIP && f.jac_prototype !== nothing
     J = similar(f.jac_prototype)
@@ -532,7 +547,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
-    W = WOperator(f.mass_matrix, dt, J, IIP)
+    W = WOperator{IIP}(f.mass_matrix, dt, J)
   else
     J = if f.jac_prototype === nothing
       ArrayInterface.zeromatrix(u)
