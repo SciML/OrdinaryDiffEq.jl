@@ -31,7 +31,7 @@ if GROUP == "All" || GROUP == "InterfaceI"
   @time @safetestset "Stiffness Detection Tests" begin include("interface/stiffness_detection_test.jl") end
   @time @safetestset "Composite Interpolation Tests" begin include("interface/composite_interpolation.jl") end
   @time @safetestset "Export tests" begin include("interface/export_tests.jl") end
-  @time @safetestset "Derivative Utilities Tests" begin include("interface/type_handling.jl") end
+  @time @safetestset "Type Handling Tests" begin include("interface/type_handling.jl") end
   @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
   @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
   @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end

@@ -166,13 +166,22 @@ mutable struct WOperator{IIP,T,
   _concrete_form::C        # non-lazy form (matrix/number) of the operator
 
   function WOperator{IIP}(mass_matrix, gamma, J; transform=false) where IIP
-    if transform
-      _concrete_form = -mass_matrix / gamma + convert(AbstractMatrix,J)
+    if J isa Union{Number,DiffEqScalar}
+      if transform
+        _concrete_form = -mass_matrix / gamma + convert(Number,J)
+      else
+        _concrete_form = -mass_matrix + gamma * convert(Number,J)
+      end
+      _func_cache = nothing
     else
-      _concrete_form = -mass_matrix + gamma * convert(AbstractMatrix,J)
+      if transform
+        _concrete_form = -mass_matrix / gamma + convert(AbstractMatrix,J)
+      else
+        _concrete_form = -mass_matrix + gamma * convert(AbstractMatrix,J)
+      end
+      _func_cache = similar(_concrete_form, axes(_concrete_form, 1))
     end
     T = eltype(_concrete_form)
-    _func_cache = similar(_concrete_form, axes(_concrete_form, 1))
     MType = typeof(mass_matrix)
     GType = typeof(gamma)
     JType = typeof(J)
