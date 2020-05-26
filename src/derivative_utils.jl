@@ -152,8 +152,8 @@ internal cache (can be specified in the constructor; default to regular `Vector`
 It supports all of `AbstractDiffEqLinearOperator`'s interface.
 """
 mutable struct WOperator{IIP,T,
-  MType <: Union{UniformScaling,AbstractMatrix},
-  GType <: Real,
+  MType,
+  GType,
   JType <: DiffEqBase.AbstractDiffEqLinearOperator,
   F,
   C,
@@ -274,10 +274,6 @@ function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
 end
 
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
-  if W._func_cache === nothing
-    # Allocate cache only if needed
-    W._func_cache = Vector{eltype(B)}(undef, size(Y, 1))
-  end
   if W.transform
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
