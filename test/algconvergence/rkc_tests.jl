@@ -9,7 +9,7 @@ probArr[2] = prob_ode_2Dlinear
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
   Random.seed!(123)
   eigen_est = (integrator) -> integrator.eigen_est = 1.5e2
-  for iip in [true, false], Alg in [ROCK2, ROCK4, RKC, SERK2, ESERK4, ESERK5], alg in [Alg(), Alg(eigen_est=eigen_est)]
+  for iip in [true, false], alg in [ROCK4(), ROCK4(eigen_est=eigen_est)]
     println(typeof(alg))
     A = randn(20,20)
     test_f(u,p,t) = A*u
@@ -29,7 +29,8 @@ probArr[2] = prob_ode_2Dlinear
   end
 
   Random.seed!(123)
-  for iip in [true, false], Alg in [IRKC], alg in [Alg(), Alg(eigen_est=eigen_est)]
+  for iip in [true, false], Alg in [IRKC]
+    alg = Alg()
     println(typeof(alg))
     A = randn(20,20)
     B = randn(20,20)
@@ -80,13 +81,16 @@ end
     println("ROCKC")
     sim = test_convergence(dts,prob,RKC())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+    println("SERK2")
     sim = test_convergence(dts,prob,SERK2())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+    println("ESERK4")
     sim = test_convergence(dts,prob,ESERK4())
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
   end
   dts = 1 .//2 .^(6:-1:2)
   for prob in probArr
+    println("ESERK5")
     sim = test_convergence(dts,prob,ESERK5())
     @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
   end
