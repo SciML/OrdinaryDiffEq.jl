@@ -477,30 +477,19 @@ end
   islin, isode = islinearfunction(integrator)
   !isdae && update_coefficients!(mass_matrix,uprev,p,t)
 
-  if islin
-    J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
-    W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
-  elseif DiffEqBase.has_jac(f)
-    J = f.jac(uprev, p, t)
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
+  # handle Wfact
+  if W_transform && DiffEqBase.has_Wfact_t(f)
+    W = f.Wfact_t(uprev, p, dtgamma, t)
+    is_compos && (integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) + inv(dtgamma)) # TODO: better estimate
+    return W
+  elseif !W_transform && DiffEqBase.has_Wfact(f)
+    W = f.Wfact(uprev, p, dtgamma, t)
+    if is_compos
+      opn = opnorm(LowerTriangular(W), Inf)
+      integrator.eigen_est = (constvalue(opn) + one(opn)) / dtgamma # TODO: better estimate
     end
-    W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
-    integrator.destats.nw += 1
-  else
-    integrator.destats.nw += 1
-    J = calc_J(integrator, cache)
-    if isdae
-      W = J
-    else
-      W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
-                             -mass_matrix + dtgamma*J
-      W = W_full isa Number ? W_full : DiffEqBase.default_factorize(W_full)
-    end
+    return W
   end
-  (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
-  is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) : integrator.opts.internalnorm(J, t))
-  return W
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
