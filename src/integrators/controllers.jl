@@ -139,10 +139,6 @@ function stepsize_controller!(integrator, alg::QNDF)
   EEst1 = integrator.cache.EEst1
   EEst2 = integrator.cache.EEst2
   if integrator.cache.nconsteps < integrator.cache.order + 2
-    # q = standard_stepsize_controller!(integrator, alg)
-    #@show("Here")
-    #@show integrator.cache.nconsteps
-    #@show integrator.cache.order
     integrator.cache.nconsteps += 1
     q = one(integrator.qold) #quasi-contsant steps    
   else
