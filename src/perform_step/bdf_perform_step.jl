@@ -745,7 +745,7 @@ end
 
 function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack udiff,dts,order,max_order,D,D2,R,U,utilde,atmp,nlsolver = cache
+  @unpack udiff,dts,order,max_order,D,D2,R,U,utilde,atmp,nlsolver,nconsteps = cache
   tmp = nlsolver.tmp
   cnt = integrator.iter
   k = order
@@ -806,7 +806,6 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   for i = 1:k
     @. tm += D[i]
   end
-  #@show tmp 
   @.. nlsolver.tmp = uprev + tm - ϕ
 
   γdt = γ*dt
@@ -835,28 +834,20 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
 
-    if cnt == 1
-      cache.order = 1
-    elseif cnt <= 3
-      cache.order = 2
-    else
-      errm1 = 0
-      if k > 1
-        @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
-        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-        errm1 = integrator.opts.internalnorm(atmp,t)
-        cache.EEst1 = integrator.opts.internalnorm(atmp,t)
-      end
-      backward_diff!(cache,D,D2,k+1,false)
-      @.. tmp = u - uprev
-      for i = 1:(k+1)
-        @. tmp -= D2[i,1]
-      end
-      @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+    if k > 1
+      @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      cache.EEst2 = integrator.opts.internalnorm(atmp,t)
-      errp1 = integrator.opts.internalnorm(atmp,t)
-    end # cnt == 1
+      cache.EEst1 = integrator.opts.internalnorm(atmp,t)
+    end
+    backward_diff!(cache,D,D2,k+1,false)
+    @.. tmp = u - uprev
+    for i = 1:(k+1)
+      @. tmp -= D2[i,1]
+    end
+    @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    cache.EEst2 = integrator.opts.internalnorm(atmp,t)
+    # cnt == 1
   end # integrator.opts.adaptive
 
   swap_tmp = udiff[6]
