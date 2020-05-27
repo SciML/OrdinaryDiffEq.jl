@@ -806,7 +806,6 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   for i = 1:k
     @. tm += D[i]
   end
-  #@show tmp 
   @.. nlsolver.tmp = uprev + tm - ϕ
 
   γdt = γ*dt

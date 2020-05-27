@@ -148,7 +148,6 @@ function stepsize_controller!(integrator, alg::QNDF)
     if(integrator.dt != dt_optim_success || prev_order !=integrator.cache.order)
       integrator.cache.nconsteps = 0
     end
-    #@show dt_optim_success, integrator.cache.order
     q = integrator.dt/dt_optim_success
     integrator.qold = integrator.dt/dt_optim_failed
   end
