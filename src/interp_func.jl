@@ -6,6 +6,7 @@ struct InterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInterpo
   ts::tType
   ks::kType
   dense::Bool
+  sensitivity_context::Bool
   cache::cacheType
 end
 
@@ -16,6 +17,7 @@ struct CompositeInterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiff
   ks::kType
   alg_choice::Vector{Int}
   dense::Bool
+  sensitivity_context::Bool
   cache::cacheType
 end
 
@@ -91,3 +93,14 @@ function CompositeInterpolationData(id::CompositeInterpolationData,f)
                                id.dense,
                                id.cache)
 end
+
+const SENSITIVITY_INTERP_MESSAGE =
+"""
+Standard interpolation is disabled due to sensitivity analysis being
+used for the gradients. Only linear and constant interpolations are
+compatible with non-AD sensitivity analysis calculations. Either
+utilize tooling like saveat to avoid post-solution interpolation, use
+the keyword argument dense=false for linear or constant interpolations,
+or use the keyword argument sensealg=SensitivityADPassThrough() to revert
+to AD-based derivatives.
+"""

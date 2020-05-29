@@ -136,6 +136,7 @@ times ts (sorted), with values timeseries and derivatives ks
 function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
+  id.sensitivity_context && id.dense && error(SENSITIVITY_INTERP_MESSAGE)
   idx = sortperm(tvals,rev=tdir<0)
 
   if typeof(idxs) <: Number
@@ -191,6 +192,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
+  id.sensitivity_context && id.dense && error(SENSITIVITY_INTERP_MESSAGE)
   @inbounds tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
 
@@ -256,6 +258,7 @@ times ts (sorted), with values timeseries and derivatives ks
 function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
+  id.sensitivity_context && id.dense && error(SENSITIVITY_INTERP_MESSAGE)
 
   if continuity === :left
     # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
@@ -298,6 +301,7 @@ times ts (sorted), with values timeseries and derivatives ks
 function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=:left)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
+  id.sensitivity_context && id.dense && error(SENSITIVITY_INTERP_MESSAGE)
 
   if continuity === :left
     # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],

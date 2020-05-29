@@ -61,6 +61,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            alias_u0 = false,
                            alias_du0 = false,
                            initializealg = DefaultInit(),
+                           sensitivity_context=false,
                            kwargs...) where recompile_flag
 
   if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -272,11 +273,11 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   end
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
+    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,sensitivity_context,cache)
     beta2 === nothing && ( beta2=beta2_default(alg.algs[cache.current]) )
     beta1 === nothing && ( beta1=beta1_default(alg.algs[cache.current],beta2) )
   else
-    id = InterpolationData(f,timeseries,ts,ks,dense,cache)
+    id = InterpolationData(f,timeseries,ts,ks,dense,sensitivity_context,cache)
     beta2 === nothing && ( beta2=beta2_default(alg) )
     beta1 === nothing && ( beta1=beta1_default(alg,beta2) )
   end
