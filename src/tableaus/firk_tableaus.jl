@@ -11,6 +11,8 @@ struct RadauIIA3Tableau{T,T2}
   c2::T2
   α::T
   β::T
+  e1::T
+  e2::T
 end
 
 function RadauIIA3Tableau(T,T2)
@@ -26,9 +28,11 @@ function RadauIIA3Tableau(T,T2)
   c2 = T2(1.0)
   α  = T(2.0)
   β  = T(-sqrt(2))
+  e1 = T(1/4)
+  r2 = T(-1/4)
   RadauIIA3Tableau{T,T2}(T11, T12, T21, T22,
   TI11, TI12, TI21, TI22,
-  c1, c2,   α,    β)
+  c1, c2,   α,    β,  e1,  e2)
 end
 
 
