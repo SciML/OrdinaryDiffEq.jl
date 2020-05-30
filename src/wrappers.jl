@@ -32,4 +32,4 @@ end
 @inline Base.axes(af::ArrayFuse) = axes(af.visible)
 
 Adapt.adapt_structure(to, af::ArrayFuse{AT, T, P}) where {AT, T, P} = 
-	ArrayFuse(adapt(to, af.visible), adpat(to, af.hidden), af.p)
+	ArrayFuse(adapt(to, af.visible), adapt(to, af.hidden), af.p)
