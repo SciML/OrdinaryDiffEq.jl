@@ -62,12 +62,32 @@ function DiffEqBase.solution_new_retcode(sol::ODECompositeSolution{T,N,uType,uTy
                      sol.u,sol.u_analytic,sol.errors,sol.t,sol.k,sol.prob,
                      sol.alg,sol.interp,sol.alg_choice,sol.dense,sol.tslocation,
                      sol.destats,retcode)
- end
+end
 
- function DiffEqBase.solution_new_tslocation(sol::ODECompositeSolution{
+function DiffEqBase.solution_new_tslocation(sol::ODECompositeSolution{
    T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE},tslocation) where {T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE}
    ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,DE}(
                       sol.u,sol.u_analytic,sol.errors,sol.t,sol.k,sol.prob,
                       sol.alg,sol.interp,sol.alg_choice,sol.dense,tslocation,
                       sol.destats,sol.retcode)
-  end
+end
+
+function DiffEqBase.sensitivity_solution(sol::ODECompositeSolution,u,t)
+    T = eltype(eltype(u))
+    N = length((size(sol.prob.u0)..., length(u)))
+    interp = if typeof(sol.interp) <: LinearInterpolation
+      LinearInterpolation(t,u)
+    elseif typeof(sol.interp) <: ConstantInterpolation
+      ConstantInterpolation(t,u)
+    else
+      SensitivityInterpolation(t,u)
+    end
+
+    ODECompositeSolution{T,N,typeof(u),typeof(sol.u_analytic),typeof(sol.errors),
+                typeof(t),Nothing,typeof(sol.prob),typeof(sol.alg),
+                typeof(interp),typeof(sol.destats)}(
+                u,sol.u_analytic,sol.errors,t,nothing,sol.prob,
+                sol.alg,interp,sol.alg_choice,
+                sol.dense,sol.tslocation,
+                sol.destats,sol.retcode)
+end
