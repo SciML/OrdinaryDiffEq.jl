@@ -75,9 +75,9 @@ end
 function DiffEqBase.sensitivity_solution(sol::ODECompositeSolution,u,t)
     T = eltype(eltype(u))
     N = length((size(sol.prob.u0)..., length(u)))
-    interp = if typeof(sol.interp) <: LinearInterpolation
+    interp = if typeof(sol.interp) <: DiffEqBase.LinearInterpolation
       LinearInterpolation(t,u)
-    elseif typeof(sol.interp) <: ConstantInterpolation
+    elseif typeof(sol.interp) <: DiffEqBase.ConstantInterpolation
       ConstantInterpolation(t,u)
     else
       SensitivityInterpolation(t,u)
