@@ -34,58 +34,39 @@ end
 end
 
 function initialize!(integrator,cache::LowStorageRK2NCache)
-  @unpack k, tmp, wrapper, williamson_condition = cache
+  @unpack k, tmp, williamson_condition = cache
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = k
-  if williamson_condition
-    wrapper.dt = integrator.dt
-    integrator.f(wrapper,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
-  else
-    integrator.f(k ,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
-    @.. tmp += integrator.dt * k
-  end
+  integrator.f(k ,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  @.. tmp = integrator.dt * k
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NCache,repeat_step=false)
   @unpack t,dt,u,f,p = integrator
-  @unpack k,tmp,wrapper,williamson_condition = cache
+  @unpack k,tmp,williamson_condition = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
   @.. u   = u + B1*tmp
-  if williamson_condition
-    wrapper.dt = dt
-  end
   # other stages
   for i in eachindex(A2end)
     if williamson_condition
-      wrapper.coefficient = A2end[i]
-      f(wrapper, u, p, t+c2end[i]*dt)
+      f(ArrayFuse(tmp, u, (A2end[i], dt, B2end[i])), u, p, t+c2end[i]*dt)
     else
       @.. tmp = A2end[i]*tmp
       f(k, u, p, t+c2end[i]*dt)
       @.. tmp += dt * k
+      @.. u   = u + B2end[i]*tmp
     end
     integrator.destats.nf += 1
-    @.. u   = u + B2end[i]*tmp
   end
 
   f(k, u, p, t+dt)
   @.. tmp = dt*k
   integrator.destats.nf += 1
 end
-
-mutable struct WilliamsonWrapper{kType, dtType, coffType}
-  kref::kType
-  dt::dtType
-  coefficient::coffType
-end
-
-@inline Base.setindex!(a::WilliamsonWrapper, b, c) = (a.kref[c] = a.coefficient * a.kref[c] + a.dt * b)
-@inline Base.size(a::WilliamsonWrapper) = size(a.kref)
-@inline Base.copyto!(a::WilliamsonWrapper, b) = @.. a.kref = a.coefficient * a.kref + a.dt * b
 
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)
