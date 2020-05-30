@@ -1,6 +1,9 @@
 The OrdinaryDiffEq.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2016: ChrisRackauckas.
+> Copyright (c) 2016-2020: ChrisRackauckas, Yingbo Ma, Julia Computing Inc, and
+> other contributors:
+> 
+> https://github.com/SciML/OrdinaryDiffEq.jl/graphs/contributors
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal

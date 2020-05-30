@@ -1,6 +1,6 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
 version = "5.38.3"
 
 [deps]
