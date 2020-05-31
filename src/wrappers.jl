@@ -29,6 +29,11 @@ end
 	return af.visible[index]
 end
 
+@inline function Base.setindex!(af::ArrayFuse, value, index)
+	af.visible[index] = af.p[1] * af.visible[index] + af.p[2] * value
+	af.hidden[index] = af.hidden[index] + af.p[3] * af.visible[index]
+end
+
 @inline Base.size(af::ArrayFuse) = length(af.visible)
 @inline Base.axes(af::ArrayFuse) = axes(af.visible)
 
