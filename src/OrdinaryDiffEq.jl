@@ -55,7 +55,7 @@ module OrdinaryDiffEq
                           forwarddiff_color_jacobian, ForwardColorJacCache,
                           default_chunk_size, getsize
 
-  using MacroTools
+  using MacroTools, Adapt
 
   const CompiledFloats = Union{Float32,Float64,
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
@@ -114,6 +114,7 @@ module OrdinaryDiffEq
   include("cache_utils.jl")
   include("integrators/integrator_interface.jl")
   include("initialize_dae.jl")
+  include("wrappers.jl")
 
   include("perform_step/fixed_timestep_perform_step.jl")
   include("perform_step/symplectic_perform_step.jl")
