@@ -98,9 +98,6 @@ end
   # precalculations
   rtol = @. reltol^(2/3) / 10
   atol = @. rtol * (abstol / reltol)
-  c1m1 = c1-1
-  c2m1 = c2-1
-  c1mc2= c1-c2
   αdt, βdt = α/dt, β/dt
   J = calc_J(integrator,  cache)
 
@@ -115,6 +112,7 @@ end
   else
     LU1 = lu(-(αdt + βdt*im)*mass_matrix + J)
   end
+  integrator.destats.nw += 1
 
   # Newton iteration
   local ndw
@@ -123,10 +121,11 @@ end
   iter = 0
   while iter < maxiters
     iter += 1
-
+    integrator.destats.nnonliniter += 1
     # evaluate function
     ff1 = f(uprev+z1, p, t+c1*dt)
     ff2 = f(uprev+z2, p, t+c2*dt)
+    integrator.destats.nf += 2
 
     fw1 = @. TI11 * ff1 + TI12 * ff2
     fw2 = @. TI21 * ff1 + TI22 * ff2
@@ -142,6 +141,7 @@ end
     rhs1 = @. fw1 - αdt*Mw1 + βdt*Mw2
     rhs2 = @. fw2 - βdt*Mw1 - αdt*Mw2
     dw12 = LU1 \ (@. rhs1 + rhs2*im)
+    integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
 
@@ -188,25 +188,16 @@ end
     tmp = @. e1dt*z1 + e2dt*z2
     mass_matrix != I && (tmp = mass_matrix*tmp)
     utilde = @. integrator.fsalfirst + tmp
-    alg.smooth_est && (utilde = LU1 \ utilde)
+    alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
     atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
     integrator.EEst = internalnorm(atmp, t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
       utilde = @. f0 + tmp
-      alg.smooth_est && (utilde = LU1 \ utilde)
+      alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
       atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
-    end
-  end
-
-  if integrator.EEst <= oneunit(integrator.EEst)
-    cache.dtprev = dt
-    if alg.extrapolant != :constant
-      cache.cont1  = @. z2/c2m1
-      tmp          = @. (z1 - z2)/c1mc2
-      cache.cont2  = @. (tmp - cache.cont1) / c1m1
     end
   end
 
@@ -238,6 +229,7 @@ end
       @inbounds for II in CartesianIndices(J)
         W1[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
       end
+      integrator.destats.nw += 1
   end
 
   #better initial guess
@@ -256,11 +248,13 @@ end
   iter = 0
   while iter < maxiters
     iter += 1
+    integrator.destats.nnonliniter += 1
     # evaluate function
     @. tmp = uprev + z1
     f(fsallast, tmp, p, t+c1*dt)
     @. tmp = uprev + z2
     f(k2, tmp, p, t+c2*dt)
+    integrator.destats.nf += 2
 
     @. fw1 = TI11 * fsallast + TI12 * k2
     @. fw2 = TI21 * fsallast + TI22 * k2
@@ -283,6 +277,7 @@ end
     @. dw12 = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
     needfactor = iter==1
     linsolve2(vec(dw12), W1, vec(dw12), needfactor)
+    integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
 
@@ -321,6 +316,7 @@ end
   end
   if fail_convergence
     integrator.force_stepfail = true
+    integrator.destats.nnonlinconvfail += 1
     return
   end
 
@@ -331,7 +327,7 @@ end
     @. tmp = e1dt*z1 + e2dt*z2
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
     @. utilde = integrator.fsalfirst + tmp
-    alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false)
+    alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
     integrator.EEst = internalnorm(atmp, t)
 
@@ -339,22 +335,14 @@ end
       @. utilde = uprev + utilde
       f(fsallast, utilde, p, t)
       @. utilde = fsallast + tmp
-      alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false);
+      alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
     end
   end
 
-  if integrator.EEst <= oneunit(integrator.EEst)
-    cache.dtprev = dt
-    if alg.extrapolant != :constant
-      cache.cont1  = @. z2/c2m1
-      tmp          = @. (z1 - z2)/c1mc2
-      cache.cont2  = @. (tmp - cache.cont1) / c1m1
-    end
-  end
-
   f(fsallast, u, p, t+dt)
+  integrator.destats.nf += 1
   return
 end
 
@@ -509,6 +497,24 @@ end
       integrator.EEst = internalnorm(atmp, t)
     end
   end
+
+  if integrator.EEst <= oneunit(integrator.EEst)
+    cache.dtprev = dt
+    if alg.extrapolant != :constant
+      cache.cont1  = @.. (z2 - z3)/c2m1
+      tmp          = @.. (z1 - z2)/c1mc2
+      cache.cont2  = @.. (tmp - cache.cont1) / c1m1
+      cache.cont3  = @.. cache.cont2 - (tmp - z1/c1)/c2
+    end
+  end
+
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+  return
+end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,fsallast,fsalfirst = integrator
