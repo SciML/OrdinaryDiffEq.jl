@@ -203,9 +203,9 @@ end
   nlsolver.z = uprev
 
   if f.mass_matrix === I
-    nlsolver.tmp = uprev * inv(γdt) + integrator.fsalfirst
+    nlsolver.tmp = @.. uprev * inv(γdt) + integrator.fsalfirst
   else
-    nlsolver.tmp = f.mass_matrix * uprev * inv(γdt) + integrator.fsalfirst
+    nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
   end
   u = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return

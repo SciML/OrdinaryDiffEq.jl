@@ -65,10 +65,10 @@ Equations II, Springer Series in Computational Mathematics. ISBN
       ustep = z
       # tmp = outertmp ./ hγ
       if mass_matrix === I
-        ztmp = tmp .+ f(z, p, tstep) - α * z .* invγdt
+        ztmp = tmp .+ f(z, p, tstep) .- (α * invγdt) .* z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
-        ztmp = tmp .+ f(z, p, tstep) - α * mass_matrix * z .* invγdt
+        ztmp = tmp .+ f(z, p, tstep) .- (mass_matrix * z) .* (α * invγdt)
       end
     else
       ustep = @. tmp + γ * z
@@ -127,11 +127,11 @@ end
       ustep = z
       f(k, z, p, tstep)
       if mass_matrix === I
-        @.. ztmp = tmp .+ k - α * z .* invγdt
+        @.. ztmp = tmp + k - (α * invγdt) * z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(vec(ztmp), mass_matrix, vec(z))
-        @.. ztmp = tmp .+ k - α * ztmp .* invγdt
+        @.. ztmp = tmp + k - (α * invγdt) * ztmp
       end
     else
       @.. ustep = tmp + γ * z
