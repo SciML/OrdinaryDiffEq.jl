@@ -49,27 +49,34 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,false}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,tmp,γ,α,cache = nlsolver
+  @unpack alg,z,tmp,γ,α,cache = nlsolver
   @unpack tstep,W,invγdt = cache
 
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
-
-  if !isdae
-    mass_matrix = integrator.f.mass_matrix
-  end
 
   if isdae
     ustep = @. uprev + z
     dustep = @. (tmp + α * z) * invγdt
     ztmp = f(dustep, ustep, p, t)
   else
-    ustep = @. tmp + γ * z
-    if mass_matrix === I
-      ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+    mass_matrix = integrator.f.mass_matrix
+    if isodemultistep(alg)
+      # tmp = outertmp ./ hγ
+      if mass_matrix === I
+        ztmp = tmp .+ f(z, p, tstep) - α * z .* invγdt
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        ztmp = tmp .+ f(z, p, tstep) - α * mass_matrix * z .* invγdt
+      end
     else
-      update_coefficients!(mass_matrix, ustep, p, tstep)
-      ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+      ustep = @. tmp + γ * z
+      if mass_matrix === I
+        ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+      end
     end
   end
 
@@ -104,31 +111,36 @@ end
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
 
-  if !isdae
-    mass_matrix = integrator.f.mass_matrix
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nf += 1
   end
 
   if isdae
     @.. ztmp = (tmp + α * z) * invγdt
     @.. ustep = uprev + z
     f(k, ztmp, ustep, p, tstep)
-  else
-    @.. ustep = tmp + γ * z
-    f(k, ustep, p, tstep)
-  end
-  if DiffEqBase.has_destats(integrator)
-    integrator.destats.nf += 1
-  end
-
-  if isdae
     b = vec(k)
   else
-    if mass_matrix === I
-      @.. ztmp = (dt * k - z) * invγdt
+    mass_matrix = integrator.f.mass_matrix
+    if isodemultistep(unwrap_alg(integrator, true))
+      f(k, z, p, tstep)
+      if mass_matrix === I
+        @.. ztmp = tmp .+ k - α * z .* invγdt
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+        @.. ztmp = tmp .+ k - α * ztmp .* invγdt
+      end
     else
-      update_coefficients!(mass_matrix, ustep, p, tstep)
-      mul!(vec(ztmp), mass_matrix, vec(z))
-      @.. ztmp = (dt * k - ztmp) * invγdt
+      @.. ustep = tmp + γ * z
+      f(k, ustep, p, tstep)
+      if mass_matrix === I
+        @.. ztmp = (dt * k - z) * invγdt
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+        @.. ztmp = (dt * k - ztmp) * invγdt
+      end
     end
     b = vec(ztmp)
   end

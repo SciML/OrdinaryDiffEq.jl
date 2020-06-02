@@ -266,11 +266,13 @@ end
   markfirststage!(nlsolver)
 
   # initial guess
-  @.. z = dt*integrator.fsalfirst
-  @.. tmp = uprev + γdt*integrator.fsalfirst
+  @.. z = uprev#dt*integrator.fsalfirst
+  invγdt = inv(γdt)
+  @.. tmp = (uprev + γdt*integrator.fsalfirst) * invγdt
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  @.. u = tmp + 1//2*z
+  @.. u = z
+  #@.. u = tmp + 1//2*z
 
   if integrator.opts.adaptive
     if integrator.iter > 2
