@@ -11,7 +11,9 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
   @label REDO
   if isnewton(nlsolver)
     cache === nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
-    update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
+    γW = nlsolver.γ*integrator.dt
+    isodemultistep(unwrap_alg(integrator, true)) && (γW = γW / nlsolver.α)
+    update_W!(nlsolver, integrator, cache, γW, repeat_step)
   end
 
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver

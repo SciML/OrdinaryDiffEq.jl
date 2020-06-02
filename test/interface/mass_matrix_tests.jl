@@ -69,7 +69,7 @@ dependent_M2 = DiffEqArrayOperator(ones(3,3),update_func=update_func2)
 
     println("SDIRKs")
     @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
-    @test_broken _norm_dsol(Trapezoid(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(Trapezoid(),prob,prob2) ≈ 0 atol=1e-12
     @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
     @test _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2) ≈ 0 atol=1e-10
 

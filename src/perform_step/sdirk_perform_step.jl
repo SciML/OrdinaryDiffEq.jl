@@ -199,14 +199,16 @@ end
   γdt = γ*dt
   markfirststage!(nlsolver)
 
-  # initial guess
-  zprev = dt*integrator.fsalfirst
-  nlsolver.z = zprev # Constant extrapolation
+  # initial guess: constant extrapolation
+  nlsolver.z = uprev
 
-  nlsolver.tmp = uprev + γdt*integrator.fsalfirst
-  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  if f.mass_matrix === I
+    nlsolver.tmp = uprev * inv(γdt) + integrator.fsalfirst
+  else
+    nlsolver.tmp = f.mass_matrix * uprev * inv(γdt) + integrator.fsalfirst
+  end
+  u = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  u = nlsolver.tmp + 1//2*z
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -265,14 +267,18 @@ end
   γdt = γ*dt
   markfirststage!(nlsolver)
 
-  # initial guess
-  @.. z = uprev#dt*integrator.fsalfirst
+  # initial guess: constant extrapolation
+  @.. z = uprev
   invγdt = inv(γdt)
-  @.. tmp = (uprev + γdt*integrator.fsalfirst) * invγdt
+  if mass_matrix === I
+    @.. tmp = uprev * invγdt + integrator.fsalfirst
+  else
+    mul!(u, mass_matrix, uprev)
+    @.. tmp = u * invγdt + integrator.fsalfirst
+  end
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = z
-  #@.. u = tmp + 1//2*z
 
   if integrator.opts.adaptive
     if integrator.iter > 2

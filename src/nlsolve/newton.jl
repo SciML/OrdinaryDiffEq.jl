@@ -61,7 +61,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     ztmp = f(dustep, ustep, p, t)
   else
     mass_matrix = integrator.f.mass_matrix
-    if isodemultistep(alg)
+    if isodemultistep(unwrap_alg(integrator, true))
+      ustep = z
       # tmp = outertmp ./ hγ
       if mass_matrix === I
         ztmp = tmp .+ f(z, p, tstep) - α * z .* invγdt
@@ -123,6 +124,7 @@ end
   else
     mass_matrix = integrator.f.mass_matrix
     if isodemultistep(unwrap_alg(integrator, true))
+      ustep = z
       f(k, z, p, tstep)
       if mass_matrix === I
         @.. ztmp = tmp .+ k - α * z .* invγdt
