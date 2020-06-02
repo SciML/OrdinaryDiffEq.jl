@@ -91,27 +91,41 @@ end
                                                                      NLAnderson},false},
                                           integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack z,γ,α,cache = nlsolver
+  @unpack z,γ,α,cache,tmp = nlsolver
   @unpack tstep = cache
 
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
 
+  γdt = γ*dt
   if isdae
     ustep = @.. uprev + z
-    dustep = @.. (nlsolver.tmp + α * z) * inv(γ*dt)
+    invγdt = inv(γdt)
+    dustep = @.. (tmp + α * z) * invγdt
     dz = f(dustep, ustep, p, t)
     ztmp = @.. z + dz
   else
     mass_matrix = integrator.f.mass_matrix
-    ustep = @.. nlsolver.tmp + γ*z
-    if mass_matrix == I
-      ztmp = dt .* f(ustep, p, tstep)
-      dz = ztmp .- z
+    if isodemultistep(unwrap_alg(integrator, true))
+      ustep = z
+      if mass_matrix === I
+        ztmp = (tmp .+ f(z, p, tstep)) * (γdt / α)
+        dz = ztmp .- z
+      else
+        ztmp = _reshape(mass_matrix * _vec(z), axes(z))
+        dz = (tmp .+ f(z, p, tstep)) * γdt - α .* ztmp
+        ztmp = dz .+ z
+      end
     else
-      ztmp = _reshape(mass_matrix * _vec(z), axes(z))
-      dz = dt .* f(ustep, p, tstep) .- ztmp
-      ztmp = z .+ dz
+      ustep = @.. tmp + γ*z
+      if mass_matrix === I
+        ztmp = dt .* f(ustep, p, tstep)
+        dz = ztmp .- z
+      else
+        ztmp = _reshape(mass_matrix * _vec(z), axes(z))
+        dz = dt .* f(ustep, p, tstep) .- ztmp
+        ztmp = z .+ dz
+      end
     end
   end
   if DiffEqBase.has_destats(integrator)
@@ -141,32 +155,47 @@ end
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
 
+  γdt = γ*dt
   if isdae
     @.. ustep = uprev + z
-    @.. ztmp = (tmp + α * z) * inv(γ*dt)
+    @.. ztmp = (tmp + α * z) * inv(γdt)
     f(k, ztmp, ustep, p, tstep)
-  else
-    mass_matrix = integrator.f.mass_matrix
-    @.. ustep = tmp + γ*z
-    f(k, ustep, p, tstep)
-  end
-  if DiffEqBase.has_destats(integrator)
-    integrator.destats.nf += 1
-  end
-  if isdae
     @.. dz = k
     @.. ztmp = z + dz
   else
-    if mass_matrix == I
-      @.. ztmp = dt * k
-      @.. dz = ztmp - z
+    mass_matrix = integrator.f.mass_matrix
+    ismultistep = isodemultistep(unwrap_alg(integrator, true))
+    if ismultistep
+      ustep = z
+      f(k, ustep, p, tstep)
+      if mass_matrix === I
+        @.. ztmp = (tmp + k) * (γdt / α)
+        @.. dz = ztmp - z
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+        @.. dz = (tmp + k) * γdt - α * ztmp
+        @.. ztmp = dz + z
+      end
     else
-      update_coefficients!(mass_matrix,ustep, p, tstep)
-      mul!(vec(ztmp), mass_matrix, vec(z))
-      @.. dz = dt * k - ztmp
-      @.. ztmp = z + dz
+      @.. ustep = tmp + γ*z
+      f(k, ustep, p, tstep)
+      if mass_matrix === I
+        @.. ztmp = dt * k
+        @.. dz = ztmp - z
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+        @.. dz = dt * k - ztmp
+        @.. ztmp = z + dz
+      end
     end
   end
+
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nf += 1
+  end
+
   # compute norm of residuals
   calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)

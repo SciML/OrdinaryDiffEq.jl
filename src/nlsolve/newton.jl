@@ -49,7 +49,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,false}, integrator)
   @unpack uprev,t,p,dt,opts = integrator
-  @unpack alg,z,tmp,γ,α,cache = nlsolver
+  @unpack z,tmp,γ,α,cache = nlsolver
   @unpack tstep,W,invγdt = cache
 
   f = nlsolve_f(integrator)
