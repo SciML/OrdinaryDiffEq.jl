@@ -31,24 +31,9 @@ end
 Compute next iterate of numerically stable modified Newton iteration
 that is specialized for implicit methods.
 
-It solves
-```math
-z = dt⋅f(tmp + γ⋅z, p, t + c⋅dt)
-```
-by iterating
-```math
-(I + (dt⋅γ)J) Δᵏ = dt*f(tmp + γ⋅zᵏ, p, t + c⋅dt) - zᵏ
-zᵏ⁺¹ = g(zᵏ) = zᵏ - Δᵏ
-```
-or, by utilizing a transformation,
-```math
-W Δᵏ = f(tmp + γ⋅zᵏ, p, t + c⋅dt)/γ - zᵏ/(dt⋅γ)
-zᵏ⁺¹ = g(zᵏ) = zᵏ - Δᵏ/(dt⋅γ)
-```
-where `W = M/(dt⋅γ) - J`, `M` is the mass matrix, `dt` is the step size, `γ` and
-`c` are constants, `J` is the Jacobian matrix. This transformation occurs since `c*J` is
-O(n^2), while `c*M` is usually much sparser. In the most common case, `M=I`, we
-have that `c*M` is O(1) for `I isa UniformScaling`.
+Please check
+https://github.com/SciML/DiffEqDevMaterials/blob/master/newton/output/main.pdf
+for more details.
 
 # References
 
@@ -70,21 +55,29 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
 
-  if !isdae
-    mass_matrix = integrator.f.mass_matrix
-  end
-
   if isdae
     ustep = @. uprev + z
     dustep = @. (tmp + α * z) * invγdt
     ztmp = f(dustep, ustep, p, t)
   else
-    ustep = @. tmp + γ * z
-    if mass_matrix === I
-      ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+    mass_matrix = integrator.f.mass_matrix
+    if isodemultistep(unwrap_alg(integrator, true))
+      ustep = z
+      # tmp = outertmp ./ hγ
+      if mass_matrix === I
+        ztmp = tmp .+ f(z, p, tstep) .- (α * invγdt) .* z
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        ztmp = tmp .+ f(z, p, tstep) .- (mass_matrix * z) .* (α * invγdt)
+      end
     else
-      update_coefficients!(mass_matrix, ustep, p, tstep)
-      ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+      ustep = @. tmp + γ * z
+      if mass_matrix === I
+        ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+      end
     end
   end
 
@@ -119,31 +112,37 @@ end
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
 
-  if !isdae
-    mass_matrix = integrator.f.mass_matrix
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nf += 1
   end
 
   if isdae
     @.. ztmp = (tmp + α * z) * invγdt
     @.. ustep = uprev + z
     f(k, ztmp, ustep, p, tstep)
-  else
-    @.. ustep = tmp + γ * z
-    f(k, ustep, p, tstep)
-  end
-  if DiffEqBase.has_destats(integrator)
-    integrator.destats.nf += 1
-  end
-
-  if isdae
     b = vec(k)
   else
-    if mass_matrix === I
-      @.. ztmp = (dt * k - z) * invγdt
+    mass_matrix = integrator.f.mass_matrix
+    if isodemultistep(unwrap_alg(integrator, true))
+      ustep = z
+      f(k, z, p, tstep)
+      if mass_matrix === I
+        @.. ztmp = tmp + k - (α * invγdt) * z
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+        @.. ztmp = tmp + k - (α * invγdt) * ztmp
+      end
     else
-      update_coefficients!(mass_matrix, ustep, p, tstep)
-      mul!(vec(ztmp), mass_matrix, vec(z))
-      @.. ztmp = (dt * k - ztmp) * invγdt
+      @.. ustep = tmp + γ * z
+      f(k, ustep, p, tstep)
+      if mass_matrix === I
+        @.. ztmp = (dt * k - z) * invγdt
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+        @.. ztmp = (dt * k - ztmp) * invγdt
+      end
     end
     b = vec(ztmp)
   end

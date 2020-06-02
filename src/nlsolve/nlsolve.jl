@@ -3,15 +3,20 @@
 
 Solve
 ```math
-dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
+dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_step=false)
   @label REDO
   if isnewton(nlsolver)
-    cache isa Nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
-    update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
+    cache === nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
+    if isodemultistep(unwrap_alg(integrator, true))
+      γW = nlsolver.γ * integrator.dt / nlsolver.α
+    else
+      γW = nlsolver.γ * integrator.dt
+    end
+    update_W!(nlsolver, integrator, cache, γW, repeat_step)
   end
 
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
@@ -48,7 +53,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
 
     # check for convergence
     iter > 1 && (η = θ / (1 - θ))
-    if (iter == 1 && ndz < 1e-5) || iszero(ndz) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
+    if (iter == 1 && ndz < 1e-5) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
       nlsolver.status = Convergence
       break
     end

@@ -1,9 +1,3 @@
-#@enum NLStatus::Int8 begin
-#  Convergence = 1
-#  TryAgain = 0
-#  Divergence = -1
-#end
-
 # solver
 
 abstract type AbstractNLSolver{algType,iip} end
@@ -25,14 +19,14 @@ mutable struct NLSolver{algType,iip,uType,tType,C<:AbstractNLSolverCache} <: Abs
   cache::C
 end
 
-NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff,
-                    ηold, iter, maxiters, status, cache) where {iip,tType} =
-  NLSolver{typeof(alg), iip, typeof(z), tType, typeof(cache)}(z, tmp, ztmp, convert(tType, γ),
-                                                              convert(tType, c), convert(tType, α),
-                                                              alg, convert(tType, κ),
-                                                              convert(tType, fast_convergence_cutoff),
-                                                              convert(tType, ηold), iter,
-                                                              maxiters, status, cache)
+function NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold, iter, maxiters, status, cache) where {iip,tType}
+  NLSolver{typeof(alg), iip, typeof(z), tType, typeof(cache)}(
+    z, tmp, ztmp, convert(tType, γ),
+    convert(tType, c), convert(tType, α), alg,
+    convert(tType, κ), convert(tType, fast_convergence_cutoff),
+    convert(tType, ηold), iter, maxiters, status, cache
+  )
+end
 
 # caches
 
