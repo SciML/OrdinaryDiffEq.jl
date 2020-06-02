@@ -3,14 +3,14 @@
 
 Solve
 ```math
-dt⋅f(tmp + γ⋅z, p, t + c⋅dt) = z
+dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_step=false)
   @label REDO
   if isnewton(nlsolver)
-    cache isa Nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
+    cache === nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
     update_W!(nlsolver, integrator, cache, nlsolver.γ*integrator.dt, repeat_step)
   end
 

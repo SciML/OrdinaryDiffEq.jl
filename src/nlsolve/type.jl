@@ -1,9 +1,3 @@
-#@enum NLStatus::Int8 begin
-#  Convergence = 1
-#  TryAgain = 0
-#  Divergence = -1
-#end
-
 # solver
 
 abstract type AbstractNLSolver{algType,iip} end

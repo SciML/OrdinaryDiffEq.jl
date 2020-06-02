@@ -31,24 +31,9 @@ end
 Compute next iterate of numerically stable modified Newton iteration
 that is specialized for implicit methods.
 
-It solves
-```math
-z = dt⋅f(tmp + γ⋅z, p, t + c⋅dt)
-```
-by iterating
-```math
-(I + (dt⋅γ)J) Δᵏ = dt*f(tmp + γ⋅zᵏ, p, t + c⋅dt) - zᵏ
-zᵏ⁺¹ = g(zᵏ) = zᵏ - Δᵏ
-```
-or, by utilizing a transformation,
-```math
-W Δᵏ = f(tmp + γ⋅zᵏ, p, t + c⋅dt)/γ - zᵏ/(dt⋅γ)
-zᵏ⁺¹ = g(zᵏ) = zᵏ - Δᵏ/(dt⋅γ)
-```
-where `W = M/(dt⋅γ) - J`, `M` is the mass matrix, `dt` is the step size, `γ` and
-`c` are constants, `J` is the Jacobian matrix. This transformation occurs since `c*J` is
-O(n^2), while `c*M` is usually much sparser. In the most common case, `M=I`, we
-have that `c*M` is O(1) for `I isa UniformScaling`.
+Please check
+https://github.com/SciML/DiffEqDevMaterials/blob/master/newton/output/main.pdf
+for more details.
 
 # References
 
