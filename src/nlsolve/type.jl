@@ -3,15 +3,17 @@
   DIRK
   COEFFICIENT_MULTISTEP
   NORDSIECK_MULTISTEP
+  GLM
 end
 
 # solver
 
 abstract type AbstractNLSolver{algType,iip} end
 
-mutable struct NLSolver{algType,iip,uType,tType,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
+mutable struct NLSolver{algType,iip,uType,tmpType,tType,C<:AbstractNLSolverCache} <: AbstractNLSolver{algType,iip}
   z::uType
-  tmp::uType
+  tmp::uType # DIRK and multistep methods only use tmp
+  tmp2::tmpType # for GLM if neccssary
   ztmp::uType
   γ::tType
   c::tType
@@ -28,9 +30,9 @@ mutable struct NLSolver{algType,iip,uType,tType,C<:AbstractNLSolverCache} <: Abs
 end
 
 # default to DIRK
-function NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold, iter, maxiters, status, cache, method=DIRK) where {iip,tType}
-  NLSolver{typeof(alg), iip, typeof(z), tType, typeof(cache)}(
-    z, tmp, ztmp, convert(tType, γ),
+function NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold, iter, maxiters, status, cache, method=DIRK, tmp2=nothing) where {iip,tType}
+  NLSolver{typeof(alg), iip, typeof(z), typeof(tmp2), tType, typeof(cache)}(
+    z, tmp, tmp2, ztmp, convert(tType, γ),
     convert(tType, c), convert(tType, α), alg,
     convert(tType, κ), convert(tType, fast_convergence_cutoff),
     convert(tType, ηold), iter, maxiters, status, cache, method
