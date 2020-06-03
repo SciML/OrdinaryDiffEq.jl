@@ -188,14 +188,12 @@ end
     tmp = @. e1dt*z1 + e2dt*z2
     mass_matrix != I && (tmp = mass_matrix*tmp)
     utilde = @. integrator.fsalfirst + tmp
-    alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
     atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
     integrator.EEst = internalnorm(atmp, t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
       utilde = @. f0 + tmp
-      alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
       atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
     end
@@ -323,22 +321,10 @@ end
   @. u = uprev + z2
   if adaptive
     utilde = w2
-    e1dt, e2dt = e1/dt, e2/dt
-    @. tmp = e1dt*z1 + e2dt*z2
-    mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
-    @. utilde = integrator.fsalfirst + tmp
-    alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
+    @. utilde = dt*(e1*fsallast + e2*k2)
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
     integrator.EEst = internalnorm(atmp, t)
-
-    if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
-      @. utilde = uprev + utilde
-      f(fsallast, utilde, p, t)
-      @. utilde = fsallast + tmp
-      alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
-      calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
-      integrator.EEst = internalnorm(atmp, t)
-    end
+    @show integrator.EEst, dt, t
   end
 
   f(fsallast, u, p, t+dt)

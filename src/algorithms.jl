@@ -662,7 +662,7 @@ struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
 end
 LinearExponential(;krylov=:off, m=10, iop=0) = LinearExponential(krylov, m, iop)
 
-struct CayleyEuler <: OrdinaryDiffEqAlgorithm end  
+struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 
@@ -671,7 +671,6 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 struct RadauIIA3{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
-  smooth_est::Bool
   extrapolant::Symbol
   κ::Tol
   maxiters::Int
@@ -683,11 +682,11 @@ end
 RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                                 linsolve=DEFAULT_LINSOLVE,
                                 extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
-                                controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
+                                controller=:Predictive,κ=nothing,maxiters=10) =
                                 RadauIIA3{chunk_size,autodiff,typeof(linsolve),
                                 typeof(diff_type),
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                                  linsolve,diff_type,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                                  linsolve,diff_type,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
