@@ -11,7 +11,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
   @label REDO
   if isnewton(nlsolver)
     cache === nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
-    if nlsolver.DIRK
+    if nlsolver.method === DIRK
       γW = nlsolver.γ * integrator.dt
     else
       γW = nlsolver.γ * integrator.dt / nlsolver.α
