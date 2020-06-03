@@ -17,40 +17,46 @@ end
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
   if integrator.iter == 1 && !integrator.u_modified
+    @show 1
     cache.dtₙ₋₁ = dtₙ
     perform_step!(integrator, cache.eulercache, repeat_step)
     cache.fsalfirstprev = integrator.fsalfirst
     return
   end
 
-  # precalculations
+  @show 2
   fₙ₋₁ = integrator.fsalfirst
   ρ = dtₙ/dtₙ₋₁
-  d = 2//3
-  ddt = d*dtₙ
-  dtmp = 1//3*ρ^2
-  d1 = 1+dtmp
-  d2 = -dtmp
-  d3 = -(ρ-1)*1//3
+  β₀ = 2//3
+  β₁ = -(ρ-1)/3
+  α₀ = 1
+  α̂ = ρ^2/3
+  α₁ = 1+α̂
+  α₂ = -α̂
 
-  # calculate W
   markfirststage!(nlsolver)
 
-  zₙ₋₁ = dtₙ*fₙ₋₁
   # initial guess
   if alg.extrapolant == :linear
-    z = dtₙ*fₙ₋₁
+    u = @.. uₙ₋₁ + dtₙ * fₙ₋₁
   else # :constant
-    z = zero(uₙ)
+    u = uₙ₋₁
   end
-  nlsolver.z = z
+  nlsolver.z = u
 
-  nlsolver.tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  nlsolver.γ = d
-  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  mass_matrix = f.mass_matrix
+
+  if mass_matrix === I
+    nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ + (α₁ * uₙ₋₁ + α₂ * uₙ₋₂)) / (dtₙ * β₀)
+  else
+    _tmp = mass_matrix * @.. (α₁ * uₙ₋₁ + α₂ * uₙ₋₂)
+    nlsolver.tmp = ((dtₙ * β₁) * fₙ₋₁ + _tmp) / (dtₙ * β₀)
+  end
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+  uₙ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
-  uₙ = nlsolver.tmp + d*z
   integrator.fsallast = f(uₙ,p,t+dtₙ)
   integrator.destats.nf += 1
 
