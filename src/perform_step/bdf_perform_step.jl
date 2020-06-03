@@ -17,14 +17,13 @@ end
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
   if integrator.iter == 1 && !integrator.u_modified
-    @show 1
     cache.dtₙ₋₁ = dtₙ
+    cache.eulercache.nlsolver.method = DIRK
     perform_step!(integrator, cache.eulercache, repeat_step)
     cache.fsalfirstprev = integrator.fsalfirst
     return
   end
 
-  @show 2
   fₙ₋₁ = integrator.fsalfirst
   ρ = dtₙ/dtₙ₋₁
   β₀ = 2//3
@@ -54,6 +53,7 @@ end
   end
   nlsolver.γ = β₀
   nlsolver.α = α₀
+  nlsolver.method = COEFFICIENT_MULTISTEP
   uₙ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 

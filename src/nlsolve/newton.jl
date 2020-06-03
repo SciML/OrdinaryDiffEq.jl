@@ -61,7 +61,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     ztmp = f(dustep, ustep, p, t)
   else
     mass_matrix = integrator.f.mass_matrix
-    if isodemultistep(unwrap_alg(integrator, true))
+    if nlsolver.method === COEFFICIENT_MULTISTEP
       ustep = z
       # tmp = outertmp ./ hγ
       if mass_matrix === I
@@ -123,7 +123,7 @@ end
     b = vec(k)
   else
     mass_matrix = integrator.f.mass_matrix
-    if isodemultistep(unwrap_alg(integrator, true))
+    if nlsolver.method === COEFFICIENT_MULTISTEP
       ustep = z
       f(k, z, p, tstep)
       if mass_matrix === I

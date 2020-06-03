@@ -1,3 +1,10 @@
+# Method type
+@enum MethodType begin
+  DIRK
+  COEFFICIENT_MULTISTEP
+  NORDSIECK_MULTISTEP
+end
+
 # solver
 
 abstract type AbstractNLSolver{algType,iip} end
@@ -17,14 +24,16 @@ mutable struct NLSolver{algType,iip,uType,tType,C<:AbstractNLSolverCache} <: Abs
   maxiters::Int
   status::NLStatus
   cache::C
+  method::MethodType
 end
 
-function NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold, iter, maxiters, status, cache) where {iip,tType}
+# default to DIRK
+function NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold, iter, maxiters, status, cache, method=DIRK) where {iip,tType}
   NLSolver{typeof(alg), iip, typeof(z), tType, typeof(cache)}(
     z, tmp, ztmp, convert(tType, γ),
     convert(tType, c), convert(tType, α), alg,
     convert(tType, κ), convert(tType, fast_convergence_cutoff),
-    convert(tType, ηold), iter, maxiters, status, cache
+    convert(tType, ηold), iter, maxiters, status, cache, method
   )
 end
 

@@ -209,6 +209,7 @@ end
   end
   nlsolver.α = 1
   nlsolver.γ = γ
+  nlsolver.method = COEFFICIENT_MULTISTEP
   u = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
@@ -280,6 +281,7 @@ end
   end
   nlsolver.α = 1
   nlsolver.γ = γ
+  nlsolver.method = COEFFICIENT_MULTISTEP
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = z
