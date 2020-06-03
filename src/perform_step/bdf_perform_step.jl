@@ -16,6 +16,7 @@ end
   alg = unwrap_alg(integrator, true)
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
+  # TODO: this doesn't look right
   if integrator.iter == 1 && !integrator.u_modified
     cache.dtₙ₋₁ = dtₙ
     cache.eulercache.nlsolver.method = DIRK
@@ -49,7 +50,7 @@ end
     nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ + (α₁ * uₙ₋₁ + α₂ * uₙ₋₂)) / (dtₙ * β₀)
   else
     _tmp = mass_matrix * @.. (α₁ * uₙ₋₁ + α₂ * uₙ₋₂)
-    nlsolver.tmp = ((dtₙ * β₁) * fₙ₋₁ + _tmp) / (dtₙ * β₀)
+    nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ + _tmp) / (dtₙ * β₀)
   end
   nlsolver.γ = β₀
   nlsolver.α = α₀
