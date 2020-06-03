@@ -115,7 +115,7 @@ end
   integrator.destats.nw += 1
 
   # Newton iteration
-  local ndw
+  local ndw, ff1, ff2
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
@@ -184,19 +184,9 @@ end
   u = @. uprev + z2
 
   if adaptive
-    e1dt, e2dt = e1/dt, e2/dt
-    tmp = @. e1dt*z1 + e2dt*z2
-    mass_matrix != I && (tmp = mass_matrix*tmp)
-    utilde = @. integrator.fsalfirst + tmp
+    utilde = @. dt*(e1*ff1 + e2*ff2)
     atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
     integrator.EEst = internalnorm(atmp, t)
-
-    if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
-      f0 = f(uprev .+ utilde, p, t)
-      utilde = @. f0 + tmp
-      atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-      integrator.EEst = internalnorm(atmp, t)
-    end
   end
 
   integrator.fsallast = f(u, p, t+dt)
@@ -317,6 +307,8 @@ end
     integrator.destats.nnonlinconvfail += 1
     return
   end
+  cache.ηold = η
+  cache.iter = iter
 
   @. u = uprev + z2
   if adaptive
@@ -324,7 +316,6 @@ end
     @. utilde = dt*(e1*fsallast + e2*k2)
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
     integrator.EEst = internalnorm(atmp, t)
-    @show integrator.EEst, dt, t
   end
 
   f(fsallast, u, p, t+dt)
