@@ -569,13 +569,3 @@ isesdirk(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
-
-isodemultistep(::Any) = false
-isodemultistep(::Union{
-  # TODO: fix the nlsolve for other multistep methods
-  #ABDF2,AB3,AB4,AB5,ABM32,ABM43,ABM54,
-  #VCAB3,VCAB4,VCAB5,VCABM3,VCABM4,VCABM5,VCABM,
-  #CNAB2,CNLF2,
-  #QNDF1,QNDF2,QNDF,SBDF,
-  Trapezoid,
-}) = true

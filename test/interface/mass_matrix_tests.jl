@@ -68,13 +68,13 @@ dependent_M2 = DiffEqArrayOperator(ones(3,3),update_func=update_func2)
     prob, prob2 = make_mm_probs(mm, Val(iip))
 
     println("SDIRKs")
-    @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-12
     @test _norm_dsol(Trapezoid(),prob,prob2) ≈ 0 atol=1e-12
     @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
     @test _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2) ≈ 0 atol=1e-10
 
     println("BDFs")
-    @test _norm_dsol(ABDF2(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(ABDF2(),prob,prob2) ≈ 0 atol=1e-12
 
     @test _norm_dsol(QBDF1(),prob,prob2) ≈ 0 atol=1e-7
     @test _norm_dsol(QBDF2(),prob,prob2) ≈ 0 atol=1e-7

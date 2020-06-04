@@ -207,6 +207,9 @@ end
   else
     nlsolver.tmp = (f.mass_matrix * uprev) .* inv(γdt) .+ integrator.fsalfirst
   end
+  nlsolver.α = 1
+  nlsolver.γ = γ
+  nlsolver.method = COEFFICIENT_MULTISTEP
   u = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
@@ -276,6 +279,9 @@ end
     mul!(u, mass_matrix, uprev)
     @.. tmp = u * invγdt + integrator.fsalfirst
   end
+  nlsolver.α = 1
+  nlsolver.γ = γ
+  nlsolver.method = COEFFICIENT_MULTISTEP
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = z

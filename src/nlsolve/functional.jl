@@ -106,7 +106,7 @@ end
     ztmp = @.. z + dz
   else
     mass_matrix = integrator.f.mass_matrix
-    if isodemultistep(unwrap_alg(integrator, true))
+    if nlsolver.method === COEFFICIENT_MULTISTEP
       ustep = z
       if mass_matrix === I
         ztmp = (tmp .+ f(z, p, tstep)) * (γdt / α)
@@ -164,8 +164,7 @@ end
     @.. ztmp = z + dz
   else
     mass_matrix = integrator.f.mass_matrix
-    ismultistep = isodemultistep(unwrap_alg(integrator, true))
-    if ismultistep
+    if nlsolver.method === COEFFICIENT_MULTISTEP
       ustep = z
       f(k, ustep, p, tstep)
       if mass_matrix === I
