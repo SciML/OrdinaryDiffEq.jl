@@ -353,7 +353,6 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
 
   u = nlsolve!(nlsolver, integrator, cache, repeat_step)
 
-  @show nlsolvefail(nlsolver)
   nlsolvefail(nlsolver) && return
   if integrator.opts.adaptive 
     if integrator.success_iter == 0
@@ -393,7 +392,7 @@ end
 function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,D,D2,R,U,dtₙ₋₁,utilde,atmp,nlsolver = cache
-  @unpack tmp,z = nlsolver
+  @unpack z,tmp,ztmp = nlsolver
   alg = unwrap_alg(integrator, true)
   κ = alg.kappa
   cnt = integrator.iter
@@ -410,19 +409,36 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
     κ = zero(alg.kappa)
   end
 
-  # precalculations
-  γ₁ = 1//1
-  nlsolver.γ = γ = inv((1-κ)*γ₁)
-  @.. tmp = uprev + D[1] - γ * (γ₁*D[1])
+  #Changing uprev2 after D Array has changed with step-size
+  uprev2 = uprev - D[1]
+    
+  β₀ = 1 
+  α₀ = 1-κ
+  α₁ = 1-2*κ
+  α₂ = κ
 
   markfirststage!(nlsolver)
 
   # initial guess
-  @.. z = (uprev + D[1] - nlsolver.tmp)*inv(γ)
+  nlsolver.z = uprev + sum(D)
 
+  mass_matrix = f.mass_matrix
+
+  if mass_matrix === I
+    @.. tmp = @.. (α₁ * uprev + α₂ * uprev2) / (dt * β₀)
+  else
+    dz = nlsolver.cache.dz
+    @.. dz = α₁ * uprev + α₂ * uprev2
+    mul!(ztmp, mass_matrix, dz)
+    @.. tmp = ztmp / (dt * β₀)
+  end
+
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+  nlsolver.method = COEFFICIENT_MULTISTEP
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  @.. u = tmp + γ*z
+  @.. u = z
 
   if integrator.opts.adaptive
     if integrator.success_iter == 0
@@ -430,7 +446,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
     else
       @.. D2[1] = u - uprev
       @.. D2[2] = D2[1] - D[1]
-      @.. utilde = (κ*γ₁ + inv(k+1)) * D2[2]
+      @.. utilde = (κ + inv(k+1)) * D2[2]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
