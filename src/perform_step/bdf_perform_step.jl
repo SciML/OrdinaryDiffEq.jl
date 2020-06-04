@@ -508,11 +508,11 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
     end
   end
 
-  β₀ = 1
-  α₀ = (1-κ)*γ₂
+  β₀ = inv((1-κ)*γ₂)
+  α₀ = 1
 
-  u₀ = α₀*(uprev + D[1] + D[2])
-  ϕ = γ₁*D[1] + γ₂*D[2]
+  u₀ = uprev + D[1] + D[2]
+  ϕ = (γ₁*D[1] + γ₂*D[2])*β₀
 
   markfirststage!(nlsolver)
 
@@ -614,11 +614,11 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
     end
   end
 
-  β₀ = 1
-  α₀ = (1-κ)*γ₂
+  β₀ = inv((1-κ)*γ₂)
+  α₀ = 1
 
-  u₀ = α₀*(uprev + D[1] + D[2])
-  ϕ = γ₁*D[1] + γ₂*D[2]
+  u₀ = uprev + D[1] + D[2]
+  ϕ = (γ₁*D[1] + γ₂*D[2])*β₀
 
   markfirststage!(nlsolver)
 
@@ -632,7 +632,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   else
     dz = nlsolver.cache.dz
     @.. dz = u₀ - ϕ
-    mul!(ztmp,mass_matrix,dz)
+    mul!(ztmp, mass_matrix, dz)
     @.. tmp = ztmp / (dt * β₀)
   end
 
