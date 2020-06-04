@@ -425,7 +425,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   mass_matrix = f.mass_matrix
 
   if mass_matrix === I
-    @.. tmp = @.. (α₁ * uprev + α₂ * uprev2) / (dt * β₀)
+    @.. tmp = (α₁ * uprev + α₂ * uprev2) / (dt * β₀)
   else
     dz = nlsolver.cache.dz
     @.. dz = α₁ * uprev + α₂ * uprev2
@@ -508,20 +508,32 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
     end
   end
 
-  # precalculations
-  nlsolver.γ = γ = inv((1-κ)*γ₂)
-  u₀ = uprev + D[1] + D[2]
-  ϕ = γ * (γ₁*D[1] + γ₂*D[2])
-  nlsolver.tmp = u₀ - ϕ
+  β₀ = 1
+  α₀ = (1-κ)*γ₂
+
+  u₀ = α₀*(uprev + D[1] + D[2])
+  ϕ = γ₁*D[1] + γ₂*D[2]
 
   markfirststage!(nlsolver)
 
   # initial guess
-  nlsolver.z = (uprev + sum(D) - nlsolver.tmp)*inv(γ)
+  nlsolver.z = uprev + sum(D)
 
-  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  mass_matrix = f.mass_matrix
+
+  if mass_matrix === I
+    nlsolver.tmp = @.. (u₀ - ϕ)/ (dt * β₀)
+  else
+    _tmp = mass_matrix * @.. (u₀ - ϕ)
+    nlsolver.tmp = @.. _tmp / (dt * β₀)
+  end
+
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+  nlsolver.method = COEFFICIENT_MULTISTEP
+
+  u = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  u = nlsolver.tmp + γ*z
 
   if integrator.opts.adaptive
     if integrator.success_iter == 0
