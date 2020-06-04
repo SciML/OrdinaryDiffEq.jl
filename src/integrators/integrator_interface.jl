@@ -80,7 +80,7 @@ end
 
 # the ordering of the cache arrays is important!!!
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::RadauIIA5,cache) = (cache.tmp,cache.atmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::Union{RadauIIA3,RadauIIA5},cache) = (cache.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.nlsolver.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,cache) = (cache.tmp,cache.utilde)

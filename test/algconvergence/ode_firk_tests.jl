@@ -30,20 +30,23 @@ for iip in (true, false)
 end
 
 ##Tests fot RadauIIA3
-
-f = (u,p,t)->cos(t)
-prob_ode_sin = ODEProblem(ODEFunction(f; analytic=(u0,p,t)->sin(t)), 0.,(0.0,1.0))
-
-f = (u,p,t)-> 1.01*u
-prob_ode_exp = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->u0*exp(1.01*t)), 1.01,(0.,1.0))
-
-probs_oop = [prob_ode_sin, prob_ode_exp]
-
-alg = RadauIIA3()
-
-dts = 1 ./2 .^(8:-1:1)
-
-for prob in [probs_oop; prob_ode_2Dlinear]
-  sim = test_convergence(dts, prob, alg)
+for prob in [prob_ode_linear, prob_ode_2Dlinear]
+  dts = 1 ./2 .^(8:-1:1)
+  sim = test_convergence(dts, prob, RadauIIA3())
   @test sim.𝒪est[:final] ≈ 3 atol = 0.25
+end
+
+# test adaptivity
+for iip in (true, false)
+  if iip
+    vanstiff = ODEProblem{iip}(van, [0;sqrt(3)], (0.0,1.0), 1e6)
+  else
+    vanstiff = ODEProblem{false}((u,p,t)->van(u,p,t), [0;sqrt(3)], (0.0,1.0), 1e6)
+  end
+  sol = solve(vanstiff, RadauIIA3())
+  if iip
+    @test sol.destats.naccept + sol.destats.nreject > sol.destats.njacs # J reuse
+    @test sol.destats.njacs < sol.destats.nw # W reuse
+  end
+  @test length(sol) < 5000 # the error estimate is not very good
 end

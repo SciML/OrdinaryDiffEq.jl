@@ -60,18 +60,6 @@ function initialize!(integrator, cache::RadauIIA3Cache)
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
   integrator.destats.nf += 1
-  #=
-  if integrator.opts.adaptive
-    @unpack abstol, reltol = integrator.opts
-    if reltol isa Number
-      cache.rtol = reltol^(2/3) / 10
-      cache.atol = cache.rtol * (abstol / reltol)
-    else
-      @.. cache.rtol = reltol^(2/3) / 10
-      @.. cache.atol = cache.rtol * (abstol / reltol)
-    end
-  end
-  =#
   nothing
 end
 
@@ -100,7 +88,7 @@ end
 @muladd function perform_step!(integrator,cache::RadauIIA3ConstantCache)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
-  @unpack c1, c2, α, β = cache.tab
+  @unpack c1, c2, α, β, e1, e2 = cache.tab
   @unpack κ, cont1, cont2 = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
@@ -124,18 +112,20 @@ end
   else
     LU1 = lu(-(αdt + βdt*im)*mass_matrix + J)
   end
+  integrator.destats.nw += 1
 
   # Newton iteration
-  local ndw
+  local ndw, ff1, ff2
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
   while iter < maxiters
     iter += 1
-
+    integrator.destats.nnonliniter += 1
     # evaluate function
     ff1 = f(uprev+z1, p, t+c1*dt)
     ff2 = f(uprev+z2, p, t+c2*dt)
+    integrator.destats.nf += 2
 
     fw1 = @. TI11 * ff1 + TI12 * ff2
     fw2 = @. TI21 * ff1 + TI22 * ff2
@@ -151,6 +141,7 @@ end
     rhs1 = @. fw1 - αdt*Mw1 + βdt*Mw2
     rhs2 = @. fw2 - βdt*Mw1 - αdt*Mw2
     dw12 = LU1 \ (@. rhs1 + rhs2*im)
+    integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
 
@@ -192,6 +183,12 @@ end
 
   u = @. uprev + z2
 
+  if adaptive
+    utilde = @. dt*(e1*ff1 + e2*ff2)
+    atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
+    integrator.EEst = internalnorm(atmp, t)
+  end
+
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -202,7 +199,7 @@ end
 @muladd function perform_step!(integrator, cache::RadauIIA3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,fsallast,fsalfirst = integrator
   @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
-  @unpack c1, c2, α, β = cache.tab
+  @unpack c1, c2, α, β, e1, e2 = cache.tab
   @unpack κ, cont1, cont2 = cache
   @unpack z1, z2, w1, w2,
           dw12,
@@ -220,6 +217,7 @@ end
       @inbounds for II in CartesianIndices(J)
         W1[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
       end
+      integrator.destats.nw += 1
   end
 
   #better initial guess
@@ -236,13 +234,15 @@ end
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   fail_convergence = true
   iter = 0
-  while iter < 2
+  while iter < maxiters
     iter += 1
+    integrator.destats.nnonliniter += 1
     # evaluate function
     @. tmp = uprev + z1
     f(fsallast, tmp, p, t+c1*dt)
     @. tmp = uprev + z2
     f(k2, tmp, p, t+c2*dt)
+    integrator.destats.nf += 2
 
     @. fw1 = TI11 * fsallast + TI12 * k2
     @. fw2 = TI21 * fsallast + TI22 * k2
@@ -265,6 +265,7 @@ end
     @. dw12 = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
     needfactor = iter==1
     linsolve2(vec(dw12), W1, vec(dw12), needfactor)
+    integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
 
@@ -303,13 +304,22 @@ end
   end
   if fail_convergence
     integrator.force_stepfail = true
+    integrator.destats.nnonlinconvfail += 1
     return
   end
   cache.ηold = η
   cache.iter = iter
 
   @. u = uprev + z2
+  if adaptive
+    utilde = w2
+    @. utilde = dt*(e1*fsallast + e2*k2)
+    calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
+    integrator.EEst = internalnorm(atmp, t)
+  end
+
   f(fsallast, u, p, t+dt)
+  integrator.destats.nf += 1
   return
 end
 

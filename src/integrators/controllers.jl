@@ -7,7 +7,7 @@
     if typeof(alg) <: Union{RKC,IRKC,SERK2}
       fac = gamma
     else
-      if alg isa RadauIIA5
+      if alg isa Union{RadauIIA3, RadauIIA5}
         @unpack iter = integrator.cache
         @unpack maxiters = alg
       else
@@ -140,11 +140,11 @@ function stepsize_controller!(integrator, alg::QNDF)
   EEst2 = integrator.cache.EEst2
   if integrator.cache.nconsteps < integrator.cache.order + 2
     integrator.cache.nconsteps += 1
-    q = one(integrator.qold) #quasi-contsant steps    
+    q = one(integrator.qold) #quasi-contsant steps
   else
     prev_order = integrator.cache.order
     dt_optim_success, dt_optim_failed = QNDF_stepsize_and_order!(integrator.cache, integrator.EEst, EEst1, EEst2, integrator.dt, integrator.cache.order)
-    
+
     if(integrator.dt != dt_optim_success || prev_order !=integrator.cache.order)
       integrator.cache.nconsteps = 0
     end
@@ -246,7 +246,7 @@ function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
       dt_optim_failed = h/2
       cache.order = k
     end
-    
+
     if 1.2 < z <= 10
       hₖ = F * h
     elseif z > 10

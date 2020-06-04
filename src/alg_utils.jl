@@ -68,7 +68,7 @@ qmin_default(alg::DP8) = 1//3
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
-qmax_default(alg::RadauIIA5) = 8
+qmax_default(alg::Union{RadauIIA3,RadauIIA5}) = 8
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
@@ -392,6 +392,7 @@ alg_adaptive_order(alg::Feagin14) = 12
 alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
 
+alg_adaptive_order(alg::RadauIIA3) = 1
 alg_adaptive_order(alg::RadauIIA5) = 3
 alg_adaptive_order(alg::RKC) = 2
 alg_adaptive_order(alg::IRKC) = 1
