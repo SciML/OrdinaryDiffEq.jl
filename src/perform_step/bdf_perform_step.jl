@@ -581,7 +581,7 @@ end
 function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,utilde,atmp,nlsolver = cache
-  tmp = nlsolver.tmp
+  @unpack z,tmp,ztmp = nlsolver
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 2
@@ -614,18 +614,35 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
     end
   end
 
-  # precalculations
-  nlsolver.γ = γ = inv((1-κ)*γ₂)
-  @.. tmp = uprev + D[1] + D[2] - γ * (γ₁*D[1] + γ₂*D[2])
+  β₀ = 1
+  α₀ = (1-κ)*γ₂
+
+  u₀ = α₀*(uprev + D[1] + D[2])
+  ϕ = γ₁*D[1] + γ₂*D[2]
 
   markfirststage!(nlsolver)
 
   # initial guess
-  @.. nlsolver.z = (uprev + D[1] + D[2] - nlsolver.tmp)*inv(γ)
+  nlsolver.z = uprev + sum(D)
+
+  mass_matrix = f.mass_matrix
+
+  if mass_matrix === I
+    @.. tmp =  (u₀ - ϕ)/ (dt * β₀)
+  else
+    dz = nlsolver.cache.dz
+    @.. dz = u₀ - ϕ
+    mul!(ztmp,mass_matrix,dz)
+    @.. tmp = ztmp / (dt * β₀)
+  end
+
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+  nlsolver.method = COEFFICIENT_MULTISTEP
 
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  @.. u = tmp + γ*z
+  @.. u = z
 
   if integrator.opts.adaptive
     if integrator.success_iter == 0
