@@ -52,7 +52,7 @@ end
   @.. u   = u + B1*tmp
   # other stages
   for i in eachindex(A2end)
-    if williamson_condition
+    if integrator.alg.williamson_condition
       f(ArrayFuse(tmp, u, (A2end[i], dt, B2end[i])), u, p, t+c2end[i]*dt)
     else
       @.. tmp = A2end[i]*tmp
