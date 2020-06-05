@@ -733,24 +733,35 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       γₖ[i] = 1//1
     end
   end
-  γ = inv((1-κ)*γₖ[k])
-  nlsolver.γ = γ
+  β₀ = inv((1-κ)*γₖ[k])
+  α₀ = 1
+
   # precalculations
   u₀ = uprev + sum(D)  # u₀ is predicted value
   ϕ = zero(u)
   for i = 1:k
-    ϕ += γₖ[i]*D[i] # Done .+ because of +(::Rational{Int64}, ::Array{Float64,1}) use case
+    ϕ += γₖ[i]*D[i]
   end
-  ϕ *= γ
-  nlsolver.tmp = u₀ - ϕ
-  γdt = γ*dt
+  ϕ *= β₀
   markfirststage!(nlsolver)
   # initial guess
-  nlsolver.z = (uprev + sum(D) -nlsolver.tmp)*inv(γ)
-  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
-  nlsolvefail(nlsolver) && return
-  u = nlsolver.tmp + γ*z
+  nlsolver.z = uprev + sum(D)
 
+  mass_matrix = f.mass_matrix
+
+  if mass_matrix == I
+    nlsolver.tmp = @.. (u₀ - ϕ)/ (dt * β₀)
+  else
+    _tmp = mass_matrix * @.. (u₀ - ϕ)
+    nlsolver.tmp = @.. _tmp / (dt * β₀)
+  end
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+  nlsolver.method = COEFFICIENT_MULTISTEP
+
+  u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+  
   if integrator.opts.adaptive
     if cnt == 1
       integrator.EEst = one(integrator.EEst)
