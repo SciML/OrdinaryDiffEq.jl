@@ -904,7 +904,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     
   else
     dz = nlsolver.cache.dz
-    @.. dz = u₀ - ϕ
+    @.. dz = uprev + tm - ϕ
     mul!(ztmp, mass_matrix, dz)
     @.. tmp = ztmp / (dt * β₀)
   end
