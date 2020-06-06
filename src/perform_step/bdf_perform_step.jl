@@ -733,24 +733,35 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       γₖ[i] = 1//1
     end
   end
-  γ = inv((1-κ)*γₖ[k])
-  nlsolver.γ = γ
+  β₀ = inv((1-κ)*γₖ[k])
+  α₀ = 1
+
   # precalculations
   u₀ = uprev + sum(D)  # u₀ is predicted value
   ϕ = zero(u)
   for i = 1:k
-    ϕ += γₖ[i]*D[i] # Done .+ because of +(::Rational{Int64}, ::Array{Float64,1}) use case
+    ϕ += γₖ[i]*D[i]
   end
-  ϕ *= γ
-  nlsolver.tmp = u₀ - ϕ
-  γdt = γ*dt
+  ϕ *= β₀
   markfirststage!(nlsolver)
   # initial guess
-  nlsolver.z = (uprev + sum(D) -nlsolver.tmp)*inv(γ)
-  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
-  nlsolvefail(nlsolver) && return
-  u = nlsolver.tmp + γ*z
+  nlsolver.z = uprev + sum(D)
 
+  mass_matrix = f.mass_matrix
+
+  if mass_matrix == I
+    nlsolver.tmp = @.. (u₀ - ϕ)/ (dt * β₀)
+  else
+    _tmp = mass_matrix * @.. (u₀ - ϕ)
+    nlsolver.tmp = @.. _tmp / (dt * β₀)
+  end
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+  nlsolver.method = COEFFICIENT_MULTISTEP
+
+  u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+  
   if integrator.opts.adaptive
     if cnt == 1
       integrator.EEst = one(integrator.EEst)
@@ -821,7 +832,7 @@ end
 function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack udiff,dts,order,max_order,D,D2,R,U,utilde,atmp,nlsolver,nconsteps = cache
-  tmp = nlsolver.tmp
+  @unpack z,tmp,ztmp = nlsolver
   cnt = integrator.iter
   k = order
   κ = integrator.alg.kappa[k]
@@ -868,28 +879,43 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       γₖ[i] = 1//1
     end
   end
-  γ = inv((1-κ)*γₖ[k])
-  nlsolver.γ = γ
+  β₀ = inv((1-κ)*γₖ[k])
+  α₀ = 1
+
   # precalculations
   ϕ = fill!(utilde, zero(eltype(u)))
   for i = 1:k
     @. ϕ += γₖ[i]*D[i]
   end
-  #@.. ϕ *= γ
-  lmul!(γ,ϕ)
-  tm = fill!(nlsolver.ztmp, zero(eltype(u)))
+  lmul!(β₀,ϕ)
+  tm = fill!(ztmp, zero(eltype(u)))
   for i = 1:k
     @. tm += D[i]
   end
-  @.. nlsolver.tmp = uprev + tm - ϕ
 
-  γdt = γ*dt
   markfirststage!(nlsolver)
   # initial guess
-  @.. nlsolver.z = (uprev + tm -nlsolver.tmp)*inv(γ)
+  @.. nlsolver.z = uprev + tm
+
+  mass_matrix = f.mass_matrix
+  
+  if mass_matrix === I
+    @.. tmp = (uprev + tm - ϕ)/ (dt * β₀)
+    
+  else
+    dz = nlsolver.cache.dz
+    @.. dz = uprev + tm - ϕ
+    mul!(ztmp, mass_matrix, dz)
+    @.. tmp = ztmp / (dt * β₀)
+  end
+
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+  nlsolver.method = COEFFICIENT_MULTISTEP
+
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  @.. u = nlsolver.tmp + γ*z
+  @.. u = z
 
 
   if integrator.opts.adaptive
