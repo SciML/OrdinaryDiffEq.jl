@@ -121,7 +121,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
-  isempty(algebraic_vars) || isempty(algebraic_eqs) && return
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 	f(tmp,u0,p,t)
 	tmp .= algebraic_eqs .* tmp
 
@@ -148,7 +148,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
-  isempty(algebraic_vars) || isempty(algebraic_eqs) && return
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 	du = f(u0,p,t)
 	resid = du[algebraic_eqs]
 
@@ -243,7 +243,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
-  isempty(algebraic_vars) || isempty(algebraic_eqs) && return
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 	tmp = get_tmp_cache(integrator)[1]
 
 	f(tmp,u,p,t)
@@ -279,7 +279,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
-  isempty(algebraic_vars) || isempty(algebraic_eqs) && return
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 
 	du = f(u0,p,t)
 	resid = du[algebraic_eqs]
@@ -300,7 +300,6 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 		du = f(u,p,t)
 		out .= @view du[algebraic_eqs]
 	end
-
 	r = nlsolve(nlequation, u0[algebraic_vars])
 	alg_u .= r.zero
 
