@@ -23,6 +23,31 @@ function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,
   MagnusMidpointConstantCache()
 end
 
+@cache struct MagnusGauss4Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+end
+
+function alg_cache(alg::MagnusGauss4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  MagnusGauss4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+end
+
+struct MagnusGauss4ConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::MagnusGauss4,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  MagnusGauss4ConstantCache()
+end
+
 @cache struct LieEulerCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

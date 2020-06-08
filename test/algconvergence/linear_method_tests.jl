@@ -18,7 +18,7 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 # u' = A(t)u solvers
 
 function update_func(A,u,p,t)
-    A[1,1] = cos(t)
+    A[1,1] = t+cos(t)
     A[2,1] = sin(t)
     A[1,2] = cos(t)*sin(t)
     A[2,2] = sin(t)^2
@@ -64,6 +64,18 @@ sim = analyticless_test_convergence(dts,prob,LieEuler(),test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol=0.2
 sim = analyticless_test_convergence(dts,prob,LieEuler(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol=0.2
+
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (1.0, 6.))
+dts = 1 ./2 .^(10:-1:1)
+sol  = solve(prob,OrdinaryDiffEq.MagnusGauss4(),dt=1/4)
+
+dts = 1 ./2 .^(7:-1:1)
+test_setup = Dict(:alg=>Vern6(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,OrdinaryDiffEq.MagnusGauss4(),test_setup)
+@test sim.𝒪est[:l2] ≈ 4 atol=0.2
+sim = analyticless_test_convergence(dts,prob,OrdinaryDiffEq.MagnusGauss4(krylov=true),test_setup)
+@test sim.𝒪est[:l2] ≈ 4 atol=0.2
 
 function B(y::AbstractMatrix)
     b = similar(y)
