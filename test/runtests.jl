@@ -1,9 +1,16 @@
+using Pkg
 using SafeTestsets
 const LONGER_TESTS = false
 
 const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV,"APPVEYOR")
-const is_TRAVIS = haskey(ENV,"TRAVIS")
+const is_CI = haskey(ENV,"CI")
+
+function activate_downstream_env()
+    Pkg.activate("downstream")
+    Pkg.develop(PackageSpec(path=dirname(@__DIR__)))
+    Pkg.instantiate()
+end
 
 #Start Test Script
 
@@ -112,21 +119,16 @@ end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
   @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
-  using Pkg
-  if is_TRAVIS
-    using Pkg
-    Pkg.add("DiffEqCallbacks")
-    Pkg.add("DiffEqSensitivity")
+  if is_CI
+    activate_downstream_env()
   end
   Pkg.test("DiffEqCallbacks")
   Pkg.test("DiffEqSensitivity")
 end
 
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
-  if is_TRAVIS
-    using Pkg
-    Pkg.add("ODEInterface")
-    Pkg.add("ODEInterfaceDiffEq")
+  if is_CI
+    activate_downstream_env()
   end
   @time @safetestset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
   @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/odeinterface_regression.jl") end
@@ -137,7 +139,10 @@ if !is_APPVEYOR && GROUP == "Multithreading"
 end
 
 if !is_APPVEYOR && GROUP == "GPU"
-  @time @safetestset "Simple GPU" begin
+    if is_CI
+        activate_downstream_env()
+    end
+    @time @safetestset "Simple GPU" begin
     import OrdinaryDiffEq
     include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl"))
   end
