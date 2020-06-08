@@ -12,6 +12,7 @@ ordinary differential equation solvers and utilities. While completely independe
 and usable on its own, users interested in using this
 functionality should check out [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl).
 
+
 ## API
 
 OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.juliadiffeq.org/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
