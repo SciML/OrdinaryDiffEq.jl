@@ -1,7 +1,7 @@
 include: https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml
 
 variables:
-  JULIA_NUM_THREADS: '4'
+  JULIA_NUM_THREADS: 4
 
 .base:
   extends:
