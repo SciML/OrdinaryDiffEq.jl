@@ -936,7 +936,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     end
 
     if k > 1
-      @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
+      @.. utilde = (integrator.alg.kappa[k-1]*γₖ[k-1] + inv(k)) * D[k]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.EEst1 = integrator.opts.internalnorm(atmp,t)
     end
@@ -945,7 +945,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     for i = 1:(k+1)
       @. tmp -= D2[i,1]
     end
-    @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+    @.. utilde = (integrator.alg.kappa[k+1]*γₖ[k+1] + inv(k+2)) * tmp
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     cache.EEst2 = integrator.opts.internalnorm(atmp,t)
     # cnt == 1
