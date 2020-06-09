@@ -138,6 +138,7 @@ function stepsize_controller!(integrator, alg::QNDF)
   cnt = integrator.iter
   EEst1 = integrator.cache.EEst1
   EEst2 = integrator.cache.EEst2
+  prev_order = integrator.cache.order
   dttmp = QNDF_stepsize_and_order!(integrator.cache, integrator.EEst, EEst1, EEst2, integrator.dt, integrator.cache.order)
   integrator.cache.nconsteps = min(integrator.cache.nconsteps+1,5+2); #Max-order + 2
   if integrator.EEst > one(integrator.EEst)
@@ -145,11 +146,13 @@ function stepsize_controller!(integrator, alg::QNDF)
     q = integrator.dt/dttmp
     integrator.qold = integrator.dt/q
   else
-    if integrator.cache.nconsteps <= integrator.cache.order + 2
+    if integrator.cache.nconsteps < integrator.cache.order + 2
       q = one(integrator.qold) #quasi-contsant steps
       integrator.qold = integrator.dt/q
     else
-      integrator.cache.nconsteps = 1
+      if (integrator.dt != dttmp || prev_order != integrator.cache.order)
+        integrator.cache.nconsteps = 1
+      end
       q = integrator.dt/dttmp
     end
   end
