@@ -951,6 +951,17 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     # cnt == 1
   end # integrator.opts.adaptive
 
+  if integrator.EEst > one(integrator.EEst)
+    for i = 1:5
+      fill!(D[i], zero(eltype(u)))
+    end
+    for i = 1:6, j = 1:6
+      fill!(D2[i,j], zero(eltype(u)))
+    end
+    fill!(R, zero(t)); fill!(U, zero(t))
+    return
+  end
+
   swap_tmp = udiff[6]
   for i = 6:-1:2
     dts[i] = dts[i-1]

@@ -138,18 +138,20 @@ function stepsize_controller!(integrator, alg::QNDF)
   cnt = integrator.iter
   EEst1 = integrator.cache.EEst1
   EEst2 = integrator.cache.EEst2
-  if integrator.cache.nconsteps < integrator.cache.order + 2
-    integrator.cache.nconsteps += 1
-    q = one(integrator.qold) #quasi-contsant steps
+  dttmp = QNDF_stepsize_and_order!(integrator.cache, integrator.EEst, EEst1, EEst2, integrator.dt, integrator.cache.order)
+  integrator.cache.nconsteps = min(integrator.cache.nconsteps+1,5+2); #Max-order + 2
+  if integrator.EEst > one(integrator.EEst)
+    integrator.cache.nconsteps = 1
+    q = integrator.dt/dttmp
+    integrator.qold = integrator.dt/q
   else
-    prev_order = integrator.cache.order
-    dt_optim_success, dt_optim_failed = QNDF_stepsize_and_order!(integrator.cache, integrator.EEst, EEst1, EEst2, integrator.dt, integrator.cache.order)
-
-    if(integrator.dt != dt_optim_success || prev_order !=integrator.cache.order)
-      integrator.cache.nconsteps = 0
+    if integrator.cache.nconsteps <= integrator.cache.order + 2
+      q = one(integrator.qold) #quasi-contsant steps
+      integrator.qold = integrator.dt/q
+    else
+      integrator.cache.nconsteps = 1
+      q = integrator.dt/dttmp
     end
-    q = integrator.dt/dt_optim_success
-    integrator.qold = integrator.dt/dt_optim_failed
   end
   q
 end
@@ -166,7 +168,7 @@ end
 function step_reject_controller!(integrator,alg::QNDF)
   #append no. of consecutive failed steps
   integrator.cache.consfailcnt += 1
-  integrator.dt = integrator.dt/integrator.qold
+  integrator.dt = integrator.qold
 end
 
 
@@ -235,7 +237,7 @@ function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
       hₙ = h
       kₙ = k
     end
-    dt_optim_success = hₙ
+    dttmp = hₙ
     cache.order = kₙ
 
   else
@@ -243,7 +245,7 @@ function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
 
     # step is not successful
     if cache.consfailcnt >= 1  # postfail
-      dt_optim_failed = h/2
+      dttmp = h/2
       cache.order = k
     end
 
@@ -269,10 +271,10 @@ function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
         kₙ = max(k-1,1)
       end
     end
-    dt_optim_failed = hₙ
+    dttmp = hₙ
     cache.order = kₙ
   end
-  return dt_optim_success, dt_optim_failed
+  return dttmp
 end
 
 @inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
