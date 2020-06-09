@@ -87,16 +87,20 @@ end
 
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  tmp = zero(u)
+  tmp = similar(u)
+  @show typeof(tmp)
+  tmp .= 0
   williamson_condition = alg.williamson_condition
   if calck
-    k = zero(rate_prototype)
+    k = similar(rate_prototype)
+    k .= 0
     williamson_condition = false
   else
     if williamson_condition
       k = tmp
     else
-      k = zero(rate_prototype)
+      k = similar(rate_prototype)
+      k .= 0
     end
   end
   LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
@@ -502,16 +506,18 @@ end
 
 function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
+  tmp = similar(u)
   williamson_condition = alg.williamson_condition
   if calck
-    k = zero(rate_prototype)
+    k = similar(rate_prototype)
+    k .= 0
     williamson_condition = false
   else
     if williamson_condition
       k = tmp
     else
-      k = zero(rate_prototype)
+      k = similar(rate_prototype)
+      k .= 0
     end
   end
   LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
