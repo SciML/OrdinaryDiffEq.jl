@@ -335,8 +335,8 @@ function islinearfunction(f, alg)::Tuple{Bool,Bool}
 end
 
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
-  alg isa DAEAlgorithm && return true, true
   repeat_step && return false, false
+  alg isa DAEAlgorithm && return true, true
   # TODO: RosW
   isnewton(nlsolver) || return true, true
   isfirstcall(nlsolver) && return true, true
@@ -493,8 +493,8 @@ end
     if isdae
       W = J
     else
-      W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
-                             -mass_matrix + dtgamma*J
+      W_full = W_transform ? J - mass_matrix*inv(dtgamma) :
+                             dtgamma*J - mass_matrix
       W = W_full isa Number ? W_full : DiffEqBase.default_factorize(W_full)
     end
   end

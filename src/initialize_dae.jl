@@ -121,6 +121,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 	f(tmp,u0,p,t)
 	tmp .= algebraic_eqs .* tmp
 
@@ -131,7 +132,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	if alg_extrapolates(integrator.alg)
 		recursivecopy!(integrator.uprev2,integrator.uprev)
 	end
-
+  return nothing
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
@@ -147,10 +148,11 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 	du = f(u0,p,t)
 	resid = du[algebraic_eqs]
 
-	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
+  integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
 	nlequation_oop = function (u)
 		update_coefficients!(M,u,p,t)
@@ -164,6 +166,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	if alg_extrapolates(integrator.alg)
 		integrator.uprev2 = integrator.uprev
 	end
+  return
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
@@ -194,7 +197,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 	if alg_extrapolates(integrator.alg)
 		recursivecopy!(integrator.uprev2,integrator.uprev)
 	end
-
+  return
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
@@ -240,6 +243,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 	tmp = get_tmp_cache(integrator)[1]
 
 	f(tmp,u,p,t)
@@ -275,11 +279,12 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	update_coefficients!(M,u0,p,t)
 	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
 	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+  (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 
 	du = f(u0,p,t)
 	resid = du[algebraic_eqs]
 
-	integrator.opts.internalnorm(resid,t) <= alg.abstol && return
+  integrator.opts.internalnorm(resid,t) <= alg.abstol && return
 
 	if u0 isa Number
 		# This doesn't fix static arrays!
@@ -295,7 +300,6 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 		du = f(u,p,t)
 		out .= @view du[algebraic_eqs]
 	end
-
 	r = nlsolve(nlequation, u0[algebraic_vars])
 	alg_u .= r.zero
 
