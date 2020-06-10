@@ -139,9 +139,7 @@ if !is_APPVEYOR && GROUP == "Multithreading"
 end
 
 if !is_APPVEYOR && GROUP == "GPU"
-    if is_CI
-        activate_downstream_env()
-    end
+    activate_downstream_env()
     @time @safetestset "Simple GPU" begin
     import OrdinaryDiffEq
     include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl"))
