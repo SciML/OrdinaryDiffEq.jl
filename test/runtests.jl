@@ -119,9 +119,7 @@ end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
   @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
-  if is_CI
-    activate_downstream_env()
-  end
+  activate_downstream_env()
   Pkg.test("DiffEqCallbacks")
   Pkg.test("DiffEqSensitivity")
 end
