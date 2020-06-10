@@ -127,9 +127,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
 end
 
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
-  if is_CI
-    activate_downstream_env()
-  end
+  activate_downstream_env()
   @time @safetestset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
   @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/odeinterface_regression.jl") end
 end
