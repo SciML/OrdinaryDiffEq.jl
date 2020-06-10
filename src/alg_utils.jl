@@ -49,7 +49,7 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
-isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,LieEuler,CayleyEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
+isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,LieEuler,MagnusGauss4,CayleyEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
 
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
