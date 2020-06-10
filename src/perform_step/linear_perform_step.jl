@@ -55,8 +55,6 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step=false)
   end
   integrator.f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
-  # println("Final uprev : $uprev and Final u : $u")
-  # println("**************")
 end
 
 function initialize!(integrator, cache::LieEulerCache)
