@@ -42,8 +42,6 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p,alg = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
-  # println("**************")
-  # println("Initial uprev : $uprev and Initial u : $u")
   L1 = deepcopy(integrator.f.f)
   L2 = deepcopy(integrator.f.f)
   update_coefficients!(L1,uprev,p,t+dt*(1/2+sqrt(3)/6))
