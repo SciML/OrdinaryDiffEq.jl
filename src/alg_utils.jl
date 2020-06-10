@@ -49,7 +49,7 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
-isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,LieEuler,CayleyEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
+isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,LieEuler,MagnusGauss4,CayleyEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
 
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
@@ -280,6 +280,7 @@ alg_order(alg::RadauIIA3) = 3
 alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::MagnusMidpoint) = 2
+alg_order(alg::MagnusGauss4) = 4
 alg_order(alg::LinearExponential) = 1
 alg_order(alg::MagnusLeapfrog) = 2
 alg_order(alg::Trapezoid) = 2
