@@ -18,10 +18,10 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 # u' = A(t)u solvers
 
 function update_func(A,u,p,t)
-    A[1,1] = t+cos(t)
+    A[1,1] = cos(t)
     A[2,1] = sin(t)
-    A[1,2] = cos(t)*sin(t)
-    A[2,2] = sin(t)^2
+    A[1,2] = -sin(t)
+    A[2,2] = cos(t)
 end
 A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0.0, 5.))
