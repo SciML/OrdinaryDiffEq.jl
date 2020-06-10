@@ -4,7 +4,6 @@ const LONGER_TESTS = false
 
 const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV,"APPVEYOR")
-const is_CI = haskey(ENV,"CI")
 
 function activate_downstream_env()
     Pkg.activate("downstream")
