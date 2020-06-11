@@ -328,13 +328,15 @@ end
       @.. tmp = (1-σ₁)*uprev+σ₁*u+σ₁*(σ₁-1)*((1-2σ₁)*(u-uprev)+(σ₁-1)*dt*k₁ + σ₁*dt*k₅)
       @.. pprime = k₁ + σ₁*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev + σ₁*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
       f(_p,tmp,p,t+σ₁*dt)
-      calculate_residuals!(atmp, dt*(_p - pprime), uprev, u, integrator.opts.abstol,
+      @.. tmp = dt*(_p - pprime)
+      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                            integrator.opts.reltol,integrator.opts.internalnorm,t)
       e1 = integrator.opts.internalnorm(atmp,t)
       @.. tmp = (1-σ₂)*uprev+σ₂*u+σ₂*(σ₂-1)*((1-2σ₂)*(u-uprev)+(σ₂-1)*dt*k₁ + σ₂*dt*k₅)
       @.. pprime = k₁ + σ₂*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev + σ₂*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
       f(_p,tmp,p,t+σ₂*dt)
-      calculate_residuals!(atmp, dt*(_p - pprime), uprev, u, integrator.opts.abstol,
+      @.. tmp = dt*(_p - pprime)
+      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                            integrator.opts.reltol,integrator.opts.internalnorm,t)
       e2 = integrator.opts.internalnorm(atmp,t)
       integrator.EEst = 2.1342*max(e1,e2)
