@@ -6,11 +6,11 @@ ODEProblemLibrary.importodeproblems()
 @testset "init" begin
     prob = ODEProblemLibrary.prob_ode_linear
     prob2D = ODEProblemLibrary.prob_ode_2Dlinear
-    
+
     inferred = [BS3(), Tsit5(), RK4(), Vern6()]
     for alg in inferred
-        @inferred init(prob, alg)
-        @inferred init(prob2D, alg)
+        @test_broken init(prob, alg)
+        @test_broken init(prob2D, alg)
     end
 
     notinferred = [SDIRK2(), TRBDF2(), KenCarp4(), Rosenbrock23(), Rodas4()]
