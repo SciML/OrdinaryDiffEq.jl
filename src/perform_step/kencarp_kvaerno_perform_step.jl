@@ -2093,6 +2093,6 @@ end
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
   else
-    @.. integrator.fsallast = z₇./dt
+    @.. integrator.fsallast = z₇/dt
   end
 end
