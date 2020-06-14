@@ -353,7 +353,10 @@ function handle_tstop!(integrator)
     tdir_t = integrator.tdir * integrator.t
     tdir_ts_top = top(tstops)
     if tdir_t == tdir_ts_top
-      pop!(tstops)
+      while tdir_t == tdir_ts_top #remove all redundant copies in heap == tdir_t
+        pop!(tstops)
+        isempty(tstops) ? break : tdir_ts_top = top(tstops)
+      end
       integrator.just_hit_tstop = true
     elseif tdir_t > tdir_ts_top
       if !integrator.dtchangeable
