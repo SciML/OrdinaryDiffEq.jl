@@ -1841,7 +1841,7 @@ end
     u = nlsolver.tmp + γ*z₅
     k5 = dt*f2( u,p,t+c5*dt)
     integrator.destats.nf2 += 1
-    tmp = uprev + a61*z₁ + a61*z₂ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
+    tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
   else
     #z₆ = α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
     #tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
@@ -2033,7 +2033,7 @@ end
     @.. u = tmp + γ*z₅
     f2( k5, u,p,t+c5*dt); k5 .*= dt
     integrator.destats.nf2 += 1
-    @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
+    @.. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
   else
     #@.. z₆ = α61*z₁ + α62*z₂
     #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
