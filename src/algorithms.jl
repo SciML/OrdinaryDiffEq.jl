@@ -655,7 +655,7 @@ struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 @article{tsitouras2011runge,
   title={Runge--Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption},
   author={Tsitouras, Ch},
-  journal={Computers \& Mathematics with Applications},
+  journal={Computers \\& Mathematics with Applications},
   volume={62},
   number={2},
   pages={770--775},
@@ -673,8 +673,8 @@ Springer-Verlag.
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
-Tanaka M., Muramatsu S., Yamashita S., (1992), "On the Optimization of Some Nine-Stage
-Seventh-order Runge-Kutta Method", Information Processing Society of Japan,
+Tanaka M., Muramatsu S., Yamashita S., (1992), On the Optimization of Some Nine-Stage
+Seventh-order Runge-Kutta Method, Information Processing Society of Japan,
 33 (12), pp. 1512-1526.
 """
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -685,7 +685,7 @@ struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
   title={High-order explicit Runge-Kutta methods using m-symmetry},
   author={Feagin, Terry},
   year={2012},
-  publisher={Neural, Parallel \& Scientific Computations}
+  publisher={Neural, Parallel \\& Scientific Computations}
 }
 """
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -695,7 +695,7 @@ struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
   title={High-order explicit Runge-Kutta methods using m-symmetry},
   author={Feagin, Terry},
   year={2012},
-  publisher={Neural, Parallel \& Scientific Computations}
+  publisher={Neural, Parallel \\& Scientific Computations}
 }
 """
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -710,7 +710,7 @@ struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 @article{bogacki1996efficient,
   title={An efficient runge-kutta (4, 5) pair},
   author={Bogacki, P and Shampine, Lawrence F},
-  journal={Computers \& Mathematics with Applications},
+  journal={Computers \\& Mathematics with Applications},
   volume={32},
   number={6},
   pages={15--28},
@@ -1010,7 +1010,7 @@ struct KahanLi8 <: OrdinaryDiffEqAlgorithm end
   number={4-5},
   pages={597--613},
   year={2005},
-  publisher={Taylor \& Francis}
+  publisher={Taylor \\& Francis}
 }
 """
 struct SofSpa10 <: OrdinaryDiffEqAlgorithm end
@@ -1060,7 +1060,7 @@ struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 @article{dormand1987runge,
   title={Runge-kutta-nystrom triples},
   author={Dormand, JR and Prince, PJ},
-  journal={Computers \& Mathematics with Applications},
+  journal={Computers \\& Mathematics with Applications},
   volume={13},
   number={12},
   pages={937--949},
@@ -1663,7 +1663,7 @@ SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 """
 @article{kvaerno2004singly,
   title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
-  author={Kv{\ae}rn{\o}, Anne},
+  author={Kv{\\ae}rn{\\o}, Anne},
   journal={BIT Numerical Mathematics},
   volume={44},
   number={3},
@@ -1857,7 +1857,7 @@ Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 """
 @article{kvaerno2004singly,
   title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
-  author={Kv{\ae}rn{\o}, Anne},
+  author={Kv{\\ae}rn{\\o}, Anne},
   journal={BIT Numerical Mathematics},
   volume={44},
   number={3},
@@ -1884,7 +1884,7 @@ Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 """
 @article{kvaerno2004singly,
   title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
-  author={Kv{\ae}rn{\o}, Anne},
+  author={Kv{\\ae}rn{\\o}, Anne},
   journal={BIT Numerical Mathematics},
   volume={44},
   number={3},
