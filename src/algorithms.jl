@@ -219,10 +219,28 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
       sequence,diff_type)
 end
 
+"""
+Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion
+Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006.
+doi: https://doi.org/10.1016/j.compfluid.2005.04.003
+"""
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{shampine2005solving,
+  title={Solving ODEs and DDEs with residual control},
+  author={Shampine, LF},
+  journal={Applied Numerical Mathematics},
+  volume={52},
+  number={1},
+  pages={113--127},
+  year={2005},
+  publisher={Elsevier}
+}
+"""
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RKM <: OrdinaryDiffEqAlgorithm end
 struct Anas5{T} <: OrdinaryDiffEqAlgorithm
@@ -230,45 +248,112 @@ struct Anas5{T} <: OrdinaryDiffEqAlgorithm
 end
 Anas5(; w=1) = Anas5(w)
 
+"""
+Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
+Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
+228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
+"""
 struct ORK256 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   ORK256(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+@article{carpenter1994fourth,
+  title={Fourth-order 2N-storage Runge-Kutta schemes},
+  author={Carpenter, Mark H and Kennedy, Christopher A},
+  year={1994}
+}
+"""
 struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   CarpenterKennedy2N54(;williamson_condition=true) = new(williamson_condition)
 end
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
 struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
+
+"""
+D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
+Computational Acoustics. Journal of Computational Physics, 143(2), pp 674-681, 1998. doi:
+https://doi.org/10.1006/jcph.1998.5986
+"""
 struct HSLDDRK64 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   HSLDDRK64(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
+Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
+pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+"""
 struct DGLDDRK73_C <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   DGLDDRK73_C(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
+Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
+pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+"""
 struct DGLDDRK84_C <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   DGLDDRK84_C(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
+Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
+pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+"""
 struct DGLDDRK84_F <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   DGLDDRK84_F(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
+Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
+doi: https://doi.org/10.1016/j.jcp.2011.09.003
+"""
 struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   NDBLSRK124(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
+Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
+doi: https://doi.org/10.1016/j.jcp.2011.09.003
+"""
 struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   NDBLSRK134(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
+Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
+doi: https://doi.org/10.1016/j.jcp.2011.09.003
+"""
 struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   NDBLSRK144(;williamson_condition=true) = new(williamson_condition)
 end
+
+"""
+M. Calvo, J. M. Franco, L. Randez. A New Minimum Storage Runge–Kutta Scheme
+for Computational Acoustics. Journal of Computational Physics, 201, pp 1-12, 2004.
+doi: https://doi.org/10.1016/j.jcp.2004.05.012
+"""
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Kostas Tselios, T. E. Simos. Optimized Runge–Kutta Methods with Minimal Dispersion and Dissipation
+for Problems arising from Computational Ccoustics. Physics Letters A, 393(1-2), pp 38-47, 2007.
+doi: https://doi.org/10.1016/j.physleta.2006.10.072
+"""
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
 struct CKLLSRK43_2 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct CKLLSRK54_3C <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -286,64 +371,169 @@ struct CKLLSRK54_3M_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct CKLLSRK65_4M_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct CKLLSRK85_4FM_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct CKLLSRK75_4M_5R <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct ParsaniKetchesonDeconinck3S32 <: OrdinaryDiffEqAlgorithm end
-struct ParsaniKetchesonDeconinck3S82 <: OrdinaryDiffEqAlgorithm end
-struct ParsaniKetchesonDeconinck3S53 <: OrdinaryDiffEqAlgorithm end
-struct ParsaniKetchesonDeconinck3S173 <: OrdinaryDiffEqAlgorithm end
-struct ParsaniKetchesonDeconinck3S94 <: OrdinaryDiffEqAlgorithm end
-struct ParsaniKetchesonDeconinck3S184 <: OrdinaryDiffEqAlgorithm end
-struct ParsaniKetchesonDeconinck3S105 <: OrdinaryDiffEqAlgorithm end
-struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
-struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S32 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S82 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S53 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S173 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S94 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S184 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S105 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
+"Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
+SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
+doi: https://doi.org/10.1137/120885899
+"""
+struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
+
+struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 struct RKO65 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
 
+"""
+Shu, Chi-Wang, and Stanley Osher. "Efficient implementation of essentially
+non-oscillatory shock-capturing schemes." Journal of Computational Physics
+77.2 (1988): 439-471.
+"""
 struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK22(stage_limiter! = trivial_limiter!) = SSPRK22(stage_limiter!, trivial_limiter!)
+
+"""
+Shu, Chi-Wang, and Stanley Osher. "Efficient implementation of essentially
+non-oscillatory shock-capturing schemes." Journal of Computational Physics
+77.2 (1988): 439-471.
+"""
 struct SSPRK33{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK33(stage_limiter! = trivial_limiter!) = SSPRK33(stage_limiter!, trivial_limiter!)
+
+"""
+Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
+Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+"""
 struct SSPRK53{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 struct KYKSSPRK42 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
 SSPRK53(stage_limiter! = trivial_limiter!) = SSPRK53(stage_limiter!, trivial_limiter!)
+
+"""
+Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+"""
 struct SSPRK53_2N1{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK53_2N1(stage_limiter! = trivial_limiter!) = SSPRK53_2N1(stage_limiter!, trivial_limiter!)
+
+"""
+Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+"""
 struct SSPRK53_2N2{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK53_2N2(stage_limiter! = trivial_limiter!) = SSPRK53_2N2(stage_limiter!, trivial_limiter!)
+
+"""
+Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+"""
 struct SSPRK53_H{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK53_H(stage_limiter! = trivial_limiter!) = SSPRK53_H(stage_limiter!, trivial_limiter!)
+
+"""
+Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
+Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+"""
 struct SSPRK63{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK63(stage_limiter! = trivial_limiter!) = SSPRK63(stage_limiter!, trivial_limiter!)
+
+"""
+Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
+Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+"""
 struct SSPRK73{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK73(stage_limiter! = trivial_limiter!) = SSPRK73(stage_limiter!, trivial_limiter!)
+
+"""
+Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
+Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+"""
 struct SSPRK83{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK83(stage_limiter! = trivial_limiter!) = SSPRK83(stage_limiter!, trivial_limiter!)
+
+"""
+Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu. Strong stability
+  preserving Runge-Kutta and multistep time discretizations. World Scientific,
+  2011.
+"""
 struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -359,50 +549,243 @@ struct SSPRKMSVS32{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   step_limiter!::StepLimiter
 end
 SSPRKMSVS32(stage_limiter! = trivial_limiter!) = SSPRKMSVS32(stage_limiter!, trivial_limiter!)
+
+"""
+Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu. Strong stability
+preserving Runge-Kutta and multistep time discretizations. World Scientific,
+2011.
+"""
 struct SSPRK932{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK932(stage_limiter! = trivial_limiter!) = SSPRK932(stage_limiter!, trivial_limiter!)
+
+"""
+Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
+Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+"""
 struct SSPRK54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK54(stage_limiter! = trivial_limiter!) = SSPRK54(stage_limiter!, trivial_limiter!)
+
+"""
+Ketcheson, David I. "Highly efficient strong stability-preserving Runge–Kutta
+methods with low-storage implementations." SIAM Journal on Scientific
+Computing 30.4 (2008): 2113-2136.
+"""
 struct SSPRK104{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_limiter!)
 
+"""
+@article{owren1992derivation,
+  title={Derivation of efficient, continuous, explicit Runge--Kutta methods},
+  author={Owren, Brynjulf and Zennaro, Marino},
+  journal={SIAM journal on scientific and statistical computing},
+  volume={13},
+  number={6},
+  pages={1488--1501},
+  year={1992},
+  publisher={SIAM}
+}
+"""
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+"""
+@article{owren1992derivation,
+  title={Derivation of efficient, continuous, explicit Runge--Kutta methods},
+  author={Owren, Brynjulf and Zennaro, Marino},
+  journal={SIAM journal on scientific and statistical computing},
+  volume={13},
+  number={6},
+  pages={1488--1501},
+  year={1992},
+  publisher={SIAM}
+}
+"""
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{owren1992derivation,
+  title={Derivation of efficient, continuous, explicit Runge--Kutta methods},
+  author={Owren, Brynjulf and Zennaro, Marino},
+  journal={SIAM journal on scientific and statistical computing},
+  volume={13},
+  number={6},
+  pages={1488--1501},
+  year={1992},
+  publisher={SIAM}
+}
+"""
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{bogacki19893,
+  title={A 3 (2) pair of Runge-Kutta formulas},
+  author={Bogacki, Przemyslaw and Shampine, Lawrence F},
+  journal={Applied Mathematics Letters},
+  volume={2},
+  number={4},
+  pages={321--325},
+  year={1989},
+  publisher={Elsevier}
+}
+"""
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{dormand1980family,
+  title={A family of embedded Runge-Kutta formulae},
+  author={Dormand, John R and Prince, Peter J},
+  journal={Journal of computational and applied mathematics},
+  volume={6},
+  number={1},
+  pages={19--26},
+  year={1980},
+  publisher={Elsevier}
+}
+"""
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{tsitouras2011runge,
+  title={Runge--Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption},
+  author={Tsitouras, Ch},
+  journal={Computers \& Mathematics with Applications},
+  volume={62},
+  number={2},
+  pages={770--775},
+  year={2011},
+  publisher={Elsevier}
+}
+"""
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+Springer-Verlag.
+"""
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+Tanaka M., Muramatsu S., Yamashita S., (1992), "On the Optimization of Some Nine-Stage
+Seventh-order Runge-Kutta Method", Information Processing Society of Japan,
+33 (12), pp. 1512-1526.
+"""
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{feagin2012high,
+  title={High-order explicit Runge-Kutta methods using m-symmetry},
+  author={Feagin, Terry},
+  year={2012},
+  publisher={Neural, Parallel \& Scientific Computations}
+}
+"""
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{feagin2012high,
+  title={High-order explicit Runge-Kutta methods using m-symmetry},
+  author={Feagin, Terry},
+  year={2012},
+  publisher={Neural, Parallel \& Scientific Computations}
+}
+"""
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+Feagin, T., “An Explicit Runge-Kutta Method of Order Fourteen,” Numerical
+Algorithms, 2009
+"""
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{bogacki1996efficient,
+  title={An efficient runge-kutta (4, 5) pair},
+  author={Bogacki, P and Shampine, Lawrence F},
+  journal={Computers \& Mathematics with Applications},
+  volume={32},
+  number={6},
+  pages={15--28},
+  year={1996},
+  publisher={Elsevier}
+}
+"""
 struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   BS5(;lazy=true) = new(lazy)
 end
+
+"""
+@article{verner2010numerically,
+  title={Numerically optimal Runge--Kutta pairs with interpolants},
+  author={Verner, James H},
+  journal={Numerical Algorithms},
+  volume={53},
+  number={2-3},
+  pages={383--396},
+  year={2010},
+  publisher={Springer}
+}
+"""
 struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   Vern6(;lazy=true) = new(lazy)
 end
+
+"""
+@article{verner2010numerically,
+  title={Numerically optimal Runge--Kutta pairs with interpolants},
+  author={Verner, James H},
+  journal={Numerical Algorithms},
+  volume={53},
+  number={2-3},
+  pages={383--396},
+  year={2010},
+  publisher={Springer}
+}
+"""
 struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   Vern7(;lazy=true) = new(lazy)
 end
+
+"""
+@article{verner2010numerically,
+  title={Numerically optimal Runge--Kutta pairs with interpolants},
+  author={Verner, James H},
+  journal={Numerical Algorithms},
+  volume={53},
+  number={2-3},
+  pages={383--396},
+  year={2010},
+  publisher={Springer}
+}
+"""
 struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   Vern8(;lazy=true) = new(lazy)
 end
+
+"""
+@article{verner2010numerically,
+  title={Numerically optimal Runge--Kutta pairs with interpolants},
+  author={Verner, James H},
+  journal={Numerical Algorithms},
+  volume={53},
+  number={2-3},
+  pages={383--396},
+  year={2010},
+  publisher={Springer}
+}
+"""
 struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   Vern9(;lazy=true) = new(lazy)
@@ -423,59 +806,423 @@ end
 # Symplectic methods
 
 struct SymplecticEuler <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{verlet1967computer,
+  title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
+  author={Verlet, Loup},
+  journal={Physical review},
+  volume={159},
+  number={1},
+  pages={98},
+  year={1967},
+  publisher={APS}
+}
+"""
 struct VelocityVerlet <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{verlet1967computer,
+  title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
+  author={Verlet, Loup},
+  journal={Physical review},
+  volume={159},
+  number={1},
+  pages={98},
+  year={1967},
+  publisher={APS}
+}
+"""
 struct VerletLeapfrog <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{verlet1967computer,
+  title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
+  author={Verlet, Loup},
+  journal={Physical review},
+  volume={159},
+  number={1},
+  pages={98},
+  year={1967},
+  publisher={APS}
+}
+"""
 struct PseudoVerletLeapfrog <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{mclachlan1992accuracy,
+  title={The accuracy of symplectic integrators},
+  author={McLachlan, Robert I and Atela, Pau},
+  journal={Nonlinearity},
+  volume={5},
+  number={2},
+  pages={541},
+  year={1992},
+  publisher={IOP Publishing}
+}
+"""
 struct McAte2 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{ruth1983canonical,
+  title={A canonical integration technique},
+  author={Ruth, Ronald D},
+  journal={IEEE Trans. Nucl. Sci.},
+  volume={30},
+  number={CERN-LEP-TH-83-14},
+  pages={2669--2671},
+  year={1983}
+}
+"""
 struct Ruth3 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{mclachlan1992accuracy,
+  title={The accuracy of symplectic integrators},
+  author={McLachlan, Robert I and Atela, Pau},
+  journal={Nonlinearity},
+  volume={5},
+  number={2},
+  pages={541},
+  year={1992},
+  publisher={IOP Publishing}
+}
+"""
 struct McAte3 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{candy1991symplectic,
+  title={A symplectic integration algorithm for separable Hamiltonian functions},
+  author={Candy, J and Rozmus, W},
+  journal={Journal of Computational Physics},
+  volume={92},
+  number={1},
+  pages={230--256},
+  year={1991},
+  publisher={Elsevier}
+}
+"""
 struct CandyRoz4 <: OrdinaryDiffEqAlgorithm end
 struct McAte4 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{sanz1993symplectic,
+  title={Symplectic numerical methods for Hamiltonian problems},
+  author={Sanz-Serna, Jes{\'u}s Maria and Calvo, Mari-Paz},
+  journal={International Journal of Modern Physics C},
+  volume={4},
+  number={02},
+  pages={385--392},
+  year={1993},
+  publisher={World Scientific}
+}
+"""
 struct CalvoSanz4 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{mclachlan1992accuracy,
+  title={The accuracy of symplectic integrators},
+  author={McLachlan, Robert I and Atela, Pau},
+  journal={Nonlinearity},
+  volume={5},
+  number={2},
+  pages={541},
+  year={1992},
+  publisher={IOP Publishing}
+}
+"""
 struct McAte42 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{mclachlan1992accuracy,
+  title={The accuracy of symplectic integrators},
+  author={McLachlan, Robert I and Atela, Pau},
+  journal={Nonlinearity},
+  volume={5},
+  number={2},
+  pages={541},
+  year={1992},
+  publisher={IOP Publishing}
+}
+"""
 struct McAte5 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{yoshida1990construction,
+  title={Construction of higher order symplectic integrators},
+  author={Yoshida, Haruo},
+  journal={Physics letters A},
+  volume={150},
+  number={5-7},
+  pages={262--268},
+  year={1990},
+  publisher={Elsevier}
+}
+"""
 struct Yoshida6 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{kahan1997composition,
+  title={Composition constants for raising the orders of unconventional schemes for ordinary differential equations},
+  author={Kahan, William and Li, Ren-Cang},
+  journal={Mathematics of computation},
+  volume={66},
+  number={219},
+  pages={1089--1099},
+  year={1997}
+}
+"""
 struct KahanLi6 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{mclachlan1995numerical,
+  title={On the numerical integration of ordinary differential equations by symmetric composition methods},
+  author={McLachlan, Robert I},
+  journal={SIAM Journal on Scientific Computing},
+  volume={16},
+  number={1},
+  pages={151--168},
+  year={1995},
+  publisher={SIAM}
+}
+"""
 struct McAte8 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{kahan1997composition,
+  title={Composition constants for raising the orders of unconventional schemes for ordinary differential equations},
+  author={Kahan, William and Li, Ren-Cang},
+  journal={Mathematics of computation},
+  volume={66},
+  number={219},
+  pages={1089--1099},
+  year={1997}
+}
+"""
 struct KahanLi8 <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{sofroniou2005derivation,
+  title={Derivation of symmetric composition constants for symmetric integrators},
+  author={Sofroniou, Mark and Spaletta, Giulia},
+  journal={Optimization Methods and Software},
+  volume={20},
+  number={4-5},
+  pages={597--613},
+  year={2005},
+  publisher={Taylor \& Francis}
+}
+"""
 struct SofSpa10 <: OrdinaryDiffEqAlgorithm end
 
 # Nyström methods
 
+"""
+@article{rabiei2012numerical,
+  title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
+  author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
+  publisher={Citeseer}
+}
+"""
 struct IRKN3 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+  Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+  Springer-Verlag.
+"""
 struct Nystrom4 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+  Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+  Springer-Verlag.
+"""
 struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{rabiei2012numerical,
+  title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
+  author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
+  publisher={Citeseer}
+}
+"""
 struct IRKN4 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
+  Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+  Springer-Verlag.
+"""
 struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
+
+"""
+@article{dormand1987runge,
+  title={Runge-kutta-nystrom triples},
+  author={Dormand, JR and Prince, PJ},
+  journal={Computers \& Mathematics with Applications},
+  volume={13},
+  number={12},
+  pages={937--949},
+  year={1987},
+  publisher={Elsevier}
+}
+"""
 struct DPRKN6 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{dormand1987high,
+  title={High-order embedded Runge-Kutta-Nystrom formulae},
+  author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
+  journal={IMA Journal of Numerical Analysis},
+  volume={7},
+  number={4},
+  pages={423--430},
+  year={1987},
+  publisher={Oxford University Press}
+}
+"""
 struct DPRKN8 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{dormand1987high,
+  title={High-order embedded Runge-Kutta-Nystrom formulae},
+  author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
+  journal={IMA Journal of Numerical Analysis},
+  volume={7},
+  number={4},
+  pages={423--430},
+  year={1987},
+  publisher={Oxford University Press}
+}
+"""
 struct DPRKN12 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{demba2017embedded,
+  title={An Embedded 4 (3) Pair of Explicit Trigonometrically-Fitted Runge-Kutta-Nystr{\"o}m Method for Solving Periodic Initial Value Problems},
+  author={Demba, MA and Senu, N and Ismail, F},
+  journal={Applied Mathematical Sciences},
+  volume={11},
+  number={17},
+  pages={819--838},
+  year={2017}
+}
+"""
 struct ERKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+@article{demba20165,
+  title={A 5 (4) Embedded Pair of Explicit Trigonometrically-Fitted Runge--Kutta--Nystr{\"o}m Methods for the Numerical Solution of Oscillatory Initial Value Problems},
+  author={Demba, Musa A and Senu, Norazak and Ismail, Fudziah},
+  journal={Mathematical and Computational Applications},
+  volume={21},
+  number={4},
+  pages={46},
+  year={2016},
+  publisher={Multidisciplinary Digital Publishing Institute}
+}
+"""
 struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 ################################################################################
 
 # Adams Bashforth and Adams moulton methods
 
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct AB3 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct AB4 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct AB5 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct ABM32 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct ABM43 <: OrdinaryDiffEqAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
 
 # Variable Step Size Adams methods
 
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # Variable Order and Variable Step Size Adams methods
 
+"""
+E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
+Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
+https://doi.org/10.1007/978-3-540-78862-1
+"""
 struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
 # IMEX Multistep methods
@@ -561,6 +1308,11 @@ Base.@pure QNDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 Base.@pure QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
 
+"""
+Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
+Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
+Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+"""
 struct SBDF{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -576,9 +1328,33 @@ SBDF(order;chunk_size=0,autodiff=true,diff_type=Val{:forward},
      SBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
      typeof(κ),typeof(tol)}(
      linsolve,nlsolve,diff_type,κ,tol,extrapolant,order)
+
+ """
+ Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
+ Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
+ Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+ """
 IMEXEuler(;kwargs...) = SBDF(1;kwargs...)
+
+"""
+Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
+Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
+Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+"""
 SBDF2(;kwargs...) = SBDF(2;kwargs...)
+
+"""
+Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
+Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
+Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+"""
 SBDF3(;kwargs...) = SBDF(3;kwargs...)
+
+"""
+Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
+Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
+Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+"""
 SBDF4(;kwargs...) = SBDF(4;kwargs...)
 
 # Adams/BDF methods in Nordsieck forms
@@ -597,6 +1373,11 @@ JVODE_Adams(;kwargs...) = JVODE(:Adams;kwargs...)
 JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 
 # ROCK methods
+
+"""
+Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
+Numerische Mathematik, 90 (1), pp 1-18, 2001. doi: https://dx.doi.org/10.1007/s002110100292
+"""
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
   max_stages::Int
@@ -604,6 +1385,11 @@ struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ROCK2(;min_stages=0,max_stages=200,eigen_est=nothing) = ROCK2(min_stages,max_stages,eigen_est)
 
+"""
+Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
+Industrial and Applied Mathematics Journal on Scientific Computing, 23(6), pp 2041-2054, 2001.
+doi: https://doi.org/10.1137/S1064827500379549
+"""
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
   max_stages::Int
@@ -612,6 +1398,15 @@ end
 ROCK4(;min_stages=0,max_stages=152,eigen_est=nothing) = ROCK4(min_stages,max_stages,eigen_est)
 
 # SERK methods
+
+#=
+RKC
+
+B. P. Sommeijer, L. F. Shampine, J. G. Verwer. RKC: An Explicit Solver for Parabolic PDEs,
+  Journal of Computational and Applied Mathematics, 88(2), pp 315-326, 1998. doi:
+  https://doi.org/10.1016/S0377-0427(97)00219-7
+=#
+
 for Alg in [:ESERK4, :ESERK5, :RKC]
   @eval begin
     struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -668,6 +1463,18 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 
 # FIRK Methods
 
+"""
+@article{hairer1999stiff,
+  title={Stiff differential equations solved by Radau methods},
+  author={Hairer, Ernst and Wanner, Gerhard},
+  journal={Journal of Computational and Applied Mathematics},
+  volume={111},
+  number={1-2},
+  pages={93--111},
+  year={1999},
+  publisher={Elsevier}
+}
+"""
 struct RadauIIA3{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
@@ -688,6 +1495,18 @@ RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
                                   linsolve,diff_type,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
+"""
+@article{hairer1999stiff,
+  title={Stiff differential equations solved by Radau methods},
+  author={Hairer, Ernst and Wanner, Gerhard},
+  journal={Journal of Computational and Applied Mathematics},
+  volume={111},
+  number={1-2},
+  pages={93--111},
+  year={1999},
+  publisher={Elsevier}
+}
+"""
 struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
@@ -739,6 +1558,10 @@ ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                       linsolve,nlsolve,diff_type,extrapolant)
 
+"""
+Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
+  NY, USA.
+"""
 struct Trapezoid{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -753,6 +1576,18 @@ Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                       linsolve,nlsolve,diff_type,extrapolant,controller)
 
+"""
+@article{hosea1996analysis,
+  title={Analysis and implementation of TR-BDF2},
+  author={Hosea, ME and Shampine, LF},
+  journal={Applied Numerical Mathematics},
+  volume={20},
+  number={1-2},
+  pages={21--37},
+  year={1996},
+  publisher={Elsevier}
+}
+"""
 struct TRBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -768,6 +1603,18 @@ TRBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
       linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+@article{hindmarsh2005sundials,
+  title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
+  author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
+  journal={ACM Transactions on Mathematical Software (TOMS)},
+  volume={31},
+  number={3},
+  pages={363--396},
+  year={2005},
+  publisher={ACM}
+}
+"""
 struct SDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -813,6 +1660,18 @@ SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+@article{kvaerno2004singly,
+  title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
+  author={Kv{\ae}rn{\o}, Anne},
+  journal={BIT Numerical Mathematics},
+  volume={44},
+  number={3},
+  pages={489--502},
+  year={2004},
+  publisher={Springer}
+}
+"""
 struct Kvaerno3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -828,6 +1687,14 @@ Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  Kvaerno3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+@book{kennedy2001additive,
+  title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
+  author={Kennedy, Christopher Alan},
+  year={2001},
+  publisher={National Aeronautics and Space Administration, Langley Research Center}
+}
+"""
 struct KenCarp3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -855,6 +1722,18 @@ CFNLIRK3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       CFNLIRK3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                       linsolve,nlsolve,diff_type,extrapolant)
 
+"""
+@article{hindmarsh2005sundials,
+  title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
+  author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
+  journal={ACM Transactions on Mathematical Software (TOMS)},
+  volume={31},
+  number={3},
+  pages={363--396},
+  year={2005},
+  publisher={ACM}
+}
+"""
 struct Cash4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -935,6 +1814,11 @@ SFSDIRK8(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                     SFSDIRK8{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                     linsolve,nlsolve,diff_type,extrapolant)
 
+"""
+E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
+  differential-algebraic problems. Computational mathematics (2nd revised ed.),
+  Springer (1996)
+"""
 struct Hairer4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -950,6 +1834,11 @@ Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  Hairer4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
+  differential-algebraic problems. Computational mathematics (2nd revised ed.),
+  Springer (1996)
+"""
 struct Hairer42{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -965,6 +1854,18 @@ Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  Hairer42{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+@article{kvaerno2004singly,
+  title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
+  author={Kv{\ae}rn{\o}, Anne},
+  journal={BIT Numerical Mathematics},
+  volume={44},
+  number={3},
+  pages={489--502},
+  year={2004},
+  publisher={Springer}
+}
+"""
 struct Kvaerno4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -980,6 +1881,18 @@ Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  Kvaerno4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+@article{kvaerno2004singly,
+  title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
+  author={Kv{\ae}rn{\o}, Anne},
+  journal={BIT Numerical Mathematics},
+  volume={44},
+  number={3},
+  pages={489--502},
+  year={2004},
+  publisher={Springer}
+}
+"""
 struct Kvaerno5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -995,6 +1908,14 @@ Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  Kvaerno5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+@book{kennedy2001additive,
+  title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
+  author={Kennedy, Christopher Alan},
+  year={2001},
+  publisher={National Aeronautics and Space Administration, Langley Research Center}
+}
+"""
 struct KenCarp4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1010,6 +1931,14 @@ KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+"""
+@book{kennedy2001additive,
+  title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
+  author={Kennedy, Christopher Alan},
+  year={2001},
+  publisher={National Aeronautics and Space Administration, Langley Research Center}
+}
+"""
 struct KenCarp5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1042,6 +1971,49 @@ ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Rosenbrock Methods
 
+#=
+#### Rosenbrock23, Rosenbrock32, ode23s, ModifiedRosenbrockIntegrator
+
+- Shampine L.F. and Reichelt M., (1997) The MATLAB ODE Suite, SIAM Journal of
+Scientific Computing, 18 (1), pp. 1-22.
+
+#### ROS3P
+
+- Lang, J. & Verwer, ROS3P—An Accurate Third-Order Rosenbrock Solver Designed for
+  Parabolic Problems J. BIT Numerical Mathematics (2001) 41: 731. doi:10.1023/A:1021900219772
+
+#### Rodas3, Ros4LStab, Rodas4, Rodas42
+
+- E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
+  differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
+
+#### RosShamp4
+
+- L. F. Shampine, Implementation of Rosenbrock Methods, ACM Transactions on
+  Mathematical Software (TOMS), 8: 2, 93-113. doi:10.1145/355993.355994
+
+#### Veldd4, Velds4
+
+- van Veldhuizen, D-stability and Kaps-Rentrop-methods, M. Computing (1984) 32: 229.
+  doi:10.1007/BF02243574
+
+#### GRK4T, GRK4A
+
+- Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four with stepsize control
+  for stiff ordinary differential equations. P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
+
+#### Rodas4P
+
+- Steinebach G. Order-reduction of ROW-methods for DAEs and method of lines
+  applications. Preprint-Nr. 1741, FB Mathematik, TH Darmstadt; 1995.
+
+#### Rodas5
+
+- Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
+différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
+University of Geneva, Switzerland.
+=#
+
 for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas5]
   @eval begin
     struct $Alg{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
@@ -1069,6 +2041,11 @@ RosenbrockW6S4OS(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DE
 ######################################
 
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
+
+  """
+  Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
+    Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
+  """
   @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int
@@ -1111,6 +2088,11 @@ struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 
 #########################################
 
+"""
+E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
+an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Computer Science,
+29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
+"""
 struct ABDF2{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
