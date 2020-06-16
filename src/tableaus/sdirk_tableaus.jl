@@ -2054,11 +2054,11 @@ function KenCarp47Tableau(T,T2)
 
   #ebtilde1 = 0
   #ebtilde2 = 0
-  ebtilde3 = convert(T,4469248916618//8635866897933)
-  ebtilde4 = -convert(T,621260224600//4094290005349)
-  ebtilde5 = convert(T,696572312987//2942599194819)
-  ebtilde6 = convert(T,1532940081127//5565293938103)
-  ebtilde7 = convert(T,2441//20000)
+  ebtilde3 = convert(T,BigInt(216367897668138065439709)//BigInt(153341716340757627089664345))
+  ebtilde4 = -convert(T,BigInt(1719969231640509698414113)//BigInt(303097339249411872572263321))
+  ebtilde5 = convert(T,BigInt(33321949854538424751892)//BigInt(16748125370719759490730723))
+  ebtilde6 = convert(T,BigInt(4033362550194444079469)//BigInt(1083063207508329376479196))
+  ebtilde7 = -convert(T,29//20000)
 
   KenCarp47Tableau(γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a73,a74,a75,a76,
                   btilde3,btilde4,btilde5,btilde6,btilde7,
