@@ -4,6 +4,7 @@ function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,
                                               KenCarp4ConstantCache,
                                               Kvaerno5ConstantCache,
                                               KenCarp5ConstantCache,
+                                              KenCarp58ConstantCache,
                                               CFNLIRK3ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -22,6 +23,7 @@ function initialize!(integrator, cache::Union{Kvaerno3Cache,
                                               KenCarp4Cache,
                                               Kvaerno5Cache,
                                               KenCarp5Cache,
+                                              KenCarp58Cache,
                                               CFNLIRK3Cache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
@@ -1486,6 +1488,8 @@ end
     u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
   end
 
+  @show([z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈])
+
   ################################### Finalize
 
   if integrator.opts.adaptive
@@ -1717,4 +1721,214 @@ end
   else
     @.. integrator.fsallast = z₈/dt
   end
+end
+
+@muladd function perform_step!(integrator, cache::KenCarp58ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,p = integrator
+  nlsolver = cache.nlsolver
+  @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a83,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
+  #TODO: Update α for KenCarp58
+  #@unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
+  @unpack btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = cache.tab
+  @unpack ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65 = cache.tab
+  @unpack ea71,ea72,ea73,ea74,ea75,ea76,ea81,ea82,ea83,ea84,ea85,ea86,ea87 = cache.tab
+  @unpack eb3,eb4,eb5,eb6,eb7,eb8 = cache.tab
+  @unpack ebtilde3,ebtilde4,ebtilde5,ebtilde6,ebtilde7,ebtilde8 = cache.tab
+  alg = unwrap_alg(integrator, true)
+
+  if typeof(integrator.f) <: SplitFunction
+    f = integrator.f.f1
+    f2 = integrator.f.f2
+  else
+    f = integrator.f
+  end
+
+  # precalculations
+  γdt = γ*dt
+
+  # calculate W
+  markfirststage!(nlsolver)
+
+  ##### Step 1
+
+  if typeof(integrator.f) <: SplitFunction
+    # Explicit tableau is not FSAL
+    # Make this not compute on repeat
+    z₁ = dt.*f(uprev, p, t)
+  else
+    # FSAL Step 1
+    z₁ = dt*integrator.fsalfirst
+  end
+
+  ##### Step 2
+
+  # TODO: Add extrapolation choice
+  nlsolver.z = z₂ = zero(u)
+
+  tmp = uprev + γ*z₁
+
+  if typeof(integrator.f) <: SplitFunction
+    # This assumes the implicit part is cheaper than the explicit part
+    k1 = dt*integrator.fsalfirst - z₁
+    tmp += ea21*k1
+  end
+  nlsolver.tmp = tmp
+  nlsolver.c = 2γ
+
+  z₂ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 3
+
+  if typeof(integrator.f) <: SplitFunction
+    z₃ = z₂
+    u = nlsolver.tmp + γ*z₂
+    k2 = dt*f2(u,p,t+2γdt)
+    integrator.destats.nf2 += 1
+    tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
+  else
+    # Guess is from Hermite derivative on z₁ and z₂
+    #z₃ = α31*z₁ + α32*z₂
+    #tmp = uprev + a31*z₁ + a32*z₂
+  end
+  nlsolver.z = z₃
+  nlsolver.c = c3
+  nlsolver.tmp = tmp
+
+  z₃ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 4
+
+  if typeof(integrator.f) <: SplitFunction
+    z₄ = z₂
+    u = nlsolver.tmp + γ*z₃
+    k3 = dt*f2( u,p,t+c3*dt)
+    integrator.destats.nf2 += 1
+    tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
+  else
+    #z₄ = α41*z₁ + α42*z₂
+    #tmp = uprev + a41*z₁ + a43*z₃
+  end
+  nlsolver.z = z₄
+  nlsolver.c = c4
+  nlsolver.tmp = tmp
+
+  z₄ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 5
+
+  if typeof(integrator.f) <: SplitFunction
+    z₅ = z₂
+    u = nlsolver.tmp + γ*z₄
+    k4 = dt*f2( u,p,t+c4*dt)
+    integrator.destats.nf2 += 1
+    tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
+  else
+    #z₅ = α51*z₁ + α52*z₂
+    #tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄
+  end
+  nlsolver.z = z₅
+  nlsolver.c = c5
+  nlsolver.tmp = tmp
+
+  z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 6
+
+  if typeof(integrator.f) <: SplitFunction
+    z₆ = z₃
+    u = nlsolver.tmp + γ*z₅
+    k5 = dt*f2( u,p,t+c5*dt)
+    integrator.destats.nf2 += 1
+    tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
+  else
+    #z₆ = α61*z₁ + α62*z₂
+    #tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+  end
+  nlsolver.z = z₆
+  nlsolver.c = c6
+  nlsolver.tmp = tmp
+
+  z₆ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 7
+
+  if typeof(integrator.f) <: SplitFunction
+    z₇ = z₂
+    u = nlsolver.tmp + γ*z₆
+    k6 = dt*f2( u,p,t+c6*dt)
+    integrator.destats.nf2 += 1
+    tmp = uprev + a71*z₁ + a72*z₂ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea72*k2 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
+  else
+    #z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
+    #tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  end
+  nlsolver.z = z₇
+  nlsolver.c = c7
+  nlsolver.tmp = tmp
+
+  z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve Step 8
+
+  if typeof(integrator.f) <: SplitFunction
+    z₈ = z₅
+    u = nlsolver.tmp + γ*z₇
+    k7 = dt*f2( u,p,t+c7*dt)
+    integrator.destats.nf2 += 1
+    tmp = uprev + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea82*k2 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
+  else
+    #z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
+    #tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+  end
+  nlsolver.z = z₈
+  nlsolver.c = 1
+  nlsolver.tmp = tmp
+
+  z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  u = nlsolver.tmp + γ*z₈
+  if typeof(integrator.f) <: SplitFunction
+    k8 = dt*f2( u,p,t+dt)
+    integrator.destats.nf2 += 1
+    u = uprev + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
+  end
+
+  @show([z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈])
+
+
+  ################################### Finalize
+
+  if integrator.opts.adaptive
+    if typeof(integrator.f) <: SplitFunction
+      tmp = btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
+    else
+      tmp = btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+    end
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
+      est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
+    else
+      est = tmp
+    end
+    atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  if typeof(integrator.f) <: SplitFunction
+    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = integrator.f(u, p, t+dt)
+    integrator.k[2] = integrator.fsallast
+  else
+    integrator.fsallast = z₈./dt
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+  end
+  integrator.u = u
 end
