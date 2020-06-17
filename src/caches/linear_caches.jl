@@ -22,15 +22,6 @@ function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   MagnusMidpointConstantCache()
 end
-@cache struct MagnusGL6Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  uprev2::uType
-  tmp::uType
-  fsalfirst::rateType
-  W::WType
-  k::rateType
-end
 
 @cache struct MagnusNC6Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -56,6 +47,16 @@ end
 function alg_cache(alg::MagnusNC6,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   MagnusNC6ConstantCache()
+end
+
+@cache struct MagnusGL6Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
 end
 
 function alg_cache(alg::MagnusGL6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
