@@ -27,6 +27,52 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   integrator.f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
 end
+
+function initialize!(integrator, cache::MagnusNC6Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+  L0 = deepcopy(integrator.f.f)
+  L1 = deepcopy(integrator.f.f)
+  L2 = deepcopy(integrator.f.f)
+  L3 = deepcopy(integrator.f.f)
+  L4 = deepcopy(integrator.f.f)
+  update_coefficients!(L0,uprev,p,t)
+  A0 = Matrix(L0)
+  update_coefficients!(L1,uprev,p,t+dt/4)
+  A1 = Matrix(L1)
+  update_coefficients!(L2,uprev,p,t+dt/2)
+  A2 = Matrix(L2)
+  update_coefficients!(L3,uprev,p,t+3*dt/4)
+  A3 = Matrix(L3)
+  update_coefficients!(L4,uprev,p,t+dt)
+  A4 = Matrix(L4)
+  B0 = (1/90)*(7*(A0+A4)+32*(A1+A3)+12*(A2))
+  B1 = (1/90)*((7/2)*(A4-A0) + 8*(A3-A1))
+  B2 = (1/90)*((7/4)*(A0+A4) + 2*(A1+A3))
+  Ω1 = dt*B0
+  Ω2 = (dt*dt)*(B1*(3*B0/2 - 6*B2) - (3*B0/2 - 6*B2)*B1)
+  Ω3_4 = (dt*dt)*(B0*(B0*(dt*B2/2-Ω2/60)-(dt*B2/2-Ω2/60)*B0) - (B0*(dt*B2/2-Ω2/60)-(dt*B2/2-Ω2/60)*B0)*B0) + (3*dt/5)*(B1*Ω2 - Ω2*B1)
+  if integrator.alg.krylov
+    u .= expv(1.0,Ω1 + Ω2 + Ω3_4, uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
+  end
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+end
+
 function initialize!(integrator, cache::MagnusGauss4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
