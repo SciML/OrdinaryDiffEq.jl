@@ -28,7 +28,7 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   integrator.destats.nf += 1
 end
 
-function initialize!(integrator, cache::MagnusGL6Cache)
+function initialize!(integrator, cache::MagnusNC6Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -39,7 +39,7 @@ function initialize!(integrator, cache::MagnusGL6Cache)
   integrator.destats.nf += 1
 end
 
-function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step=false)
+function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p,alg = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
