@@ -1862,15 +1862,18 @@ struct KenCarp47Tableau{T,T2}
   α32::T
   α41::T
   α42::T
+  α43::T
   α51::T
   α52::T
-  α53::T
-  α54::T
   α61::T
   α62::T
   α63::T
-  α64::T
-  α65::T
+  α71::T
+  α72::T
+  α73::T
+  α74::T
+  α75::T
+  α76::T
   ea21::T
   ea31::T
   ea32::T
@@ -2076,7 +2079,7 @@ function KenCarp47Tableau(T,T2)
   KenCarp47Tableau(γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a73,a74,a75,a76,
                   btilde3,btilde4,btilde5,btilde6,btilde7,
                   c3,c4,c5,c6,
-                  α21,α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65,
+                  α21,α31,α32,α41,α42,α43,α51,α52,α61,α62,α63,α71,α72,α73,α74,α75,α76,
                   ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,
                   ea63,ea64,ea65,ea71,ea72,ea73,ea74,ea75,ea76,eb3,eb4,eb5,eb6,eb7,ebtilde3,ebtilde4,
                   ebtilde5,ebtilde6,ebtilde7)
