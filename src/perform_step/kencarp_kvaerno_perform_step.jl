@@ -1728,8 +1728,7 @@ end
   @unpack t,dt,uprev,u,p = integrator
   nlsolver = cache.nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
-  #TODO:Change α for KenCarp47
-  #@unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
+  @unpack α31,α32,α41,α42,α43,α51,α52,α61,α62,α63,α71,α72,α73,α74,α75,α76 = cache.tab
   @unpack btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65,ea71,ea72,ea73,ea74,ea75,ea76 = cache.tab
   @unpack eb3,eb4,eb5,eb6,eb7 = cache.tab
@@ -1786,8 +1785,8 @@ end
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
-    #z₃ = α31*z₁ + α32*z₂
-    #tmp = uprev + a31*z₁ + a32*z₂
+    z₃ = α31*z₁ + α32*z₂
+    tmp = uprev + a31*z₁ + a32*z₂
   end
   nlsolver.z = z₃
   nlsolver.tmp = tmp
@@ -1805,8 +1804,8 @@ end
     integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
-    #z₄ = α41*z₁ + α42*z₂
-    #tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+    z₄ = α41*z₁ + α42*z₂ + α43*z₃
+    tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
   nlsolver.z = z₄
   nlsolver.tmp = tmp
@@ -1824,8 +1823,8 @@ end
     integrator.destats.nf2 += 1
     tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
   else
-    #z₅ = α51*z₁ + α52*z₂ + α53*z₃ + α54*z₄
-    #tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+    z₅ = α51*z₁ + α52*z₂
+    tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   end
   nlsolver.z = z₅
   nlsolver.tmp = tmp
@@ -1843,8 +1842,8 @@ end
     integrator.destats.nf2 += 1
     tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
   else
-    #z₆ = α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
-    #tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+    z₆ = α61*z₁ + α62*z₂ + α63*z₃
+    tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
   end
   nlsolver.z = z₆
   nlsolver.tmp = tmp
@@ -1862,8 +1861,8 @@ end
     integrator.destats.nf2 += 1
     tmp = uprev + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea72*k2 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
   else
-    #z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
-    #tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+    z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅ + + α76*z₆
+    tmp = uprev + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   end
   nlsolver.z = z₇
   nlsolver.c = 1
