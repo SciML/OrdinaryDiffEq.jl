@@ -90,6 +90,16 @@ sim = analyticless_test_convergence(dts,prob,MagnusGL6(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusGL6(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 6 atol=0.2
 
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (1.0, 6.))
+sol = solve(prob,MagnusGL8(),dt=1/10)
+dts = 1 ./2 .^(4:-1:1)
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,MagnusGL8(),test_setup)
+@test sim.𝒪est[:l2] ≈ 6 atol=0.2
+sim = analyticless_test_convergence(dts,prob,MagnusGL8(krylov=true),test_setup)
+@test sim.𝒪est[:l2] ≈ 6 atol=0.2
+
 function B(y::AbstractMatrix)
     b = similar(y)
     N = size(b, 1)
