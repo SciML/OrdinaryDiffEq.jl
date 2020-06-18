@@ -1762,7 +1762,7 @@ end
   ##### Step 2
 
   # TODO: Add extrapolation choice
-  nlsolver.z = z₂ = zero(u)
+  nlsolver.z = z₂ = z₁
 
   tmp = uprev + γ*z₁
 
@@ -1800,7 +1800,7 @@ end
   ################################## Solve Step 4
 
   if typeof(integrator.f) <: SplitFunction
-    z₄ = z₂
+    z₄ = z₁
     u = nlsolver.tmp + γ*z₃
     k3 = dt*f2( u,p,t+c3*dt)
     integrator.destats.nf2 += 1
@@ -1857,7 +1857,7 @@ end
   ################################## Solve Step 7
 
   if typeof(integrator.f) <: SplitFunction
-    z₇ = z₂
+    z₇ = z₃
     u = nlsolver.tmp + γ*z₆
     k6 = dt*f2( u,p,t+c6*dt)
     integrator.destats.nf2 += 1
@@ -1876,7 +1876,7 @@ end
   ################################## Solve Step 8
 
   if typeof(integrator.f) <: SplitFunction
-    z₈ = z₅
+    z₈ = z₇
     u = nlsolver.tmp + γ*z₇
     k7 = dt*f2( u,p,t+c7*dt)
     integrator.destats.nf2 += 1
@@ -1975,7 +1975,7 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(eltype(u))
+  z₂ .= z₁
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
@@ -2013,7 +2013,7 @@ end
   ################################## Solve Step 4
 
   if typeof(integrator.f) <: SplitFunction
-    z₄ .= z₂
+    z₄ .= z₁
     @.. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
     integrator.destats.nf2 += 1
@@ -2067,7 +2067,7 @@ end
   ################################## Solve Step 7
 
   if typeof(integrator.f) <: SplitFunction
-    z₇ .= z₂
+    z₇ .= z₃
     @.. u = tmp + γ*z₆
     f2( k6, u,p,t+c6*dt); k6 .*= dt
     integrator.destats.nf2 += 1
@@ -2085,7 +2085,7 @@ end
   ################################## Solve Step 8
 
   if typeof(integrator.f) <: SplitFunction
-    z₈ .= z₅
+    z₈ .= z₇
     @.. u = tmp + γ*z₇
     f2( k7, u,p,t+c7*dt); k7 .*= dt
     integrator.destats.nf2 += 1
