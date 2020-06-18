@@ -77,6 +77,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     end
   elseif !(typeof(prob)<:DiscreteProblem) &&
          !(typeof(prob)<:DiffEqBase.AbstractDAEProblem) &&
+         !(typeof(prob.f)<:IncrementingODEFunction) &&
          !is_mass_matrix_alg(alg) &&
          prob.f.mass_matrix != I
     error("This solver is not able to use mass matrices.")
@@ -99,6 +100,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   end
 
   isdae = alg isa DAEAlgorithm || (!(typeof(prob)<:DiscreteProblem) &&
+                                  (!prob.f isa IncrementingODEFunction) &&
                                      prob.f.mass_matrix != I &&
                                      !(typeof(prob.f.mass_matrix)<:Tuple) &&
                                      ArrayInterface.issingular(prob.f.mass_matrix))

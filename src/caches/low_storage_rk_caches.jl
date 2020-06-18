@@ -48,7 +48,7 @@ function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -93,7 +93,7 @@ function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBo
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -142,7 +142,7 @@ function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -193,7 +193,7 @@ function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -247,7 +247,7 @@ function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -301,7 +301,7 @@ function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -367,7 +367,7 @@ function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltype
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -436,7 +436,7 @@ function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltype
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
@@ -508,7 +508,7 @@ function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltype
     k = zero(rate_prototype)
     williamson_condition = false
   else
-    if williamson_condition
+    if williamson_condition || f isa IncrementingODEFunction
       k = tmp
     else
       k = zero(rate_prototype)
