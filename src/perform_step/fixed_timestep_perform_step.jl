@@ -5,7 +5,8 @@ end
 
 function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=false)
   @unpack uprev,dt,t,f,p = integrator
-  if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT
+  if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT &&
+     !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&  integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT)
     if FunctionMap_scale_by_time(integrator.alg)
       tmp = f(uprev, p, t + dt)
       integrator.destats.nf += 1
@@ -25,7 +26,8 @@ end
 function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
   @unpack u,uprev,dt,t,f,p = integrator
   @unpack tmp = cache
-  if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT
+  if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
+     !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&  integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
     if FunctionMap_scale_by_time(integrator.alg)
       f(tmp, uprev, p, t+dt)
       @muladd @.. u = uprev + dt*tmp
