@@ -105,6 +105,7 @@ alg_extrapolates(alg::KenCarp3) = true
 alg_extrapolates(alg::KenCarp4) = true
 alg_extrapolates(alg::KenCarp47) = true
 alg_extrapolates(alg::KenCarp5) = true
+alg_extrapolates(alg::KenCarp58) = true
 alg_extrapolates(alg::Cash4) = true
 alg_extrapolates(alg::Hairer4) = true
 alg_extrapolates(alg::Hairer42) = true
@@ -282,6 +283,8 @@ alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::MagnusMidpoint) = 2
 alg_order(alg::MagnusGauss4) = 4
+alg_order(alg::MagnusNC6) = 6
+alg_order(alg::MagnusGL6) = 6
 alg_order(alg::LinearExponential) = 1
 alg_order(alg::MagnusLeapfrog) = 2
 alg_order(alg::Trapezoid) = 2
@@ -299,6 +302,7 @@ alg_order(alg::CFNLIRK3) = 3
 alg_order(alg::KenCarp4) = 4
 alg_order(alg::KenCarp47) = 4
 alg_order(alg::KenCarp5) = 5
+alg_order(alg::KenCarp58) = 5
 alg_order(alg::Cash4) = 4
 alg_order(alg::SFSDIRK4) = 4
 alg_order(alg::SFSDIRK5) = 4
@@ -564,7 +568,7 @@ isWmethod(alg::ROS34PW3) = true
 isWmethod(alg::RosenbrockW6S4OS) = true
 
 isesdirk(alg::TRBDF2) = true
-isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5,
+isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
                     Kvaerno3, Kvaerno4, Kvaerno5,
                     ESDIRK54I8L2SA,CFNLIRK3}) = true
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false

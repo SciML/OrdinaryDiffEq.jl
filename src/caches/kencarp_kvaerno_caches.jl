@@ -345,28 +345,94 @@ end
 end
 
 function alg_cache(alg::KenCarp47,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = KenCarp47Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  γ, c = tab.γ, tab.c3
-  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
-  fsalfirst = zero(rate_prototype)
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+tab = KenCarp47Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+γ, c = tab.γ, tab.c3
+nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+fsalfirst = zero(rate_prototype)
 
-  if typeof(f) <: SplitFunction
-    k1 = similar(u); k2 = similar(u)
-    k3 = similar(u); k4 = similar(u)
-    k5 = similar(u); k6 = similar(u)
-    k7 = similar(u)
-  else
-    k1 = nothing; k2 = nothing
-    k3 = nothing; k4 = nothing
-    k5 = nothing; k6 = nothing
-    k7 = nothing
-  end
+if typeof(f) <: SplitFunction
+k1 = similar(u); k2 = similar(u)
+k3 = similar(u); k4 = similar(u)
+k5 = similar(u); k6 = similar(u)
+k7 = similar(u)
+else
+k1 = nothing; k2 = nothing
+k3 = nothing; k4 = nothing
+k5 = nothing; k6 = nothing
+k7 = nothing
+end
 
-  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
-  z₅ = zero(u); z₆ = zero(u); z₇ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits)
+z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
+z₅ = zero(u); z₆ = zero(u); z₇ = nlsolver.z
+atmp = similar(u,uEltypeNoUnits)
 
-  KenCarp47Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,
-                k1,k2,k3,k4,k5,k6,k7,atmp,nlsolver,tab)
+KenCarp47Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,
+k1,k2,k3,k4,k5,k6,k7,atmp,nlsolver,tab)
+end
+
+@cache mutable struct KenCarp58ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::KenCarp58,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+tab = KenCarp58Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+γ, c = tab.γ, tab.c3
+nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
+
+KenCarp58ConstantCache(nlsolver,tab)
+end
+
+@cache mutable struct KenCarp58Cache{uType,rateType,uNoUnitsType,N,Tab,kType} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  z₅::uType
+  z₆::uType
+  z₇::uType
+  z₈::uType
+  k1::kType
+  k2::kType
+  k3::kType
+  k4::kType
+  k5::kType
+  k6::kType
+  k7::kType
+  k8::kType
+  atmp::uNoUnitsType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::KenCarp58,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+tab = KenCarp58Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+γ, c = tab.γ, tab.c3
+nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
+fsalfirst = zero(rate_prototype)
+
+if typeof(f) <: SplitFunction
+k1 = similar(u); k2 = similar(u)
+k3 = similar(u); k4 = similar(u)
+k5 = similar(u); k6 = similar(u)
+k7 = similar(u); k8 = similar(u)
+else
+k1 = nothing; k2 = nothing
+k3 = nothing; k4 = nothing
+k5 = nothing; k6 = nothing
+k7 = nothing; k8 = nothing
+end
+
+z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
+z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = nlsolver.z
+atmp = similar(u,uEltypeNoUnits)
+
+KenCarp58Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
+k1,k2,k3,k4,k5,k6,k7,k8,atmp,nlsolver,tab)
 end
