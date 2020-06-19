@@ -2,7 +2,7 @@ function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,
                                               KenCarp3ConstantCache,
                                               Kvaerno4ConstantCache,
                                               KenCarp4ConstantCache,
-                                              KenCarp47ConstantCache
+                                              KenCarp47ConstantCache,
                                               Kvaerno5ConstantCache,
                                               KenCarp5ConstantCache,
                                               KenCarp58ConstantCache,
@@ -1894,6 +1894,9 @@ end
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
+      est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
+    else
+      est = tmp
     end
     atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -1910,7 +1913,6 @@ end
   end
   integrator.u = u
 end
-
 
 
 @muladd function perform_step!(integrator, cache::KenCarp47Cache, repeat_step=false)
