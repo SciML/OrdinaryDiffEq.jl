@@ -1931,6 +1931,21 @@ KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+struct KenCarp47{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  smooth_est::Bool
+  extrapolant::Symbol
+  controller::Symbol
+end
+KenCarp47(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                   linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                   smooth_est=true,extrapolant=:linear,
+                   controller = :PI) =
+ KenCarp47{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+        linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
+
 """
 @book{kennedy2001additive,
   title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
@@ -2168,7 +2183,7 @@ const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   AB3,AB4,AB5,ABM32,ABM43,ABM54}
 
 const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
-                              KenCarp3,KenCarp4,KenCarp5,KenCarp58,CFNLIRK3}
+                              KenCarp3,KenCarp4,KenCarp47,KenCarp5,KenCarp58,CFNLIRK3}
 
 
 # DAE Specific Algorithms
