@@ -70,6 +70,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 
+sol = solve(prob,KenCarp58())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp58())
+@test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+
 # IMEXEuler
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
@@ -130,6 +135,11 @@ sim = test_convergence(dts,prob,KenCarp4())
 sol = solve(prob,KenCarp5())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
+@test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+
+sol = solve(prob,KenCarp58())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp58())
 @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 
 # IMEXEuler
@@ -194,6 +204,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 
+sol = solve(prob,KenCarp58())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp58())
+@test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+
 # IMEXEuler
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
@@ -254,6 +269,11 @@ sim = test_convergence(dts,prob,KenCarp4())
 sol = solve(prob,KenCarp5())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
+@test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+
+sol = solve(prob,KenCarp58())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp58())
 @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 
 # IMEXEuler
@@ -318,6 +338,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 
+sol = solve(prob,KenCarp58())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp58())
+@test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+
 # IMEXEuler
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
@@ -378,6 +403,11 @@ sim = test_convergence(dts,prob,KenCarp4())
 sol = solve(prob,KenCarp5())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
+@test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+
+sol = solve(prob,KenCarp58())
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp58())
 @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 
 # IMEXEuler
