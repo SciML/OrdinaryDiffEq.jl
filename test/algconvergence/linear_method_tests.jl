@@ -99,6 +99,15 @@ sim = analyticless_test_convergence(dts,prob,MagnusGL8(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusGL8(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 8 atol=0.2
 
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (0.0, 100.))
+dts = 1.773 .^(5:-1:0)
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,MagnusNC8(),test_setup)
+@test sim.𝒪est[:l2] ≈ 8 atol=0.2
+sim = analyticless_test_convergence(dts,prob,MagnusNC8(krylov=true),test_setup)
+@test sim.𝒪est[:l2] ≈ 8 atol=0.2
+
 function B(y::AbstractMatrix)
     b = similar(y)
     N = size(b, 1)
