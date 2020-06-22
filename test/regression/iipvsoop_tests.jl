@@ -16,6 +16,10 @@ sol5 = solve(prob,KenCarp4(),abstol=1e-12,reltol=1e-12)
 sol6 = solve(prob,KenCarp4(autodiff=false),abstol=1e-12,reltol=1e-12)
 sol7 = solve(prob,KenCarp4(autodiff=false,diff_type=Val{:central}),abstol=1e-12,reltol=1e-12)
 sol8 = solve(prob,KenCarp4(autodiff=false,diff_type=Val{:complex}),abstol=1e-12,reltol=1e-12)
+sol5 = solve(prob,KenCarp47(),abstol=1e-12,reltol=1e-12)
+sol6 = solve(prob,KenCarp47(autodiff=false),abstol=1e-12,reltol=1e-12)
+sol7 = solve(prob,KenCarp47(autodiff=false,diff_type=Val{:central}),abstol=1e-12,reltol=1e-12)
+sol8 = solve(prob,KenCarp47(autodiff=false,diff_type=Val{:complex}),abstol=1e-12,reltol=1e-12)
 
 ts = 0.0:0.1:1.0
 @test sol1(ts) ≈ sol2(ts)
@@ -69,7 +73,7 @@ sdirk_algs = [Trapezoid(),
               TRBDF2(), SDIRK2(),
               Kvaerno3(), KenCarp3(),
               Cash4(), Hairer4(), Hairer42(), Kvaerno4(), KenCarp4(),
-              Kvaerno5(), KenCarp5()]
+              Kvaerno5(), KenCarp5(),KenCarp47(),KenCarp58()]
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in working_sdirk_algs
   println(nameof(typeof(alg)))
