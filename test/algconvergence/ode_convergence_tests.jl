@@ -256,4 +256,10 @@ end
 
   sim116 = test_convergence(dts,prob,ESDIRK54I8L2SA())
   @test sim116.𝒪est[:final] ≈ 5 atol=testTol
+
+  sim117 = test_convergence(dts,prob,KenCarp47())
+  @test sim117.𝒪est[:final] ≈ 4 atol=testTol
+
+  sim118 = test_convergence(dts,prob,KenCarp58())
+  @test sim118.𝒪est[:final] ≈ 5 atol=testTol
 end
