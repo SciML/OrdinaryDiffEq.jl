@@ -34,7 +34,8 @@ end
 end
 
 function initialize!(integrator,cache::LowStorageRK2NCache)
-  @unpack k, tmp, williamson_condition = cache
+  @unpack k, tmp = cache
+  @unpack williamson_condition = integrator.alg
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = k
@@ -43,32 +44,34 @@ function initialize!(integrator,cache::LowStorageRK2NCache)
   else
     integrator.f(k ,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
   end
-  @.. tmp = integrator.dt * k
+  if !(integrator.f isa IncrementingODEFunction || williamson_condition)
+    @.. tmp = k
+  end
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NCache,repeat_step=false)
   @unpack t,dt,u,f,p = integrator
-  @unpack k,tmp,williamson_condition = cache
+  @unpack k,tmp = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
+  @unpack williamson_condition = integrator.alg
 
   # u1
-  @.. u   = u + B1*tmp
+  @.. u   = u + B1*dt*tmp
   # other stages
   for i in eachindex(A2end)
     if f isa IncrementingODEFunction
-      @.. tmp = (A2end[i] / dt)*tmp
+      @.. tmp = A2end[i]*tmp
       f(tmp, u, p, t+c2end[i]*dt, true)
-      @.. tmp *= dt
-      @.. u   = u + B2end[i]*tmp
+      @.. u   = u + B2end[i]*dt*tmp
     else
       if williamson_condition
-        f(ArrayFuse(tmp, u, (A2end[i], dt, B2end[i])), u, p, t+c2end[i]*dt)
+        f(ArrayFuse(tmp, u, (A2end[i], 1.0, dt * B2end[i])), u, p, t+c2end[i]*dt)
       else
           @.. tmp = A2end[i]*tmp
           f(k, u, p, t+c2end[i]*dt)
-          @.. tmp += dt * k
-          @.. u   = u + B2end[i]*tmp
+          @.. tmp += k
+          @.. u   = u + B2end[i]*dt*tmp
       end
     end
     integrator.destats.nf += 1
@@ -79,7 +82,9 @@ end
   else
     f(k, u, p, t+dt)
   end
-  @.. tmp = dt*k
+  if !(f isa IncrementingODEFunction || williamson_condition)
+    @.. tmp = k
+  end
   integrator.destats.nf += 1
 end
 
