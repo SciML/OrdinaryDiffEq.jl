@@ -94,6 +94,38 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step=false)
   integrator.destats.nf += 1
 end
 
+function initialize!(integrator, cache::MagnusGL4Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+  L1 = deepcopy(integrator.f.f)
+  update_coefficients!(L1,uprev,p,t+dt*(1/2 - sqrt(3)/6))
+  A1 = Matrix(L1)
+  update_coefficients!(L1,uprev,p,t+dt*(1/2 + sqrt(3)/6))
+  A2 = Matrix(L1)
+
+  Ω = (dt/2)*(A1 + A2) - (dt^2)*(sqrt(3)/12)*(A1*A2 - A2*A1)
+
+  if integrator.alg.krylov
+    u .= expv(1.0, Ω , uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    u .= exp(Ω) * uprev
+  end
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+end
+
 function initialize!(integrator, cache::MagnusGL8Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
