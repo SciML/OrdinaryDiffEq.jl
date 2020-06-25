@@ -40,6 +40,10 @@ sol = solve(prob,KenCarp3(),abstol=1e-10,reltol=1e-10)
 @test sol.errors[:l2] < 8e-4
 sol = solve(prob,KenCarp4(),abstol=1e-10,reltol=1e-10)
 @test sol.errors[:l2] < 1e-7
+sol = solve(prob,KenCarp47(),abstol=1e-10,reltol=1e-10)
+@test sol.errors[:l2] < 1e-7
+sol = solve(prob,KenCarp58(),abstol=1e-10,reltol=1e-10)
+@test sol.errors[:l2] < 1e-7
 
 using ModelingToolkit
 function lotka(du,u,p,t)

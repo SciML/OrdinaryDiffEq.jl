@@ -54,8 +54,12 @@ for prob in [prob1, prob2, prob3, prob4]
   @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
   sim = test_convergence(dts,prob,KenCarp4(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+  sim = test_convergence(dts,prob,KenCarp47(); kwargs...)
+  @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
   dts = 1 .//2 .^(7:-1:4)
   sim = test_convergence(dts,prob,KenCarp5(); kwargs...)
+  @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+  sim = test_convergence(dts,prob,KenCarp58(); kwargs...)
   @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
 end
 for prob in [prob1, prob2]

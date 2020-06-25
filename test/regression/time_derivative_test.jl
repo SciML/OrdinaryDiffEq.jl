@@ -35,7 +35,15 @@ sol = solve(prob,KenCarp3(),reltol=1e-12,abstol=1e-12)
 sol = solve(prob,KenCarp4(),reltol=1e-12,abstol=1e-12)
 @test length(sol) > 2
 @test sol.errors[:final] < 1e-10
+@show KenCarp47
+sol = solve(prob,KenCarp47(),reltol=1e-12,abstol=1e-12)
+@test length(sol) > 2
+@test sol.errors[:final] < 1e-10
 @show KenCarp5
+sol = solve(prob,KenCarp5(),reltol=1e-12,abstol=1e-12)
+@test length(sol) > 2
+@test sol.errors[:final] < 1e-10
+@show KenCarp58
 sol = solve(prob,KenCarp5(),reltol=1e-12,abstol=1e-12)
 @test length(sol) > 2
 @test sol.errors[:final] < 1e-10
