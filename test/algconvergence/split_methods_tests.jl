@@ -38,7 +38,9 @@ sol3 = solve(prob2,Euler(),dt=1/10)
 @test sol3[end] == sol[end]
 @test sol3(0.345) == sol(0.345)
 
+println("OOP Tests")
 # Now test only the first part
+println("Testing only first part of Split ODE")
 
 f1 = (u,p,t) -> 2u
 f2 = (u,p,t) -> zero(u)
@@ -116,6 +118,7 @@ sim = test_convergence(dts,prob,IRKC())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # Now test only the second part
+println("Testing only second part of Split ODE")
 
 f1 = (u,p,t) -> zero(u)
 f2 = (u,p,t) -> 2u
@@ -188,6 +191,7 @@ sim = test_convergence(dts,prob,IRKC())
 @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
 # Test together
+println("Testing both parts of Split ODE together")
 
 f1 = (u,p,t) -> u
 f2 = (u,p,t) -> 2u
@@ -259,7 +263,9 @@ dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,IRKC())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
+println("IIP Tests")
 # Now test only the first part
+println("Testing only first part of Split ODE")
 
 f1 = (du,u,p,t) -> du .= 2u
 f2 = (du,u,p,t) -> du .= 0.0
@@ -332,6 +338,7 @@ sim = test_convergence(dts,prob,IRKC())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # Now test only the second part
+println("Testing only second part of Split ODE")
 
 f1 = (du,u,p,t) -> du.= 0.0
 f2 = (du,u,p,t) -> du.= 2u
@@ -404,6 +411,7 @@ sim = test_convergence(dts,prob,IRKC())
 @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
 # Test together
+println("Testing both parts of Split ODE together")
 
 f1 = (du,u,p,t) -> du .= u
 f2 = (du,u,p,t) -> du .= 2u
