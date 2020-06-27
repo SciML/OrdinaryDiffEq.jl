@@ -61,8 +61,7 @@ end
   # other stages
   for i in eachindex(A2end)
     if f isa IncrementingODEFunction
-      @.. tmp = A2end[i]*tmp
-      f(tmp, u, p, t+c2end[i]*dt, true)
+      f(tmp, u, p, t+c2end[i]*dt, true; β=A2end[i])
       @.. u   = u + B2end[i]*dt*tmp
     else
       if williamson_condition
