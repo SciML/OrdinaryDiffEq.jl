@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, Calculus, ForwardDiff
+using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra
 
 function f(du,u,p,t)
   du[1] = -p[1]
@@ -152,3 +152,105 @@ end
 
 ForwardDiff.gradient(myobj4, [1.0])
 ForwardDiff.hessian(myobj4, [1.0])
+
+# From https://discourse.julialang.org/t/issue-with-callbacks-when-solving-differential-equations-having-dual-number-states/41883/6
+
+#                     val    d/dy0  d/dvy0 d/dgy
+y  = ForwardDiff.Dual(0.6,   1.0,   0.0,   0.0  )
+vy = ForwardDiff.Dual(0.0,   0.0,   1.0,   0.0  )
+gy = ForwardDiff.Dual(0.005, 0.0,   0.0,   1.0  )
+u0 = [y;vy]
+tspan = (0.0, 2.0)
+function st!(du, u, p, t)
+    @inbounds begin
+        du[1] = u[2]
+        du[2] = (1-u[1]) - p
+    end
+    return nothing
+end
+cnd(u, t, integ) = u[1] - 1
+CC = ContinuousCallback(cnd, terminate!, nothing, abstol=0, reltol=0)
+
+prb = ODEProblem(st!, u0, tspan, gy)
+sl1 = solve(prb, Vern9(), abstol=1e-12, reltol=1e-12)
+sl2 = solve(prb, Vern9(), abstol=1e-12, reltol=1e-12, callback=CC)
+
+s1 = sl1(sl2.t[end].value)
+s2 = sl2[end]
+@test s1 ≈ s2
+
+s3 = sl1(sl2.t[end-1].value)
+s4 = sl2[end-1]
+@test s3 ≈ s4
+
+s5 = sl1(sl2.t[end-2].value)
+s6 = sl2[end-2]
+@test s5 ≈ s6
+
+s7 = sl1(sl2.t[end-3].value)
+s8 = sl2[end-3]
+@test s7 ≈ s8
+
+s9 = sl1(sl2.t[end-4].value)
+s10= sl2[end-4]
+@test s9 ≈ s10
+
+x = [0.6,0.0,0.005]
+function get_endminusidx_cb(x;idx=0)
+    y  = x[1]
+    vy = x[2]
+    gy = x[3]
+    u0 = [y;vy]
+    tspan = (0.0, 2.0)
+    function st!(du, u, p, t)
+        @inbounds begin
+            du[1] = u[2]
+            du[2] = (1-u[1]) - p
+        end
+        return nothing
+    end
+    cnd(u, t, integ) = u[1] - 1
+    CC = ContinuousCallback(cnd, terminate!, nothing, abstol=0, reltol=0)
+
+    prb = ODEProblem(st!, u0, tspan, gy)
+    sol = solve(prb, Vern9(), abstol=1e-12, reltol=1e-12, callback = CC, saveat= ForwardDiff.value.(sl2.t))
+    sol[end-idx]
+end
+function get_endminusidx(x;idx=0)
+    y  = x[1]
+    vy = x[2]
+    gy = x[3]
+    u0 = [y;vy]
+    tspan = (0.0, 2.0)
+    function st!(du, u, p, t)
+        @inbounds begin
+            du[1] = u[2]
+            du[2] = (1-u[1]) - p
+        end
+        return nothing
+    end
+    cnd(u, t, integ) = u[1] - 1
+    CC = ContinuousCallback(cnd, terminate!, nothing, abstol=0, reltol=0)
+
+    prb = ODEProblem(st!, u0, tspan, gy)
+    sol = solve(prb, Vern9(), abstol=1e-12, reltol=1e-12, saveat= ForwardDiff.value.(sl2.t))
+    sol[end-idx]
+end
+# The first two need to use the callback, since that makes finite difference
+# know that u[1] does not change at the end
+enddiffs = FiniteDiff.finite_difference_jacobian(get_endminusidx_cb,x)
+@test enddiffs ≈ reduce(hcat,Array.(ForwardDiff.partials.(s2)))' atol=1e-7
+
+enddiffs = FiniteDiff.finite_difference_jacobian(x->get_endminusidx_cb(x,idx=1),x)
+@test enddiffs ≈ reduce(hcat,Array.(ForwardDiff.partials.(s4)))' atol=1e-7
+
+# These now use the no-callback version since that seems to be more stable
+# for finite differencing
+enddiffs = FiniteDiff.finite_difference_jacobian(x->get_endminusidx(x,idx=2),x)
+@test enddiffs ≈ reduce(hcat,Array.(ForwardDiff.partials.(s6)))' atol=1e-5
+
+enddiffs = FiniteDiff.finite_difference_jacobian(x->get_endminusidx(x,idx=3),x)
+@test enddiffs ≈ reduce(hcat,Array.(ForwardDiff.partials.(s8)))' atol=1e-5
+
+enddiffs = FiniteDiff.finite_difference_jacobian(x->get_endminusidx(x,idx=4),x)
+@test enddiffs ≈ reduce(hcat,Array.(ForwardDiff.partials.(s10)))' atol=1e-5
