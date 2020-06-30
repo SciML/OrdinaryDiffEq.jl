@@ -48,6 +48,31 @@ function alg_cache(alg::MagnusNC8,u,rate_prototype,uEltypeNoUnits,
   MagnusNC8ConstantCache()
 end
 
+@cache struct MagnusGL4Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+end
+
+function alg_cache(alg::MagnusGL4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  MagnusGL4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+end
+
+struct MagnusGL4ConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::MagnusGL4,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  MagnusGL4ConstantCache()
+end
+
 @cache struct MagnusGL8Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
