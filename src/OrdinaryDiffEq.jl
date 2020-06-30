@@ -77,6 +77,7 @@ module OrdinaryDiffEq
   include("caches/low_order_rk_caches.jl")
   include("caches/high_order_rk_caches.jl")
   include("caches/low_storage_rk_caches.jl")
+  include("caches/multirate_caches.jl")
   include("caches/ssprk_caches.jl")
   include("caches/feagin_caches.jl")
   include("caches/verner_caches.jl")
@@ -128,6 +129,7 @@ module OrdinaryDiffEq
   include("perform_step/verner_rk_perform_step.jl")
   include("perform_step/feagin_rk_perform_step.jl")
   include("perform_step/low_storage_rk_perform_step.jl")
+  include("perform_step/multirate_perform_step.jl")
   include("perform_step/ssprk_perform_step.jl")
   include("perform_step/sdirk_perform_step.jl")
   include("perform_step/kencarp_kvaerno_perform_step.jl")
@@ -247,4 +249,6 @@ module OrdinaryDiffEq
   export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
 
   export ShampineCollocationInit, BrownFullBasicInit
+
+  export Rice3
 end # module
