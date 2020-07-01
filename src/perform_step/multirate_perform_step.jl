@@ -1,3 +1,16 @@
+get_a21(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :a21) ? tab.a21 : zero(T)
+get_a31(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :a31) ? tab.a31 : zero(T)
+get_a32(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :a32) ? tab.a32 : zero(T)
+get_a41(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :a41) ? tab.a41 : zero(T)
+get_a42(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :a42) ? tab.a42 : zero(T)
+get_a43(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :a43) ? tab.a43 : zero(T)
+get_btilde1(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :btilde1) ? tab.btilde1 : zero(T)
+get_btilde2(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :btilde2) ? tab.btilde2 : zero(T)
+get_btilde3(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :btilde3) ? tab.btilde3 : zero(T)
+get_btilde4(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :btilde4) ? tab.btilde4 : zero(T)
+get_c1(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :c1) ? tab.c1 : zero(T2)
+get_c2(tab::OrdinaryDiffEqTableau{T,T2}) where {T,T2} = hasfield(typeof(tab), :c2) ? tab.c2 : zero(T2)
+
 function initialize!(integrator, cache::Rice3ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -15,13 +28,20 @@ end
   f, g = integrator.f.f1, integrator.f.f2
   K = integrator.alg.K
   xprev, yprev = uprev.x[1], uprev.x[2]
-  @unpack a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4 = cache.tab
+  a21 = get_a21(cache.tab)
+  a31 = get_a31(cache.tab)
+  a32 = get_a32(cache.tab)
+  a41 = get_a41(cache.tab)
+  a42 = get_a42(cache.tab)
+  a43 = get_a43(cache.tab)
+  c1  = get_c1(cache.tab)
+  c2  = get_c2(cache.tab)
   # slow time stepping
   k1, h1 = integrator.fsalfirst.x[1], integrator.fsalfirst.x[2]
   k2 = f(xprev + dt*a21*k1, yprev + dt*a21*h1, p, t+c1*dt)
   h2 = g(xprev + dt*a21*k1, yprev + dt*a21*h1, p, t+c1*dt)
-  k3 = f(xprev + dt*a32*k2, yprev + dt*a32*h2, p, t+c2*dt)
-  h3 = g(xprev + dt*a32*k2, yprev + dt*a32*h2, p, t+c2*dt)
+  k3 = f(xprev + dt*a31*k1 + dt*a32*k2, yprev + dt*a31*h1 + dt*a32*h2, p, t+c2*dt)
+  h3 = g(xprev + dt*a31*k1 + dt*a32*k2, yprev + dt*a31*h1 + dt*a32*h2, p, t+c2*dt)
   x = xprev + dt * (a41*k1 + a42*k2 + a43*k3)
 
   # slow time stepping
@@ -53,6 +73,10 @@ end
   h4 = f(x, y, p, t+dt)
   integrator.fsallast = ArrayPartition(k4, h4)
   if integrator.opts.adaptive
+    btilde1 = get_btilde1(cache.tab)
+    btilde2 = get_btilde2(cache.tab)
+    btilde3 = get_btilde3(cache.tab)
+    btilde4 = get_btilde4(cache.tab)
     xtilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
     ytilde = dt*(btilde1*h1 + btilde2*h2 + btilde3*h3 + btilde4*h4)
     utilde = ArrayPartition(xtilde, ytilde)
@@ -78,7 +102,14 @@ end
 @muladd function perform_step!(integrator, cache::Rice3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
   f, g = integrator.f.f1, integrator.f.f2
-  @unpack a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4 = cache.tab
+  a21 = get_a21(cache.tab)
+  a31 = get_a31(cache.tab)
+  a32 = get_a32(cache.tab)
+  a41 = get_a41(cache.tab)
+  a42 = get_a42(cache.tab)
+  a43 = get_a43(cache.tab)
+  c1  = get_c1(cache.tab)
+  c2  = get_c2(cache.tab)
   @unpack k2,k3,k4,h2,h3,h4,d1,d2,d3,utilde,tmp,tmp2,atmp = cache
   K = integrator.alg.K
 
@@ -94,8 +125,8 @@ end
   f(k2, xtmp, ytmp, p, t + c1 * dt)
   g(h2, xtmp, ytmp, p, t + c1 * dt)
 
-  @.. xtmp = xprev + dt * a32 * k2
-  @.. ytmp = yprev + dt * a32 * h2
+  @.. xtmp = xprev + dt * a31 * k1 + dt * a32 * k2
+  @.. ytmp = yprev + dt * a31 * h1 + dt * a32 * h2
   f(k3, xtmp, ytmp, p, t + c2 * dt)
   g(h3, xtmp, ytmp, p, t + c2 * dt)
 
@@ -131,6 +162,10 @@ end
   g(h4, x, y, p, t + dt)
 
   if integrator.opts.adaptive
+    btilde1 = get_btilde1(cache.tab)
+    btilde2 = get_btilde2(cache.tab)
+    btilde3 = get_btilde3(cache.tab)
+    btilde4 = get_btilde4(cache.tab)
     xtilde, ytilde = utilde.x[1], utilde.x[2]
     @.. xtilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
     @.. ytilde = dt*(btilde1*h1 + btilde2*h2 + btilde3*h3 + btilde4*h4)
