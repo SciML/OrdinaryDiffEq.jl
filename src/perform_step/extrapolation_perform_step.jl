@@ -252,6 +252,10 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
+  @unpack subdividing_sequence = cache.coefficients
+
+  @show subdividing_sequence
+
   max_order = min(size(T, 1), cur_order + 1)
 
   if !integrator.alg.threading

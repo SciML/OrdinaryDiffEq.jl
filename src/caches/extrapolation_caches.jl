@@ -67,7 +67,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType,extrapolation_coefficients} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType,sequenceType} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmps::Array{uType,1}
   utilde::uType
@@ -90,10 +90,10 @@ end
   linsolve::Array{F,1}
   jac_config::JCType
   grad_config::GCType
-  coefficients::extrapolation_coefficients #support for different sequences
+  sequence::sequenceType #support for different sequences
 end
 
-@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF,sequenceType} <: OrdinaryDiffEqConstantCache
   dtpropose::dtType
   T::arrayType
   cur_order::Int
@@ -104,7 +104,7 @@ end
   tf::TF
   uf::UF
 
-  coefficients::extrapolation_coefficients #support for different sequences
+  sequence::sequenceType #support for different sequences
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -117,8 +117,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   step_no = zero(Int)
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
-  coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
-  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,coefficients)
+  sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
+  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,sequence)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -192,12 +192,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
-
-  coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
-
-
+  sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
   ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,coefficients)
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence)
 end
 
 
@@ -314,6 +311,44 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats}, alg::Union
   extrapolation_coefficients(subdividing_sequence,
       extrapolation_weights, extrapolation_scalars,
       extrapolation_weights_2, extrapolation_scalars_2)
+end
+
+function generate_sequence(T, alg::ImplicitEulerExtrapolation)
+  # Compute and return extrapolation_coefficients
+
+  @unpack min_order, init_order, max_order, sequence = alg
+
+  max_order > 15 && error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
+
+  # Initialize subdividing_sequence:
+  if sequence == :harmonic
+      subdividing_sequence = BigInt.(1:(max_order + 1))
+  elseif sequence == :romberg
+      subdividing_sequence = BigInt(2).^(0:max_order)
+  else # sequence == :bulirsch
+      subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) : 3 * BigInt(2)^(n ÷ 2 - 1)) for n = 0:max_order]
+  end
+
+  subdividing_sequence
+end
+
+function generate_sequence(T::Type{<:CompiledFloats}, alg::ImplicitEulerExtrapolation)
+  # Compute and return extrapolation_coefficients
+
+  @unpack min_order, init_order, max_order, sequence = alg
+
+  max_order > 15 && error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
+
+  # Initialize subdividing_sequence:
+  if sequence == :harmonic
+    subdividing_sequence = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+  elseif sequence == :romberg
+    subdividing_sequence = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+  else # sequence == :bulirsch
+    subdividing_sequence = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256]
+  end
+
+  subdividing_sequence
 end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardConstantCache{QType, extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
