@@ -259,7 +259,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
 
   if !integrator.alg.threading
     for index in 1:max_order
-      dt_temp = dt/sequence[index] # Romberg sequence
+      dt_temp = dt/sequence[index]
       calc_W!(W[1], integrator, nothing, cache, dt_temp, repeat_step)
       @.. k_tmps[1] = integrator.fsalfirst
       @.. u_tmps[1] = uprev
@@ -374,17 +374,18 @@ end
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
+  @unpack sequence = cache
 
   max_order = min(size(T, 1), cur_order+1)
 
   if !integrator.alg.threading
     for index in 1:max_order
-      dt_temp = dt/(2^(index-1)) # Romberg sequence
+      dt_temp = dt/sequence[index]
       W = calc_W(integrator, cache, dt_temp, repeat_step)
       k_copy = integrator.fsalfirst
       u_tmp = uprev
 
-      for j in 1:2^(index-1)
+      for j in 1:sequence[index]
         k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
         integrator.destats.nsolve += 1
         u_tmp = u_tmp + k
@@ -401,7 +402,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         startIndex = (i==1) ? 1 : max_order
         endIndex = (i==1) ? max_order-1 : max_order
         for index in startIndex:endIndex
-          dt_temp = dt/(2^(index-1)) # Romberg sequence
+          dt_temp = dt/sequence[index]
           W = calc_W(integrator, cache, dt_temp, repeat_step)
           k_copy = integrator.fsalfirst
           u_tmp = uprev
@@ -415,7 +416,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       end
     end
 
-    nevals = 2^max_order - 1
+    nevals = sum(sequence[max_order]) + 1
     integrator.destats.nf += nevals
     integrator.destats.nsolve += nevals
   end
@@ -425,7 +426,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
   for j in 2:max_order
     tmp *= 2
     for i in j:max_order
-      T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
+      T[i, j] = ((sequence[i]/sequence[i - j + 1]) * T[i, j - 1] - T[i - 1, j - 1]) / ((sequence[i]/sequence[i - j + 1]) - 1)
     end
   end
 
@@ -440,7 +441,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       end
 
       for i in range_start:max_order
-          A = 2^(i-1)
+          A = sum(sequence[i]) + 1
           utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
