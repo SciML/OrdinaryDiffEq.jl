@@ -68,7 +68,7 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
 
     # Warn user if sequence has been changed:
     if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-      @warn "The `sequence` given to the `ImplicitHairerWannerExtrapolation` algorithm
+      @warn "The `sequence` given to the `ImplicitEulerExtrapolation` algorithm
           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
           Thus it has been changed
         :$(sequence) --> :harmonic"
