@@ -67,7 +67,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType,extrapolation_coefficients} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmps::Array{uType,1}
   utilde::uType
@@ -90,9 +90,10 @@ end
   linsolve::Array{F,1}
   jac_config::JCType
   grad_config::GCType
+  coefficients::extrapolation_coefficients #support for different sequences
 end
 
-@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
   dtpropose::dtType
   T::arrayType
   cur_order::Int
@@ -102,6 +103,8 @@ end
 
   tf::TF
   uf::UF
+
+  coefficients::extrapolation_coefficients #support for different sequences
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -114,7 +117,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   step_no = zero(Int)
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
-  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf)
+  coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
+  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,coefficients)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -189,9 +193,11 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
+  coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
+
 
   ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config)
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,coefficients)
 end
 
 

@@ -1490,6 +1490,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
       u_temp1 = T[i+1]
     end
   end
+  @show T
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
