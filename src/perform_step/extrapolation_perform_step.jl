@@ -252,20 +252,19 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
-  @unpack subdividing_sequence = cache.coefficients
+  @unpack sequence = cache
 
-  @show subdividing_sequence
 
   max_order = min(size(T, 1), cur_order + 1)
 
   if !integrator.alg.threading
     for index in 1:max_order
-      dt_temp = dt/(2^(index-1)) # Romberg sequence
+      dt_temp = dt/sequence[index] # Romberg sequence
       calc_W!(W[1], integrator, nothing, cache, dt_temp, repeat_step)
       @.. k_tmps[1] = integrator.fsalfirst
       @.. u_tmps[1] = uprev
 
-      for j in 1:2^(index-1)
+      for j in 1:sequence[index]
         @.. linsolve_tmps[1] = dt_temp*k_tmps[1]
         cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
         integrator.destats.nsolve += 1
@@ -285,11 +284,11 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         startIndex = (i == 1) ? 1 : max_order
         endIndex = (i == 1) ? max_order - 1 : max_order
         for index in startIndex:endIndex
-          dt_temp = dt/(2^(index-1)) # Romberg sequence
+          dt_temp = dt/sequence[index] # Romberg sequence
           calc_W!(W[Threads.threadid()], integrator, nothing, cache, dt_temp, repeat_step)
           @.. k_tmps[Threads.threadid()] = integrator.fsalfirst
           @.. u_tmps[Threads.threadid()] = uprev
-          for j in 1:2^(index-1)
+          for j in 1:sequence[index]
               @.. linsolve_tmps[Threads.threadid()] = dt_temp*k_tmps[Threads.threadid()]
               cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -302,17 +301,16 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       end
     end
 
-    nevals = 2^max_order - 1
+    nevals = sum(sequence[max_order]) + 1
     integrator.destats.nf += nevals
     integrator.destats.nsolve += nevals
   end
 
-  # Richardson extrapolation
+  # Polynomial extrapolation
   tmp = 1
   for j in 2:max_order
-    tmp *= 2
     for i in j:max_order
-      @.. T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
+      @.. T[i, j] = ((sequence[i]/sequence[i - j + 1]) * T[i, j - 1] - T[i - 1, j - 1]) / ((sequence[i]/sequence[i - j + 1]) - 1)
     end
   end
 
@@ -327,7 +325,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     end
 
     for i in range_start:max_order
-        A = 2^(i-1)
+        A = sum(sequence[i]) + 1
         @.. utilde = T[i,i] - T[i,i-1]
         atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         EEst = integrator.opts.internalnorm(atmp,t)
@@ -1494,7 +1492,6 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
       u_temp1 = T[i+1]
     end
   end
-  @show T
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min

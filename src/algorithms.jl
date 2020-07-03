@@ -71,8 +71,8 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
       @warn "The `sequence` given to the `ImplicitEulerExtrapolation` algorithm
           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
           Thus it has been changed
-        :$(sequence) --> :harmonic"
-      sequence = :harmonic
+        :$(sequence) --> :bulirsch"
+      sequence = :bulirsch
     end
     ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(
       linsolve,max_order,min_order,init_order,threading,diff_type,sequence)

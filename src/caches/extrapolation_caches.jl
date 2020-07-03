@@ -318,8 +318,6 @@ function generate_sequence(T, alg::ImplicitEulerExtrapolation)
 
   @unpack min_order, init_order, max_order, sequence = alg
 
-  max_order > 15 && error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
-
   # Initialize subdividing_sequence:
   if sequence == :harmonic
       subdividing_sequence = BigInt.(1:(max_order + 1))
@@ -337,15 +335,13 @@ function generate_sequence(T::Type{<:CompiledFloats}, alg::ImplicitEulerExtrapol
 
   @unpack min_order, init_order, max_order, sequence = alg
 
-  max_order > 15 && error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
-
   # Initialize subdividing_sequence:
   if sequence == :harmonic
-    subdividing_sequence = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    subdividing_sequence = Int.(1:(max_order + 1))
   elseif sequence == :romberg
-    subdividing_sequence = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+    subdividing_sequence = Int(2).^(0:max_order)
   else # sequence == :bulirsch
-    subdividing_sequence = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256]
+    subdividing_sequence = [n==0 ? Int(1) : (isodd(n) ? Int(2)^((n + 1) ÷ 2) : 3 * Int(2)^(n ÷ 2 - 1)) for n = 0:max_order]
   end
 
   subdividing_sequence
