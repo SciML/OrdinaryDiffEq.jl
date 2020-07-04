@@ -28,6 +28,104 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   integrator.destats.nf += 1
 end
 
+function initialize!(integrator, cache::MagnusNC8Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  L1 = deepcopy(integrator.f.f)
+
+  update_coefficients!(L1,u,p,t)
+  A0 = Matrix(L1)
+  update_coefficients!(L1,u,p,t+dt/6)
+  A1 = Matrix(L1)
+  update_coefficients!(L1,u,p,t+2*dt/6)
+  A2 = Matrix(L1)
+  update_coefficients!(L1,u,p,t+3*dt/6)
+  A3 = Matrix(L1)
+  update_coefficients!(L1,u,p,t+4*dt/6)
+  A4 = Matrix(L1)
+  update_coefficients!(L1,u,p,t+5*dt/6)
+  A5 = Matrix(L1)
+  update_coefficients!(L1,u,p,t+dt)
+  A6 = Matrix(L1)
+
+  S1 = A0 + A6
+  S2 = A1 + A5
+  S3 = A2 + A4
+  S4 = A3
+  R1 = A6 - A0
+  R2 = A5 - A1
+  R3 = A4 - A2
+
+  B0 = (1/840)*(41*S1 + 216*S2 + 27*S3 + 272*S4)
+  B2 = (1/840)*(41*S1/4 + 216*S2/9 + 27*S3/36)
+  B1 = (1/840)*(41*R1/2 + 216*R2/3 + 27*R3/6)
+  B3 = (1/840)*(41*R1/8 + 216*R2/27 + 27*R3/216)
+
+  Q1 = (-38*B0/5 + 24*B2)*B3 - B3*(-38*B0/5 + 24*B2)
+  Q2 = (63*B0/5 - 84*B2)*(-5*B1/28 + B3) - (-5*B1/28 + B3)*(63*B0/5 - 84*B2)
+  Q3 = (19*B0/28 - 15*B2/7)*(B0*(B2 + dt*(61*Q1/588 - Q2/12)) - (B2 + dt*(61*Q1/588 - Q2/12))*B0) - (B0*(B2 + dt*(61*Q1/588 - Q2/12)) - (B2 + dt*(61*Q1/588 - Q2/12))*B0)*(19*B0/28 - 15*B2/7)
+  Q4 = B3*(20*Q1/7 + 10*Q2) - (20*Q1/7 + 10*Q2)*B3
+  Q5 = (-6025*B0/4116 + 2875*B2/343)*(B2*Q1 - Q1*B2) - (B2*Q1 - Q1*B2)*(-6025*B0/4116 + 2875*B2/343)
+  Q6 = B3*(20*(Q3 + Q4)/7 + 820*dt*Q5/189) - (20*(Q3 + Q4)/7 + 820*dt*Q5/189)*B3
+  Q7 = (-1/42)*(B0*(B0*(Q3 - Q4/3 + dt*Q5) - (Q3 - Q4/3 + dt*Q5)*B0) - (B0*(Q3 - Q4/3 + dt*Q5) - (Q3 - Q4/3 + dt*Q5)*B0)*B0)
+
+  Ω1 = dt*B0
+  Ω2 = (dt^2)*(Q1 + Q2)
+  Ω3_4_5_6 = (dt^3)*(Q3 + Q4) + (dt^4)*(Q5 + Q6) + (dt^5)*Q7
+  if integrator.alg.krylov
+    u .= expv(1.0,Ω1 + Ω2 + Ω3_4_5_6, uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
+  end
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+end
+
+function initialize!(integrator, cache::MagnusGL4Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+  L1 = deepcopy(integrator.f.f)
+  update_coefficients!(L1,uprev,p,t+dt*(1/2 - sqrt(3)/6))
+  A1 = Matrix(L1)
+  update_coefficients!(L1,uprev,p,t+dt*(1/2 + sqrt(3)/6))
+  A2 = Matrix(L1)
+
+  Ω = (dt/2)*(A1 + A2) - (dt^2)*(sqrt(3)/12)*(A1*A2 - A2*A1)
+
+  if integrator.alg.krylov
+    u .= expv(1.0, Ω , uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    u .= exp(Ω) * uprev
+  end
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+end
+
 function initialize!(integrator, cache::MagnusGL8Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst

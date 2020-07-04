@@ -1451,7 +1451,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Linear Methods
 
-for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8]
+for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int
@@ -1992,7 +1992,7 @@ KenCarp58(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
  KenCarp58{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
-        linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)        
+        linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
 struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
