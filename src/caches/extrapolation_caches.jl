@@ -67,7 +67,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType,sequenceType} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmps::Array{uType,1}
   utilde::uType
@@ -90,9 +90,10 @@ end
   linsolve::Array{F,1}
   jac_config::JCType
   grad_config::GCType
+  sequence::sequenceType #support for different sequences
 end
 
-@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF,sequenceType} <: OrdinaryDiffEqConstantCache
   dtpropose::dtType
   T::arrayType
   cur_order::Int
@@ -102,6 +103,8 @@ end
 
   tf::TF
   uf::UF
+
+  sequence::sequenceType #support for different sequences
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -114,7 +117,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   step_no = zero(Int)
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
-  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf)
+  sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
+  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,sequence)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -188,10 +192,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
-
-
+  sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
   ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config)
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence)
 end
 
 
@@ -308,6 +311,40 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats}, alg::Union
   extrapolation_coefficients(subdividing_sequence,
       extrapolation_weights, extrapolation_scalars,
       extrapolation_weights_2, extrapolation_scalars_2)
+end
+
+function generate_sequence(T, alg::ImplicitEulerExtrapolation)
+  # Compute and return extrapolation_coefficients
+
+  @unpack min_order, init_order, max_order, sequence = alg
+
+  # Initialize subdividing_sequence:
+  if sequence == :harmonic
+      subdividing_sequence = BigInt.(1:(max_order + 1))
+  elseif sequence == :romberg
+      subdividing_sequence = BigInt(2).^(0:max_order)
+  else # sequence == :bulirsch
+      subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) : 3 * BigInt(2)^(n ÷ 2 - 1)) for n = 0:max_order]
+  end
+
+  subdividing_sequence
+end
+
+function generate_sequence(T::Type{<:CompiledFloats}, alg::ImplicitEulerExtrapolation)
+  # Compute and return extrapolation_coefficients
+
+  @unpack min_order, init_order, max_order, sequence = alg
+
+  # Initialize subdividing_sequence:
+  if sequence == :harmonic
+    subdividing_sequence = Int.(1:(max_order + 1))
+  elseif sequence == :romberg
+    subdividing_sequence = Int(2).^(0:max_order)
+  else # sequence == :bulirsch
+    subdividing_sequence = [n==0 ? Int(1) : (isodd(n) ? Int(2)^((n + 1) ÷ 2) : 3 * Int(2)^(n ÷ 2 - 1)) for n = 0:max_order]
+  end
+
+  subdividing_sequence
 end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardConstantCache{QType, extrapolation_coefficients} <: OrdinaryDiffEqConstantCache

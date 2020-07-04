@@ -70,26 +70,26 @@ testTol = 0.2
   end
 end # AitkenNeville
 
+# Define the subdividing sequences
+sequence_array =[:harmonic, :romberg, :bulirsch]
+
 @testset "Testing ImplicitEulerExtrapolation" begin
-  for prob in problem_array
+  for prob in problem_array, seq in sequence_array
     global dts
 
     newTol = 0.35
     #  Convergence test
     for j = 1:4
       sim = test_convergence(dts,prob,ImplicitEulerExtrapolation(max_order = j,
-        min_order = j, init_order = j))
+        min_order = j, init_order = j,sequence = seq))
       @test sim.𝒪est[:final] ≈ j atol=newTol
     end
     # Regression test
     sol = solve(prob,ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
-        init_order = 9),reltol=1e-3)
+        init_order = 9,sequence = seq),reltol=1e-3)
     @test length(sol.u) < 15
   end
 end
-
-# Define the subdividing sequences
-sequence_array =[:harmonic, :romberg, :bulirsch]
 
 @testset "Testing ImplicitDeuflhardExtrapolation" begin
   for prob in problem_array, seq in sequence_array
