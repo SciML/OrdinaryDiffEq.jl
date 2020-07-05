@@ -23,6 +23,20 @@ abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD} <: OrdinaryDif
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
 
+function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm, kwargs...)
+  T = DiffEqBase.remaker_of(thing)
+  T(; DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
+end
+
+function DiffEqBase.remake(thing::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}, kwargs...) where {CS, AD}
+  T = DiffEqBase.remaker_of(thing)
+  T(; chunk_size=CS,autodiff=AD,DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
+end
+
+function DiffEqBase.remake(thing::OrdinaryDiffEqImplicitAlgorithm{CS,AD}, kwargs...) where {CS, AD}
+  T = DiffEqBase.remaker_of(thing)
+  T(; chunk_size=CS,autodiff=AD,DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
+end
 ###############################################################################
 
 # RK methods
