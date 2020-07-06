@@ -258,9 +258,11 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   max_order = min(size(T, 1), cur_order + 1)
 
   if !integrator.alg.threading
+    calc_J!(J,integrator,cache)
     for index in 1:max_order
       dt_temp = dt/sequence[index]
-      calc_W!(W[1], integrator, nothing, cache, dt_temp, repeat_step)
+      jacobian2W!(W[1], integrator.f.mass_matrix, dt_temp, J, false)
+      integrator.destats.nw +=1
       @.. k_tmps[1] = integrator.fsalfirst
       @.. u_tmps[1] = uprev
 
@@ -301,7 +303,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       end
     end
 
-    nevals = sum(sequence[max_order]) + 1
+    nevals = sum(sequence[1:max_order]) - 1
     integrator.destats.nf += nevals
     integrator.destats.nsolve += nevals
   end
@@ -325,7 +327,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     end
 
     for i in range_start:max_order
-        A = sum(sequence[i]) + 1
+        A = sum(sequence[1:i]) + 1
         @.. utilde = T[i,i] - T[i,i-1]
         atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         EEst = integrator.opts.internalnorm(atmp,t)
