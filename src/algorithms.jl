@@ -117,7 +117,7 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
 
   # Warn user if sequence_factor is not even
   if sequence_factor%2 != 0
-    @warn "An odd number cannot be used as sequence factor. 
+    @warn "A non-even number cannot be used as sequence factor. 
           Thus is has been changed 
           $(sequence_factor) --> 2"
     sequence_factor = 2
@@ -201,7 +201,7 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
 
   # Warn user if sequence_factor is not even
   if sequence_factor%2 != 0
-    @warn "A odd number cannot be used as sequence factor. 
+    @warn "A non-even number cannot be used as sequence factor. 
           Thus is has been changed 
           $(sequence_factor) --> 2"
     sequence_factor = 2
