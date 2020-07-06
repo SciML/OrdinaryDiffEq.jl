@@ -43,8 +43,8 @@ function jacobian_autodiff(f, x::AbstractArray, odefun, alg)
   jac_prototype = odefun.jac_prototype
   sparsity,colorvec = sparsity_colorvec(odefun,x)
   maxcolor = maximum(colorvec)
-  chunk_size = get_chunksize(alg)==0 ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
-  num_of_chunks = chunk_size==nothing ? Int(ceil(maxcolor / getsize(default_chunk_size(maxcolor)))) :
+  chunk_size = get_chunksize(alg)===Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
+  num_of_chunks = chunk_size===nothing ? Int(ceil(maxcolor / getsize(default_chunk_size(maxcolor)))) :
                                         Int(ceil(maxcolor / chunk_size))
   (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity,
                               jac_prototype = jac_prototype, chunksize=chunk_size),
@@ -118,7 +118,7 @@ function DiffEqBase.build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,::Val{transfor
     jac_prototype = f.jac_prototype
     sparsity,colorvec = sparsity_colorvec(f,u)
     if alg_autodiff(alg)
-      _chunksize = get_chunksize(alg)==0 ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
+      _chunksize = get_chunksize(alg)===Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
       jac_config = ForwardColorJacCache(uf,uprev,_chunksize;colorvec=colorvec,sparsity=sparsity)
     else
       if alg.diff_type != Val{:complex}
@@ -133,7 +133,7 @@ function DiffEqBase.build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,::Val{transfor
   jac_config
 end
 
-get_chunksize(jac_config::ForwardDiff.JacobianConfig{T,V,N,D}) where {T,V,N,D} = N
+get_chunksize(jac_config::ForwardDiff.JacobianConfig{T,V,N,D}) where {T,V,N,D} = Val(N) # don't degrade compile time information to runtime information
 
 function DiffEqBase.resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
   resize!(jac_config.fx, i)
