@@ -504,6 +504,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
+  @unpack sequence_factor = integrator.alg
 
   fill!(cache.Q, zero(eltype(cache.Q)))
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
@@ -698,7 +699,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
-  @unpack sequence_factor = integrator.alg.sequence_factor
+  @unpack sequence_factor = integrator.alg
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -1322,6 +1323,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
+  @unpack subdividing_sequence = integrator.alg
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
