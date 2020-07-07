@@ -279,6 +279,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       @.. T[index,1] = u_tmps[1]
     end
   else
+    calc_J!(J,integrator,cache) # Store the calculated jacobian it won't change in internal discretisation
     let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
         integrator=integrator, cache=cache, repeat_step = repeat_step,
         k_tmps=k_tmps, u_tmps=u_tmps
@@ -286,8 +287,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         startIndex = (i == 1) ? 1 : max_order
         endIndex = (i == 1) ? max_order - 1 : max_order
         for index in startIndex:endIndex
-          dt_temp = dt/sequence[index] # Romberg sequence
-          calc_W!(W[Threads.threadid()], integrator, nothing, cache, dt_temp, repeat_step)
+          dt_temp = dt/sequence[index]
+          jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_temp, J, false)
           @.. k_tmps[Threads.threadid()] = integrator.fsalfirst
           @.. u_tmps[Threads.threadid()] = uprev
           for j in 1:sequence[index]
@@ -304,6 +305,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     end
 
     nevals = sum(sequence[1:max_order]) - 1
+    integrator.destats.nw += max_order
     integrator.destats.nf += nevals
     integrator.destats.nsolve += nevals
   end
