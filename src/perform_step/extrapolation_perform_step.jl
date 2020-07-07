@@ -1517,10 +1517,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
   end
 
   #Compute the internal discretisations
+  J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   for i in 0:n_curr
     j_int = 2 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    W = calc_W(integrator, cache, dt_int, repeat_step)
+    W = dt_int*J - integrator.f.mass_matrix
+    integrator.destats.nw += 1
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
     for j in 2:j_int
@@ -1636,7 +1638,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   for i in 0:n_curr
     j_int = 2 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
+    jacobian2W!(W, integrator.f.mass_matrix, dt_t, J, false)
     integrator.destats.nw +=1
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int * fsalfirst
