@@ -279,7 +279,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       @.. T[index,1] = u_tmps[1]
     end
   else
-    calc_J!(J,integrator,cache) # Store the calculated jacobian it won't change in internal discretisation
+    calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
         integrator=integrator, cache=cache, repeat_step = repeat_step,
         k_tmps=k_tmps, u_tmps=u_tmps
@@ -1625,10 +1625,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   end
 
   #Compute the internal discretisations
+  calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   for i in 0:n_curr
     j_int = 2 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    calc_W!(W, integrator, nothing, cache, dt_int, repeat_step)
+    jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
+    integrator.destats.nw +=1
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int * fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
@@ -1639,6 +1641,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       integrator.destats.nf += 1
       @.. linsolve_tmp = dt_int*k - (u_temp1 - u_temp2)
       cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+      integrator.destats.nsolve += 1
       @.. k = -k
       @.. T[i+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
       @.. u_temp2 = u_temp1
