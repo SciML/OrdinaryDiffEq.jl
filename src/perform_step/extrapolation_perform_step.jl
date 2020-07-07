@@ -899,6 +899,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int*fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+    integrator.destats.nsolve += 1
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
     for j in 2:j_int
@@ -1645,6 +1646,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int * fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+    integrator.destats.nsolve += 1
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
     for j in 2:j_int
