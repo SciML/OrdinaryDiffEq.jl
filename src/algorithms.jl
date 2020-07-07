@@ -1474,6 +1474,8 @@ for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:
   @eval $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
 end
 
+struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
   krylov::Symbol
   m::Int
