@@ -382,10 +382,12 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   max_order = min(size(T, 1), cur_order+1)
 
+  J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   if !integrator.alg.threading
     for index in 1:max_order
       dt_temp = dt/sequence[index]
-      W = calc_W(integrator, cache, dt_temp, repeat_step)
+      W = dt_temp*J - integrator.f.mass_matrix
+      integrator.destats.nw += 1
       k_copy = integrator.fsalfirst
       u_tmp = uprev
 
@@ -400,6 +402,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       T[index,1] = u_tmp
     end
   else
+    J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     let max_order=max_order, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
       uprev=uprev, T=T
       Threads.@threads for i in 1:2
@@ -407,7 +410,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         endIndex = (i==1) ? max_order-1 : max_order
         for index in startIndex:endIndex
           dt_temp = dt/sequence[index]
-          W = calc_W(integrator, cache, dt_temp, repeat_step)
+          W = dt_temp*J - integrator.f.mass_matrix
           k_copy = integrator.fsalfirst
           u_tmp = uprev
           for j in 1:sequence[index]
@@ -420,7 +423,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       end
     end
 
-    nevals = sum(sequence[max_order]) + 1
+    nevals = sum(sequence[1:max_order]) - 1
+    integrator.destats.nw += max_order
     integrator.destats.nf += nevals
     integrator.destats.nsolve += nevals
   end
@@ -445,7 +449,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       end
 
       for i in range_start:max_order
-          A = sum(sequence[i]) + 1
+          A = sum(sequence[1:i]) + 1
           utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
