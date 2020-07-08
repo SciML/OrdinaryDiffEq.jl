@@ -98,8 +98,9 @@ struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarS
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
   threading::Bool
+  sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
-function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10, sequence = :harmonic, threading = true)
+function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10, sequence = :harmonic, threading = true, sequence_factor = 2)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
   n_init = max(n_min,init_order)
@@ -114,6 +115,14 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
       Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
   end
 
+  # Warn user if sequence_factor is not even
+  if sequence_factor%2 != 0
+    @warn "A non-even number cannot be used as sequence factor. 
+          Thus is has been changed 
+          $(sequence_factor) --> 2"
+    sequence_factor = 2
+  end
+
   # Warn user if sequence has been changed:
   if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
     @warn "The `sequence` given to the `ExtrapolationMidpointDeuflhard` algorithm
@@ -124,7 +133,7 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
   end
 
   # Initialize algorithm
-  ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading)
+  ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
 
 struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
@@ -172,8 +181,9 @@ struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderV
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
   threading::Bool
+  sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
-function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic, threading = true)
+function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic, threading = true, sequence_factor = 2)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
   n_min = max(2, min_order)
@@ -189,6 +199,14 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
       Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
   end
 
+  # Warn user if sequence_factor is not even
+  if sequence_factor%2 != 0
+    @warn "A non-even number cannot be used as sequence factor. 
+          Thus is has been changed 
+          $(sequence_factor) --> 2"
+    sequence_factor = 2
+  end
+
   # Warn user if sequence has been changed:
   if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
     @warn "The `sequence` given to the `ExtrapolationMidpointHairerWanner` algorithm
@@ -199,7 +217,7 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   end
 
   # Initialize algorithm
-  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading)
+  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
 
 struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}

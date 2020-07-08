@@ -365,6 +365,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
     Q = fill(zero(QType),alg.n_max - alg.n_min + 1)
     n_curr = alg.n_init
     n_old = alg.n_init
+    sequence_factor = alg.sequence_factor
 
     coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
     stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
@@ -373,7 +374,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
       for i in alg.n_min:(alg.n_min + n)
         s += coefficients.subdividing_sequence[i]
       end
-      stage_number[n] = 2 * Int(s) - alg.n_min - n + 1
+      stage_number[n] = sequence_factor * Int(s) - alg.n_min - n + 1
     end
 
     # Initialize cache
@@ -578,6 +579,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
   Q = fill(zero(QType),alg.n_max + 1)
   n_curr = alg.n_init
   n_old = alg.n_init
+  sequence_factor = alg.sequence_factor
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
   stage_number = Vector{Int}(undef, alg.n_max + 1)
@@ -586,7 +588,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
     for i in 1:n
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = 2 * Int(s) - n + 1
+    stage_number[n] = sequence_factor * Int(s) - n + 1
   end
   sigma = 9//10
 
