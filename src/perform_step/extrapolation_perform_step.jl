@@ -554,7 +554,6 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
             for j in 2:j_int_temp
               f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
-              integrator.destats.nf += 1
               @.. T[index+1] = u_temp4[Threads.threadid()] + 2 * dt_int_temp * k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
@@ -566,7 +565,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
         Threads.@threads for i in 0:(n_curr ÷ 2)
-          indices = (i, n_curr-i)
+          indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
             dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
@@ -574,7 +573,6 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
             for j in 2:j_int_temp
               f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
-              integrator.destats.nf += 1
               @.. T[index+1] = u_temp4[Threads.threadid()] + 2 * dt_int_temp * k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
@@ -586,6 +584,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         end
       end
     end
+    nevals = cache.stage_number[n_curr+1] - 1
+    integrator.destats.nf += nevals
   end
 
 
