@@ -24,9 +24,10 @@ prob_mm = ODEProblem(f_oop,[1.0,0.0,0.2],(0.0,1e5),(0.04,3e7,1e4))
 sol = solve(prob_mm,Rosenbrock23(),reltol=1e-8,abstol=1e-8)
 @test sum(sol[1]) ≈ 1
 @test sol[1] ≈ [1.0,0.0,0.0]
-sol = solve(prob_mm,Rosenbrock23(),reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
-@test sum(sol[1]) ≈ 1
-@test !(sol[1] ≈ [1.0,0.0,0.0])
+for alg in [Rosenbrock23(), Trapezoid()]
+  sol = solve(prob_mm,alg,reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
+  @test sum(sol[1]) ≈ 1
+end
 
 function rober(du,u,p,t)
   y₁,y₂,y₃ = u
@@ -51,9 +52,10 @@ sol = solve(prob_mm,Rodas5(),reltol=1e-8,abstol=1e-8)
 @test sum(sol[1]) ≈ 1
 @test sol[1] ≈ [1.0,0.0,0.0]
 
-sol = solve(prob_mm,Rodas5(),reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
-@test sum(sol[1]) ≈ 1
-@test !(sol[1] ≈ [1.0,0.0,0.0])
+for alg in [Rodas5(), Trapezoid()]
+  sol = solve(prob_mm,alg,reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
+  @test sum(sol[1]) ≈ 1
+end
 
 ## DAEProblem
 

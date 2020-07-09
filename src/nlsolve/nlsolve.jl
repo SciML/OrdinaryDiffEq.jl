@@ -23,7 +23,6 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
 
   initialize!(nlsolver, integrator)
   nlsolver.status = Divergence
-  # TODO: test immediate convergence on the first iteration
   η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
   local ndz
