@@ -97,41 +97,57 @@ Solve for `u`
 
 =#
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-						 alg::ShampineCollocationInit, ::Val{true})
+function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit, ::Val{true})
+  @unpack p, t, f = integrator
+  M = integrator.f.mass_matrix
+  dtmax = integrator.opts.dtmax
+  tmp = first(get_tmp_cache(integrator))
+  u0 = integrator.u
 
-	@unpack p, t, f = integrator
- 	M = integrator.f.mass_matrix
-	dtmax = integrator.opts.dtmax
-	tmp = first(get_tmp_cache(integrator))
-	u0 = integrator.u
+  dt = if alg.initdt === nothing
+    integrator.dt != 0 ? min(integrator.dt/5, dtmax) : 1//1000 # Haven't implemented norm reduction
+  else
+    alg.initdt
+  end
 
-	dt = t != 0 ? min(t/1000,dtmax) : dtmax # Haven't implemented norm reduction
-
- 	nlequation! = function (out,u)
-		update_coefficients!(M,u,p,t)
- 		#M * (u-u0)/dt - f(u,p,t)
-		@. tmp = (u - u0)/dt
-		mul!(out,M,tmp)
-		f(tmp,u,p,t)
-		out .-= tmp
-		nothing
- 	end
-
-	update_coefficients!(M,u0,p,t)
-	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
-	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+  algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+  algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-	f(tmp,u0,p,t)
-	tmp .= algebraic_eqs .* tmp
+  update_coefficients!(M, u0, p, t)
+  f(tmp, u0, p, t)
+  tmp .= algebraic_eqs .* tmp
 
- 	integrator.opts.internalnorm(tmp,t) <= integrator.opts.abstol && return
+  integrator.opts.internalnorm(tmp, t) <= integrator.opts.abstol && return
 
-	integrator.u .= nlsolve(nlequation!, u0).zero
-	recursivecopy!(integrator.uprev,integrator.u)
-	if alg_extrapolates(integrator.alg)
-		recursivecopy!(integrator.uprev2,integrator.uprev)
-	end
+  if isdefined(integrator.cache, :nlsolver)
+    # backward Euler
+    nlsolver = integrator.cache.nlsolver
+    oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt
+    nlsolver.tmp .= integrator.uprev
+    nlsolver.γ, nlsolver.c = 1, 1
+    nlsolver.method = DIRK
+    integrator.dt = dt
+    z = nlsolve!(nlsolver, integrator, integrator.cache)
+    nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod, olddt
+    # TODO: failure handling
+    nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed. Try adjust initdt like `ShampineCollocationInit(initdt)`."
+    @.. integrator.u = integrator.uprev + z
+  else
+    nlequation! = function (out,u)
+      update_coefficients!(M,u,p,t)
+      #M * (u-u0)/dt - f(u,p,t)
+      @. tmp = (u - u0)/dt
+      mul!(out,M,tmp)
+      f(tmp,u,p,t)
+      out .-= tmp
+      nothing
+    end
+    integrator.u .= nlsolve(nlequation!, u0).zero
+  end
+  recursivecopy!(integrator.uprev,integrator.u)
+  if alg_extrapolates(integrator.alg)
+    recursivecopy!(integrator.uprev2,integrator.uprev)
+  end
   return nothing
 end
 
