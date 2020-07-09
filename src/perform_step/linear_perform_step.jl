@@ -41,10 +41,10 @@ end
 
 function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p,alg = integrator
-  @unpack W,k,tmp = cache
+  @unpack W,k,tmp, utilde, atmp = cache
   mass_matrix = integrator.f.mass_matrix
-  print("***********")
-  print("dt initial : $dt")
+  print("***********\n")
+  print("dt initial : $dt\n")
 
   L = deepcopy(integrator.f.f)
   update_coefficients!(L,uprev,p,t)
@@ -55,7 +55,7 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
   y2 = (1/2)*Q1
   update_coefficients!(L,exp(y2)*uprev,p,t + dt/2)
   A1 = Matrix(L)
-  k2 = dt .* A1
+  k2 = dt * A1
   Q2 = k2 - k1
 
   y3 = (1/2)*Q1 + (1/4)*Q2
@@ -86,14 +86,20 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
 
   u .= exp(v4) * uprev
 
-  utilde .= exp(y6) * uprev
-  atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-  integrator.EEst = integrator.opts.internalnorm(atmp,t)
-
-  print("dt final : $dt")
-  print("***********")
   integrator.f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
+  if integrator.opts.adaptive
+    utilde = exp(y6) * uprev
+    print("initial uprev : $uprev")
+    print("final u : $u")
+    print("final utilde : $utilde")
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    print("error estimate :$(integrator.EEst)\n")
+    print("Atol :$(integrator.opts.abstol)\n")
+    print("Reltol :$(integrator.opts.reltol)\n")
+    print("norm :$(integrator.opts.internalnorm)\n")
+  end
 end
 
 function initialize!(integrator, cache::MagnusNC8Cache)
