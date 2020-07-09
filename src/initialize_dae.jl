@@ -2,12 +2,12 @@ struct DefaultInit <: DiffEqBase.DAEInitializationAlgorithm end
 struct NoInit <: DiffEqBase.DAEInitializationAlgorithm end
 
 struct ShampineCollocationInit{T} <: DiffEqBase.DAEInitializationAlgorithm
-	initdt::T
+  initdt::T
 end
 ShampineCollocationInit() = ShampineCollocationInit(nothing)
 
 struct BrownFullBasicInit{T} <: DiffEqBase.DAEInitializationAlgorithm
-	abstol::T
+  abstol::T
 end
 BrownFullBasicInit() = BrownFullBasicInit(1e-10)
 
@@ -130,7 +130,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     z = nlsolve!(nlsolver, integrator, integrator.cache)
     nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod, olddt
     # TODO: failure handling
-    nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed. Try adjust initdt like `ShampineCollocationInit(initdt)`."
+    nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
     @.. integrator.u = integrator.uprev + z
   else
     nlequation! = function (out,u)
@@ -151,37 +151,54 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
   return nothing
 end
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-						 alg::ShampineCollocationInit, ::Val{false})
+function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit, ::Val{false})
+  @unpack p, t, f = integrator
+  u0 = integrator.u
+  M = integrator.f.mass_matrix
+  dtmax = integrator.opts.dtmax
 
-	@unpack p, t, f = integrator
-	u0 = integrator.u
-	M = integrator.f.mass_matrix
-	dtmax = integrator.opts.dtmax
+  dt = if alg.initdt === nothing
+    integrator.dt != 0 ? min(integrator.dt/5, dtmax) : 1//1000 # Haven't implemented norm reduction
+  else
+    alg.initdt
+  end
 
-	dt = t != 0 ? min(t/1000,dtmax/10) : dtmax # Haven't implemented norm reduction
-
-	update_coefficients!(M,u0,p,t)
-	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
-	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+  algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+  algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-	du = f(u0,p,t)
-	resid = du[algebraic_eqs]
+  update_coefficients!(M,u0,p,t)
+  du = f(u0,p,t)
+  resid = du[algebraic_eqs]
 
   integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
-	nlequation_oop = function (u)
-		update_coefficients!(M,u,p,t)
-		M * (u-u0)/dt - f(u,p,t)
-	end
+  if isdefined(integrator.cache, :nlsolver)
+    # backward Euler
+    nlsolver = integrator.cache.nlsolver
+    oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt
+    nlsolver.tmp .= integrator.uprev
+    nlsolver.γ, nlsolver.c = 1, 1
+    nlsolver.method = DIRK
+    integrator.dt = dt
+    z = nlsolve!(nlsolver, integrator, integrator.cache)
+    nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod, olddt
+    # TODO: failure handling
+    nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
+    @.. integrator.u = integrator.uprev + z
+  else
+    nlequation_oop = function (u)
+      update_coefficients!(M,u,p,t)
+      M * (u-u0)/dt - f(u,p,t)
+    end
 
-	nlequation! = (out,u) -> out .= nlequation_oop(u)
+    nlequation! = (out,u) -> out .= nlequation_oop(u)
 
-	integrator.u = nlsolve(nlequation!, u0).zero
-	integrator.uprev = integrator.u
-	if alg_extrapolates(integrator.alg)
-		integrator.uprev2 = integrator.uprev
-	end
+    integrator.u = nlsolve(nlequation!, u0).zero
+  end
+  integrator.uprev = integrator.u
+  if alg_extrapolates(integrator.alg)
+    integrator.uprev2 = integrator.uprev
+  end
   return
 end
 
