@@ -1645,7 +1645,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   for i in 0:n_curr
     j_int = 2 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    jacobian2W!(W, integrator.f.mass_matrix, dt_t, J, false)
+    jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
     integrator.destats.nw +=1
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int * fsalfirst
