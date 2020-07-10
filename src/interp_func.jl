@@ -67,7 +67,10 @@ function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType
   interp.dense ? "3rd order Hermite" : "1st order linear"
 end
 function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:CompositeCache
-  interp.dense ? "Automatic order switching interpolation" : "1st order linear"
+  interp.dense ? "automatic order switching interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{DPRKN6ConstantCache,DPRKN6Cache}
+  interp.dense ? "specialized 6th order interpolation" : "1st order linear"
 end
 
 (interp::InterpolationData)(tvals,idxs,deriv,p,continuity::Symbol=:left) = ode_interpolation(tvals,interp,idxs,deriv,p,continuity)
