@@ -1565,11 +1565,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
 
         # Update T
         j_int = 2 * subdividing_sequence[n_curr + 1]
-        dt_int = dt / j_int # Stepsize of the new internal discretisation
+        dt_int = dt / j_int # Stepsize of the ith internal discretisation
+        W = dt_int*J - integrator.f.mass_matrix
+        integrator.destats.nw += 1
         u_temp2 = uprev
-        u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
+        u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
         for j in 2:j_int
-          T[n_curr+1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j-1) * dt_int)
+          T[n_curr+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
           integrator.destats.nf += 1
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
