@@ -1703,14 +1703,24 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = 2 * subdividing_sequence[n_curr + 1]
-        dt_int = dt / j_int # Stepsize of the new internal discretisation
+        j_int = 2 * subdividing_sequence[n_curr+1]
+        dt_int = dt / j_int # Stepsize of the ith internal discretisation
+        jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
+        integrator.destats.nw +=1
         @.. u_temp2 = uprev
-        @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
+        @.. linsolve_tmp = dt_int * fsalfirst
+        cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+        integrator.destats.nsolve += 1
+        @.. k = -k
+        @.. u_temp1 = u_temp2 + k # Euler starting step
         for j in 2:j_int
-          f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+          f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
           integrator.destats.nf += 1
-          @.. T[n_curr+1] = u_temp2 + 2 * dt_int * k
+          @.. linsolve_tmp = dt_int*k - (u_temp1 - u_temp2)
+          cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+          integrator.destats.nsolve += 1
+          @.. k = -k
+          @.. T[n_curr+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
