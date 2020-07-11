@@ -954,7 +954,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
         # Update cache.T
         j_int = 2 * subdividing_sequence[n_curr + 1]
-        dt_int = dt / j_int # Stepsize of the ith internal discretisation
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
         integrator.destats.nw += 1
         @.. u_temp2 = uprev
@@ -1097,7 +1097,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
 
         # Update T
         j_int = 2 * subdividing_sequence[n_curr + 1]
-        dt_int = dt / j_int # Stepsize of the ith internal discretisation
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         W = dt_int*J - integrator.f.mass_matrix
         integrator.destats.nw += 1
         u_temp2 = uprev
@@ -1577,7 +1577,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
 
         # Update T
         j_int = 2 * subdividing_sequence[n_curr + 1]
-        dt_int = dt / j_int # Stepsize of the ith internal discretisation
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         W = dt_int*J - integrator.f.mass_matrix
         integrator.destats.nw += 1
         u_temp2 = uprev
@@ -1718,7 +1718,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
         # Update cache.T
         j_int = 2 * subdividing_sequence[n_curr+1]
-        dt_int = dt / j_int # Stepsize of the ith internal discretisation
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
         integrator.destats.nw +=1
         @.. u_temp2 = uprev
