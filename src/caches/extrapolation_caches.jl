@@ -497,13 +497,27 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
   stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
+
+  #==
+  Work calculation in Deuflhard is referenced from here: https://link.springer.com/article/10.1007/BF01418332
+  A[1] := CJAC + CLR + (N[1] + 1)(CF + CS)
+  A[J] := A[J-1] - N[J]*(CF + CS) + CLR + CS      J = 2, 3, 4..... 
+  CF = 1; CJ = n*CF ; CS = CLR = 0
+  n = Dimension of the jacobian (particularly gaussian decomposition of I - hJ (n,n) matrix) 
+  Since we are using 4*N sequence and doing 4*N - 1 Computations
+  A[J] := A[J-1] - (4*N[J] - 1)*(CF + CS) + CLR + CS      J = 2, 3, 4.....
+  ===#
   for n in 1:length(stage_number)
     s = zero(eltype(coefficients.subdividing_sequence))
-    for i in alg.n_min:(alg.n_min + n)
+    for i in 1:(alg.n_min + n)
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = 2 * Int(s) - alg.n_min - n + 1
+    stage_number[n] = 4 * Int(s) - alg.n_min - n - 1
   end
+
+  #Update stage_number by the jacobian size
+  jac_dim = size(rate_prototype)[1]
+  stage_number = stage_number .+ jac_dim
 
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
