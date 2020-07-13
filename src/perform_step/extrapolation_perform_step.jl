@@ -1538,7 +1538,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
   #Compute the internal discretisations
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   for i in 0:n_curr
-    j_int = 2 * subdividing_sequence[i+1]
+    j_int = 4 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
     W = dt_int*J - integrator.f.mass_matrix
     integrator.destats.nw += 1
@@ -1576,7 +1576,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         cache.n_curr = n_curr
 
         # Update T
-        j_int = 2 * subdividing_sequence[n_curr + 1]
+        j_int = 4 * subdividing_sequence[n_curr + 1]
         dt_int = dt / j_int # Stepsize of the new internal discretisation
         W = dt_int*J - integrator.f.mass_matrix
         integrator.destats.nw += 1
@@ -1657,7 +1657,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   for i in 0:n_curr
-    j_int = 2 * subdividing_sequence[i+1]
+    j_int = 4 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
     jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
     integrator.destats.nw +=1
@@ -1717,7 +1717,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = 2 * subdividing_sequence[n_curr+1]
+        j_int = 4 * subdividing_sequence[n_curr+1]
         dt_int = dt / j_int # Stepsize of the new internal discretisation
         jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
         integrator.destats.nw +=1
