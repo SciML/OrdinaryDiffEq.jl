@@ -677,13 +677,31 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   n_old = alg.n_init
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
+  #==Work Calculation (A[J] denotes Jth order work)
+  Default values are used from https://github.com/luchr/ODEInterface.jl/blob/master/src/Seulex.jl#L393-L399
+
+  ║ WKFCN      │ estimated works (complexity)        │     1.0 ║
+  ║ WKJAC      │ for a call to                       │     5.0 ║
+  ║ WKDEC      │ WKFCN: right-hand side f            │     1.0 ║
+  ║ WKSOL      │ WKJAC: JACOBIMATRIX                 │     1.0 ║
+  ║ WKROW      │ WKDEC: LU-decomposition             │     2.0 ║
+  ║            │ WKSOL: Forward- and Backward subst. │         ║
+  ║            | WKROW: Tot. work in one iteration   |         ║
+  ╚════════════╧═════════════════════════════════════╧═════════╝
+  WKROW = WKFCN + WKSOL
+  A[1] = WKJAC + (N[1] + 1)* WKROw + WKDEC
+  A[J] = A[J - 1] + N[J]* WKROW + WKDEC
+
+  Since we are using 4*N Sequence and only performing 4*N - 1 computations, The modified Work Equation becomes:
+  A[J] = A[J - 1] + (4*N[J] - 1)* WKROW + WKDEC
+  ==#
   stage_number = Vector{Int}(undef, alg.n_max + 1)
   for n in 1:length(stage_number)
     s = zero(eltype(coefficients.subdividing_sequence))
     for i in 1:n
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = 2 * Int(s) - n + 1
+    stage_number[n] = 8 * Int(s) - n + 3
   end
   sigma = 9//10
 
