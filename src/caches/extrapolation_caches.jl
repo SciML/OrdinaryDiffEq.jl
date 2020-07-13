@@ -371,10 +371,10 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
     stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
     for n in 1:length(stage_number)
       s = zero(eltype(coefficients.subdividing_sequence))
-      for i in alg.n_min:(alg.n_min + n)
+      for i in 1:(alg.n_min + n)
         s += coefficients.subdividing_sequence[i]
       end
-      stage_number[n] = sequence_factor * Int(s) - alg.n_min - n + 1
+      stage_number[n] = sequence_factor * Int(s) - alg.n_min - n + 3 - sequence_factor
     end
 
     # Initialize cache
@@ -602,7 +602,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
     for i in 1:n
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = sequence_factor * Int(s) - n + 1
+    stage_number[n] = sequence_factor * Int(s) - n + 3 - sequence_factor
   end
   sigma = 9//10
 
