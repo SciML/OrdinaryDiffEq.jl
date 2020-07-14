@@ -878,7 +878,6 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
 
   fill!(cache.Q, zero(eltype(cache.Q)))
-  tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
 
   if integrator.opts.adaptive
     # Set up the order window
@@ -943,6 +942,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
+      tol = integrator.opts.internalnorm(cache.utilde,t)/integrator.EEst # Used by the convergence monitor
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
@@ -1040,7 +1040,6 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
   u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-  tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
   T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -1086,6 +1085,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
+      tol = integrator.opts.internalnorm(cache.utilde,t)/integrator.EEst # Used by the convergence monitor
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
@@ -1710,7 +1710,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
-    elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
+    elseif (n_curr < integrator.alg.n_min + 1) || integrator.opts.internalnorm(cache.utilde,t) <= (prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
