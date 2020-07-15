@@ -371,10 +371,10 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
     stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
     for n in 1:length(stage_number)
       s = zero(eltype(coefficients.subdividing_sequence))
-      for i in alg.n_min:(alg.n_min + n)
+      for i in 1:(alg.n_min + n)
         s += coefficients.subdividing_sequence[i]
       end
-      stage_number[n] = sequence_factor * Int(s) - alg.n_min - n + 1
+      stage_number[n] = sequence_factor * Int(s) - alg.n_min - n + 3 - sequence_factor
     end
 
     # Initialize cache
@@ -497,13 +497,27 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
   stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
+
+  #==
+  Work calculation in Deuflhard is referenced from here: https://link.springer.com/article/10.1007/BF01418332
+  A[1] := CJAC + CLR + (N[1] + 1)(CF + CS)
+  A[J] := A[J-1] - N[J]*(CF + CS) + CLR + CS      J = 2, 3, 4..... 
+  CF = 1; CJ = n*CF ; CS = CLR = 0
+  n = Dimension of the jacobian (particularly gaussian decomposition of I - hJ (n,n) matrix) 
+  Since we are using 4*N sequence and doing 4*N - 1 Computations
+  A[J] := A[J-1] - (4*N[J] - 1)*(CF + CS) + CLR + CS      J = 2, 3, 4.....
+  ===#
   for n in 1:length(stage_number)
     s = zero(eltype(coefficients.subdividing_sequence))
-    for i in alg.n_min:(alg.n_min + n)
+    for i in 1:(alg.n_min + n)
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = 2 * Int(s) - alg.n_min - n + 1
+    stage_number[n] = 4 * Int(s) - alg.n_min - n - 1
   end
+
+  #Update stage_number by the jacobian size
+  jac_dim = size(rate_prototype)[1]
+  stage_number = stage_number .+ jac_dim
 
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
@@ -588,7 +602,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
     for i in 1:n
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = sequence_factor * Int(s) - n + 1
+    stage_number[n] = sequence_factor * Int(s) - n + 3 - sequence_factor
   end
   sigma = 9//10
 
@@ -677,13 +691,31 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   n_old = alg.n_init
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
+  #==Work Calculation (A[J] denotes Jth order work)
+  Default values are used from https://github.com/luchr/ODEInterface.jl/blob/master/src/Seulex.jl#L393-L399
+
+  ║ WKFCN      │ estimated works (complexity)        │     1.0 ║
+  ║ WKJAC      │ for a call to                       │     5.0 ║
+  ║ WKDEC      │ WKFCN: right-hand side f            │     1.0 ║
+  ║ WKSOL      │ WKJAC: JACOBIMATRIX                 │     1.0 ║
+  ║ WKROW      │ WKDEC: LU-decomposition             │     2.0 ║
+  ║            │ WKSOL: Forward- and Backward subst. │         ║
+  ║            | WKROW: Tot. work in one iteration   |         ║
+  ╚════════════╧═════════════════════════════════════╧═════════╝
+  WKROW = WKFCN + WKSOL
+  A[1] = WKJAC + (N[1] + 1)* WKROw + WKDEC
+  A[J] = A[J - 1] + N[J]* WKROW + WKDEC
+
+  Since we are using 4*N Sequence and only performing 4*N - 1 computations, The modified Work Equation becomes:
+  A[J] = A[J - 1] + (4*N[J] - 1)* WKROW + WKDEC
+  ==#
   stage_number = Vector{Int}(undef, alg.n_max + 1)
   for n in 1:length(stage_number)
     s = zero(eltype(coefficients.subdividing_sequence))
     for i in 1:n
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = 2 * Int(s) - n + 1
+    stage_number[n] = 8 * Int(s) - n + 3
   end
   sigma = 9//10
 
