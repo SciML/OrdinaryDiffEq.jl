@@ -19,6 +19,7 @@ const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDi
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD} end
+abstract type MultirateOrdinaryDiffEqAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
@@ -2275,3 +2276,8 @@ DABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           DABDF2{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),typeof(diff_type)}(linsolve,
                           nlsolve,diff_type,extrapolant,controller)
+
+struct Rice3{M<:OrdinaryDiffEqAlgorithm} <: MultirateOrdinaryDiffEqAlgorithm
+  base_method::M
+  K::Int
+end

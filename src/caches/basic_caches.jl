@@ -3,6 +3,7 @@ abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
 abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
+abstract type OrdinaryDiffEqTableau{T,T2} <: OrdinaryDiffEqConstantCache end
 
 mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   caches::T

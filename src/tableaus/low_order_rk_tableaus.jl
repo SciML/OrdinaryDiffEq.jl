@@ -1,4 +1,4 @@
-struct BS3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct BS3ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   a21::T
   a32::T
   a41::T
@@ -60,7 +60,7 @@ function BS3ConstantCache(T::Type,T2::Type)
   BS3ConstantCache(a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4)
 end
 
-struct OwrenZen3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct OwrenZen3ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -128,7 +128,7 @@ function OwrenZen3ConstantCache(T, T2)
                          r13,r12,r23,r22,r33,r32)
 end
 
-struct OwrenZen4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct OwrenZen4ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -262,7 +262,7 @@ function OwrenZen4ConstantCache(T, T2)
                          r54,r53,r52,r64,r63,r62)
 end
 
-struct OwrenZen5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct OwrenZen5ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -494,7 +494,7 @@ function OwrenZen5ConstantCache(T, T2)
                          r62,r75,r74,r73,r72,r85,r84,r83,r82)
 end
 
-struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   c1::T2
   c2::T2
   c3::T2
@@ -735,7 +735,7 @@ function Tsit5Interp(T::Type)
   return r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74
 end
 
-struct BS5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct BS5ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   c1::T2
   c2::T2
   c3::T2
@@ -1228,7 +1228,7 @@ function BS5Interp_polyweights(T::Type)
   return r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112
 end
 
-struct DP5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct DP5ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   a21::T
   a31::T
   a32::T
@@ -1392,7 +1392,7 @@ An Optimized Runge-Kutta method for the solution of Orbital Problems
 by Z.A. Anastassi and T.E. Simos
 Journal of Computational and Applied Mathematics, Volume 175, Issue 1, 1 March 2005, Pages 1 to 9.
 """
-struct Anas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Anas5ConstantCache{T,T2} <: OrdinaryDiffEqTableau{T,T2}
   a21::T
   a31::T
   a32::T
