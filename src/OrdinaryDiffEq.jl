@@ -10,7 +10,7 @@ module OrdinaryDiffEq
   using LinearAlgebra
 
   # Interfaces
-  import DiffEqBase: solve!, step!, initialize!, isadaptive
+  import DiffEqBase: solve!, step!, initialize!, isadaptive, alg_order, alg_adaptive_order, isadaptive, isfsal, alg_stages, get_tableau_A, get_tableau_b, get_tableau_bEEst, get_tableau_c, get_tableau_name
 
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK

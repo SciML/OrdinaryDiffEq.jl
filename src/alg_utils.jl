@@ -3,7 +3,6 @@ isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 DiffEqBase.isdiscrete(alg::FunctionMap) = true
 
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
-isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
@@ -262,7 +261,7 @@ alg_order(alg::SSPRK104) = 4
 
 alg_order(alg::RK4) = 4
 alg_order(alg::RKM) = 4
-alg_order(alg::ExplicitRK) = alg.tableau.order
+alg_order(alg::ExplicitRK) = alg_order(alg.tableau)
 
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5
@@ -392,7 +391,7 @@ alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.n_max+1)
 alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.n_max+1)
 alg_maximum_order(alg::ImplicitHairerWannerExtrapolation) = 2(alg.n_max+1)
 
-alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
+alg_adaptive_order(alg::ExplicitRK) = alg_adaptive_order(alg.tableau)
 alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = alg_order(alg)-1
 alg_adaptive_order(alg::DP8) = 6
 alg_adaptive_order(alg::Feagin10) = 8
