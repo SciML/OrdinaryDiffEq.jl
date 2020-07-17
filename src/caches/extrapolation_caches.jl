@@ -758,6 +758,9 @@ end
   linsolve::F
   jac_config::JCType
   grad_config::GCType
+  # Values to check overflow in T1 computation
+  diff1::uType
+  diff2::uType 
 end
 
 
@@ -805,8 +808,11 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
+  diff1 = zero(u)
+  diff2 = zero(u)
+
   # Initialize the cache
   ImplicitHairerWannerExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmp,
-      linsolve, jac_config, grad_config)
+      linsolve, jac_config, grad_config,diff1,diff2)
 end
