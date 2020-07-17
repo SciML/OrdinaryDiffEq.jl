@@ -864,7 +864,7 @@ end
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
-  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
+  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k, diff1, diff2  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
 
   # Coefficients for obtaining u
@@ -903,6 +903,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
     integrator.destats.nsolve += 1
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
+    @.. diff1 = u_temp1 - u_temp2
     for j in 2:j_int
       f(k, cache.u_temp1, p, t + (j-1) * dt_int)
       integrator.destats.nf += 1
@@ -913,6 +914,15 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       @.. T[i+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
       @.. u_temp2 = u_temp1
       @.. u_temp1 = T[i+1]
+      if(i<=1)
+        # Deuflhard Stability check for initial two sequences 
+        @.. diff2 = u_temp1 - u_temp2
+        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+          # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+          integrator.force_stepfail = true
+          return
+        end
+      end
     end
   end
 

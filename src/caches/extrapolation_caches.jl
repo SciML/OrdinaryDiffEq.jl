@@ -485,6 +485,9 @@ end
   linsolve::F
   jac_config::JCType
   grad_config::GCType
+  # Values to check overflow in T1 computation
+  diff1::uType
+  diff2::uType  
 end
 
 function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -568,10 +571,12 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
+  diff1 = zero(u)
+  diff2 = zero(u)
 
 
   ImplicitDeuflhardExtrapolationCache(utilde,u_temp1,u_temp2,u_temp3,u_temp4,tmp,T,res,fsalfirst,k,k_tmps,cc.Q,cc.n_curr,cc.n_old,cc.coefficients,cc.stage_number,
-    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config,diff1,diff2)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
