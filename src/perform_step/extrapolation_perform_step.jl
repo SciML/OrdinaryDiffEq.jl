@@ -1073,11 +1073,21 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
     integrator.destats.nw += 1
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
+    diff1 = u_temp1 - u_temp2
     for j in 2:j_int
       T[i+1] = 2*u_temp1 - u_temp2 + 2 * _reshape(W\-_vec(dt_int*f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
       integrator.destats.nf += 1
       u_temp2 = u_temp1
       u_temp1 = T[i+1]
+      if(i<=1)
+        # Deuflhard Stability check for initial two sequences 
+        diff2 = u_temp1 - u_temp2
+        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+          # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+          integrator.force_stepfail = true
+          return
+        end
+      end
     end
   end
 
