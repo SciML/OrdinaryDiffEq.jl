@@ -592,7 +592,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         end
       end
     end
-    nevals = cache.stage_number[n_curr+1] - 1
+    nevals = cache.stage_number[n_curr - integrator.alg.n_min + 1] - 1
     integrator.destats.nf += nevals
   end
 
@@ -788,7 +788,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
         end
       end
     end
-    nevals = cache.stage_number[n_curr+1] - 1
+    nevals = cache.stage_number[n_curr - integrator.alg.n_min + 1] - 1
     integrator.destats.nf += nevals
   end
 
