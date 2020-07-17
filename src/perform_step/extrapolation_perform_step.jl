@@ -942,7 +942,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
-      tol = integrator.opts.internalnorm(cache.utilde,t)/integrator.EEst # Used by the convergence monitor
+      tol = integrator.opts.internalnorm(cache.utilde - integrator.u,t)/integrator.EEst # Used by the convergence monitor
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
@@ -1085,7 +1085,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
-      tol = integrator.opts.internalnorm(cache.utilde,t)/integrator.EEst # Used by the convergence monitor
+      tol = integrator.opts.internalnorm(utilde - u,t)/integrator.EEst # Used by the convergence monitor
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
@@ -1349,7 +1349,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
-  @unpack subdividing_sequence = integrator.alg
+  @unpack sequence_factor = integrator.alg
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations

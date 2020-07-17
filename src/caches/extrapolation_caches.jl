@@ -516,7 +516,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   end
 
   #Update stage_number by the jacobian size
-  jac_dim = size(rate_prototype)[1]
+  jac_dim = typeof(rate_prototype) <: Float64 ? 1 : sum(size(rate_prototype)) 
   stage_number = stage_number .+ jac_dim
 
   tf = TimeDerivativeWrapper(f,u,p)
