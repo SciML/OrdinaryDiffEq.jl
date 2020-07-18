@@ -592,7 +592,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         end
       end
     end
-    nevals = cache.stage_number[n_curr+1] - 1
+    nevals = cache.stage_number[n_curr - integrator.alg.n_min + 1] - 1
     integrator.destats.nf += nevals
   end
 
@@ -788,7 +788,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
         end
       end
     end
-    nevals = cache.stage_number[n_curr+1] - 1
+    nevals = cache.stage_number[n_curr - integrator.alg.n_min + 1] - 1
     integrator.destats.nf += nevals
   end
 
@@ -864,7 +864,7 @@ end
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
-  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
+  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k, diff1, diff2  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
 
   # Coefficients for obtaining u
@@ -903,6 +903,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
     integrator.destats.nsolve += 1
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
+    @.. diff1 = u_temp1 - u_temp2
     for j in 2:j_int
       f(k, cache.u_temp1, p, t + (j-1) * dt_int)
       integrator.destats.nf += 1
@@ -913,6 +914,15 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       @.. T[i+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
       @.. u_temp2 = u_temp1
       @.. u_temp1 = T[i+1]
+      if(i<=1)
+        # Deuflhard Stability check for initial two sequences 
+        @.. diff2 = u_temp1 - u_temp2
+        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+          # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+          integrator.force_stepfail = true
+          return
+        end
+      end
     end
   end
 
@@ -942,7 +952,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
-      tol = integrator.opts.internalnorm(cache.utilde,t)/integrator.EEst # Used by the convergence monitor
+      tol = integrator.opts.internalnorm(cache.utilde - integrator.u,t)/integrator.EEst # Used by the convergence monitor
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
@@ -1063,11 +1073,21 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
     integrator.destats.nw += 1
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
+    diff1 = u_temp1 - u_temp2
     for j in 2:j_int
       T[i+1] = 2*u_temp1 - u_temp2 + 2 * _reshape(W\-_vec(dt_int*f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
       integrator.destats.nf += 1
       u_temp2 = u_temp1
       u_temp1 = T[i+1]
+      if(i<=1)
+        # Deuflhard Stability check for initial two sequences 
+        diff2 = u_temp1 - u_temp2
+        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+          # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+          integrator.force_stepfail = true
+          return
+        end
+      end
     end
   end
 
@@ -1085,7 +1105,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
-      tol = integrator.opts.internalnorm(cache.utilde,t)/integrator.EEst # Used by the convergence monitor
+      tol = integrator.opts.internalnorm(utilde - u,t)/integrator.EEst # Used by the convergence monitor
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
@@ -1349,7 +1369,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
-  @unpack subdividing_sequence = integrator.alg
+  @unpack sequence_factor = integrator.alg
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -1544,11 +1564,21 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     integrator.destats.nw += 1
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
+    diff1 = u_temp1 - u_temp2
     for j in 2:j_int
       T[i+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
       integrator.destats.nf += 1
       u_temp2 = u_temp1
       u_temp1 = T[i+1]
+      if(i<=1)
+        # Deuflhard Stability check for initial two sequences 
+        diff2 = u_temp1 - u_temp2
+        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+          # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+          integrator.force_stepfail = true
+          return
+        end
+      end
     end
   end
 
@@ -1626,7 +1656,7 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
-  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
+  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -1667,6 +1697,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
     integrator.destats.nsolve += 1
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
+    @.. diff1 = u_temp1 - u_temp2
     for j in 2:j_int
       f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
       integrator.destats.nf += 1
@@ -1677,6 +1708,15 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       @.. T[i+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
       @.. u_temp2 = u_temp1
       @.. u_temp1 = T[i+1]
+      if(i<=1)
+        # Deuflhard Stability check for initial two sequences 
+        @.. diff2 = u_temp1 - u_temp2
+        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+          # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+          integrator.force_stepfail = true
+          return
+        end
+      end
     end
   end
 
@@ -1710,7 +1750,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
-    elseif (n_curr < integrator.alg.n_min + 1) || integrator.opts.internalnorm(cache.utilde,t) <= (prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
+    elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
