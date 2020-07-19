@@ -981,6 +981,9 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
           integrator.destats.nsolve += 1
           @.. k = -k
           @.. T[n_curr+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
+          # if(j == j_int + 1)
+          #   @.. T[n_curr + 1] = 0.5(T[n_curr + 1] + u_temp2)
+          # end
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
@@ -1698,7 +1701,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
     @.. diff1 = u_temp1 - u_temp2
-    for j in 2:j_int
+    for j in 2:j_int + 1
       f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
       integrator.destats.nf += 1
       @.. linsolve_tmp = dt_int*k - (u_temp1 - u_temp2)
@@ -1706,6 +1709,9 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       integrator.destats.nsolve += 1
       @.. k = -k
       @.. T[i+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
+      if(j == j_int + 1)
+        @.. T[i + 1] = 0.5(T[i + 1] + u_temp2)
+      end
       @.. u_temp2 = u_temp1
       @.. u_temp1 = T[i+1]
       if(i<=1)
@@ -1714,9 +1720,11 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
           # Divergence of iteration, overflow is possible. Force fail and start with smaller step
           integrator.force_stepfail = true
+          #integrator.destats.nreject += 1
           return
         end
       end
+      @.. diff1 = u_temp1 - u_temp2
     end
   end
 
@@ -1767,7 +1775,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         integrator.destats.nsolve += 1
         @.. k = -k
         @.. u_temp1 = u_temp2 + k # Euler starting step
-        for j in 2:j_int
+        for j in 2:j_int + 1
           f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
           integrator.destats.nf += 1
           @.. linsolve_tmp = dt_int*k - (u_temp1 - u_temp2)
@@ -1775,6 +1783,9 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
           integrator.destats.nsolve += 1
           @.. k = -k
           @.. T[n_curr+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
+          if(j == j_int + 1)
+            @.. T[n_curr+ 1] = 0.5(T[n_curr + 1] + u_temp2)
+          end
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
