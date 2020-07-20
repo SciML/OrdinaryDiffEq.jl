@@ -122,7 +122,7 @@ end
         init_order = j, max_order=j,
         sequence = seq)
       sim = test_convergence(dts,prob,alg)
-      @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
+      @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) - 1 atol=testTol
     end
 
     # TODO: Regression test
