@@ -1565,9 +1565,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
     diff1 = u_temp1 - u_temp2
-    for j in 2:j_int
+    for j in 2:j_int + 1
       T[i+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
       integrator.destats.nf += 1
+      if(j == j_int + 1)
+        T[i + 1] = 0.5(T[i + 1] + u_temp2)
+      end
       u_temp2 = u_temp1
       u_temp1 = T[i+1]
       if(i<=1)
@@ -1579,6 +1582,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
           return
         end
       end
+      diff1 = u_temp1 - u_temp2
     end
   end
 
@@ -1612,9 +1616,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         integrator.destats.nw += 1
         u_temp2 = uprev
         u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
-        for j in 2:j_int
+        for j in 2:j_int + 1
           T[n_curr+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
           integrator.destats.nf += 1
+          if(j == j_int + 1)
+            T[n_curr+ 1] = 0.5(T[n_curr + 1] + u_temp2)
+          end
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
         end
