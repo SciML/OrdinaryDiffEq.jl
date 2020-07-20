@@ -904,7 +904,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
     @.. diff1 = u_temp1 - u_temp2
-    for j in 2:j_int + 1
+    for j in 2:j_int
       f(k, cache.u_temp1, p, t + (j-1) * dt_int)
       integrator.destats.nf += 1
       @.. linsolve_tmp = dt_int * k - (u_temp1 - u_temp2)
@@ -912,9 +912,6 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       integrator.destats.nsolve += 1
       @.. k = -k
       @.. T[i+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
-      if(j == j_int + 1)
-        @.. T[i + 1] = 0.5(T[i + 1] + u_temp2)
-      end
       @.. u_temp2 = u_temp1
       @.. u_temp1 = T[i+1]
       if(i<=1)
@@ -926,7 +923,6 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
           return
         end
       end
-      @.. diff1 = u_temp1 - u_temp2
     end
   end
 
@@ -977,7 +973,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         integrator.destats.nsolve += 1
         @.. k = -k
         @.. u_temp1 = u_temp2 + k # Euler starting step
-        for j in 2:j_int + 1
+        for j in 2:j_int
           f(k, cache.u_temp1, p, t + (j-1) * dt_int)
           integrator.destats.nf += 1
           @.. linsolve_tmp = dt_int * k - (u_temp1 - u_temp2)
@@ -985,9 +981,6 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
           integrator.destats.nsolve += 1
           @.. k = -k
           @.. T[n_curr+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
-          if(j == j_int + 1)
-            @.. T[n_curr + 1] = 0.5(T[n_curr + 1] + u_temp2)
-          end
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
