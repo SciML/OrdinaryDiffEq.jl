@@ -75,10 +75,10 @@ end
 function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
     diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
     max_order=10,min_order=1,init_order=5,threading=true,sequence = :bulirsch)
-    # if threading
-    #   @warn "Threading in `ImplicitEulerExtrapolation` is currently disabled. Thus `threading` has been changed from `true` to `false`."
-    #   threading = false
-    # end
+    if threading
+      @warn "Threading in `ImplicitEulerExtrapolation` is currently disabled. Thus `threading` has been changed from `true` to `false`."
+      threading = false
+    end
 
     # Warn user if sequence has been changed:
     if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
