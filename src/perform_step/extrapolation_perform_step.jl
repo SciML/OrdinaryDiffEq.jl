@@ -1693,41 +1693,111 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  for i in 0:n_curr
-    j_int = 4 * subdividing_sequence[i+1]
-    dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
-    integrator.destats.nw +=1
-    @.. u_temp2 = uprev
-    @.. linsolve_tmps[1] = dt_int * fsalfirst
-    cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
-    integrator.destats.nsolve += 1
-    @.. k = -k
-    @.. u_temp1 = u_temp2 + k # Euler starting step
-    @.. diff1 = u_temp1 - u_temp2
-    for j in 2:j_int + 1
-      f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-      integrator.destats.nf += 1
-      @.. linsolve_tmps[1] = dt_int*k - (u_temp1 - u_temp2)
+  if !integrator.alg.threading
+    for i in 0:n_curr
+      j_int = 4 * subdividing_sequence[i+1]
+      dt_int = dt / j_int # Stepsize of the ith internal discretisation
+      jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
+      integrator.destats.nw +=1
+      @.. u_temp2 = uprev
+      @.. linsolve_tmps[1] = dt_int * fsalfirst
       cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
       integrator.destats.nsolve += 1
       @.. k = -k
-      @.. T[i+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
-      if(j == j_int + 1)
-        @.. T[i + 1] = 0.5(T[i + 1] + u_temp2)
+      @.. u_temp1 = u_temp2 + k # Euler starting step
+      @.. diff1[1] = u_temp1 - u_temp2
+      for j in 2:j_int + 1
+        f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
+        integrator.destats.nf += 1
+        @.. linsolve_tmps[1] = dt_int*k - (u_temp1 - u_temp2)
+        cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
+        integrator.destats.nsolve += 1
+        @.. k = -k
+        @.. T[i+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
+        if(j == j_int + 1)
+          @.. T[i + 1] = 0.5(T[i + 1] + u_temp2)
+        end
+        @.. u_temp2 = u_temp1
+        @.. u_temp1 = T[i+1]
+        if(i<=1)
+          # Deuflhard Stability check for initial two sequences 
+          @.. diff2[1] = u_temp1 - u_temp2
+          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
+            # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+            integrator.force_stepfail = true
+            return
+          end
+        end
+        @.. diff1[1] = u_temp1 - u_temp2
       end
-      @.. u_temp2 = u_temp1
-      @.. u_temp1 = T[i+1]
-      if(i<=1)
-        # Deuflhard Stability check for initial two sequences 
-        @.. diff2 = u_temp1 - u_temp2
-        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
-          # Divergence of iteration, overflow is possible. Force fail and start with smaller step
-          integrator.force_stepfail = true
-          return
+    end
+  else
+    if integrator.alg.sequence == :romberg
+      # Compute solution by using maximum two threads for romberg sequence
+      # One thread will fill T matrix till second last element and another thread will
+      # fill last element of T matrix.
+      # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
+      # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+
+          for index in startIndex:endIndex
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
+            jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_int_temp, J, false)
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. linsolve_tmps[Threads.threadid()] = dt_int_temp * fsalfirst
+            cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
+            @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + k_tmps[Threads.threadid()] # Euler starting step
+            @.. diff1[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
+            for j in 2:j_int_temp + 1
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
+              @.. linsolve_tmps[Threads.threadid()] = dt_int_temp*k_tmps[Threads.threadid()] - (u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()])
+              cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
+              @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
+              @.. T[index+1] = 2*u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()] + 2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              if(j == j_int_temp + 1)
+                @.. T[index + 1] = 0.5(T[index + 1] + u_temp4[Threads.threadid()])
+              end
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+              if(index<=1)
+                # Deuflhard Stability check for initial two sequences 
+                @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                  # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+                  integrator.force_stepfail = true
+                  return
+                end
+              end
+              @.. diff1[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
+            end
+          end
         end
       end
-      @.. diff1 = u_temp1 - u_temp2
+    else
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i in 0:(n_curr ÷ 2)
+          indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
+          for index in indices
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j in 2:j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2 * dt_int_temp * k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
+          end
+        end
+      end
     end
   end
 
