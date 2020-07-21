@@ -28,6 +28,71 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   integrator.destats.nf += 1
 end
 
+function initialize!(integrator, cache::MagnusAdapt4Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp, utilde, atmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  L = deepcopy(integrator.f.f)
+  update_coefficients!(L,uprev,p,t)
+  A0 = Matrix(L)
+  k1 = dt*A0
+  Q1 = k1
+
+  y2 = (1/2)*Q1
+  update_coefficients!(L,exp(y2)*uprev,p,t + dt/2)
+  A1 = Matrix(L)
+  k2 = dt * A1
+  Q2 = k2 - k1
+
+  y3 = (1/2)*Q1 + (1/4)*Q2
+  update_coefficients!(L,exp(y3)*uprev,p,t + dt/2)
+  A2 = Matrix(L)
+  k3 = dt*A2
+  Q3 = k3 - k2
+
+  y4 = Q1 + Q2
+  update_coefficients!(L,exp(y4)*uprev,p,t + dt)
+  A3 = Matrix(L)
+  k4 = dt*A3
+  Q4 = k4 - 2*k2 +k1
+
+  y5 = (1/2)*Q1 + (1/4)*Q2 + (1/3)*Q3 - (1/24)*Q4 - (1/48)*(Q1*Q2 - Q2*Q1)
+  update_coefficients!(L,exp(y5)*uprev,p,t + dt/2)
+  A4 = Matrix(L)
+  k5 = dt*A4
+  Q5 = k5 - k2
+
+  y6 = Q1 + Q2 + (2/3)*Q3 + (1/6)*Q4 - (1/6)*(Q1*Q2 - Q2*Q1)
+  update_coefficients!(L,exp(y6)*uprev,p,t + dt)
+  A5 = Matrix(L)
+  k6 = dt*A5
+  Q6 = k6 - 2*k2 + k1
+
+  v4 = Q1 + Q2 + (2/3)*Q5 + (1/6)*Q6 - (1/6)*(Q1*(Q2 - Q3 + Q5 + (1/2)*Q6) - (Q2 - Q3 + Q5 + (1/2)*Q6)*Q1)
+
+  u .= exp(v4) * uprev
+
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+  if integrator.opts.adaptive
+    utilde = u - exp(y6) * uprev
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+end
+
 function initialize!(integrator, cache::MagnusNC8Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst

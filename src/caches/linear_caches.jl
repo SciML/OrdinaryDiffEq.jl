@@ -23,6 +23,36 @@ function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,
   MagnusMidpointConstantCache()
 end
 
+@cache struct MagnusAdapt4Cache{uType,rateType,WType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+  utilde::uType
+  atmp::uNoUnitsType
+end
+
+function alg_cache(alg::MagnusAdapt4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  MagnusAdapt4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k,utilde,atmp)
+end
+
+struct MagnusAdapt4ConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::MagnusAdapt4,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  MagnusAdapt4ConstantCache()
+end
+
 @cache struct MagnusNC8Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
