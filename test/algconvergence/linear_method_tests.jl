@@ -16,6 +16,18 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 @test isapprox(sol3, sol_analytic, rtol=1e-10)
 
 # u' = A(t)u solvers
+function update_func(A,u,p,t)
+    A[1,1] = 0
+    A[2,1] = 1
+    A[1,2] = -2*(1 - cos(u[2]) - u[2]*sin(u[2]))
+    A[2,2] = 0
+end
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (30, 150.))
+dts = 1 ./2 .^(7:-1:1)
+test_setup = Dict(:alg=>Tsit5(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,MagnusAdapt4(),test_setup)
+@test sim.𝒪est[:l2] ≈ 4 atol=0.2
 
 function update_func(A,u,p,t)
     A[1,1] = cos(t)

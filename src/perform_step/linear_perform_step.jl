@@ -43,8 +43,6 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p,alg = integrator
   @unpack W,k,tmp, utilde, atmp = cache
   mass_matrix = integrator.f.mass_matrix
-  print("***********\n")
-  print("dt initial : $dt\n")
 
   L = deepcopy(integrator.f.f)
   update_coefficients!(L,uprev,p,t)
@@ -89,16 +87,9 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
   integrator.f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
   if integrator.opts.adaptive
-    utilde = exp(y6) * uprev
-    print("initial uprev : $uprev")
-    print("final u : $u")
-    print("final utilde : $utilde")
+    utilde = u - exp(y6) * uprev
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    print("error estimate :$(integrator.EEst)\n")
-    print("Atol :$(integrator.opts.abstol)\n")
-    print("Reltol :$(integrator.opts.reltol)\n")
-    print("norm :$(integrator.opts.internalnorm)\n")
   end
 end
 

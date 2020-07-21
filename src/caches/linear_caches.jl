@@ -42,7 +42,7 @@ function alg_cache(alg::MagnusAdapt4,u,rate_prototype,uEltypeNoUnits,uBottomElty
   utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  MagnusAdapt4Cache(u,uprev,uprev2,similar(u),utilde,tmp,fsalfirst,W,k,atmp)
+  MagnusAdapt4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k,utilde,atmp)
 end
 
 struct MagnusAdapt4ConstantCache <: OrdinaryDiffEqConstantCache
