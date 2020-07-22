@@ -1817,9 +1817,14 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               @.. diff1[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
             end
           end
+          integrator.force_stepfail ? break : continue
         end
       end
     end
+  end
+
+  if integrator.force_stepfail
+    return
   end
 
   if integrator.opts.adaptive
