@@ -759,13 +759,13 @@ end
   W::WType
   tf::TFType
   uf::UFType
-  linsolve_tmp::rateType
-  linsolve::F
+  linsolve_tmps::Array{rateType,1}
+  linsolve::Array{F,1}
   jac_config::JCType
   grad_config::GCType
   # Values to check overflow in T1 computation
-  diff1::uType
-  diff2::uType 
+  diff1::Array{uType,1}
+  diff2::Array{uType,1} 
 end
 
 
@@ -800,24 +800,51 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   du2 = zero(rate_prototype)
 
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
+    W_el = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
     J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
+    W_el = similar(J)
   end
+
+  W = Array{typeof(W_el),1}(undef, Threads.nthreads())
+  W[1] = W_el
+  for i=2:Threads.nthreads()
+    if W_el isa WOperator
+      W[i] = WOperator(f, dt, true)
+    else
+      W[i] = zero(W_el)
+    end
+  end
+  
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linsolve_tmps = Array{typeof(linsolve_tmp),1}(undef, Threads.nthreads())
+  
+  for i=1:Threads.nthreads()
+    linsolve_tmps[i] = zero(rate_prototype)
+  end
+
+  linsolve_el = alg.linsolve(Val{:init},uf,u)
+  linsolve = Array{typeof(linsolve_el),1}(undef, Threads.nthreads())
+  linsolve[1] = linsolve_el
+  for i=2:Threads.nthreads()
+    linsolve[i] = alg.linsolve(Val{:init},uf,u)
+  end
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
-  diff1 = zero(u)
-  diff2 = zero(u)
-
+  
+  diff1 = Array{typeof(u),1}(undef, Threads.nthreads())
+  diff2 = Array{typeof(u),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+    diff1[i] = zero(u)
+    diff2[i] = zero(u)
+  end
+  
   # Initialize the cache
   ImplicitHairerWannerExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
-      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmp,
+      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,
       linsolve, jac_config, grad_config,diff1,diff2)
 end
