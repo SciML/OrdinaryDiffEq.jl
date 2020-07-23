@@ -247,5 +247,5 @@ module OrdinaryDiffEq
 
   export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
 
-  export ShampineCollocationInit, BrownFullBasicInit
+  export ShampineCollocationInit, BrownFullBasicInit, NoInit
 end # module
