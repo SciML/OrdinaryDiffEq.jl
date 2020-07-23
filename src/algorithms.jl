@@ -143,10 +143,11 @@ struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtr
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
   diff_type::FDT
+  threading::Bool
 end
 function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
-  min_order=1,init_order=5,max_order=10,sequence = :harmonic)
+  min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
   n_init = max(n_min,init_order)
@@ -172,7 +173,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
 
   # Initialize algorithm
   ImplicitDeuflhardExtrapolation{chunk_size, autodiff,
-      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,sequence,diff_type)
+      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,sequence,diff_type,threading)
 end
 
 struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
