@@ -875,7 +875,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
 
-  @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack J,W,uf,tf,linsolve_tmps,jac_config = cache
 
   fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -895,20 +895,20 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   for i in 0:n_curr
     j_int = 4 * subdividing_sequence[i+1]
     dt_int = dt / j_int # Stepsize of the ith internal discretisation
-    jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
+    jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
     integrator.destats.nw += 1
     @.. u_temp2 = uprev
-    @.. linsolve_tmp = dt_int*fsalfirst
-    cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+    @.. linsolve_tmps[1] = dt_int*fsalfirst
+    cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
     integrator.destats.nsolve += 1
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
-    @.. diff1 = u_temp1 - u_temp2
+    @.. diff1[1] = u_temp1 - u_temp2
     for j in 2:j_int
       f(k, cache.u_temp1, p, t + (j-1) * dt_int)
       integrator.destats.nf += 1
-      @.. linsolve_tmp = dt_int * k - (u_temp1 - u_temp2)
-      cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+      @.. linsolve_tmps[1] = dt_int * k - (u_temp1 - u_temp2)
+      cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
       integrator.destats.nsolve += 1
       @.. k = -k
       @.. T[i+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
@@ -916,8 +916,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       @.. u_temp1 = T[i+1]
       if(i<=1)
         # Deuflhard Stability check for initial two sequences 
-        @.. diff2 = u_temp1 - u_temp2
-        if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+        @.. diff2[1] = u_temp1 - u_temp2
+        if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
           # Divergence of iteration, overflow is possible. Force fail and start with smaller step
           integrator.force_stepfail = true
           return
@@ -965,19 +965,19 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         # Update cache.T
         j_int = 4 * subdividing_sequence[n_curr + 1]
         dt_int = dt / j_int # Stepsize of the new internal discretisation
-        jacobian2W!(W, integrator.f.mass_matrix, dt_int, J, false)
+        jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
         integrator.destats.nw += 1
         @.. u_temp2 = uprev
-        @.. linsolve_tmp = dt_int*fsalfirst
-        cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+        @.. linsolve_tmps[1] = dt_int*fsalfirst
+        cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
         integrator.destats.nsolve += 1
         @.. k = -k
         @.. u_temp1 = u_temp2 + k # Euler starting step
         for j in 2:j_int
           f(k, cache.u_temp1, p, t + (j-1) * dt_int)
           integrator.destats.nf += 1
-          @.. linsolve_tmp = dt_int * k - (u_temp1 - u_temp2)
-          cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+          @.. linsolve_tmps[1] = dt_int * k - (u_temp1 - u_temp2)
+          cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
           integrator.destats.nsolve += 1
           @.. k = -k
           @.. T[n_curr+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule

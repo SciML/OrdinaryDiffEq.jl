@@ -602,7 +602,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
 
 
   ImplicitDeuflhardExtrapolationCache(utilde,u_temp1,u_temp2,u_temp3,u_temp4,tmp,T,res,fsalfirst,k,k_tmps,cc.Q,cc.n_curr,cc.n_old,cc.coefficients,cc.stage_number,
-    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config,diff1,diff2)
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,diff1,diff2)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
