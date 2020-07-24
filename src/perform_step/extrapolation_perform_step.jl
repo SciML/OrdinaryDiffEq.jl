@@ -1600,30 +1600,31 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
           for index in startIndex:endIndex
-            j_int_temp = 4 * subdividing_sequence[index+1]
-            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
+            j_int = 4 * subdividing_sequence[index+1]
+            dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int*J - integrator.f.mass_matrix
-            u_temp2 = uprev
-            u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
-            diff1 = u_temp1 - u_temp2
-            for j in 2:j_int_temp + 1
-              T[index+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
+            integrator.destats.nw += 1
+            u_temp4 = uprev
+            u_temp3 = u_temp4 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
+            diff1 = u_temp3 - u_temp4
+            for j in 2:j_int + 1
+              T[index+1] = 2*u_temp3 - u_temp4 + 2*_reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int) - (u_temp3 - u_temp4)),axes(uprev))
               integrator.destats.nf += 1
               if(j == j_int + 1)
-                T[index + 1] = 0.5(T[i + 1] + u_temp2)
+                T[index + 1] = 0.5(T[index + 1] + u_temp4)
               end
-              u_temp2 = u_temp1
-              u_temp1 = T[index+1]
+              u_temp4 = u_temp3
+              u_temp3 = T[index+1]
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
-                diff2 = u_temp1 - u_temp2
+                diff2 = u_temp3 - u_temp4
                 if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
                 end
               end
-              diff1 = u_temp1 - u_temp2
+              diff1 = u_temp3 - u_temp4
             end
           end
           integrator.force_stepfail ? break : continue
