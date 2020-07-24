@@ -99,14 +99,35 @@ end
     for j = 1:6
       alg = ImplicitDeuflhardExtrapolation(min_order = j,
         init_order = j, max_order=j,
-        sequence = seq)
+        sequence = seq,threading=false)
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
     end
 
     # Regression test
     alg = ImplicitDeuflhardExtrapolation(max_order=9, min_order=1,
-      init_order=9, sequence=seq)
+      init_order=9, sequence=seq,threading=false)
+    sol = solve(prob, alg, reltol=1e-3)
+    @test length(sol.u) < 10
+  end
+end
+
+@testset "Testing ImplicitDeuflhardExtrapolation" begin
+  for prob in problem_array, seq in sequence_array
+    global dts
+
+    # Convergence test
+    for j = 1:6
+      alg = ImplicitDeuflhardExtrapolation(min_order = j,
+        init_order = j, max_order=j,
+        sequence = seq,threading=true)
+      sim = test_convergence(dts,prob,alg)
+      @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
+    end
+
+    # Regression test
+    alg = ImplicitDeuflhardExtrapolation(max_order=9, min_order=1,
+      init_order=9, sequence=seq,threading=true)
     sol = solve(prob, alg, reltol=1e-3)
     @test length(sol.u) < 10
   end
@@ -120,13 +141,37 @@ end
     for j = 1:6
       alg = ImplicitHairerWannerExtrapolation(min_order = j,
         init_order = j, max_order=j,
-        sequence = seq)
+        sequence = seq, threading=false)
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) - 1 atol=testTol
     end
 
-    # TODO: Regression test
-  
+    alg = ImplicitHairerWannerExtrapolation(max_order=9, min_order=1,
+    init_order=9, sequence=seq,threading=false)
+    sol = solve(prob, alg, reltol=1e-3)
+    @test length(sol.u) < 10
+
+  end
+end
+
+@testset "Testing ImplicitHairerWannerExtrapolation" begin
+  for prob in problem_array, seq in sequence_array
+    global dts
+
+    # Convergence test
+    for j = 1:6
+      alg = ImplicitHairerWannerExtrapolation(min_order = j,
+        init_order = j, max_order=j,
+        sequence = seq,threading=true)
+      sim = test_convergence(dts,prob,alg)
+      @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) - 1 atol=testTol
+    end
+
+    alg = ImplicitHairerWannerExtrapolation(max_order=9, min_order=1,
+    init_order=9, sequence=seq,threading=true)
+    sol = solve(prob, alg, reltol=1e-3)
+    @test length(sol.u) < 10
+
   end
 end
 
