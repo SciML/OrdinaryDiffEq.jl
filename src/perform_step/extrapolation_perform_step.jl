@@ -1202,12 +1202,9 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
             u_temp4 = uprev
             u_temp3 = u_temp4 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
             diff1 = u_temp3 - u_temp4
-            for j in 2:j_int + 1
+            for j in 2:j_int
               T[index+1] = 2*u_temp3 - u_temp4 + 2*_reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int) - (u_temp3 - u_temp4)),axes(uprev))
               integrator.destats.nf += 1
-              if(j == j_int + 1)
-                T[index + 1] = 0.5(T[index + 1] + u_temp4)
-              end
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
               if(index<=1)
@@ -1219,7 +1216,6 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
                   return
                 end
               end
-              diff1 = u_temp3 - u_temp4
             end
           end
           integrator.force_stepfail ? break : continue
@@ -1252,7 +1248,6 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
                   return
                 end
               end
-              diff1 = u_temp3 - u_temp4
             end
           end
           integrator.force_stepfail ? break : continue
@@ -1842,7 +1837,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
       end
     end
   end
-  
+
   if integrator.force_stepfail
     return
   end
