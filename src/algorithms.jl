@@ -117,8 +117,8 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
 
   # Warn user if sequence_factor is not even
   if sequence_factor%2 != 0
-    @warn "A non-even number cannot be used as sequence factor. 
-          Thus is has been changed 
+    @warn "A non-even number cannot be used as sequence factor.
+          Thus is has been changed
           $(sequence_factor) --> 2"
     sequence_factor = 2
   end
@@ -202,8 +202,8 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
 
   # Warn user if sequence_factor is not even
   if sequence_factor%2 != 0
-    @warn "A non-even number cannot be used as sequence factor. 
-          Thus is has been changed 
+    @warn "A non-even number cannot be used as sequence factor.
+          Thus is has been changed
           $(sequence_factor) --> 2"
     sequence_factor = 2
   end
@@ -1485,7 +1485,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Linear Methods
 
-for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4]
+for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int
