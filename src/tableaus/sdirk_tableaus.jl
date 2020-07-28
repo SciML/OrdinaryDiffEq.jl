@@ -45,7 +45,7 @@ function TRBDF2Tableau(T,T2)
 end
 
 struct ESDIRK4Tableau{T,T2}
-    γ::T
+    γ::T2
     a31::T
     a32::T
     a41::T
@@ -56,10 +56,10 @@ struct ESDIRK4Tableau{T,T2}
     btilde3::T
     btilde4::T
     c3::T2
-    α31::T
-    α32::T
-    α41::T
-    α42::T
+    α31::T2
+    α32::T2
+    α41::T2
+    α42::T2
 end
 
 #=
@@ -115,7 +115,7 @@ z₄ = yhat - uprev = a31*z1 + a32*z2 + γ*z3
 =#
 
 function Kvaerno3Tableau(T,T2)
-  γ   = convert(T,0.4358665215)
+  γ   = convert(T2,0.4358665215)
   a31 = convert(T,0.490563388419108)
   a32 = convert(T,0.073570090080892)
   a41 = convert(T,0.308809969973036)
@@ -134,14 +134,14 @@ function Kvaerno3Tableau(T,T2)
   θ = c3/c2
   α31 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
   α32 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
-  α41 = convert(T,0.0)
-  α42 = convert(T,0.0)
+  α41 = convert(T2,0.0)
+  α42 = convert(T2,0.0)
   ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32,α41,α42)
 end
 
 
 struct KenCarp3Tableau{T,T2}
-    γ::T
+    γ::T2
     a31::T
     a32::T
     a41::T
@@ -152,10 +152,10 @@ struct KenCarp3Tableau{T,T2}
     btilde3::T
     btilde4::T
     c3::T2
-    α31::T
-    α32::T
-    α41::T
-    α42::T
+    α31::T2
+    α32::T2
+    α41::T2
+    α42::T2
     ea21::T
     ea31::T
     ea32::T
@@ -186,7 +186,7 @@ dt = c2
 ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
 =#
 function KenCarp3Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-  γ  = convert(T,0.435866521508459)
+  γ  = convert(T2,0.435866521508459)
   a31 = convert(T,0.2576482460664272)
   a32 = -convert(T,0.09351476757488625)
   a41 = convert(T,0.18764102434672383)
@@ -223,7 +223,6 @@ function KenCarp3Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
   ebtilde2 = convert(T,0.11013520969201586)
   ebtilde3 = -convert(T,0.10306492520138458)
   ebtilde4 = -convert(T,0.0341695463672966)
-
   KenCarp3Tableau(γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,
                   α32,α41,α42,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4,
                   ebtilde1,ebtilde2,ebtilde3,ebtilde4)
@@ -232,7 +231,7 @@ end
 
 
 function KenCarp3Tableau(T,T2)
-  γ  = convert(T,1767732205903//4055673282236)
+  γ  = convert(T2,1767732205903//4055673282236)
   a31 = convert(T,2746238789719//10658868560708)
   a32 = -convert(T,640167445237//6845629431997)
   a41 = convert(T,1471266399579//7840856788654)
@@ -283,7 +282,7 @@ end
 # ebtilde4 = big(1767732205903)//4055673282236 - big(2193209047091)//5459859503100
 
 struct Cash4Tableau{T,T2}
-  γ::T
+  γ::T2
   a21::T
   a31::T
   a32::T
@@ -348,7 +347,7 @@ Using constant extrapolations
 =#
 
 function Cash4Tableau(T,T2)
-  γ = convert(T,0.435866521508)
+  γ = convert(T2,0.435866521508)
   a21 = convert(T,-1.13586652150)
   a31 = convert(T,1.08543330679)
   a32 = -convert(T,0.721299828287)
@@ -375,7 +374,7 @@ function Cash4Tableau(T,T2)
 end
 
 struct SFSDIRK4Tableau{T,T2}
-  γ::T
+  γ::T2
   a21::T
   a31::T
   a32::T
@@ -392,7 +391,7 @@ struct SFSDIRK4Tableau{T,T2}
 end
 
 function SFSDIRK4Tableau(T,T2)
-  γ = convert(T,0.097961082941)
+  γ = convert(T2,0.097961082941)
   a21 = convert(T,0.262318069183)
   a31 = convert(T,0.230169419019)
   a32 = convert(T,0.294466719347)
@@ -410,7 +409,7 @@ function SFSDIRK4Tableau(T,T2)
 end
 
 struct SFSDIRK5Tableau{T,T2}
-  γ::T
+  γ::T2
   a21::T
   a31::T
   a32::T
@@ -433,7 +432,7 @@ struct SFSDIRK5Tableau{T,T2}
 end
 
 function SFSDIRK5Tableau(T,T2)
-  γ = convert(T,0.078752939968)
+  γ = convert(T2,0.078752939968)
   a21 = convert(T,0.222465723027)
   a31 = convert(T,0.203192361700)
   a32 = convert(T,0.230847263068)
@@ -457,7 +456,7 @@ function SFSDIRK5Tableau(T,T2)
 end
 
 struct SFSDIRK6Tableau{T,T2}
-  γ::T
+  γ::T2
   a21::T
   a31::T
   a32::T
@@ -487,7 +486,7 @@ struct SFSDIRK6Tableau{T,T2}
 end
 
 function SFSDIRK6Tableau(T,T2)
-  γ = convert(T,0.067410767219)
+  γ = convert(T2,0.067410767219)
   a21 = convert(T,0.194216850802)
   a31 = convert(T,0.194216850802)
   a32 = convert(T,0.199861501713)
@@ -518,7 +517,7 @@ function SFSDIRK6Tableau(T,T2)
 end
 
 struct SFSDIRK7Tableau{T,T2}
-  γ::T
+  γ::T2
   a21::T
   a31::T
   a32::T
@@ -556,7 +555,7 @@ struct SFSDIRK7Tableau{T,T2}
 end
 
 function SFSDIRK7Tableau(T,T2)
-  γ = convert(T,0.056879041592)
+  γ = convert(T2,0.056879041592)
   a21 = convert(T,0.172205581756)
   a31 = convert(T,0.135485903539)
   a32 = convert(T,0.135485903539)
@@ -595,7 +594,7 @@ function SFSDIRK7Tableau(T,T2)
 end
 
 struct SFSDIRK8Tableau{T,T2}
-  γ::T
+  γ::T2
   a21::T
   a31::T
   a32::T
@@ -642,7 +641,7 @@ struct SFSDIRK8Tableau{T,T2}
 end
 
 function SFSDIRK8Tableau(T,T2)
-  γ = convert(T,0.050353353407)
+  γ = convert(T2,0.050353353407)
   a21 = convert(T,0.147724666662)
   a31 = convert(T,0.114455029802)
   a32 = convert(T,0.114455029802)
@@ -690,7 +689,7 @@ function SFSDIRK8Tableau(T,T2)
 end
 
 struct Hairer4Tableau{T,T2}
-  γ::T
+  γ::T2
   a21::T
   a31::T
   a32::T
@@ -733,18 +732,18 @@ struct Hairer4Tableau{T,T2}
   r52::T
   r53::T
   r54::T
-  α21::T
-  α31::T
-  α32::T
-  α41::T
-  α43::T
+  α21::T2
+  α31::T2
+  α32::T2
+  α41::T2
+  α43::T2
 end
 
 function Hairer4Tableau(T,T2)
-  γ = convert(T,1//4)
-  c2 = convert(T,3//4)
-  c3 = convert(T,11//20)
-  c4 = convert(T,1//2)
+  γ = convert(T2,1//4)
+  c2 = convert(T2,3//4)
+  c3 = convert(T2,11//20)
+  c4 = convert(T2,1//2)
 
   #=
   α21 = convert(T,2)
@@ -873,7 +872,7 @@ function Hairer4Tableau(T,T2)
   r54 = convert(T,80//27)
 
   # c2/γ
-  α21 = convert(T,3)
+  α21 = convert(T2,3)
   #=
   # Prediction alphas from Hairer
   # Predict z3 from z1 and z2
@@ -882,8 +881,8 @@ function Hairer4Tableau(T,T2)
   b = [c3,a31*c1+a32*c2+γ*c3]
   A\b
   =#
-  α31 = convert(T,88//100)
-  α32 = convert(T,44//100)
+  α31 = convert(T2,88//100)
+  α32 = convert(T2,44//100)
   #=
   # Predict z4 from z1 and z3
   A = [c1   c3
@@ -891,8 +890,8 @@ function Hairer4Tableau(T,T2)
   b = [c4,a41*c1+a42*c2+a43*c3+γ*c4]
   A\b
   =#
-  α41 = convert(T,3//17)
-  α43 = convert(T,155//187)
+  α41 = convert(T2,3//17)
+  α43 = convert(T2,155//187)
 
  Hairer4Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                 bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,
@@ -1027,7 +1026,7 @@ function Hairer42Tableau(T,T2)
 end
 
 struct Kvaerno4Tableau{T,T2}
-  γ::T
+  γ::T2
   a31::T
   a32::T
   a41::T
@@ -1044,11 +1043,11 @@ struct Kvaerno4Tableau{T,T2}
   btilde5::T
   c3::T2
   c4::T2
-  α21::T
-  α31::T
-  α32::T
-  α41::T
-  α42::T
+  α21::T2
+  α31::T2
+  α32::T2
+  α41::T2
+  α42::T2
 end
 
 #=
@@ -1070,7 +1069,7 @@ dt = c2
 =#
 
 function Kvaerno4Tableau(T,T2)
-  γ = convert(T,0.4358665215)
+  γ = convert(T2,0.4358665215)
   a31 = convert(T,0.140737774731968)
   a32 = convert(T,-0.108365551378832)
   a41 = convert(T,0.102399400616089)
@@ -1087,18 +1086,18 @@ function Kvaerno4Tableau(T,T2)
   btilde5 = -γ
   c3 = convert(T2,0.468238744853136)
   c4 = convert(T2,1)
-  α21 = convert(T,2) # c2/γ
-  α31 = convert(T,0.462864521870446)
-  α32 = convert(T,0.537135478129554)
-  α41 = convert(T,-0.14714018016178376)
-  α42 = convert(T,1.1471401801617838)
+  α21 = convert(T2,2) # c2/γ
+  α31 = convert(T2,0.462864521870446)
+  α32 = convert(T2,0.537135478129554)
+  α41 = convert(T2,-0.14714018016178376)
+  α42 = convert(T2,1.1471401801617838)
   Kvaerno4Tableau(γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                   btilde1,btilde2,btilde3,btilde4,btilde5,
                   c3,c4,α21,α31,α32,α41,α42)
 end
 
 struct KenCarp4Tableau{T,T2}
-  γ::T
+  γ::T2
   a31::T
   a32::T
   a41::T
@@ -1162,7 +1161,7 @@ struct KenCarp4Tableau{T,T2}
 end
 
 struct CFNLIRK3Tableau{T,T2}
-    γ::T
+    γ::T2
     a31::T
     a32::T
     a41::T
@@ -1184,7 +1183,7 @@ end
 
 function CFNLIRK3Tableau(T,T2)
   #Implicit Tableau
-  γ  = convert(T,0.43586652150846)
+  γ  = convert(T2,0.43586652150846)
   a31 = convert(T,0.0)
   a32 = convert(T,(1-γ)/2)
   a41 = convert(T,0.0)
@@ -1268,7 +1267,7 @@ y₁-y₀ = a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
 
 =#
 function KenCarp4Tableau(T,T2)
-  γ = convert(T,1//4)
+  γ = convert(T2,1//4)
   a31 = convert(T,8611//62500)
   a32 = -convert(T,1743//31250)
   a41 = convert(T,5012029//34652500)
@@ -1295,20 +1294,20 @@ function KenCarp4Tableau(T,T2)
   c3 = convert(T2,83//250)
   c4 = convert(T2,31//50)
   c5 = convert(T2,17//20)
-  α21 = convert(T,2) # c2/γ
-  α31 = convert(T,42//125)
-  α32 = convert(T,83//125)
-  α41 = convert(T,-6//25)
-  α42 = convert(T,31//25)
-  α51 = convert(T,914470432//2064665255)
-  α52 = convert(T,798813//724780)
-  α53 = convert(T,-824765625//372971788)
-  α54 = convert(T,49640//29791)
-  α61 = convert(T,288521442795//954204491116)
-  α62 = convert(T,2224881//2566456)
-  α63 = convert(T,-1074821875//905317354)
-  α64 = convert(T,-3360875//8098936)
-  α65 = convert(T,7040//4913)
+  α21 = convert(T2,2) # c2/γ
+  α31 = convert(T2,42//125)
+  α32 = convert(T2,83//125)
+  α41 = convert(T2,-6//25)
+  α42 = convert(T2,31//25)
+  α51 = convert(T2,914470432//2064665255)
+  α52 = convert(T2,798813//724780)
+  α53 = convert(T2,-824765625//372971788)
+  α54 = convert(T2,49640//29791)
+  α61 = convert(T2,288521442795//954204491116)
+  α62 = convert(T2,2224881//2566456)
+  α63 = convert(T2,-1074821875//905317354)
+  α64 = convert(T2,-3360875//8098936)
+  α65 = convert(T2,7040//4913)
 
   ea21 = convert(T,1//2)
   ea31 = convert(T,13861//62500)
@@ -1356,7 +1355,7 @@ end
 # ebtilde6 = 1//4 - 61727//225920
 
 struct Kvaerno5Tableau{T,T2}
-  γ::T
+  γ::T2
   a31::T
   a32::T
   a41::T
@@ -1385,17 +1384,17 @@ struct Kvaerno5Tableau{T,T2}
   c4::T2
   c5::T2
   c6::T2
-  α31::T
-  α32::T
-  α41::T
-  α42::T
-  α43::T
-  α51::T
-  α52::T
-  α53::T
-  α61::T
-  α62::T
-  α63::T
+  α31::T2
+  α32::T2
+  α41::T2
+  α42::T2
+  α43::T2
+  α51::T2
+  α52::T2
+  α53::T2
+  α61::T2
+  α62::T2
+  α63::T2
 end
 
 #=
@@ -1443,7 +1442,7 @@ dt = c3
 =#
 
 function Kvaerno5Tableau(T,T2)
-  γ = convert(T,0.26)
+  γ = convert(T2,0.26)
   a31 = convert(T,0.13)
   a32 = convert(T,0.84033320996790809)
   a41 = convert(T,0.22371961478320505)
@@ -1469,17 +1468,17 @@ function Kvaerno5Tableau(T,T2)
   btilde6 = convert(T,0.19037520551797272) # γ-a76
   btilde7 = -γ
   α21 = convert(T,2) # c2/γ
-  α31 = convert(T,-1.366025403784441)
-  α32 = convert(T,2.3660254037844357)
-  α41 = convert(T,-0.19650552613122207)
-  α42 = convert(T,0.8113579546496623)
-  α43 = convert(T,0.38514757148155954)
-  α51 = convert(T,0.10375304369958693)
-  α52 = convert(T,0.937994698066431)
-  α53 = convert(T,-0.04174774176601781)
-  α61 = convert(T,-0.17281112873898072)
-  α62 = convert(T,0.6235784481025847)
-  α63 = convert(T,0.5492326806363959)
+  α31 = convert(T2,-1.366025403784441)
+  α32 = convert(T2,2.3660254037844357)
+  α41 = convert(T2,-0.19650552613122207)
+  α42 = convert(T2,0.8113579546496623)
+  α43 = convert(T2,0.38514757148155954)
+  α51 = convert(T2,0.10375304369958693)
+  α52 = convert(T2,0.937994698066431)
+  α53 = convert(T2,-0.04174774176601781)
+  α61 = convert(T2,-0.17281112873898072)
+  α62 = convert(T2,0.6235784481025847)
+  α63 = convert(T2,0.5492326806363959)
   c3 = convert(T,1.230333209967908)
   c4 = convert(T,0.895765984350076)
   c5 = convert(T,0.436393609858648)
@@ -1492,7 +1491,7 @@ function Kvaerno5Tableau(T,T2)
 end
 
 struct KenCarp5Tableau{T,T2}
-  γ::T
+  γ::T2
   a31::T
   a32::T
   a41::T
@@ -1519,24 +1518,24 @@ struct KenCarp5Tableau{T,T2}
   c5::T2
   c6::T2
   c7::T2
-  α31::T
-  α32::T
-  α41::T
-  α42::T
-  α51::T
-  α52::T
-  α61::T
-  α62::T
-  α71::T
-  α72::T
-  α73::T
-  α74::T
-  α75::T
-  α81::T
-  α82::T
-  α83::T
-  α84::T
-  α85::T
+  α31::T2
+  α32::T2
+  α41::T2
+  α42::T2
+  α51::T2
+  α52::T2
+  α61::T2
+  α62::T2
+  α71::T2
+  α72::T2
+  α73::T2
+  α74::T2
+  α75::T2
+  α81::T2
+  α82::T2
+  α83::T2
+  α84::T2
+  α85::T2
   btilde1::T
   btilde4::T
   btilde5::T
@@ -1634,7 +1633,7 @@ dt = c5
 =#
 
 function KenCarp5Tableau(T,T2)
-  γ = convert(T,41//200)
+  γ = convert(T2,41//200)
   a31 = convert(T,41//400)
   a32 = -convert(T,567603406766//11931857230679)
   a41 = convert(T,683785636431//9252920307686)
@@ -1673,24 +1672,24 @@ function KenCarp5Tableau(T,T2)
   c5 = convert(T2,92//100)
   c6 = convert(T2,24//100)
   c7 = convert(T2,3//5)
-  α31 = convert(T,169472355998441//463007087066141)
-  α32 = convert(T,293534731067700//463007087066141)
-  α41 = convert(T,152460326250177//295061965385977)
-  α42 = convert(T,142601639135800//295061965385977)
-  α51 = convert(T,-51//41)
-  α52 = convert(T,92//41)
-  α61 = convert(T,17//41)
-  α62 = convert(T,24//41)
-  α71 = convert(T,13488091065527792//122659689776876057)
-  α72 = convert(T,-3214953045//3673655312)
-  α73 = convert(T,550552676519862000//151043064207496529)
-  α74 = convert(T,-409689169278408000//135215758621947439)
-  α75 = convert(T,3345//12167)
-  α81 = convert(T,1490668709762032//122659689776876057)
-  α82 = convert(T,5358255075//14694621248)
-  α83 = convert(T,-229396948549942500//151043064207496529)
-  α84 = convert(T,170703820532670000//135215758621947439)
-  α85 = convert(T,30275//24334)
+  α31 = convert(T2,169472355998441//463007087066141)
+  α32 = convert(T2,293534731067700//463007087066141)
+  α41 = convert(T2,152460326250177//295061965385977)
+  α42 = convert(T2,142601639135800//295061965385977)
+  α51 = convert(T2,-51//41)
+  α52 = convert(T2,92//41)
+  α61 = convert(T2,17//41)
+  α62 = convert(T2,24//41)
+  α71 = convert(T2,13488091065527792//122659689776876057)
+  α72 = convert(T2,-3214953045//3673655312)
+  α73 = convert(T2,550552676519862000//151043064207496529)
+  α74 = convert(T2,-409689169278408000//135215758621947439)
+  α75 = convert(T2,3345//12167)
+  α81 = convert(T2,1490668709762032//122659689776876057)
+  α82 = convert(T2,5358255075//14694621248)
+  α83 = convert(T2,-229396948549942500//151043064207496529)
+  α84 = convert(T2,170703820532670000//135215758621947439)
+  α85 = convert(T2,30275//24334)
 
   ea21 = convert(T,41//100)
   ea31 = convert(T,367902744464//2072280473677)
@@ -1751,7 +1750,7 @@ end
 # ebtilde8 = Int128(41)//200 - Int128(4035322873751)//18575991585200
 
 struct ESDIRK54I8L2SATableau{T,T2}
-  γ::T
+  γ::T2
   a31::T; a32::T
   a41::T; a42::T; a43::T
   a51::T; a52::T; a53::T; a54::T
@@ -1763,7 +1762,7 @@ struct ESDIRK54I8L2SATableau{T,T2}
 end
 
 function ESDIRK54I8L2SATableau(T, T2)
-  γ  = convert(T, 1//4)
+  γ  = convert(T2, 1//4)
   a31 = convert(T, 1748874742213//5795261096931)
   a32 = convert(T, 1748874742213//5795261096931)
   a41 = convert(T, 2426486750897//12677310711630)
@@ -1829,7 +1828,7 @@ function SDIRK22Tableau(T)
 end
 
 struct KenCarp47Tableau{T,T2}
-  γ::T
+  γ::T2
   a31::T
   a32::T
   a41::T
@@ -1857,23 +1856,23 @@ struct KenCarp47Tableau{T,T2}
   c4::T2
   c5::T2
   c6::T2
-  α21::T
-  α31::T
-  α32::T
-  α41::T
-  α42::T
-  α43::T
-  α51::T
-  α52::T
-  α61::T
-  α62::T
-  α63::T
-  α71::T
-  α72::T
-  α73::T
-  α74::T
-  α75::T
-  α76::T
+  α21::T2
+  α31::T2
+  α32::T2
+  α41::T2
+  α42::T2
+  α43::T2
+  α51::T2
+  α52::T2
+  α61::T2
+  α62::T2
+  α63::T2
+  α71::T2
+  α72::T2
+  α73::T2
+  α74::T2
+  α75::T2
+  α76::T2
   ea21::T
   ea31::T
   ea32::T
@@ -1978,7 +1977,7 @@ y₁-y₀ = a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆
 
 =#
 function KenCarp47Tableau(T,T2)
-  γ = convert(T,1235//10000)
+  γ = convert(T2,1235//10000)
   a31 = convert(T,624185399699//4186980696204)
   a32 = a31
   a41 = convert(T,1258591069120//10082082980243)
@@ -2017,23 +2016,23 @@ function KenCarp47Tableau(T,T2)
   c5 = convert(T2,3//40)
   c6 = convert(T2,7//10)
 
-  α21 = convert(T,2) # c2/γ
-  α31 = -convert(T,796131459065721//1125899906842624)
-  α32 = convert(T,961015682954173//562949953421312)
-  α41 = convert(T,139710975840363//2251799813685248)
-  α42 = convert(T,389969885861609//1125899906842624)
-  α43 = convert(T,2664298132243335//4503599627370496)
-  α51 = convert(T,6272219723949193//9007199254740992)
-  α52 = convert(T,2734979530791799//9007199254740992)
-  α61 = convert(T,42616678320173//140737488355328)
-  α62 = -convert(T,2617409280098421//1125899906842624)
-  α63 = convert(T,1701187880189829//562949953421312)
-  α71 = convert(T,4978493057967061//2251799813685248)
-  α72 = convert(T,7230365118049293//9007199254740992)
-  α73 = -convert(T,6826045129237249//18014398509481984)
-  α74 = -convert(T,2388848894891525//1125899906842624)
-  α75 = -convert(T,4796744191239075//2251799813685248)
-  α76 = convert(T,2946706549191323//1125899906842624)
+  α21 = convert(T2,2) # c2/γ
+  α31 = -convert(T2,796131459065721//1125899906842624)
+  α32 = convert(T2,961015682954173//562949953421312)
+  α41 = convert(T2,139710975840363//2251799813685248)
+  α42 = convert(T2,389969885861609//1125899906842624)
+  α43 = convert(T2,2664298132243335//4503599627370496)
+  α51 = convert(T2,6272219723949193//9007199254740992)
+  α52 = convert(T2,2734979530791799//9007199254740992)
+  α61 = convert(T2,42616678320173//140737488355328)
+  α62 = -convert(T2,2617409280098421//1125899906842624)
+  α63 = convert(T2,1701187880189829//562949953421312)
+  α71 = convert(T2,4978493057967061//2251799813685248)
+  α72 = convert(T2,7230365118049293//9007199254740992)
+  α73 = -convert(T2,6826045129237249//18014398509481984)
+  α74 = -convert(T2,2388848894891525//1125899906842624)
+  α75 = -convert(T2,4796744191239075//2251799813685248)
+  α76 = convert(T2,2946706549191323//1125899906842624)
 
   ea21 = convert(T,247//1000)
   ea31 = convert(T,247//4000)
@@ -2082,7 +2081,7 @@ function KenCarp47Tableau(T,T2)
                   ebtilde5,ebtilde6,ebtilde7)
 end
 struct KenCarp58Tableau{T,T2}
-  γ::T
+  γ::T2
   a31::T
   a32::T
   a41::T
@@ -2113,25 +2112,25 @@ struct KenCarp58Tableau{T,T2}
   c5::T2
   c6::T2
   c7::T2
-  α31::T
-  α32::T
-  α41::T
-  α42::T
-  α51::T
-  α52::T
-  α61::T
-  α62::T
-  α63::T
-  α71::T
-  α72::T
-  α73::T
-  α81::T
-  α82::T
-  α83::T
-  α84::T
-  α85::T
-  α86::T
-  α87::T
+  α31::T2
+  α32::T2
+  α41::T2
+  α42::T2
+  α51::T2
+  α52::T2
+  α61::T2
+  α62::T2
+  α63::T2
+  α71::T2
+  α72::T2
+  α73::T2
+  α81::T2
+  α82::T2
+  α83::T2
+  α84::T2
+  α85::T2
+  α86::T2
+  α87::T2
   btilde3::T
   btilde4::T
   btilde5::T
@@ -2255,7 +2254,7 @@ y₁-y₀ = a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + γ
 =#
 
 function KenCarp58Tableau(T,T2)
-  γ = convert(T,2//9)
+  γ = convert(T2,2//9)
   a31 = convert(T,2366667076620//8822750406821)
   a32 = a31
   a41 = -convert(T,257962897183//4451812247028)
@@ -2302,25 +2301,25 @@ function KenCarp58Tableau(T,T2)
   c6 = convert(T2,18//25)
   c7 = convert(T2,191//200)
 
-  α31 = -convert(T,796131459065721//1125899906842624)
-  α32 = convert(T,961015682954173//562949953421312)
-  α41 = convert(T,3335563016633385//4503599627370496)
-  α42 = convert(T,2336073221474223//9007199254740992)
-  α51 = convert(T,1777088537295433//9007199254740992)
-  α52 = convert(T,7230110717445555//9007199254740992)
-  α61 = convert(T,305461594360167//36028797018963968)
-  α62 = convert(T,3700851199347703//36028797018963968)
-  α63 = convert(T,8005621056314023//9007199254740992)
-  α71 = convert(T,247009276011491//9007199254740992)
-  α72 = -convert(T,6222030107065861//9007199254740992)
-  α73 = convert(T,1872777510724421//1125899906842624)
-  α81 = convert(T,180631849429283//36028797018963968)
-  α82 = -convert(T,3454740038041085//36028797018963968)
-  α83 = convert(T,476708848972457//2251799813685248)
-  α84 = convert(T,5255799236757313//288230376151711744)
-  α85 = convert(T,3690914796734375//288230376151711744)
-  α86 = -convert(T,5010195363762467//18014398509481984)
-  α87 = convert(T,5072201887169367//4503599627370496)
+  α31 = -convert(T2,796131459065721//1125899906842624)
+  α32 = convert(T2,961015682954173//562949953421312)
+  α41 = convert(T2,3335563016633385//4503599627370496)
+  α42 = convert(T2,2336073221474223//9007199254740992)
+  α51 = convert(T2,1777088537295433//9007199254740992)
+  α52 = convert(T2,7230110717445555//9007199254740992)
+  α61 = convert(T2,305461594360167//36028797018963968)
+  α62 = convert(T2,3700851199347703//36028797018963968)
+  α63 = convert(T2,8005621056314023//9007199254740992)
+  α71 = convert(T2,247009276011491//9007199254740992)
+  α72 = -convert(T2,6222030107065861//9007199254740992)
+  α73 = convert(T2,1872777510724421//1125899906842624)
+  α81 = convert(T2,180631849429283//36028797018963968)
+  α82 = -convert(T2,3454740038041085//36028797018963968)
+  α83 = convert(T2,476708848972457//2251799813685248)
+  α84 = convert(T2,5255799236757313//288230376151711744)
+  α85 = convert(T2,3690914796734375//288230376151711744)
+  α86 = -convert(T2,5010195363762467//18014398509481984)
+  α87 = convert(T2,5072201887169367//4503599627370496)
 
   ea21 = convert(T,4//9)
   ea31 = convert(T,1//9)

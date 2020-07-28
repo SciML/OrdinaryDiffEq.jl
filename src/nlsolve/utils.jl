@@ -185,7 +185,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   end
 
   # build non-linear solver
-  ηold = one(uTolType)
+  ηold = one(t)
 
   NLSolver{true,tTypeNoUnits}(
     z,tmp,ztmp,γ,c,α,nlalg,nlalg.κ,
