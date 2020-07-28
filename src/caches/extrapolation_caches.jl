@@ -91,6 +91,7 @@ end
   jac_config::JCType
   grad_config::GCType
   sequence::sequenceType #support for different sequences
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
 end
 
 @cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF,sequenceType} <: OrdinaryDiffEqConstantCache
@@ -105,20 +106,34 @@ end
   uf::UF
 
   sequence::sequenceType #support for different sequences
+  stage_number::Vector{Int}
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   dtpropose = zero(dt)
   cur_order = max(alg.init_order, alg.min_order)
   T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
-  @.. T = u
+  for i=1:alg.max_order
+    for j=1:i
+      T[i,j] = zero(u)
+    end
+  end
   work = zero(dt)
   A = one(Int)
   step_no = zero(Int)
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
-  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,sequence)
+  stage_number = Vector{Int}(undef, alg.max_order + 1)
+
+  for n in 1:length(stage_number)
+    s = zero(eltype(sequence))
+    for i in 1:n
+      s += sequence[i]
+    end
+    stage_number[n] = 8 * Int(s) - n + 3
+  end
+  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,sequence,stage_number)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -193,8 +208,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
   sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
+  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
   ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence)
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence,cc.stage_number)
 end
 
 
