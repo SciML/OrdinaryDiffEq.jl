@@ -193,10 +193,11 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
   if max_len_cb isa VectorContinuousCallback
+    uBottomEltypeReal = real(uBottomEltype)
     if isinplace(prob)
-      callback_cache = DiffEqBase.CallbackCache(u,max_len_cb.len,uBottomEltype,uBottomEltype)
+      callback_cache = DiffEqBase.CallbackCache(u,max_len_cb.len,uBottomEltypeReal,uBottomEltypeReal)
     else
-      callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltype,uBottomEltype)
+      callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltypeReal,uBottomEltypeReal)
     end
   else
     callback_cache = nothing
