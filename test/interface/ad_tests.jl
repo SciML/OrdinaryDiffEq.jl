@@ -173,7 +173,7 @@ params = [0.002, -0.005, -0.004, -0.003, -0.002]
 tspan = (7.0, 84.0)
 times = collect(minimum(tspan):0.5:maximum(tspan))
 prob = SplitODEProblem(f1s,f2s, u0, tspan, params)
-sol2 = solve(prob, solver2; dt=0.5, saveat=times)
+sol2 = solve(prob, KenCarp4(); dt=0.5, saveat=times)
 
 function difffunc(p)
     tmp_prob = remake(prob,p=p)
