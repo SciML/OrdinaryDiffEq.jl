@@ -31,6 +31,15 @@ test_setup = Dict(:alg=>Tsit5(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,RKMK2(),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
 
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (30, 150.))
+sol1  = solve(prob,OrdinaryDiffEq.Tsit5(),dt=1/4)
+sol2  = solve(prob,OrdinaryDiffEq.RKMK4(),dt=1/4)
+dts = 1 ./2 .^(10:-1:5)
+test_setup = Dict(:alg=>Tsit5(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,RKMK4(),test_setup)
+@test sim.𝒪est[:l2] ≈ 4 atol=0.2
+
 function update_func(A,u,p,t)
     A[1,1] = 0
     A[2,1] = 1

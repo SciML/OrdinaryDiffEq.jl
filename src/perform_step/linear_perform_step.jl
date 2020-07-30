@@ -60,7 +60,7 @@ function perform_step!(integrator, cache::RKMK4Cache, repeat_step=false)
   if integrator.alg.krylov
     u .= expv(1/6, (k1 + 2*k2 + 2*k3 + k4 - (k1*k4 - k4*k1)/2), uprev; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
-    u .= exp((1/2)*(k1 + 2*k2 + 2*k3 + k4 - (k1*k4 - k4*k1)/2)) * uprev
+    u .= exp((1/6)*(k1 + 2*k2 + 2*k3 + k4 - (k1*k4 - k4*k1)/2)) * uprev
   end
 
   integrator.f(integrator.fsallast,u,p,t+dt)
