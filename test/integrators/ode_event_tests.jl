@@ -346,3 +346,19 @@ sol1 = solve(prob,Tsit5(),callback = cb,tstops=tstop,saveat=tstop)
 sol2 = solve(prob,Tsit5(),callback = cb,tstops=tstop,saveat=prevfloat.(tstop))
 @test count(x->x==tstop[1], sol2.t) == 2
 @test count(x->x==tstop[2], sol2.t) == 2
+
+# check VectorContinuousCallback works for complex valued solutions
+# see issue #1222
+f = (u,p,t) -> -1.0im * u
+prob = ODEProblem(f, complex([1.0]), (0.0, 1.0))
+condition = function(out, u, t, integrator)
+  out[1] = t - 0.5
+end
+n = 0
+affect! = function(integrator, event_index)
+  global n
+  n += 1
+end
+callback = VectorContinuousCallback(condition, affect!, 1)
+sol = solve(prob, Tsit5(), callback=callback)
+@test n == 1
