@@ -18,25 +18,25 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 # u' = A(t)u solvers
 function update_func(A,u,p,t)
     A[1,1] = 0
-    A[2,1] = u[1]
-    A[1,2] = -2*(1 - cos(u[1]))
+    A[2,1] = sin(u[1])
+    A[1,2] = -1
     A[2,2] = 0
 end
 A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
-prob = ODEProblem(A, ones(2), (30, 150.))
-sol1  = solve(prob,OrdinaryDiffEq.Tsit5(),dt=1/4)
+prob = ODEProblem(A, ones(2), (10, 50.))
+sol1  = solve(prob,OrdinaryDiffEq.Vern9(),dt=1/4)
 sol2  = solve(prob,OrdinaryDiffEq.RKMK2(),dt=1/4)
 dts = 1 ./2 .^(10:-1:5)
-test_setup = Dict(:alg=>Tsit5(),:reltol=>1e-14,:abstol=>1e-14)
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,RKMK2(),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
 
 A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
-prob = ODEProblem(A, ones(2), (30, 150.))
-sol1  = solve(prob,OrdinaryDiffEq.Tsit5(),dt=1/4)
+prob = ODEProblem(A, ones(2), (0, 30.))
+sol1  = solve(prob,OrdinaryDiffEq.Vern9(),dt=1/4)
 sol2  = solve(prob,OrdinaryDiffEq.RKMK4(),dt=1/4)
-dts = 1 ./2 .^(10:-1:5)
-test_setup = Dict(:alg=>Tsit5(),:reltol=>1e-14,:abstol=>1e-14)
+dts = (0.38) .^(6:-1:1)
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,RKMK4(),test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol=0.2
 
