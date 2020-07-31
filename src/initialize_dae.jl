@@ -136,13 +136,14 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     nlequation! = function (out,u)
       update_coefficients!(M,u,p,t)
       #M * (u-u0)/dt - f(u,p,t)
-      @. tmp = (u - u0)/dt
+      tmp = @. (u - u0)/dt
       mul!(out,M,tmp)
       f(tmp,u,p,t)
       out .-= tmp
       nothing
     end
-    integrator.u .= nlsolve(nlequation!, u0).zero
+    r = nlsolve(nlequation!, u0, autodiff=alg_autodiff(integrator.alg) ? :forward : :central, method = :newton)
+    integrator.u .= r.zero
   end
   recursivecopy!(integrator.uprev,integrator.u)
   if alg_extrapolates(integrator.alg)
@@ -287,12 +288,15 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 	alg_u = @view u[algebraic_vars]
 
 	nlequation = (out, x) -> begin
-		alg_u .= x
-		f(tmp, u, p, t)
-		out .= @view tmp[algebraic_eqs]
+    uu = similar(x, axes(integrator.u)); copyto!(uu, integrator.u)
+    alg_uu = @view uu[algebraic_vars]
+    alg_uu .= x
+    du_tmp = similar(uu)
+    f(du_tmp, uu, p, t)
+    out .= @view du_tmp[algebraic_eqs]
 	end
 
-	r = nlsolve(nlequation, u[algebraic_vars])
+	r = nlsolve(nlequation, u[algebraic_vars], autodiff=alg_autodiff(integrator.alg) ? :forward : :central, method=:newton)
 	alg_u .= r.zero
 
 	recursivecopy!(integrator.uprev,integrator.u)
