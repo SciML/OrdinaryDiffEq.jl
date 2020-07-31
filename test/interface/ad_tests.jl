@@ -152,3 +152,31 @@ end
 
 ForwardDiff.gradient(myobj4, [1.0])
 ForwardDiff.hessian(myobj4, [1.0])
+
+
+f1s = function (du,u,p,t)
+    du[1] = p[2] * u[1]
+    du[2] = p[3] * u[2]
+    du[3] = p[4] * u[3]
+    du[4] = p[5] * u[4]
+    nothing
+end
+f2s = function (du,u,p,t)
+    du[1] = p[1]*u[2]
+    du[2] = p[1]*u[3]
+    du[3] = p[1]*u[4]
+    du[4] = p[1]*u[1]
+    nothing
+end
+u0 = [3.4, 3.3, 3.2, 3.1]
+params = [0.002, -0.005, -0.004, -0.003, -0.002]
+tspan = (7.0, 84.0)
+times = collect(minimum(tspan):0.5:maximum(tspan))
+prob = SplitODEProblem(f1s,f2s, u0, tspan, params)
+sol2 = solve(prob, KenCarp4(); dt=0.5, saveat=times)
+
+function difffunc(p)
+    tmp_prob = remake(prob,p=p)
+    vec(solve(tmp_prob,KenCarp4(),saveat=times))
+end
+ForwardDiff.jacobian(difffunc,ones(5))
