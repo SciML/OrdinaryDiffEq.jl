@@ -48,6 +48,31 @@ function alg_cache(alg::RKMK2,u,rate_prototype,uEltypeNoUnits,
   RKMK2ConstantCache()
 end
 
+@cache struct RKMK4Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+end
+
+function alg_cache(alg::RKMK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  RKMK4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+end
+
+struct RKMK4ConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::RKMK4,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RKMK4ConstantCache()
+end
+
 @cache struct MagnusAdapt4Cache{uType,rateType,WType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
