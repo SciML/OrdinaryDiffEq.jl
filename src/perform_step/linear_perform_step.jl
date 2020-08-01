@@ -68,9 +68,9 @@ function perform_step!(integrator, cache::LieRK4Cache, repeat_step=false)
   y1_2 = exp((3*k1 + 2*k2 + 2*k3 -k4)/12)*uprev
 
   if integrator.alg.krylov
-    u .= expv((1/12), (-k1 + 2*k2 + 2*k3 + 3*k4), uprev; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+    u .= expv((1/12), (-k1 + 2*k2 + 2*k3 + 3*k4), y1_2; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
-    u .= exp((1/12)*(-k1 + 2*k2 + 2*k3 + 3*k4)) * uprev
+    u .= exp((1/12)*(-k1 + 2*k2 + 2*k3 + 3*k4)) * y1_2
   end
 
   integrator.f(integrator.fsallast,u,p,t+dt)
