@@ -133,16 +133,19 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
     @.. integrator.u = integrator.uprev + z
   else
-    nlequation! = function (out,u)
+    isad = alg_autodiff(integrator.alg)
+    _tmp = isad ? DiffEqBase.dualcache(tmp, Val{ForwardDiff.pickchunksize(length(tmp))}) : tmp
+    nlequation! = @closure (out,u) -> begin
       update_coefficients!(M,u,p,t)
       #M * (u-u0)/dt - f(u,p,t)
-      tmp = @. (u - u0)/dt
+      tmp = isad ? DiffEqBase.get_tmp(_tmp, u) : _tmp
+      @. tmp = (u - u0)/dt
       mul!(out,M,tmp)
       f(tmp,u,p,t)
       out .-= tmp
       nothing
     end
-    r = nlsolve(nlequation!, u0, autodiff=alg_autodiff(integrator.alg) ? :forward : :central, method = :newton)
+    r = nlsolve(nlequation!, u0, autodiff=isad ? :forward : :central, method = :newton)
     integrator.u .= r.zero
   end
   recursivecopy!(integrator.uprev,integrator.u)
@@ -187,12 +190,12 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
     @.. integrator.u = integrator.uprev + z
   else
-    nlequation_oop = function (u)
+    nlequation_oop = @closure u -> begin
       update_coefficients!(M,u,p,t)
       M * (u-u0)/dt - f(u,p,t)
     end
 
-    nlequation! = (out,u) -> out .= nlequation_oop(u)
+    nlequation! = @closure (out,u) -> out .= nlequation_oop(u)
 
     integrator.u = nlsolve(nlequation!, u0).zero
   end
@@ -215,7 +218,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
 	dt = t != 0 ? min(t/1000,dtmax) : dtmax # Haven't implemented norm reduction
 
- 	nlequation! = function (out,u)
+ 	nlequation! = @closure (out,u) -> begin
  		#M * (u-u0)/dt - f(u,p,t)
 		@. tmp = (u - u0)/dt
 		f(out,tmp,u,p,t)
@@ -243,11 +246,11 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
 	dt = t != 0 ? min(t/1000,dtmax/10) : dtmax # Haven't implemented norm reduction
 
-	nlequation_oop = function (u)
+	nlequation_oop = u -> begin
 		f((u-u0)/dt,u,p,t)
 	end
 
-	nlequation! = (out,u) -> out .= nlequation_oop(u)
+	nlequation! = @closure (out,u) -> out .= nlequation_oop(u)
 
 	resid = f(integrator.du,u0,p,t)
 	integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
@@ -269,42 +272,51 @@ Solve for the algebraic variables
 
 =#
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-						 alg::BrownFullBasicInit, ::Val{true})
-	@unpack p, t, f = integrator
-	u = integrator.u
-	M = integrator.f.mass_matrix
-	update_coefficients!(M,u,p,t)
-	algebraic_vars = [all(iszero,x) for x in eachcol(M)]
-	algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit, ::Val{true})
+  @unpack p, t, f = integrator
+  u = integrator.u
+  M = integrator.f.mass_matrix
+  update_coefficients!(M,u,p,t)
+  algebraic_vars = [all(iszero,x) for x in eachcol(M)]
+  algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-	tmp = get_tmp_cache(integrator)[1]
+  tmp = get_tmp_cache(integrator)[1]
 
-	f(tmp,u,p,t)
+  f(tmp,u,p,t)
 
-	tmp .= algebraic_eqs .* tmp
+  tmp .= algebraic_eqs .* tmp
 
-	integrator.opts.internalnorm(tmp,t) <= alg.abstol && return
-	alg_u = @view u[algebraic_vars]
+  integrator.opts.internalnorm(tmp,t) <= alg.abstol && return
+  alg_u = @view u[algebraic_vars]
 
-	nlequation = (out, x) -> begin
-    uu = similar(x, axes(integrator.u)); copyto!(uu, integrator.u)
+  isad = alg_autodiff(integrator.alg)
+  if isad
+    chunk = Val{ForwardDiff.pickchunksize(count(algebraic_vars))}
+    _tmp = DiffEqBase.dualcache(tmp, chunk)
+    _du_tmp = DiffEqBase.dualcache(tmp, chunk)
+  else
+    _tmp, _du_tmp = tmp, similar(tmp)
+  end
+  nlequation = @closure (out, x) -> begin
+    uu = isad ? DiffEqBase.get_tmp(_tmp, x) : _tmp
+    du_tmp = isad ? DiffEqBase.get_tmp(_du_tmp, x) : _du_tmp
+    copyto!(uu, integrator.u)
     alg_uu = @view uu[algebraic_vars]
     alg_uu .= x
-    du_tmp = similar(uu)
     f(du_tmp, uu, p, t)
     out .= @view du_tmp[algebraic_eqs]
-	end
+    return nothing
+  end
 
-	r = nlsolve(nlequation, u[algebraic_vars], autodiff=alg_autodiff(integrator.alg) ? :forward : :central, method=:newton)
-	alg_u .= r.zero
+  r = nlsolve(nlequation, u[algebraic_vars], autodiff=isad ? :forward : :central, method=:newton)
+  alg_u .= r.zero
 
-	recursivecopy!(integrator.uprev,integrator.u)
-	if alg_extrapolates(integrator.alg)
-		recursivecopy!(integrator.uprev2,integrator.uprev)
-	end
+  recursivecopy!(integrator.uprev,integrator.u)
+  if alg_extrapolates(integrator.alg)
+    recursivecopy!(integrator.uprev2,integrator.uprev)
+  end
 
-	return
+  return
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
@@ -332,7 +344,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
 	alg_u = @view u[algebraic_vars]
 
-	nlequation = (out,x) -> begin
+	nlequation = @closure (out,x) -> begin
 		alg_u .= x
 		du = f(u,p,t)
 		out .= @view du[algebraic_eqs]
@@ -371,7 +383,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 		error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
 	end
 
-	nlequation = (out, x) -> begin
+	nlequation = @closure (out, x) -> begin
 		@. du = ifelse(differential_vars,x,du)
 		@. u  = ifelse(differential_vars,u,x)
 		f(out, du, u, p, t)
@@ -410,7 +422,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 		du = integrator.du
 	end
 
-	nlequation = (out,x) -> begin
+	nlequation = @closure (out,x) -> begin
 		@. du = ifelse(differential_vars,x,du)
 		@. u  = ifelse(differential_vars,u,x)
 		out .= f(du, u, p, t)
