@@ -15,7 +15,7 @@ M = [1. 0  0
      0  0  0]
 f_oop = ODEFunction(rober_oop,mass_matrix=M)
 prob_mm = ODEProblem(f_oop,[1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4))
-sol = solve(prob_mm,Rosenbrock23(),reltol=1e-8,abstol=1e-8)
+sol = solve(prob_mm,Rosenbrock23(autodiff=false),reltol=1e-8,abstol=1e-8)
 @test sol[1] == [1.0,0.0,0.0] # Ensure initialization is unchanged if it works at the start!
 sol = solve(prob_mm,Rosenbrock23(),reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
 @test sol[1] == [1.0,0.0,0.0] # Ensure initialization is unchanged if it works at the start!
@@ -24,7 +24,8 @@ prob_mm = ODEProblem(f_oop,[1.0,0.0,0.2],(0.0,1e5),(0.04,3e7,1e4))
 sol = solve(prob_mm,Rosenbrock23(),reltol=1e-8,abstol=1e-8)
 @test sum(sol[1]) ≈ 1
 @test sol[1] ≈ [1.0,0.0,0.0]
-for alg in [Rosenbrock23(), Trapezoid()]
+for alg in [Rosenbrock23(autodiff=false), Trapezoid()]
+  local sol
   sol = solve(prob_mm,alg,reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
   @test sum(sol[1]) ≈ 1
 end
@@ -42,7 +43,7 @@ M = [1. 0  0
      0  0  0]
 f = ODEFunction(rober,mass_matrix=M)
 prob_mm = ODEProblem(f,[1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4))
-sol = solve(prob_mm,Rodas5(),reltol=1e-8,abstol=1e-8)
+sol = solve(prob_mm,Rodas5(autodiff=false),reltol=1e-8,abstol=1e-8)
 @test sol[1] == [1.0,0.0,0.0] # Ensure initialization is unchanged if it works at the start!
 sol = solve(prob_mm,Rodas5(),reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
 @test sol[1] == [1.0,0.0,0.0] # Ensure initialization is unchanged if it works at the start!
@@ -52,7 +53,8 @@ sol = solve(prob_mm,Rodas5(),reltol=1e-8,abstol=1e-8)
 @test sum(sol[1]) ≈ 1
 @test sol[1] ≈ [1.0,0.0,0.0]
 
-for alg in [Rodas5(), Trapezoid()]
+for alg in [Rodas5(autodiff=false), Trapezoid()]
+  local sol
   sol = solve(prob_mm,alg,reltol=1e-8,abstol=1e-8,initializealg=ShampineCollocationInit())
   @test sum(sol[1]) ≈ 1
 end
