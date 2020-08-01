@@ -283,6 +283,7 @@ alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::RKMK2) = 2
 alg_order(alg::RKMK4) = 4
+alg_order(alg::LieRK4) = 4
 alg_order(alg::MagnusMidpoint) = 2
 alg_order(alg::MagnusGauss4) = 4
 alg_order(alg::MagnusNC6) = 6

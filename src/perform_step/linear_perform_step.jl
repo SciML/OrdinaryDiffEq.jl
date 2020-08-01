@@ -27,6 +27,55 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   integrator.f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
 end
+function initialize!(integrator, cache::LieRK4Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::LieRK4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  L = integrator.f.f
+
+  Y1 = uprev
+  update_coefficients!(L,Y1,p,t)
+  A = Matrix(deepcopy(L))
+  k1 = dt*A
+
+  Y2 = exp(k1/2)*uprev
+  update_coefficients!(L,Y2,p,t)
+  B = Matrix(deepcopy(L))
+  k2 = dt*B
+
+  Y3 = exp(k2/2)*uprev
+  update_coefficients!(L,Y3,p,t)
+  C = Matrix(deepcopy(L))
+  k3 = dt*C
+
+  Y4 = exp(k3 - k1/2)*Y2
+  update_coefficients!(L,Y4,p,t)
+  D = Matrix(deepcopy(L))
+  k4 = dt*D
+
+  y1_2 = exp((3*k1 + 2*k2 + 2*k3 -k4)/12)*uprev
+
+  if integrator.alg.krylov
+    u .= expv((1/12), (-k1 + 2*k2 + 2*k3 + 3*k4), uprev; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  else
+    u .= exp((1/12)*(-k1 + 2*k2 + 2*k3 + 3*k4)) * uprev
+  end
+
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+end
 
 function initialize!(integrator, cache::RKMK4Cache)
   integrator.kshortsize = 2
