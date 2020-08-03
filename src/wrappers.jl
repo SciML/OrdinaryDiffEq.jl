@@ -24,6 +24,11 @@ ArrayFuse(visible::AT, hidden::AT, p) where {AT} = ArrayFuse{AT, eltype(visible)
 	@. af.hidden = af.hidden + af.p[3] * af.visible
 end
 
+@inline function Base.copyto!(af::OrdinaryDiffEq.ArrayFuse{AT, T, P}, src::Base.Broadcast.Broadcasted{F1, Axes, F, Args}) where {AT, T, P, F1<:Base.Broadcast.AbstractArrayStyle{0}, Axes, F, Args<:Tuple}
+	@. af.visible = af.p[1] * af.visible + af.p[2] * src
+	@. af.hidden = af.hidden + af.p[3] * af.visible
+end
+
 # not recommended but good to have
 @inline function Base.getindex(af::ArrayFuse, index)
 	return af.visible[index]
