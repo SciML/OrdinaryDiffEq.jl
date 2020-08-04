@@ -2455,7 +2455,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   if !integrator.alg.threading
     for i in 0:n_curr
-      j_int = 4 * subdividing_sequence[i+1]
+      j_int = subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
       jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
       integrator.destats.nw +=1
@@ -2469,11 +2469,11 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       for j in 2:j_int + 1
         f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
         integrator.destats.nf += 1
-        @.. linsolve_tmps[1] = dt_int*k - (u_temp1 - u_temp2)
+        @.. linsolve_tmps[1] = dt_int*k
         cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
         integrator.destats.nsolve += 1
         @.. k = -k
-        @.. T[i+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
+        @.. T[i+1] = u_temp1 + k
         if(j == j_int + 1)
           @.. T[i + 1] = 0.5(T[i + 1] + u_temp2)
         end
@@ -2625,7 +2625,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = 4 * subdividing_sequence[n_curr+1]
+        j_int = subdividing_sequence[n_curr+1]
         dt_int = dt / j_int # Stepsize of the new internal discretisation
         jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
         integrator.destats.nw +=1
@@ -2638,11 +2638,11 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         for j in 2:j_int + 1
           f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
           integrator.destats.nf += 1
-          @.. linsolve_tmps[1] = dt_int*k - (u_temp1 - u_temp2)
+          @.. linsolve_tmps[1] = dt_int*k
           cache.linsolve[1](vec(k), W[1], vec(linsolve_tmps[1]), !repeat_step)
           integrator.destats.nsolve += 1
           @.. k = -k
-          @.. T[n_curr+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
+          @.. T[n_curr+1] = u_temp1 + k # Explicit Midpoint rule
           if(j == j_int + 1)
             @.. T[n_curr+ 1] = 0.5(T[n_curr + 1] + u_temp2)
           end
