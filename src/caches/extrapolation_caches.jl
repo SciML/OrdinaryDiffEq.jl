@@ -235,7 +235,8 @@ end
 function create_extrapolation_coefficients(T, alg::Union{ExtrapolationMidpointDeuflhard,
                                                          ExtrapolationMidpointHairerWanner,
                                                          ImplicitDeuflhardExtrapolation,
-                                                         ImplicitHairerWannerExtrapolation})
+                                                         ImplicitHairerWannerExtrapolation,
+                                                         ImplicitEulerBarycentricExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -297,7 +298,8 @@ end
 function create_extrapolation_coefficients(T::Type{<:CompiledFloats}, alg::Union{ExtrapolationMidpointDeuflhard,
                                                                                  ExtrapolationMidpointHairerWanner,
                                                                                  ImplicitDeuflhardExtrapolation,
-                                                                                 ImplicitHairerWannerExtrapolation})
+                                                                                 ImplicitHairerWannerExtrapolation,
+                                                                                 ImplicitEulerBarycentricExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
