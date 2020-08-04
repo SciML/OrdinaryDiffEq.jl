@@ -2232,7 +2232,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   if !integrator.alg.threading
     for i in 0:n_curr
-      j_int = 4 * subdividing_sequence[i+1]
+      j_int = subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
       W = dt_int*J - integrator.f.mass_matrix
       integrator.destats.nw += 1
@@ -2240,7 +2240,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
       diff1 = u_temp1 - u_temp2
       for j in 2:j_int + 1
-        T[i+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
+        T[i+1] = u_temp1 + _reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int)),axes(uprev))
         integrator.destats.nf += 1
         if(j == j_int + 1)
           T[i + 1] = 0.5(T[i + 1] + u_temp2)
@@ -2370,14 +2370,14 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         cache.n_curr = n_curr
 
         # Update T
-        j_int = 4 * subdividing_sequence[n_curr + 1]
+        j_int = subdividing_sequence[n_curr + 1]
         dt_int = dt / j_int # Stepsize of the new internal discretisation
         W = dt_int*J - integrator.f.mass_matrix
         integrator.destats.nw += 1
         u_temp2 = uprev
         u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
         for j in 2:j_int + 1
-          T[n_curr+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
+          T[n_curr+1] = u_temp1 + _reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int)),axes(uprev))
           integrator.destats.nf += 1
           if(j == j_int + 1)
             T[n_curr+ 1] = 0.5(T[n_curr + 1] + u_temp2)
