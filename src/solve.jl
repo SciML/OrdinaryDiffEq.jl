@@ -120,8 +120,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     else
       du = recursivecopy(prob.u0)
     end
+    duprev = recursivecopy(du)
   else
     du = nothing
+    duprev = nothing
   end
 
   uType = typeof(u)
@@ -368,7 +370,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                              typeof(opts),fsal_typeof(alg,rate_prototype),
                              typeof(last_event_error),typeof(callback_cache),
                              typeof(initializealg)}(
-                             sol,u,du,k,t,tType(dt),f,p,uprev,uprev2,tprev,
+                             sol,u,du,k,t,tType(dt),f,p,uprev,uprev2,duprev,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,

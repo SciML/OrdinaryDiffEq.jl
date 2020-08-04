@@ -34,6 +34,7 @@ function initialize!(integrator, cache::DImplicitEulerConstantCache) end
   end
 
   integrator.u = u
+  integrator.du = (u-uprev)/dt
 end
 
 
@@ -49,6 +50,7 @@ end
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = uprev + z
+  @.. du = z * inv(dt)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
