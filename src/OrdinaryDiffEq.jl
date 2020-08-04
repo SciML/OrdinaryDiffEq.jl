@@ -243,7 +243,7 @@ module OrdinaryDiffEq
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
   export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitEulerExtrapolation,
-         ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation
+         ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation, ImplicitEulerBarycentricExtrapolation
 
   export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
 
