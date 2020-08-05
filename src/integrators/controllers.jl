@@ -369,14 +369,22 @@ function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointDeu
   integrator.dt = dt_red
 end
 
+<<<<<<< HEAD
 @inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation})
+=======
+@inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerBarycentricExtrapolation})
+>>>>>>> master
   # Dummy function
   # ExtrapolationMidpointHairerWanner's stepsize scaling is stored in the cache;
   # it is computed by  stepsize_controller_internal! (in perfom_step!), step_accept_controller! or step_reject_controller!
   zero(typeof(integrator.opts.qmax))
 end
 
+<<<<<<< HEAD
 function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation})
+=======
+function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerBarycentricExtrapolation})
+>>>>>>> master
   # Standard stepsize controller
   # Compute and save the stepsize scaling based on the latest error estimate of the current order
   if iszero(integrator.EEst)
@@ -392,7 +400,11 @@ function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpoi
   integrator.cache.Q[integrator.cache.n_curr + 1] = q
 end
 
+<<<<<<< HEAD
 function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation},q)
+=======
+function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerBarycentricExtrapolation},q)
+>>>>>>> master
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q, sigma = integrator.cache
@@ -441,7 +453,11 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHair
   dt_new[n_new + 1]
 end
 
+<<<<<<< HEAD
 function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation})
+=======
+function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerBarycentricExtrapolation})
+>>>>>>> master
   # Compute and save order and stepsize for redoing the current step
   @unpack n_old, n_curr, Q = integrator.cache
 

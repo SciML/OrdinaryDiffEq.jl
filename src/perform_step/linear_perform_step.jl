@@ -149,6 +149,35 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step=false)
   integrator.destats.nf += 1
 end
 
+function initialize!(integrator, cache::CG2Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::CG2Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack W,k,tmp = cache
+  mass_matrix = integrator.f.mass_matrix
+
+  L = integrator.f.f
+  update_coefficients!(L,uprev,p,t)
+  A = Matrix(deepcopy(L))
+  k1 = dt*A
+  update_coefficients!(L,exp(k1)*uprev,p,t)
+  B = Matrix(deepcopy(L))
+  k2 = dt*B
+  u .= (exp((1/2)*(k1))*(exp((1/2)*k2))) * uprev
+
+  integrator.f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
+end
+
 function initialize!(integrator, cache::MagnusAdapt4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst

@@ -267,6 +267,48 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
       sequence,diff_type,threading)
 end
 
+struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+  linsolve::F
+  n_min::Int # Minimal extrapolation order
+  n_init::Int # Initial extrapolation order
+  n_max::Int # Maximal extrapolation order
+  sequence::Symbol # Name of the subdividing sequence
+  diff_type::FDT
+  threading::Bool
+end
+function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
+  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
+  min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
+  # Enforce 2 <=  min_order
+  # and min_order + 1 <= init_order <= max_order - 1:
+  n_min = max(2, min_order)
+  n_init = max(n_min + 1, init_order)
+  n_max = max(n_init + 1, max_order)
+
+  # Warn user if orders have been changed
+  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
+    @warn "The range of extrapolation orders and/or the initial order given to the
+      `ImplicitEulerBarycentricExtrapolation` algorithm are not valid and have been changed:
+      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
+      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
+      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
+  end
+
+  # Warn user if sequence has been changed:
+  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+    @warn "The `sequence` given to the `ImplicitEulerBarycentricExtrapolation` algorithm
+       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+       Thus it has been changed
+      :$(sequence) --> :harmonic"
+    sequence = :harmonic
+  end
+
+  # Initialize algorithm
+  ImplicitEulerBarycentricExtrapolation{chunk_size, autodiff,
+      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,
+      sequence,diff_type,threading)
+end
+
 """
 Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion
 Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006.
@@ -1489,7 +1531,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Linear Methods
 
-for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4]
+for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4,:CG2]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int

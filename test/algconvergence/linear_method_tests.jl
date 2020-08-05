@@ -49,6 +49,15 @@ test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,LieRK4(),test_setup)
 @test sim.𝒪est[:l2] ≈ 5 atol=0.2
 
+A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+prob = ODEProblem(A, ones(2), (0, 30.))
+sol1  = solve(prob,OrdinaryDiffEq.Vern9(),dt=1/4)
+sol2  = solve(prob,OrdinaryDiffEq.CG2(),dt=1/4)
+dts = 1 ./2 .^(7:-1:1)
+test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
+sim = analyticless_test_convergence(dts,prob,CG2(),test_setup)
+@test sim.𝒪est[:l2] ≈ 2 atol=0.2
+
 function update_func(A,u,p,t)
     A[1,1] = 0
     A[2,1] = 1
