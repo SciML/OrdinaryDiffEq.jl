@@ -235,7 +235,8 @@ end
 function create_extrapolation_coefficients(T, alg::Union{ExtrapolationMidpointDeuflhard,
                                                          ExtrapolationMidpointHairerWanner,
                                                          ImplicitDeuflhardExtrapolation,
-                                                         ImplicitHairerWannerExtrapolation})
+                                                         ImplicitHairerWannerExtrapolation,
+                                                         ImplicitEulerBarycentricExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -297,7 +298,8 @@ end
 function create_extrapolation_coefficients(T::Type{<:CompiledFloats}, alg::Union{ExtrapolationMidpointDeuflhard,
                                                                                  ExtrapolationMidpointHairerWanner,
                                                                                  ImplicitDeuflhardExtrapolation,
-                                                                                 ImplicitHairerWannerExtrapolation})
+                                                                                 ImplicitHairerWannerExtrapolation,
+                                                                                 ImplicitEulerBarycentricExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -887,6 +889,166 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   
   # Initialize the cache
   ImplicitHairerWannerExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
+      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,
+      linsolve, jac_config, grad_config,diff1,diff2)
+end
+
+@cache mutable struct ImplicitEulerBarycentricExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF} <: OrdinaryDiffEqConstantCache
+  # Values that are mutated
+  Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+
+  # Constant values
+  coefficients::extrapolation_coefficients
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
+  sigma::Rational{Int} # Parameter for order selection
+
+  tf::TF
+  uf::UF
+end
+
+function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  # Initialize cache's members
+  QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+
+  Q = fill(zero(QType),alg.n_max + 1)
+  n_curr = alg.n_init
+  n_old = alg.n_init
+
+  coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
+
+  stage_number = Vector{Int}(undef, alg.n_max + 1)
+  for n in 1:length(stage_number)
+    s = zero(eltype(coefficients.subdividing_sequence))
+    for i in 1:n
+      s += coefficients.subdividing_sequence[i]
+    end
+    stage_number[n] = 2 * Int(s) + n + 7
+  end
+  sigma = 9//10
+
+  # Initialize the constant cache
+  tf = TimeDerivativeWrapper(f,u,p)
+  uf = UDerivativeWrapper(f,t,p)
+  ImplicitEulerBarycentricExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf)
+end
+
+@cache mutable struct ImplicitEulerBarycentricExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,JType,WType,F,JCType,GCType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+  # Values that are mutated
+  utilde::uType
+  u_temp1::uType
+  u_temp2::uType
+  u_temp3::Array{uType,1}
+  u_temp4::Array{uType,1}
+  tmp::uType # for get_tmp_cache()
+  T::Array{uType,1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
+  res::uNoUnitsType # Storage for the scaled residual of u and utilde
+
+  fsalfirst::rateType
+  k::rateType
+  k_tmps::Array{rateType,1}
+
+  # Constant values
+  Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  coefficients::extrapolation_coefficients
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
+  sigma::Rational{Int} # Parameter for order selection
+
+  du1::rateType
+  du2::rateType
+  J::JType
+  W::WType
+  tf::TFType
+  uf::UFType
+  linsolve_tmps::Array{rateType,1}
+  linsolve::Array{F,1}
+  jac_config::JCType
+  grad_config::GCType
+  # Values to check overflow in T1 computation
+  diff1::Array{uType,1}
+  diff2::Array{uType,1} 
+end
+
+
+function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  # Initialize cache's members
+  utilde = zero(u)
+  u_temp1 = zero(u)
+  u_temp2 = zero(u)
+  u_temp3 = Array{typeof(u),1}(undef, Threads.nthreads())
+  u_temp4 = Array{typeof(u),1}(undef, Threads.nthreads())
+
+  for i=1:Threads.nthreads()
+    u_temp3[i] = zero(u)
+    u_temp4[i] = zero(u)
+  end
+  tmp = zero(u)
+  T = Vector{typeof(u)}(undef,alg.n_max + 1)
+  for i in 1:alg.n_max+1
+    T[i] = zero(u)
+  end
+  res = uEltypeNoUnits.(zero(u))
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
+  k_tmps = Array{typeof(k),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+      k_tmps[i] = zero(rate_prototype)
+  end
+
+  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
+
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
+
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W_el = WOperator(f, dt, true)
+    J = nothing # is J = W.J better?
+  else
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+    W_el = similar(J)
+  end
+
+  W = Array{typeof(W_el),1}(undef, Threads.nthreads())
+  W[1] = W_el
+  for i=2:Threads.nthreads()
+    if W_el isa WOperator
+      W[i] = WOperator(f, dt, true)
+    else
+      W[i] = zero(W_el)
+    end
+  end
+  
+  tf = TimeGradientWrapper(f,uprev,p)
+  uf = UJacobianWrapper(f,t,p)
+  linsolve_tmp = zero(rate_prototype)
+  linsolve_tmps = Array{typeof(linsolve_tmp),1}(undef, Threads.nthreads())
+  
+  for i=1:Threads.nthreads()
+    linsolve_tmps[i] = zero(rate_prototype)
+  end
+
+  linsolve_el = alg.linsolve(Val{:init},uf,u)
+  linsolve = Array{typeof(linsolve_el),1}(undef, Threads.nthreads())
+  linsolve[1] = linsolve_el
+  for i=2:Threads.nthreads()
+    linsolve[i] = alg.linsolve(Val{:init},uf,u)
+  end
+  grad_config = build_grad_config(alg,f,tf,du1,t)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
+
+  
+  diff1 = Array{typeof(u),1}(undef, Threads.nthreads())
+  diff2 = Array{typeof(u),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+    diff1[i] = zero(u)
+    diff2[i] = zero(u)
+  end
+  
+  # Initialize the cache
+  ImplicitEulerBarycentricExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,
       linsolve, jac_config, grad_config,diff1,diff2)
 end
