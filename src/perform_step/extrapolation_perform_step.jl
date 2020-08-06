@@ -243,23 +243,35 @@ function initialize!(integrator,cache::ImplicitEulerExtrapolationCache)
   integrator.destats.nf += 1
 
   cache.step_no = 1
-  cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
+  #cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
 end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack T,utilde,atmp,dtpropose,cur_order,A,stage_number = cache
+  @unpack T,utilde,atmp,dtpropose,n_curr,A,stage_number = cache
   @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
   @unpack sequence = cache
 
+  if integrator.opts.adaptive
+    # Set up the order window
+    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
+    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+       Please report this error  ")
+    end
+    win_min =  n_curr - 1
+    win_max =  n_curr + 1
 
-  max_order = min(size(T, 1), cur_order + 1)
+    # Set up the current extrapolation order
+    cache.n_old = n_curr # Save the suggested order for step_*_controller!
+    n_curr = win_min # Start with smallest order in the order window
+  end
 
   if !integrator.alg.threading
     calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-    for index in 1:max_order
+    for index in 1:n_curr + 1
       dt_temp = dt/sequence[index]
       jacobian2W!(W[1], integrator.f.mass_matrix, dt_temp, J, false)
       integrator.destats.nw +=1
@@ -311,53 +323,78 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   end
 
   # Polynomial extrapolation
-  tmp = 1
-  for j in 2:max_order
-    for i in j:max_order
+  for j in 2:n_curr + 1
+    for i in j:n_curr + 1
       @.. T[i, j] = ((sequence[i]/sequence[i - j + 1]) * T[i, j - 1] - T[i - 1, j - 1]) / ((sequence[i]/sequence[i - j + 1]) - 1)
     end
   end
 
-  integrator.dt = dt
-
   if integrator.opts.adaptive
-    minimum_work = Inf
-    if isone(cache.step_no)
-      range_start = 2
-    else
-      range_start = max(2, cur_order - 1)
+    # Compute all information relating to an extrapolation order ≦ win_min
+    for i = win_min - 1 : win_min
+
+      @.. integrator.u = T[i + 1,i + 1]
+      @.. cache.utilde  = T[i + 1, i]
+
+      calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(cache.res, t)
+      cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
     end
 
-    for i in range_start:max_order
-        A = stage_number[i]
-        @.. utilde = T[i,i] - T[i,i-1]
-        atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-        EEst = integrator.opts.internalnorm(atmp,t)
+    # Check if an approximation of some order in the order window can be accepted
+    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    while n_curr <= win_max
+      if integrator.EEst <= 1.0
+        # Accept current approximation u of order n_curr
+        break
+    elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
+        # Reject current approximation order but pass convergence monitor
+        # Compute approximation of order (n_curr + 1)
+        n_curr = n_curr + 1
+        cache.n_curr = n_curr
 
-        beta1 = integrator.opts.beta1
-        e = integrator.EEst
-        qold = integrator.qold
-
-        integrator.opts.beta1 = 1/(i+1)
-        integrator.EEst = EEst
-        dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
-        integrator.EEst = e
-        integrator.opts.beta1 = beta1
-        integrator.qold = qold
-
-        work = A/dtpropose
-
-        if work < minimum_work
-            integrator.opts.beta1 = 1/(i+1)
-            cache.dtpropose = dtpropose
-            cache.cur_order = i
-            minimum_work = work
-            integrator.EEst = EEst
+        dt_temp = dt/sequence[n_curr + 1]
+        jacobian2W!(W[1], integrator.f.mass_matrix, dt_temp, J, false)
+        integrator.destats.nw +=1
+        @.. k_tmps[1] = integrator.fsalfirst
+        @.. u_tmps[1] = uprev
+  
+        for j in 1:sequence[n_curr + 1]
+          @.. linsolve_tmps[1] = dt_temp*k_tmps[1]
+          cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
+          integrator.destats.nsolve += 1
+          @.. k_tmps[1] = -k_tmps[1]
+          @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
+          f(k_tmps[1], u_tmps[1],p,t+j*dt_temp)
+          integrator.destats.nf += 1
         end
+
+        @.. T[n_curr + 1,1] = u_tmps[1]
+
+        for j in 2:n_curr + 1
+          for i in j:n_curr + 1
+            @.. T[i, j] = ((sequence[i]/sequence[i - j + 1]) * T[i, j - 1] - T[i - 1, j - 1]) / ((sequence[i]/sequence[i - j + 1]) - 1)
+          end
+        end
+
+        @.. integrator.u = T[n_curr + 1,n_curr + 1]
+        @.. cache.utilde  = T[n_curr + 1,n_curr]
+
+        calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(cache.res, t)
+        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      else
+          # Reject the current approximation and not pass convergence monitor
+          break
+      end
     end
+  else
+
+    @.. integrator.u = T[n_curr + 1,n_curr + 1]
+
   end
 
-  @.. integrator.u = T[cache.cur_order,cache.cur_order]
   cache.step_no = cache.step_no + 1
   f(integrator.fsallast, integrator.u, p, t+dt)
   integrator.destats.nf += 1

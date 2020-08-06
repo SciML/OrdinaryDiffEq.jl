@@ -67,7 +67,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType,sequenceType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,QType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType,sequenceType} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmps::Array{uType,1}
   utilde::uType
@@ -76,7 +76,6 @@ end
   k_tmps::Array{rateType,1}
   dtpropose::dtType
   T::arrayType
-  cur_order::Int
   work::dtType
   A::Int
   step_no::Int
@@ -92,15 +91,24 @@ end
   grad_config::GCType
   sequence::sequenceType #support for different sequences
   stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
+
+  Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  sigma::Rational{Int} # Parameter for order selection
+  res::uNoUnitsType # Storage for the scaled residual of u and utilde
 end
 
-@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF,sequenceType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{QType,dtType,arrayType,TF,UF,sequenceType} <: OrdinaryDiffEqConstantCache
+  Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n)
   dtpropose::dtType
   T::arrayType
-  cur_order::Int
+  n_curr::Int
+  n_old::Int
   work::dtType
   A::Int
   step_no::Int
+  sigma::Rational{Int}
 
   tf::TF
   uf::UF
@@ -111,9 +119,13 @@ end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   dtpropose = zero(dt)
-  cur_order = max(alg.init_order, alg.min_order)
-  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
-  for i=1:alg.max_order
+  #cur_order = max(alg.init_order, alg.min_order)
+  QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+  Q = fill(zero(QType),alg.n_max + 1)
+  n_curr = alg.n_init
+  n_old = alg.n_init
+  T = Array{typeof(u),2}(undef, alg.n_max + 1, alg.n_max + 1)
+  for i=1:alg.n_max + 1
     for j=1:i
       T[i,j] = zero(u)
     end
@@ -124,16 +136,17 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
-  stage_number = Vector{Int}(undef, alg.max_order + 1)
+  stage_number = Vector{Int}(undef, alg.n_max + 1)
 
   for n in 1:length(stage_number)
     s = zero(eltype(sequence))
     for i in 1:n
       s += sequence[i]
     end
-    stage_number[n] = 8 * Int(s) - n + 3
+    stage_number[n] = 2 * Int(s) + n + 7
   end
-  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,sequence,stage_number)
+  sigma = 9//10
+  ImplicitEulerExtrapolationConstantCache(Q,dtpropose,T,n_curr,n_old,work,A,step_no,sigma,tf,uf,sequence,stage_number)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -155,11 +168,11 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
     k_tmps[i] = zero(rate_prototype)
   end
 
-  cur_order = max(alg.init_order, alg.min_order)
+  #cur_order = max(alg.init_order, alg.min_order)
   dtpropose = zero(dt)
-  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
+  T = Array{typeof(u),2}(undef, alg.n_max + 1, alg.n_max + 1)
   # Initialize lower triangle of T to different instance of zeros array similar to u
-  for i=1:alg.max_order
+  for i=1:alg.n_max + 1
     for j=1:i
       T[i,j] = zero(u)
     end
@@ -205,12 +218,13 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   for i=2:Threads.nthreads()
     linsolve[i] = alg.linsolve(Val{:init},uf,u)
   end
+  res = uEltypeNoUnits.(zero(u))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
   sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
   cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
-  ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence,cc.stage_number)
+  ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,work,A,step_no,
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence,cc.stage_number,cc.Q,cc.n_curr,cc.n_old,cc.sigma,res)
 end
 
 
@@ -334,15 +348,15 @@ end
 function generate_sequence(T, alg::ImplicitEulerExtrapolation)
   # Compute and return extrapolation_coefficients
 
-  @unpack min_order, init_order, max_order, sequence = alg
+  @unpack n_min, n_init, n_max, sequence = alg
 
   # Initialize subdividing_sequence:
   if sequence == :harmonic
-      subdividing_sequence = BigInt.(1:(max_order + 1))
+      subdividing_sequence = BigInt.(1:(n_max + 1))
   elseif sequence == :romberg
-      subdividing_sequence = BigInt(2).^(0:max_order)
+      subdividing_sequence = BigInt(2).^(0:n_max)
   else # sequence == :bulirsch
-      subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) : 3 * BigInt(2)^(n ÷ 2 - 1)) for n = 0:max_order]
+      subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) : 3 * BigInt(2)^(n ÷ 2 - 1)) for n = 0:n_max]
   end
 
   subdividing_sequence
@@ -351,15 +365,15 @@ end
 function generate_sequence(T::Type{<:CompiledFloats}, alg::ImplicitEulerExtrapolation)
   # Compute and return extrapolation_coefficients
 
-  @unpack min_order, init_order, max_order, sequence = alg
+  @unpack n_min, n_init, n_max, sequence = alg
 
   # Initialize subdividing_sequence:
   if sequence == :harmonic
-    subdividing_sequence = Int.(1:(max_order + 1))
+    subdividing_sequence = Int.(1:(n_max + 1))
   elseif sequence == :romberg
-    subdividing_sequence = Int(2).^(0:max_order)
+    subdividing_sequence = Int(2).^(0:n_max)
   else # sequence == :bulirsch
-    subdividing_sequence = [n==0 ? Int(1) : (isodd(n) ? Int(2)^((n + 1) ÷ 2) : 3 * Int(2)^(n ÷ 2 - 1)) for n = 0:max_order]
+    subdividing_sequence = [n==0 ? Int(1) : (isodd(n) ? Int(2)^((n + 1) ÷ 2) : 3 * Int(2)^(n ÷ 2 - 1)) for n = 0:n_max]
   end
 
   subdividing_sequence

@@ -64,9 +64,9 @@ AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNev
 
 struct ImplicitEulerExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
-  max_order::Int
-  min_order::Int
-  init_order::Int
+  n_max::Int
+  n_min::Int
+  n_init::Int
   threading::Bool
   diff_type::FDT
   sequence::Symbol # Name of the subdividing sequence
@@ -75,6 +75,10 @@ end
 function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
     diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
     max_order=10,min_order=1,init_order=5,threading=true,sequence = :bulirsch)
+    
+    n_min = max(2,min_order)
+    n_init = max(n_min + 1,init_order)
+    n_max = max(n_init + 1, max_order)
     if threading
       @warn "Threading in `ImplicitEulerExtrapolation` is currently disabled. Thus `threading` has been changed from `true` to `false`."
       threading = false
@@ -89,7 +93,7 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
       sequence = :bulirsch
     end
     ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(
-      linsolve,max_order,min_order,init_order,threading,diff_type,sequence)
+      linsolve,n_max,n_min,n_init,threading,diff_type,sequence)
 end
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
