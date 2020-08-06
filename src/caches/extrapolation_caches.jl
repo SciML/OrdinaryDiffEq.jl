@@ -143,7 +143,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
     for i in 1:n
       s += sequence[i]
     end
-    stage_number[n] = 2 * Int(s) + n + 7
+    stage_number[n] = 2 * Int(s) - n + 7
   end
   sigma = 9//10
   ImplicitEulerExtrapolationConstantCache(Q,dtpropose,T,n_curr,n_old,work,A,step_no,sigma,tf,uf,sequence,stage_number)
@@ -938,7 +938,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
     for i in 1:n
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = 2 * Int(s) + n + 7
+    stage_number[n] = 2 * Int(s) - n + 7
   end
   sigma = 9//10
 
