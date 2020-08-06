@@ -39,7 +39,7 @@ end
 
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,du,u,f,p = integrator
   @unpack atmp,nlsolver = cache
   @unpack tmp = nlsolver
   alg = unwrap_alg(integrator, true)

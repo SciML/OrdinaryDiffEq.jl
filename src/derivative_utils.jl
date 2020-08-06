@@ -92,7 +92,8 @@ function calc_J!(J, integrator, cache)
   if alg isa DAEAlgorithm
     if DiffEqBase.has_jac(f)
       duprev = integrator.duprev
-      f.jac(J, duprev, uprev, p, t)
+      uf = cache.uf
+      f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
     else
       @unpack du1, uf, jac_config = cache
       # using `dz` as temporary array
