@@ -120,6 +120,7 @@ function initialize!(integrator, cache::DABDF2ConstantCache) end
   end
 
   integrator.u = uₙ
+  integrator.du = du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dtₙ)
   return
 end
 
@@ -129,7 +130,7 @@ function initialize!(integrator, cache::DABDF2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::DABDF2Cache, repeat_step=false)
-  @unpack t,dt,f,p = integrator
+  @unpack t,dt,du,f,p = integrator
   @unpack atmp,dtₙ₋₁,nlsolver = cache
   @unpack z,tmp = nlsolver
   alg = unwrap_alg(integrator, true)
@@ -155,6 +156,7 @@ end
   nlsolvefail(nlsolver) && return
 
   @.. uₙ = uₙ₋₁ + z
+  @.. du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
 
   @.. integrator.fsallast = z / dtₙ
   integrator.destats.nf += 1
