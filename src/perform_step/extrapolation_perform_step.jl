@@ -414,14 +414,27 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
+  @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
   @unpack sequence,stage_number = cache
 
-  max_order = min(size(T, 1), cur_order+1)
+  if integrator.opts.adaptive
+    # Set up the order window
+    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
+    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+       Please report this error  ")
+    end
+    win_min =  n_curr - 1
+    win_max =  n_curr + 1
+
+    # Set up the current extrapolation order
+    cache.n_old = n_curr # Save the suggested order for step_*_controller!
+    n_curr = win_min # Start with smallest order in the order window
+  end
 
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   if !integrator.alg.threading
-    for index in 1:max_order
+    for index in 1:n_curr + 1
       dt_temp = dt/sequence[index]
       W = dt_temp*J - integrator.f.mass_matrix
       integrator.destats.nw += 1
@@ -468,9 +481,9 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   # Richardson extrapolation
   tmp = 1
-  for j in 2:max_order
+  for j in 2:n_curr + 1
     tmp *= 2
-    for i in j:max_order
+    for i in j:n_curr + 1
       T[i, j] = ((sequence[i]/sequence[i - j + 1]) * T[i, j - 1] - T[i - 1, j - 1]) / ((sequence[i]/sequence[i - j + 1]) - 1)
     end
   end
@@ -478,45 +491,68 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
   integrator.dt = dt
 
   if integrator.opts.adaptive
-      minimum_work = Inf
-      if isone(cache.step_no)
-        range_start = 2
-      else
-        range_start = max(2, cur_order - 1)
-      end
+    # Compute all information relating to an extrapolation order ≦ win_min
+    for i = win_min - 1 : win_min
+      u = T[i + 1, i + 1]
+      utilde = T[i + 1, i]
+      res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(res, t)
+      cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+    end
 
-      for i in range_start:max_order
-          A = stage_number[i]
-          utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-          EEst = integrator.opts.internalnorm(atmp,t)
+    # Check if an approximation of some order in the order window can be accepted
+    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    while n_curr <= win_max
+      if integrator.EEst <= 1.0
+        # Accept current approximation u of order n_curr
+        break
+      elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
+        # Reject current approximation order but pass convergence monitor
+        # Always compute approximation of order (n_curr + 1)
+        n_curr = n_curr + 1
+        cache.n_curr = n_curr
 
-          beta1 = integrator.opts.beta1
-          e = integrator.EEst
-          qold = integrator.qold
+        # Update T
+        dt_temp = dt/sequence[n_curr + 1]
+        W = dt_temp*J - integrator.f.mass_matrix
+        integrator.destats.nw += 1
+        k_copy = integrator.fsalfirst
+        u_tmp = uprev
+  
+        for j in 1:sequence[n_curr + 1]
+          k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
+          integrator.destats.nsolve += 1
+          u_tmp = u_tmp + k
+          k_copy = f(u_tmp, p, t+j*dt_temp)
+          integrator.destats.nf += 1
+        end
+  
+        T[n_curr + 1,1] = u_tmp
 
-          integrator.opts.beta1 = 1/(i+1)
-          integrator.EEst = EEst
-          dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
-          integrator.EEst = e
-          integrator.opts.beta1 = beta1
-          integrator.qold = qold
-
-          work = A/dtpropose
-
-          if work < minimum_work
-              integrator.opts.beta1 = 1/(i+1)
-              cache.dtpropose = dtpropose
-              cache.cur_order = i
-              minimum_work = work
-              integrator.EEst = EEst
+        #Extrapolate to new order
+        for j in 2:n_curr + 1
+          for i in j:n_curr + 1
+            T[i, j] = ((sequence[i]/sequence[i - j + 1]) * T[i, j - 1] - T[i - 1, j - 1]) / ((sequence[i]/sequence[i - j + 1]) - 1)
           end
+        end
+        # Update u, integrator.EEst and cache.Q
+        u = T[n_curr + 1, n_curr + 1]
+        utilde = T[n_curr + 1, n_curr]  
+        res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(res, t)
+        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      else
+          # Reject the current approximation and not pass convergence monitor
+          break
       end
+    end
+  else
+    integrator.u = T[n_curr + 1,n_curr + 1]
   end
 
-
   # Use extrapolated value of u
-  integrator.u = T[cache.cur_order, cache.cur_order]
+  integrator.u = T[n_curr + 1,n_curr + 1]
   k_temp = f(integrator.u, p, t+dt)
   integrator.destats.nf += 1
   integrator.fsallast = k_temp

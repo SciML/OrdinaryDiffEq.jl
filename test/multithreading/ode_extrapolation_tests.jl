@@ -84,7 +84,7 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
         init_order = j, max_order=j,
         sequence = seq)
       sim = test_convergence(dts,prob,alg)
-      @test sim.𝒪est[:final] ≈ alg.n_init+1.01 atol=newTol #Superconvergence
+      @test sim.𝒪est[:final] ≈ alg.n_init+1.1 atol=newTol #Superconvergence
     end
     # Regression test
     sol = solve(prob,ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
