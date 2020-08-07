@@ -134,6 +134,7 @@ get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2cache.n
 get_current_adaptive_order(alg::ImplicitDeuflhardExtrapolation,cache) = 2cache.n_curr
 get_current_alg_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2(cache.n_curr + 1)
 get_current_alg_order(alg::ImplicitHairerWannerExtrapolation,cache) = 2(cache.n_curr + 1)
+get_current_alg_order(alg::ImplicitEulerBarycentricExtrapolation,cache) = 2(cache.n_curr + 1)
 get_current_alg_order(alg::ImplicitEulerExtrapolation,cache) = 2(cache.n_curr + 1)
 get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2cache.n_curr
 get_current_adaptive_order(alg::ImplicitHairerWannerExtrapolation,cache) = 2cache.n_curr
