@@ -34,11 +34,12 @@ function initialize!(integrator, cache::DImplicitEulerConstantCache) end
   end
 
   integrator.u = u
+  integrator.du = (u-uprev)/dt
 end
 
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,du,u,f,p = integrator
   @unpack atmp,nlsolver = cache
   @unpack tmp = nlsolver
   alg = unwrap_alg(integrator, true)
@@ -49,6 +50,7 @@ end
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = uprev + z
+  @.. du = z * inv(dt)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -118,6 +120,7 @@ function initialize!(integrator, cache::DABDF2ConstantCache) end
   end
 
   integrator.u = uₙ
+  integrator.du = du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dtₙ)
   return
 end
 
@@ -127,7 +130,7 @@ function initialize!(integrator, cache::DABDF2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::DABDF2Cache, repeat_step=false)
-  @unpack t,dt,f,p = integrator
+  @unpack t,dt,du,f,p = integrator
   @unpack atmp,dtₙ₋₁,nlsolver = cache
   @unpack z,tmp = nlsolver
   alg = unwrap_alg(integrator, true)
@@ -153,8 +156,9 @@ end
   nlsolvefail(nlsolver) && return
 
   @.. uₙ = uₙ₋₁ + z
+  @.. du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
 
-  @.. integrator.fsallast = z / dtₙ
+  @.. integrator.fsallast = du
   integrator.destats.nf += 1
   if integrator.opts.adaptive
     btilde0 = (dtₙ₋₁+dtₙ)*1//6

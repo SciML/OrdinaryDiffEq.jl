@@ -286,8 +286,14 @@ function apply_step!(integrator)
   end
   if isinplace(integrator.sol.prob)
     recursivecopy!(integrator.uprev,integrator.u)
+    if integrator.alg isa DAEAlgorithm
+      recursivecopy!(integrator.duprev, integrator.du)
+    end
   else
     integrator.uprev = integrator.u
+    if integrator.alg isa DAEAlgorithm
+      integrator.duprev = integrator.du
+    end
   end
 
   #Update dt if adaptive or if fixed and the dt is allowed to change
