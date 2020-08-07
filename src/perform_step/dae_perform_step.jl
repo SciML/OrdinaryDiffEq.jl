@@ -158,7 +158,7 @@ end
   @.. uₙ = uₙ₋₁ + z
   @.. du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
 
-  @.. integrator.fsallast = z / dtₙ
+  @.. integrator.fsallast = du
   integrator.destats.nf += 1
   if integrator.opts.adaptive
     btilde0 = (dtₙ₋₁+dtₙ)*1//6
