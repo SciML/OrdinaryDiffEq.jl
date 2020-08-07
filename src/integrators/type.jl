@@ -85,6 +85,7 @@ mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm
   p::pType
   uprev::uType
   uprev2::uType
+  duprev::duType
   tprev::tType
   alg::algType
   dtcache::tType
@@ -124,7 +125,7 @@ mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm
 
   function ODEIntegrator{algType,IIP,uType,duType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,CacheType,O,FSALType,EventErrorType,CallbackCacheType,InitializeAlgType}(
-                sol,u,du,k,t,dt,f,p,uprev,uprev2,tprev,
+                sol,u,du,k,t,dt,f,p,uprev,uprev2,duprev,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,cache,callback_cache,
@@ -139,7 +140,7 @@ mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm
 
       new{algType,IIP,uType,duType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,CacheType,O,FSALType,EventErrorType,CallbackCacheType,InitializeAlgType}(
-                  sol,u,du,k,t,dt,f,p,uprev,uprev2,tprev,
+                  sol,u,du,k,t,dt,f,p,uprev,uprev2,duprev,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,cache,callback_cache,
