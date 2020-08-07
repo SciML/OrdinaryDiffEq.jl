@@ -292,12 +292,12 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     end
   else
     calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-    let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
+    let n_curr=n_curr, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
         integrator=integrator, cache=cache, repeat_step = repeat_step,
         k_tmps=k_tmps, u_tmps=u_tmps
       Threads.@threads for i in 1:2
-        startIndex = (i == 1) ? 1 : max_order
-        endIndex = (i == 1) ? max_order - 1 : max_order
+        startIndex = (i == 1) ? 1 : n_curr + 1
+        endIndex = (i == 1) ? n_curr : n_curr + 1
         for index in startIndex:endIndex
           dt_temp = dt/sequence[index]
           jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_temp, J, false)
@@ -316,8 +316,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       end
     end
 
-    nevals = sum(sequence[1:max_order]) - 1
-    integrator.destats.nw += max_order
+    nevals = sum(sequence[1:n_curr + 1]) - 1
+    integrator.destats.nw += n_curr + 1
     integrator.destats.nf += nevals
     integrator.destats.nsolve += nevals
   end
