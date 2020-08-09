@@ -51,6 +51,8 @@ c = 10.0
 p = [β,c,γ,δt]
 
 @enum InfectionStatus Susceptible Infected Recovered
+zero(::InfectionStatus) = Susceptible
+
 N = 1000
 I0 = 10
 u0 = Array{InfectionStatus}(undef,N);
