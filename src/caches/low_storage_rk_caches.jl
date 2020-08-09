@@ -569,7 +569,7 @@ function CFRLDDRK64ConstantCache(T, T2)
 end
 
 function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -615,7 +615,7 @@ function TSLDDRK74ConstantCache(T, T2)
 end
 
 function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -684,7 +684,7 @@ function ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -760,7 +760,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -818,7 +818,7 @@ function ParsaniKetchesonDeconinck3S53ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -948,7 +948,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -1030,7 +1030,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -1166,7 +1166,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -1254,7 +1254,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -1402,7 +1402,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   if calck
     fsalfirst = zero(rate_prototype)
@@ -1470,10 +1470,10 @@ end
 
 function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -1521,10 +1521,10 @@ end
 
 function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -1588,10 +1588,10 @@ end
 
 function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -1655,10 +1655,10 @@ end
 
 function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -1722,10 +1722,10 @@ end
 
 function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -1806,13 +1806,13 @@ end
 
 function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -1866,13 +1866,13 @@ end
 
 function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -1926,13 +1926,13 @@ end
 
 function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2001,13 +2001,13 @@ end
 
 function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2076,13 +2076,13 @@ end
 
 function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2151,13 +2151,13 @@ end
 
 function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2246,7 +2246,7 @@ end
 
 function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
@@ -2254,7 +2254,7 @@ function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   uᵢ₋₃ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
   fᵢ₋₃ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2314,7 +2314,7 @@ end
 
 function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
@@ -2322,7 +2322,7 @@ function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   uᵢ₋₃ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
   fᵢ₋₃ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2388,7 +2388,7 @@ end
 
 function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
@@ -2396,7 +2396,7 @@ function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   uᵢ₋₃ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
   fᵢ₋₃ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2474,7 +2474,7 @@ end
 
 function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
@@ -2482,7 +2482,7 @@ function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottom
   uᵢ₋₃ = zero(u)
   fᵢ₋₂ = zero(rate_prototype)
   fᵢ₋₃ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else
@@ -2594,7 +2594,7 @@ end
 
 function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
-  tmp  = similar(u)
+  tmp  = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
@@ -2604,7 +2604,7 @@ function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomE
   fᵢ₋₂ = zero(rate_prototype)
   fᵢ₋₃ = zero(rate_prototype)
   fᵢ₋₄ = zero(rate_prototype)
-  gprev    = similar(u)
+  gprev    = zero(u)
   if calck
     fsalfirst = zero(rate_prototype)
   else

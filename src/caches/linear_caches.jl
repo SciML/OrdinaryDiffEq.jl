@@ -12,7 +12,7 @@ function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEl
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusMidpointCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusMidpointCache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusMidpointConstantCache <: OrdinaryDiffEqConstantCache
@@ -37,7 +37,7 @@ function alg_cache(alg::RKMK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  RKMK2Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  RKMK2Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct RKMK2ConstantCache <: OrdinaryDiffEqConstantCache
@@ -62,7 +62,7 @@ function alg_cache(alg::LieRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  LieRK4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  LieRK4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct LieRK4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -87,7 +87,7 @@ function alg_cache(alg::CG2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  CG2Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  CG2Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct CG2ConstantCache <: OrdinaryDiffEqConstantCache
@@ -112,7 +112,7 @@ function alg_cache(alg::RKMK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  RKMK4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  RKMK4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct RKMK4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -139,10 +139,10 @@ function alg_cache(alg::MagnusAdapt4,u,rate_prototype,uEltypeNoUnits,uBottomElty
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  utilde = similar(u)
+  utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
-  MagnusAdapt4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k,utilde,atmp)
+  tmp = zero(u)
+  MagnusAdapt4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k,utilde,atmp)
 end
 
 struct MagnusAdapt4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -167,7 +167,7 @@ function alg_cache(alg::MagnusNC8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusNC8Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusNC8Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusNC8ConstantCache <: OrdinaryDiffEqConstantCache
@@ -192,7 +192,7 @@ function alg_cache(alg::MagnusGL4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusGL4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusGL4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusGL4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -217,7 +217,7 @@ function alg_cache(alg::MagnusGL8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusGL8Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusGL8Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusGL8ConstantCache <: OrdinaryDiffEqConstantCache
@@ -243,7 +243,7 @@ function alg_cache(alg::MagnusNC6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusNC6Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusNC6Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusNC6ConstantCache <: OrdinaryDiffEqConstantCache
@@ -268,7 +268,7 @@ function alg_cache(alg::MagnusGL6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusGL6Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusGL6Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusGL6ConstantCache <: OrdinaryDiffEqConstantCache
@@ -292,7 +292,7 @@ function alg_cache(alg::MagnusGauss4,u,rate_prototype,uEltypeNoUnits,uBottomElty
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusGauss4Cache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusGauss4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusGauss4ConstantCache <: OrdinaryDiffEqConstantCache
@@ -317,7 +317,7 @@ function alg_cache(alg::LieEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  LieEulerCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  LieEulerCache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct LieEulerConstantCache <: OrdinaryDiffEqConstantCache
@@ -340,7 +340,7 @@ end
 function alg_cache(alg::CayleyEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  CayleyEulerCache(u,uprev,similar(u),similar(u),fsalfirst,k)
+  CayleyEulerCache(u,uprev,zero(u),zero(u),fsalfirst,k)
 end
 
 struct CayleyEulerConstantCache <: OrdinaryDiffEqConstantCache
@@ -363,7 +363,7 @@ function alg_cache(alg::MagnusLeapfrog,u,rate_prototype,uEltypeNoUnits,uBottomEl
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
-  MagnusLeapfrogCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
+  MagnusLeapfrogCache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
 
 struct MagnusLeapfrogConstantCache <: OrdinaryDiffEqConstantCache
@@ -389,7 +389,7 @@ end
 
 function alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   rtmp = zero(rate_prototype)
   n = length(u)
   T = eltype(u)

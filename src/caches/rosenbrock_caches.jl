@@ -59,7 +59,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   k₃ = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  # f₀ = similar(u) fsalfirst
+  # f₀ = zero(u) fsalfirst
   f₁ = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
@@ -87,7 +87,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   k₃ = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  # f₀ = similar(u) fsalfirst
+  # f₀ = zero(u) fsalfirst
   f₁ = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
