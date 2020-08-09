@@ -27,7 +27,7 @@ testTol = 0.2
 @testset "Testing extrapolation methods" begin
 
     # Test AitkenNeville
-    printlnln("Testing AitkenNeville")
+    println("Testing AitkenNeville")
     @testset "Testing AitkenNeville" begin
         @testset "Testing sequential AitkenNeville" begin
             for prob in problem_array
@@ -54,7 +54,7 @@ testTol = 0.2
     # Define the subdividing sequences
     sequence_array =[:harmonic, :romberg, :bulirsch]
 
-    printlnln("Testing ImplicitEulerExtrapolation")
+    println("Testing ImplicitEulerExtrapolation")
     @testset "Testing ImplicitEulerExtrapolation" begin
     for prob in problem_array, seq in sequence_array
         global dts
@@ -76,7 +76,7 @@ testTol = 0.2
     end
 
 
-    printlnln("Testing ImplicitDeuflhardExtrapolation")
+    println("Testing ImplicitDeuflhardExtrapolation")
     @testset "Testing ImplicitDeuflhardExtrapolation" begin
     for prob in problem_array, seq in sequence_array
         global dts
@@ -99,7 +99,7 @@ testTol = 0.2
     end
 
 
-    printlnln("Testing ImplicitHairerWannerExtrapolation")
+    println("Testing ImplicitHairerWannerExtrapolation")
     @testset "Testing ImplicitHairerWannerExtrapolation" begin
     for prob in problem_array, seq in sequence_array
         global dts
@@ -122,7 +122,7 @@ testTol = 0.2
 
     # Test ExtrapolationMidpointDeuflhard
 
-    printlnln("Testing ExtrapolationMidpointDeuflhard")
+    println("Testing ExtrapolationMidpointDeuflhard")
     @testset "Testing ExtrapolationMidpointDeuflhard" begin
     @testset "Testing sequential ExtrapolationMidpointDeuflhard" begin
         for prob in problem_array, seq in sequence_array
