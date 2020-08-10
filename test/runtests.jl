@@ -101,7 +101,6 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
   @time @safetestset "Non-autonomous Convergence Tests" begin include("algconvergence/non-autonomous_convergence_tests.jl") end
   @time @safetestset "Adams Variable Coefficients Tests" begin include("algconvergence/adams_tests.jl") end
   @time @safetestset "Nordsieck Tests" begin include("algconvergence/nordsieck_tests.jl") end
-  @time @safetestset "Linear Methods Tests" begin include("algconvergence/linear_method_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_II")
@@ -112,6 +111,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_II")
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
+  @time @safetestset "Linear Methods Tests" begin include("algconvergence/linear_method_tests.jl") end
   @time @safetestset "Split Methods Tests" begin include("algconvergence/split_methods_tests.jl") end
   @time @safetestset "Rosenbrock Tests" begin include("algconvergence/ode_rosenbrock_tests.jl") end
   @time @safetestset "FIRK Tests" begin include("algconvergence/ode_firk_tests.jl") end
