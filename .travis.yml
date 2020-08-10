@@ -13,6 +13,7 @@ julia:
 env:
   - GROUP=InterfaceI
   - GROUP=InterfaceII
+  - GROUP=InterfaceIII
   - GROUP=Integrators_I
   - GROUP=Integrators_II
   - GROUP=Regression_I

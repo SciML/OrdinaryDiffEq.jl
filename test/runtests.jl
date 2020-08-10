@@ -38,10 +38,6 @@ if GROUP == "All" || GROUP == "InterfaceI"
   @time @safetestset "Composite Interpolation Tests" begin include("interface/composite_interpolation.jl") end
   @time @safetestset "Export tests" begin include("interface/export_tests.jl") end
   @time @safetestset "Type Handling Tests" begin include("interface/type_handling.jl") end
-  @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
-  @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
-  @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
-  @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
@@ -52,6 +48,13 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
   @time @safetestset "Second Order with First Order Solver Tests" begin include("interface/second_order_with_first_order_solvers.jl") end
   @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
   @time @safetestset "DAE Initialize Integration" begin include("interface/dae_initialize_integration.jl") end
+end
+
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII")
+  @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
+  @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
+  @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
+  @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")
