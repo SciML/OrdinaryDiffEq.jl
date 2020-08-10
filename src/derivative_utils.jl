@@ -188,7 +188,7 @@ mutable struct WOperator{IIP,T,
       else
         _concrete_form = nothing
       end
-      _func_cache = similar(u)
+      _func_cache = zero(u)
     end
     T = eltype(_concrete_form)
     MType = typeof(mass_matrix)

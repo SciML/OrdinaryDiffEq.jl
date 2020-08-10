@@ -18,7 +18,7 @@ function alg_cache(alg::Nystrom4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   k₃ = zero(reduced_rate_prototype)
   k₄ = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   Nystrom4Cache(u,uprev,k₁,k₂,k₃,k₄,k,tmp)
 end
 
@@ -44,7 +44,7 @@ function alg_cache(alg::Nystrom4VelocityIndependent,u,rate_prototype,uEltypeNoUn
   k₂ = zero(reduced_rate_prototype)
   k₃ = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k,tmp)
 end
 
@@ -70,7 +70,7 @@ function alg_cache(alg::IRKN3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k₂ = zero(rate_prototype)
   k₃ = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   tab = IRKN3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   IRKN3Cache(u,uprev,uprev2,k₁,k₂,k,tmp,k₃,Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂.x[2],k₃.x[2],k,tmp),tab)
 end
@@ -96,7 +96,7 @@ function alg_cache(alg::IRKN4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k₂ = zero(rate_prototype)
   k₃ = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   tmp2 = similar(rate_prototype)
   tab = IRKN4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   IRKN4Cache(u,uprev,uprev2,k₁,k₂,k₃,k,tmp,tmp2,Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂.x[2],k₃.x[2],k,tmp),tab)
@@ -123,7 +123,7 @@ function alg_cache(alg::Nystrom5VelocityIndependent,u,rate_prototype,uEltypeNoUn
   k₃ = zero(reduced_rate_prototype)
   k₄ = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   tab = Nystrom5VelocityIndependentConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   Nystrom5VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k₄,k,tmp,tab)
 end
@@ -156,9 +156,9 @@ function alg_cache(alg::DPRKN6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   k5 = zero(reduced_rate_prototype)
   k6 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  utilde = similar(u)
+  utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
+  tmp = zero(u)
   DPRKN6Cache(u,uprev,k1,k2,k3,k4,k5,k6,k,utilde,tmp,atmp,tab)
 end
 
@@ -196,9 +196,9 @@ function alg_cache(alg::DPRKN8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   k8 = zero(reduced_rate_prototype)
   k9 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  utilde = similar(u)
+  utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
+  tmp = zero(u)
   DPRKN8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k,utilde,tmp,atmp,tab)
 end
 
@@ -252,9 +252,9 @@ function alg_cache(alg::DPRKN12,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   k16 = zero(reduced_rate_prototype)
   k17 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  utilde = similar(u)
+  utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
+  tmp = zero(u)
   DPRKN12Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k,utilde,tmp,atmp,tab)
 end
 
@@ -282,9 +282,9 @@ function alg_cache(alg::ERKN4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k3 = zero(reduced_rate_prototype)
   k4 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  utilde = similar(u)
+  utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
+  tmp = zero(u)
   ERKN4Cache(u,uprev,k1,k2,k3,k4,k,utilde,tmp,atmp,tab)
 end
 
@@ -312,9 +312,9 @@ function alg_cache(alg::ERKN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k3 = zero(reduced_rate_prototype)
   k4 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
-  utilde = similar(u)
+  utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
+  tmp = zero(u)
   ERKN5Cache(u,uprev,k1,k2,k3,k4,k,utilde,tmp,atmp,tab)
 end
 

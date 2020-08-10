@@ -33,7 +33,7 @@ alg_cache(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) where {F} = ODEEmptyCac
 end
 
 function alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  FunctionMapCache(u,uprev,FunctionMap_scale_by_time(alg) ? rate_prototype : similar(u))
+  FunctionMapCache(u,uprev,FunctionMap_scale_by_time(alg) ? rate_prototype : zero(u))
 end
 
 struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
@@ -64,7 +64,7 @@ function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltype
     fsallast = zero(rate_prototype)
   end
   utilde = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   tab = ExplicitRKConstantCache(alg.tableau,rate_prototype)
   ExplicitRKCache(u,uprev,tmp,utilde,atmp,fsalfirst,fsallast,kk,tab)
