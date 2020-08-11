@@ -2346,7 +2346,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
           for index in startIndex:endIndex
-            j_int = 4 * subdividing_sequence[index+1]
+            j_int = subdividing_sequence[index+1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int*J - integrator.f.mass_matrix
             integrator.destats.nw += 1
@@ -2354,7 +2354,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             u_temp3 = u_temp4 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
             diff1 = u_temp3 - u_temp4
             for j in 2:j_int + 1
-              T[index+1] = 2*u_temp3 - u_temp4 + 2*_reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int) - (u_temp3 - u_temp4)),axes(uprev))
+              T[index+1] = u_temp3  + _reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int)),axes(uprev))
               integrator.destats.nf += 1
               if(j == j_int + 1)
                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
@@ -2382,7 +2382,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
-            j_int = 4 * subdividing_sequence[index+1]
+            j_int = subdividing_sequence[index+1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int*J - integrator.f.mass_matrix
             integrator.destats.nw += 1
@@ -2390,7 +2390,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             u_temp3 = u_temp4 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
             diff1 = u_temp3 - u_temp4
             for j in 2:j_int + 1
-              T[index+1] = 2*u_temp3 - u_temp4 + 2*_reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int) - (u_temp3 - u_temp4)),axes(uprev))
+              T[index+1] = u_temp3  + _reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int)),axes(uprev))
               integrator.destats.nf += 1
               if(j == j_int + 1)
                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
