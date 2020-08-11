@@ -249,8 +249,7 @@ end
 function create_extrapolation_coefficients(T, alg::Union{ExtrapolationMidpointDeuflhard,
                                                          ExtrapolationMidpointHairerWanner,
                                                          ImplicitDeuflhardExtrapolation,
-                                                         ImplicitHairerWannerExtrapolation,
-                                                         ImplicitEulerBarycentricExtrapolation})
+                                                         ImplicitHairerWannerExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -309,11 +308,69 @@ function create_extrapolation_coefficients(T, alg::Union{ExtrapolationMidpointDe
       T.(extrapolation_weights_2), T.(extrapolation_scalars_2))
 end
 
+function create_extrapolation_coefficients(T, alg::Union{ImplicitEulerBarycentricExtrapolation})
+# Compute and return extrapolation_coefficients
+
+@unpack n_min, n_init, n_max, sequence = alg
+
+# Initialize subdividing_sequence:
+if sequence == :harmonic
+subdividing_sequence = BigInt.(1:(n_max + 1))
+elseif sequence == :romberg
+subdividing_sequence = BigInt(2).^(0:n_max)
+else # sequence == :bulirsch
+subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) : 3 * BigInt(2)^(n ÷ 2 - 1)) for n = 0:n_max]
+end
+
+
+# Compute nodes corresponding to subdividing_sequence
+nodes = BigInt(1) .// subdividing_sequence
+
+# Compute barycentric weights for internal extrapolation operators
+extrapolation_weights_2 = zeros(Rational{BigInt}, n_max, n_max)
+extrapolation_weights_2[1,:] = ones(Rational{BigInt}, 1, n_max)
+for n = 2:n_max
+distance = nodes[2:n] .- nodes[n+1]
+extrapolation_weights_2[1:(n-1), n] = extrapolation_weights_2[1:n-1, n-1] .// distance
+extrapolation_weights_2[n, n] = 1 // prod(-distance)
+end
+
+# Compute barycentric weights for extrapolation operators
+extrapolation_weights = zeros(Rational{BigInt}, n_max+1, n_max+1)
+for n = 1:n_max
+extrapolation_weights[n+1, (n+1) : (n_max+1)] = extrapolation_weights_2[n, n:n_max] // (nodes[n+1] - nodes[1])
+extrapolation_weights[1, n] = 1 // prod(nodes[1] .- nodes[2:n])
+end
+extrapolation_weights[1, n_max+1] = 1 // prod(nodes[1] .- nodes[2:n_max+1])
+
+# Rescale barycentric weights to obtain weights of 1. Barycentric Formula
+for m = 1:(n_max+1)
+extrapolation_weights[1:m, m] = - extrapolation_weights[1:m, m] .// nodes[1:m]
+if 2 <= m
+extrapolation_weights_2[1:m-1, m-1] = -extrapolation_weights_2[1:m-1, m-1] .// nodes[2:m]
+end
+end
+
+# Compute scaling factors for internal extrapolation operators
+extrapolation_scalars_2 = ones(Rational{BigInt}, n_max)
+extrapolation_scalars_2[1] = -nodes[2]
+for n = 1:(n_max-1)
+extrapolation_scalars_2[n+1] = -extrapolation_scalars_2[n] * nodes[n+2]
+end
+
+# Compute scaling factors for extrapolation operators
+extrapolation_scalars = -nodes[1] * [BigInt(1); extrapolation_scalars_2]
+
+# Initialize and return extrapolation_coefficients
+extrapolation_coefficients(Int.(subdividing_sequence),
+T.(extrapolation_weights), T.(extrapolation_scalars),
+T.(extrapolation_weights_2), T.(extrapolation_scalars_2))
+end
+
 function create_extrapolation_coefficients(T::Type{<:CompiledFloats}, alg::Union{ExtrapolationMidpointDeuflhard,
                                                                                  ExtrapolationMidpointHairerWanner,
                                                                                  ImplicitDeuflhardExtrapolation,
-                                                                                 ImplicitHairerWannerExtrapolation,
-                                                                                 ImplicitEulerBarycentricExtrapolation})
+                                                                                 ImplicitHairerWannerExtrapolation})
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
