@@ -16,6 +16,7 @@ testTol = .2
 bools = Vector{Bool}(undef,0)
 
 ### BS3()
+println("BS3")
 sim = test_convergence(dts,probnum,BS3())
 @test abs.(sim.𝒪est[:l2]-3) < testTol
 sim = test_convergence(dts,prob,BS3())
@@ -38,6 +39,7 @@ sol2 =solve(prob,BS3(),dt=1/2^6)
 @test length(sol1) == length(sol2)
 
 ### BS5()
+println("BS5")
 dts = (1/2) .^ (6:-1:3)
 sim = test_convergence(dts,probnumbig,BS5())
 @test abs.(sim.𝒪est[:l2]-5) < testTol
@@ -62,6 +64,7 @@ sol2 =solve(prob,BS5(),dt=1/2^6)
 
 ### Tsit5()
 
+println("Tsit5")
 dts = (1/2) .^ (7:-1:3)
 sim = test_convergence(dts,probnum,Tsit5())
 @test abs.(sim.𝒪est[:l2]-5) < testTol+.1
@@ -86,6 +89,7 @@ sol2 =solve(prob,Tsit5(),dt=1/2^6)
 
 ### Vern6()
 
+println("Vern6")
 dts = (1/2) .^ (8:-1:5)
 sim = test_convergence(dts,probnumbig,Vern6())
 @test abs.(sim.𝒪est[:l2]-6) < testTol
@@ -110,6 +114,7 @@ sol2 =solve(probbig,Vern6(),dt=1/2^6)
 
 ### Vern7()
 
+println("Vern7")
 dts = (1/2) .^ (6:-1:3)
 sim = test_convergence(dts,probnumbig,Vern7(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-7) < testTol
@@ -134,6 +139,7 @@ sol2 =solve(probbig,Vern7(),dt=1/2^6)
 
 ### TanYam7()
 
+println("TanYam7")
 dts = (1/2) .^ (6:-1:3)
 sim = test_convergence(dts,probnumbig,TanYam7())
 @test abs.(sim.𝒪est[:l2]-7) < testTol
@@ -159,6 +165,7 @@ sol2 =solve(prob,TanYam7(),dt=1/2^6)
 
 ### Vern8()
 
+println("Vern8")
 dts = (1/2) .^ (6:-1:3)
 sim = test_convergence(dts,probnumbig,Vern8(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-8) < testTol
@@ -183,6 +190,7 @@ sol2 =solve(prob,Vern8(),dt=1/2^6)
 
 ### TsitPap8()
 
+println("TsitPap8")
 dts = (1/2) .^ (6:-1:3)
 sim = test_convergence(dts,probnumbig,TsitPap8())
 @test abs.(sim.𝒪est[:l2]-8) < testTol
@@ -207,6 +215,7 @@ sol2 =solve(prob,TsitPap8(),dt=1/2^6)
 
 ### Vern9()
 
+println("Vern9")
 dts = (1/2) .^ (6:-1:3)
 sim = test_convergence(dts,probnumbig,Vern9(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-9) < testTol

@@ -68,10 +68,10 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
 
-  z1 = similar(u); z2 = similar(u);
-  w1 = similar(u); w2 = similar(u);
+  z1 = zero(u); z2 = zero(u);
+  w1 = zero(u); w2 = zero(u);
   dw12 = similar(u, Complex{eltype(u)})
-  cont1 = similar(u); cont2 = similar(u);
+  cont1 = zero(u); cont2 = zero(u);
 
   fsalfirst = similar(rate_prototype)
   k = similar(rate_prototype); k2 = similar(rate_prototype);
@@ -82,7 +82,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   du1 = similar(rate_prototype)
 
-  tmp = similar(u)
+  tmp = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
   linsolve1 = alg.linsolve(Val{:init}, uf, u)
@@ -176,10 +176,10 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
 
-  z1 = similar(u); z2 = similar(u); z3 = similar(u)
-  w1 = similar(u); w2 = similar(u); w3 = similar(u)
-  dw1 = similar(u); dw23 = similar(u, Complex{eltype(u)})
-  cont1 = similar(u); cont2 = similar(u); cont3 = similar(u)
+  z1 = zero(u); z2 = zero(u); z3 = zero(u)
+  w1 = zero(u); w2 = zero(u); w3 = zero(u)
+  dw1 = zero(u); dw23 = similar(u, Complex{eltype(u)})
+  cont1 = zero(u); cont2 = zero(u); cont3 = zero(u)
 
   fsalfirst = similar(rate_prototype)
   k = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype)
@@ -190,7 +190,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   du1 = similar(rate_prototype)
 
-  tmp = similar(u)
+  tmp = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
   linsolve1 = alg.linsolve(Val{:init}, uf, u)

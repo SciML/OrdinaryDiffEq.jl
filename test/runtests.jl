@@ -38,20 +38,23 @@ if GROUP == "All" || GROUP == "InterfaceI"
   @time @safetestset "Composite Interpolation Tests" begin include("interface/composite_interpolation.jl") end
   @time @safetestset "Export tests" begin include("interface/export_tests.jl") end
   @time @safetestset "Type Handling Tests" begin include("interface/type_handling.jl") end
-  @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
-  @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
-  @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
-  @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
-  @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
-  @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
+  @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
+  @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
   @time @safetestset "Enum Tests" begin include("interface/enums.jl") end
   @time @safetestset "Mass Matrix Tests" begin include("interface/mass_matrix_tests.jl") end
   @time @safetestset "Second Order with First Order Solver Tests" begin include("interface/second_order_with_first_order_solvers.jl") end
   @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
   @time @safetestset "DAE Initialize Integration" begin include("interface/dae_initialize_integration.jl") end
+end
+
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII")
+  @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
+  @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
+  @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
+  @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")
@@ -98,7 +101,6 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
   @time @safetestset "Non-autonomous Convergence Tests" begin include("algconvergence/non-autonomous_convergence_tests.jl") end
   @time @safetestset "Adams Variable Coefficients Tests" begin include("algconvergence/adams_tests.jl") end
   @time @safetestset "Nordsieck Tests" begin include("algconvergence/nordsieck_tests.jl") end
-  @time @safetestset "Linear Methods Tests" begin include("algconvergence/linear_method_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_II")
@@ -109,6 +111,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_II")
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
+  @time @safetestset "Linear Methods Tests" begin include("algconvergence/linear_method_tests.jl") end
   @time @safetestset "Split Methods Tests" begin include("algconvergence/split_methods_tests.jl") end
   @time @safetestset "Rosenbrock Tests" begin include("algconvergence/ode_rosenbrock_tests.jl") end
   @time @safetestset "FIRK Tests" begin include("algconvergence/ode_firk_tests.jl") end

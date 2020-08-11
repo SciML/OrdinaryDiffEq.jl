@@ -63,7 +63,7 @@ struct KuttaPRK2p5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)

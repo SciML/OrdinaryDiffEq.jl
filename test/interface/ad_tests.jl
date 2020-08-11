@@ -8,6 +8,9 @@ end
 
 for x in 0:0.001:5
   called = false
+  if x in [1.0, 2.0, 3.0, 4.0, 5.0]
+    print("AD Ping $x")
+  end
   function test_f(p)
     cb = ContinuousCallback((u,t,i) -> u[1], (integrator)->(called=true;integrator.p[2]=zero(integrator.p[2])))
     prob = ODEProblem(f,eltype(p).([1.0,0.0]),eltype(p).((0.0,1.0)),copy(p))
@@ -32,6 +35,9 @@ end
 
 for x in 2.1:0.001:5
   called = false
+  if x in [3.0, 4.0, 5.0]
+    print("AD Ping $x")
+  end
   function test_f2(p)
     cb = ContinuousCallback((u,t,i) -> u[1], (integrator)->(called=true;integrator.p[2]=zero(integrator.p[2])))
     prob = ODEProblem(f2,eltype(p).([1.0,0.0]),eltype(p).((0.0,1.0)),copy(p))
@@ -72,6 +78,9 @@ fordiff = ForwardDiff.jacobian(test_f2,p)
 =#
 
 for x in 1.0:0.001:2.5
+  if x in [1.5, 2.0, 2.5]
+    print("AD Ping $x")
+  end
   function lotka_volterra(du,u,p,t)
     x, y = u
     α, β, δ, γ = p

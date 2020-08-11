@@ -26,8 +26,8 @@ end
 end
 
 function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
-  utilde = similar(u)
+  tmp = zero(u)
+  utilde = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   cur_order = max(alg.init_order, alg.min_order)
@@ -150,7 +150,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  u_tmp = similar(u)
+  u_tmp = zero(u)
   u_tmps = Array{typeof(u_tmp),1}(undef, Threads.nthreads())
 
   u_tmps[1] = u_tmp
@@ -158,8 +158,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
     u_tmps[i] = zero(u_tmp)
   end
 
-  utilde = similar(u)
-  tmp = similar(u)
+  utilde = zero(u)
+  tmp = zero(u)
   k_tmp = zero(rate_prototype)
   k_tmps = Array{typeof(k_tmp),1}(undef, Threads.nthreads())
 

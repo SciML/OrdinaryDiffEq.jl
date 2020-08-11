@@ -23,7 +23,7 @@ function alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   k1 = zero(rate_prototype); k2 = zero(rate_prototype) ; k3 = zero(rate_prototype); k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6 = zero(rate_prototype) ; k7 = zero(rate_prototype); k8 = zero(rate_prototype)
   k9 = zero(rate_prototype); k10= zero(rate_prototype) ;
-  utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = zero(rate_prototype)
+  utilde = zero(u); tmp = zero(u); atmp = similar(u,uEltypeNoUnits); k = zero(rate_prototype)
   TanYam7Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,k,tab)
 end
 
@@ -66,8 +66,8 @@ function alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k1 = zero(rate_prototype); k2  = zero(rate_prototype); k3  = zero(rate_prototype);  k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6  = zero(rate_prototype); k7  = zero(rate_prototype);  k8 = zero(rate_prototype)
   k9 = zero(rate_prototype); k10 = zero(rate_prototype); k11 = zero(rate_prototype); k12 = zero(rate_prototype)
-  kupdate = zero(rate_prototype); utilde = similar(u);
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
+  kupdate = zero(rate_prototype); utilde = zero(u);
+  tmp = zero(u); atmp = similar(u,uEltypeNoUnits)
   k13 = zero(rate_prototype)
   k14 = zero(rate_prototype)
   k15 = zero(rate_prototype)
@@ -117,8 +117,8 @@ function alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype)
   k9 = zero(rate_prototype); k10 = zero(rate_prototype); k11 = zero(rate_prototype); k12 = zero(rate_prototype)
-  k13 = zero(rate_prototype); utilde = similar(u); k = zero(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits);
+  k13 = zero(rate_prototype); utilde = zero(u); k = zero(rate_prototype)
+  tmp = zero(u); atmp = similar(u,uEltypeNoUnits);
   TsitPap8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,tmp,atmp,k,tab)
 end
 
@@ -162,9 +162,9 @@ function alg_cache(alg::PFRK87,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   k11 = zero(rate_prototype)
   k12 = zero(rate_prototype)
   k13 = zero(rate_prototype)
-  utilde = similar(u)
+  utilde = zero(u)
   k = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   PFRK87Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,tmp,atmp,k,tab)
 end

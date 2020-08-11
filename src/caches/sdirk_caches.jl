@@ -128,7 +128,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  atmp = similar(u,uEltypeNoUnits); zprev = similar(u); zᵧ = similar(u)
+  atmp = similar(u,uEltypeNoUnits); zprev = zero(u); zᵧ = zero(u)
 
   TRBDF2Cache(u,uprev,fsalfirst,zprev,zᵧ,atmp,nlsolver,tab)
 end
@@ -160,7 +160,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = nlsolver.z
+  z₁ = zero(u); z₂ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   SDIRK2Cache(u,uprev,fsalfirst,z₁,z₂,atmp,nlsolver)
@@ -236,7 +236,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = nlsolver.z
+  z₁ = zero(u); z₂ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   SSPSDIRK2Cache(u,uprev,fsalfirst,z₁,z₂,nlsolver)
@@ -275,7 +275,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   Kvaerno3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,atmp,nlsolver,tab)
@@ -315,7 +315,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   Cash4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
@@ -355,7 +355,7 @@ function alg_cache(alg::SFSDIRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   SFSDIRK4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
@@ -396,7 +396,7 @@ function alg_cache(alg::SFSDIRK5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u); z₆ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u); z₆ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   SFSDIRK5Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver,tab)
@@ -437,7 +437,7 @@ function alg_cache(alg::SFSDIRK6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u); z₆ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u); z₆ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   SFSDIRK6Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver,tab)
@@ -479,7 +479,7 @@ function alg_cache(alg::SFSDIRK7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u);z₆ = similar(u); z₇ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u);z₆ = zero(u); z₇ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   SFSDIRK7Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,atmp,nlsolver,tab)
@@ -522,7 +522,7 @@ function alg_cache(alg::SFSDIRK8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u);z₅ = similar(u);z₆ = similar(u);z₇ = similar(u); z₈ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u);z₆ = zero(u);z₇ = zero(u); z₈ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   SFSDIRK8Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver,tab)
@@ -570,7 +570,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = nlsolver.z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
   atmp = similar(u,uEltypeNoUnits)
 
   Hairer4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)

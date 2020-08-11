@@ -8,11 +8,12 @@ os:
   - linux
 #  - osx
 julia:
-  - 1.4
+  - 1.5
 #  - nightly
 env:
   - GROUP=InterfaceI
   - GROUP=InterfaceII
+  - GROUP=InterfaceIII
   - GROUP=Integrators_I
   - GROUP=Integrators_II
   - GROUP=Regression_I
@@ -31,8 +32,9 @@ addons:
 #    - julia: nightly
 notifications:
   email: false
-after_success:
+script: julia -e 'using Pkg; Pkg.build(); Pkg.test(coverage=false)'
+#after_success:
   # push coverage results to Coveralls
-  - julia -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  #- julia -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
-  - julia -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  #- julia -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'

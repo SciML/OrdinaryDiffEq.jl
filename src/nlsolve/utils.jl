@@ -130,14 +130,14 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   isdae = alg isa DAEAlgorithm
 
   # define fields of non-linear solver
-  z = similar(u); tmp = similar(u); ztmp = similar(u)
+  z = zero(u); tmp = zero(u); ztmp = zero(u)
 
   # build cache of non-linear solver
-  ustep = similar(u)
+  ustep = zero(u)
   tstep = zero(t)
   k = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
-  dz = similar(u)
+  dz = zero(u)
 
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
@@ -159,7 +159,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     end
 
     # TODO: check if the solver is iterative
-    weight = similar(u)
+    weight = zero(u)
 
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))

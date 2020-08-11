@@ -22,7 +22,7 @@ function alg_cache(alg::AB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k3 = zero(rate_prototype)
   ralk2 = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   AB3Cache(u,uprev,fsalfirst,k2,k3,ralk2,k,tmp,1)
 end
 
@@ -56,7 +56,7 @@ function alg_cache(alg::ABM32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k3 = zero(rate_prototype)
   ralk2 = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   ABM32Cache(u,uprev,fsalfirst,k2,k3,ralk2,k,tmp,1)
 end
 
@@ -96,7 +96,7 @@ function alg_cache(alg::AB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k4 = zero(rate_prototype)
   ralk2 = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   t2 = zero(rate_prototype)
   t3 = zero(rate_prototype)
   t4 = zero(rate_prototype)
@@ -143,7 +143,7 @@ function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k4 = zero(rate_prototype)
   ralk2 = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   t2 = zero(rate_prototype)
   t3 = zero(rate_prototype)
   t4 = zero(rate_prototype)
@@ -191,7 +191,7 @@ function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k4 = zero(rate_prototype)
   k5 = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   t2 = zero(rate_prototype)
   t3 = zero(rate_prototype)
   t4 = zero(rate_prototype)
@@ -241,7 +241,7 @@ function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k4 = zero(rate_prototype)
   k5 = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = similar(u)
+  tmp = zero(u)
   t2 = zero(rate_prototype)
   t3 = zero(rate_prototype)
   t4 = zero(rate_prototype)
@@ -318,9 +318,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   bk2 = zero(rate_prototype)
   bk3 = zero(rate_prototype)
   bk4 = zero(rate_prototype)
-  butilde = similar(u)
+  butilde = zero(u)
   batmp = similar(u,uEltypeNoUnits)
-  btmp = similar(u)
+  btmp = zero(u)
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -338,8 +338,8 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   β = fill(zero(t),3)
   order = 3
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
-  utilde = similar(u)
+  tmp = zero(u)
+  utilde = zero(u)
   VCAB3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
 end
 
@@ -400,7 +400,7 @@ function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = similar(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -418,8 +418,8 @@ function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   β = fill(zero(t),4)
   order = 4
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
-  utilde = similar(u)
+  tmp = zero(u)
+  utilde = zero(u)
   VCAB4Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -482,7 +482,7 @@ function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = similar(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -500,8 +500,8 @@ function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   β = fill(zero(t),5)
   order = 5
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
-  utilde = similar(u)
+  tmp = zero(u)
+  utilde = zero(u)
   VCAB5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -568,9 +568,9 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   bk2 = zero(rate_prototype)
   bk3 = zero(rate_prototype)
   bk4 = zero(rate_prototype)
-  butilde = similar(u)
+  butilde = zero(u)
   batmp = similar(u,uEltypeNoUnits)
-  btmp = similar(u)
+  btmp = zero(u)
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -592,8 +592,8 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   β = fill(zero(t),3)
   order = 3
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
-  utilde = similar(u)
+  tmp = zero(u)
+  utilde = zero(u)
   VCABM3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
 end
 
@@ -659,7 +659,7 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = similar(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -681,8 +681,8 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   β = fill(zero(t),4)
   order = 4
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
-  utilde = similar(u)
+  tmp = zero(u)
+  utilde = zero(u)
   VCABM4Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -748,7 +748,7 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = similar(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -770,8 +770,8 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   β = fill(zero(t),5)
   order = 5
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
-  utilde = similar(u)
+  tmp = zero(u)
+  utilde = zero(u)
   VCABM5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -865,13 +865,13 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   order = 1
   max_order = 12
   atmp = similar(u,uEltypeNoUnits)
-  tmp = similar(u)
+  tmp = zero(u)
   ξ = zero(dt)
   ξ0 = zero(dt)
-  utilde = similar(u)
-  utildem2 = similar(u)
-  utildem1 = similar(u)
-  utildep1 = similar(u)
+  utilde = zero(u)
+  utildem2 = zero(u)
+  utildem1 = zero(u)
+  utildep1 = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   atmpm1 = similar(u,uEltypeNoUnits)
   atmpm2 = similar(u,uEltypeNoUnits)

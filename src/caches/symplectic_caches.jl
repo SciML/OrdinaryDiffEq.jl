@@ -7,7 +7,7 @@
 end
 
 function alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  SymplecticEulerCache(u,uprev,similar(u),zero(rate_prototype),zero(rate_prototype))
+  SymplecticEulerCache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype))
 end
 
 struct SymplecticEulerConstantCache <: OrdinaryDiffEqConstantCache end
@@ -47,7 +47,7 @@ alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = VerletLeapfrogConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -58,7 +58,7 @@ alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
       VerletLeapfrogConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 function alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = PseudoVerletLeapfrogConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -69,7 +69,7 @@ alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 PseudoVerletLeapfrogConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 function alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = McAte2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -89,7 +89,7 @@ McAte2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 function alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = Ruth3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -100,7 +100,7 @@ alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeN
 Ruth3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 function alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = McAte3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -120,7 +120,7 @@ McAte3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 function alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = McAte4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -130,7 +130,7 @@ end
 alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = McAte4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 function alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = CandyRoz4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -149,7 +149,7 @@ alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tT
 end
 
 function alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = CalvoSanz4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -159,7 +159,7 @@ end
 alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = CalvoSanz4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 function alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = McAte42ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -178,7 +178,7 @@ alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTyp
 end
 
 function alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = McAte5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -197,7 +197,7 @@ alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tType
 end
 
 function alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = Yoshida6ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -216,7 +216,7 @@ alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTy
 end
 
 function alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = KahanLi6ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -235,7 +235,7 @@ alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTy
 end
 
 function alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = McAte8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -254,7 +254,7 @@ alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tType
 end
 
 function alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = KahanLi8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -273,7 +273,7 @@ alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTy
 end
 
 function alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = similar(u)
+  tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = SofSpa10ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
