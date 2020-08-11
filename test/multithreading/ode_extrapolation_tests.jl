@@ -93,7 +93,7 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
   end
 end
 
-@testset "Testing ImplicitEulerExtrapolation" begin
+@testset "Testing ImplicitEulerBarycentricExtrapolation" begin
   for prob in problem_array, seq in sequence_array
     global dts
 
@@ -107,13 +107,13 @@ end
       @test sim.𝒪est[:final] ≈ alg.n_init + 0.5 atol=newTol #Superconvergence
     end
     # Regression test
-    sol = solve(prob,ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
+    sol = solve(prob,ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
         init_order = 9,sequence = seq, threading = false),reltol=1e-3)
     @test length(sol.u) < 15
   end
 end
 
-@testset "Testing ImplicitEulerExtrapolation" begin
+@testset "Testing ImplicitEulerBarycentricExtrapolation" begin
   for prob in problem_array, seq in sequence_array
     global dts
 
@@ -127,7 +127,7 @@ end
       @test sim.𝒪est[:final] ≈ alg.n_init + 0.5 atol=newTol #Superconvergence
     end
     # Regression test
-    sol = solve(prob,ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
+    sol = solve(prob,ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
         init_order = 9,sequence = seq, threading = true),reltol=1e-3)
     @test length(sol.u) < 15
   end
