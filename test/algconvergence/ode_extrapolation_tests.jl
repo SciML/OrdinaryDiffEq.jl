@@ -75,6 +75,26 @@ testTol = 0.2
     end
     end
 
+    println("Testing ImplicitEulerBarycentricExtrapolation")
+    @testset "Testing ImplicitEulerBarycentricExtrapolation" begin
+        for prob in problem_array, seq in sequence_array
+            global dts
+
+            newTol = 0.35
+            #  Convergence test
+            for j = 1:4
+            alg = ImplicitEulerBarycentricExtrapolation(min_order = j,
+                init_order = j, max_order=j,
+                sequence = seq, threading = false)
+            sim = test_convergence(dts,prob,alg)
+            @test sim.𝒪est[:final] ≈ alg.n_init + 0.5 atol=newTol #Superconvergence
+            end
+            # Regression test
+            sol = solve(prob,ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
+                init_order = 9,sequence = seq, threading = false),reltol=1e-3)
+            @test length(sol.u) < 15
+        end
+    end
 
     println("Testing ImplicitDeuflhardExtrapolation")
     @testset "Testing ImplicitDeuflhardExtrapolation" begin

@@ -2346,7 +2346,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
           for index in startIndex:endIndex
-            j_int = 4 * subdividing_sequence[index+1]
+            j_int = subdividing_sequence[index+1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int*J - integrator.f.mass_matrix
             integrator.destats.nw += 1
@@ -2354,7 +2354,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             u_temp3 = u_temp4 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
             diff1 = u_temp3 - u_temp4
             for j in 2:j_int + 1
-              T[index+1] = 2*u_temp3 - u_temp4 + 2*_reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int) - (u_temp3 - u_temp4)),axes(uprev))
+              T[index+1] = u_temp3  + _reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int)),axes(uprev))
               integrator.destats.nf += 1
               if(j == j_int + 1)
                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
@@ -2382,7 +2382,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
-            j_int = 4 * subdividing_sequence[index+1]
+            j_int = subdividing_sequence[index+1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int*J - integrator.f.mass_matrix
             integrator.destats.nw += 1
@@ -2390,7 +2390,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             u_temp3 = u_temp4 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
             diff1 = u_temp3 - u_temp4
             for j in 2:j_int + 1
-              T[index+1] = 2*u_temp3 - u_temp4 + 2*_reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int) - (u_temp3 - u_temp4)),axes(uprev))
+              T[index+1] = u_temp3  + _reshape(W\-_vec(dt_int * f(u_temp3, p, t + (j-1) * dt_int)),axes(uprev))
               integrator.destats.nf += 1
               if(j == j_int + 1)
                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
@@ -2578,7 +2578,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
           for index in startIndex:endIndex
-            j_int_temp = 4 * subdividing_sequence[index+1]
+            j_int_temp = subdividing_sequence[index+1]
             dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_int_temp, J, false)
             @.. u_temp4[Threads.threadid()] = uprev
@@ -2589,10 +2589,10 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             @.. diff1[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
             for j in 2:j_int_temp + 1
               f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
-              @.. linsolve_tmps[Threads.threadid()] = dt_int_temp*k_tmps[Threads.threadid()] - (u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()])
+              @.. linsolve_tmps[Threads.threadid()] = dt_int_temp*k_tmps[Threads.threadid()]
               cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
-              @.. T[index+1] = 2*u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()] + 2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. T[index+1] = u_temp3[Threads.threadid()] + k_tmps[Threads.threadid()] # Explicit Midpoint rule
               if(j == j_int_temp + 1)
                 @.. T[index + 1] = 0.5(T[index + 1] + u_temp4[Threads.threadid()])
               end
@@ -2619,7 +2619,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
-            j_int_temp = 4 * subdividing_sequence[index+1]
+            j_int_temp = subdividing_sequence[index+1]
             dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_int_temp, J, false)
             @.. u_temp4[Threads.threadid()] = uprev
@@ -2630,10 +2630,10 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             @.. diff1[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
             for j in 2:j_int_temp + 1
               f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
-              @.. linsolve_tmps[Threads.threadid()] = dt_int_temp*k_tmps[Threads.threadid()] - (u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()])
+              @.. linsolve_tmps[Threads.threadid()] = dt_int_temp*k_tmps[Threads.threadid()]
               cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
-              @.. T[index+1] = 2*u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()] + 2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. T[index+1] = u_temp3[Threads.threadid()] + k_tmps[Threads.threadid()] # Explicit Midpoint rule
               if(j == j_int_temp + 1)
                 @.. T[index + 1] = 0.5(T[index + 1] + u_temp4[Threads.threadid()])
               end
