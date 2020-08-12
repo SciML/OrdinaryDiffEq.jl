@@ -362,7 +362,7 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idx
     # typeof(y₀) can be these if saveidxs gives a single value
     _ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T)
   elseif typeof(idxs) <: Nothing
-    out = oneunit(Θ) .* y₀
+    out = oneunit(Θ) .* y₁
     _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
   else
     # determine output type
