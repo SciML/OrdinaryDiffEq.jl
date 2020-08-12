@@ -361,21 +361,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idx
   if typeof(idxs) <: Number || typeof(y₀) <: Union{Number,SArray}
     # typeof(y₀) can be these if saveidxs gives a single value
     _ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T)
+  elseif typeof(idxs) <: Nothing
+    out = oneunit(Θ) .* y₁
+    _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
   else
-    # determine output type
-    # required for calculation of time derivatives with autodifferentiation
-    oneunit_Θ = oneunit(Θ)
-    if isempty(k)
-      S = promote_type(typeof(oneunit_Θ * oneunit(eltype(y₀)))) # Θ*y₀
-    else
-      S = promote_type(typeof(oneunit_Θ * oneunit(eltype(y₀))), # Θ*y₀
-                     typeof(oneunit_Θ * oneunit(dt) * oneunit(eltype(k[1])))) # Θ*dt*k
-    end
-    if typeof(idxs) <: Nothing
-      out = similar(y₁, S)
-    else
-      out = similar(y₁, S, axes(idxs))
-    end
+    out = oneunit(Θ) .* y₁[idxs]
     _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
   end
 end
