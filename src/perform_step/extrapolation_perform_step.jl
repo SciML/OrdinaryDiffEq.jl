@@ -2529,7 +2529,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
   if !integrator.alg.threading
     for i in 0:n_curr
-      j_int = subdividing_sequence[i+1]
+      j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
       jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
       integrator.destats.nw +=1
@@ -2549,14 +2549,14 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         @.. k = -k
         @.. T[i+1] = u_temp1 + k
         if(j == j_int + 1)
-          @.. T[i + 1] = 0.5(T[i + 1] + u_temp2)
+          @.. T[i + 1] = 0.25(T[i + 1] + 2*u_temp1 + u_temp2)
         end
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
-        if(i<=1)
+        if(i<=1 && j==2)
           # Deuflhard Stability check for initial two sequences 
           @.. diff2[1] = u_temp1 - u_temp2
-          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
+          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm((diff2[1]),t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
             integrator.force_stepfail = true
             return
@@ -2579,7 +2579,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
           for index in startIndex:endIndex
-            j_int_temp = subdividing_sequence[index+1]
+            j_int_temp = sequence_factor * subdividing_sequence[index+1]
             dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_int_temp, J, false)
             @.. u_temp4[Threads.threadid()] = uprev
@@ -2620,7 +2620,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
-            j_int_temp = subdividing_sequence[index+1]
+            j_int_temp = sequence_factor * subdividing_sequence[index+1]
             dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_int_temp, J, false)
             @.. u_temp4[Threads.threadid()] = uprev
@@ -2699,7 +2699,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = subdividing_sequence[n_curr+1]
+        j_int = sequence_factor * subdividing_sequence[n_curr+1]
         dt_int = dt / j_int # Stepsize of the new internal discretisation
         jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
         integrator.destats.nw +=1
@@ -2718,7 +2718,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
           @.. k = -k
           @.. T[n_curr+1] = u_temp1 + k # Explicit Midpoint rule
           if(j == j_int + 1)
-            @.. T[n_curr+ 1] = 0.5(T[n_curr + 1] + u_temp2)
+            @.. T[n_curr+ 1] = 0.25(T[n_curr + 1] + 2*u_temp1 + u_temp2)
           end
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
