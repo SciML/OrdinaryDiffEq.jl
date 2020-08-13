@@ -2595,14 +2595,14 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = u_temp3[Threads.threadid()] + k_tmps[Threads.threadid()] # Explicit Midpoint rule
               if(j == j_int_temp + 1)
-                @.. T[index + 1] = 0.5(T[index + 1] + u_temp4[Threads.threadid()])
+                @.. T[index + 1] = 0.25(T[index + 1] + 2*u_temp3[Threads.threadid()] + u_temp4[Threads.threadid()])
               end
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
-              if(index<=1)
+              if(index<=1 && j==2)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
-                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm((diff2[Threads.threadid()]),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -2636,11 +2636,11 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = u_temp3[Threads.threadid()] + k_tmps[Threads.threadid()] # Explicit Midpoint rule
               if(j == j_int_temp + 1)
-                @.. T[index + 1] = 0.5(T[index + 1] + u_temp4[Threads.threadid()])
+                @.. T[index + 1] = 0.25(T[index + 1] + 2*u_temp3[Threads.threadid()] + u_temp4[Threads.threadid()])
               end
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
-              if(index<=1)
+              if(index<=1 && j==2)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
