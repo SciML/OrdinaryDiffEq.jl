@@ -75,7 +75,7 @@ end
 function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
     diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
     max_order=10,min_order=1,init_order=5,threading=true,sequence = :bulirsch)
-    
+
     n_min = max(2,min_order)
     n_init = max(n_min + 1,init_order)
     n_max = max(n_init + 1, max_order)
@@ -1531,7 +1531,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Linear Methods
 
-for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4,:CG2]
+for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4,:CG2,:CG3]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int

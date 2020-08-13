@@ -203,7 +203,7 @@ module OrdinaryDiffEq
          Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA, SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8
 
   export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler, MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
-         MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2
+         MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5,

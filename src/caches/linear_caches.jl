@@ -73,6 +73,31 @@ function alg_cache(alg::LieRK4,u,rate_prototype,uEltypeNoUnits,
   LieRK4ConstantCache()
 end
 
+@cache struct CG3Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  tmp::uType
+  fsalfirst::rateType
+  W::WType
+  k::rateType
+end
+
+function alg_cache(alg::CG3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
+  CG3Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
+end
+
+struct CG3ConstantCache <: OrdinaryDiffEqConstantCache
+end
+
+function alg_cache(alg::CG3,u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  CG3ConstantCache()
+end
+
 @cache struct CG2Cache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
