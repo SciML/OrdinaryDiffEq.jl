@@ -168,14 +168,13 @@ function perform_step!(integrator, cache::CG3Cache, repeat_step=false)
   L = integrator.f.f
   update_coefficients!(L,uprev,p,t)
   A = Matrix(deepcopy(L))
-  k1 = dt*A
-  update_coefficients!(L,exp((3/4)*(k1))*uprev,p,t+(3*dt/4))
+  v2 = exp((3/4)*dt*A)*uprev
+  update_coefficients!(L,v2,p,t+(3*dt/4))
   B = Matrix(deepcopy(L))
-  k2 = dt*B
-  update_coefficients!(L,exp((119/216)*(k1) + (17/108)*(k2))*uprev,p,t+(17*dt/24))
+  v3 = exp((119/216)*dt*B)*exp((17/108)*dt*A)*uprev
+  update_coefficients!(L,v3,p,t+(17*dt/24))
   C = Matrix(deepcopy(L))
-  k3 = dt*C
-  u .= (exp((13/51)*(k1))*(exp((-2/3)*k2))*(exp((24/17)*k3))) * uprev
+  u .= (exp(dt*(24/17)*C)*exp(dt*(-2/3)*B)*exp(dt*(13/51)*A)) * uprev
 
   integrator.f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
