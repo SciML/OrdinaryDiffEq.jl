@@ -275,10 +275,11 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImpli
   sequence::Symbol # Name of the subdividing sequence
   diff_type::FDT
   threading::Bool
+  sequence_factor::Int
 end
 function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
-  min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
+  min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
   n_min = max(2, min_order)
@@ -306,7 +307,7 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
   # Initialize algorithm
   ImplicitEulerBarycentricExtrapolation{chunk_size, autodiff,
       typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,
-      sequence,diff_type,threading)
+      sequence,diff_type,threading,sequence_factor)
 end
 
 """

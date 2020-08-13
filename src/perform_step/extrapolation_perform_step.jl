@@ -2504,6 +2504,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
+  @unpack sequence_factor = integrator.alg
 
   @unpack J,W,uf,tf,linsolve_tmps,jac_config = cache
 
