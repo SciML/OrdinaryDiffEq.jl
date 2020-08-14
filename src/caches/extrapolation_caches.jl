@@ -1018,6 +1018,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
   Q = fill(zero(QType),alg.n_max + 1)
   n_curr = alg.n_init
   n_old = alg.n_init
+  sequence_factor = alg.sequence_factor
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
 
@@ -1027,7 +1028,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
     for i in 1:n
       s += coefficients.subdividing_sequence[i]
     end
-    stage_number[n] = 2 * Int(s) - n + 7
+    stage_number[n] = 2 * sequence_factor * Int(s) - n + 7
   end
   sigma = 9//10
 
