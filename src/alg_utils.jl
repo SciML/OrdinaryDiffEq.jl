@@ -135,11 +135,11 @@ get_current_adaptive_order(alg::ImplicitDeuflhardExtrapolation,cache) = 2cache.n
 get_current_alg_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2(cache.n_curr + 1)
 get_current_alg_order(alg::ImplicitHairerWannerExtrapolation,cache) = 2(cache.n_curr + 1)
 get_current_alg_order(alg::ImplicitEulerBarycentricExtrapolation,cache) = cache.n_curr
-get_current_alg_order(alg::ImplicitEulerExtrapolation,cache) = cache.n_curr
+get_current_alg_order(alg::ImplicitEulerExtrapolation,cache) = cache.n_curr + 1
 get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2cache.n_curr
 get_current_adaptive_order(alg::ImplicitHairerWannerExtrapolation,cache) = 2cache.n_curr
-get_current_adaptive_order(alg::ImplicitEulerExtrapolation,cache) = cache.n_curr
-get_current_adaptive_order(alg::ImplicitEulerBarycentricExtrapolation,cache) = cache.n_curr - 1
+get_current_adaptive_order(alg::ImplicitEulerExtrapolation,cache) = cache.n_curr - 1
+get_current_adaptive_order(alg::ImplicitEulerBarycentricExtrapolation,cache) = cache.n_curr - 2
 
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
@@ -447,7 +447,7 @@ beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ImplicitDeuflhardExtrapolation,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ImplicitHairerWannerExtrapolation,beta2) =  1//(2alg.n_init+1)
-beta1_default(alg::ImplicitEulerExtrapolation,beta2) =  1//(2alg.n_init+1)
+beta1_default(alg::ImplicitEulerExtrapolation,beta2) =  1//(alg.n_init+1)
 beta1_default(alg::ImplicitEulerBarycentricExtrapolation,beta2) =  1//(alg.n_init - 1)
 
 gamma_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = isadaptive(alg) ? 9//10 : 0
