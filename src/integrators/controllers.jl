@@ -379,17 +379,37 @@ end
 function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation})
   # Standard stepsize controller
   # Compute and save the stepsize scaling based on the latest error estimate of the current order
-  if iszero(integrator.EEst)
-    q = inv(integrator.opts.qmax)
+  if typeof(alg) <: Union{ImplicitEulerExtrapolation,ImplicitEulerBarycentricExtrapolation,ImplicitHairerWannerExtrapolation}
+    if iszero(integrator.EEst)
+      q = inv(integrator.opts.qmax)
+    else
+      # Update gamma and beta1
+      if typeof(alg) <: ImplicitHairerWannerExtrapolation
+        integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
+      elseif typeof(alg) <: ImplicitEulerExtrapolation
+        integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (integrator.cache.n_curr))
+      else
+        integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (integrator.cache.n_curr - 1))
+      end
+      integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(80 // 100),integrator.opts.beta1)
+      # Compute new stepsize scaling
+      qtmp = DiffEqBase.fastpow(integrator.EEst,integrator.opts.beta1) / (integrator.opts.gamma)
+      @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
+    end
+    integrator.cache.Q[integrator.cache.n_curr + 1] = q
   else
-    # Update gamma and beta1
-    integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
-    integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(65 // 100),integrator.opts.beta1)
-    # Compute new stepsize scaling
-    qtmp = DiffEqBase.fastpow(integrator.EEst,integrator.opts.beta1) / integrator.opts.gamma
-    @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
+    if iszero(integrator.EEst)
+      q = inv(integrator.opts.qmax)
+    else
+      # Update gamma and beta1
+      integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
+      integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(65 // 100),integrator.opts.beta1)
+      # Compute new stepsize scaling
+      qtmp = DiffEqBase.fastpow(integrator.EEst,integrator.opts.beta1) / integrator.opts.gamma
+      @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
+    end
+    integrator.cache.Q[integrator.cache.n_curr + 1] = q
   end
-  integrator.cache.Q[integrator.cache.n_curr + 1] = q
 end
 
 function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation},q)

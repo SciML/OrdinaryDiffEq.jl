@@ -74,9 +74,9 @@ end
 
 function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
     diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
-    max_order=10,min_order=1,init_order=5,threading=true,sequence = :bulirsch)
+    max_order=12,min_order=3,init_order=5,threading=true,sequence = :bulirsch)
 
-    n_min = max(2,min_order)
+    n_min = max(3,min_order)
     n_init = max(n_min + 1,init_order)
     n_max = max(n_init + 1, max_order)
     if threading
@@ -279,10 +279,10 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImpli
 end
 function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
-  min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false,sequence_factor = 2)
+  min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
-  n_min = max(2, min_order)
+  n_min = max(3, min_order)
   n_init = max(n_min + 1, init_order)
   n_max = max(n_init + 1, max_order)
 
