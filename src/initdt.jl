@@ -63,7 +63,7 @@
   dtmin = nextfloat(integrator.opts.dtmin)
   smalldt = convert(_tType,oneunit_tType*1//10^(6))
   if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
-    ftmp = similar(f₀)
+    ftmp = zero(f₀)
     try
       integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
       f₀ .= ftmp
@@ -94,9 +94,9 @@
 
   dt₀_tdir = tdir*dt₀
 
-  u₁ = similar(u0) # required by DEDataArray
+  u₁ = zero(u0) # required by DEDataArray
   @.. u₁ = u0 + dt₀_tdir*f₀
-  f₁ = similar(f₀)
+  f₁ = zero(f₀)
   f(f₁,u₁,p,t+dt₀_tdir)
 
   if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
