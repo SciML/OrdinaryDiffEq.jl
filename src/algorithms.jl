@@ -14,6 +14,7 @@ const RosenbrockAlgorithm = Union{OrdinaryDiffEqRosenbrockAlgorithm,OrdinaryDiff
 
 abstract type OrdinaryDiffEqExponentialAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm end
 const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -1533,7 +1534,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 # Linear Methods
 
 for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4,:CG2,:CG3]
-  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+  @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
     krylov::Bool
     m::Int
     iop::Int

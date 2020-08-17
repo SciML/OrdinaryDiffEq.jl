@@ -86,6 +86,7 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,cache) = (cache.tmp,cache.utilde)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,cache) = (cache.tmp,cache.utilde)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqExponentialAlgorithm,cache) = (cache.tmp,cache.dz)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqLinearExponentialAlgorithm,cache) = (cache.tmp,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 @inline DiffEqBase.get_tmp_cache(integrator,alg::DAEAlgorithm,cache) = (cache.nlsolver.cache.dz,cache.atmp)
 
