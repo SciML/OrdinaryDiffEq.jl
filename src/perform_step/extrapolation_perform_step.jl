@@ -1283,7 +1283,8 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 diff2 = u_temp3 - u_temp4
-                if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
+                @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
+                if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -2051,7 +2052,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         if(i<=1)
           # Deuflhard Stability check for initial two sequences 
           @.. diff2[1] = u_temp1 - u_temp2
-          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
+          @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
+          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
             integrator.force_stepfail = true
             return
@@ -2557,7 +2559,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         if(i<=1)
           # Deuflhard Stability check for initial two sequences 
           @.. diff2[1] = u_temp1 - u_temp2
-          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
+          @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
+          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
             integrator.force_stepfail = true
             return
