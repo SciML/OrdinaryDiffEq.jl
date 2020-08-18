@@ -1033,7 +1033,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
-                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -1070,7 +1071,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
-                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -1283,8 +1285,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 diff2 = u_temp3 - u_temp4
-                @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
-                if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
+                if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -2099,7 +2100,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
-                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -2140,7 +2142,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
-                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -2611,7 +2614,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
-                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
@@ -2652,7 +2656,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               if(index<=1)
                 # Deuflhard Stability check for initial two sequences 
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
-                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()]),t))
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
                   return
