@@ -391,7 +391,7 @@ function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpoi
       else
         integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (integrator.cache.n_curr - 1))
       end
-      integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(80 // 100),integrator.opts.beta1)
+      integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(65 // 100),integrator.opts.beta1)
       # Compute new stepsize scaling
       qtmp = DiffEqBase.fastpow(integrator.EEst,integrator.opts.beta1) / (integrator.opts.gamma)
       @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
