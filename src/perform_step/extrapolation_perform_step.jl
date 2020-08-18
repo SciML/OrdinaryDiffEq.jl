@@ -2186,10 +2186,15 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
     # Check if an approximation of some order in the order window can be accepted
     # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
+      EEst1 = one(integrator.EEst)
+      for i in n_curr + 2: win_max + 1
+        EEst1 *= subdividing_sequence[i]/subdividing_sequence[1]
+      end
+      EEst1 *= EEst1      
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
-    elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
+      elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= EEst1
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
