@@ -33,17 +33,17 @@ function modify_dt_for_tstops!(integrator)
   if !isempty(tstops)
     if integrator.opts.adaptive
       if integrator.tdir > 0
-        integrator.dt = min(abs(integrator.dt), abs(top(tstops) - integrator.t)) # step! to the end
+        integrator.dt = min(abs(integrator.dt), abs(first(tstops) - integrator.t)) # step! to the end
       else
-        integrator.dt = - min(abs(integrator.dt), abs(top(tstops) + integrator.t))
+        integrator.dt = - min(abs(integrator.dt), abs(first(tstops) + integrator.t))
       end
     elseif iszero(integrator.dtcache) && integrator.dtchangeable
       # Use integrator.opts.tstops
-      integrator.dt = integrator.tdir * abs(top(tstops) - integrator.tdir * integrator.t)
+      integrator.dt = integrator.tdir * abs(first(tstops) - integrator.tdir * integrator.t)
   elseif integrator.dtchangeable && !integrator.force_stepfail
       # always try to step! with dtcache, but lower if a tstops
       # however, if force_stepfail then don't set to dtcache, and no tstop worry
-      integrator.dt = integrator.tdir * min(abs(integrator.dtcache), abs(top(tstops) - integrator.tdir * integrator.t)) # step! to the end
+      integrator.dt = integrator.tdir * min(abs(integrator.dtcache), abs(first(tstops) - integrator.tdir * integrator.t)) # step! to the end
     end
   end
 end
@@ -56,7 +56,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool,Bool}
   saved, savedexactly = false, false
   !integrator.opts.save_on && return saved, savedexactly
   tdir_t = integrator.tdir * integrator.t
-  while !isempty(integrator.opts.saveat) && top(integrator.opts.saveat) <= tdir_t # Perform saveat
+  while !isempty(integrator.opts.saveat) && first(integrator.opts.saveat) <= tdir_t # Perform saveat
     integrator.saveiter += 1; saved = true
     curt = integrator.tdir * pop!(integrator.opts.saveat)
     if curt!=integrator.t # If <t, interpolate
@@ -192,7 +192,7 @@ function _loopfooter!(integrator)
       integrator.tprev = integrator.t
       # integrator.EEst has unitless type of integrator.t
       if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
-        tstop = integrator.tdir * top(integrator.opts.tstops)
+        tstop = integrator.tdir * first(integrator.opts.tstops)
         abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
@@ -208,7 +208,7 @@ function _loopfooter!(integrator)
     integrator.tprev = integrator.t
     # integrator.EEst has unitless type of integrator.t
     if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
-      tstop = integrator.tdir * top(integrator.opts.tstops)
+      tstop = integrator.tdir * first(integrator.opts.tstops)
       abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
     else
@@ -305,7 +305,7 @@ function apply_step!(integrator)
 
   # Update fsal if needed
   if !isempty(integrator.opts.d_discontinuities) &&
-      top(integrator.opts.d_discontinuities) == integrator.t
+      first(integrator.opts.d_discontinuities) == integrator.t
 
       handle_discontinuities!(integrator)
       get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
@@ -357,11 +357,11 @@ function handle_tstop!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
     tdir_t = integrator.tdir * integrator.t
-    tdir_ts_top = top(tstops)
+    tdir_ts_top = first(tstops)
     if tdir_t == tdir_ts_top
       while tdir_t == tdir_ts_top #remove all redundant copies in heap == tdir_t
         pop!(tstops)
-        isempty(tstops) ? break : tdir_ts_top = top(tstops)
+        isempty(tstops) ? break : tdir_ts_top = first(tstops)
       end
       integrator.just_hit_tstop = true
     elseif tdir_t > tdir_ts_top
