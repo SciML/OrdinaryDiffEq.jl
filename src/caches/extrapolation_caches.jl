@@ -1009,6 +1009,10 @@ end
 
   tf::TF
   uf::UF
+
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1}
 end
 
 function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -1032,10 +1036,12 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
   end
   sigma = 9//10
 
+  work = fill(zero(eltype(Q)),alg.n_max + 1)
+  dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
   # Initialize the constant cache
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
-  ImplicitEulerBarycentricExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf)
+  ImplicitEulerBarycentricExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf, work, dt_new)
 end
 
 @cache mutable struct ImplicitEulerBarycentricExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,JType,WType,F,JCType,GCType,TFType,UFType} <: OrdinaryDiffEqMutableCache
@@ -1073,7 +1079,10 @@ end
   grad_config::GCType
   # Values to check overflow in T1 computation
   diff1::Array{uType,1}
-  diff2::Array{uType,1} 
+  diff2::Array{uType,1}
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1} 
 end
 
 
@@ -1154,5 +1163,5 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
   # Initialize the cache
   ImplicitEulerBarycentricExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,
-      linsolve, jac_config, grad_config,diff1,diff2)
+      linsolve, jac_config, grad_config,diff1,diff2,cc.work,cc.dt_new)
 end

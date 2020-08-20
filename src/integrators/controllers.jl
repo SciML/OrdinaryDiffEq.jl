@@ -415,19 +415,23 @@ end
 function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation},q)
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
-  @unpack n_curr, n_old, Q, sigma = integrator.cache
+  @unpack n_curr, n_old, Q, sigma, work, dt_new = integrator.cache
   s = integrator.cache.stage_number
 
   # Compute new order based on available quantities
   win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perfom_step! of the last step
   tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
-  dt_new = fill(zero(eltype(Q)),n_max+1)
-  dt_new[tmp] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
+  #@show size(dt_new)
+  fill!(dt_new, zero(eltype(dt_new)))
+  @.. Q = integrator.dt/Q
+  copyto!(dt_new,win_min_old,Q,win_min_old,(max(n_curr, n_old) + 1) - win_min_old + 1)
+  @.. Q = integrator.dt/Q
   dtmin = timedepentdtmin(integrator)
   dt_new[tmp] = max.(dtmin, min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
-  work= Vector{eltype(Q)}(undef,n_max+1) # work[n] is the work for order (n-1)
-  work[tmp] = s[tmp] ./ dt_new[tmp]
-
+  fill!(work,zero(eltype(work))) # work[n] is the work for order (n-1)
+  for i in tmp
+    work[i] = s[i]/dt_new[i]
+  end
   # Order selection
   n_new = n_old
   if n_curr == n_min # Enforce n_min + 1 ≦ n_new
