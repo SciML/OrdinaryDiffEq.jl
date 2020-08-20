@@ -427,7 +427,6 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHair
   copyto!(dt_new,win_min_old,Q,win_min_old,(max(n_curr, n_old) + 1) - win_min_old + 1)
   @.. Q = integrator.dt/Q
   dtmin = timedepentdtmin(integrator)
-  dt_new[tmp] = max.(dtmin, min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
   fill!(work,zero(eltype(work))) # work[n] is the work for order (n-1)
   for i in tmp
     work[i] = s[i]/dt_new[i]
