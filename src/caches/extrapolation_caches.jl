@@ -76,7 +76,6 @@ end
   k_tmps::Array{rateType,1}
   dtpropose::dtType
   T::arrayType
-  work::dtType
   A::Int
   step_no::Int
   du1::rateType
@@ -97,6 +96,10 @@ end
   n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
   sigma::Rational{Int} # Parameter for order selection
   res::uNoUnitsType # Storage for the scaled residual of u and utilde
+
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1} 
 end
 
 @cache mutable struct ImplicitEulerExtrapolationConstantCache{QType,dtType,arrayType,TF,UF,sequenceType} <: OrdinaryDiffEqConstantCache
@@ -105,7 +108,6 @@ end
   T::arrayType
   n_curr::Int
   n_old::Int
-  work::dtType
   A::Int
   step_no::Int
   sigma::Rational{Int}
@@ -115,6 +117,10 @@ end
 
   sequence::sequenceType #support for different sequences
   stage_number::Vector{Int}
+
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1} 
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -130,7 +136,6 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
       T[i,j] = zero(u)
     end
   end
-  work = zero(dt)
   A = one(Int)
   step_no = zero(Int)
   tf = TimeDerivativeWrapper(f,u,p)
@@ -146,7 +151,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
     stage_number[n] = 2 * Int(s) - n + 7
   end
   sigma = 9//10
-  ImplicitEulerExtrapolationConstantCache(Q,dtpropose,T,n_curr,n_old,work,A,step_no,sigma,tf,uf,sequence,stage_number)
+  work = fill(zero(eltype(Q)),alg.n_max + 1)
+  dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
+  ImplicitEulerExtrapolationConstantCache(Q,dtpropose,T,n_curr,n_old,A,step_no,sigma,tf,uf,sequence,stage_number,work,dt_new)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -177,7 +184,6 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
       T[i,j] = zero(u)
     end
   end
-  work = zero(dt)
   A = one(Int)
   atmp = similar(u,uEltypeNoUnits)
   step_no = zero(Int)
@@ -223,8 +229,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
   sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
   cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
-  ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence,cc.stage_number,cc.Q,cc.n_curr,cc.n_old,cc.sigma,res)
+  ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,A,step_no,
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence,cc.stage_number,cc.Q,cc.n_curr,cc.n_old,cc.sigma,res,cc.work,cc.dt_new)
 end
 
 
@@ -736,6 +742,10 @@ end
   coefficients::extrapolation_coefficients
   stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
   sigma::Rational{Int} # Parameter for order selection
+
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1} 
 end
 
 function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -758,8 +768,10 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
   end
   sigma = 9//10
 
+  work = fill(zero(eltype(Q)),alg.n_max + 1)
+  dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
   # Initialize the constant cache
-  ExtrapolationMidpointHairerWannerConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma)
+  ExtrapolationMidpointHairerWannerConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, work, dt_new)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients} <: OrdinaryDiffEqMutableCache
@@ -784,6 +796,10 @@ end
   coefficients::extrapolation_coefficients
   stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
   sigma::Rational{Int} # Parameter for order selection
+
+  #Stepsizing caches  
+  work::Array{QType, 1}
+  dt_new::Array{QType,1}
 end
 
 
@@ -816,7 +832,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
 
   # Initialize the cache
   ExtrapolationMidpointHairerWannerCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
-      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma)
+      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma,cc.work,cc.dt_new)
 end
 
 @cache mutable struct ImplicitHairerWannerExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF} <: OrdinaryDiffEqConstantCache
@@ -832,6 +848,10 @@ end
 
   tf::TF
   uf::UF
+
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1}   
 end
 
 function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -874,7 +894,9 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   # Initialize the constant cache
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
-  ImplicitHairerWannerExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf)
+  work = fill(zero(eltype(Q)),alg.n_max + 1)
+  dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
+  ImplicitHairerWannerExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf, work, dt_new)
 end
 
 @cache mutable struct ImplicitHairerWannerExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,JType,WType,F,JCType,GCType,TFType,UFType} <: OrdinaryDiffEqMutableCache
@@ -912,7 +934,11 @@ end
   grad_config::GCType
   # Values to check overflow in T1 computation
   diff1::Array{uType,1}
-  diff2::Array{uType,1} 
+  diff2::Array{uType,1}
+
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1} 
 end
 
 
@@ -993,7 +1019,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   # Initialize the cache
   ImplicitHairerWannerExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,
-      linsolve, jac_config, grad_config,diff1,diff2)
+      linsolve, jac_config, grad_config,diff1,diff2,cc.work,cc.dt_new)
 end
 
 @cache mutable struct ImplicitEulerBarycentricExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF} <: OrdinaryDiffEqConstantCache
@@ -1009,6 +1035,10 @@ end
 
   tf::TF
   uf::UF
+
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1}
 end
 
 function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -1032,10 +1062,12 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
   end
   sigma = 9//10
 
+  work = fill(zero(eltype(Q)),alg.n_max + 1)
+  dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
   # Initialize the constant cache
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
-  ImplicitEulerBarycentricExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf)
+  ImplicitEulerBarycentricExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf, work, dt_new)
 end
 
 @cache mutable struct ImplicitEulerBarycentricExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,JType,WType,F,JCType,GCType,TFType,UFType} <: OrdinaryDiffEqMutableCache
@@ -1073,7 +1105,10 @@ end
   grad_config::GCType
   # Values to check overflow in T1 computation
   diff1::Array{uType,1}
-  diff2::Array{uType,1} 
+  diff2::Array{uType,1}
+  #Stepsizing caches
+  work::Array{QType, 1}
+  dt_new::Array{QType,1} 
 end
 
 
@@ -1154,5 +1189,5 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
   # Initialize the cache
   ImplicitEulerBarycentricExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,
-      linsolve, jac_config, grad_config,diff1,diff2)
+      linsolve, jac_config, grad_config,diff1,diff2,cc.work,cc.dt_new)
 end
