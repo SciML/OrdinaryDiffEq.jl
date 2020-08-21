@@ -57,7 +57,7 @@ println("BS3")
 println("ROCK2")
 @time sol = solve(prob,ROCK2(),progress=true,save_everystep=false,save_start=false)
 
-using CuArrays
+using CUDA
 gu0 = CuArray(Float32.(u0))
 const gMx = CuArray(Float32.(Mx))
 const gMy = CuArray(Float32.(My))

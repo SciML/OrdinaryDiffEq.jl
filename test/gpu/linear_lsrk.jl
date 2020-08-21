@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, CuArrays, Test
+using OrdinaryDiffEq, CUDA, Test
 CuArrays.allowscalar(false)
 N = 256
 # Define the initial condition as normal arrays
