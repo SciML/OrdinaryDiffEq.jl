@@ -4,8 +4,6 @@
 [![Build Status](https://travis-ci.org/SciML/OrdinaryDiffEq.jl.svg?branch=master)](https://travis-ci.org/SciML/OrdinaryDiffEq.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/dpa182s6i8c67awu/branch/master?svg=true)](https://ci.appveyor.com/project/YingboMa/ordinarydiffeq-jl/branch/master)
 [![GitlabCI](https://gitlab.com/JuliaGPU/OrdinaryDiffEq.jl/badges/master/pipeline.svg)](https://gitlab.com/JuliaGPU/OrdinaryDiffEq.jl/pipelines)
-[![Coverage Status](https://coveralls.io/repos/github/SciML/OrdinaryDiffEq.jl/badge.svg?branch=master)](https://coveralls.io/github/SciML/OrdinaryDiffEq.jl?branch=master)
-[![codecov](https://codecov.io/gh/SciML/OrdinaryDiffEq.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/SciML/OrdinaryDiffEq.jl)
 
 OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the
 ordinary differential equation solvers and utilities. While completely independent
