@@ -1,4 +1,4 @@
-mutable struct DEOptions{absType,relType,QT,tType,Controller,F1,F2,F3,F4,F5,F6,F7,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
+mutable struct DEOptions{absType,relType,QT,tType,Controller,F1,F2,F3,F4,F5,F6,F7,tstopsType,saveatType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
   save_everystep::Bool
   adaptive::Bool
@@ -18,7 +18,7 @@ mutable struct DEOptions{absType,relType,QT,tType,Controller,F1,F2,F3,F4,F5,F6,F
   internalopnorm::F2
   save_idxs::SType
   tstops::tstopsType
-  saveat::tstopsType
+  saveat::saveatType
   d_discontinuities::discType
   tstops_cache::tcache
   saveat_cache::savecache

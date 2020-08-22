@@ -250,19 +250,19 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     end
     sizehint!(timeseries,steps+1)
     sizehint!(ts,steps+1)
-    sizehint!(ks,steps+1)
+    dense && sizehint!(ks,steps+1)
   elseif save_everystep
     sizehint!(timeseries,50)
     sizehint!(ts,50)
-    sizehint!(ks,50)
+    dense && sizehint!(ks,50)
   elseif !isempty(saveat_internal)
     sizehint!(timeseries,length(saveat_internal)+1)
     sizehint!(ts,length(saveat_internal)+1)
-    sizehint!(ks,length(saveat_internal)+1)
+    dense && sizehint!(ks,length(saveat_internal)+1)
   else
     sizehint!(timeseries,2)
     sizehint!(ts,2)
-    sizehint!(ks,2)
+    dense && sizehint!(ks,2)
   end
 
   QT, EEstT = if tTypeNoUnits <: Integer
@@ -326,7 +326,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                    typeof(callbacks_internal),
                    typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),
-                   typeof(tstops_internal),
+                   typeof(tstops_internal), typeof(saveat_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),
                    typeof(save_idxs),
                    typeof(maxiters),typeof(tstops),
@@ -442,10 +442,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
       copyat_or_push!(ts,1,t)
       if save_idxs === nothing
         copyat_or_push!(timeseries,1,integrator.u)
-        copyat_or_push!(ks,1,[rate_prototype])
+        dense && copyat_or_push!(ks,1,[rate_prototype])
       else
         copyat_or_push!(timeseries,1,u_initial,Val{false})
-        copyat_or_push!(ks,1,[ks_prototype])
+        dense && copyat_or_push!(ks,1,[ks_prototype])
       end
     else
       saveiter = 0 # Starts at 0 so first save is at 1
@@ -545,7 +545,7 @@ end
 
 # saving time points
 function initialize_saveat(::Type{T}, saveat, tspan) where T
-  saveat_internal = BinaryMinHeap{T}()
+  saveat_internal = saveat === () ? () : BinaryMinHeap{T}()
 
   t0, tf = tspan
   tdir = sign(tf - t0)
