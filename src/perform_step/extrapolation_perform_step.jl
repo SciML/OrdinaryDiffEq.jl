@@ -471,11 +471,23 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       integrator.destats.nw += 1
       k_copy = integrator.fsalfirst
       u_tmp = uprev
-
+      diff1 = zero(u_tmp)
       for j in 1:sequence[index]
         k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
         integrator.destats.nsolve += 1
+        u_tmp2 = u_tmp
         u_tmp = u_tmp + k
+        if(index<=2 && j>=2)
+          # Deuflhard Stability check for initial two sequences
+          diff2 = u_tmp - u_tmp2
+          diff2 = 0.5*(diff2 - diff1)
+          if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(diff2,t))
+            # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+            integrator.force_stepfail = true
+            return
+          end
+        end
+        diff1 = u_tmp - u_tmp2
         k_copy = f(u_tmp, p, t+j*dt_temp)
         integrator.destats.nf += 1
       end
@@ -494,14 +506,32 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
           W = dt_temp*J - integrator.f.mass_matrix
           k_copy = integrator.fsalfirst
           u_tmp = uprev
+          diff1 = zero(u_tmp)
           for j in 1:sequence[index]
               k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
+              u_tmp2 = u_tmp
               u_tmp = u_tmp + k
+              if(index<=2 && j>=2)
+                # Deuflhard Stability check for initial two sequences
+                diff2 = u_tmp - u_tmp2
+                diff2 = 0.5*(diff2 - diff1)
+                if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(diff2,t))
+                  # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+                  integrator.force_stepfail = true
+                  return
+                end
+              end
+              diff1 = u_tmp - u_tmp2
               k_copy = f(u_tmp, p, t+j*dt_temp)
           end
           T[index,1] = u_tmp
         end
+        integrator.force_stepfail ? break : continue
       end
+    end
+    
+    if(integrator.force_stepfail)
+      return
     end
 
     nevals = sum(sequence[1:n_curr + 1]) - 1
