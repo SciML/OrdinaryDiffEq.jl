@@ -287,8 +287,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
         if(index<=2 && j>=2)
           # Deuflhard Stability check for initial two sequences 
-          diff2[1] = u_tmps[1] - u_tmps2[1]
-          diff2[1] = 0.5*(diff2[1] - diff1[1])
+          @.. diff2[1] = u_tmps[1] - u_tmps2[1]
+          @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
           if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
             integrator.force_stepfail = true
@@ -324,8 +324,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
               @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + k_tmps[Threads.threadid()]
               if(index<=2 && j>=2)
                 # Deuflhard Stability check for initial two sequences 
-                diff2[Threads.threadid()] = u_tmps[Threads.threadid()] - u_tmps2[Threads.threadid()]
-                diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                @.. diff2[Threads.threadid()] = u_tmps[Threads.threadid()] - u_tmps2[Threads.threadid()]
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                   integrator.force_stepfail = true
