@@ -248,9 +248,9 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack T,utilde,atmp,dtpropose,n_curr,A,stage_number = cache
+  @unpack T,utilde,atmp,dtpropose,n_curr,A,stage_number,diff1,diff2 = cache
   @unpack J,W,uf,tf,jac_config = cache
-  @unpack u_tmps, k_tmps, linsolve_tmps = cache
+  @unpack u_tmps, k_tmps, linsolve_tmps, u_tmps2 = cache
 
   @unpack sequence = cache
 
@@ -283,7 +283,20 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
         integrator.destats.nsolve += 1
         @.. k_tmps[1] = -k_tmps[1]
+        @.. u_tmps2[1] = u_tmps[1]
         @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
+        if(index<=2 && j>=2)
+          # Deuflhard Stability check for initial two sequences 
+          diff2[1] = u_tmps[1] - u_tmps2[1]
+          diff2[1] = 0.5*(diff2[1] - diff1[1])
+          if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
+            # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+            integrator.force_stepfail = true
+            return
+          end
+        end
+        @.. diff1[1] = u_tmps[1] - u_tmps2[1]
+
         f(k_tmps[1], u_tmps[1],p,t+j*dt_temp)
         integrator.destats.nf += 1
       end

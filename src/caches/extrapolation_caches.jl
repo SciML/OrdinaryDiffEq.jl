@@ -70,6 +70,7 @@ end
 @cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,QType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType,sequenceType} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmps::Array{uType,1}
+  u_tmps2::Array{uType,1}
   utilde::uType
   tmp::uType
   atmp::uNoUnitsType
@@ -100,6 +101,10 @@ end
   #Stepsizing caches
   work::Array{QType, 1}
   dt_new::Array{QType,1} 
+  
+  # Values to check overflow in T1 computation
+  diff1::Array{uType,1}
+  diff2::Array{uType,1}
 end
 
 @cache mutable struct ImplicitEulerExtrapolationConstantCache{QType,dtType,arrayType,TF,UF,sequenceType} <: OrdinaryDiffEqConstantCache
@@ -163,6 +168,12 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   u_tmps[1] = u_tmp
   for i=2:Threads.nthreads()
     u_tmps[i] = zero(u_tmp)
+  end
+
+  u_tmps2 = Array{typeof(u_tmp),1}(undef, Threads.nthreads())
+
+  for i=1:Threads.nthreads()
+    u_tmps2[i] = zero(u_tmp)
   end
 
   utilde = zero(u)
@@ -229,8 +240,14 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
   sequence = generate_sequence(constvalue(uBottomEltypeNoUnits),alg)
   cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
-  ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence,cc.stage_number,cc.Q,cc.n_curr,cc.n_old,cc.sigma,res,cc.work,cc.dt_new)
+  diff1 = Array{typeof(u),1}(undef, Threads.nthreads())
+  diff2 = Array{typeof(u),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+    diff1[i] = zero(u)
+    diff2[i] = zero(u)
+  end
+  ImplicitEulerExtrapolationCache(uprev,u_tmps,u_tmps2,utilde,tmp,atmp,k_tmps,dtpropose,T,A,step_no,
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config,sequence,cc.stage_number,cc.Q,cc.n_curr,cc.n_old,cc.sigma,res,cc.work,cc.dt_new,diff1,diff2)
 end
 
 
