@@ -285,7 +285,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         @.. k_tmps[1] = -k_tmps[1]
         @.. u_tmps2[1] = u_tmps[1]
         @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
-        if(index<=2 && j>=2)
+        if index<=2 && j>=2
           # Deuflhard Stability check for initial two sequences 
           @.. diff2[1] = u_tmps[1] - u_tmps2[1]
           @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
