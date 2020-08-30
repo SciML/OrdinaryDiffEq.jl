@@ -164,7 +164,7 @@ end
   if max_d₁d₂ <= 1//Int64(10)^(15)
     dt₁ = max(smalldt,dt₀*1//10^(3))
   else
-    dt₁ = _tType(oneunit_tType*10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
+    dt₁ = _tType(oneunit_tType*10^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
   return tdir*max(dtmin, min(100dt₀,dt₁,dtmax_tdir))
 end
