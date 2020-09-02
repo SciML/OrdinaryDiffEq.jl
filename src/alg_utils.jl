@@ -529,7 +529,7 @@ function unwrap_alg(integrator, is_stiff)
   iscomp = typeof(alg) <: CompositeAlgorithm
   if !iscomp
     return alg
-  elseif typeof(alg.choice_function) <: AutoSwitch
+  elseif typeof(alg.choice_function) <: AutoSwitchCache
     num = is_stiff ? 2 : 1
     return alg.algs[num]
   else

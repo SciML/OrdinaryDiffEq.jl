@@ -1,4 +1,4 @@
-mutable struct AutoSwitch{nAlg,sAlg,tolType,T}
+mutable struct AutoSwitchCache{nAlg,sAlg,tolType,T}
   count::Int
   nonstiffalg::nAlg
   stiffalg::sAlg
@@ -10,9 +10,20 @@ mutable struct AutoSwitch{nAlg,sAlg,tolType,T}
   dtfac::T
   stiffalgfirst::Bool
 end
+
+struct AutoSwitch{nAlg,sAlg,tolType,T}
+  nonstiffalg::nAlg
+  stiffalg::sAlg
+  maxstiffstep::Int
+  maxnonstiffstep::Int
+  nonstifftol::tolType
+  stifftol::tolType
+  dtfac::T
+  stiffalgfirst::Bool
+end
 AutoSwitch(nonstiffalg, stiffalg; maxstiffstep=10, maxnonstiffstep=3,
            nonstifftol=9//10, stifftol=9//10, dtfac=2, stiffalgfirst=false) =
-  AutoSwitch(0, nonstiffalg, stiffalg, stiffalgfirst, maxstiffstep, maxnonstiffstep,
+  AutoSwitch(nonstiffalg, stiffalg, maxstiffstep, maxnonstiffstep,
              promote(nonstifftol, stifftol)..., dtfac, stiffalgfirst)
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
@@ -23,7 +34,7 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
   stiffness > os * tol
 end
 
-function (AS::AutoSwitch)(integrator)
+function (AS::AutoSwitchCache)(integrator)
   integrator.iter == 0 && return Int(AS.stiffalgfirst) + 1
   dt = integrator.dt
   # Successive stiffness test positives are counted by a positive integer,
