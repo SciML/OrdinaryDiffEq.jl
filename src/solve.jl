@@ -102,9 +102,21 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                                      prob.f.mass_matrix != I &&
                                      !(typeof(prob.f.mass_matrix)<:Tuple) &&
                                      ArrayInterface.issingular(prob.f.mass_matrix))
-  if alg isa AutoSwitch
-    alg.count = 0
-    alg.is_stiffalg = alg.stiffalgfirst
+  if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
+    auto = alg.choice_function
+    alg = CompositeAlgorithm(alg.algs,
+                             AutoSwitchCache(
+                                             0,
+                                             auto.nonstiffalg,
+                                             auto.stiffalg,
+                                             auto.stiffalgfirst,
+                                             auto.maxstiffstep,
+                                             auto.maxnonstiffstep,
+                                             auto.nonstifftol,
+                                             auto.stifftol,
+                                             auto.dtfac,
+                                             auto.stiffalgfirst,
+                                            ))
   end
   f = prob.f
   p = prob.p

@@ -46,7 +46,7 @@ for (i, prob) in enumerate(probArr)
   sol = solve(prob,AutoVern6(Kvaerno3(); maxstiffstep=4, maxnonstiffstep=2), maxiters=1000)
   @test length(sol.t) < 700
   @test is_switching_fb(sol)
-  sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=1), maxiters=1000)
+  sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=2), maxiters=1000)
   @test length(sol.t) < 610
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4), maxiters=1000)
