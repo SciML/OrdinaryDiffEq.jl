@@ -102,7 +102,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                                      prob.f.mass_matrix != I &&
                                      !(typeof(prob.f.mass_matrix)<:Tuple) &&
                                      ArrayInterface.issingular(prob.f.mass_matrix))
-
+  if alg isa AutoSwitch
+    alg.count = 0
+    alg.is_stiffalg = alg.stiffalgfirst
+  end
   f = prob.f
   p = prob.p
 

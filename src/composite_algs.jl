@@ -1,3 +1,4 @@
+# AutoSwitch needs to be reinitialized in `init`
 mutable struct AutoSwitch{nAlg,sAlg,tolType,T}
   count::Int
   nonstiffalg::nAlg
