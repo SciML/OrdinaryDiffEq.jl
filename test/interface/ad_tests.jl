@@ -189,3 +189,22 @@ function difffunc(p)
     vec(solve(tmp_prob,KenCarp4(),saveat=times))
 end
 ForwardDiff.jacobian(difffunc,ones(5))
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1221
+
+f_a  = function (du, u, p, t)
+    du[1] = -p[1]*u[1] + exp(-t)
+end
+
+of_a = p -> begin
+    u0  = [0.0]
+    tspan = (0.0, 5.0)
+    prob  = ODEProblem(f_a, u0, tspan, p)
+    # sol = solve(prob, Tsit5())                      # works
+    # sol = solve(prob, Rodas5(autodiff=false))       # works
+    sol = solve(prob, Rodas5(autodiff=true),abstol=1e-14,reltol=1e-14)          # fails
+    return sum(t -> abs2(t[1]), sol([1.0, 2.0, 3.0]))
+end
+
+@test !iszero(ForwardDiff.gradient(t -> of_a(t), [1.0]))
+@test ForwardDiff.gradient(t -> of_a(t), [1.0]) ≈ FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol=1e-5
