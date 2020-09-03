@@ -1,3 +1,13 @@
+DiffEqBase.@def lsrkcache begin
+  tmp = zero(rate_prototype)
+  williamson_condition = alg.williamson_condition
+  if williamson_condition || f isa IncrementingODEFunction
+    k = tmp
+  else
+    k = zero(rate_prototype)
+  end
+  LowStorageRK2NCache(u,uprev,k,tmp,tab)
+end
 
 # 2N low storage methods introduced by Williamson
 @cache struct LowStorageRK2NCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
@@ -6,7 +16,6 @@
   k::rateType
   tmp::uType # tmp acts as second register and fsal both
   tab::TabType
-  williamson_condition::Bool
 end
 
 struct LowStorageRK2NConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
@@ -42,19 +51,7 @@ end
 
 function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -87,19 +84,7 @@ end
 
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -136,19 +121,7 @@ end
 
 function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = HSLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -187,19 +160,7 @@ end
 
 function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -241,19 +202,7 @@ end
 
 function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -295,19 +244,7 @@ end
 
 function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = DGLDDRK84_FConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -361,19 +298,7 @@ end
 
 function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -430,19 +355,7 @@ end
 
 function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
@@ -502,19 +415,7 @@ end
 
 function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  tmp = zero(u)
-  williamson_condition = alg.williamson_condition
-  if calck
-    k = zero(rate_prototype)
-    williamson_condition = false
-  else
-    if williamson_condition
-      k = tmp
-    else
-      k = zero(rate_prototype)
-    end
-  end
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  @lsrkcache
 end
 
 function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
