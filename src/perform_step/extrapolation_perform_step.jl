@@ -248,9 +248,9 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack T,utilde,atmp,dtpropose,n_curr,A,stage_number = cache
+  @unpack T,utilde,atmp,dtpropose,n_curr,A,stage_number,diff1,diff2 = cache
   @unpack J,W,uf,tf,jac_config = cache
-  @unpack u_tmps, k_tmps, linsolve_tmps = cache
+  @unpack u_tmps, k_tmps, linsolve_tmps, u_tmps2 = cache
 
   @unpack sequence = cache
 
@@ -283,7 +283,20 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
         integrator.destats.nsolve += 1
         @.. k_tmps[1] = -k_tmps[1]
+        @.. u_tmps2[1] = u_tmps[1]
         @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
+        if index<=2 && j>=2
+          # Deuflhard Stability check for initial two sequences 
+          @.. diff2[1] = u_tmps[1] - u_tmps2[1]
+          @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
+          if integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t)
+            # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+            integrator.force_stepfail = true
+            return
+          end
+        end
+        @.. diff1[1] = u_tmps[1] - u_tmps2[1]
+
         f(k_tmps[1], u_tmps[1],p,t+j*dt_temp)
         integrator.destats.nf += 1
       end
@@ -294,7 +307,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     let n_curr=n_curr, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
         integrator=integrator, cache=cache, repeat_step = repeat_step,
-        k_tmps=k_tmps, u_tmps=u_tmps
+        k_tmps=k_tmps, u_tmps=u_tmps, u_tmps2=u_tmps2,diff1=diff1,diff2=diff2 
       Threads.@threads for i in 1:2
         startIndex = (i == 1) ? 1 : n_curr + 1
         endIndex = (i == 1) ? n_curr : n_curr + 1
@@ -307,19 +320,37 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
               @.. linsolve_tmps[Threads.threadid()] = dt_temp*k_tmps[Threads.threadid()]
               cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
+              @.. u_tmps2[Threads.threadid()] = u_tmps[Threads.threadid()]
               @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + k_tmps[Threads.threadid()]
+              if index<=2 && j>=2
+                # Deuflhard Stability check for initial two sequences 
+                @.. diff2[Threads.threadid()] = u_tmps[Threads.threadid()] - u_tmps2[Threads.threadid()]
+                @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
+                if integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t)
+                  # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+                  integrator.force_stepfail = true
+                  return
+                end
+              end
+              @.. diff1[Threads.threadid()] = u_tmps[Threads.threadid()] - u_tmps2[Threads.threadid()]
               f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()],p,t+j*dt_temp)
           end
 
           @.. T[index,1] = u_tmps[Threads.threadid()]
         end
+        integrator.force_stepfail ? break : continue
       end
     end
+
 
     nevals = sum(sequence[1:n_curr + 1]) - 1
     integrator.destats.nw += n_curr + 1
     integrator.destats.nf += nevals
     integrator.destats.nsolve += nevals
+  end
+
+  if integrator.force_stepfail
+    return
   end
 
   # Polynomial extrapolation
@@ -440,11 +471,23 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       integrator.destats.nw += 1
       k_copy = integrator.fsalfirst
       u_tmp = uprev
-
+      diff1 = zero(u_tmp)
       for j in 1:sequence[index]
         k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
         integrator.destats.nsolve += 1
+        u_tmp2 = u_tmp
         u_tmp = u_tmp + k
+        if index<=2 && j>=2
+          # Deuflhard Stability check for initial two sequences
+          diff2 = u_tmp - u_tmp2
+          diff2 = 0.5*(diff2 - diff1)
+          if integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(diff2,t)
+            # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+            integrator.force_stepfail = true
+            return
+          end
+        end
+        diff1 = u_tmp - u_tmp2
         k_copy = f(u_tmp, p, t+j*dt_temp)
         integrator.destats.nf += 1
       end
@@ -463,14 +506,32 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
           W = dt_temp*J - integrator.f.mass_matrix
           k_copy = integrator.fsalfirst
           u_tmp = uprev
+          diff1 = zero(u_tmp)
           for j in 1:sequence[index]
               k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
+              u_tmp2 = u_tmp
               u_tmp = u_tmp + k
+              if index<=2 && j>=2
+                # Deuflhard Stability check for initial two sequences
+                diff2 = u_tmp - u_tmp2
+                diff2 = 0.5*(diff2 - diff1)
+                if integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(diff2,t)
+                  # Divergence of iteration, overflow is possible. Force fail and start with smaller step
+                  integrator.force_stepfail = true
+                  return
+                end
+              end
+              diff1 = u_tmp - u_tmp2
               k_copy = f(u_tmp, p, t+j*dt_temp)
           end
           T[index,1] = u_tmp
         end
+        integrator.force_stepfail ? break : continue
       end
+    end
+    
+    if integrator.force_stepfail
+      return
     end
 
     nevals = sum(sequence[1:n_curr + 1]) - 1
