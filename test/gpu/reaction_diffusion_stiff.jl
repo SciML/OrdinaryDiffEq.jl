@@ -84,7 +84,7 @@ function gf(du,u,p,t)
 end
 
 prob2 = ODEProblem(gf,gu0,(0.0,100.0))
-CuArrays.allowscalar(false)
+CUDA.allowscalar(false)
 sol = solve(prob2,BS3(),save_everystep=false,save_start=false)
 sol = solve(prob2,ROCK2(),save_everystep=false,save_start=false)
 @test sol.t[end] == 100.0
