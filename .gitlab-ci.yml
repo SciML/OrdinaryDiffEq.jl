@@ -31,3 +31,4 @@ test-GPU:
     GROUP: GPU
   tags:
     - nvidia
+    - fastcpu
