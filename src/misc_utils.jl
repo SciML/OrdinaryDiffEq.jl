@@ -43,6 +43,10 @@ function constvalue(::Type{T}) where T
   _T = DiffEqBase.value(T)
   return _T <: Complex ? DiffEqBase.value(real(_T)) : DiffEqBase.value(_T)
 end
+function constvalue(x)
+  _x = DiffEqBase.value(x)
+  return _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
+end
 
 function diffdir(integrator::DiffEqBase.DEIntegrator)
   difference = maximum(abs, integrator.uprev)*sqrt(eps(typeof(integrator.t)))

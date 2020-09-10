@@ -263,5 +263,5 @@ end
         )
         solve(prob, alg())(last(tspan))[1]
     end
-    @test ForwardDiff.derivative(g, 0.0) ≈ _u0/2*exp(-0.5) rtol=(alg ∈ (TRBDF2, Rosenbrock23) ? 1e-2 : 1e-3)
+    @test ForwardDiff.derivative(g, 0.0) ≈ _u0/2*exp(-0.5) rtol=(alg ∈ (TRBDF2, Rosenbrock23,) ? 1e-2 : 1e-3)
 end
