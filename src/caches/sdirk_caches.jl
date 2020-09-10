@@ -104,7 +104,7 @@ end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = TRBDF2Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = TRBDF2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.d, tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   TRBDF2ConstantCache(nlsolver,tab)
@@ -123,7 +123,7 @@ end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = TRBDF2Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = TRBDF2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.d, tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -175,7 +175,7 @@ end
 
 function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
+  tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
   uprev3 = u
   tprev2 = t
   γ, c = 1, 1
@@ -198,7 +198,7 @@ end
 end
 
 function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
+  tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
   γ, c = 1, 1
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -249,7 +249,7 @@ end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Kvaerno3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ, 2tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   Kvaerno3ConstantCache(nlsolver,tab)
@@ -270,7 +270,7 @@ end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Kvaerno3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ, 2tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -288,7 +288,7 @@ end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = Cash4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Cash4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   Cash4ConstantCache(nlsolver,tab)
@@ -310,7 +310,7 @@ end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = Cash4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Cash4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -328,7 +328,7 @@ end
 
 function alg_cache(alg::SFSDIRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = SFSDIRK4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   SFSDIRK4ConstantCache(nlsolver,tab)
@@ -350,7 +350,7 @@ end
 
 function alg_cache(alg::SFSDIRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = SFSDIRK4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -368,7 +368,7 @@ end
 
 function alg_cache(alg::SFSDIRK5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = SFSDIRK5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   SFSDIRK5ConstantCache(nlsolver,tab)
@@ -391,7 +391,7 @@ end
 
 function alg_cache(alg::SFSDIRK5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = SFSDIRK5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK5Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -409,7 +409,7 @@ end
 
 function alg_cache(alg::SFSDIRK6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = SFSDIRK6Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   SFSDIRK6ConstantCache(nlsolver,tab)
@@ -432,7 +432,7 @@ end
 
 function alg_cache(alg::SFSDIRK6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = SFSDIRK6Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK6Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -450,7 +450,7 @@ end
 
 function alg_cache(alg::SFSDIRK7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = SFSDIRK7Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK7Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   SFSDIRK7ConstantCache(nlsolver,tab)
@@ -474,7 +474,7 @@ end
 
 function alg_cache(alg::SFSDIRK7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = SFSDIRK7Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK7Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -492,7 +492,7 @@ end
 
 function alg_cache(alg::SFSDIRK8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = SFSDIRK8Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK8Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   SFSDIRK8ConstantCache(nlsolver,tab)
@@ -517,7 +517,7 @@ end
 
 function alg_cache(alg::SFSDIRK8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = SFSDIRK8Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = SFSDIRK8Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -536,9 +536,9 @@ end
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   if alg isa Hairer4
-    tab = Hairer4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+    tab = Hairer4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   else
-    tab = Hairer42Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+    tab = Hairer42Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   end
   γ, c = tab.γ, tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
@@ -562,9 +562,9 @@ end
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   if alg isa Hairer4
-    tab = Hairer4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+    tab = Hairer4Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   else # Hairer42
-    tab = Hairer42Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+    tab = Hairer42Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   end
   γ, c = tab.γ, tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
@@ -588,7 +588,7 @@ end
 
 function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ESDIRK54I8L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ, tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
@@ -607,7 +607,7 @@ end
 
 function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ESDIRK54I8L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   ESDIRK54I8L2SAConstantCache(nlsolver,tab)

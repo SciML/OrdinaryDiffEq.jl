@@ -208,3 +208,60 @@ end
 
 @test !iszero(ForwardDiff.gradient(t -> of_a(t), [1.0]))
 @test ForwardDiff.gradient(t -> of_a(t), [1.0]) ≈ FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol=1e-5
+
+
+SOLVERS_FOR_AD = (
+    BS3,
+    Tsit5,
+    KenCarp4, KenCarp47, KenCarp5, KenCarp58,
+    TRBDF2,
+    Rodas4, Rodas5,
+    Rosenbrock23, Rosenbrock32,
+    Vern6, Vern7,
+    )
+
+@testset "$alg can handle ForwardDiff.Dual in u0 when iip=$iip" for
+    alg in SOLVERS_FOR_AD,
+    iip in (true, false)
+
+    if iip
+      f = (du, u, p, t) -> du .= -0.5*u
+    else
+      f = (u, p, t) -> -0.5*u
+    end
+
+    g = u0 -> begin
+        tspan = (0.0, 1.0)
+        prob = ODEProblem(
+            f,
+            u0,
+            tspan
+        )
+        solve(prob, alg())(last(tspan))[1]
+    end
+    @test ForwardDiff.gradient(g, [10.0])[1] ≈ exp(-0.5) rtol=1e-3
+end
+
+@testset "$alg can handle ForwardDiff.Dual in t0 when iip=$iip" for
+    alg in SOLVERS_FOR_AD,
+    iip in (true, false)
+
+    if iip
+      f = (du, u, p, t) -> du .= -0.5*u
+    else
+      f = (u, p, t) -> -0.5*u
+    end
+
+    _u0 = 10.0
+    g = t0 -> begin
+        tspan = (t0, 1.0)
+        u0 = typeof(t0)[_u0]
+        prob = ODEProblem(
+            f,
+            u0,
+            tspan
+        )
+        solve(prob, alg())(last(tspan))[1]
+    end
+    @test ForwardDiff.derivative(g, 0.0) ≈ _u0/2*exp(-0.5) rtol=(alg ∈ (TRBDF2, Rosenbrock23) ? 1e-2 : 1e-3)
+end
