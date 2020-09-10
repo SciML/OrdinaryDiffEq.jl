@@ -224,6 +224,8 @@ SOLVERS_FOR_AD = (
     (Rosenbrock32, 1e-11),
     (Vern6       , 1e-11),
     (Vern7       , 1e-11),
+    (RadauIIA3   , 1e-12),
+    (RadauIIA5   , 1e-12),
 )
 
 @testset "$alg can handle ForwardDiff.Dual in u0 with rtol=$rtol when iip=$iip" for
