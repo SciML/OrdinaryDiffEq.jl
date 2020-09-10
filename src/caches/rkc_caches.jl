@@ -23,7 +23,7 @@ end
 end
 
 function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  constantcache = ROCK2ConstantCache(real(uEltypeNoUnits), real(tTypeNoUnits), u)
+  constantcache = ROCK2ConstantCache(constvalue(uEltypeNoUnits), constvalue(tTypeNoUnits), u)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   tmp = zero(u)
@@ -65,7 +65,7 @@ end
 end
 
 function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  constantcache = ROCK4ConstantCache(real(uEltypeNoUnits), real(tTypeNoUnits), u)
+  constantcache = ROCK4ConstantCache(constvalue(uEltypeNoUnits), constvalue(tTypeNoUnits), u)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
   uᵢ₋₃ = zero(u)
@@ -77,7 +77,7 @@ function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  ROCK4ConstantCache(real(uEltypeNoUnits), real(uEltypeNoUnits),u)
+  ROCK4ConstantCache(constvalue(uEltypeNoUnits), constvalue(uEltypeNoUnits),u)
 end
 
 mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache

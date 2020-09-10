@@ -164,12 +164,12 @@ function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   else
     fsalfirst = k
   end
-  tab = SSPRK53ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK53Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK53ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SHLDDRK52Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
@@ -222,7 +222,7 @@ function alg_cache(alg::SHLDDRK52,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = SHLDDRK52ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SHLDDRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SHLDDRK52Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -313,7 +313,7 @@ function alg_cache(alg::SHLDDRK_2N,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = SHLDDRK_2NConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SHLDDRK_2NCache(u,uprev,k,tmp,fsalfirst,tab,1)
 end
 
@@ -366,12 +366,12 @@ function alg_cache(alg::SSPRK53_2N1,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   else
     fsalfirst = k
   end
-  tab = SSPRK53_2N1ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK53_2N1ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK53_2N1Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK53_2N1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK53_2N1ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK53_2N1ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 
@@ -428,12 +428,12 @@ function alg_cache(alg::SSPRK53_2N2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   else
     fsalfirst = k
   end
-  tab = SSPRK53_2N2ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK53_2N2Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK53_2N2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK53_2N2ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK53_HCache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
@@ -494,12 +494,12 @@ function alg_cache(alg::SSPRK53_H,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   else
     fsalfirst = k
   end
-  tab = SSPRK53_HConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK53_HCache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK53_H,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK53_HConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 
@@ -561,12 +561,12 @@ function alg_cache(alg::SSPRK63,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   u₂ = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = SSPRK63ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK63Cache(u,uprev,k,tmp,u₂,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK63,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK63ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 
@@ -635,12 +635,12 @@ function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   u₁ = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = SSPRK73ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK73Cache(u,uprev,k,tmp,u₁,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK73ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 
@@ -717,12 +717,12 @@ function alg_cache(alg::SSPRK83,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   u₃ = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = SSPRK83ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK83Cache(u,uprev,k,tmp,u₂,u₃,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK83,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK83ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 
@@ -945,12 +945,12 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   k = zero(rate_prototype)
   k₃ = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = SSPRK54ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK54Cache(u,uprev,k,k₃,u₂,u₃,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK54ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 

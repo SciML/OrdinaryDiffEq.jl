@@ -52,10 +52,10 @@ function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     nlsolver2 = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
     nlsolver = [nlsolver1, nlsolver2]
   else
-    _nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))    
+    _nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
     nlsolver = [_nlsolver]
   end
-  tab = PDIRK44Tableau(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = PDIRK44Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   k1 = [zero(rate_prototype) for i in 1:2 ]
   k2 = [zero(rate_prototype) for i in 1:2 ]
   PDIRK44Cache(u,uprev,k1,k2,nlsolver,tab)
@@ -71,6 +71,6 @@ function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     _nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
     nlsolver = [_nlsolver]
   end
-  tab = PDIRK44Tableau(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = PDIRK44Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   PDIRK44ConstantCache(nlsolver,tab)
 end
