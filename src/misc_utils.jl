@@ -39,9 +39,13 @@ end
 
 # Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
 # value should recurse for anything else.
+function constvalue(::Type{T}) where T
+  _T = DiffEqBase.value(T)
+  return _T <: Complex ? DiffEqBase.value(real(_T)) : DiffEqBase.value(_T)
+end
 function constvalue(x)
   _x = DiffEqBase.value(x)
-  _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
+  return _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
 end
 
 function diffdir(integrator::DiffEqBase.DEIntegrator)

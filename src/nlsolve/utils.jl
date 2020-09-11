@@ -237,11 +237,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
   end
 
   # build non-linear solver
-  ηold = one(uTolType)
-
+  ηold = one(tTypeNoUnits)
   NLSolver{false,tTypeNoUnits}(
-    z,tmp,ztmp,γ,c,α,nlalg,nlalg.κ,
-    nlalg.fast_convergence_cutoff,ηold,0,nlalg.max_iter,Divergence,
+    z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
+    nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter, Divergence,
     nlcache)
 end
 

@@ -336,12 +336,12 @@ function alg_cache(alg::RK46NL,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   tmp = zero(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = RK46NLConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = RK46NLConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   RK46NLCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::RK46NL,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  RK46NLConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  RK46NLConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(alg::Tsit5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -499,12 +499,12 @@ function alg_cache(alg::KYK2014DGSSPRK_3S2,u,rate_prototype,uEltypeNoUnits,uBott
   kk_2 = zero(rate_prototype)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = KYK2014DGSSPRK_3S2_ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   KYK2014DGSSPRK_3S2_Cache(u,uprev,k,fsalfirst,tab, u_1, u_2, kk_1, kk_2)
 end
 
 function alg_cache(alg::KYK2014DGSSPRK_3S2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  KYK2014DGSSPRK_3S2_ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 
@@ -637,7 +637,7 @@ end
 end
 
 struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
-  
+
   α21::T1
   α31::T1
   α41::T1
@@ -660,7 +660,7 @@ struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
   α74::T1
   α84::T1
   α94::T1
-  
+
   α65::T1
   α75::T1
   α85::T1
@@ -672,9 +672,9 @@ struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
 
   α87::T1
   α97::T1
-  
+
   α98::T1
-  
+
   β1::T1
   # β4::T1
   # β5::T1
@@ -736,7 +736,7 @@ struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
   f9::T1
   f10::T1
   f11::T1
-  
+
   function FRK65ConstantCache(T1,T2)
 
     # elements of Butcher Table
@@ -763,21 +763,21 @@ struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
     α74 = T1(11481363823//3650030081)
     α84 = T1(-74239028301//15737704666)
     α94 = T1(1450675392//5936579813)
-   
+
     α65 = T1(4533285649//6676940598)
     α75 = T1(-4096673444//7349814937)
     α85 = T1(222688842816//44196813415)
     α95 = T1(4617877550//16762182457)
-    
+
     α76 = T1(9911918171//12847192605)
     α86 = T1(-105204445705//30575217706)
     α96 = T1(1144867463//6520294355)
-   
+
     α87 = T1(8799291910//8966990271)
     α97 = T1(1822809703//7599996644)
 
     α98 = T1(79524953//2351253316)
-    
+
     β1 = T1(1026331676//33222204855)
     #β4 = T1(1450675392//5936579813)
     #β5 = T1(4617877550//16762182457)
@@ -815,7 +815,7 @@ struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
     d11 = T1(9205//210998423)
     d12 = T1(-250//519462673)
     d13 = T1(67//327513887)
-  
+
     e1=T1(437217689//1587032700)
     e2=T1(-15824413//592362279)
     e3=T1(-1563775//341846569)
@@ -827,7 +827,7 @@ struct FRK65ConstantCache{T1,T2} <: OrdinaryDiffEqConstantCache
     e9=T1(641177//265376522)
     e10=T1(44633//291742143)
     e11=T1(611//223639880)
-  
+
     f1=T1(44861261//255495624)
     f2=T1(-11270940//352635157)
     f3=T1(-182222//232874507)
@@ -911,7 +911,7 @@ struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
     # c4 = T2(0.70546072965982)
     # c5 = T2(0.09295870406537)
     # c6 = T2(0.76210081248836)
-    
+
     α2 = T(0.167266187050662)
     α3 = T(0.484574582244783)
     α4 = T(0.536909403373491)
@@ -927,7 +927,7 @@ struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
     c4 = T2(0.536909403373491)
     c5 = T2(0.082069535961948)
     c6 = T2(0.853923000035347)
-    
+
     new{T,T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6)
   end
 end

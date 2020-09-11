@@ -128,7 +128,7 @@ function Kvaerno3Tableau(T,T2)
   btilde1 = convert(T,0.181753418446072) # bhat1-a41
   btilde2 = convert(T,-1.416993298173214) # bhat2-a42
   btilde3 = convert(T,1.671106401227145) # bhat3-a43
-  btilde4 = -γ # bhat4-γ
+  btilde4 = convert(T,-γ) # bhat4-γ
   c3 = convert(T2,1)
   c2 = 2γ
   θ = c3/c2

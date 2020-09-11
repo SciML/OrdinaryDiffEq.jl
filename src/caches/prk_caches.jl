@@ -73,10 +73,10 @@ function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   k5_6[1] = zero(rate_prototype)
   k5_6[2] = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = KuttaPRK2p5ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = KuttaPRK2p5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   KuttaPRK2p5Cache(u,uprev,k,k1,k2,k3,k4,k5_6,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  KuttaPRK2p5ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  KuttaPRK2p5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
