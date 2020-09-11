@@ -35,21 +35,47 @@ end
 
 function initialize!(integrator, cache::CompositeCache)
   cache.current = cache.choice_function(integrator)
-  initialize!(integrator, @inbounds(cache.caches[cache.current]))
+  if cache.current == 1
+    initialize!(integrator, @inbounds(cache.caches[1]))
+  elseif cache.current == 2
+    initialize!(integrator, @inbounds(cache.caches[2]))
+  else
+    initialize!(integrator, @inbounds(cache.caches[cache.current]))
+  end
   resize!(integrator.k, integrator.kshortsize)
 end
 
 function perform_step!(integrator, cache::CompositeCache, repeat_step=false)
-  perform_step!(integrator, @inbounds(cache.caches[cache.current]), repeat_step)
+  if cache.current == 1
+    perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
+  elseif cache.current == 2
+    perform_step!(integrator, @inbounds(cache.caches[2]), repeat_step)
+  else
+    perform_step!(integrator, @inbounds(cache.caches[cache.current]), repeat_step)
+  end
 end
 
 choose_algorithm!(integrator,cache::OrdinaryDiffEqCache) = nothing
 function choose_algorithm!(integrator,cache::CompositeCache)
   new_current = cache.choice_function(integrator)
   @inbounds if new_current != cache.current
-    initialize!(integrator,cache.caches[new_current])
-    reset_alg_dependent_opts!(integrator,integrator.alg.algs[cache.current],integrator.alg.algs[new_current])
-    transfer_cache!(integrator,integrator.cache.caches[cache.current],integrator.cache.caches[new_current])
+    if new_current == 1
+      initialize!(integrator, @inbounds(cache.caches[1]))
+    elseif new_current == 2
+      initialize!(integrator, @inbounds(cache.caches[2]))
+    else
+      initialize!(integrator, @inbounds(cache.caches[new_current]))
+    end
+    if cache.current == 1 && new_current == 2
+      reset_alg_dependent_opts!(integrator,integrator.alg.algs[1],integrator.alg.algs[2])
+      transfer_cache!(integrator,integrator.cache.caches[1],integrator.cache.caches[2])
+    elseif cache.current == 2 && new_current == 1
+      reset_alg_dependent_opts!(integrator,integrator.alg.algs[2],integrator.alg.algs[1])
+      transfer_cache!(integrator,integrator.cache.caches[2],integrator.cache.caches[1])
+    else
+      reset_alg_dependent_opts!(integrator,integrator.alg.algs[cache.current],integrator.alg.algs[new_current])
+      transfer_cache!(integrator,integrator.cache.caches[cache.current],integrator.cache.caches[new_current])
+    end
     cache.current = new_current
   end
 end
