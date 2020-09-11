@@ -46,19 +46,25 @@ function initialize!(integrator, cache::CompositeCache)
 end
 
 function perform_step!(integrator, cache::CompositeCache, repeat_step=false)
-  perform_step!(integrator, @inbounds(cache.caches[cache.current]), repeat_step)
+  if cache.current == 1
+    perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
+  elseif cache.current == 2
+    perform_step!(integrator, @inbounds(cache.caches[2]), repeat_step)
+  else
+    perform_step!(integrator, @inbounds(cache.caches[cache.current]), repeat_step)
+  end
 end
 
 choose_algorithm!(integrator,cache::OrdinaryDiffEqCache) = nothing
 function choose_algorithm!(integrator,cache::CompositeCache)
   new_current = cache.choice_function(integrator)
   @inbounds if new_current != cache.current
-    if cache.current == 1
+    if new_current == 1
       initialize!(integrator, @inbounds(cache.caches[1]))
-    elseif cache.current == 2
+    elseif new_current == 2
       initialize!(integrator, @inbounds(cache.caches[2]))
     else
-      initialize!(integrator, @inbounds(cache.caches[cache.current]))
+      initialize!(integrator, @inbounds(cache.caches[new_current]))
     end
     reset_alg_dependent_opts!(integrator,integrator.alg.algs[cache.current],integrator.alg.algs[new_current])
     transfer_cache!(integrator,integrator.cache.caches[cache.current],integrator.cache.caches[new_current])
