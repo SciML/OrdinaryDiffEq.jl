@@ -211,17 +211,23 @@ end
 
 
 SOLVERS_FOR_AD = (
-    BS3,
-    Tsit5,
-    KenCarp4, KenCarp47, KenCarp5, KenCarp58,
-    TRBDF2,
-    Rodas4, Rodas5,
-    Rosenbrock23, Rosenbrock32,
-    Vern6, Vern7,
-    )
+    (BS3         , 1e-12),
+    (Tsit5       , 1e-12),
+    (KenCarp4    , 1e-11),
+    (KenCarp47   , 1e-11),
+    (KenCarp5    , 1e-11),
+    (KenCarp58   , 1e-12),
+    (TRBDF2      , 1e-07),
+    (Rodas4      , 1e-12),
+    (Rodas5      , 1e-12),
+    (Rosenbrock23, 1e-10),
+    (Rosenbrock32, 1e-11),
+    (Vern6       , 1e-11),
+    (Vern7       , 1e-11),
+)
 
-@testset "$alg can handle ForwardDiff.Dual in u0 when iip=$iip" for
-    alg in SOLVERS_FOR_AD,
+@testset "$alg can handle ForwardDiff.Dual in u0 with rtol=$rtol when iip=$iip" for
+    (alg, rtol) in SOLVERS_FOR_AD,
     iip in (true, false)
 
     if iip
@@ -237,13 +243,13 @@ SOLVERS_FOR_AD = (
             u0,
             tspan
         )
-        solve(prob, alg())(last(tspan))[1]
+        solve(prob, alg(), abstol=1e-14, reltol=1e-14)(last(tspan))[1]
     end
-    @test ForwardDiff.gradient(g, [10.0])[1] ≈ exp(-0.5) rtol=1e-3
+    @test ForwardDiff.gradient(g, [10.0])[1] ≈ exp(-0.5) rtol=rtol
 end
 
-@testset "$alg can handle ForwardDiff.Dual in t0 when iip=$iip" for
-    alg in SOLVERS_FOR_AD,
+@testset "$alg can handle ForwardDiff.Dual in t0 with rtol=$rtol when iip=$iip" for
+    (alg, rtol) in SOLVERS_FOR_AD,
     iip in (true, false)
 
     if iip
@@ -261,7 +267,7 @@ end
             u0,
             tspan
         )
-        solve(prob, alg())(last(tspan))[1]
+        solve(prob, alg(), abstol=1e-14, reltol=1e-14)(last(tspan))[1]
     end
-    @test ForwardDiff.derivative(g, 0.0) ≈ _u0/2*exp(-0.5) rtol=(alg ∈ (TRBDF2, Rosenbrock23,) ? 1e-2 : 1e-3)
+    @test ForwardDiff.derivative(g, 0.0) ≈ _u0/2*exp(-0.5) rtol=rtol
 end
