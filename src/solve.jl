@@ -266,7 +266,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     sizehint!(ks,2)
   end
 
-  QT = tTypeNoUnits <: Integer ? typeof(qmin) : constvalue(tTypeNoUnits)
+  QT = tTypeNoUnits <: Integer ? typeof(qmin) : typeof(internalnorm(u, t))
 
   k = rateType[]
 

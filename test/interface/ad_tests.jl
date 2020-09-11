@@ -224,7 +224,7 @@ SOLVERS_FOR_AD = (
     (Rosenbrock32, 1e-11),
     (Vern6       , 1e-11),
     (Vern7       , 1e-11),
-    (RadauIIA3   , 1e-12),
+    (RadauIIA3   , 1e-04),
     (RadauIIA5   , 1e-12),
 )
 
