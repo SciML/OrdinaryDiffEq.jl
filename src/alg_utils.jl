@@ -531,9 +531,21 @@ function unwrap_alg(integrator, is_stiff)
     return alg
   elseif typeof(alg.choice_function) <: AutoSwitchCache
     num = is_stiff ? 2 : 1
-    return alg.algs[num]
+    if num == 1
+      return alg.algs[1]
+    elseif num == 2
+      return alg.algs[2]
+    else
+      return alg.algs[num]
+    end
   else
-    return alg.algs[integrator.cache.current]
+    if integrator.cache.current == 1
+      return alg.algs[1]
+    elseif integrator.cache.current == 2
+      return alg.algs[2]
+    else
+      return alg.algs[integrator.cache.current]
+    end
   end
 end
 
