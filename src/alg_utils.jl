@@ -533,10 +533,8 @@ function unwrap_alg(integrator, is_stiff)
     num = is_stiff ? 2 : 1
     if num == 1
       return alg.algs[1]
-    elseif num == 2
-      return alg.algs[2]
     else
-      return alg.algs[num]
+      return alg.algs[2]
     end
   else
     if integrator.cache.current == 1
