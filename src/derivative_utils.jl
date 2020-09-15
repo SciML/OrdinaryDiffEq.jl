@@ -575,7 +575,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
     elseif IIP
       similar(J)
     else
-      ArrayInterface.lu_instance(J)
+      lu(J, check=false)
     end
   end
   return J, W

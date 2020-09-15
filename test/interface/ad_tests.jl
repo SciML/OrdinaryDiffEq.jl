@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff
+using LabelledArrays, OrdinaryDiffEq, Calculus, FiniteDiff, ForwardDiff
 
 function f(du,u,p,t)
   du[1] = -p[1]
@@ -228,7 +228,8 @@ SOLVERS_FOR_AD = (
 
 @testset "$alg can handle ForwardDiff.Dual in u0 with rtol=$rtol when iip=$iip" for
     (alg, rtol) in SOLVERS_FOR_AD,
-    iip in (true, false)
+    (u0, iip) in ((LVector(Central=10.0), true),
+                  (SLVector(Central=10.0), false))
 
     if iip
       f = (du, u, p, t) -> du .= -0.5*u
@@ -236,16 +237,16 @@ SOLVERS_FOR_AD = (
       f = (u, p, t) -> -0.5*u
     end
 
-    g = u0 -> begin
+    g = _u0 -> begin
         tspan = (0.0, 1.0)
         prob = ODEProblem(
             f,
-            u0,
+            _u0,
             tspan
         )
         solve(prob, alg(), abstol=1e-14, reltol=1e-14)(last(tspan))[1]
     end
-    @test ForwardDiff.gradient(g, [10.0])[1] ≈ exp(-0.5) rtol=rtol
+    @test ForwardDiff.gradient(g, u0)[1] ≈ exp(-0.5) rtol=rtol
 end
 
 @testset "$alg can handle ForwardDiff.Dual in t0 with rtol=$rtol when iip=$iip" for
@@ -261,7 +262,7 @@ end
     _u0 = 10.0
     g = t0 -> begin
         tspan = (t0, 1.0)
-        u0 = typeof(t0)[_u0]
+        u0 = (iip ? LVector : SLVector)(Central=typeof(t0)(_u0))
         prob = ODEProblem(
             f,
             u0,
