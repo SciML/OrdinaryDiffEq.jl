@@ -158,14 +158,14 @@ f = function (du,u,p,t)
 	du - u
 end
 
-u₀ = 1.0
-du₀ = 0.0
-tspan = (0.0,1.0)
-differential_vars = [true]
+u₀ = SVector(1.0)
+du₀ = SVector(0.0)
+tspan = (0.0, 1.0)
+differential_vars = SVector(true)
 prob = DAEProblem(f,du₀,u₀,tspan,differential_vars=differential_vars)
 integrator = init(prob, DABDF2())
 
-@test integrator.du ≈ 1.0 atol=1e-9
+@test integrator.du ≈ [1.0] atol=1e-9
 
 f = function (du,u,p,t)
 	du .- u

@@ -190,8 +190,7 @@ function _loopfooter!(integrator)
       integrator.last_stepfail = false
       dtnew = DiffEqBase.value(step_accept_controller!(integrator,integrator.alg,q)) * oneunit(integrator.dt)
       integrator.tprev = integrator.t
-      # integrator.EEst has unitless type of integrator.t
-      if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
+      if integrator.t isa AbstractFloat && !isempty(integrator.opts.tstops)
         tstop = integrator.tdir * first(integrator.opts.tstops)
         abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
@@ -206,8 +205,7 @@ function _loopfooter!(integrator)
   elseif !integrator.opts.adaptive #Not adaptive
     integrator.destats.naccept += 1
     integrator.tprev = integrator.t
-    # integrator.EEst has unitless type of integrator.t
-    if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
+    if integrator.t isa AbstractFloat && !isempty(integrator.opts.tstops)
       tstop = integrator.tdir * first(integrator.opts.tstops)
       abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)

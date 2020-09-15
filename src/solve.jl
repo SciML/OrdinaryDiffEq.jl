@@ -266,7 +266,14 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     sizehint!(ks,2)
   end
 
-  QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
+  QT = if tTypeNoUnits <: Integer
+    typeof(qmin)
+  elseif prob isa DiscreteProblem
+    # The QT fields are not used for DiscreteProblems
+    constvalue(tTypeNoUnits)
+  else
+    typeof(internalnorm(u, t))
+  end
 
   k = rateType[]
 
@@ -359,7 +366,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   kshortsize = 0
   reeval_fsal = false
   u_modified = false
-  EEst = tTypeNoUnits(1)
+  EEst = QT(1)
   just_hit_tstop = false
   isout = false
   accept_step = false
@@ -369,9 +376,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   vector_event_last_time = 1
   last_event_error = typeof(alg) <: FunctionMap ? false : zero(uBottomEltypeNoUnits)
   dtchangeable = isdtchangeable(alg)
-  q11 = tTypeNoUnits(1)
+  q11 = QT(1)
   success_iter = 0
-  erracc = tTypeNoUnits(1)
+  erracc = QT(1)
   dtacc = tType(1)
   reinitiailize = true
   saveiter = 0 # Starts at 0 so first save is at 1

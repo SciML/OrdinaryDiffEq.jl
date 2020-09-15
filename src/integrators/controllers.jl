@@ -15,7 +15,7 @@
       end
       fac = min(gamma,(1+2*maxiters)*gamma/(iter+2*maxiters))
     end
-    expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
+    expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache) + 1)
     qtmp = DiffEqBase.fastpow(integrator.EEst,expo)/fac
     @fastmath q = DiffEqBase.value(max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp)))
     integrator.qold = q
