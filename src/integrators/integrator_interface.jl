@@ -74,7 +74,7 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
           get_tmp_cache(integrator::ODEIntegrator,integrator.alg,integrator.cache)
 # avoid method ambiguity
-for typ in (OrdinaryDiffEqAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm)
+for typ in (OrdinaryDiffEqAlgorithm,Union{RadauIIA3,RadauIIA5},OrdinaryDiffEqNewtonAdaptiveAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm)
   @eval @inline DiffEqBase.get_tmp_cache(integrator,alg::$typ,cache::OrdinaryDiffEqConstantCache) = nothing
 end
 

@@ -104,3 +104,28 @@ sol = solve(prob,Tsit5(),callback=cb,dt=1e-3,adaptive=false)
 sol2 = solve(prob,Tsit5(),callback=cb2,dt=1e-3,adaptive=false)
 @test sol.u == sol2.u
 @test z[] == 0
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1273
+
+function du!(du, u, p, t)
+    du[1] = 1
+end
+
+callback = ContinuousCallback(
+    (u, t, integrator) -> 1.0,
+    (integrator) -> nothing
+)
+
+prob = ODEProblem(du!, [0], (0.0, 1.0), callback=callback)
+
+solve(prob, Tsit5())
+solve(prob, RadauIIA3())
+solve(prob, RadauIIA5())
+
+du(u, p, t) = [1]
+
+prob = ODEProblem(du, [0], (0.0, 1.0), callback=callback)
+
+solve(prob, Tsit5())
+solve(prob, RadauIIA3())
+solve(prob, RadauIIA5())
