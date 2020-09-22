@@ -113,6 +113,18 @@ function resize!(integrator::ODEIntegrator, i::Int)
   resize_J_W!(cache, integrator, i)
   resize_non_user_cache!(integrator, cache, i)
 end
+# we can't use resize!(..., i::Union{Int, NTuple{N,Int}}) where {N} because of method ambiguities with DiffEqBase
+function resize!(integrator::ODEIntegrator, i::NTuple{N,Int}) where {N}
+  @unpack cache = integrator
+
+  for c in full_cache(cache)
+    resize!(c,i)
+  end
+  # TODO the parts below need to be adapted for implicit methods
+  isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)
+  resize_J_W!(cache, integrator, i)
+  resize_non_user_cache!(integrator, cache, i)
+end
 
 function resize_J_W!(cache, integrator, i)
   (isdefined(cache, :J) && isdefined(cache, :W)) || return
