@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 using Random
+using ElasticArrays
 Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),
   CarpenterKennedy2N54(), HSLDDRK64(),
@@ -65,6 +66,25 @@ end
 for alg in broken_CACHE_TEST_ALGS
   @show alg
   @test_broken length(solve(prob,alg,callback=callback,dt=1/2)[end]) > 1
+end
+
+# cache tests resizing multidimensional arrays
+u0_matrix = ElasticArray(ones(2, 2))
+f_matrix = (du, u, p, t) -> du .= u
+prob_matrix = ODEProblem(f_matrix, u0_matrix, (0.0, 2.0))
+condition_matrix = (u, t, integrator) -> t - 1
+affect_matrix! = function (integrator)
+  resize!(integrator, (2,3))
+  integrator.u .= 1
+  nothing
+end
+callback_matrix = ContinuousCallback(condition_matrix, affect_matrix!)
+
+for alg in CACHE_TEST_ALGS
+  OrdinaryDiffEq.isimplicit(alg) && continue # this restriction should be removed in the future
+  @show alg
+  sol = solve(prob_matrix, alg,callback=callback_matrix, dt=1/2)
+  @test size(sol[end]) == (2,3)
 end
 
 
