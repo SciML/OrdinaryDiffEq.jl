@@ -68,7 +68,14 @@ for alg in broken_CACHE_TEST_ALGS
   @test_broken length(solve(prob,alg,callback=callback,dt=1/2)[end]) > 1
 end
 
+sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
+sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
+@test length(sol[end]) > 1
+
+
 # cache tests resizing multidimensional arrays
+println("Check resizing multidimensional arrays")
 u0_matrix = ElasticArray(ones(2, 2))
 f_matrix = (du, u, p, t) -> du .= u
 prob_matrix = ODEProblem(f_matrix, u0_matrix, (0.0, 2.0))
@@ -87,11 +94,25 @@ for alg in CACHE_TEST_ALGS
   @test size(sol[end]) == (2,3)
 end
 
+# additional cache tests to find more bugs
+println("Additional resize! checks")
+u0resize3 = ones(2)
+fresize3 = (du, u, p, t) -> du .= u
+prob_resize3 = ODEProblem(fresize3, u0resize3, (0.0, 2.0))
+condition_resize3 = (u, t, integrator) -> t - 1
+affect!_resize3 = function (integrator)
+  resize!(integrator, 3)
+  integrator.u .= 1
+  nothing
+end
+callback_resize3 = ContinuousCallback(condition_resize3, affect!_resize3)
 
-sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
-@test length(sol[end]) > 1
-sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
-@test length(sol[end]) > 1
+for alg in CACHE_TEST_ALGS
+  @show alg
+  sol = solve(prob_resize3, alg, callback=callback_resize3, dt=0.125)
+  @test size(sol[end]) == (3,)
+  @test all(sol[end] .== sol[end][1])
+end
 
 
 # Force switching

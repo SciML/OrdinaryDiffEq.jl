@@ -50,6 +50,13 @@ end
   @unpack k,tmp,williamson_condition = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
+  if integrator.u_modified
+    if !get_current_isfsal(integrator.alg, integrator.cache)
+      f(k, u, p, t+dt)
+    end
+    @.. tmp = dt*k
+  end
+
   # u1
   @.. u   = u + B1*tmp
   # other stages
