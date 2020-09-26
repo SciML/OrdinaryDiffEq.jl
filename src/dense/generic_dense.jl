@@ -138,45 +138,39 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   @inbounds tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
 
-  if typeof(idxs) <: Number
-    vals = Vector{eltype(first(timeseries))}(undef, length(tvals))
-  elseif typeof(idxs) <: AbstractArray
-    vals = Vector{Array{eltype(first(timeseries)),ndims(idxs)}}(undef, length(tvals))
-  else
-    vals = Vector{eltype(timeseries)}(undef, length(tvals))
-  end
-
   # start the search thinking it's ts[1]-ts[2]
   i₋ = 1
   i₊ = 2
-  @inbounds for j in idx
-    t = tvals[j]
+  vals = map(idx) do j
+    @inbounds begin
+      t = tvals[j]
 
-    if continuity === :left
-      # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
-      # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
-      i₊ = min(lastindex(ts), _searchsortedfirst(ts,t,i₊,tdir > 0))
-      i₋ = i₊ > 1 ? i₊ - 1 : i₊
-    else
-      # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
-      # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
-      i₋ = max(1, _searchsortedlast(ts,t,i₋,tdir > 0))
-      i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
-    end
+      if continuity === :left
+        # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
+        # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
+        i₊ = min(lastindex(ts), _searchsortedfirst(ts,t,i₊,tdir > 0))
+        i₋ = i₊ > 1 ? i₊ - 1 : i₊
+      else
+        # we have i₋ = i₊ - 1 = 1 if t < ts[1], i₊ = i₋ = lastindex(ts) if t = ts[end],
+        # and otherwise i₋ and i₊ satisfy ts[i₋] ≤ t < ts[i₊]
+        i₋ = max(1, _searchsortedlast(ts,t,i₋,tdir > 0))
+        i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
+      end
 
-    dt = ts[i₊] - ts[i₋]
-    Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t-ts[i₋]) / dt
+      dt = ts[i₊] - ts[i₋]
+      Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t-ts[i₋]) / dt
 
-    if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
-      vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
-    elseif !id.dense
-      vals[j] = linear_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
-    elseif typeof(cache) <: CompositeCache
-      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache.caches[id.alg_choice[i₊]]) # update the kcurrent
-      vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
-    else
-      DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache) # update the kcurrent
-      vals[j] = ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
+      if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+        return ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],0,cache,idxs,deriv)
+      elseif !id.dense
+        return linear_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],idxs,deriv)
+      elseif typeof(cache) <: CompositeCache
+        DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+        return ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache.caches[id.alg_choice[i₊]],idxs,deriv)
+      else
+        DiffEqBase.addsteps!(ks[i₊],ts[i₋],timeseries[i₋],timeseries[i₊],dt,f,p,cache) # update the kcurrent
+        return ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
+      end
     end
   end
 
