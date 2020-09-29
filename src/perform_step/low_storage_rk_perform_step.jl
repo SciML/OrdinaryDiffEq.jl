@@ -52,10 +52,12 @@ end
 
   if integrator.u_modified
     if !get_current_isfsal(integrator.alg, integrator.cache)
-      f(k, u, p, t+dt)
+      f(k, u, p, t)
+      integrator.destats.nf += 1
     end
-    @.. tmp = dt*k
   end
+
+  @.. tmp = dt*k
 
   # u1
   @.. u   = u + B1*tmp
@@ -73,7 +75,6 @@ end
   end
 
   f(k, u, p, t+dt)
-  @.. tmp = dt*k
   integrator.destats.nf += 1
 end
 
