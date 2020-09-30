@@ -3,14 +3,14 @@ using Random
 using ElasticArrays
 Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),
-  CarpenterKennedy2N54(), HSLDDRK64(),
+  CarpenterKennedy2N54(), HSLDDRK64(), ORK256(), DGLDDRK73_C(),
   CFRLDDRK64(), TSLDDRK74(),
   CKLLSRK43_2(),
   ParsaniKetchesonDeconinck3S32(),
   BS3(),BS5(),DP5(),DP8(),Feagin10(),Feagin12(),Feagin14(),TanYam7(),
   Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9(),OwrenZen3(),OwrenZen4(),OwrenZen5(),
   AutoTsit5(Rosenbrock23())]
-broken_CACHE_TEST_ALGS = [ORK256(), DGLDDRK73_C(),KenCarp4()]
+broken_CACHE_TEST_ALGS = [KenCarp4()]
 
 using InteractiveUtils
 
