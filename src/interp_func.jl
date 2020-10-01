@@ -30,7 +30,7 @@ end
 function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{Rodas4ConstantCache,Rodas4Cache}
   interp.dense ? "specialized 3rd order \"free\" stiffness-aware interpolation" : "1st order linear"
 end
-function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{SSPRK22,SSPRK22ConstantCache,SSPRK33,SSPRK33ConstantCache,SSPRK432,SSPRK432ConstantCache}
+function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{SSPRK22,SSPRK22ConstantCache,SSPRK33,SSPRK33ConstantCache,SSPRK43,SSPRK43ConstantCache,SSPRK432,SSPRK432ConstantCache}
   interp.dense ? "2nd order \"free\" SSP interpolation" : "1st order linear"
 end
 function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{OwrenZen3Cache,OwrenZen3ConstantCache}

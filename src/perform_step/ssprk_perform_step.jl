@@ -1011,15 +1011,15 @@ end
   # u1
   f( fsalfirst,  uprev, p, t)
   @.. u = uprev + dt_2*fsalfirst
-  stage_limiter!(u, f, t+dt_2)
+  stage_limiter!(u, f, p, t+dt_2)
   f( k,  u, p, t+dt_2)
   # u2
   @.. u = u + dt_2*k
-  stage_limiter!(u, f, t+dt)
+  stage_limiter!(u, f, p, t+dt)
   f( k,  u, p, t+dt)
   #
   @.. u = u + dt_2*k
-  stage_limiter!(u, f, t+dt+dt_2)
+  stage_limiter!(u, f, p, t+dt+dt_2)
   if integrator.opts.adaptive
     @.. utilde = one_third_u * uprev + two_thirds_u * u # corresponds to bhat = (1/3, 1/3, 1/3, 0)
   end
@@ -1028,8 +1028,8 @@ end
   f( k,  u, p, t+dt_2)
   #
   @.. u = u + dt_2*k # corresponds to b = (1/6, 1/6, 1/6, 1/2)
-  stage_limiter!(u, f, t+dt)
-  step_limiter!(u, f, t+dt)
+  stage_limiter!(u, f, p, t+dt)
+  step_limiter!(u, f, p, t+dt)
 
   if integrator.opts.adaptive
     @.. utilde = half_u * (utilde - u) # corresponds to bhat = (1/4, 1/4, 1/4, 1/4)
