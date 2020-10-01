@@ -501,6 +501,7 @@ ssp_coefficient(alg::SSPRK53_H) = 2.65
 ssp_coefficient(alg::SSPRK63) = 3.518
 ssp_coefficient(alg::SSPRK73) = 4.2879
 ssp_coefficient(alg::SSPRK83) = 5.107
+ssp_coefficient(alg::SSPRK43) = 2
 ssp_coefficient(alg::SSPRK432) = 2
 ssp_coefficient(alg::SSPRKMSVS32) = 0.5
 ssp_coefficient(alg::SSPRKMSVS43) = 0.33
