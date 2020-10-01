@@ -257,6 +257,7 @@ alg_order(alg::SSPRK53_H) = 3
 alg_order(alg::SSPRK63) = 3
 alg_order(alg::SSPRK73) = 3
 alg_order(alg::SSPRK83) = 3
+alg_order(alg::SSPRK43) = 3
 alg_order(alg::SSPRK432) = 3
 alg_order(alg::SSPRKMSVS43) = 3
 alg_order(alg::SSPRK932) = 3

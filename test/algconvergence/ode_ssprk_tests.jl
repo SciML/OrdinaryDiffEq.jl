@@ -315,6 +315,31 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
+println("SSPRK43")
+alg = SSPRK43()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  # higher order as pure quadrature
+  @test abs(sim.𝒪est[:final]-1-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+# test SSP coefficient
+sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
+@test all(sol.u .>= 0)
+# test SSP property of dense output
+sol = solve(test_problem_ssp, alg, dt=8/5, adaptive=false)
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
+sol = solve(test_problem_ssp_inplace, alg, dt=8/5, adaptive=false)
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
+
+
 println("SSPRK432")
 alg = SSPRK432()
 for prob in test_problems_only_time

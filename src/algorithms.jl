@@ -622,15 +622,37 @@ end
 SSPRK83(stage_limiter! = trivial_limiter!) = SSPRK83(stage_limiter!, trivial_limiter!)
 
 """
-Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu. Strong stability
-  preserving Runge-Kutta and multistep time discretizations. World Scientific,
-  2011.
+Optimal third-order explicit SSP method with four stages discovered by
+- J. F. B. M. Kraaijevanger.
+  "Contractivity of Runge-Kutta methods."
+  In: BIT Numerical Mathematics 31.3 (1991), pp. 482–528.
+  [DOI: 10.1007/BF01933264](https://doi.org/10.1007/BF01933264).
+Embedded method constructed by
+- Sidafa Conde, Imre Fekete, John N. Shadid.
+  "Embedded error estimation and adaptive step-size control for
+  optimal explicit strong stability preserving Runge–Kutta methods."
+  [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
+"""
+struct SSPRK43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRK43(stage_limiter! = trivial_limiter!) = SSPRK43(stage_limiter!, trivial_limiter!)
+
+"""
+Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
+Strong stability preserving Runge-Kutta and multistep time discretizations.
+World Scientific, 2011.
+Example 6.1.
+
+Consider using `SSPRK43` instead, which uses the same main method and an improved embedded method.
 """
 struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRK432(stage_limiter! = trivial_limiter!) = SSPRK432(stage_limiter!, trivial_limiter!)
+
 struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
