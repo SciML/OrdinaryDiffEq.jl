@@ -2,7 +2,7 @@ using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 using Random
 using ElasticArrays
 Random.seed!(213)
-CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),
+CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK104(),
   CarpenterKennedy2N54(), HSLDDRK64(), ORK256(), DGLDDRK73_C(),
   CFRLDDRK64(), TSLDDRK74(),
   CKLLSRK43_2(),
@@ -59,7 +59,7 @@ sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
 
 for alg in CACHE_TEST_ALGS
   @show alg
-  sol = solve(prob,alg,callback=callback,dt=1/2)
+  local sol = solve(prob,alg,callback=callback,dt=1/2)
   @test length(sol[end]) > 1
 end
 
@@ -90,7 +90,7 @@ callback_matrix = ContinuousCallback(condition_matrix, affect_matrix!)
 for alg in CACHE_TEST_ALGS
   OrdinaryDiffEq.isimplicit(alg) && continue # this restriction should be removed in the future
   @show alg
-  sol = solve(prob_matrix, alg,callback=callback_matrix, dt=1/2)
+  local sol = solve(prob_matrix, alg,callback=callback_matrix, dt=1/2)
   @test size(sol[end]) == (2,3)
 end
 
@@ -108,10 +108,35 @@ end
 callback_resize3 = ContinuousCallback(condition_resize3, affect!_resize3)
 
 for alg in CACHE_TEST_ALGS
+  (OrdinaryDiffEq.isimplicit(alg) || OrdinaryDiffEq.alg_order(alg) < 2) && continue
   @show alg
-  sol = solve(prob_resize3, alg, callback=callback_resize3, dt=0.125)
+  local sol = solve(prob_resize3, alg, callback=callback_resize3, dt=0.125)
   @test size(sol[end]) == (3,)
   @test all(sol[end] .== sol[end][1])
+  @test sol[end][1] ≈ exp(1) atol=1.0e-2
+end
+
+# additional cache tests to find more bugs
+println("Enforced adaptive dt checks")
+u0_adapt = zeros(2)
+f_adapt = (du, u, p, t) -> du .= t
+prob_adapt = ODEProblem(f_adapt, u0_adapt, (0.0, 2.0))
+condition_adapt = (u, t, integrator) -> true
+affect!_adapt = function (integrator)
+  dt = rand((0.0625, 0.125, 0.25))
+  set_proposed_dt!(integrator, dt)
+  integrator.opts.dtmax = dt
+  integrator.dtcache = dt
+  u_modified!(integrator, false)
+  nothing
+end
+callback_adapt = DiscreteCallback(condition_adapt, affect!_adapt, save_positions=(false,false))
+
+for alg in CACHE_TEST_ALGS
+  (OrdinaryDiffEq.isimplicit(alg) || OrdinaryDiffEq.alg_order(alg) < 2) && continue
+  @show alg
+  local sol = solve(prob_adapt, alg, callback=callback_adapt, dt=0.125)
+  @test all(idx -> all(isapprox.(sol.u[idx], 0.5*sol.t[idx]^2, atol=1.0e-6)), eachindex(sol.t))
 end
 
 
