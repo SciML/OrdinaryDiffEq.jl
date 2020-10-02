@@ -983,6 +983,8 @@ end
   dt_2 = half_t * dt
 
   # u1
+  integrator.fsalfirst = f(uprev, p, t)
+  integrator.k[1] = integrator.fsalfirst
   u = uprev + dt_2*integrator.fsalfirst
   k = f(u, p, t+dt_2)
   # u2
@@ -998,35 +1000,33 @@ end
   # u
   u = u + dt_2*k # corresponds to b = (1/6, 1/6, 1/6, 1/2)
 
-  integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 4
   if integrator.opts.adaptive
     utilde = half_u * (utilde - u) # corresponds to bhat = (1/4, 1/4, 1/4, 1/4)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
-  integrator.k[1] = integrator.fsalfirst
   integrator.u = u
 end
 
 function initialize!(integrator,cache::SSPRK43Cache)
+  @unpack k = cache
+  integrator.fsalfirst = similar(k)
+  integrator.fsallast = k
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
-  integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
-  integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK43Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
+  @unpack k,utilde,atmp,stage_limiter!,step_limiter! = cache
   @unpack one_third_u, two_thirds_u, half_u, half_t = cache.tab
   dt_2 = half_t * dt
 
   # u1
-  @.. u = uprev + dt_2*fsalfirst
+  f( integrator.fsalfirst,  uprev, p, t)
+  @.. u = uprev + dt_2*integrator.fsalfirst
   stage_limiter!(u, f, t+dt_2)
   f( k,  u, p, t+dt_2)
   # u2
@@ -1053,7 +1053,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.destats.nf += 4
-  f( k,  u, p, t+dt)
 end
 
 

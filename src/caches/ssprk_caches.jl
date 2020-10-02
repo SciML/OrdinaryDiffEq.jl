@@ -731,7 +731,6 @@ end
   uprev::uType
   k::rateType
   tmp::uType # superfluous, only needed for callbacks
-  fsalfirst::rateType
   utilde::uType
   atmp::uNoUnitsType
   stage_limiter!::StageLimiter
@@ -758,11 +757,10 @@ end
 function alg_cache(alg::SSPRK43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = zero(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
   utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   tab = SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-  SSPRK43Cache(u,uprev,k,tmp,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!,tab)
+  SSPRK43Cache(u,uprev,k,tmp,utilde,atmp,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
