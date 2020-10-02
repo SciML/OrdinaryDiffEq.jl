@@ -47,7 +47,7 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
-@inline trivial_limiter!(u, f, t) = nothing
+@inline trivial_limiter!(u, f, p, t) = nothing
 
 struct Euler <: OrdinaryDiffEqAlgorithm end
 struct KuttaPRK2p5 <: OrdinaryDiffEqAlgorithm
