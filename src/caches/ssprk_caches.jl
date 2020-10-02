@@ -687,6 +687,48 @@ function alg_cache(alg::SSPRK83,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
 end
 
 
+@cache struct SSPRK43Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType # superfluous, only needed for callbacks
+  utilde::uType
+  atmp::uNoUnitsType
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  tab::TabType
+end
+
+struct SSPRK43ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  one_third_u::T
+  two_thirds_u::T
+  half_u::T
+  half_t::T2
+
+  function SSPRK43ConstantCache(T, T2)
+    one_third_u = inv(T(3))
+    two_thirds_u = 2 * one_third_u
+    half_u = T(0.5)
+    half_t = T2(0.5)
+
+    new{T,T2}(one_third_u, two_thirds_u, half_u, half_t)
+  end
+end
+
+function alg_cache(alg::SSPRK43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tmp = zero(u)
+  k = zero(rate_prototype)
+  utilde = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+  SSPRK43Cache(u,uprev,k,tmp,utilde,atmp,alg.stage_limiter!,alg.step_limiter!,tab)
+end
+
+function alg_cache(alg::SSPRK43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+
 @cache struct SSPRK432Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

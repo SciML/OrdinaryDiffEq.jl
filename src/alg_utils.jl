@@ -37,6 +37,7 @@ isfsal(alg::SSPRK53_H) = false
 isfsal(alg::SSPRK63) = false
 isfsal(alg::SSPRK73) = false
 isfsal(alg::SSPRK83) = false
+isfsal(alg::SSPRK43) = false
 isfsal(alg::SSPRK432) = false
 isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
