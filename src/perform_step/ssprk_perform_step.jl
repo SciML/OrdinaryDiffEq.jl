@@ -1513,13 +1513,12 @@ end
 function initialize!(integrator,cache::SSPRK104ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
-  integrator.kshortsize = 2
+  integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK104ConstantCache,repeat_step=false)
@@ -1528,6 +1527,8 @@ end
   dt_3 = dt/3
   dt_2 = dt/2
 
+  k = integrator.fsalfirst = f(uprev, p, t)
+  integrator.k[1] = integrator.fsalfirst
   tmp = uprev + dt_6 * integrator.fsalfirst # u₁
   k = f(tmp, p, t+dt_6)
   tmp = tmp + dt_6 * k # u₂
@@ -1536,7 +1537,7 @@ end
   k = f(tmp, p, t+dt_2)
   u = tmp + dt_6 * k # u₄
   k₄ = f(u, p, t+2*dt_3)
-  tmp = (3*uprev + 2*u + dt_3 * k₄) / 5 # u₅
+  tmp = (3*uprev + 2*u + 2*dt_6 * k₄) / 5 # u₅
   k = f(tmp, p, t+dt_3)
   tmp = tmp + dt_6 * k # u₆
   k = f(tmp, p, t+dt_2)
@@ -1548,32 +1549,29 @@ end
   k = f(tmp, p, t+dt)
   u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.destats.nf += 10
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
 
 function initialize!(integrator,cache::SSPRK104Cache)
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
+  @unpack k = cache
+  integrator.fsalfirst = k
   integrator.fsallast = k
-  integrator.kshortsize = 2
+  integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.k[1] = k
+  integrator.f(k,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK104Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,k₄,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
+  @unpack k,k₄,tmp,stage_limiter!,step_limiter! = cache
   dt_6 = dt/6
   dt_3 = dt/3
   dt_2 = dt/2
 
+  f( k,  uprev, p, t)
   @.. tmp = uprev + dt_6 * integrator.fsalfirst
   stage_limiter!(tmp, f, t+dt_6)
   f( k,  tmp, p, t+dt_6)
@@ -1605,5 +1603,4 @@ end
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 10
-  f(k, u, p, t+dt)
 end

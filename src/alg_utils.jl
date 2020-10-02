@@ -28,6 +28,8 @@ isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
+isfsal(alg::SSPRK104) = false
+
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 

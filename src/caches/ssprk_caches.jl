@@ -960,7 +960,6 @@ end
   k::rateType
   k₄::rateType
   tmp::uType
-  fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
@@ -971,12 +970,7 @@ function alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tmp = zero(u)
   k = zero(rate_prototype)
   k₄ = zero(rate_prototype)
-  if calck
-    fsalfirst = zero(rate_prototype)
-  else
-    fsalfirst = k
-  end
-  SSPRK104Cache(u,uprev,k,k₄,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
+  SSPRK104Cache(u,uprev,k,k₄,tmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
 alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = SSPRK104ConstantCache()
