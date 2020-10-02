@@ -28,6 +28,18 @@ isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
+isfsal(alg::SSPRK22) = false
+isfsal(alg::SSPRK33) = false
+isfsal(alg::SSPRK53) = false
+isfsal(alg::SSPRK53_2N1) = false
+isfsal(alg::SSPRK53_2N2) = false
+isfsal(alg::SSPRK53_H) = false
+isfsal(alg::SSPRK63) = false
+isfsal(alg::SSPRK73) = false
+isfsal(alg::SSPRK83) = false
+isfsal(alg::SSPRK432) = false
+isfsal(alg::SSPRK932) = false
+isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
