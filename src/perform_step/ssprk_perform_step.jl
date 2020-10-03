@@ -25,8 +25,8 @@ end
 end
 
 function initialize!(integrator,cache::SSPRK22Cache)
-  @unpack k = cache
-  integrator.fsalfirst = similar(k)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
@@ -35,11 +35,11 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK22Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,stage_limiter!,step_limiter! = cache
+  @unpack k,fsalfirst,stage_limiter!,step_limiter! = cache
 
   # u1 -> stored as u
-  f( integrator.fsalfirst,  uprev, p, t)
-  @.. u = uprev + dt*integrator.fsalfirst
+  f( fsalfirst,  uprev, p, t)
+  @.. u = uprev + dt*fsalfirst
   stage_limiter!(u, f, p, t+dt)
   f( k,  u, p, t+dt)
   # u

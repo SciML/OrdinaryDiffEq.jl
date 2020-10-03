@@ -2,6 +2,7 @@
   u::uType
   uprev::uType
   k::rateType
+  fsalfirst::rateType
   tmp::uType # superfluous, only needed for callbacks...
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -12,7 +13,12 @@ struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
 function alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = zero(u)
   k = zero(rate_prototype)
-  SSPRK22Cache(u,uprev,k,tmp,alg.stage_limiter!,alg.step_limiter!)
+  if calck
+    fsalfirst = similar(k)
+  else
+    fsalfirst = k
+  end
+  SSPRK22Cache(u,uprev,k,fsalfirst,tmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
 alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = SSPRK22ConstantCache()

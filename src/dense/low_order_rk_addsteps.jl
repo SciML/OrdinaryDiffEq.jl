@@ -15,9 +15,8 @@ end
 
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<1 || always_calc_begin
-    rtmp = similar(u, eltype(eltype(k)))
-    f(rtmp,uprev,p,t)
-    copyat_or_push!(k,1,rtmp)
+    f(cache.k,uprev,p,t)
+    copyat_or_push!(k,1,cache.k)
   end
   nothing
 end
