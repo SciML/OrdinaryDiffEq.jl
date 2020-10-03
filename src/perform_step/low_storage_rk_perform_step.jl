@@ -41,7 +41,6 @@ function initialize!(integrator,cache::LowStorageRK2NCache)
   integrator.fsalfirst = k # used for get_du
   integrator.fsallast = k
   integrator.f(k ,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
-  @.. tmp = integrator.dt * k
   integrator.destats.nf += 1
 end
 
@@ -50,16 +49,10 @@ end
   @unpack k,tmp,williamson_condition = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
-  if integrator.u_modified
-    if !get_current_isfsal(integrator.alg, integrator.cache)
-      f(k, u, p, t)
-      integrator.destats.nf += 1
-    end
-  end
-
-  @.. tmp = dt*k
-
   # u1
+  f(k, u, p, t)
+  integrator.destats.nf += 1
+  @.. tmp = dt*k
   @.. u   = u + B1*tmp
   # other stages
   for i in eachindex(A2end)
@@ -73,9 +66,6 @@ end
     end
     integrator.destats.nf += 1
   end
-
-  f(k, u, p, t+dt)
-  integrator.destats.nf += 1
 end
 
 # 2C low storage methods
@@ -95,7 +85,9 @@ end
   @unpack A2end,B1,B2end,c2end = cache
 
   # u1
-  k = integrator.fsalfirst
+  k = integrator.fsalfirst = f(u, p, t)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.destats.nf += 1
   u = u + B1*dt*k
 
   # other stages
@@ -106,9 +98,6 @@ end
     u   = u + B2end[i]*dt*k
   end
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
-  integrator.destats.nf += 1
-  integrator.k[1] = integrator.fsalfirst
   integrator.u = u
 end
 
