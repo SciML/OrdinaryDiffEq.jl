@@ -6,18 +6,17 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::FunctionMapConstantCache
   nothing
 end
 
-function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK43ConstantCache,SSPRK432ConstantCache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<1 || always_calc_begin
     copyat_or_push!(k,1,f(uprev,p,t))
   end
   nothing
 end
 
-function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK43Cache,SSPRK432Cache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<1 || always_calc_begin
-    rtmp = similar(u, eltype(eltype(k)))
-    f(rtmp,uprev,p,t)
-    copyat_or_push!(k,1,rtmp)
+    f(cache.k,uprev,p,t)
+    copyat_or_push!(k,1,cache.k)
   end
   nothing
 end

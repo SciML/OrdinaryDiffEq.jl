@@ -28,6 +28,21 @@ isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
+isfsal(alg::SSPRK22) = false
+isfsal(alg::SSPRK33) = false
+isfsal(alg::SSPRK53) = false
+isfsal(alg::SSPRK53_2N1) = false
+isfsal(alg::SSPRK53_2N2) = false
+isfsal(alg::SSPRK53_H) = false
+isfsal(alg::SSPRK63) = false
+isfsal(alg::SSPRK73) = false
+isfsal(alg::SSPRK83) = false
+isfsal(alg::SSPRK43) = false
+isfsal(alg::SSPRK432) = false
+isfsal(alg::SSPRK932) = false
+isfsal(alg::SSPRK54) = false
+isfsal(alg::SSPRK104) = false
+
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
@@ -257,6 +272,7 @@ alg_order(alg::SSPRK53_H) = 3
 alg_order(alg::SSPRK63) = 3
 alg_order(alg::SSPRK73) = 3
 alg_order(alg::SSPRK83) = 3
+alg_order(alg::SSPRK43) = 3
 alg_order(alg::SSPRK432) = 3
 alg_order(alg::SSPRKMSVS43) = 3
 alg_order(alg::SSPRK932) = 3
@@ -500,6 +516,7 @@ ssp_coefficient(alg::SSPRK53_H) = 2.65
 ssp_coefficient(alg::SSPRK63) = 3.518
 ssp_coefficient(alg::SSPRK73) = 4.2879
 ssp_coefficient(alg::SSPRK83) = 5.107
+ssp_coefficient(alg::SSPRK43) = 2
 ssp_coefficient(alg::SSPRK432) = 2
 ssp_coefficient(alg::SSPRKMSVS32) = 0.5
 ssp_coefficient(alg::SSPRKMSVS43) = 0.33
