@@ -74,7 +74,7 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
           get_tmp_cache(integrator::ODEIntegrator,integrator.alg,integrator.cache)
 # avoid method ambiguity
-for typ in (OrdinaryDiffEqAlgorithm,Union{RadauIIA3,RadauIIA5},OrdinaryDiffEqNewtonAdaptiveAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm)
+for typ in (OrdinaryDiffEqAlgorithm,Union{RadauIIA3,RadauIIA5},OrdinaryDiffEqNewtonAdaptiveAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,Union{SSPRK22,SSPRK33,SSPRK53_2N1,SSPRK53_2N2,SSPRK43,SSPRK432,SSPRK932})
   @eval @inline DiffEqBase.get_tmp_cache(integrator,alg::$typ,cache::OrdinaryDiffEqConstantCache) = nothing
 end
 
@@ -83,13 +83,13 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::Union{RadauIIA3,RadauIIA5},cache) = (cache.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.nlsolver.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::Union{SSPRK22,SSPRK33,SSPRK53_2N1,SSPRK53_2N2,SSPRK43,SSPRK432,SSPRK932},cache) = (cache.k,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,cache) = (cache.tmp,cache.utilde)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,cache) = (cache.tmp,cache.utilde)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqExponentialAlgorithm,cache) = (cache.tmp,cache.dz)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqLinearExponentialAlgorithm,cache) = (cache.tmp,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 @inline DiffEqBase.get_tmp_cache(integrator,alg::DAEAlgorithm,cache) = (cache.nlsolver.cache.dz,cache.atmp)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::Union{SSPRK22,SSPRK33,SSPRK53_2N1,SSPRK53_2N2,SSPRK43,SSPRK432,SSPRK932},cache) = (cache.k,)
 
 full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
 full_cache(integrator::CompositeCache) = Iterators.flatten(full_cache(c) for c in integrator.caches)
