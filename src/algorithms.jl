@@ -529,6 +529,12 @@ doi: https://doi.org/10.1137/120885899
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 
 struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
+
+"""
+Tsitouras, Ch. "Explicit Runge–Kutta methods for starting integration of
+Lane–Emden problem." Applied Mathematics and Computation 354 (2019): 353-364.
+doi: https://doi.org/10.1016/j.amc.2019.02.047
+"""
 struct RKO65 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
 
 """
