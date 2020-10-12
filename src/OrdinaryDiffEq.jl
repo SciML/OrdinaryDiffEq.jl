@@ -50,6 +50,8 @@ module OrdinaryDiffEq
 
   import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear, timedepentdtmin
 
+  import DiffEqBase: LinearInterpolation, HermiteInterpolation
+
   import SparseDiffTools
   import SparseDiffTools: matrix_colors, forwarddiff_color_jacobian!,
                           forwarddiff_color_jacobian, ForwardColorJacCache,
