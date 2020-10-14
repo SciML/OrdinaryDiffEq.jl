@@ -34,8 +34,8 @@ end
 
 function lotka_volterra!(du,u,h,p,t)
     🐰, 🐺 = u
-    🕥🐰 = h(p,t-τ;idxs=1)
     α,β,γ,δ,τ = p
+    🕥🐰 = h(p,t-τ;idxs=1)
     du[1] = d🐰 = α*🕥🐰 - β*🐺*🐰
     du[2] = d🐺 = γ*🐺*🐰 -δ*🐺
     nothing
