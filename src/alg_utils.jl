@@ -76,6 +76,9 @@ isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
 isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 
+isautoswitch(alg) = false
+isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
+
 qmin_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = isadaptive(alg) ? 1//5 : 0
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 qmin_default(alg::DP8) = 1//3
