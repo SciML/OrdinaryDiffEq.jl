@@ -33,7 +33,7 @@ DDEProblemLibrary.importddeproblems()
 end
 
 τ = 1.0
-function latka_volterra!(du,u,h,p,t)
+function lotka_volterra!(du,u,h,p,t)
     🐰, 🐺 = u
     🕥🐰 = h(p,t-τ;idxs=1)
     α,β,γ,δ = p
@@ -46,5 +46,5 @@ tspan = (0.0, 10.0)
 h(p,t) = [1.0,1.0]
 h(p,t;idxs = 1) = 1.0
 p = [1.5,1.0,3.0,1.0]
-prob = DDEProblem(latka_volterra!,uₒ,h,tspan,p,constant_lag = [τ] )
+prob = DDEProblem(lotka_volterra!,uₒ,h,tspan,p,constant_lag = [τ] )
 sol = solve(prob,MethodOfSteps(AutoTsit5(Rosenbrock23(autodiff=false))))
