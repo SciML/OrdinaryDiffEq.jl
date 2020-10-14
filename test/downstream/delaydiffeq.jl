@@ -31,3 +31,20 @@ DDEProblemLibrary.importddeproblems()
         @test sol[1, :] ≈ sol_scalar.u
     end
 end
+
+τ = 1.0
+function latka_volterra!(du,u,h,p,t)
+    🐰, 🐺 = u
+    🕥🐰 = h(p,t-τ;idxs=1)
+    α,β,γ,δ = p
+    du[1] = d🐰 = α*🕥🐰 - β*🐺*🐰
+    du[2] = d🐺 = γ*🐺*🐰 -δ*🐺
+    nothing
+end
+uₒ = [1.0,1.0]
+tspan = (0.0, 10.0)
+h(p,t) = [1.0,1.0]
+h(p,t;idxs = 1) = 1.0
+p = [1.5,1.0,3.0,1.0]
+prob = DDEProblem(latka_volterra!,uₒ,h,tspan,p,constant_lag = [τ] )
+sol = solve(prob,MethodOfSteps(AutoTsit5(Rosenbrock23(autodiff=false))))
