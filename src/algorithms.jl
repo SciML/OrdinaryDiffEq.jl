@@ -345,9 +345,11 @@ Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
 Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
 228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
 """
-struct ORK256 <: OrdinaryDiffEqAlgorithm
+struct ORK256{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  ORK256(;williamson_condition=true) = new(williamson_condition)
+  ORK256(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
@@ -357,9 +359,11 @@ end
   year={1994}
 }
 """
-struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm
+struct CarpenterKennedy2N54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  CarpenterKennedy2N54(;williamson_condition=true) = new(williamson_condition)
+  CarpenterKennedy2N54(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
 struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
@@ -369,9 +373,11 @@ D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutt
 Computational Acoustics. Journal of Computational Physics, 143(2), pp 674-681, 1998. doi:
 https://doi.org/10.1006/jcph.1998.5986
 """
-struct HSLDDRK64 <: OrdinaryDiffEqAlgorithm
+struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  HSLDDRK64(;williamson_condition=true) = new(williamson_condition)
+  HSLDDRK64(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
@@ -379,9 +385,11 @@ T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK73_C <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK73_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  DGLDDRK73_C(;williamson_condition=true) = new(williamson_condition)
+  DGLDDRK73_C(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
@@ -389,9 +397,11 @@ T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_C <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK84_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  DGLDDRK84_C(;williamson_condition=true) = new(williamson_condition)
+  DGLDDRK84_C(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
@@ -399,9 +409,11 @@ T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_F <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK84_F{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  DGLDDRK84_F(;williamson_condition=true) = new(williamson_condition)
+  DGLDDRK84_F(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
@@ -409,9 +421,11 @@ Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta S
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK124{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  NDBLSRK124(;williamson_condition=true) = new(williamson_condition)
+  NDBLSRK124(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
@@ -419,9 +433,11 @@ Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta S
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK134{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  NDBLSRK134(;williamson_condition=true) = new(williamson_condition)
+  NDBLSRK134(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
@@ -429,9 +445,11 @@ Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta S
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK144{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
   williamson_condition::Bool
-  NDBLSRK144(;williamson_condition=true) = new(williamson_condition)
+  NDBLSRK144(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
 
 """
