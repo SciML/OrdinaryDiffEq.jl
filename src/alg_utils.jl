@@ -54,7 +54,7 @@ issplit(alg::SplitAlgorithms) = true
   for i in 1:length(T.types)
     push!(expr.args, quote
       if current == $i
-        return QT(beta1_default(algs[$i], beta2_default(algs[1])))
+        return QT(beta1_default(algs[$i], beta2_default(algs[$i])))
       end
     end)
   end
@@ -65,7 +65,7 @@ end
   for i in 1:length(T.types)
     push!(expr.args, quote
       if current == $i
-        return QT(beta2_default(algs[1]))
+        return QT(beta2_default(algs[$i]))
       end
     end)
   end
