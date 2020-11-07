@@ -299,7 +299,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
     beta2 === nothing && ( beta2=_composite_beta2_default(_alg.algs, cache.current, QT) )
-    beta1 === nothing && ( beta1=_composite_beta1_default(_alg.algs, cache.current, QT) )
+    beta1 === nothing && ( beta1=_composite_beta1_default(_alg.algs, cache.current, QT, beta2) )
   else
     id = InterpolationData(f,timeseries,ts,ks,dense,cache)
     beta2 === nothing && ( beta2=beta2_default(_alg) )

@@ -49,12 +49,12 @@ get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.curre
 issplit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 issplit(alg::SplitAlgorithms) = true
 
-@generated function _composite_beta1_default(algs::T, current, ::Type{QT}) where {T <: Tuple, QT}
+@generated function _composite_beta1_default(algs::T, current, ::Type{QT}, beta2) where {T <: Tuple, QT}
   expr = Expr(:block)
   for i in 1:length(T.types)
     push!(expr.args, quote
       if current == $i
-        return QT(beta1_default(algs[$i], beta2_default(algs[$i])))
+        return QT(beta1_default(algs[$i], beta2))
       end
     end)
   end
