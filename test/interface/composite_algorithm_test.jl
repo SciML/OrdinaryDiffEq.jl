@@ -20,4 +20,4 @@ solve!(integrator2)
 @test integrator1.sol.t == integrator2.sol.t
 
 sol = solve(prob,alg_switch)
-@inferred OrdinaryDiffEq.DiffEqBase.__solve(prob,alg_switch)
+@inferred DiffEqBase.__init(prob, alg_switch)
