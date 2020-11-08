@@ -49,11 +49,35 @@ get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.curre
 issplit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 issplit(alg::SplitAlgorithms) = true
 
+@generated function _composite_beta1_default(algs::T, current, ::Type{QT}, beta2) where {T <: Tuple, QT}
+  expr = Expr(:block)
+  for i in 1:length(T.types)
+    push!(expr.args, quote
+      if current == $i
+        return QT(beta1_default(algs[$i], beta2))
+      end
+    end)
+  end
+  return expr
+end
+@generated function _composite_beta2_default(algs::T, current, ::Type{QT}) where {T <: Tuple, QT}
+  expr = Expr(:block)
+  for i in 1:length(T.types)
+    push!(expr.args, quote
+      if current == $i
+        return QT(beta2_default(algs[$i]))
+      end
+    end)
+  end
+  return expr
+end
+
+  
 fsal_typeof(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},rate_prototype) = typeof(rate_prototype)
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
-  fsal = unique(map(x->fsal_typeof(x,rate_prototype), alg.algs))
-  @assert length(fsal) == 1 "`fsal_typeof` must be consistent"
+  fsal = map(x->fsal_typeof(x,rate_prototype), alg.algs)
+  @assert length(unique(fsal)) == 1 "`fsal_typeof` must be consistent"
   return fsal[1]
 end
 

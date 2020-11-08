@@ -10,18 +10,16 @@ mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   current::Int
 end
 
-function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  caches = map(alg.algs) do x
-    alg_cache(x,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(false))
-  end
+function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {V}
+  caches = __alg_cache(alg.algs,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(V))
   CompositeCache(caches,alg.choice_function,1)
 end
 
-function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  caches = map(alg.algs) do x
-    alg_cache(x,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(true))
-  end
-  CompositeCache(caches,alg.choice_function,1)
+# map + closure approach doesn't infer
+@generated function __alg_cache(algs::T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {T <: Tuple, V}
+  return Expr(:tuple, map(1:length(T.types)) do i
+    :(alg_cache(algs[$i],u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val($V)))
+  end...)
 end
 
 alg_cache(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) where {F} = ODEEmptyCache()
