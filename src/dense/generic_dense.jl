@@ -53,9 +53,24 @@ end
   if !(typeof(integrator.cache) <: CompositeCache)
     val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
   else
-    val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,@inbounds(integrator.cache.caches[integrator.cache.current]),idxs,deriv)
+    val = composite_ode_interpolant(Θ,integrator,integrator.cache.caches,integrator.cache.current,idxs,deriv)
   end
   val
+end
+
+@generated function composite_ode_interpolant(Θ, integrator, caches::T, current, idxs, deriv) where {T <: Tuple}
+  expr = Expr(:block)
+  for i in 1:length(T.types)
+    push!(expr.args, quote
+      if $i == current
+        return ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,caches[$i],idxs,deriv)
+      end
+    end)
+  end
+  push!(expr.args, quote
+    throw("Cache $current is not available. There are only $(length(caches)) caches.")
+  end)
+  return expr
 end
 
 @inline function ode_interpolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
@@ -65,6 +80,21 @@ end
   else
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
+end
+
+@generated function composite_ode_interpolant!(val, Θ, integrator, caches::T, current, idxs, deriv) where {T <: Tuple}
+  expr = Expr(:block)
+  for i in 1:length(T.types)
+    push!(expr.args, quote
+      if $i == current
+        return ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,caches[$i],idxs,deriv)
+      end
+    end)
+  end
+  push!(expr.args, quote
+    throw("Cache $current is not available. There are only $(length(caches)) caches.")
+  end)
+  return expr
 end
 
 @inline function current_interpolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
@@ -112,20 +142,49 @@ end
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
   else
-    ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
+    composite_ode_extrapolant!(val,θ,integrator,integrator.cache.caches,integrator.cache.current,idxs,deriv)
   end
 end
+
+@generated function composite_ode_extrapolant!(val, Θ, integrator, caches::T, current, idxs, deriv) where {T <: Tuple}
+  expr = Expr(:block)
+  for i in 1:length(T.types)
+    push!(expr.args, quote
+      if $i == current
+        return ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,caches[$i],idxs,deriv)
+      end
+    end)
+  end
+  push!(expr.args, quote
+    throw("Cache $current is not available. There are only $(length(caches)) caches.")
+  end)
+  return expr
+end
+
 
 @inline function ode_extrapolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   DiffEqBase.addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
   else
-    ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
+    composite_ode_extrapolant(Θ,integrator,integrator.cache.caches,integrator.cache.current,idxs,deriv)
   end
 end
 
-##
+@generated function composite_ode_extrapolant(Θ, integrator, caches::T, current, idxs, deriv) where {T <: Tuple}
+  expr = Expr(:block)
+  for i in 1:length(T.types)
+    push!(expr.args, quote
+      if $i == current
+        return ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,caches[$i],idxs,deriv)
+      end
+    end)
+  end
+  push!(expr.args, quote
+    throw("Cache $current is not available. There are only $(length(caches)) caches.")
+  end)
+  return expr
+end
 
 """
 ode_interpolation(tvals,ts,timeseries,ks)
