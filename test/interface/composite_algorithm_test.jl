@@ -21,3 +21,7 @@ solve!(integrator2)
 
 sol = solve(prob,alg_switch)
 @inferred DiffEqBase.__init(prob, alg_switch)
+v = @inferred OrdinaryDiffEq.ode_interpolant(1.0, integrator1, integrator1.opts.save_idxs, Val{0})
+@inferred OrdinaryDiffEq.ode_interpolant!(v, 1.0, integrator1, integrator1.opts.save_idxs, Val{0})
+v = @inferred OrdinaryDiffEq.ode_extrapolant(1.0, integrator1, integrator1.opts.save_idxs, Val{0})
+@inferred OrdinaryDiffEq.ode_extrapolant!(v, 1.0, integrator1, integrator1.opts.save_idxs, Val{0})

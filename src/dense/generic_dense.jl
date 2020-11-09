@@ -142,7 +142,7 @@ end
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
   else
-    composite_ode_extrapolant!(val,θ,integrator,integrator.cache.caches,integrator.cache.current,idxs,deriv)
+    composite_ode_extrapolant!(val,Θ,integrator,integrator.cache.caches,integrator.cache.current,idxs,deriv)
   end
 end
 
