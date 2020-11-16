@@ -218,11 +218,12 @@ function _loopfooter!(integrator)
     handle_callbacks!(integrator)
   end
   if integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
+    t1,t2 = integrator.sol.prob.tspan
     @logmsg(LogLevel(-1),
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
-    progress=integrator.t/integrator.sol.prob.tspan[2])
+    progress=(integrator.t-t1)/(t2-t1))
   end
 
   # Take value because if t is dual then maxeig can be dual
