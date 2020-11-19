@@ -82,6 +82,7 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::Union{RadauIIA3,RadauIIA5},cache) = (cache.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.nlsolver.tmp,cache.atmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAlgorithm,cache) = (cache.nlsolver.tmp,cache.nlsolver.z)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::Union{SSPRK22,SSPRK33,SSPRK53_2N1,SSPRK53_2N2,SSPRK43,SSPRK432,SSPRK932},cache) = (cache.k,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,cache) = (cache.tmp,cache.utilde)
