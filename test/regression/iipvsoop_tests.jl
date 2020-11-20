@@ -79,6 +79,7 @@ end
 
 working_sdirk_algs = [ImplicitMidpoint(),
                       ImplicitEuler(),
+                      ImplicitMidpoint(autodiff=false),
                       SSPSDIRK2()]
 
 sdirk_algs = [Trapezoid(),
