@@ -1,25 +1,4 @@
-# OrdinaryDiffEq.jl
-
-[![Join the chat at https://gitter.im/JuliaDiffEq/Lobby](https://badges.gitter.im/JuliaDiffEq/Lobby.svg)](https://gitter.im/JuliaDiffEq/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/SciML/OrdinaryDiffEq.jl.svg?branch=master)](https://travis-ci.org/SciML/OrdinaryDiffEq.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/dpa182s6i8c67awu/branch/master?svg=true)](https://ci.appveyor.com/project/YingboMa/ordinarydiffeq-jl/branch/master)
-[![GitlabCI](https://gitlab.com/JuliaGPU/OrdinaryDiffEq.jl/badges/master/pipeline.svg)](https://gitlab.com/JuliaGPU/OrdinaryDiffEq.jl/pipelines)
-
-OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the
-ordinary differential equation solvers and utilities. While completely independent
-and usable on its own, users interested in using this
-functionality should check out [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl).
-
-## Installation
-
-Assuming that you already have Julia correctly installed, it suffices to import
-OrdinaryDiffEq.jl in the standard way:
-
-```julia
-import Pkg; Pkg.add("OrdinaryDiffEq")
-```
-
-## API
+# Usage
 
 OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://diffeq.sciml.ai/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
 
