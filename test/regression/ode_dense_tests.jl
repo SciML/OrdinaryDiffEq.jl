@@ -186,8 +186,8 @@ regression_test(ORK256(), 3.0e-5, 5.0e-5)
 # CarpenterKennedy2N54
 regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
 
-# HSLDDRK64
-regression_test(HSLDDRK64(), 3.0e-5, 3.0e-5)
+# SHLDDRK64
+regression_test(SHLDDRK64(), 3.0e-5, 3.0e-5)
 
 # DGLDDRK73_C
 regression_test(DGLDDRK73_C(), 3.0e-4, 3.0e-4)

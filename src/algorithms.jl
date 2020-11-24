@@ -365,20 +365,21 @@ struct CarpenterKennedy2N54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
   CarpenterKennedy2N54(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
-struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
-struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
+
 
 """
 D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
 Computational Acoustics. Journal of Computational Physics, 143(2), pp 674-681, 1998. doi:
 https://doi.org/10.1006/jcph.1998.5986
 """
-struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SHLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   williamson_condition::Bool
-  HSLDDRK64(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+  SHLDDRK64(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
+struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
+struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
 
 """
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space

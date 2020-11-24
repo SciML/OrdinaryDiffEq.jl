@@ -109,7 +109,7 @@ function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBo
 end
 
 
-function HSLDDRK64ConstantCache(T, T2)
+function SHLDDRK64ConstantCache(T, T2)
   #TODO: Solve the order conditions with more accuracy
   A2 = convert(T, -0.4919575)
   A3 = convert(T, -0.8946264)
@@ -136,8 +136,8 @@ function HSLDDRK64ConstantCache(T, T2)
   LowStorageRK2NConstantCache{5,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tab = HSLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+function alg_cache(alg::SHLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tab = SHLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   tmp = zero(u)
   williamson_condition = alg.williamson_condition
   if calck
@@ -153,8 +153,8 @@ function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition,alg.stage_limiter!,alg.step_limiter!)
 end
 
-function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  HSLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+function alg_cache(alg::SHLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  SHLDDRK64ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 

@@ -13,7 +13,7 @@ end
 prob = ODEProblem(f,u0,(0.0,10.0))
 prob2 = ODEProblem(f,gu0,(0.0,10.0))
 
-algs = [ORK256(), CarpenterKennedy2N54(),HSLDDRK64(),DGLDDRK73_C()]
+algs = [ORK256(), CarpenterKennedy2N54(),SHLDDRK64(),DGLDDRK73_C()]
 
 for alg in algs
 	# CPU warmup
