@@ -1,6 +1,6 @@
 # Usage
 
-OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://docs.juliadiffeq.org/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
+OrdinaryDiffEq.jl is part of the SciML common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](https://diffeq.sciml.ai/dev/tutorials/ode_example/) using the `Tsit5()` algorithm:
 
 ```julia
 using OrdinaryDiffEq
@@ -44,7 +44,7 @@ prob = ODEProblem(lorenz,u0,tspan)
 sol = solve(prob,Tsit5())
 ```
 
-For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://docs.juliadiffeq.org/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
 function HH_acceleration(dv,v,u,p,t)
@@ -63,4 +63,4 @@ Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 
 ## Available Solvers
 
-For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://docs.juliadiffeq.org/dev/solvers/ode_solve/), [Dynamical ODE Solvers](http://docs.juliadiffeq.org/dev/solvers/dynamical_solve/), and the [Split ODE Solvers](http://docs.juliadiffeq.org/dev/solvers/split_ode_solve/) pages.
+For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://diffeq.sciml.ai/dev/solvers/ode_solve/), [Dynamical ODE Solvers](http://diffeq.sciml.ai/dev/solvers/dynamical_solve/), and the [Split ODE Solvers](http://diffeq.sciml.ai/dev/solvers/split_ode_solve/) pages.
