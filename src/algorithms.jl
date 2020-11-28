@@ -380,6 +380,19 @@ struct SHLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
 end
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
 struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
+"""
+Deprecated SHLDDRK64 scheme from 'D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
+Computational Acoustics'
+"""
+struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  williamson_condition::Bool
+  function HSLDDRK64(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true)
+    Base.depwarn("HSLDDRK64 is deprecated, use SHLDDRK64 instead.", :HSLDDRK64)
+    SHLDDRK64(stage_limiter!, step_limiter!; williamson_condition=williamson_condition)
+  end
+end
 
 """
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
