@@ -3,7 +3,7 @@ using Random
 using ElasticArrays
 Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK43(),SSPRK104(),
-  CarpenterKennedy2N54(), HSLDDRK64(), ORK256(), DGLDDRK73_C(),
+  CarpenterKennedy2N54(), SHLDDRK64(), ORK256(), DGLDDRK73_C(),
   CFRLDDRK64(), TSLDDRK74(),
   CKLLSRK43_2(),
   ParsaniKetchesonDeconinck3S32(),

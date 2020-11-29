@@ -104,9 +104,9 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
-@info "HSLDDRK64"
-alg = HSLDDRK64()
-alg2 = HSLDDRK64(;williamson_condition=true)
+@info "SHLDDRK64"
+alg = SHLDDRK64()
+alg2 = SHLDDRK64(;williamson_condition=true)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
