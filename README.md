@@ -1,8 +1,7 @@
 # OrdinaryDiffEq.jl
 
 [![Join the chat at https://gitter.im/JuliaDiffEq/Lobby](https://badges.gitter.im/JuliaDiffEq/Lobby.svg)](https://gitter.im/JuliaDiffEq/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/SciML/OrdinaryDiffEq.jl.svg?branch=master)](https://travis-ci.org/SciML/OrdinaryDiffEq.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/dpa182s6i8c67awu/branch/master?svg=true)](https://ci.appveyor.com/project/YingboMa/ordinarydiffeq-jl/branch/master)
+[![Build Status](https://github.com/SciML/OrdinaryDiffEq.jl/workflows/CI/badge.svg)](https://github.com/SciML/OrdinaryDiffEq.jl/actions?query=workflow%3ACI)
 [![GitlabCI](https://gitlab.com/JuliaGPU/OrdinaryDiffEq.jl/badges/master/pipeline.svg)](https://gitlab.com/JuliaGPU/OrdinaryDiffEq.jl/pipelines)
 
 OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the
