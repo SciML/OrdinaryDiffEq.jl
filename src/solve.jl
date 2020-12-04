@@ -203,8 +203,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     resType = typeof(res_prototype)
   end
 
-  tstops_internal, saveat_internal, d_discontinuities_internal =
-    tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
+  tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
+  saveat_internal = initialize_saveat(tType, saveat, tspan)
+  d_discontinuities_internal = initialize_d_discontinuities(tType, d_discontinuities, tspan)
 
   callbacks_internal = CallbackSet(callback)
 
@@ -486,16 +487,15 @@ function handle_dt!(integrator)
   end
 end
 
-function tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
-  t0, tf = tspan
-  tType = eltype(tspan)
-  tdir = sign(tf - t0)
+# time stops
+function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where T
+  tstops_internal = BinaryMinHeap{T}()
 
+  t0, tf = tspan
+  tdir = sign(tf - t0)
   tdir_t0 = tdir * t0
   tdir_tf = tdir * tf
 
-  # time stops
-  tstops_internal = BinaryMinHeap{tType}()
   if isempty(d_discontinuities) && isempty(tstops) # TODO: Specialize more
     push!(tstops_internal, tdir_tf)
   else
@@ -512,8 +512,18 @@ function tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
     push!(tstops_internal, tdir_tf)
   end
 
-  # saving time points
-  saveat_internal = BinaryMinHeap{tType}()
+  return tstops_internal
+end
+
+# saving time points
+function initialize_saveat(::Type{T}, saveat, tspan) where T
+  saveat_internal = BinaryMinHeap{T}()
+
+  t0, tf = tspan
+  tdir = sign(tf - t0)
+  tdir_t0 = tdir * t0
+  tdir_tf = tdir * tf
+
   if typeof(saveat) <: Number
     directional_saveat = tdir * abs(saveat)
     for t in (t0 + directional_saveat):directional_saveat:tf
@@ -526,14 +536,22 @@ function tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
     end
   end
 
-  # discontinuities
-  d_discontinuities_internal = BinaryMinHeap{tType}()
-  sizehint!(d_discontinuities_internal.valtree, length(d_discontinuities))
+  return saveat_internal
+end
+
+# discontinuities
+function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where T
+  d_discontinuities_internal = BinaryMinHeap{T}()
+  sizehint!(d_discontinuities_internal, length(d_discontinuities))
+
+  t0, tf = tspan
+  tdir = sign(tf - t0)
+
   for t in d_discontinuities
     push!(d_discontinuities_internal, tdir * t)
   end
 
-  tstops_internal, saveat_internal, d_discontinuities_internal
+  return d_discontinuities_internal
 end
 
 function initialize_callbacks!(integrator, initialize_save = true)
