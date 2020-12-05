@@ -252,12 +252,11 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   integrator.tprev = t0
 
   tType = typeof(integrator.t)
-  tstops_internal, saveat_internal, d_discontinuities_internal =
-    tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, (tType(t0), tType(tf)))
-
-  integrator.opts.tstops = tstops_internal
-  integrator.opts.saveat = saveat_internal
-  integrator.opts.d_discontinuities = d_discontinuities_internal
+  tspan = (tType(t0), tType(tf))
+  integrator.opts.tstops = initialize_tstops(tType, tstops, d_discontinuities, tspan)
+  integrator.opts.saveat = initialize_saveat(tType, saveat, tspan)
+  integrator.opts.d_discontinuities =
+    initialize_d_discontinuities(tType, d_discontinuities, tspan)
 
   if erase_sol
     if integrator.opts.save_start

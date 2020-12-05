@@ -29,21 +29,17 @@ last_step_failed(integrator::ODEIntegrator) =
   integrator.last_stepfail && !integrator.opts.adaptive
 
 function modify_dt_for_tstops!(integrator)
-  tstops = integrator.opts.tstops
-  if !isempty(tstops)
+  if has_tstop(integrator)
+    tdir_t = integrator.tdir * integrator.t
+    tdir_tstop = first_tstop(integrator)
     if integrator.opts.adaptive
-      if integrator.tdir > 0
-        integrator.dt = min(abs(integrator.dt), abs(first(tstops) - integrator.t)) # step! to the end
-      else
-        integrator.dt = - min(abs(integrator.dt), abs(first(tstops) + integrator.t))
-      end
+      integrator.dt = integrator.tdir * min(abs(integrator.dt), abs(tdir_tstop - tdir_t)) # step! to the end
     elseif iszero(integrator.dtcache) && integrator.dtchangeable
-      # Use integrator.opts.tstops
-      integrator.dt = integrator.tdir * abs(first(tstops) - integrator.tdir * integrator.t)
-  elseif integrator.dtchangeable && !integrator.force_stepfail
-      # always try to step! with dtcache, but lower if a tstops
+      integrator.dt = integrator.tdir * abs(tdir_tstop - tdir_t)
+    elseif integrator.dtchangeable && !integrator.force_stepfail
+      # always try to step! with dtcache, but lower if a tstop
       # however, if force_stepfail then don't set to dtcache, and no tstop worry
-      integrator.dt = integrator.tdir * min(abs(integrator.dtcache), abs(first(tstops) - integrator.tdir * integrator.t)) # step! to the end
+      integrator.dt = integrator.tdir * min(abs(integrator.dtcache), abs(tdir_tstop - tdir_t)) # step! to the end
     end
   end
 end
@@ -190,8 +186,8 @@ function _loopfooter!(integrator)
       integrator.last_stepfail = false
       dtnew = DiffEqBase.value(step_accept_controller!(integrator,integrator.alg,q)) * oneunit(integrator.dt)
       integrator.tprev = integrator.t
-      if integrator.t isa AbstractFloat && !isempty(integrator.opts.tstops)
-        tstop = integrator.tdir * first(integrator.opts.tstops)
+      if integrator.t isa AbstractFloat && has_tstop(integrator)
+        tstop = integrator.tdir * first_tstop(integrator)
         abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
@@ -205,8 +201,8 @@ function _loopfooter!(integrator)
   elseif !integrator.opts.adaptive #Not adaptive
     integrator.destats.naccept += 1
     integrator.tprev = integrator.t
-    if integrator.t isa AbstractFloat && !isempty(integrator.opts.tstops)
-      tstop = integrator.tdir * first(integrator.opts.tstops)
+    if integrator.t isa AbstractFloat && has_tstop(integrator)
+      tstop = integrator.tdir * first_tstop(integrator)
       abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
     else
@@ -303,9 +299,7 @@ function apply_step!(integrator)
   end
 
   # Update fsal if needed
-  if !isempty(integrator.opts.d_discontinuities) &&
-      first(integrator.opts.d_discontinuities) == integrator.t
-
+  if has_discontinuity(integrator) && first_discontinuity(integrator) == integrator.tdir * integrator.t
       handle_discontinuities!(integrator)
       get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
   elseif get_current_isfsal(integrator.alg, integrator.cache)
@@ -321,9 +315,7 @@ function apply_step!(integrator)
   end
 end
 
-function handle_discontinuities!(integrator)
-    pop!(integrator.opts.d_discontinuities)
-end
+handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
 
 function calc_dt_propose!(integrator,dtnew)
   if (typeof(integrator.alg) <: Union{ROCK2,ROCK4,SERK2,ESERK4,ESERK5}) && integrator.opts.adaptive && (integrator.iter >= 1)
@@ -353,19 +345,18 @@ function fix_dt_at_bounds!(integrator)
 end
 
 function handle_tstop!(integrator)
-  tstops = integrator.opts.tstops
-  if !isempty(tstops)
+  if has_tstop(integrator)
     tdir_t = integrator.tdir * integrator.t
-    tdir_ts_top = first(tstops)
-    if tdir_t == tdir_ts_top
-      while tdir_t == tdir_ts_top #remove all redundant copies in heap == tdir_t
-        pop!(tstops)
-        isempty(tstops) ? break : tdir_ts_top = first(tstops)
+    tdir_tstop = first_tstop(integrator)
+    if tdir_t == tdir_tstop
+      while tdir_t == tdir_tstop #remove all redundant copies
+        pop_tstop!(integrator)
+        has_tstop(integrator) ? (tdir_tstop = first_tstop(integrator)) : break
       end
       integrator.just_hit_tstop = true
-    elseif tdir_t > tdir_ts_top
+    elseif tdir_t > tdir_tstop
       if !integrator.dtchangeable
-        DiffEqBase.change_t_via_interpolation!(integrator, integrator.tdir * pop!(tstops), Val{true})
+        DiffEqBase.change_t_via_interpolation!(integrator, integrator.tdir * pop_tstop!(integrator), Val{true})
         integrator.just_hit_tstop = true
       else
         error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")
@@ -398,3 +389,12 @@ function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
 end
 
 (integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=nothing) = current_interpolant!(val,t,integrator,idxs,deriv)
+
+# Interface used by DelayDiffEq
+has_tstop(integrator) = !isempty(integrator.opts.tstops)
+first_tstop(integrator) = first(integrator.opts.tstops)
+pop_tstop!(integrator) = pop!(integrator.opts.tstops)
+
+has_discontinuity(integrator) = !isempty(integrator.opts.d_discontinuities)
+first_discontinuity(integrator) = first(integrator.opts.d_discontinuities)
+pop_discontinuity!(integrator) = pop!(integrator.opts.d_discontinuities)
