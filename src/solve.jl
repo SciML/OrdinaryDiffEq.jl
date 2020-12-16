@@ -179,7 +179,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   if !isdae && isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number && uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
     rate_prototype = recursivecopy(u)
-    end
   elseif prob isa DAEProblem
     rate_prototype = prob.du0
   else
