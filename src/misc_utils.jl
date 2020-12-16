@@ -54,3 +54,8 @@ function diffdir(integrator::DiffEqBase.DEIntegrator)
           integrator.t > integrator.sol.prob.tspan[2] - difference ? -true :  true :
           integrator.t < integrator.sol.prob.tspan[2] + difference ?  true : -true
 end
+
+# Recursively test if all elements in an ArrayPartition are AbstractArray
+isarrays(u::ArrayPartition) = all(isarrays(x) for x in u.x)
+isarrays(u::T) where {T<:AbstractArray} = true
+isarrays(u) = false
