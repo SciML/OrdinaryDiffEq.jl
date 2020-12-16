@@ -178,11 +178,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   # dtmin is all abs => does not care about sign already.
 
   if !isdae && isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number && uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
-    if !(typeof(u) <: ArrayPartition) || isarrays(u)
-      rate_prototype = recursivecopy(u)
-    else # this is for ArrayPartition that is unitless but holds non-arrays
-      rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
-    end
+    rate_prototype = recursivecopy(u)
   elseif prob isa DAEProblem
     rate_prototype = prob.du0
   else
