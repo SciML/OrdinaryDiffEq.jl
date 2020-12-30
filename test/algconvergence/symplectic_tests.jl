@@ -1,4 +1,3 @@
-module SymplecticTests
 
 using Test
 using OrdinaryDiffEq, DiffEqBase
@@ -36,6 +35,7 @@ dq(res, p, q, pa, t) = (res .= dq(p, q, pa, t))
 
 dynode(iip, dp, dq) = DynamicalODEFunction{iip}(dp, dq)
 
+# [0:1] used in dp, dq; [3:4] start values for p0, q0
 const PARAMS = ((0.1, 0.0, 1.0, 0.0), (0.1, 1.0, 1.0, -1.0))
 const IIPS = (true, false)
 const TSPAN = (0.0, 1.0)
@@ -55,6 +55,5 @@ apa(iip::Bool, x) = iip ? vcat.(x) : x
 
     @test calc[1] ≈ solution(t1, pa)[1] rtol = 1e-3
     @test calc[2] ≈ solution(t1, pa)[2] rtol = 1e-3
-end
 end
 
