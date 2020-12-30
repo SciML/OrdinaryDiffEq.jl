@@ -14,6 +14,10 @@ end
 #Start Test Script
 
 @time begin
+if GROUP == "All" || GROUP == "Symplectic"
+  @time @safetestset "Symplectic Tests" begin include("algconvergence/symplectic_tests.jl") end
+end
+
 if GROUP == "All" || GROUP == "InterfaceI"
   #@time @safetestset "Linear Solver Tests" begin include("interface/linear_solver_test.jl") end
   @time @safetestset "Discrete Algorithm Tests" begin include("interface/discrete_algorithm_test.jl") end
