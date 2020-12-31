@@ -8,7 +8,7 @@ prob = ODEProblem(function (du,u,p,t)
                   [1.0;0.0;0.0], (0.0, 100.0))
 
 function buildW(...)::NTuple{3}
-  , nothing #= left preconditioner =#, nothing #= right preconditioner =#
+    nothing #= left preconditioner =#, nothing #= right preconditioner =#
 end
 
 nlsolve = NLNewton(buildW, )
