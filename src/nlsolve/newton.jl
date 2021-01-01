@@ -154,7 +154,7 @@ end
 
   linsolve(vec(dz), W, b, iter == 1 && new_W;
            Pl=DiffEqBase.ScaleVector(weight, true),
-           Pr=DiffEqBase.ScaleVector(weight, false), tol=integrator.opts.reltol)
+           Pr=DiffEqBase.ScaleVector(weight, false), reltol=integrator.opts.reltol)
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
