@@ -14,6 +14,7 @@ end
 #Start Test Script
 
 @time begin
+
 if GROUP == "All" || GROUP == "InterfaceI"
   #@time @safetestset "Linear Solver Tests" begin include("interface/linear_solver_test.jl") end
   @time @safetestset "Discrete Algorithm Tests" begin include("interface/discrete_algorithm_test.jl") end
@@ -119,6 +120,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
   @time @safetestset "Linear-Nonlinear Krylov Methods Tests" begin include("algconvergence/linear_nonlinear_krylov_tests.jl") end
   @time @safetestset "Feagin Tests" begin include("algconvergence/ode_feagin_tests.jl") end
   @time @safetestset "Extrapolation Tests" begin include("algconvergence/ode_extrapolation_tests.jl") end
+  @time @safetestset "Symplectic Tests" begin include("algconvergence/symplectic_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
