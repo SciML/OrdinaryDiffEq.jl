@@ -15,6 +15,7 @@ using OrdinaryDiffEq: alg_order
     sim  = test_convergence(dts,prob,Alg())
     @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
   end
+
   # Dense test
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
   @test abs(sim.𝒪est[:l2]-4) < 0.2
@@ -30,11 +31,18 @@ end
   linnonlin_fun_iip = SplitFunction(linnonlin_f1,linnonlin_f2;analytic=(u0,p,t)->exp((A+μ*I)*t)*u0)
   prob = SplitODEProblem(linnonlin_fun_iip,u0,(0.0,1.0))
 
-  dts = 1 ./2 .^(8:-1:4) #14->7 good plot
-  for Alg in [LawsonEuler(),NorsettEuler(),ETDRK2(),ETDRK3(),ETDRK4(),HochOst4(),ETD2(),KenCarp3(linsolve=LinSolveGMRES(tol=1e-6))]
+  dts = 1 ./2 .^(8:-1:4)
+  for Alg in [LawsonEuler(),NorsettEuler(),ETDRK2(),ETDRK3(),ETDRK4(),HochOst4(),ETD2()]
     sim  = test_convergence(dts,prob,Alg)
     @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol=0.15
   end
+
+  dts = 1 ./2 .^(14:-1:10)
+  Alg = KenCarp3(linsolve=LinSolveGMRES(abstol=1e-16,reltol=1e-16))
+  sim  = test_convergence(dts,prob,Alg)
+  @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
+
+  dts = 1 ./2 .^(8:-1:4) 
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
   @test sim.𝒪est[:l2] ≈  4 atol=0.1
   @test sim.𝒪est[:L2] ≈ 4 atol=0.1
