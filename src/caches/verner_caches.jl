@@ -159,7 +159,7 @@ function alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k13 = zero(rate_prototype); k14 = zero(rate_prototype); k15 = zero(rate_prototype);
   k16 =k6;
   utilde = zero(u); tmp = zero(u); atmp = similar(u,uEltypeNoUnits);
-  rtmp = zero(rate_prototype)
+  rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype);
   Vern9Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,tmp,rtmp,atmp,tab)
 end
 
