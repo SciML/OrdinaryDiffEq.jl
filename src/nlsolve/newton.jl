@@ -152,9 +152,15 @@ end
     update_coefficients!(W, ustep, p, tstep)
   end
 
+  if integrator.opts.adaptive
+    reltol = integrator.opts.reltol
+  else
+    reltol = eps(eltype(dz))
+  end
+
   linsolve(vec(dz), W, b, iter == 1 && new_W;
            Pl=DiffEqBase.ScaleVector(weight, true),
-           Pr=DiffEqBase.ScaleVector(weight, false), reltol=integrator.opts.reltol)
+           Pr=DiffEqBase.ScaleVector(weight, false), reltol=reltol)
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
