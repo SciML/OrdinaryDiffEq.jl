@@ -49,7 +49,13 @@ end
     end
 
     prob = ODEProblem(f,rv0,(0.0u"s",1.0u"s"),μ)
-    sol = solve(prob,Tsit5())
+    for alg in [Tsit5(), AutoVern6(Rodas5(autodiff=false)),
+                AutoVern7(Rodas5(autodiff=false)),
+                AutoVern8(Rodas5(autodiff=false)),
+                AutoVern9(Rodas5(autodiff=false))]
+        @show alg
+        sol = solve(prob,alg)
+    end
 end
 
 @testset "Without ArrayPartition" begin
