@@ -2,6 +2,7 @@
 using Test, LinearAlgebra
 using OrdinaryDiffEq, DiffEqBase
 
+# algoritm, dq(p) != p, convergence order
 const ALGOS = (
     (SymplecticEuler, true, 1),
     (VelocityVerlet, false, 2),
@@ -13,7 +14,7 @@ const ALGOS = (
     (CandyRoz4, true, 4),
     (McAte4, true, 4),
     (CalvoSanz4, true, 4),
-    # (McAte42, true, 4), known to be broken
+    (McAte42, true, 1), # known to be broken
     (McAte5, true, 5),
     (Yoshida6, true, 6),
     (KahanLi6, true, 6),
