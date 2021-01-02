@@ -163,6 +163,7 @@ function initialize!(integrator,cache::C) where C<:Union{ConstantCachesHamilton,
   integrator.destats.nf2 += 1
   integrator.fsallast = ArrayPartition((kdu,ku))
   integrator.k[2] = integrator.fsallast
+  integrator.fsalfirst = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator,cache::VelocityVerletConstantCache,repeat_step=false)
