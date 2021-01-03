@@ -4,3 +4,4 @@
 *.jl.*.mem
 Manifest.toml
 *.DS_Store
+.vscode
