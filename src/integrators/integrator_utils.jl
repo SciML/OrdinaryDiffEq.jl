@@ -52,10 +52,6 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool,Bool}
   saved, savedexactly = false, false
   !integrator.opts.save_on && return saved, savedexactly
   tdir_t = integrator.tdir * integrator.t
-  if length(integrator.sol.t) > 1 && integrator.t == 140.0
-    println("before")
-    @show integrator.sol.t[end-1:end]
-  end
   while !isempty(integrator.opts.saveat) && first(integrator.opts.saveat) <= tdir_t # Perform saveat
     integrator.saveiter += 1; saved = true
     curt = integrator.tdir * pop!(integrator.opts.saveat)
