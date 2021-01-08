@@ -374,7 +374,7 @@ end
 
 affect! = nothingf =
 affect_neg! = function (integrator)
-  integrator.u = ArrayPartition(integrator.u[1], -integrator.u[2])
+  integrator.u = ArrayPartition(SVector{1}(integrator.u[1]), SVector{1}(-integrator.u[2]))
 end
 
 callback = ContinuousCallback(condition,affect!,affect_neg!,interp_points=100)
