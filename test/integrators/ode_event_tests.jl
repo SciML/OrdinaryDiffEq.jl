@@ -362,3 +362,17 @@ end
 callback = VectorContinuousCallback(condition, affect!, 1)
 sol = solve(prob, Tsit5(), callback=callback)
 @test n == 1
+
+# check that multiple discrete callbacks with save_everystep do not double save
+# https://github.com/SciML/DifferentialEquations.jl/issues/711
+
+prob = ODEProblem((u,p,t)->1.01u,[1.0],(0.0,10.0))
+cond1(u,t,integrator) = t == 2.5
+cond2(u,t,integrator) = t == 2.5
+affect1!(integrator) = nothing
+affect2!(integrator) = nothing
+cb1 = DiscreteCallback(cond1,affect1!,save_positions = (false,false))
+cb2 = DiscreteCallback(cond2,affect2!,save_positions = (false,false))
+cb = CallbackSet(cb1,cb2)
+sol = solve(prob,Tsit5(),callback = cb,tstops = [2.5])
+@test !any(diff(sol.t) .== 0)
