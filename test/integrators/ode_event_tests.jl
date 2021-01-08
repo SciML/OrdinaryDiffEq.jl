@@ -367,12 +367,12 @@ sol = solve(prob, Tsit5(), callback=callback)
 # https://github.com/SciML/DifferentialEquations.jl/issues/711
 
 prob = ODEProblem((u,p,t)->1.01u,[1.0],(0.0,10.0))
-cond1(u,t,integrator) = t == 2.5
-cond2(u,t,integrator) = t == 2.5
-affect1!(integrator) = nothing
-affect2!(integrator) = nothing
-cb1 = DiscreteCallback(cond1,affect1!,save_positions = (false,false))
-cb2 = DiscreteCallback(cond2,affect2!,save_positions = (false,false))
+savecond1(u,t,integrator) = t == 2.5
+savecond2(u,t,integrator) = t == 2.5
+saveaffect1!(integrator) = nothing
+saveaffect2!(integrator) = nothing
+cb1 = DiscreteCallback(savecond1,saveaffect1!,save_positions = (false,false))
+cb2 = DiscreteCallback(savecond2,saveaffect2!,save_positions = (false,false))
 cb = CallbackSet(cb1,cb2)
 sol = solve(prob,Tsit5(),callback = cb,tstops = [2.5])
 @test !any(diff(sol.t) .== 0)
