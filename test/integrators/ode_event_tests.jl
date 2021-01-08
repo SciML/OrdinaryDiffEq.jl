@@ -384,3 +384,17 @@ tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 sol = solve(prob,Tsit5(),callback=callback,adaptive=false,dt=1/4)
+
+# check that multiple discrete callbacks with save_everystep do not double save
+# https://github.com/SciML/DifferentialEquations.jl/issues/711
+
+prob = ODEProblem((u,p,t)->1.01u,[1.0],(0.0,10.0))
+savecond1(u,t,integrator) = t == 2.5
+savecond2(u,t,integrator) = t == 2.5
+saveaffect1!(integrator) = nothing
+saveaffect2!(integrator) = nothing
+cb1 = DiscreteCallback(savecond1,saveaffect1!,save_positions = (false,false))
+cb2 = DiscreteCallback(savecond2,saveaffect2!,save_positions = (false,false))
+cb = CallbackSet(cb1,cb2)
+sol = solve(prob,Tsit5(),callback = cb,tstops = [2.5])
+@test !any(diff(sol.t) .== 0)
