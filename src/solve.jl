@@ -137,7 +137,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     if alias_du0
       du = prob.du0
     else
-      du = recursivecopy(prob.u0)
+      du = recursivecopy(prob.du0)
     end
     duprev = recursivecopy(du)
   else
