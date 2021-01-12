@@ -348,6 +348,61 @@ function Rodas4PTableau(T, T2)
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
+function Rodas4P2Tableau(T, T2)
+  gamma = convert(T,1//4)
+
+  a21= convert(T,3.000000000000000)   
+  a31= convert(T,0.906377755268814)
+  a32=-convert(T,0.189707390391685)
+  a41= convert(T,3.758617027739064)  
+  a42= convert(T,1.161741776019525)
+  a43=-convert(T,0.849258085312803)
+  a51= convert(T,7.089566927282776)
+  a52= convert(T,4.573591406461604)
+  a53=-convert(T,8.423496976860259)
+  a54=-convert(T,0.959280113459775)
+
+  C21= convert(T,-12.00000000000000)
+  C31= convert(T,-6.354581592719008)  
+  C32= convert(T, 0.338972550544623)
+  C41= convert(T,-8.575016317114033)  
+  C42= convert(T,-7.606483992117508)
+  C43= convert(T,12.224997650124820)
+  C51= convert(T,-5.888975457523102)
+  C52= convert(T,-8.157396617841821)
+  C53= convert(T,24.805546872612922)
+  C54= convert(T,12.790401512796979)
+  C61= convert(T,-4.408651676063871)
+  C62= convert(T,-6.692003137674639)
+  C63= convert(T,24.625568527593117)
+  C64= convert(T,16.627521966636085)
+  C65= convert(T,-5.714285714285718)
+	
+  c2=convert(T2,0.750000000000000)
+  c3=convert(T2,0.321448134013046)
+  c4=convert(T2,0.519745732277726)
+  d1=convert(T, 0.250000000000000)  
+  d2=convert(T,-0.500000000000000)  
+  d3=convert(T,-0.189532918363016)   
+  d4=convert(T, 0.085612108792769)   
+			       
+  h21= convert(T, -5.323528268423303)
+  h22= convert(T,-10.042123754867493)
+  h23= convert(T, 17.175254928256965)
+  h24=-convert(T, -5.079931171878093)
+  h25= convert(T, -0.016185991706112)
+  h31= convert(T,  6.984505741529879)
+  h32=-convert(T,  6.914061169603662)
+  h33= convert(T, -0.849178943070653)
+  h34= convert(T, 18.104410789349338)
+  h35=-convert(T, -3.516963011559032)
+
+  RodasTableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+                    C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,
+                    gamma,c2,c3,c4,d1,d2,d3,d4,
+                    h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
+end
+
 struct Rodas5Tableau{T,T2}
   a21::T
   a31::T
