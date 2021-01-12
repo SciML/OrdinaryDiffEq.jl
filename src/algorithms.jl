@@ -2193,7 +2193,7 @@ Scientific Computing, 18 (1), pp. 1-22.
 
 #### Rodas4P2
 - Steinebach G. (2020) Improvement of Rosenbrock-Wanner Method RODASP. 
-  In: Reis T., Grundel S., Schöps S. (eds) Progress in Differential-Algebraic Equations II. 
+  In: Reis T., Grundel S., Schoeps S. (eds) Progress in Differential-Algebraic Equations II. 
   Differential-Algebraic Equations Forum. Springer, Cham. https://doi.org/10.1007/978-3-030-53905-4_6
 
 #### Rodas5
