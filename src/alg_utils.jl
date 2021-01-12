@@ -9,6 +9,7 @@ isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
+isfsal(alg::Rodas4P2) = false
 isfsal(alg::Vern7) = false
 isfsal(alg::Vern8) = false
 isfsal(alg::Vern9) = false
@@ -389,6 +390,7 @@ alg_order(alg::RosenbrockW6S4OS) = 4
 alg_order(alg::Rodas4) = 4
 alg_order(alg::Rodas42) = 4
 alg_order(alg::Rodas4P) = 4
+alg_order(alg::Rodas4P2) = 4
 alg_order(alg::Rodas5) = 5
 
 alg_order(alg::AB3) = 3
