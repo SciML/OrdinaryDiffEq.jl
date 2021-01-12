@@ -2191,6 +2191,12 @@ Scientific Computing, 18 (1), pp. 1-22.
 - Steinebach G. Order-reduction of ROW-methods for DAEs and method of lines
   applications. Preprint-Nr. 1741, FB Mathematik, TH Darmstadt; 1995.
 
+#### Rodas4P2
+
+- Steinebach G. (2020) Improvement of Rosenbrock-Wanner Method RODASP. 
+  In: Reis T., Grundel S., Schöps S. (eds) Progress in Differential-Algebraic Equations II. 
+  Differential-Algebraic Equations Forum. Springer, Cham. https://doi.org/10.1007/978-3-030-53905-4_6
+
 #### Rodas5
 
 - Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
@@ -2198,7 +2204,7 @@ différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
 University of Geneva, Switzerland.
 =#
 
-for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas5]
+for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5]
   @eval begin
     struct $Alg{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
       linsolve::F
