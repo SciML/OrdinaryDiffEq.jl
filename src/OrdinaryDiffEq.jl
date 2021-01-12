@@ -1,4 +1,4 @@
-module OrdinaryDiffEq
+﻿module OrdinaryDiffEq
 
   using Reexport
   @reexport using DiffEqBase
