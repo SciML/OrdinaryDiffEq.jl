@@ -316,6 +316,13 @@ sim = test_convergence(dts,prob,Rodas4P(),dense_errors=true)
 
 sol = solve(prob,Rodas4P())
 @test length(sol) < 20
+  
+sim = test_convergence(dts,prob,Rodas4P2(),dense_errors=true)
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+@test sim.𝒪est[:L2] ≈ 4 atol=testTol
+
+sol = solve(prob,Rodas4P2())
+@test length(sol) < 20
 
 prob = prob_ode_2Dlinear
 
@@ -363,6 +370,22 @@ sim = test_convergence(dts,prob,Rodas4P(),dense_errors=true)
 @test sim.𝒪est[:L2] ≈ 4 atol=testTol
 
 sol = solve(prob,Rodas4P())
+@test length(sol) < 20
+  
+sim = test_convergence(dts,prob,Rodas4P2(),dense_errors=true)
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+@test sim.𝒪est[:L2] ≈ 4 atol=testTol
+
+sol = solve(prob,Rodas4P2())
+@test length(sol) < 20
+  
+println("Rodas4P2 with finite diff")
+
+sim = test_convergence(dts,prob,Rodas4P2(autodiff=false),dense_errors=true)
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+@test sim.𝒪est[:L2] ≈ 4 atol=testTol
+
+sol = solve(prob,Rodas4P2(autodiff=false))
 @test length(sol) < 20
 
 ### Rodas5
