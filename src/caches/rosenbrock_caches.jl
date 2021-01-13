@@ -1,4 +1,4 @@
-abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
+﻿abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 ################################################################################
 
 # Shampine's Low-order Rosenbrocks
@@ -469,6 +469,46 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
   linsolve = alg.linsolve(Val{:init},uf,u)
   Rodas4ConstantCache(tf,uf,Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+end
+
+function alg_cache(alg::Rodas4P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  dense1 = zero(rate_prototype)
+  dense2 = zero(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
+  dT = zero(rate_prototype)
+  J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+  tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
+  tab = Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+
+  tf = TimeGradientWrapper(f,uprev,p)
+  uf = UJacobianWrapper(f,t,p)
+  linsolve_tmp = zero(rate_prototype)
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  grad_config = build_grad_config(alg,f,tf,du1,t)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
+                    k5,k6,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    linsolve,jac_config,grad_config)
+end
+
+function alg_cache(alg::Rodas4P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  tf = TimeDerivativeWrapper(f,u,p)
+  uf = UDerivativeWrapper(f,t,p)
+  J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  Rodas4ConstantCache(tf,uf,Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
 
 ################################################################################
