@@ -87,11 +87,6 @@ affect_matrix! = function (integrator)
 end
 callback_matrix = ContinuousCallback(condition_matrix, affect_matrix!)
 
-Base.similar(x::ElasticArrays.ElasticArray, ::Type{T}) where T = deepcopy(x)
-Base.copy(x::ElasticArrays.ElasticArray) = deepcopy(x)
-Base.zero(x::ElasticArrays.ElasticArray) = ElasticArray(zero(Array(x)))
-Base.resize!(x::ElasticArrays.ElasticArray,i::Tuple) = resize!(x,i...)
-
 for alg in CACHE_TEST_ALGS
   OrdinaryDiffEq.isimplicit(alg) && continue # this restriction should be removed in the future
   @show alg
