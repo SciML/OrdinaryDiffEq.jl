@@ -95,7 +95,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II")
   @time @safetestset "Inference Tests" begin include("regression/inference.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
+if !is_APPVEYOR && GROUP == "AlgConvergence_I"
   @time @safetestset "Partitioned Methods Tests" begin include("algconvergence/partitioned_methods_tests.jl") end
   @time @safetestset "Convergence Tests" begin include("algconvergence/ode_convergence_tests.jl") end
   @time @safetestset "DAE Convergence Tests" begin include("algconvergence/dae_convergence_tests.jl") end
@@ -104,14 +104,14 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
   @time @safetestset "Nordsieck Tests" begin include("algconvergence/nordsieck_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_II")
+if !is_APPVEYOR && GROUP == "AlgConvergence_II"
   @time @safetestset "SSPRK Tests" begin include("algconvergence/ode_ssprk_tests.jl") end
   @time @safetestset "Low Storage RK Tests" begin include("algconvergence/ode_low_storage_rk_tests.jl") end
   @time @safetestset "OwrenZen Tests" begin include("algconvergence/owrenzen_tests.jl") end
   @time @safetestset "Runge-Kutta-Chebyshev Tests" begin include("algconvergence/rkc_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
+if !is_APPVEYOR && GROUP == "AlgConvergence_III"
   @time @safetestset "Linear Methods Tests" begin include("algconvergence/linear_method_tests.jl") end
   @time @safetestset "Split Methods Tests" begin include("algconvergence/split_methods_tests.jl") end
   @time @safetestset "Rosenbrock Tests" begin include("algconvergence/ode_rosenbrock_tests.jl") end
@@ -123,7 +123,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
   @time @safetestset "Symplectic Tests" begin include("algconvergence/symplectic_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
+if !is_APPVEYOR && GROUP == "Downstream"
   @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
   activate_downstream_env()
   Pkg.test("DiffEqCallbacks")
