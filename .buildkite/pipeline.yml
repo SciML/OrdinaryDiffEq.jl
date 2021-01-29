@@ -4,8 +4,7 @@ steps:
       - JuliaCI/julia#v0.6:
           version: "1.5"
       - JuliaCI/julia-test#v0.3:
-      # - JuliaCI/julia-coverage#v0.3:
-      #     codecov: true
+           coverage: false # 1000x slowdown
     agents:
       queue: "juliagpu"
       cuda: "*"
