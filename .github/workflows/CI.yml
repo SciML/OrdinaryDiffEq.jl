@@ -25,6 +25,7 @@ jobs:
           - AlgConvergence_III
           - Downstream
           - ODEInterfaceRegression
+          - Multithreading
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
