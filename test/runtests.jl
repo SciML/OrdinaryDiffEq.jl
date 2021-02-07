@@ -15,7 +15,7 @@ end
 
 @time begin
 
-if GROUP == "All" || GROUP == "InterfaceI"
+if GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
   #@time @safetestset "Linear Solver Tests" begin include("interface/linear_solver_test.jl") end
   @time @safetestset "Discrete Algorithm Tests" begin include("interface/discrete_algorithm_test.jl") end
   @time @safetestset "Tstops Tests" begin include("interface/ode_tstops_tests.jl") end
@@ -41,7 +41,7 @@ if GROUP == "All" || GROUP == "InterfaceI"
   @time @safetestset "Type Handling Tests" begin include("interface/type_handling.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
   @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
   @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
   @time @safetestset "Enum Tests" begin include("interface/enums.jl") end
@@ -51,14 +51,14 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII")
   @time @safetestset "DAE Initialize Integration" begin include("interface/dae_initialize_integration.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII" || GROUP == "Interface")
   @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
   @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
   @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
   @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I" || GROUP == "Integrators")
   @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
@@ -71,7 +71,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I")
   @time @safetestset "Event Repetition Detection Tests" begin include("integrators/event_repeat_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II" || GROUP == "Integrators")
   @time @safetestset "Reverse Directioned Event Tests" begin include("integrators/rev_events_tests.jl") end
   @time @safetestset "Differentiation Direction Tests" begin include("integrators/diffdir_tests.jl") end
   @time @safetestset "Resize Tests" begin include("integrators/resize_tests.jl") end
@@ -80,14 +80,14 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II")
   @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_I")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_I" || GROUP == "Regression")
   @time @safetestset "Dense Tests" begin include("regression/ode_dense_tests.jl") end
   @time @safetestset "Special Interp Tests" begin include("regression/special_interps.jl") end
   @time @safetestset "Inplace Tests" begin include("regression/ode_inplace_tests.jl") end
   @time @safetestset "Adaptive Tests" begin include("regression/ode_adaptive_tests.jl") end
 end
 
-if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II" || GROUP == "Regression")
   @time @safetestset "PSOS Energy Conservation Tests" begin include("regression/psos_and_energy_conservation.jl") end
   @time @safetestset "Unrolled Tests" begin include("regression/ode_unrolled_comparison_tests.jl") end
   @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
