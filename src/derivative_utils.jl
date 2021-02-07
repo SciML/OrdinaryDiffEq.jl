@@ -283,7 +283,14 @@ function Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number})
     -W.mass_matrix*x + W.gamma * (W.J*x)
   end
 end
-function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
+function Base.:\(W::WOperator, x::AbstractVecOrMat)
+  if size(W) == () # scalar operator
+    convert(Number,W) \ x
+  else
+    convert(AbstractMatrix,W) \ x
+  end
+end
+function Base.:\(W::WOperator, x::Number)
   if size(W) == () # scalar operator
     convert(Number,W) \ x
   else
