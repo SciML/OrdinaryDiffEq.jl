@@ -135,3 +135,8 @@ integ = init(ODEProblem((u,p,t)->u,0.0,(0.0,1.0)),Tsit5(),saveat=_saveat)
 add_tstop!(integ,2.0)
 solve!(integ)
 @test integ.sol.t == _saveat
+
+integ = init(ODEProblem((u,p,t)->u,0.0,(0.0,1.0)),Tsit5(),saveat=_saveat,save_end = true)
+add_tstop!(integ,2.0)
+solve!(integ)
+@test integ.sol.t == [0.0,0.25,0.5,1.0,2.0]
