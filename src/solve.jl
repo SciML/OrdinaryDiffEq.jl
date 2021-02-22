@@ -306,7 +306,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob; use_end_time=false))
 
   save_end_user = save_end
-  save_end = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat
+  save_end = save_end === nothing ? save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat : save_end
 
   opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
                    typeof(internalnorm),typeof(internalopnorm),typeof(save_end_user),
