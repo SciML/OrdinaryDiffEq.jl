@@ -129,3 +129,9 @@ tspan = (0.0, 15.0)
 prob = ODEProblem(small_f,u0,tspan)
 sol = solve(prob, Tsit5(), saveat=4.)
 @test sol.t == [0.0,4,8,12,15]
+
+_saveat = [0.0,0.25,0.5,1.0]
+integ = init(ODEProblem((u,p,t)->u,0.0,(0.0,1.0)),Tsit5(),saveat=_saveat)
+add_tstop!(integ,2.0)
+solve!(integ)
+@test integ.sol.t == _saveat
