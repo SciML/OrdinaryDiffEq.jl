@@ -19,7 +19,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            save_everystep = isempty(saveat),
                            save_on = true,
                            save_start = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[1] in saveat,
-                           save_end = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat,
+                           save_end = nothing,
                            callback = nothing,
                            dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
                            calck = (callback !== nothing && callback != CallbackSet()) || (dense), # and no dense output
@@ -305,8 +305,13 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob; use_end_time=false))
 
+  save_end_user = save_end
+  save_end = save_end === nothing ? save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat : save_end
+
   opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
-                   typeof(internalnorm),typeof(internalopnorm),typeof(callbacks_internal),typeof(isoutofdomain),
+                   typeof(internalnorm),typeof(internalopnorm),typeof(save_end_user),
+                   typeof(callbacks_internal),
+                   typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
                    typeof(maxiters),typeof(tstops),typeof(saveat),
@@ -321,7 +326,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                        userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
                        QT(beta1),QT(beta2),QT(qoldinit),dense,
-                       save_on,save_start,save_end,callbacks_internal,isoutofdomain,
+                       save_on,save_start,save_end,save_end_user,
+                       callbacks_internal,isoutofdomain,
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
@@ -529,7 +535,7 @@ function initialize_saveat(::Type{T}, saveat, tspan) where T
   elseif !isempty(saveat)
     for t in saveat
       tdir_t = tdir * t
-      tdir_t0 < tdir_t < tdir_tf && push!(saveat_internal, tdir_t)
+      tdir_t0 < tdir_t ≤ tdir_tf && push!(saveat_internal, tdir_t)
     end
   end
 
