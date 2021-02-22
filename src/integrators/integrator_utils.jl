@@ -136,7 +136,9 @@ end
 function solution_endpoint_match_cur_integrator!(integrator)
   if integrator.opts.save_end &&
      (integrator.saveiter == 0 || integrator.sol.t[integrator.saveiter] !=  integrator.t &&
-     ((integrator.opts.save_end_user isa Bool && integrator.opts.save_end_user) || integrator.t ∈ integrator.opts.saveat_cache))
+     ((integrator.opts.save_end_user isa Bool && integrator.opts.save_end_user) ||
+       integrator.t ∈ integrator.opts.saveat_cache ||
+       integrator.t == integrator.sol.prob.tspan[2]))
 
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
