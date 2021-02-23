@@ -76,7 +76,7 @@ end
 
 @testset "set_proposed_dt!" begin
   # 1) Setup problem
-  f(du,u,p,t) -> du[1] = p
+  f = (du,u,p,t) -> (du[1] = p)
   u0 = [1.0]
   tspan = (0.0,5.0)
   p = -1
