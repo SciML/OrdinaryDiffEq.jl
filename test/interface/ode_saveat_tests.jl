@@ -145,3 +145,11 @@ integ = init(ODEProblem((u,p,t)->u,0.0,(0.0,1.0)),Tsit5(),saveat=_saveat,save_en
 add_tstop!(integ,2.0)
 solve!(integ)
 @test integ.sol.t == _saveat
+
+# Catch save for maxiters
+ode = ODEProblem((u,p,t) -> u, 1.0, (0.0, 1.0))
+sol = solve(ode, Tsit5(), save_everystep=false) # okay, as expected
+@test length(sol) == 2
+@info "Warning Expected"
+sol = solve(ode, Tsit5(), save_everystep=false, maxiters=3) # doesn't save the final solution anymore!
+@test length(sol) == 2
