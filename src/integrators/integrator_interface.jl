@@ -49,10 +49,11 @@ function u_modified!(integrator::ODEIntegrator,bool::Bool)
 end
 
 get_proposed_dt(integrator::ODEIntegrator) = integrator.dtpropose
-set_proposed_dt!(integrator::ODEIntegrator,dt::Number) = (integrator.dtpropose = dt)
+set_proposed_dt!(integrator::ODEIntegrator,dt::Number) = (integrator.dtpropose = dt; integrator.dtcache = dt)
 
 function set_proposed_dt!(integrator::ODEIntegrator,integrator2::ODEIntegrator)
   integrator.dtpropose = integrator2.dtpropose
+  integrator.dtcache = integrator2.dtcache
   integrator.qold = integrator2.qold
   integrator.erracc = integrator2.erracc
   integrator.dtacc = integrator2.dtacc

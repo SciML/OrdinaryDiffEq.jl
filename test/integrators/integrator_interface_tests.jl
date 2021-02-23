@@ -73,3 +73,29 @@ println("Second")
   end
   @test integrator1.u ≈ integrator2.u  rtol=rtol atol=atol
 end
+
+@testset "set_proposed_dt!" begin
+  # 1) Setup problem
+  f(du,u,p,t) -> du[1] = p
+  u0 = [1.0]
+  tspan = (0.0,5.0)
+  p = -1
+  prob = ODEProblem(f,u0,tspan,p)
+
+  # 2) Setup callback
+  condition(u,t,integrator) = u[1] <= 0.0
+  # function that sets dt that works with adaptive solvers:
+  function affect!(integrator)
+    integrator.p = 1
+    set_proposed_dt!(integrator,0.5)
+  end
+  cb = DiscreteCallback(condition,affect!;save_positions=(true,true))
+
+  sol = solve(prob,RK4(), dt = 0.1,adaptive = false, callback=cb_workAdaptive)
+  @test diff(sol.t)[1] == 0.1
+  @test diff(sol.t)[13] == 0.5
+
+  sol    = solve(prob,RK4(), dt = 0.1,adaptive = true, callback=cb)
+  @test diff(sol.t)[1] == 0.1
+  @test diff(sol.t)[4] == 0.5
+end
