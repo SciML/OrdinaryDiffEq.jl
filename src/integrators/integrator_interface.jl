@@ -48,7 +48,7 @@ function u_modified!(integrator::ODEIntegrator,bool::Bool)
   integrator.u_modified = bool
 end
 
-get_proposed_dt(integrator::ODEIntegrator) = integrator.dtpropose
+get_proposed_dt(integrator::ODEIntegrator) = ifelse(integrator.opts.adaptive, integrator.dtpropose, integrator.dtcache)
 set_proposed_dt!(integrator::ODEIntegrator,dt::Number) = (integrator.dtpropose = dt; integrator.dtcache = dt)
 
 function set_proposed_dt!(integrator::ODEIntegrator,integrator2::ODEIntegrator)
