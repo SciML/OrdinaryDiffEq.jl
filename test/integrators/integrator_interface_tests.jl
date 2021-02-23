@@ -91,7 +91,7 @@ end
   end
   cb = DiscreteCallback(condition,affect!;save_positions=(true,true))
 
-  sol = solve(prob,RK4(), dt = 0.1,adaptive = false, callback=cb_workAdaptive)
+  sol = solve(prob,RK4(), dt = 0.1,adaptive = false, callback=cb)
   @test diff(sol.t)[1] == 0.1
   @test diff(sol.t)[13] == 0.5
 
