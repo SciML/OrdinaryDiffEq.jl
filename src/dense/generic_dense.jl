@@ -200,7 +200,7 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
   # start the search thinking it's ts[1]-ts[2]
   i₋ = 1
   i₊ = 2
-  _vals = map(idx) do j
+  vals = map(idx) do j
     t = tvals[j]
 
     if continuity === :left
