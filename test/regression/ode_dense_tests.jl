@@ -33,8 +33,8 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
   println("\n", alg)
 
   sol = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
-  sol(interpolation_results_1d, interpolation_points)
-  sol(interpolation_points[1])
+  @inferred sol(interpolation_results_1d, interpolation_points)
+  @inferred sol(interpolation_points[1])
   sol2 = solve(prob_ode_linear, alg, dt=1//2^(4), dense=true, adaptive=false)
   for i in eachindex(sol2)
     print_results( @test maximum(abs.(sol2[i] - interpolation_results_1d[i])) < tol_ode_linear )
