@@ -230,7 +230,7 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
       return ode_interpolant(Θ,dt,timeseries[i₋],timeseries[i₊],ks[i₊],cache,idxs,deriv)
     end
   end
-  vals = _vals[invperm(idx)]
+  invpermute!(vals, idx)
   DiffEqArray(vals, tvals)
 end
 
