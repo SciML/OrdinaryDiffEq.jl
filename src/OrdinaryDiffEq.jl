@@ -21,7 +21,7 @@
 
   import RecursiveArrayTools: chain, recursivecopy!
 
-  using UnPack, GenericSVD, ForwardDiff, RecursiveArrayTools,
+  using UnPack, ForwardDiff, RecursiveArrayTools,
         DataStructures, FiniteDiff, ArrayInterface
 
   import ForwardDiff.Dual
