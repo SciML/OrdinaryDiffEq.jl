@@ -1,5 +1,11 @@
-function initialize!(integrator, cache::DImplicitEulerCache) end
-function initialize!(integrator, cache::DImplicitEulerConstantCache) end
+function initialize!(integrator, cache::Union{DImplicitEulerCache})
+  integrator.kshortsize = 2
+  @unpack k₁,k₂ = cache
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [k₁,k₂]
+  integrator.k[1] .= integrator.du
+  nothing
+end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
@@ -35,6 +41,11 @@ function initialize!(integrator, cache::DImplicitEulerConstantCache) end
 
   integrator.u = u
   integrator.du = (u-uprev)/dt
+
+  if integrator.opts.calck
+    integrator.k[2] = integrator.k[1]
+    integrator.k[1] = integrator.du
+  end
 end
 
 
@@ -70,6 +81,11 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   else
     integrator.EEst = 1
+  end
+
+  if integrator.opts.calck
+    integrator.k[2] .= integrator.k[1]
+    integrator.k[1] .= du
   end
 end
 
@@ -121,12 +137,24 @@ function initialize!(integrator, cache::DABDF2ConstantCache) end
 
   integrator.u = uₙ
   integrator.du = du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dtₙ)
+
+  if integrator.opts.calck
+    integrator.k[2] = integrator.k[1]
+    integrator.k[1] = integrator.du
+  end
   return
 end
 
 function initialize!(integrator, cache::DABDF2Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
+
+  integrator.kshortsize = 2
+  @unpack k₁,k₂ = cache.eulercache
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [k₁,k₂]
+  integrator.k[1] .= integrator.du
+  nothing
 end
 
 @muladd function perform_step!(integrator, cache::DABDF2Cache, repeat_step=false)
@@ -177,5 +205,3 @@ end
   end
   return
 end
-
-

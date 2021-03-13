@@ -1,8 +1,10 @@
-@cache mutable struct DImplicitEulerCache{uType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct DImplicitEulerCache{uType,rateType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   atmp::uNoUnitsType
+  k₁::rateType
+  k₂::rateType
   nlsolver::N
 end
 
@@ -24,11 +26,13 @@ function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,uEltype
 
   γ, c = 1, 1
   α = 1
+  k₁ = zero(rate_prototype)
+  k₂ = zero(rate_prototype)
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(true))
 
   atmp = similar(u,uEltypeNoUnits)
 
-  DImplicitEulerCache(u,uprev,uprev2,atmp,nlsolver)
+  DImplicitEulerCache(u,uprev,uprev2,atmp,k₁,k₂,nlsolver)
 end
 
 @cache mutable struct DABDF2ConstantCache{N,dtType,rate_prototype} <: OrdinaryDiffEqConstantCache
@@ -73,7 +77,10 @@ function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,uEltypeNoUnits,
   fsalfirstprev = zero(rate_prototype)
   atmp = similar(u,uEltypeNoUnits)
 
-  eulercache = DImplicitEulerCache(u,uprev,uprev2,atmp,nlsolver)
+  k₁ = zero(rate_prototype)
+  k₂ = zero(rate_prototype)
+
+  eulercache = DImplicitEulerCache(u,uprev,uprev2,atmp,k₁,k₂,nlsolver)
 
   dtₙ₋₁ = one(dt)
 
