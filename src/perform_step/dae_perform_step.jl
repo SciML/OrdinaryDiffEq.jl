@@ -1,4 +1,10 @@
-function initialize!(integrator, cache::Union{DImplicitEulerCache})
+function initialize!(integrator, cache::DImplicitEulerConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.k[1] = integrator.du
+end
+
+function initialize!(integrator, cache::DImplicitEulerCache)
   integrator.kshortsize = 2
   @unpack k₁,k₂ = cache
   resize!(integrator.k, integrator.kshortsize)
@@ -89,7 +95,11 @@ end
   end
 end
 
-function initialize!(integrator, cache::DABDF2ConstantCache) end
+function initialize!(integrator, cache::DABDF2ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.k[1] = integrator.du
+end
 
 @muladd function perform_step!(integrator, cache::DABDF2ConstantCache, repeat_step=false)
   @unpack t,f,p = integrator
