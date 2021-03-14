@@ -288,6 +288,6 @@ differential_vars = [true,true,false]
 prob = DAEProblem(f,du₀,u₀,tspan,p,differential_vars=differential_vars)
 
 function f(p)
-	sum(solve(remake(prob,p=p),DABDF2(),saveat=0.1))
+	sum(solve(remake(prob,p=p),DABDF2(),saveat=0.1, abstol=1e-6, reltol=1e-6))
 end
-@test ForwardDiff.gradient(f,[0.5])[1] ≈ 0 atol=1e-12
+@test ForwardDiff.gradient(f,[0.5])[1] ≈ 0 atol=1e-2
