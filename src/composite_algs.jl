@@ -31,7 +31,9 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
   stiffness = abs(eigen_est*dt/alg_stability_size(alg)) # `abs` here is just for safety
   tol = is_stiffalg ? stol : ntol
   os = oneunit(stiffness)
-  stiffness > os * tol
+  bool = stiffness > os * tol
+  integrator.do_error_check = !bool
+  bool
 end
 
 function (AS::AutoSwitchCache)(integrator)

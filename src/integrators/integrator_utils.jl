@@ -174,6 +174,7 @@ function _loopfooter!(integrator)
   # But not set to false when reset so algorithms can check if reset occurred
   integrator.reeval_fsal = false
   integrator.u_modified = false
+  integrator.do_error_check = true
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
       if integrator.opts.adaptive
@@ -265,6 +266,7 @@ function handle_callbacks!(integrator)
 
   integrator.u_modified = continuous_modified || discrete_modified
   if integrator.u_modified
+    integrator.do_error_check = false
     handle_callback_modifiers!(integrator)
   end
 end
