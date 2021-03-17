@@ -308,7 +308,7 @@ function apply_step!(integrator)
   if has_discontinuity(integrator) && first_discontinuity(integrator) == integrator.tdir * integrator.t
       handle_discontinuities!(integrator)
       get_current_isfsal(integrator.alg, integrator.cache) && reset_fsal!(integrator)
-  elseif get_current_isfsal(integrator.alg, integrator.cache)
+  elseif all_fsal(integrator.alg, integrator.cache) || get_current_isfsal(integrator.alg, integrator.cache)
     if integrator.reeval_fsal || integrator.u_modified || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
         reset_fsal!(integrator)
     else # Do not reeval_fsal, instead copyto! over
