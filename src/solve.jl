@@ -375,6 +375,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   accept_step = false
   force_stepfail = false
   last_stepfail = false
+  do_error_check = true
   event_last_time = 0
   vector_event_last_time = 1
   last_event_error = typeof(_alg) <: FunctionMap ? false : zero(uBottomEltypeNoUnits)
@@ -401,7 +402,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,cache,callback_cache,
                              kshortsize,force_stepfail,last_stepfail,
-                             just_hit_tstop,event_last_time,vector_event_last_time,
+                             just_hit_tstop,do_error_check,
+                             event_last_time,vector_event_last_time,
                              last_event_error,accept_step,
                              isout,reeval_fsal,
                              u_modified,reinitiailize,isdae,
@@ -447,7 +449,7 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
   @inbounds while !isempty(integrator.opts.tstops)
     while integrator.tdir * integrator.t < first(integrator.opts.tstops)
       loopheader!(integrator)
-      if check_error!(integrator) != :Success
+      if integrator.do_error_check && check_error!(integrator) != :Success
         return integrator.sol
       end
       perform_step!(integrator,integrator.cache)
