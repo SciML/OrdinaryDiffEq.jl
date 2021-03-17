@@ -45,7 +45,16 @@ isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
-get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
+get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])::Bool
+all_fsal(alg, cache) = isfsal(alg)
+all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
+
+@generated function _all_fsal(algs::T) where {T <: Tuple}
+  ex = Expr(:tuple, map(1:length(T.types)) do i
+    :(isfsal(algs[$i]))
+  end...)
+  :(all($ex))
+end
 
 issplit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 issplit(alg::SplitAlgorithms) = true
@@ -73,7 +82,7 @@ end
   return expr
 end
 
-  
+
 fsal_typeof(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},rate_prototype) = typeof(rate_prototype)
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
