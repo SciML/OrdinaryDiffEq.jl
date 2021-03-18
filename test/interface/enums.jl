@@ -51,7 +51,6 @@ c = 10.0
 p = [β,c,γ,δt]
 
 @enum InfectionStatus Susceptible Infected Recovered
-Base.zero(::Type{<:InfectionStatus}) = Susceptible
 
 N = 1000
 I0 = 10
