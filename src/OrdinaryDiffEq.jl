@@ -1,5 +1,9 @@
-﻿module OrdinaryDiffEq
+﻿"""
+$(DocStringExtensions.README)
+"""
+module OrdinaryDiffEq
 
+using DocStringExtensions
   using Reexport
   @reexport using DiffEqBase
 
