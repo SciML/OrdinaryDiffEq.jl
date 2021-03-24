@@ -585,7 +585,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 2
-  if cnt == 1 || cnt == 2
+  if cnt <=2
     κ = zero(alg.kappa)
     γ₁ = 1//1
     γ₂ = 1//1
@@ -919,18 +919,18 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
 
 
   if integrator.opts.adaptive
-    if cnt == 1
+    if cnt > k
       integrator.EEst = one(integrator.EEst)
-    elseif cnt == 2
-      @.. utilde = (u - uprev) - (udiff[1] * dt/dts[1])
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    # elseif cnt == 2
+    #   @.. utilde = (u - uprev) - (udiff[1] * dt/dts[1])
+    #   calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    #   integrator.EEst = integrator.opts.internalnorm(atmp,t)
     else
       @.. tmp = u - uprev
       for i = 1:k
         @. tmp -= D[i]
       end
-      @.. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
+      @.. utilde = (inv(k+1)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
