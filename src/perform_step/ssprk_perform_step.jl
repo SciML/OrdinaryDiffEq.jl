@@ -354,7 +354,7 @@ end
   f(u,p,t)
 end
 
-function initialize!(integrator,cache::SSPRKConstantCache)
+function initialize!(integrator,cache::SSPRK32ConstantCache)
   integrator.fsalfirst=integrator.f(integrator.uprev,integrator.p,integrator.t)#Pre-start fsal
   integrator.kshortsize=1
   integrator.k=typeof(integrator.k)(undef,integrator.kshortsize)
@@ -364,7 +364,7 @@ function initialize!(integrator,cache::SSPRKConstantCache)
   integrator.k[1]=integrator.fsalfirst
 end
 
-@muladd function perform_step!(integrator,cache::KYKSSPRK32ConstantCache)
+@muladd function perform_step!(integrator,cache::SSPRK32ConstantCache)
   @unpack t,dt,uprev,u,f,p=integrator
   @unpack α10,α20,α21,α30,α32,β10,β21,β30,β32=cache
 
