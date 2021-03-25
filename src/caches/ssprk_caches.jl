@@ -42,6 +42,7 @@ struct KYKSSPRK32ConstantCache{T} <: OrdinaryDiffEqConstantCache
   β21::T
   β30::T
   β32::T
+end
 
 function SSPRKConstantCache(T)
   α10=T(1.000000000000000)
