@@ -581,6 +581,20 @@ end
 SSPRK22(stage_limiter! = trivial_limiter!) = SSPRK22(stage_limiter!, trivial_limiter!)
 
 """
+Kubatko, E.J., Yeager, B.A. & Ketcheson, D.I. 
+Optimal Strong-Stability-Preserving Runge–Kutta
+ Time Discretizations for Discontinuous Galerkin Methods. 
+J Sci Comput 60, 313–344 (2014). 
+https://doi.org/10.1007/s10915-013-9796-7
+
+"""
+struct SSPRK32{StageLimiter,StepLimiter}<:OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRK32(stage_limiter! = trivial_limiter!) = SSPRK32(stage_limiter!, trivial_limiter!)
+
+"""
 Shu, Chi-Wang, and Stanley Osher. "Efficient implementation of essentially
 non-oscillatory shock-capturing schemes." Journal of Computational Physics
 77.2 (1988): 439-471.

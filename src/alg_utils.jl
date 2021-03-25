@@ -30,6 +30,7 @@ isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
 isfsal(alg::SSPRK22) = false
+isfsal(alg::SSPRK32) = false
 isfsal(alg::SSPRK33) = false
 isfsal(alg::SSPRK53) = false
 isfsal(alg::SSPRK53_2N1) = false
@@ -300,6 +301,7 @@ alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 
 alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRKMSVS32) = 2
+alg_order(alg::SSPRK32) = 2
 alg_order(alg::SSPRK33) = 3
 alg_order(alg::KYKSSPRK42) = 2
 alg_order(alg::SSPRK53) = 3
@@ -545,6 +547,7 @@ julia> ssp_coefficient(SSPRK104())
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
 ssp_coefficient(alg::Euler) = 1
 ssp_coefficient(alg::SSPRK22) = 1
+ssp_coefficient(alg::SSPRK32) = 1.893
 ssp_coefficient(alg::SSPRK33) = 1
 ssp_coefficient(alg::KYKSSPRK42) = 2.459
 ssp_coefficient(alg::SSPRK53) = 2.65

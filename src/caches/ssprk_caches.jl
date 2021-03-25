@@ -22,6 +22,52 @@ end
 alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = SSPRK22ConstantCache()
 
 
+@cache struct SSPRK32Cache{uType,rateType,StageLimiter,StepLimiter,TabType}<:OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  u₂::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct KYKSSPRK32ConstantCache{T} <: OrdinaryDiffEqConstantCache
+  α10::T
+  α20::T
+  α21::T
+  α30::T
+  α32::T
+  β10::T
+  β21::T
+  β30::T
+  β32::T
+
+function SSPRKConstantCache(T)
+  α10=T(1.000000000000000)
+  α20=T(0.087353119859156)
+  α21=T(0.912646880140844)
+  α30=T(0.344956917166841)
+  α32=T(0.345866039233415)
+  β10=T(0.528005024856522)
+  β21=T(0.481882138633993)
+  β30=T(0.022826837460491)
+  β32=T(0.345866039233415)
+  KYKSSPRK32ConstantCache(α10,α20,α21,α30,α32,β10,β21,β30,β32)
+end
+
+function alg_cache(alg::KYKSSPRK32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tmp=similar(u)
+  k=zero(rate_prototype)
+  fsalfirst=zero(rate_prototype)
+  tab=KYKSSPRK32ConstantCache(real(tTypeNoUnits))
+  KYKSSPRK32Cache(u,uprev,k,tmp,faslfirst,tab)
+end
+
+function alg_cache(alg::KYKSSPRK32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  KYKSSPRK32ConstantCache(real(tTypeNoUnits))
+end
+
 @cache struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

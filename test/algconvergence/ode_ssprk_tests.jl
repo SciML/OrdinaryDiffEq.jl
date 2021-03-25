@@ -128,6 +128,21 @@ for prob in test_problems_nonlinear
   # saturation towards low dts due to less precision in the provided values of weights , tolerance is kept so high
 end
 
+println("SSPRK32")
+alg=SSPRK32()
+for prob in test_problems_only_time
+    sim=test_convergence(dts,prob,alg)
+    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear
+    sim=test_convergence(dts,prob,alg)
+    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+    sim=test_convergence(dts,prob,alg)
+    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+
 println("SSPRK33")
 alg = SSPRK33()
 for prob in test_problems_only_time
