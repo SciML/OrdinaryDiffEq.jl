@@ -588,7 +588,7 @@ J Sci Comput 60, 313–344 (2014).
 https://doi.org/10.1007/s10915-013-9796-7
 
 """
-struct SSPRK32{StageLimiter,StepLimiter}<:OrdinaryDiffEqAlgorithm
+struct SSPRK32{StageLimiter,StepLimiter} <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end

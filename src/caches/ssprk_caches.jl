@@ -22,7 +22,7 @@ end
 alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = SSPRK22ConstantCache()
 
 
-@cache struct SSPRK32Cache{uType,rateType,StageLimiter,StepLimiter,TabType}<:OrdinaryDiffEqMutableCache
+@cache struct SSPRK32Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -32,8 +32,7 @@ alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTyp
   tab::TabType
 end
 
-struct SSPRK32ConstantCache{T} <: OrdinaryDiffEqConstantCache
-  α10::T
+struct SSPRK32ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
   α20::T
   α21::T
   α30::T
@@ -42,10 +41,12 @@ struct SSPRK32ConstantCache{T} <: OrdinaryDiffEqConstantCache
   β21::T
   β30::T
   β32::T
+  c1::T2
+  c2::T2
+  c3::T2
 end
 
 function SSPRK32ConstantCache(T)
-  α10=T(1.000000000000000)
   α20=T(0.087353119859156)
   α21=T(0.912646880140844)
   α30=T(0.344956917166841)
@@ -54,19 +55,21 @@ function SSPRK32ConstantCache(T)
   β21=T(0.481882138633993)
   β30=T(0.022826837460491)
   β32=T(0.345866039233415)
-  SSPRK32ConstantCache(α10,α20,α21,α30,α32,β10,β21,β30,β32)
+  c1=T2(1.000000000000000)
+
+  SSPRK32ConstantCache(α20, α21, α30, α32, β10, β21, β30, β32)
 end
 
 function alg_cache(alg::SSPRK32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp=similar(u)
   k=zero(rate_prototype)
   fsalfirst=zero(rate_prototype)
-  tab=SSPRK32ConstantCache(real(tTypeNoUnits))
-  SSPRK32Cache(u,uprev,k,tmp,faslfirst,tab)
+  tab=SSPRK32ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+  SSPRK32Cache(u, uprev, k, tmp, u₂, fsalfirst, tab)
 end
 
 function alg_cache(alg::SSPRK32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-  SSPRK32ConstantCache(real(tTypeNoUnits))
+  SSPRK32ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 @cache struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
