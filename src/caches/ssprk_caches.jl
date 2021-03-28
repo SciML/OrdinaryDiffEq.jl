@@ -142,7 +142,7 @@ struct KYKSSPRK52ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
  c4::T2
 end
 
-function KYKSSPRK42ConstantCache(T, T2)
+function KYKSSPRK52ConstantCache(T, T2)
  α20 = T(0.235593265061659)
  α21 = T(0.764406734938341)
  α30 = T(0.174017972351526)
@@ -169,8 +169,8 @@ function KYKSSPRK42ConstantCache(T, T2)
 
  c1 = T2(0.324840618151514)
  c2 = T2(0.4966207125931022)
- c3 = T2()
- c4 = T2()
+ c3 = T2(0.9)
+ c4 = T2(0.6)
  KYKSSPRK52ConstantCache(α20, α21, α30, α32, α40, α41, α43, α50, α51, α52, α54, β10, β21, β30, β32, β40, β41, β43, β50, β51, β52, β54, c1, c2, c3, c4)
 end
 
