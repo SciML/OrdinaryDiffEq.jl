@@ -600,6 +600,7 @@ struct SSPRK53{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   step_limiter!::StepLimiter
 end
 struct KYKSSPRK42 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
+struct KYKSSPRK52 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
 SSPRK53(stage_limiter! = trivial_limiter!) = SSPRK53(stage_limiter!, trivial_limiter!)
 
 """

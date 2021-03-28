@@ -103,6 +103,90 @@ function alg_cache(alg::KYKSSPRK42,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
+@cache struct KYKSSPRK52Cache{uType, rateType, TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct KYKSSPRK52ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+ α20::T
+ α21::T
+ α30::T
+ α32::T
+ α40::T
+ α41::T
+ α43::T
+ α50::T
+ α51::T
+ α52::T
+ α54::T
+
+ β10::T
+ β21::T
+ β30::T
+ β32::T
+ β40::T
+ β41::T
+ β43::T
+ β50::T
+ β51::T
+ β52::T
+ β54::T
+ c1::T2
+ c2::T2
+ c3::T2
+ c4::T2
+end
+
+function KYKSSPRK42ConstantCache(T, T2)
+ α20 = T(0.235593265061659)
+ α21 = T(0.764406734938341)
+ α30 = T(0.174017972351526)
+ α32 = T(0.825982027648475)
+ α40 = T(0.235264368870758)
+ α41 = T(0.000058643383967)
+ α43 = T(0.764676987745275)
+ α50 = T(0.141720372339803)
+ α51 = T(0.095374613155521)
+ α52 = T(0.000311763705780)
+ α54 = T(0.762593250798895)
+
+ β10 = T(0.324840618151514)
+ β21 = T(0.248310356296551)
+ β30 = T(0.108822380501601)
+ β32 = T(0.268312512443371)
+ β40 = T(0.054392262422093)
+ β41 = T(0.000019049753098)
+ β43 = T(0.248398145385413)
+ β50 = T(0.000000180291569)
+ β51 = T(0.030981548293401)
+ β52 = T(0.000101273514903)
+ β54 = T(0.247721262987686)
+
+ c1 = T2(0.324840618151514)
+ c2 = T2(0.4966207125931022)
+ c3 = T2()
+ c4 = T2()
+ KYKSSPRK52ConstantCache(α20, α21, α30, α32, α40, α41, α43, α50, α51, α52, α54, β10, β21, β30, β32, β40, β41, β43, β50, β51, β52, β54, c1, c2, c3, c4)
+end
+
+function alg_cache(alg::KYKSSPRK52, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true})
+ tmp = similar(u)
+ k = zero(rate_prototype)
+ fsalfirst = zero(rate_prototype)
+ tab = KYKSSPRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+ KYKSSPRK52Cache(u, uprev, k, tmp, fsalfirst, tab)
+end
+
+function alg_cache(alg::KYKSSPRK52, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false})
+ KYKSSPRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+
 @cache struct SSPRK53Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
