@@ -143,6 +143,7 @@ struct KYKSSPRK52ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function KYKSSPRK52ConstantCache(T, T2)
+ α10 = T(1.000000000000000)
  α20 = T(0.235593265061659)
  α21 = T(0.764406734938341)
  α30 = T(0.174017972351526)
