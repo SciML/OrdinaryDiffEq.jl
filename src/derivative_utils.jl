@@ -503,7 +503,7 @@ end
     if isdae
       W = J
     else
-      W_full = W_transform ? J - mass_matrix*inv(dtgamma) :
+      W_full = W_transform ? J - convert(AbstractMatrix,mass_matrix)*inv(dtgamma) :
                              dtgamma*J - mass_matrix
       W = W_full isa Number ? W_full : DiffEqBase.default_factorize(W_full)
     end
