@@ -149,9 +149,9 @@ sol = solve(prob,MagnusGL6(),dt=1/10)
 dts = 1 ./2 .^(4:-1:1)
 test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,MagnusGL6(),test_setup)
-@test sim.𝒪est[:l2] ≈ 6 atol=0.2
+@test sim.𝒪est[:l2] ≈ 6 atol=0.3
 sim = analyticless_test_convergence(dts,prob,MagnusGL6(krylov=true),test_setup)
-@test sim.𝒪est[:l2] ≈ 6 atol=0.2
+@test sim.𝒪est[:l2] ≈ 6 atol=0.3
 
 A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0.0, 100.))
