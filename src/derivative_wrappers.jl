@@ -139,7 +139,7 @@ function DiffEqBase.resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJ
   resize!(jac_config.fx, i)
   resize!(jac_config.dx, i)
   resize!(jac_config.t, i)
-  ps = SparseDiffTools.adapt.(parameterless_type(jac_config.dx),
+  ps = SparseDiffTools.adapt.(DiffEqBase.parameterless_type(jac_config.dx),
                  SparseDiffTools.generate_chunked_partials(jac_config.dx,
                  1:length(jac_config.dx),Val(ForwardDiff.npartials(jac_config.t[1]))))
   resize!(jac_config.p, length(ps))
