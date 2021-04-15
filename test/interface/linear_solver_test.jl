@@ -10,7 +10,7 @@ M = DiffEqArrayOperator(mm'mm)
 u0 = ones(N)
 prob = ODEProblem(ODEFunction(A; mass_matrix=M), u0, (0.0, 1.0))
 
-for alg in [Rosenbrock23()]
+for alg in [Rosenbrock23(), Rosenbrock23(linsolve=LinSolveFactorize(lu))]
   sol = solve(prob, alg)
   @test sol.destats.njacs == 0
   @test sol.destats.nw == 1
