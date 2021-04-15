@@ -316,7 +316,9 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   else
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
-      @.. vec(Y) = W.mass_matrix.λ * vec(B)
+      vY = vec(Y)
+      vB = vec(B)
+      @.. vY .= W.mass_matrix.λ .* vB
     else
       mul!(vec(Y), W.mass_matrix, vec(B))
     end

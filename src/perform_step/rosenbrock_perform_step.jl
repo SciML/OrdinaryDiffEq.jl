@@ -39,7 +39,7 @@ end
 
   new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, u,
+  calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
 
   cache.linsolve(vec(k₁), W, vec(linsolve_tmp), new_W,
