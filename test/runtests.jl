@@ -43,6 +43,7 @@ end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
   @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
+  @time @safetestset "Linear Solver Tests" begin include("interface/linear_solver_test.jl") end
   @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
   @time @safetestset "Enum Tests" begin include("interface/enums.jl") end
   @time @safetestset "Mass Matrix Tests" begin include("interface/mass_matrix_tests.jl") end
