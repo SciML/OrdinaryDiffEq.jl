@@ -178,12 +178,13 @@ mutable struct WOperator{IIP,T,
       end
       _func_cache = nothing
     else
-      if J isa Union{AbstractMatrix,DiffEqArrayOperator}
-        AJ = convert(AbstractMatrix,J)
+      AJ = J isa DiffEqArrayOperator ? convert(AbstractMatrix, J) : J
+      if AJ isa AbstractMatrix
+        mm = mass_matrix isa DiffEqArrayOperator ? convert(AbstractMatrix, mass_matrix) : mass_matrix
         if transform
-          _concrete_form = -mass_matrix / gamma + AJ
+          _concrete_form = -mm / gamma + AJ
         else
-          _concrete_form = -mass_matrix + gamma * AJ
+          _concrete_form = -mm + gamma * AJ
         end
       else
         _concrete_form = nothing
@@ -345,9 +346,11 @@ function islinearfunction(f, alg)::Tuple{Bool,Bool}
 end
 
 function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
+  integrator.iter <= 1 && return true, true # at least one JW eval at the start
   repeat_step && return false, false
+  islin, _ = islinearfunction(integrator)
+  islin && return false, false # no further JW eval when it's linear
   alg isa DAEAlgorithm && return true, true
-  # TODO: RosW
   isnewton(nlsolver) || return true, true
   isfirstcall(nlsolver) && return true, true
   isfs = isfirststage(nlsolver)
@@ -460,8 +463,8 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   else # concrete W using jacobian from `calc_J!`
     islin, isode = islinearfunction(integrator)
     islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, lcache)) )
-    !(isdae) && update_coefficients!(mass_matrix,uprev,p,t)
-    new_W && !(isdae) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    !isdae && update_coefficients!(mass_matrix,uprev,p,t)
+    new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton(nlsolver)
     set_new_W!(nlsolver, new_W)
@@ -472,7 +475,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
     end
   end
   new_W && (integrator.destats.nw += 1)
-  return nothing
+  return new_W
 end
 
 @noinline function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
@@ -517,8 +520,11 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
   nlsolver = nothing
   # we need to skip calculating `W` when a step is repeated
-  repeat_step || calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, W_transform)
-  return nothing
+  new_W = false
+  if !repeat_step
+      new_W = calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, W_transform)
+  end
+  return new_W
 end
 
 # update W matrix (only used in Newton method)
