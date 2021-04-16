@@ -84,7 +84,8 @@ end
     @.. k₃ = -k₃
     integrator.destats.nsolve += 1
 
-    @.. atmp = dto6*(k₁ - 2*k₂ + k₃) * weight
+    @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
