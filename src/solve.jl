@@ -61,7 +61,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            alias_u0 = false,
                            alias_du0 = false,
                            initializealg = DefaultInit(),
-                           isdae = is_dae(prob,alg),
                            kwargs...) where recompile_flag
 
   if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
@@ -98,6 +97,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) && !(typeof(alg) <: DAEAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap,LinearExponential})
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
+
+  # check if we are working with a DAE problem
+  isdae = is_dae(prob, alg; kwargs...)
 
   if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
     auto = alg.choice_function
@@ -472,11 +474,12 @@ end
 
 # Helpers
 
-function is_dae(prob, alg)
+function is_dae(prob, alg; mm_singular=nothing)
   return alg isa DAEAlgorithm || (!(typeof(prob)<:DiscreteProblem) &&
                                      prob.f.mass_matrix != I &&
                                      !(typeof(prob.f.mass_matrix)<:Tuple) &&
-                                     ArrayInterface.issingular(prob.f.mass_matrix))
+                                     (mm_singular === nothing ? 
+                                        ArrayInterface.issingular(prob.f.mass_matrix) : mm_singular))
 end
 
 function handle_dt!(integrator)
