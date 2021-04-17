@@ -24,8 +24,8 @@ function initialize!(integrator, cache::Union{Rosenbrock23ConstantCache,
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
+  @unpack t,dt,uprev,u,f,p,opts = integrator
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
   @unpack c₃₂,d = cache.tab
 
   # Assignments
@@ -37,9 +37,15 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
-  calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+  new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
+  calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
+                       opts.abstol, opts.reltol, opts.internalnorm, t)
+
+  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), new_W,
+      Pl=DiffEqBase.ScaleVector(weight, true),
+      Pr=DiffEqBase.ScaleVector(weight, false), reltol=opts.reltol)
+
   @.. k₁ = -k₁
   integrator.destats.nsolve += 1
 
