@@ -380,7 +380,7 @@ end
   dtd3 = dt*d3
   dtgamma = dt*gamma
 
-  new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+  new_W = calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
@@ -541,7 +541,7 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
-  new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+  new_W = calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
@@ -798,7 +798,7 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
-  new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+  new_W = calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
@@ -1120,7 +1120,7 @@ end
   dtd5 = dt*d5
   dtgamma = dt*gamma
 
-  new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+  new_W = calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
@@ -1128,7 +1128,7 @@ end
   cache.linsolve(vec(k₁), W, vec(linsolve_tmp), new_W,
       Pl=DiffEqBase.ScaleVector(weight, true),
       Pr=DiffEqBase.ScaleVector(weight, false), reltol=opts.reltol)
-      
+
   @.. k1 = -k1
   integrator.destats.nsolve += 1
 
