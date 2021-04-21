@@ -102,25 +102,24 @@ end
 end
 
 # First Derivative 
-
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4ConstantCache,idxs::Nothing,T::Type{Val{1}})
-  @inbounds (k[1] - y₀ + y₁ - 2*k[1]*Θ + 2*k[2]*Θ-3*k[2]*Θ^2)/dt
+  @inbounds (k[1] - y₀ + y₁ - Θ*(2*k[1] + 2*k[2] - Θ*3*k[2]))/dt
 end
 
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4Cache,idxs::Nothing,T::Type{Val{1}})
-  @inbounds @..  (k[1] - y₀ + y₁ - 2*k[1]*Θ + 2*k[2]*Θ-3*k[2]*Θ^2)/dt
+  @inbounds @..  (k[1] - y₀ + y₁ - Θ*(2*k[1] + 2*k[2] - Θ*3*k[2]))/dt
 end
 
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs,T::Type{Val{1}})
-  @..   (k[1][idxs] - y₀[idxs] + y₁[idxs] - 2*k[1][idxs]*Θ + 2*k[2][idxs]*Θ-3*k[2][idxs]*Θ^2)/dt
+  @..   (k[1][idxs] - y₀[idxs] + y₁[idxs] - Θ*(2*k[1][idxs] + 2*k[2][idxs] - Θ*3*k[2][idxs]))/dt
 end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs::Nothing,T::Type{Val{1}})
-  @.. out =  (k[1] - y₀ + y₁ - 2*k[1]*Θ + 2*k[2]*Θ-3*k[2]*Θ^2)/dt
+  @.. out =  (k[1] - y₀ + y₁ - Θ*(2*k[1] + 2*k[2] - Θ*3*k[2]))/dt
   out
 end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs,T::Type{Val{1}})
-  @views @.. out =   (k[1][idxs] - y₀[idxs] + y₁[idxs] - 2*k[1][idxs]*Θ + 2*k[2][idxs]*Θ-3*k[2][idxs]*Θ^2)/dt
+  @views @.. out =   (k[1][idxs] - y₀[idxs] + y₁[idxs] - Θ*(2*k[1][idxs] + 2*k[2][idxs] - Θ*3*k[2][idxs]))/dt
   out
 end
