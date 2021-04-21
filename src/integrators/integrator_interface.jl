@@ -72,9 +72,9 @@ end
     out .= integrator.cache.tmp
   else
     return if isdefined(integrator, :fsallast)
-      integrator.fsallast
+      out .= integrator.fsallast
     else
-      integrator(integrator.t, Val{1})
+      integrator(out, integrator.t, Val{1})
     end
   end
 end
