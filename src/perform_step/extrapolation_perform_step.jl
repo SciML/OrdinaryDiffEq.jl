@@ -82,21 +82,21 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
 
-          beta1 = integrator.opts.beta1
+          beta1 = integrator.opts.controller.beta1
           e = integrator.EEst
           qold = integrator.qold
 
-          integrator.opts.beta1 = 1/(i+1)
+          integrator.opts.controller.beta1 = 1/(i+1)
           integrator.EEst = EEst
           dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
           integrator.EEst = e
-          integrator.opts.beta1 = beta1
+          integrator.opts.controller.beta1 = beta1
           integrator.qold = qold
 
           work = A/dtpropose
 
           if work < minimum_work
-              integrator.opts.beta1 = 1/(i+1)
+              integrator.opts.controller.beta1 = 1/(i+1)
               cache.dtpropose = dtpropose
               cache.cur_order = i
               minimum_work = work
@@ -196,21 +196,21 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
 
-          beta1 = integrator.opts.beta1
+          beta1 = integrator.opts.controller.beta1
           e = integrator.EEst
           qold = integrator.qold
 
-          integrator.opts.beta1 = 1/(i+1)
+          integrator.opts.controller.beta1 = 1/(i+1)
           integrator.EEst = EEst
           dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
           integrator.EEst = e
-          integrator.opts.beta1 = beta1
+          integrator.opts.controller.beta1 = beta1
           integrator.qold = qold
 
           work = A/dtpropose
 
           if work < minimum_work
-              integrator.opts.beta1 = 1/(i+1)
+              integrator.opts.controller.beta1 = 1/(i+1)
               cache.dtpropose = dtpropose
               cache.cur_order = i
               minimum_work = work
@@ -286,7 +286,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         @.. u_tmps2[1] = u_tmps[1]
         @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
         if index<=2 && j>=2
-          # Deuflhard Stability check for initial two sequences 
+          # Deuflhard Stability check for initial two sequences
           @.. diff2[1] = u_tmps[1] - u_tmps2[1]
           @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
           if integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t)
@@ -307,7 +307,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     let n_curr=n_curr, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
         integrator=integrator, cache=cache, repeat_step = repeat_step,
-        k_tmps=k_tmps, u_tmps=u_tmps, u_tmps2=u_tmps2,diff1=diff1,diff2=diff2 
+        k_tmps=k_tmps, u_tmps=u_tmps, u_tmps2=u_tmps2,diff1=diff1,diff2=diff2
       Threads.@threads for i in 1:2
         startIndex = (i == 1) ? 1 : n_curr + 1
         endIndex = (i == 1) ? n_curr : n_curr + 1
@@ -323,7 +323,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
               @.. u_tmps2[Threads.threadid()] = u_tmps[Threads.threadid()]
               @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + k_tmps[Threads.threadid()]
               if index<=2 && j>=2
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 @.. diff2[Threads.threadid()] = u_tmps[Threads.threadid()] - u_tmps2[Threads.threadid()]
                 @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t)
@@ -390,7 +390,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         integrator.destats.nw +=1
         @.. k_tmps[1] = integrator.fsalfirst
         @.. u_tmps[1] = uprev
-  
+
         for j in 1:sequence[n_curr + 1]
           @.. linsolve_tmps[1] = dt_temp*k_tmps[1]
           cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
@@ -529,7 +529,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         integrator.force_stepfail ? break : continue
       end
     end
-    
+
     if integrator.force_stepfail
       return
     end
@@ -580,7 +580,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         integrator.destats.nw += 1
         k_copy = integrator.fsalfirst
         u_tmp = uprev
-  
+
         for j in 1:sequence[n_curr + 1]
           k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
           integrator.destats.nsolve += 1
@@ -588,7 +588,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
           k_copy = f(u_tmp, p, t+j*dt_temp)
           integrator.destats.nf += 1
         end
-  
+
         T[n_curr + 1,1] = u_tmp
 
         #Extrapolate to new order
@@ -599,7 +599,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         end
         # Update u, integrator.EEst and cache.Q
         u = T[n_curr + 1, n_curr + 1]
-        utilde = T[n_curr + 1, n_curr]  
+        utilde = T[n_curr + 1, n_curr]
         res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -1050,7 +1050,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
         if(i<=1)
-          # Deuflhard Stability check for initial two sequences 
+          # Deuflhard Stability check for initial two sequences
           @.. diff2[1] = u_temp1 - u_temp2
           if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -1092,7 +1092,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
                 @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
@@ -1130,7 +1130,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
                 @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
@@ -1144,7 +1144,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
           integrator.force_stepfail ? break : continue
         end
       end
-    end    
+    end
   end
 
   if integrator.force_stepfail
@@ -1307,7 +1307,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
         u_temp2 = u_temp1
         u_temp1 = T[i+1]
         if(i<=1)
-          # Deuflhard Stability check for initial two sequences 
+          # Deuflhard Stability check for initial two sequences
           diff2 = u_temp1 - u_temp2
           if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -1344,7 +1344,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 diff2 = u_temp3 - u_temp4
                 if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(0.5*(diff2[1] - diff1[1]),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -1376,7 +1376,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 diff2 = u_temp3 - u_temp4
                 if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -1389,7 +1389,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
           integrator.force_stepfail ? break : continue
         end
       end
-    end    
+    end
   end
 
   if integrator.force_stepfail
@@ -1880,7 +1880,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         u_temp2 = u_temp1
         u_temp1 = T[i+1]
         if(i<=1)
-          # Deuflhard Stability check for initial two sequences 
+          # Deuflhard Stability check for initial two sequences
           diff2 = u_temp1 - u_temp2
           if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -1921,7 +1921,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 diff2 = u_temp3 - u_temp4
                 if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -1957,7 +1957,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 diff2 = u_temp3 - u_temp4
                 if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -2112,7 +2112,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
         if(i<=1)
-          # Deuflhard Stability check for initial two sequences 
+          # Deuflhard Stability check for initial two sequences
           @.. diff2[1] = u_temp1 - u_temp2
           @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
           if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
@@ -2159,7 +2159,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
                 @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
@@ -2201,7 +2201,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
                 @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
@@ -2254,7 +2254,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       for i in n_curr + 2: win_max + 1
         EEst1 *= subdividing_sequence[i]/subdividing_sequence[1]
       end
-      EEst1 *= EEst1      
+      EEst1 *= EEst1
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
         break
@@ -2393,7 +2393,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         u_temp2 = u_temp1
         u_temp1 = T[i+1]
         if(i<=1)
-          # Deuflhard Stability check for initial two sequences 
+          # Deuflhard Stability check for initial two sequences
           diff2 = u_temp1 - u_temp2
           if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
             # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -2434,7 +2434,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 diff2 = u_temp3 - u_temp4
                 if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -2470,7 +2470,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 diff2 = u_temp3 - u_temp4
                 if(integrator.opts.internalnorm(diff1,t)<integrator.opts.internalnorm(0.5*(diff2 - diff1),t))
                   # Divergence of iteration, overflow is possible. Force fail and start with smaller step
@@ -2626,7 +2626,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
         if(i<=1)
-          # Deuflhard Stability check for initial two sequences 
+          # Deuflhard Stability check for initial two sequences
           @.. diff2[1] = u_temp1 - u_temp2
           @.. diff2[1] = 0.5*(diff2[1] - diff1[1])
           if(integrator.opts.internalnorm(diff1[1],t)<integrator.opts.internalnorm(diff2[1],t))
@@ -2673,7 +2673,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
                 @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
@@ -2715,7 +2715,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
               if(index<=1)
-                # Deuflhard Stability check for initial two sequences 
+                # Deuflhard Stability check for initial two sequences
                 @.. diff2[Threads.threadid()] = u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()]
                 @.. diff2[Threads.threadid()] = 0.5*(diff2[Threads.threadid()] - diff1[Threads.threadid()])
                 if(integrator.opts.internalnorm(diff1[Threads.threadid()],t)<integrator.opts.internalnorm(diff2[Threads.threadid()],t))
@@ -2769,7 +2769,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         EEst1 *= subdividing_sequence[i]/subdividing_sequence[1]
       end
       EEst1 *= EEst1
-      
+
       #@show integrator.opts.internalnorm(integrator.u - cache.utilde,t)
       if integrator.EEst <= 1.0
         # Accept current approximation u of order n_curr
