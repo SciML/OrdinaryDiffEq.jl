@@ -1,4 +1,4 @@
-mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,F7,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
+mutable struct DEOptions{absType,relType,QT,tType,Controller,F1,F2,F3,F4,F5,F6,F7,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
   save_everystep::Bool
   adaptive::Bool
@@ -12,6 +12,7 @@ mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,F7,tstopsTyp
   failfactor::QT
   dtmax::tType
   dtmin::tType
+  controller::Controller
   internalnorm::F1
   internalopnorm::F2
   save_idxs::SType
@@ -28,9 +29,6 @@ mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,F7,tstopsTyp
   progress_message::F6
   timeseries_errors::Bool
   dense_errors::Bool
-  beta1::QT
-  beta2::QT
-  qoldinit::QT
   dense::Bool
   save_on::Bool
   save_start::Bool

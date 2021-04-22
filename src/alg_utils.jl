@@ -482,6 +482,41 @@ alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
 alg_adaptive_order(alg::AN5) = 5
 
+
+function default_controller(alg, cache, qoldinit, _beta1=nothing, _beta2=nothing)
+  if ispredictive(alg)
+    return PredictiveController()
+  elseif isstandard(alg)
+    return IController()
+  else # Default is PI-controller
+    QT = typeof(qoldinit)
+    beta1, beta2 = _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+    return PIController(beta1, beta2, qoldinit)
+  end
+end
+
+function default_controller(alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation, ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation}, cache, qoldinit, _beta1=nothing, _beta2=nothing)
+  QT = typeof(qoldinit)
+  beta1, beta2 = _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+  return ExtrapolationController(beta1)
+end
+
+function _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+  if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+    beta2 = _beta2 === nothing ? _composite_beta2_default(alg.algs, cache.current, QT) : _beta2
+    beta1 = _beta1 === nothing ? _composite_beta1_default(alg.algs, cache.current, QT, beta2) : _beta1
+  else
+    beta2 = _beta2 === nothing ? beta2_default(alg) : _beta2
+    beta1 = _beta1 === nothing ? beta1_default(alg,beta2) : _beta1
+  end
+  return convert(QT, beta1)::QT, convert(QT, beta2)::QT
+end
+
+# other special cases in controllers.jl
+function default_controller(alg::Union{JVODE, QNDF}, args...)
+  DummyController()
+end
+
 beta2_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = isadaptive(alg) ? 2//(5alg_order(alg)) : 0
 beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
