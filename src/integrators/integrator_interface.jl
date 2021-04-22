@@ -60,14 +60,22 @@ function set_proposed_dt!(integrator::ODEIntegrator,integrator2::ODEIntegrator)
 end
 
 @inline function DiffEqBase.get_du(integrator::ODEIntegrator)
-  integrator.fsallast
+  return if isdefined(integrator, :fsallast)
+    integrator.fsallast
+  else
+    integrator(integrator.t, Val{1})
+  end
 end
 
 @inline function DiffEqBase.get_du!(out,integrator::ODEIntegrator)
   if typeof(integrator.cache) <: FunctionMapCache
     out .= integrator.cache.tmp
   else
-    out .= integrator.fsallast
+    return if isdefined(integrator, :fsallast)
+      out .= integrator.fsallast
+    else
+      integrator(out, integrator.t, Val{1})
+    end
   end
 end
 
