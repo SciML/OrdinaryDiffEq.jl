@@ -19,18 +19,18 @@ DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = 
 
 
 # Standard integral (I) stepsize controller
-struct IController <: AbstractController
+struct StandardIController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::IController, alg)
+@inline function stepsize_controller!(integrator, controller::StandardIController, alg)
   @unpack qmin, qmax, gamma = integrator.opts
   EEst = DiffEqBase.value(integrator.EEst)
 
   if iszero(EEst)
     q = inv(qmax)
   else
-    k = get_current_adaptive_order(alg, integrator.cache) + 1
-    qtmp = DiffEqBase.fastpow(EEst, k) / gamma
+    expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
+    qtmp = DiffEqBase.fastpow(EEst, expo) / gamma
     @fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
     # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
     integrator.qold = integrator.dt / q
@@ -38,7 +38,7 @@ end
   q
 end
 
-function step_accept_controller!(integrator, controller::IController, alg, q)
+function step_accept_controller!(integrator, controller::StandardIController, alg, q)
   @unpack qsteady_min, qsteady_max = integrator.opts
 
   if qsteady_min <= q <= qsteady_max
@@ -47,9 +47,9 @@ function step_accept_controller!(integrator, controller::IController, alg, q)
   integrator.dt / q # new dt
 end
 
-function step_reject_controller!(integrator, controller::IController, alg)
-  @unpack dt, success_iter, qold = integrator
-  integrator.dt = success_iter == 0 ? 0.1 * dt : dt / qold
+function step_reject_controller!(integrator, controller::StandardIController, alg)
+  @unpack qold = integrator
+  integrator.dt = qold
 end
 
 
@@ -125,7 +125,7 @@ end
       end
       fac = min(gamma, ( 1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
     end
-    expo = 1 / (get_current_adaptive_order(integrator.alg,integrator.cache) + 1)
+    expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
     qtmp = DiffEqBase.fastpow(EEst, expo) / fac
     @fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
     # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
