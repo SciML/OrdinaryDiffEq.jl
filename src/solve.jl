@@ -326,8 +326,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                    typeof(d_discontinuities)}(
                        maxiters,save_everystep,adaptive,abstol_internal,
                        reltol_internal,QT(gamma),QT(qmax),
-                       QT(qmin),QT(qsteady_max),
-                       QT(qsteady_min),QT(failfactor),tType(dtmax),
+                       QT(qmin),QT(qsteady_max),QT(qsteady_min),QT(qoldinit),
+                       QT(failfactor),tType(dtmax),
                        tType(dtmin),controller,internalnorm,internalopnorm,save_idxs,tstops_internal,saveat_internal,
                        d_discontinuities_internal,
                        tstops,saveat,d_discontinuities,

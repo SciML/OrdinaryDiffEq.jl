@@ -15,6 +15,8 @@ end
 
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 
+DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
+
 
 # Standard integral (I) stepsize controller
 struct IController <: AbstractController
@@ -55,7 +57,6 @@ end
 mutable struct PIController{QT} <: AbstractController
   beta1::QT
   beta2::QT
-  qoldinit::QT
 end
 
 @inline function stepsize_controller!(integrator, controller::PIController, alg)
@@ -76,8 +77,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::PIController, alg, q)
-  @unpack qsteady_min, qsteady_max = integrator.opts
-  @unpack qoldinit = controller
+  @unpack qsteady_min, qsteady_max, qoldinit = integrator.opts
   EEst = DiffEqBase.value(integrator.EEst)
 
   if qsteady_min <= q <= qsteady_max

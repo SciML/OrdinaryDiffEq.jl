@@ -9,6 +9,7 @@ mutable struct DEOptions{absType,relType,QT,tType,Controller,F1,F2,F3,F4,F5,F6,F
   qmin::QT
   qsteady_max::QT
   qsteady_min::QT
+  qoldinit::QT
   failfactor::QT
   dtmax::tType
   dtmin::tType
