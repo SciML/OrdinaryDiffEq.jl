@@ -114,7 +114,7 @@ end
   if iszero(EEst)
     q = inv(qmax)
   else
-    if als isa Union{RKC,IRKC,SERK2}
+    if alg isa Union{RKC,IRKC,SERK2}
       fac = gamma
     else
       if alg isa Union{RadauIIA3, RadauIIA5}
