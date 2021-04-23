@@ -252,4 +252,6 @@ using DocStringExtensions
   export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
 
   export ShampineCollocationInit, BrownFullBasicInit, NoInit
+
+  export IController, PIController, PIDController
 end # module

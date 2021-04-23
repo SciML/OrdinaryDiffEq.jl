@@ -18,7 +18,7 @@ reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
 
 
-# Standard integral (I) stepsize controller
+# Standard integral (I) step size controller
 struct StandardIController <: AbstractController
 end
 
@@ -60,7 +60,7 @@ mutable struct PIController{QT} <: AbstractController
 end
 
 @inline function stepsize_controller!(integrator, controller::PIController, alg)
-  @unpack q11, qold = integrator
+  @unpack qold = integrator
   @unpack qmin, qmax, gamma = integrator.opts
   @unpack beta1, beta2 = controller
   EEst = DiffEqBase.value(integrator.EEst)
@@ -103,7 +103,75 @@ function reset_alg_dependent_opts!(controller::PIController, alg1, alg2)
 end
 
 
-# Gustafsson predictive stepsize controller
+# PID step size controller
+"""
+    PIDController(beta1, beta2, beta3=zero(beta1))
+
+Construct a PID step size controller adapting the time step using the formula
+```
+Δtₙ₊₁  = εₙ₊₁^(β₁/k) * εₙ^(β₂/k) * εₙ₋₁^(β₃/ k) * Δtₙ
+```
+where `k = min(alg_order, alg_adaptive_order) + 1` and `εᵢ` are inverses of
+the error estimates scaled by the tolerance.
+
+## References
+- Söderlind (2003)
+  Digital Filters in Adaptive Time-Stepping
+  [DOI: 10.1145/641876.641877](https://doi.org/10.1145/641876.641877)
+- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+  Optimized Runge-Kutta Methods with Automatic Step Size Control for
+  Compressible Computational Fluid Dynamics
+  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+"""
+struct PIDController{QT} <: AbstractController
+  beta::MVector{3,QT} # controller coefficients
+  err ::MVector{3,QT} # history of the error estimates
+end
+
+function PIDController(beta1, beta2, beta3=zero(beta1))
+  beta = MVector(promote(beta1, beta2, beta3)...)
+  QT = eltype(beta)
+  err = MVector{3,QT}(true, true, true)
+  return PIDController(beta, err)
+end
+
+@inline function stepsize_controller!(integrator, controller::PIDController, alg)
+  @unpack qold = integrator
+  @unpack qmin, qmax, gamma = integrator.opts
+  beta1, beta2, beta3 = controller.beta
+  controller.err[1] = DiffEqBase.value(integrator.EEst)
+  err1, err2, err3 = controller.err
+
+  if iszero(err1)
+    q = inv(qmax)
+  else
+    k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
+    q  = DiffEqBase.fastpow(err1, beta1 / k)
+    q *= DiffEqBase.fastpow(err2, beta2 / k)
+    q *= DiffEqBase.fastpow(err3, beta3 / k)
+    @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
+    integrator.qold = q
+  end
+  q
+end
+
+function step_accept_controller!(integrator, controller::PIDController, alg, q)
+  @unpack qsteady_min, qsteady_max, qoldinit = integrator.opts
+
+  if qsteady_min <= q <= qsteady_max
+    q = one(q)
+  end
+  controller.err[3] = controller.err[2]
+  controller.err[2] = controller.err[1]
+  return integrator.dt / q # new dt
+end
+
+function step_reject_controller!(integrator, controller::PIDController, alg)
+  integrator.dt /= integrator.qold
+end
+
+
+# Gustafsson predictive step size controller
 struct PredictiveController <: AbstractController
 end
 
@@ -128,7 +196,6 @@ end
     expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
     qtmp = DiffEqBase.fastpow(EEst, expo) / fac
     @fastmath q = max(inv(qmax), min(inv(qmin), qtmp))
-    # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
     integrator.qold = q
   end
   q
@@ -353,7 +420,7 @@ end
 end
 
 function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
-  # Standard stepsize controller
+  # Standard step size controller
   # Compute and save the stepsize scaling based on the latest error estimate of the current order
   @unpack controller = integrator.opts
 
@@ -450,7 +517,7 @@ end
 end
 
 function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation})
-  # Standard stepsize controller
+  # Standard step size controller
   # Compute and save the stepsize scaling based on the latest error estimate of the current order
   @unpack controller = integrator.opts
 
