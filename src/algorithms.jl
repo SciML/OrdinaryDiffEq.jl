@@ -665,11 +665,18 @@ Optimal third-order explicit SSP method with four stages discovered by
   "Contractivity of Runge-Kutta methods."
   In: BIT Numerical Mathematics 31.3 (1991), pp. 482–528.
   [DOI: 10.1007/BF01933264](https://doi.org/10.1007/BF01933264).
+
 Embedded method constructed by
 - Sidafa Conde, Imre Fekete, John N. Shadid.
   "Embedded error estimation and adaptive step-size control for
   optimal explicit strong stability preserving Runge–Kutta methods."
   [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
+
+Efficient implementation (and optimized controller) described in
+- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+  Optimized Runge-Kutta Methods with Automatic Step Size Control for
+  Compressible Computational Fluid Dynamics
+  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct SSPRK43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
@@ -2192,8 +2199,8 @@ Scientific Computing, 18 (1), pp. 1-22.
   applications. Preprint-Nr. 1741, FB Mathematik, TH Darmstadt; 1995.
 
 #### Rodas4P2
-- Steinebach G. (2020) Improvement of Rosenbrock-Wanner Method RODASP. 
-  In: Reis T., Grundel S., Schoeps S. (eds) Progress in Differential-Algebraic Equations II. 
+- Steinebach G. (2020) Improvement of Rosenbrock-Wanner Method RODASP.
+  In: Reis T., Grundel S., Schoeps S. (eds) Progress in Differential-Algebraic Equations II.
   Differential-Algebraic Equations Forum. Springer, Cham. https://doi.org/10.1007/978-3-030-53905-4_6
 
 #### Rodas5
