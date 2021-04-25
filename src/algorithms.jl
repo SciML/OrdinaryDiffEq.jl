@@ -560,6 +560,19 @@ doi: https://doi.org/10.1137/120885899
 """
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 
+"""
+    RDPK3SpFSAL35()
+
+A third-order, five-stage explicit Runge-Kutta method with embedded error estimator.
+
+## References
+- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+  Optimized Runge-Kutta Methods with Automatic Step Size Control for
+  Compressible Computational Fluid Dynamics
+  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+"""
+struct RDPK3SpFSAL35 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 
 """

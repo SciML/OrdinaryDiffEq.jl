@@ -197,6 +197,7 @@ using DocStringExtensions
          ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
          ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
          ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+         RDPK3SpFSAL35,
          KYK2014DGSSPRK_3S2
 
   export RadauIIA3, RadauIIA5

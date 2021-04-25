@@ -1421,6 +1421,112 @@ end
 
 
 
+# 3S+ low storage methods: 3S methods adding another memory location for the embedded method
+# ## References
+# - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+#   Optimized Runge-Kutta Methods with Automatic Step Size Control for
+#   Compressible Computational Fluid Dynamics
+#   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+@cache struct LowStorageRK3SpFSALCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  utilde::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct LowStorageRK3SpFSALConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
+  γ12end::SVector{N,T} # γ11 is always zero
+  γ22end::SVector{N,T} # γ21 is always one
+  γ32end::SVector{N,T} # γ31 is always zero
+  # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimisation?
+  δ2end ::SVector{N,T} # δ1  is always one
+  β1::T
+  β2end::SVector{N,T}
+  c2end::SVector{N,T2} # c1 is always zero
+  bhat1::T
+  bhat2end::SVector{N,T}
+  bhatfsal::T
+end
+
+
+function RDPK3SpFSAL35ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"2.587771979725733308135192812685323706e-01"),
+    convert(T, big"-1.324380360140723382965420909764953437e-01"),
+    convert(T, big"5.056033948190826045833606441415585735e-02"),
+    convert(T, big"5.670532000739313812633197158607642990e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"5.528354909301389892439698870483746541e-01"),
+    convert(T, big"6.731871608203061824849561782794643600e-01"),
+    convert(T, big"2.803103963297672407841316576323901761e-01"),
+    convert(T, big"5.521525447020610386070346724931300367e-01"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"2.752563273304676380891217287572780582e-01"),
+    convert(T, big"-8.950526174674033822276061734289327568e-01"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"3.407655879334525365094815965895763636e-01"),
+    convert(T, big"3.414382655003386206551709871126405331e-01"),
+    convert(T, big"7.229275366787987419692007421895451953e-01"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.300298624518076223899418286314123354e-01")
+  β2end = SVector(
+    convert(T, big"3.021434166948288809034402119555380003e-01"),
+    convert(T, big"8.025606185416310937583009085873554681e-01"),
+    convert(T, big"4.362158943603440930655148245148766471e-01"),
+    convert(T, big"1.129272530455059129782111662594436580e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.300298624518076223899418286314123354e-01"),
+    convert(T, big"4.050046072094990912268498160116125481e-01"),
+    convert(T, big"8.947822893693433545220710894560512805e-01"),
+    convert(T, big"7.235136928826589010272834603680114769e-01"),
+  )
+
+  bhat1    = convert(T, big"9.484166705035703392326247283838082847e-02")
+  bhat2end = SVector(
+    convert(T, big"1.726371339430353766966762629176676070e-01"),
+    convert(T, big"3.998243189084371024483169698618455770e-01"),
+    convert(T, big"1.718016807580178450618829007973835152e-01"),
+    convert(T, big"5.881914422155740300718268359027168467e-02"),
+  )
+  bhatfsal = convert(T, big"1.020760551185952388626787099944507877e-01")
+
+  LowStorageRK3SpFSALConstantCache{4,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal)
+end
+
+function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  tmp = zero(u)
+  utilde = zero(u)
+  k = zero(rate_prototype)
+  # if calck # TODO: HR
+    fsalfirst = zero(rate_prototype)
+  # else
+  #   fsalfirst = k
+  # end
+  tab = RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpFSALCache(u,uprev,k,tmp,utilde,fsalfirst,tab)
+end
+
+function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+
 # 2R+ low storage methods introduced by van der Houwen
 @cache struct LowStorageRK2RPCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
