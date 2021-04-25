@@ -118,6 +118,9 @@ the error estimates scaled by the tolerance.
 - Söderlind (2003)
   Digital Filters in Adaptive Time-Stepping
   [DOI: 10.1145/641876.641877](https://doi.org/10.1145/641876.641877)
+- Söderlind, Wang (2006)
+  Adaptive time-stepping and computational stability
+  [DOI: 10.1016/j.cam.2005.03.008](https://doi.org/10.1016/j.cam.2005.03.008)
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
