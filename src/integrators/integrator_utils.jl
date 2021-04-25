@@ -187,7 +187,12 @@ function _loopfooter!(integrator)
   elseif integrator.opts.adaptive
     q = stepsize_controller!(integrator,integrator.alg)
     integrator.isout = integrator.opts.isoutofdomain(integrator.u,integrator.p,ttmp)
-    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
+    # TODO: HR
+    #       Other codes use a kind of safety factor here such that slightly
+    #       bigger values are ccepted, e.g.,
+    #       `integrator.EEst <= 1.0 / 0.9^2`
+    # integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
+    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0 / 0.9^2) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
     if integrator.accept_step # Accept
       integrator.destats.naccept += 1
       integrator.last_stepfail = false

@@ -146,10 +146,20 @@ end
     q = inv(qmax)
   else
     k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
-    q  = DiffEqBase.fastpow(err1, beta1 / k)
-    q *= DiffEqBase.fastpow(err2, beta2 / k)
-    q *= DiffEqBase.fastpow(err3, beta3 / k)
-    @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
+    # TODO: HR
+    # q  = DiffEqBase.fastpow(err1, beta1 / k)
+    # q *= DiffEqBase.fastpow(err2, beta2 / k)
+    # q *= DiffEqBase.fastpow(err3, beta3 / k)
+    # @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
+    q  = err1^(beta1 / k)
+    q *= err2^(beta2 / k)
+    q *= err3^(beta3 / k)
+    q = 1 + atan(q - 1)
+    # TODO: HR
+    #       Other codes don't use a safety factor here but when they
+    #       make the decision whether to accept a step or not.
+    # q = max(inv(qmax), min(inv(qmin), q / gamma))
+    q = max(inv(qmax), min(inv(qmin), q))
     integrator.qold = q
   end
   q
@@ -167,6 +177,7 @@ function step_accept_controller!(integrator, controller::PIDController, alg, q)
 end
 
 function step_reject_controller!(integrator, controller::PIDController, alg)
+  @info "rejected" integrator.qold integrator.opts.gamma integrator.opts.qmin integrator.opts.qmax
   integrator.dt /= integrator.qold
 end
 
