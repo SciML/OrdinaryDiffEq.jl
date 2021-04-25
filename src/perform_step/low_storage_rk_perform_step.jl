@@ -273,7 +273,7 @@ end
   @.. tmp = u
   @.. u   = tmp + β1*dt*integrator.fsalfirst
   if integrator.opts.adaptive
-    @.. utilde = bhat1*dt*integrator.fsalfirst
+    @.. utilde = tmp + bhat1*dt*integrator.fsalfirst
   end
 
   # other stages
@@ -291,7 +291,7 @@ end
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
-    @.. utilde = utilde + bhatfsal*dt*k
+    @.. utilde = utilde + bhatfsal*dt*k - u
     atmp = zero(utilde)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
