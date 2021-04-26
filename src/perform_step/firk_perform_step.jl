@@ -1,4 +1,4 @@
-  function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
+function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
   integrator.iter <= 1 && return true
   repeat_step && return false
   first(islinearfunction(integrator)) && return false
@@ -265,7 +265,7 @@ end
     @. dw12 = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
     needfactor = iter==1
     linsolve2(vec(cubuff), W1, vec(dw12), needfactor)
-    @.. dw12 = cubuff
+    dw12 = cubuff
     integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
@@ -593,10 +593,10 @@ end
     @.. dw1 = fw1 - γdt*Mw1
     needfactor = iter==1 && new_W
     linsolve1(vec(ubuff), W1, vec(dw1), needfactor)
-    @.. dw1 = ubuff
+    dw1 = ubuff
     @.. dw23 = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
     linsolve2(vec(cubuff), W2, vec(dw23), needfactor)
-    @.. dw23 = cubuff
+    dw23 = cubuff
     integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
     @.. dw2 = real(dw23)
@@ -657,7 +657,7 @@ end
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
     @.. utilde = integrator.fsalfirst + tmp
     alg.smooth_est && (linsolve1(vec(ubuff), W1, vec(utilde), false); integrator.destats.nsolve += 1)
-    @.. utilde = ubuff
+    utilde = ubuff
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -669,7 +669,7 @@ end
       integrator.destats.nf += 1
       @.. utilde = fsallast + tmp
       alg.smooth_est && (linsolve1(vec(ubuff), W1, vec(utilde), false); integrator.destats.nsolve += 1)
-      @.. utilde = ubuff
+      utilde = ubuff
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
     end
