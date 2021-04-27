@@ -292,6 +292,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
       resize!(integrator.sol.alg_choice,resize_start)
     end
     integrator.saveiter = resize_start
+    integrator.saveiter_dense = resize_start
   end
   integrator.iter = 0
   integrator.success_iter = 0
