@@ -262,10 +262,9 @@ end
       Mw2 = z2
     end
 
-    @. dw12 = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
+    @. cubuff = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
     needfactor = iter==1
-    linsolve2(vec(cubuff), W1, vec(dw12), needfactor)
-    dw12 .= cubuff
+    linsolve2(vec(dw12), W1, vec(cubuff), needfactor)
     integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
@@ -590,13 +589,11 @@ end
       Mw3 = z3
     end
 
-    @.. dw1 = fw1 - γdt*Mw1
+    @.. ubuff = fw1 - γdt*Mw1
     needfactor = iter==1 && new_W
-    linsolve1(vec(ubuff), W1, vec(dw1), needfactor)
-    dw1 .= ubuff
-    @.. dw23 = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
-    linsolve2(vec(cubuff), W2, vec(dw23), needfactor)
-    dw23 .= cubuff
+    linsolve1(vec(dw1), W1, vec(ubuff), needfactor)
+    @.. cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
+    linsolve2(vec(dw23), W2, vec(cubuff), needfactor)
     integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
     @.. dw2 = real(dw23)
@@ -655,9 +652,8 @@ end
     e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
     @.. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
-    @.. utilde = integrator.fsalfirst + tmp
-    alg.smooth_est && (linsolve1(vec(ubuff), W1, vec(utilde), false); integrator.destats.nsolve += 1)
-    utilde .= ubuff
+    @.. ubuff = integrator.fsalfirst + tmp
+    alg.smooth_est && (linsolve1(vec(utilde), W1, vec(ubuff), false); integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -667,9 +663,8 @@ end
       @.. utilde = uprev + utilde
       f(fsallast, utilde, p, t)
       integrator.destats.nf += 1
-      @.. utilde = fsallast + tmp
-      alg.smooth_est && (linsolve1(vec(ubuff), W1, vec(utilde), false); integrator.destats.nsolve += 1)
-      utilde .= ubuff
+      @.. ubuff = fsallast + tmp
+      alg.smooth_est && (linsolve1(vec(utilde), W1, vec(ubuff), false); integrator.destats.nsolve += 1)
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
     end
