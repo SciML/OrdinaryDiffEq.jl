@@ -32,7 +32,7 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
   tol = is_stiffalg ? stol : ntol
   os = oneunit(stiffness)
   bool = stiffness > os * tol
-  integrator.do_error_check = !bool
+  integrator.do_error_check = integrator.do_error_check || !bool
   bool
 end
 
