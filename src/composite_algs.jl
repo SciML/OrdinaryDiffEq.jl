@@ -1,5 +1,6 @@
 mutable struct AutoSwitchCache{nAlg,sAlg,tolType,T}
   count::Int
+  successive_switches::Int
   nonstiffalg::nAlg
   stiffalg::sAlg
   is_stiffalg::Bool
@@ -9,6 +10,7 @@ mutable struct AutoSwitchCache{nAlg,sAlg,tolType,T}
   stifftol::tolType
   dtfac::T
   stiffalgfirst::Bool
+  switch_max::Int
 end
 
 struct AutoSwitch{nAlg,sAlg,tolType,T}
@@ -20,11 +22,13 @@ struct AutoSwitch{nAlg,sAlg,tolType,T}
   stifftol::tolType
   dtfac::T
   stiffalgfirst::Bool
+  switch_max::Int
 end
 AutoSwitch(nonstiffalg, stiffalg; maxstiffstep=10, maxnonstiffstep=3,
-           nonstifftol=9//10, stifftol=9//10, dtfac=2, stiffalgfirst=false) =
+           nonstifftol=9//10, stifftol=9//10, dtfac=2, stiffalgfirst=false,
+           switch_max = 5) =
   AutoSwitch(nonstiffalg, stiffalg, maxstiffstep, maxnonstiffstep,
-             promote(nonstifftol, stifftol)..., dtfac, stiffalgfirst)
+             promote(nonstifftol, stifftol)..., dtfac, stiffalgfirst, switch_max)
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
   eigen_est, dt = integrator.eigen_est, integrator.dt
@@ -32,7 +36,14 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
   tol = is_stiffalg ? stol : ntol
   os = oneunit(stiffness)
   bool = stiffness > os * tol
-  integrator.do_error_check = integrator.do_error_check || !bool
+
+  if !bool
+      integrator.alg.choice_function.successive_switches += 1
+  else
+      integrator.alg.choice_function.successive_switches = 0
+  end
+
+  integrator.do_error_check = integrator.alg.choice_function.successive_switches > integrator.alg.choice_function.switch_max || !bool
   bool
 end
 
