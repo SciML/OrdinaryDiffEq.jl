@@ -106,7 +106,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     auto = alg.choice_function
     _alg = CompositeAlgorithm(alg.algs,
                              AutoSwitchCache(
-                                             0,
+                                             0,0,
                                              auto.nonstiffalg,
                                              auto.stiffalg,
                                              auto.stiffalgfirst,
@@ -116,6 +116,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                                              auto.stifftol,
                                              auto.dtfac,
                                              auto.stiffalgfirst,
+                                             auto.switch_max
                                             ))
   else
     _alg = alg
