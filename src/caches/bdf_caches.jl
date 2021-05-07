@@ -252,7 +252,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   QNDF2Cache(uprev2,uprev3,fsalfirst,D,D2,R,U,atmp,utilde,nlsolver,dtₙ₋₁,dtₙ₋₂)
 end
 
-@cache mutable struct QNDFConstantCache{N,coefType1,coefType2,coefType3,uType,dtType,dtsType,EEstType,gammaType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDFConstantCache{N,coefType1,coefType2,coefType3,uType,dtType,EEstType,gammaType} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   D::coefType3
   D2::coefType2
@@ -260,10 +260,11 @@ end
   U::coefType1
   order::Int
   max_order::Int
-  udiff::uType
-  dts::dtsType
+  #udiff::uType
+  u₀::uType
+  dtprev::dtType 
   h::dtType
-  nconsteps::Int
+  nconsteps::Int ##Successful Consecutive Step with the same step size
   consfailcnt::Int #Consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
   EEst2::EEstType #Error Estimator for k+1 order
@@ -280,6 +281,7 @@ end
   order::Int
   max_order::Int
   udiff::coefType
+  u₀::uType
   dts::dtsType
   atmp::uNoUnitsType
   utilde::uType
@@ -297,11 +299,12 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   γ, c = one(eltype(alg.kappa)), 1
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
 
-  udiff = fill(zero(u), 1, 6)
-  dts = fill(zero(dt), 1, 6)
+  #udiff = fill(zero(u), 1, 6)
+  dtprev = zero(dt)
   h = zero(dt)
+  u₀ = zero(u)
 
-  D = fill(zero(u), 1, 5)
+  D = fill(zero(u), 1, 6)
   D2 = fill(zero(u), 6, 6)
   R = fill(zero(t), 5, 5)
   U = fill(zero(t), 5, 5)
@@ -314,9 +317,15 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   max_order = 5
   nconsteps = 1
 
-  γₖ = [sum(tTypeNoUnits(inv(j)) for j in 1:k) for k in 1:6]
+  @inbounds for r = 1:5
+    U[1,r] = -r
+    for j = 2:5
+      U[j,r] = U[j-1,r] * ((j-1) - r)/j
+    end
+  end
 
-  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,1,0, EEst1, EEst2, γₖ, tmp)
+  γₖ = [sum(tTypeNoUnits(1//j) for j in 1:k) for k in 1:6]
+  QNDFConstantCache(nlsolver,D,D2,R,U,1,max_order,u₀,dtprev,h,1,0, EEst1, EEst2, γₖ, tmp)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})

@@ -1,16 +1,8 @@
 # bdf_utils
-@inline function U!(k, U)
-  @inbounds for r = 1:k
-    U[1,r] = -r
-    for j = 2:k
-      U[j,r] = U[j-1,r] * ((j-1) - r)/j
-    end
-  end
-  nothing
-end
 
 function R!(k, ρ, cache)
   @unpack R = cache
+  @show k, ρ,R
   @inbounds for r = 1:k
     R[1,r] = -r * ρ
     for j = 2:k
@@ -68,5 +60,3 @@ function reinterpolate_history!(cache::OrdinaryDiffEqConstantCache, D, R, k)
     D[j] = tmp
   end
 end
-
-global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
