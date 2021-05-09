@@ -45,7 +45,7 @@ end
   end
 end
 
-@testset "Tstops Eps"
+@testset "Tstops Eps" begin
     function de(du, u, p, t) # specific DE does not impact the issue
                a, b = p
                du[1] = a * u[1]
