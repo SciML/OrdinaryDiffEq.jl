@@ -44,3 +44,22 @@ end
     @test tstop ∈ integrator.sol.t
   end
 end
+
+@testset "Tstops Eps"
+    function de(du, u, p, t) # specific DE does not impact the issue
+               a, b = p
+               du[1] = a * u[1]
+               du[2] = b * u[2]
+    end
+
+    saveat = [0.0, 0.0094777, 1.5574]
+    tstop = 0.010823
+
+    affect!(integrator) = integrator.u[1] += 1.0
+    condition(u, t, integrator) = t == tstop
+    callback = DiscreteCallback(condition, affect!)
+
+    prob = ODEProblem(de, zeros(2), (-1, 3.), rand(2))
+    sol = solve(prob, Tsit5(), saveat=saveat, tstops=tstop, callback=callback)
+    @test sol.t[end] == 3
+end

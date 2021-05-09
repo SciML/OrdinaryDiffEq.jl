@@ -195,7 +195,7 @@ function _loopfooter!(integrator)
       integrator.tprev = integrator.t
       if integrator.t isa AbstractFloat && has_tstop(integrator)
         tstop = integrator.tdir * first_tstop(integrator)
-        abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
+        abs(ttmp - tstop) < 100eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
         integrator.t = ttmp
