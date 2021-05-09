@@ -61,5 +61,5 @@ end
 
     prob = ODEProblem(de, zeros(2), (-1, 3.), rand(2))
     sol = solve(prob, Tsit5(), saveat=saveat, tstops=tstop, callback=callback)
-    @test sol.t[end] == 3
+    @test sol.t[end] == 1.5574
 end
