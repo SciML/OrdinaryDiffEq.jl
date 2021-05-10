@@ -303,8 +303,8 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   dtprev = zero(dt)
   h = zero(dt)
   u₀ = zero(u)
-
-  D = fill(zero(u), 1, 6)
+  #D =  Array{Float64,2}(undef, length(u), 7)
+  D = fill(zero(u), 7)
   D2 = fill(zero(u), 6, 6)
   R = fill(zero(t), 5, 5)
   U = fill(zero(t), 5, 5)

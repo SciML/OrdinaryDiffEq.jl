@@ -2,7 +2,6 @@
 
 function R!(k, ρ, cache)
   @unpack R = cache
-  @show k, ρ,R
   @inbounds for r = 1:k
     R[1,r] = -r * ρ
     for j = 2:k

@@ -52,6 +52,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   @unpack z,tmp,γ,α,cache = nlsolver
   @unpack tstep,W,invγdt = cache
 
+
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
 
@@ -98,7 +99,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
   atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)
-  @show ndz
+  #@show ndz
 
   # compute next iterate
   nlsolver.ztmp = z .- dz
