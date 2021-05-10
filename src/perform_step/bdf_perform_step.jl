@@ -691,13 +691,15 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   k = order
   κlist = integrator.alg.kappa
   κ = κlist[k]
-  @show k
   #TODO: step change
   #κlist = zeros(5)
   #κ = 0
   if cache.consfailcnt>0
-    for i = 1:k+1
-      D[i]=D[i+1]
+    ddprev = uprev - cache.u₀
+    D[k+1] = ddprev - D[k+2]
+    D[k+1] = ddprev
+    for i in 1:k
+      D[i] = D[i] - D[i+1]
     end
   end
   if nconsteps > k+1
@@ -715,8 +717,6 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   if cache.consfailcnt == 0
     cache.dtprev = dt
   end
-  
-
 
   ##precalculations:
   α₀ = 1
