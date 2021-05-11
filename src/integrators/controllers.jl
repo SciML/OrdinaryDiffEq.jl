@@ -162,6 +162,10 @@ function step_accept_controller!(integrator,alg::QNDF,q)
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
+  @show integrator.cache.nconsteps integrator.cache.order
+  if q != one(q)
+    integrator.cache.nconsteps = 1
+  end
   return integrator.dt/q  # dtnew
 end
 
@@ -169,6 +173,7 @@ function step_reject_controller!(integrator,alg::QNDF)
   #append no. of consecutive failed steps
   k = integrator.cache.order
   h = integrator.dt
+  @show h,k, integrator.cache.consfailcnt
   integrator.cache.consfailcnt += 1
   integrator.cache.nconsteps = 1
   if integrator.cache.consfailcnt > 1 

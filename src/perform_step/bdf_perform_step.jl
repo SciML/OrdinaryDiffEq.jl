@@ -694,22 +694,30 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   #TODO: step change
   #κlist = zeros(5)
   #κ = 0
+
   if cache.consfailcnt>0
     ddprev = uprev - cache.u₀
     D[k+1] = ddprev - D[k+2]
     D[k+1] = ddprev
-    for i in 1:k
+    for i in k:-1:1
       D[i] = D[i] - D[i+1]
     end
   end
+  
   if nconsteps > k+1
     q = dt/dtprev
     if q != 1
       R!(k,q,cache)
       RU = R[1:k,1:k]*U[1:k,1:k]
       Dtmp = hcat(D[1:k]...) * RU
-      for i in 1:k
+      if eltype(D) <: Number
+        for i in 1:k
           D[i] = Dtmp[i]
+        end
+      else
+        for i in 1:k
+          @.. D[i] = Dtmp[:,i]
+        end
       end
     end
   end
@@ -717,7 +725,6 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   if cache.consfailcnt == 0
     cache.dtprev = dt
   end
-
   ##precalculations:
   α₀ = 1
   β₀ = inv((1-κ)*γₖ[k])
@@ -751,6 +758,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   for i in k:-1:1
     D[i] = D[i] + D[i+1]
   end
+  @info dd, dt
 
   if integrator.opts.adaptive
     utilde = (κ*γₖ[k]+inv(k+1))*dd
@@ -772,7 +780,9 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       cache.EEst2 = integrator.opts.internalnorm(atmpp1, t)
     end
   end
-  cache.u₀ = u₀
+  if integrator.EEst <= 1
+    cache.u₀ = u₀
+  end
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
