@@ -108,7 +108,10 @@ end
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
     @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
-    i < ccache.mdeg && (uᵢ₋₂ .= uᵢ₋₁; uᵢ₋₁ .= u)
+    if i < ccache.mdeg 
+      @.. uᵢ₋₂ = uᵢ₋₁
+      @.. uᵢ₋₁ = u
+    end
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
   end # end if
@@ -297,7 +300,10 @@ end
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     tᵢ₋₁ = (dt*μ) - ν*tᵢ₋₂ - κ*tᵢ₋₃
     @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
-    i < ccache.mdeg && (@.. uᵢ₋₂ .= uᵢ₋₁; uᵢ₋₁ .= u)
+    if i < ccache.mdeg 
+      @.. uᵢ₋₂ = uᵢ₋₁
+      @.. uᵢ₋₁ = u
+    end    
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
   end
