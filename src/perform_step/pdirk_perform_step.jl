@@ -116,7 +116,7 @@ function initialize!(integrator, cache::PDIRK44Cache) end
     k1[2] .= nlsolve!(_nlsolver, integrator, cache, repeat_step)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
-    @.. _nlsolver.tmp .= uprev + α1[1] * k1[1] + α2[1] * k1[2]
+    @.. _nlsolver.tmp = uprev + α1[1] * k1[1] + α2[1] * k1[2]
     _nlsolver.γ = γs[1]
     _nlsolver.c = cs[3]
     markfirststage!(_nlsolver)
