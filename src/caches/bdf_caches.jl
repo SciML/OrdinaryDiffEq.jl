@@ -259,6 +259,7 @@ end
   R::coefType1
   U::coefType1
   order::Int
+  prevorder::Int
   max_order::Int
   #udiff::uType
   u₀::uType
@@ -325,7 +326,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   end
 
   γₖ = [sum(tTypeNoUnits(1//j) for j in 1:k) for k in 1:6]
-  QNDFConstantCache(nlsolver,D,prevD,R,U,1,max_order,u₀,dtprev,h,1,0, EEst1, EEst2, γₖ, tmp)
+  QNDFConstantCache(nlsolver,D,prevD,R,U,1,1,max_order,u₀,dtprev,h,0,0, EEst1, EEst2, γₖ, tmp)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
