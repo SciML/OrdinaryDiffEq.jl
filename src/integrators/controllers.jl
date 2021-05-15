@@ -171,9 +171,10 @@ function step_accept_controller!(integrator,alg::QNDF,q)
     if integrator.cache.nconsteps < integrator.cache.order + 2
       q = one(integrator.qold) #quasi-contsant steps
     else
+      #@show integrator.cache.nconsteps
       zₛ = 1.2 # equivalent to intergrator.opts.gamma
       zᵤ = 0.1
-      Fᵤ = 6
+      Fᵤ = 10
       expo = 1/(k+1)
       z = zₛ * ((est)^expo)
       F = inv(z)
@@ -191,9 +192,9 @@ function step_accept_controller!(integrator,alg::QNDF,q)
         expo = 1/k
         zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
         Fₖ₋₁ = inv(zₖ₋₁)
-        if zₖ₋₁ <= 0.1
-          hₖ₋₁ = 10 * h
-        elseif 0.1 < zₖ₋₁ <= 1.3
+        if zₖ₋₁ <= 1/10
+          hₖ₋₁ =  10* h
+        elseif 1/10 < zₖ₋₁ <= 1.3
           hₖ₋₁ = Fₖ₋₁ * h
         end
         if hₖ₋₁ > hₖ
@@ -223,7 +224,7 @@ function step_accept_controller!(integrator,alg::QNDF,q)
       # adp order and step conditions
       #@show k,est, estₖ₋₁, estₖ₊₁,hₖ₋₁,hₖ,hₖ₊₁,hₙ,kₙ
       #@info cache.D
-      #@show hₙ
+      #@show hₙ,hₖ₋₁,hₖ,hₖ₊₁
 
       if hₙ <= h
         hₙ = h
@@ -231,16 +232,23 @@ function step_accept_controller!(integrator,alg::QNDF,q)
       end
       cache.order = kₙ
       q = integrator.dt/hₙ
-      #@show kₙ,integrator.cache.nconsteps,zₖ₊₁
+      #@show integrator.cache.nconsteps,zₖ₊₁
     end
   end
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
+  if q!=one(q)
+    integrator.cache.changed = true
+  else
+    integrator.cache.changed = false
+  end
+  integrator.qold = q
   return integrator.dt/q
 end
 
 function step_reject_controller!(integrator,alg::QNDF)
+  #@show integrator.cache.D
   #append no. of consecutive failed steps
   k = integrator.cache.order
   h = integrator.dt
@@ -278,13 +286,16 @@ function step_reject_controller!(integrator,alg::QNDF)
   
   integrator.dt = hₙ
   integrator.cache.order = kₙ
+  if integrator.dt != h
+    integrator.cache.changed = true
+  end
 end
 
 
 # this stepsize and order controller is taken from
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
-function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k, gamma)
+#=function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k, gamma)
   zₛ = 1.2 # equivalent to intergrator.opts.gamma
   zᵤ = 0.1
   Fᵤ = 10
@@ -350,7 +361,7 @@ function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k, 
 
   return hₙ
  
-end
+end=#
 
 @inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
   # Dummy function

@@ -694,25 +694,25 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   #TODO: step change
   #κlist = zeros(5)
   #κ = 0
-
-
   if cache.consfailcnt>0
-    D = cache.prevD
-  else
-    cache.dtprev = dt
+    #@show cache.D
+    D = copy(cache.prevD)
   end
-  
-  if nconsteps > cache.prevorder+1
+  #@info cache.changed
+  #@show dt,dtprev
+  #if nconsteps > cache.prevorder+1 || cache.changed == true
+  if cache.changed == true
     #@info nconsteps
-    q = dt/dtprev
-    if q != 1 
+    ρ = dt/dtprev
+    #@info ρ
+    if ρ != 1 #|| k != cache.prevorder
       #@show nconsteps
       integrator.cache.nconsteps = 0
       @unpack U,R = cache
       @inbounds for r = 1:k
-        R[1,r] = -r * q
+        R[1,r] = -r * ρ
         for j = 2:k
-          R[j,r] = R[j-1,r] * ((j-1) - r * q)/j
+          R[j,r] = R[j-1,r] * ((j-1) - r * ρ)/j
         end
       end
       RU = R[1:k,1:k]*U[1:k,1:k]
@@ -735,6 +735,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   ##precalculations:
   α₀ = 1
   β₀ = inv((1-κ)*γₖ[k])
+  #β₀=1
   u₀ = sum(D[1:k]) .+ uprev  # u₀ is predicted value
   ϕ = zero(u)
   for i = 1:k
@@ -745,7 +746,9 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   mass_matrix = f.mass_matrix
 
   if mass_matrix == I
+    #nlsolver.tmp = @.. u₀*inv(β₀*dt)-ϕ*inv(dt)
     nlsolver.tmp = @.. (u₀/β₀-ϕ)/dt
+    #nlsolver.tmp = uprev*inv(dt)
   else
     nlsolver.tmp = mass_matrix * @.. (u₀/β₀-ϕ)/dt
   end
@@ -759,6 +762,8 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   nlsolvefail(nlsolver) && return
   u = z
   dd = u-u₀
+  #@show D
+  #@show u,u₀,uprev
   #@show dd D
   D[k+2] = dd - D[k+1]
   D[k+1] = dd
@@ -771,30 +776,36 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     utilde = (κ*γₖ[k]+inv(k+1))*dd
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    #@show integrator.EEst,k,dt
+    #@show D,uprev,cache.prevD
+    #@show "--------------"
+    #integrator.EEst = integrator.opts.internalnorm(utilde,t)/integrator.opts.reltol
+    #integrator.EEst = integrator.opts.internalnorm(utilde,t)/integrator.opts.reltol
     if k >1
       dd = D[k]
       utildem1 = (κlist[k-1]*γₖ[k-1]+inv(k))*dd
       atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      errm1 = integrator.opts.internalnorm(atmpm1, t)
       cache.EEst1 = integrator.opts.internalnorm(atmpm1, t)
+      #cache.EEst1 = integrator.opts.internalnorm(utildem1, t)/integrator.opts.reltol
     end
-    if k < cache.max_order && nconsteps > k+1
+    if k < cache.max_order
       dd = D[k+2]
       utildep1 = (κlist[k+1]*γₖ[k+1]+inv(k+2))*dd
       atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      errp1 = integrator.opts.internalnorm(atmpp1, t)
       cache.EEst2 = integrator.opts.internalnorm(atmpp1, t)
+      #cache.EEst2 = integrator.opts.internalnorm(utildep1, t)/integrator.opts.reltol
     end
   end
   if integrator.EEst <= 1.0
-    cache.u₀ = u₀
-    cache.prevD = D
+    #cache.u₀ = u₀
     cache.prevorder = k
+    cache.prevD = copy(D)
+    cache.dtprev = dt
   end
-  if k>3
-    @show k
-  end
+  #@show cache.D
+
   integrator.fsallast = f(u, p, t+dt)
+  #@show u-(uprev+dt*integrator.fsallast), k
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast

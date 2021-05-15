@@ -66,7 +66,6 @@ Equations II, Springer Series in Computational Mathematics. ISBN
       ustep = z
       # tmp = outertmp ./ hγ
       if mass_matrix === I
-        #@show z,tmp,invγdt,α,f(z, p, tstep)
         ztmp = tmp .+ f(z, p, tstep) .- (α * invγdt) .* z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
