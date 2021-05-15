@@ -688,6 +688,9 @@ end
 function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,iter = integrator
   @unpack dtprev,order,nconsteps,max_order,D,prevD,R,nlsolver,γₖ = cache
+  if dt!=dtprev && dtprev!=0
+    cache.changed=true
+  end
   k = order
   κlist = integrator.alg.kappa
   κ = κlist[k]
@@ -701,7 +704,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   #@info cache.changed
   #@show dt,dtprev
   #if nconsteps > cache.prevorder+1 || cache.changed == true
-  if cache.changed == true
+  if cache.changed
     #@info nconsteps
     ρ = dt/dtprev
     #@info ρ
@@ -762,7 +765,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   nlsolvefail(nlsolver) && return
   u = z
   dd = u-u₀
-  #@show D
+  #@show D,cache.prevD
   #@show u,u₀,uprev
   #@show dd D
   D[k+2] = dd - D[k+1]
@@ -776,7 +779,8 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     utilde = (κ*γₖ[k]+inv(k+1))*dd
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    #@show integrator.EEst,k,dt
+    #@show integrator.EEst
+    #@show integrator.EEst,k,dt,cache.nconsteps,cache.consfailcnt
     #@show D,uprev,cache.prevD
     #@show "--------------"
     #integrator.EEst = integrator.opts.internalnorm(utilde,t)/integrator.opts.reltol

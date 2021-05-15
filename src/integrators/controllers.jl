@@ -238,12 +238,13 @@ function step_accept_controller!(integrator,alg::QNDF,q)
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
-  if q!=one(q)
-    integrator.cache.changed = true
-  else
-    integrator.cache.changed = false
-  end
+  #if q!=one(q) || integrator.cache.order != k
+  #  integrator.cache.changed = true
+  #else
+  #  integrator.cache.changed = false
+  #end
   integrator.qold = q
+  #@show integrator.dt
   return integrator.dt/q
 end
 
@@ -286,9 +287,11 @@ function step_reject_controller!(integrator,alg::QNDF)
   
   integrator.dt = hₙ
   integrator.cache.order = kₙ
-  if integrator.dt != h
-    integrator.cache.changed = true
-  end
+  #if integrator.dt != h || integrator.cache.order != k
+  #  integrator.cache.changed = true
+  #else
+  #  integrator.cache.changed = false
+  #end
 end
 
 
