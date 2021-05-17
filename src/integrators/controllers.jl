@@ -24,6 +24,33 @@ DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = 
 
 
 # Standard integral (I) step size controller
+"""
+    StandardIController()
+
+The standard (integral) controller is the most basic step size controller.
+This controller is usually the first one introduced in numerical analysis classes
+but should only be used rarely in practice because of efficiency problems for
+many problems/algorithms.
+
+Construct an integral (I) step size controller adapting the time step
+based on the formula
+```
+Δtₙ₊₁ = εₙ₊₁^(1/k) * Δtₙ
+```
+where `k = get_current_adaptive_order(alg, integrator.cache) + 1` and `εᵢ` is the
+inverse of the error estimate `integrator.EEst` scaled by the tolerance
+(Hairer, Nørsett, Wanner, 2008, Section II.4).
+The step size factor is multiplied by the safety factor `gamma` and clipped to
+the interval `[qmin, qmax]`.
+A step will be accepted whenever the estimated error `integrator.EEst` is
+less than or equal to unity. Otherwise, the step is rejected and re-tried with
+the predicted step size.
+
+## References
+- Hairer, Nørsett, Wanner (2008)
+  Solving Ordinary Differential Equations I Nonstiff Problems
+  [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
+"""
 struct StandardIController <: AbstractController
 end
 
@@ -59,6 +86,38 @@ end
 
 
 # PI step size controller
+"""
+    PIController(beta1, beta2)
+
+The proportional-integral (PI) controller is a widespread step size controller
+with improved stability properties compared to the [`StandardIController`](@ref).
+This controller is the default for most algorithms in OrdinaryDiffEq.jl.
+
+Construct a PI step size controller adapting the time step based on the formula
+```
+Δtₙ₊₁ = εₙ₊₁^β₁ * εₙ^β₂ * Δtₙ
+```
+where `εᵢ` are inverses of the error estimates scaled by the tolerance
+(Hairer, Nørsett, Wanner, 2010, Section IV.2).
+The step size factor is multiplied by the safety factor `gamma` and clipped to
+the interval `[qmin, qmax]`.
+A step will be accepted whenever the estimated error `integrator.EEst` is
+less than or equal to unity. Otherwise, the step is rejected and re-tried with
+the predicted step size.
+
+!!! note
+    The coefficients `beta1, beta2` are not scaled by the order of the method,
+    in contrast to the [`PIDController`](@ref). For the `PIController`, this
+    scaling by the order must be done when the controller is constructed.
+
+## References
+- Hairer, Nørsett, Wanner (2010)
+  Solving Ordinary Differential Equations II Stiff and Differential-Algebraic Problems
+  [DOI: 10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
+- Hairer, Nørsett, Wanner (2008)
+  Solving Ordinary Differential Equations I Nonstiff Problems
+  [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
+"""
 mutable struct PIController{QT} <: AbstractController
   beta1::QT
   beta2::QT
@@ -114,9 +173,12 @@ end
                   limiter=default_dt_factor_limiter,
                   accept_safety=0.81)
 
+The proportional-integral-derivative (PID) controller is a generalization of the
+[`PIController`](@ref) and can have improved stability and efficiency properties.
+
 Construct a PID step size controller adapting the time step based on the formula
 ```
-Δtₙ₊₁  = εₙ₊₁^(β₁/k) * εₙ^(β₂/k) * εₙ₋₁^(β₃/ k) * Δtₙ
+Δtₙ₊₁ = εₙ₊₁^(β₁/k) * εₙ^(β₂/k) * εₙ₋₁^(β₃/ k) * Δtₙ
 ```
 where `k = min(alg_order, alg_adaptive_order) + 1` and `εᵢ` are inverses of
 the error estimates scaled by the tolerance (Söderlind, 2003).
@@ -209,6 +271,53 @@ end
 
 
 # Gustafsson predictive step size controller
+"""
+    PredictiveController()
+
+The Gustafsson acceleration algorithm accelerates changes so that way algorithms
+can more swiftly change to handle quick transients. This algorithm is thus
+well-suited for stiff solvers where this can be expected, and is the default
+for algorithms like the (E)SDIRK methods.
+
+```julia
+gamma = integrator.opts.gamma
+niters = integrator.cache.newton_iters
+fac = min(gamma,(1+2*integrator.alg.max_newton_iter)*gamma/(niters+2*integrator.alg.max_newton_iter))
+expo = 1/(alg_order(integrator.alg)+1)
+qtmp = (integrator.EEst^expo)/fac
+@fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+  q = one(q)
+end
+integrator.qold = q
+q
+```
+In this case, `niters` is the number of Newton iterations which was required
+in the most recent step of the algorithm. Note that these values are used
+differently depending on acceptance and rejectance. When the step is accepted,
+the following logic is applied:
+```julia
+if integrator.success_iter > 0
+  expo = 1/(alg_adaptive_order(integrator.alg)+1)
+  qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
+  qgus = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qgus/integrator.opts.gamma))
+  qacc=max(q,qgus)
+else
+  qacc = q
+end
+integrator.dtacc = integrator.dt
+integrator.erracc = max(1e-2,integrator.EEst)
+integrator.dt/qacc
+```
+When it rejects, its the same as the [`StandardIController`](@ref):
+```julia
+if integrator.success_iter == 0
+  integrator.dt *= 0.1
+else
+  integrator.dt = integrator.dt/integrator.qold
+end
+```
+"""
 struct PredictiveController <: AbstractController
 end
 
