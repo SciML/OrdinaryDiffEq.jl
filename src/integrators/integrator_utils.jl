@@ -192,7 +192,7 @@ function _loopfooter!(integrator)
     #       bigger values are ccepted, e.g.,
     #       `integrator.EEst <= 1.0 / 0.9^2`
     # integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
-    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0 / 0.9^2) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
+    integrator.accept_step = (!integrator.isout && accept_step_controller(integrator, integrator.opts.controller)) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
     if integrator.accept_step # Accept
       integrator.destats.naccept += 1
       integrator.last_stepfail = false

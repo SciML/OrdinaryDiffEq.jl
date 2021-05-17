@@ -5,6 +5,11 @@ abstract type AbstractController end
   stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
 
+# checks whether the controller should accept a step based on the error estimate
+@inline function accept_step_controller(integrator, controller::AbstractController)
+  return integrator.EEst <= 1
+end
+
 @inline function step_accept_controller!(integrator, alg, q)
   step_accept_controller!(integrator, integrator.opts.controller, alg, q)
 end
@@ -105,14 +110,23 @@ end
 
 # PID step size controller
 """
-    PIDController(beta1, beta2, beta3=zero(beta1))
+    PIDController(beta1, beta2, beta3=zero(beta1);
+                  limiter=default_dt_factor_limiter,
+                  accept_safety=0.81)
 
-Construct a PID step size controller adapting the time step using the formula
+Construct a PID step size controller adapting the time step based on the formula
 ```
 Δtₙ₊₁  = εₙ₊₁^(β₁/k) * εₙ^(β₂/k) * εₙ₋₁^(β₃/ k) * Δtₙ
 ```
 where `k = min(alg_order, alg_adaptive_order) + 1` and `εᵢ` are inverses of
-the error estimates scaled by the tolerance.
+the error estimates scaled by the tolerance (Söderlind, 2003).
+The step size factor is limited by the `limiter` with default value
+```
+limiter(x) = one(x) + atan(x - one(x))
+````
+as proposed by Söderlind and Wang (2006). A step will be accepted whenever the
+predicted step size change is bigger than `accept_safety`. Otherwise, the step
+is rejected and re-tried with the predicted step size.
 
 ## References
 - Söderlind (2003)
@@ -126,62 +140,64 @@ the error estimates scaled by the tolerance.
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct PIDController{QT} <: AbstractController
+struct PIDController{QT, Limiter} <: AbstractController
   beta::MVector{3,QT} # controller coefficients
   err ::MVector{3,QT} # history of the error estimates
+  accept_safety::QT   # accept a step if the predicted change of the step size
+                      # is bigger than this parameter
+  limiter::Limiter    # limiter of the dt factor (before clipping)
 end
 
-function PIDController(beta1, beta2, beta3=zero(beta1))
+function PIDController(beta1, beta2, beta3=zero(beta1); limiter=default_dt_factor_limiter,
+                                                        accept_safety=0.81)
   beta = MVector(promote(beta1, beta2, beta3)...)
   QT = eltype(beta)
   err = MVector{3,QT}(true, true, true)
-  return PIDController(beta, err)
+  return PIDController(beta, err, convert(QT, accept_safety), limiter)
 end
+
+@inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 @inline function stepsize_controller!(integrator, controller::PIDController, alg)
-  @unpack qold = integrator
-  @unpack qmin, qmax, gamma = integrator.opts
+  @unpack qmax = integrator.opts
   beta1, beta2, beta3 = controller.beta
-  controller.err[1] = DiffEqBase.value(integrator.EEst)
+  controller.err[1] = inv(DiffEqBase.value(integrator.EEst))
   err1, err2, err3 = controller.err
 
-  if iszero(err1)
-    q = inv(qmax)
-  else
-    k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
-    # TODO: HR
-    # q  = DiffEqBase.fastpow(err1, beta1 / k)
-    # q *= DiffEqBase.fastpow(err2, beta2 / k)
-    # q *= DiffEqBase.fastpow(err3, beta3 / k)
-    # @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
-    q  = err1^(beta1 / k)
-    q *= err2^(beta2 / k)
-    q *= err3^(beta3 / k)
-    q = 1 + atan(q - 1)
-    # TODO: HR
-    #       Other codes don't use a safety factor here but when they
-    #       make the decision whether to accept a step or not.
-    # q = max(inv(qmax), min(inv(qmin), q / gamma))
-    q = max(inv(qmax), min(inv(qmin), q))
-    integrator.qold = q
-  end
-  q
+  iszero(err1) && return qmax
+
+  k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
+  dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
+  dt_factor = controller.limiter(dt_factor)
+  # Note: No additional limiting of the form
+  #   dt_factor = max(qmin, min(qmax, dt_factor))
+  # is necessary since the `limiter` should take care of that. The default limiter
+  # ensures
+  #   0.21 ≈ limiter(0) <= dt_factor <= limiter(Inf) ≈ 2.57
+  # See Söderlind, Wang (2006), Section 6.
+  integrator.qold = dt_factor
+  return dt_factor
 end
 
-function step_accept_controller!(integrator, controller::PIDController, alg, q)
-  @unpack qsteady_min, qsteady_max, qoldinit = integrator.opts
+@inline function accept_step_controller(integrator, controller::PIDController)
+  return integrator.qold >= controller.accept_safety
+end
 
-  if qsteady_min <= q <= qsteady_max
-    q = one(q)
+function step_accept_controller!(integrator, controller::PIDController, alg, dt_factor)
+  @unpack qsteady_min, qsteady_max = integrator.opts
+
+  if qsteady_min <= inv(dt_factor) <= qsteady_max
+    dt_factor = one(dt_factor)
   end
   controller.err[3] = controller.err[2]
   controller.err[2] = controller.err[1]
-  return integrator.dt / q # new dt
+  return integrator.dt * dt_factor # new dt
 end
 
 function step_reject_controller!(integrator, controller::PIDController, alg)
-  @info "rejected" integrator.qold integrator.opts.gamma integrator.opts.qmin integrator.opts.qmax
-  integrator.dt /= integrator.qold
+  # TODO: HR
+  @info "rejected" integrator.t integrator.dt integrator.EEst integrator.qold integrator.opts.gamma integrator.opts.qmin integrator.opts.qmax controller
+  integrator.dt *= integrator.qold
 end
 
 
