@@ -190,6 +190,30 @@ as proposed by Söderlind and Wang (2006). A step will be accepted whenever the
 predicted step size change is bigger than `accept_safety`. Otherwise, the step
 is rejected and re-tried with the predicted step size.
 
+Some standard controller parameters suggested in the literature are
+
+| Controller | `beta1` | `beta2` | `beta3` |
+|:-----------|--------:|--------:|:-------:|
+|    basic   |  `1.00` |  `0.00` |  `0`    |
+|    PI42    |  `0.60` | `-0.20` |  `0`    |
+|    PI33    |  `2//3` | `-1//3` |  `0`    |
+|    PI34    |  `0.70` | `-0.40` |  `0`    |
+|   H211PI   |  `1//6` |  `1//6` |  `0`    |
+|   H312PID  | `1//18` |  `1//9` | `1//18` |
+
+!!! note
+    In contrast to the [`PIController`](@ref), the coefficients `beta1, beta2, beta3`
+    are scaled by the order of the method. Thus, standard controllers such as PI42
+    can use the same coefficients `beta1, beta2, beta3` for different algorithms.
+
+!!! note
+    In contrast to other controllers, the `PIDController` does not use the keyword
+    arguments `qmin, qmax` to limit the step size change or the safety factor `gamma`.
+    These common keyword arguments are replaced by the `limiter` and `accept_safety`
+    to guarantee a smooth behavior (Söderlind and Wang, 2006).
+    Because of this, a `PIDController` behaves different from a [`PIController`](@ref),
+    even if `beta1, beta2` are adapted accordingly and `iszero(beta3)`.
+
 ## References
 - Söderlind (2003)
   Digital Filters in Adaptive Time-Stepping
@@ -212,7 +236,7 @@ end
 
 function PIDController(beta1, beta2, beta3=zero(beta1); limiter=default_dt_factor_limiter,
                                                         accept_safety=0.81)
-  beta = MVector(promote(beta1, beta2, beta3)...)
+  beta = MVector(map(float, promote(beta1, beta2, beta3))...)
   QT = eltype(beta)
   err = MVector{3,QT}(true, true, true)
   return PIDController(beta, err, convert(QT, accept_safety), limiter)
