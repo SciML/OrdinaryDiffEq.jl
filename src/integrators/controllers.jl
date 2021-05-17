@@ -156,6 +156,13 @@ function PIDController(beta1, beta2, beta3=zero(beta1); limiter=default_dt_facto
   return PIDController(beta, err, convert(QT, accept_safety), limiter)
 end
 
+function Base.show(io::IO, controller::PIDController)
+  print(io, "PIDController(beta=", controller.beta,
+            ", accept_safety=", controller.accept_safety,
+            ", limiter=", controller.limiter,
+            ")")
+end
+
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 @inline function stepsize_controller!(integrator, controller::PIDController, alg)
