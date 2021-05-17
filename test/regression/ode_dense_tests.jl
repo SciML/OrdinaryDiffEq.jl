@@ -380,7 +380,16 @@ regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true, nth_der = 1, dert
 regression_test(Rosenbrock32(), 6e-4, 9e-4; test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # Rodas4
-regression_test(Rodas4(), 8.5e-6, 2e-5)
+regression_test(Rodas4(), 8.5e-6, 2e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas42
+regression_test(Rodas42(), 3e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas4P
+regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas4P2
+regression_test(Rodas4P2(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)
