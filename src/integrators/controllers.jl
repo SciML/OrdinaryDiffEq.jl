@@ -196,14 +196,14 @@ function step_accept_controller!(integrator, controller::PIDController, alg, dt_
   if qsteady_min <= inv(dt_factor) <= qsteady_max
     dt_factor = one(dt_factor)
   end
-  controller.err[3] = controller.err[2]
-  controller.err[2] = controller.err[1]
+  @inbounds begin
+    controller.err[3] = controller.err[2]
+    controller.err[2] = controller.err[1]
+  end
   return integrator.dt * dt_factor # new dt
 end
 
 function step_reject_controller!(integrator, controller::PIDController, alg)
-  # TODO: HR
-  @info "rejected" integrator.t integrator.dt integrator.EEst integrator.qold integrator.opts.gamma integrator.opts.qmin integrator.opts.qmax controller
   integrator.dt *= integrator.qold
 end
 
