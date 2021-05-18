@@ -712,10 +712,9 @@ ispredictive(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ispredictive(alg::Union{RKC}) = true
 ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
+isstandard(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 isstandard(alg::VCABM) = true
-isstandard(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
-ispi(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = !(ispredictive(alg) || isstandard(alg))
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isWmethod(alg::Rosenbrock23) = true
