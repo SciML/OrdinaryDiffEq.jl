@@ -497,7 +497,7 @@ function default_controller(alg, cache, qoldinit, _beta1=nothing, _beta2=nothing
   if ispredictive(alg)
     return PredictiveController()
   elseif isstandard(alg)
-    return StandardIController()
+    return IController()
   else # Default is PI-controller
     QT = typeof(qoldinit)
     beta1, beta2 = _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)

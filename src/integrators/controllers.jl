@@ -25,7 +25,7 @@ DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = 
 
 # Standard integral (I) step size controller
 """
-    StandardIController()
+    IController()
 
 The standard (integral) controller is the most basic step size controller.
 This controller is usually the first one introduced in numerical analysis classes
@@ -51,10 +51,10 @@ the predicted step size.
   Solving Ordinary Differential Equations I Nonstiff Problems
   [DOI: 10.1007/978-3-540-78862-1](https://doi.org/10.1007/978-3-540-78862-1)
 """
-struct StandardIController <: AbstractController
+struct IController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::StandardIController, alg)
+@inline function stepsize_controller!(integrator, controller::IController, alg)
   @unpack qmin, qmax, gamma = integrator.opts
   EEst = DiffEqBase.value(integrator.EEst)
 
@@ -70,7 +70,7 @@ end
   q
 end
 
-function step_accept_controller!(integrator, controller::StandardIController, alg, q)
+function step_accept_controller!(integrator, controller::IController, alg, q)
   @unpack qsteady_min, qsteady_max = integrator.opts
 
   if qsteady_min <= q <= qsteady_max
@@ -79,7 +79,7 @@ function step_accept_controller!(integrator, controller::StandardIController, al
   integrator.dt / q # new dt
 end
 
-function step_reject_controller!(integrator, controller::StandardIController, alg)
+function step_reject_controller!(integrator, controller::IController, alg)
   @unpack qold = integrator
   integrator.dt = qold
 end
@@ -90,7 +90,7 @@ end
     PIController(beta1, beta2)
 
 The proportional-integral (PI) controller is a widespread step size controller
-with improved stability properties compared to the [`StandardIController`](@ref).
+with improved stability properties compared to the [`IController`](@ref).
 This controller is the default for most algorithms in OrdinaryDiffEq.jl.
 
 Construct a PI step size controller adapting the time step based on the formula
@@ -333,7 +333,7 @@ integrator.dtacc = integrator.dt
 integrator.erracc = max(1e-2,integrator.EEst)
 integrator.dt/qacc
 ```
-When it rejects, its the same as the [`StandardIController`](@ref):
+When it rejects, its the same as the [`IController`](@ref):
 ```julia
 if integrator.success_iter == 0
   integrator.dt *= 0.1
