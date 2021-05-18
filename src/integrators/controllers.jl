@@ -290,6 +290,7 @@ function step_accept_controller!(integrator, controller::PIDController, alg, dt_
 end
 
 function step_reject_controller!(integrator, controller::PIDController, alg)
+  @warn "rejected" integrator.t integrator.dt integrator.EEst
   integrator.dt *= integrator.qold
 end
 

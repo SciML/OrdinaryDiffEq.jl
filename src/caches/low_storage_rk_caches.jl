@@ -1427,13 +1427,14 @@ end
 #   Optimized Runge-Kutta Methods with Automatic Step Size Control for
 #   Compressible Computational Fluid Dynamics
 #   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
-@cache struct LowStorageRK3SpFSALCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct LowStorageRK3SpFSALCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  k::rateType
-  tmp::uType
-  utilde::uType
   fsalfirst::rateType
+  k::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
   tab::TabType
 end
 
@@ -1441,7 +1442,7 @@ struct LowStorageRK3SpFSALConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
   γ12end::SVector{N,T} # γ11 is always zero
   γ22end::SVector{N,T} # γ21 is always one
   γ32end::SVector{N,T} # γ31 is always zero
-  # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimisation?
+  # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
   δ2end ::SVector{N,T} # δ1  is always one
   β1::T
   β2end::SVector{N,T}
@@ -1496,12 +1497,18 @@ function RDPK3SpFSAL35ConstantCache(T, T2)
     convert(T, big"7.235136928826589010272834603680114769e-01"),
   )
 
-  bhat1    = convert(T, big"9.484166705035703392326247283838082847e-02")
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"9.484166705035703392326247283838082847e-02"
+                      - big"1.147935971023541171733601324486904546e-01")
   bhat2end = SVector(
-    convert(T, big"1.726371339430353766966762629176676070e-01"),
-    convert(T, big"3.998243189084371024483169698618455770e-01"),
-    convert(T, big"1.718016807580178450618829007973835152e-01"),
-    convert(T, big"5.881914422155740300718268359027168467e-02"),
+    convert(T, big"1.726371339430353766966762629176676070e-01"
+             - big"8.933442853113315592708384523126474636e-02"),
+    convert(T, big"3.998243189084371024483169698618455770e-01"
+             - big"4.355871025008616992483722693795608738e-01"),
+    convert(T, big"1.718016807580178450618829007973835152e-01"
+             - big"2.473576188201451146729725866810402672e-01"),
+    convert(T, big"5.881914422155740300718268359027168467e-02"
+             - big"1.129272530455059129782111662594436580e-01"),
   )
   bhatfsal = convert(T, big"1.020760551185952388626787099944507877e-01")
 
@@ -1509,16 +1516,17 @@ function RDPK3SpFSAL35ConstantCache(T, T2)
 end
 
 function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
-  tmp = zero(u)
-  utilde = zero(u)
   k = zero(rate_prototype)
-  # if calck # TODO: HR
+  if calck
     fsalfirst = zero(rate_prototype)
-  # else
-  #   fsalfirst = k
-  # end
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
   tab = RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  LowStorageRK3SpFSALCache(u,uprev,k,tmp,utilde,fsalfirst,tab)
+  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
 end
 
 function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
