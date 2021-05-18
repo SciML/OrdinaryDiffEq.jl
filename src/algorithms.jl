@@ -589,6 +589,64 @@ compressible fluid mechanics.
 """
 struct RDPK3SpFSAL35 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
+"""
+    RDPK3Sp49()
+
+A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
+designed for spectral element discretizations of compressible fluid mechanics.
+
+## References
+- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+  Optimized Runge-Kutta Methods with Automatic Step Size Control for
+  Compressible Computational Fluid Dynamics
+  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+"""
+struct RDPK3Sp49 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+    RDPK3SpFSAL49()
+
+A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
+using the FSAL property designed for spectral element discretizations of
+compressible fluid mechanics.
+
+## References
+- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+  Optimized Runge-Kutta Methods with Automatic Step Size Control for
+  Compressible Computational Fluid Dynamics
+  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+"""
+struct RDPK3SpFSAL49 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+    RDPK3Sp510()
+
+A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
+designed for spectral element discretizations of compressible fluid mechanics.
+
+## References
+- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+  Optimized Runge-Kutta Methods with Automatic Step Size Control for
+  Compressible Computational Fluid Dynamics
+  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+"""
+struct RDPK3Sp510 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+    RDPK3SpFSAL510()
+
+A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
+using the FSAL property designed for spectral element discretizations of
+compressible fluid mechanics.
+
+## References
+- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+  Optimized Runge-Kutta Methods with Automatic Step Size Control for
+  Compressible Computational Fluid Dynamics
+  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+"""
+struct RDPK3SpFSAL510 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 
 """

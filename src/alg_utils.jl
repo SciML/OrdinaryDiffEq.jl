@@ -30,6 +30,8 @@ isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
 isfsal(alg::RDPK3Sp35) = false
+isfsal(alg::RDPK3Sp49) = false
+isfsal(alg::RDPK3Sp510) = false
 
 isfsal(alg::SSPRK22) = false
 isfsal(alg::SSPRK33) = false
@@ -300,6 +302,10 @@ alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
 alg_order(alg::RDPK3Sp35) = 3
 alg_order(alg::RDPK3SpFSAL35) = 3
+alg_order(alg::RDPK3Sp49) = 4
+alg_order(alg::RDPK3SpFSAL49) = 4
+alg_order(alg::RDPK3Sp510) = 5
+alg_order(alg::RDPK3SpFSAL510) = 5
 alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 
 alg_order(alg::SSPRK22) = 2
@@ -524,6 +530,26 @@ end
 function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
   QT = typeof(qoldinit)
   return PIDController(map(Base.Fix1(convert, QT), (0.70, -0.23, 0.00))...)
+end
+
+function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.00))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
+end
+
+function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.20, 0.06))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.00))...)
 end
 
 # other special cases in controllers.jl
