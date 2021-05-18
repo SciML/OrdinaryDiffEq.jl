@@ -285,6 +285,9 @@ regression_test(ParsaniKetchesonDeconinck3S105(), 1.5e-5, 3.0e-5)
 # ParsaniKetchesonDeconinck3S205
 regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
 
+# RDPK3Sp35
+regression_test(RDPK3Sp35(), 2.5e-4, 4.5e-4)
+
 # RDPK3SpFSAL35
 regression_test(RDPK3SpFSAL35(), 2.5e-4, 4.5e-4)
 

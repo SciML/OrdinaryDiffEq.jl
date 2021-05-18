@@ -1421,7 +1421,119 @@ end
 
 
 
-# 3S+ low storage methods: 3S methods adding another memory location for the embedded method
+# 3S+ low storage methods: 3S methods adding another memory location for the embedded method (non-FSAL version)
+# ## References
+# - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+#   Optimized Runge-Kutta Methods with Automatic Step Size Control for
+#   Compressible Computational Fluid Dynamics
+#   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+@cache struct LowStorageRK3SpCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+struct LowStorageRK3SpConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
+  γ12end::SVector{N,T} # γ11 is always zero
+  γ22end::SVector{N,T} # γ21 is always one
+  γ32end::SVector{N,T} # γ31 is always zero
+  # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
+  δ2end ::SVector{N,T} # δ1  is always one
+  β1::T
+  β2end::SVector{N,T}
+  c2end::SVector{N,T2} # c1 is always zero
+  bhat1::T
+  bhat2end::SVector{N,T}
+end
+
+
+function RDPK3Sp35ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"2.587669070352079020144955303389306026e-01"),
+    convert(T, big"-1.324366873994502973977035353758550057e-01"),
+    convert(T, big"5.055601231460399101814291350373559483e-02"),
+    convert(T, big"5.670552807902877312521811889846000976e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"5.528418745102160639901976698795928733e-01"),
+    convert(T, big"6.731844400389673824374042790213570079e-01"),
+    convert(T, big"2.803103804507635075215805236096803381e-01"),
+    convert(T, big"5.521508873507393276457754945308880998e-01"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"2.752585813446636957256614568573008811e-01"),
+    convert(T, big"-8.950548709279785077579454232514633376e-01"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"3.407687209321455242558804921815861422e-01"),
+    convert(T, big"3.414399280584625023244387687873774697e-01"),
+    convert(T, big"7.229302732875589702087936723400941329e-01"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.300285062878154351930669430512780706e-01")
+  β2end = SVector(
+    convert(T, big"3.021457892454169700189445968126242994e-01"),
+    convert(T, big"8.025601039472704213300183888573974531e-01"),
+    convert(T, big"4.362158997637629844305216319994356355e-01"),
+    convert(T, big"1.129268494470295369172265188216779157e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.300285062878154351930669430512780706e-01"),
+    convert(T, big"4.050049049262914975700372321130661410e-01"),
+    convert(T, big"8.947823877926760224705450466361360720e-01"),
+    convert(T, big"7.235108137218888081489570284485201518e-01"),
+  )
+
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"1.046363371354093758897668305991705199e-01"
+                      - big"1.147931563369900682037379182772608287e-01")
+  bhat2end = SVector(
+    convert(T, big"9.520431574956758809511173383346476348e-02"
+             - big"8.933559295232859013880114997436974196e-02"),
+    convert(T, big"4.482446645568668405072421350300379357e-01"
+             - big"4.355858717379231779899161991033964256e-01"),
+    convert(T, big"2.449030295461310135957132640369862245e-01"
+             - big"2.473585295257286267503182138232950881e-01"),
+    convert(T, big"1.070116530120251819121660365003405564e-01"
+             - big"1.129268494470295369172265188216779157e-01"),
+  )
+
+  LowStorageRK3SpConstantCache{4,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end)
+end
+
+function alg_cache(alg::RDPK3Sp35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
+end
+
+function alg_cache(alg::RDPK3Sp35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+
+# 3S+ FSAL low storage methods: 3S methods adding another memory location for the embedded method (FSAL version)
 # ## References
 # - Ranocha, Dalcin, Parsani, Ketcheson (2021)
 #   Optimized Runge-Kutta Methods with Automatic Step Size Control for

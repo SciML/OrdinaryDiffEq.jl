@@ -29,6 +29,8 @@ isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
+isfsal(alg::RDPK3Sp35) = false
+
 isfsal(alg::SSPRK22) = false
 isfsal(alg::SSPRK33) = false
 isfsal(alg::SSPRK53) = false
@@ -296,6 +298,7 @@ alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S184) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
+alg_order(alg::RDPK3Sp35) = 3
 alg_order(alg::RDPK3SpFSAL35) = 3
 alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 
@@ -511,6 +514,16 @@ function _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
     beta1 = _beta1 === nothing ? beta1_default(alg,beta2) : _beta1
   end
   return convert(QT, beta1)::QT, convert(QT, beta2)::QT
+end
+
+function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.70, -0.23, 0.00))...)
 end
 
 # other special cases in controllers.jl
