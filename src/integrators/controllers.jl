@@ -192,7 +192,7 @@ function step_accept_controller!(integrator,alg::QNDF,q)
         expo = 1/k
         zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
         Fₖ₋₁ = inv(zₖ₋₁)
-        if zₖ₋₁ <= 1/10
+        if zₖ₋₁ <= 0.1
           hₖ₋₁ =  10* h
         elseif 1/10 < zₖ₋₁ <= 1.3
           hₖ₋₁ = Fₖ₋₁ * h
@@ -238,11 +238,11 @@ function step_accept_controller!(integrator,alg::QNDF,q)
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
-  #if q!=one(q) || integrator.cache.order != k
-  #  integrator.cache.changed = true
-  #else
-  #  integrator.cache.changed = false
-  #end
+  if q!=one(q) || integrator.cache.order != k
+    integrator.cache.changed = true
+  else
+    integrator.cache.changed = false
+  end
   integrator.qold = q
   #@show integrator.dt
   return integrator.dt/q
@@ -256,7 +256,7 @@ function step_reject_controller!(integrator,alg::QNDF)
   integrator.cache.consfailcnt += 1
   integrator.cache.nconsteps = 0
   #@show integrator.cache.consfailcnt
-  if integrator.cache.consfailcnt > 1 
+  if integrator.cache.consfailcnt > 1
     h = h/2
   end
   zₛ = 1.2  # equivalent to intergrator.opts.gamma
@@ -284,87 +284,21 @@ function step_reject_controller!(integrator,alg::QNDF)
       kₙ = k-1
     end
   end
-  
+  #@show hₙ
   integrator.dt = hₙ
   integrator.cache.order = kₙ
-  #if integrator.dt != h || integrator.cache.order != k
-  #  integrator.cache.changed = true
-  #else
-  #  integrator.cache.changed = false
-  #end
+  if integrator.dt != h || integrator.cache.order != k
+    integrator.cache.changed = true
+  else
+    integrator.cache.changed = false
+  end
 end
 
 
 # this stepsize and order controller is taken from
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
-#=function QNDF_stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k, gamma)
-  zₛ = 1.2 # equivalent to intergrator.opts.gamma
-  zᵤ = 0.1
-  Fᵤ = 10
-  expo = 1/(k+1)
-  z = zₛ * ((est)^expo)
-  F = inv(z)
-  hₙ = h
-  kₙ = k
-  if z <= zᵤ
-    hₖ = Fᵤ * h
-  elseif zᵤ < z
-    hₖ = F * h
-  end
-  hₖ₋₁ = 0.0
-  hₖ₊₁ = 0.0
 
-  if est <= 1
-    if k > 1
-      expo = 1/k
-      zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
-      Fₖ₋₁ = inv(zₖ₋₁)
-      if zₖ₋₁ <= 0.1
-        hₖ₋₁ = 10 * h
-      elseif 0.1 < zₖ₋₁ <= 1.3
-        hₖ₋₁ = Fₖ₋₁ * h
-      end
-      if hₖ₋₁ > hₖ
-        hₙ = hₖ₋₁
-        kₙ = k-1
-      else
-        hₙ = hₖ
-        kₙ = k
-      end
-    end
-
-    if k < cache.max_order && cache.nconsteps > k+1
-      expo = 1/(k+2)
-      zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
-      Fₖ₊₁ = inv(zₖ₊₁)
-
-      if zₖ₊₁<= 0.1
-        hₖ₊₁ = 10 * h
-      elseif 0.1 < zₖ₊₁ <= 1.4
-        hₖ₊₁ = Fₖ₊₁ * h
-      end
-      if hₖ₊₁ > hₙ
-        hₙ = hₖ₊₁
-        kₙ = k+1
-      end
-    end
-    # adp order and step conditions
-  end
-  #@show k,est, estₖ₋₁, estₖ₊₁,hₖ₋₁,hₖ,hₖ₊₁,hₙ,kₙ
-  #@info cache.D
-  #@show hₙ
-
-  if hₙ <= h
-    hₙ = h
-    kₙ = k
-  end
-
-  cache.order = kₙ
-
-  return hₙ
- 
-end=#
 
 @inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
   # Dummy function
