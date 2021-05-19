@@ -376,7 +376,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     # Check if an approximation of some order in the order window can be accepted
     # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
     elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
@@ -565,7 +565,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
     # Check if an approximation of some order in the order window can be accepted
     # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
@@ -758,7 +758,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
@@ -940,7 +940,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
@@ -1179,7 +1179,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
       tol = integrator.opts.internalnorm(cache.utilde - integrator.u,t)/integrator.EEst # Used by the convergence monitor
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
@@ -1411,7 +1411,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
       tol = integrator.opts.internalnorm(utilde - u,t)/integrator.EEst # Used by the convergence monitor
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
@@ -1592,7 +1592,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
     # Check if an approximation of some order in the order window can be accepted
     # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
     elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
@@ -1772,7 +1772,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     # Check if an approximation of some order in the order window can be accepted
     # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
@@ -1992,7 +1992,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     # Check if an approximation of some order in the order window can be accepted
     # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
@@ -2255,7 +2255,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         EEst1 *= subdividing_sequence[i]/subdividing_sequence[1]
       end
       EEst1 *= EEst1
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= EEst1
@@ -2505,7 +2505,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
     # Check if an approximation of some order in the order window can be accepted
     # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
       elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
@@ -2771,7 +2771,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       EEst1 *= EEst1
 
       #@show integrator.opts.internalnorm(integrator.u - cache.utilde,t)
-      if integrator.EEst <= 1.0
+      if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
     elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= EEst1
