@@ -285,6 +285,24 @@ regression_test(ParsaniKetchesonDeconinck3S105(), 1.5e-5, 3.0e-5)
 # ParsaniKetchesonDeconinck3S205
 regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
 
+# RDPK3Sp35
+regression_test(RDPK3Sp35(), 7.0e-4, 1.5e-3)
+
+# RDPK3SpFSAL35
+regression_test(RDPK3SpFSAL35(), 8.5e-4, 2.0e-3)
+
+# RDPK3Sp49
+regression_test(RDPK3Sp49(), 7.5e-5, 1.5e-4)
+
+# RDPK3SpFSAL49
+regression_test(RDPK3SpFSAL49(), 8.5e-5, 1.5e-4)
+
+# RDPK3Sp510
+regression_test(RDPK3Sp510(), 2.5e-4, 3.5e-4)
+
+# RDPK3SpFSAL510
+regression_test(RDPK3SpFSAL510(), 2.5e-4, 3.5e-4)
+
 println("RKs")
 
 # RK4

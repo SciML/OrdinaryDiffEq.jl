@@ -54,7 +54,7 @@ end
   integrator.k[9]=k9
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab.extra
     k[10] = f(uprev+dt*(a1001*k[1]+a1004*k[4]+a1005*k[5]+a1006*k[6]+a1007*k[7]+a1008*k[8]+a1009*k[9]),p,t+c10*dt)
@@ -125,7 +125,7 @@ end
   end
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab.extra
     @unpack tmp = cache
@@ -187,7 +187,7 @@ end
   integrator.u = u
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613 = cache.tab.extra
     k[11] = f(uprev+dt*(a1101*k[1]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]),p,t+c11*dt)
@@ -260,7 +260,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack tmp = cache
     @unpack c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613 = cache.tab.extra
@@ -333,7 +333,7 @@ end
   integrator.u = u
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117 = cache.tab.extra
     k[14] = f(uprev+dt*(a1401*k[1]+a1406*k[6]+a1407*k[7]+a1408*k[8]+a1409*k[9]+a1410*k[10]+a1411*k[11]+a1412*k[12]),p,t+c14*dt)
@@ -413,7 +413,7 @@ end
   end
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117 = cache.tab.extra
     @unpack tmp = cache
@@ -493,7 +493,7 @@ end
   integrator.u = u
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621 = cache.tab.extra
     k[11] = f(uprev+dt*(a1701*k[1]+a1708*k[2]+a1709*k[3]+a1710*k[4]+a1711*k[5]+a1712*k[6]+a1713*k[7]+a1714*k[8]+a1715*k[9]),p,t+c17*dt)
@@ -582,7 +582,7 @@ end
   end
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack tmp = cache
     @unpack c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621 = cache.tab.extra

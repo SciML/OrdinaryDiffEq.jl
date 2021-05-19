@@ -1421,6 +1421,697 @@ end
 
 
 
+# 3S+ low storage methods: 3S methods adding another memory location for the embedded method (non-FSAL version)
+# ## References
+# - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+#   Optimized Runge-Kutta Methods with Automatic Step Size Control for
+#   Compressible Computational Fluid Dynamics
+#   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+@cache struct LowStorageRK3SpCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+struct LowStorageRK3SpConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
+  γ12end::SVector{N,T} # γ11 is always zero
+  γ22end::SVector{N,T} # γ21 is always one
+  γ32end::SVector{N,T} # γ31 is always zero
+  # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
+  δ2end ::SVector{N,T} # δ1  is always one
+  β1::T
+  β2end::SVector{N,T}
+  c2end::SVector{N,T2} # c1 is always zero
+  bhat1::T
+  bhat2end::SVector{N,T}
+end
+
+
+function RDPK3Sp35ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"2.587669070352079020144955303389306026e-01"),
+    convert(T, big"-1.324366873994502973977035353758550057e-01"),
+    convert(T, big"5.055601231460399101814291350373559483e-02"),
+    convert(T, big"5.670552807902877312521811889846000976e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"5.528418745102160639901976698795928733e-01"),
+    convert(T, big"6.731844400389673824374042790213570079e-01"),
+    convert(T, big"2.803103804507635075215805236096803381e-01"),
+    convert(T, big"5.521508873507393276457754945308880998e-01"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"2.752585813446636957256614568573008811e-01"),
+    convert(T, big"-8.950548709279785077579454232514633376e-01"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"3.407687209321455242558804921815861422e-01"),
+    convert(T, big"3.414399280584625023244387687873774697e-01"),
+    convert(T, big"7.229302732875589702087936723400941329e-01"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.300285062878154351930669430512780706e-01")
+  β2end = SVector(
+    convert(T, big"3.021457892454169700189445968126242994e-01"),
+    convert(T, big"8.025601039472704213300183888573974531e-01"),
+    convert(T, big"4.362158997637629844305216319994356355e-01"),
+    convert(T, big"1.129268494470295369172265188216779157e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.300285062878154351930669430512780706e-01"),
+    convert(T, big"4.050049049262914975700372321130661410e-01"),
+    convert(T, big"8.947823877926760224705450466361360720e-01"),
+    convert(T, big"7.235108137218888081489570284485201518e-01"),
+  )
+
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"1.046363371354093758897668305991705199e-01"
+                      - big"1.147931563369900682037379182772608287e-01")
+  bhat2end = SVector(
+    convert(T, big"9.520431574956758809511173383346476348e-02"
+             - big"8.933559295232859013880114997436974196e-02"),
+    convert(T, big"4.482446645568668405072421350300379357e-01"
+             - big"4.355858717379231779899161991033964256e-01"),
+    convert(T, big"2.449030295461310135957132640369862245e-01"
+             - big"2.473585295257286267503182138232950881e-01"),
+    convert(T, big"1.070116530120251819121660365003405564e-01"
+             - big"1.129268494470295369172265188216779157e-01"),
+  )
+
+  LowStorageRK3SpConstantCache{4,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end)
+end
+
+function alg_cache(alg::RDPK3Sp35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
+end
+
+function alg_cache(alg::RDPK3Sp35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+function RDPK3Sp49ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"-4.655641301259180308677051498071354582e+00"),
+    convert(T, big"-7.720264924836063859141482018013692338e-01"),
+    convert(T, big"-4.024423213419724605695005429153112050e+00"),
+    convert(T, big"-2.129685246739018613087466942802498152e-02"),
+    convert(T, big"-2.435022519234470128602335652131234586e+00"),
+    convert(T, big"1.985627480986167686791439120784668251e-02"),
+    convert(T, big"-2.810790112885283952929218377438668784e-01"),
+    convert(T, big"1.689434895835535695524003319503844110e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"2.499262752607825957145627300817258023e+00"),
+    convert(T, big"5.866820365436136799319929406678132638e-01"),
+    convert(T, big"1.205141365412670762568835277881144391e+00"),
+    convert(T, big"3.474793796700868848597960521248007941e-01"),
+    convert(T, big"1.321346140128723105871355808477092220e+00"),
+    convert(T, big"3.119636324379370564023292317172847140e-01"),
+    convert(T, big"4.351419055894087609560896967082486864e-01"),
+    convert(T, big"2.359698299440788299161958168555704234e-01"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"7.621037111138170045618771082985664430e-01"),
+    convert(T, big"-1.981182159087218433914909510116664154e-01"),
+    convert(T, big"-6.228960706317566993192689455719570179e-01"),
+    convert(T, big"-3.752246993432626328289874575355102038e-01"),
+    convert(T, big"-3.355436539000946543242869676125143358e-01"),
+    convert(T, big"-4.560963110717484359015342341157302403e-02"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"1.262923854387806460989545005598562667e+00"),
+    convert(T, big"7.574967177560872438940839460448329992e-01"),
+    convert(T, big"5.163591158111222863455531895152351544e-01"),
+    convert(T, big"-2.746333792042827389548936599648122146e-02"),
+    convert(T, big"-4.382674653941770848797864513655752318e-01"),
+    convert(T, big"1.273587103668392811985704533534301656e+00"),
+    convert(T, big"-6.294740045442794829622796613103492913e-01"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.836343531977826022543660465926414772e-01")
+  β2end = SVector(
+    convert(T, big"9.736497978646965372894268287659773644e-01"),
+    convert(T, big"3.382358566377620380505126936670933370e-01"),
+    convert(T, big"-3.584937820217850715182820651063453804e-01"),
+    convert(T, big"-4.113955814725134294322006403954822487e-03"),
+    convert(T, big"1.427968962196019024010757034274849198e+00"),
+    convert(T, big"1.808467712038743032991177525728915926e-02"),
+    convert(T, big"1.605771316794521018947553625079465692e-01"),
+    convert(T, big"2.952226811394310028003810072027839487e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.836343531977826022543660465926414772e-01"),
+    convert(T, big"5.484073767552486705240014599676811834e-01"),
+    convert(T, big"3.687229456675706936558667052479014150e-01"),
+    convert(T, big"-6.806119916032093175251948474173648331e-01"),
+    convert(T, big"3.518526451892056368706593492732753284e-01"),
+    convert(T, big"1.665941920204672094647868254892387293e+00"),
+    convert(T, big"9.715276989307335935187466054546761665e-01"),
+    convert(T, big"9.051569554420045339601721625247585643e-01"),
+  )
+
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"4.550655927970944948340364817140593012e-02"
+                      - big"4.503731969165884304041981629148469971e-02")
+  bhat2end = SVector(
+    convert(T, big"1.175968310492638562142460384341959193e-01"
+             - big"1.859217322011968812563859888433403777e-01"),
+    convert(T, big"3.658257330515213200375475084421083608e-02"
+             - big"3.329727509207630932171676116314110008e-02"),
+    convert(T, big"-5.311555834355629559010061596928357525e-03"
+             - big"-4.784222621050198909820741390895649698e-03"),
+    convert(T, big"5.178250012713127329531367677410650996e-03"
+             - big"4.055848062637567925908043629915811671e-03"),
+    convert(T, big"4.954639022118682638697706200022961443e-01"
+             - big"4.185027999682794463309031355073933444e-01"),
+    convert(T, big"-5.999303132737865921441409466809521699e-03"
+             - big"-4.381894507474277848407591859322000026e-03"),
+    convert(T, big"9.405093434568315929035250835218733824e-02"
+             - big"2.712846097324442608251358061215836749e-02"),
+    convert(T, big"2.169318087627035072893925375820310602e-01"
+             - big"2.952226811394310028003810072027839487e-01"),
+  )
+
+  LowStorageRK3SpConstantCache{8,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end)
+end
+
+function alg_cache(alg::RDPK3Sp49,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
+end
+
+function alg_cache(alg::RDPK3Sp49,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+function RDPK3Sp510ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"4.043660078504695837542588769963326988e-01"),
+    convert(T, big"-8.503427464263185087039788184485627962e-01"),
+    convert(T, big"-6.950894167072419998080989313353063399e+00"),
+    convert(T, big"9.238765225328278557805080247596562995e-01"),
+    convert(T, big"-2.563178039957404359875124580586147888e+00"),
+    convert(T, big"2.545744869966347362604059848503340890e-01"),
+    convert(T, big"3.125831733863168874151935287174374515e-01"),
+    convert(T, big"-7.007114800567584871263283872289072079e-01"),
+    convert(T, big"4.839620970980726631935174740648996010e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"6.871467069752345566001768382316915820e-01"),
+    convert(T, big"1.093024760468898686510433898645775908e+00"),
+    convert(T, big"3.225975382330161123625348062949430509e+00"),
+    convert(T, big"1.041153700841396427100436517666787823e+00"),
+    convert(T, big"1.292821488864702752767390075072674807e+00"),
+    convert(T, big"7.391462769297006312785029455392854586e-01"),
+    convert(T, big"1.239129257039300081860496157739352186e-01"),
+    convert(T, big"1.842753479366766790220633908793933781e-01"),
+    convert(T, big"5.712788942697077644959290025755003720e-02"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"-2.393405159342139386425044844626597490e+00"),
+    convert(T, big"-1.902854422095986544338294743445530533e+00"),
+    convert(T, big"-2.820042210583207174321941694153843259e+00"),
+    convert(T, big"-1.832698464130564949123807896975136336e+00"),
+    convert(T, big"-2.199094510750697865007677774395365522e-01"),
+    convert(T, big"-4.082430660384876496971887725512427800e-01"),
+    convert(T, big"-1.377669791121207993339861855818881150e-01"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"-1.331778409133849616712007380176762548e-01"),
+    convert(T, big"8.260422785246030254485064732649153253e-01"),
+    convert(T, big"1.513700430513332405798616943654007796e+00"),
+    convert(T, big"-1.305810063177048110528482211982726539e+00"),
+    convert(T, big"3.036678789342507704281817524408221954e+00"),
+    convert(T, big"-1.449458267074592489788800461540171106e+00"),
+    convert(T, big"3.834313873320957483471400258279635203e+00"),
+    convert(T, big"4.122293971923324492772059928094971199e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.597883575710995826783320802193635406e-01")
+  β2end = SVector(
+    convert(T, big"1.777008800169541694837687556103565007e-02"),
+    convert(T, big"2.481636637328140606807905234325691851e-01"),
+    convert(T, big"7.941736827560429420202759490815682546e-01"),
+    convert(T, big"3.885391296871822541486945325814526190e-01"),
+    convert(T, big"1.455051664264339366757555740296587660e-01"),
+    convert(T, big"1.587517379462528932413419955691782412e-01"),
+    convert(T, big"1.650605631567659573994022720500446501e-01"),
+    convert(T, big"2.118093299943235065178000892467421832e-01"),
+    convert(T, big"1.559392340339606299335442956580114440e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.597883575710995826783320802193635406e-01"),
+    convert(T, big"9.904573115730917688557891428202061598e-02"),
+    convert(T, big"2.155511882303785204133426661931565216e-01"),
+    convert(T, big"5.007950078421880417512789524851012021e-01"),
+    convert(T, big"5.592251914858131230054392022144328176e-01"),
+    convert(T, big"5.449986973408778242805929551952000165e-01"),
+    convert(T, big"7.615224662599497796472095353126697300e-01"),
+    convert(T, big"8.427062083059167761623893618875787414e-01"),
+    convert(T, big"9.152209807185253394871325258038753352e-01"),
+  )
+
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"5.734588484676193812418453938089759359e-02"
+                      - big"-2.280102305596364773323878383881954511e-03")
+  bhat2end = SVector(
+    convert(T, big"1.971447518039733870541652912891291496e-02"
+             - big"1.407393020823230537861040991952849386e-02"),
+    convert(T, big"7.215296605683716720707226840456658773e-02"
+             - big"2.332691794172822486743039657924919496e-01"),
+    convert(T, big"1.739659489807939956977075317768151880e-01"
+             - big"4.808266700465181307162297999657715930e-02"),
+    convert(T, big"3.703693600445487815015171515640585668e-01"
+             - big"4.119003221139622842134291677033040683e-01"),
+    convert(T, big"-1.215599039055065009827765147821222534e-01"
+             - big"-1.291461071364752805327361051196128312e-01"),
+    convert(T, big"1.180372945491121604465067725859678821e-01"
+             - big"1.220746011038579789984601943748468541e-01"),
+    convert(T, big"4.155688823364870056536983972605056553e-02"
+             - big"4.357858803113387764356338334851554715e-02"),
+    convert(T, big"1.227886627910379901351569893551486490e-01"
+             - big"1.025076875289905073925255867102192694e-01"),
+    convert(T, big"1.456284232223684285998448928597043056e-01"
+             - big"1.559392340339606299335442956580114440e-01"),
+  )
+
+  LowStorageRK3SpConstantCache{9,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end)
+end
+
+function alg_cache(alg::RDPK3Sp510,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = RDPK3Sp510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
+end
+
+function alg_cache(alg::RDPK3Sp510,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3Sp510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+# 3S+ FSAL low storage methods: 3S methods adding another memory location for the embedded method (FSAL version)
+# ## References
+# - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+#   Optimized Runge-Kutta Methods with Automatic Step Size Control for
+#   Compressible Computational Fluid Dynamics
+#   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+@cache struct LowStorageRK3SpFSALCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+struct LowStorageRK3SpFSALConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
+  γ12end::SVector{N,T} # γ11 is always zero
+  γ22end::SVector{N,T} # γ21 is always one
+  γ32end::SVector{N,T} # γ31 is always zero
+  # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
+  δ2end ::SVector{N,T} # δ1  is always one
+  β1::T
+  β2end::SVector{N,T}
+  c2end::SVector{N,T2} # c1 is always zero
+  bhat1::T
+  bhat2end::SVector{N,T}
+  bhatfsal::T
+end
+
+
+function RDPK3SpFSAL35ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"2.587771979725733308135192812685323706e-01"),
+    convert(T, big"-1.324380360140723382965420909764953437e-01"),
+    convert(T, big"5.056033948190826045833606441415585735e-02"),
+    convert(T, big"5.670532000739313812633197158607642990e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"5.528354909301389892439698870483746541e-01"),
+    convert(T, big"6.731871608203061824849561782794643600e-01"),
+    convert(T, big"2.803103963297672407841316576323901761e-01"),
+    convert(T, big"5.521525447020610386070346724931300367e-01"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"2.752563273304676380891217287572780582e-01"),
+    convert(T, big"-8.950526174674033822276061734289327568e-01"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"3.407655879334525365094815965895763636e-01"),
+    convert(T, big"3.414382655003386206551709871126405331e-01"),
+    convert(T, big"7.229275366787987419692007421895451953e-01"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.300298624518076223899418286314123354e-01")
+  β2end = SVector(
+    convert(T, big"3.021434166948288809034402119555380003e-01"),
+    convert(T, big"8.025606185416310937583009085873554681e-01"),
+    convert(T, big"4.362158943603440930655148245148766471e-01"),
+    convert(T, big"1.129272530455059129782111662594436580e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.300298624518076223899418286314123354e-01"),
+    convert(T, big"4.050046072094990912268498160116125481e-01"),
+    convert(T, big"8.947822893693433545220710894560512805e-01"),
+    convert(T, big"7.235136928826589010272834603680114769e-01"),
+  )
+
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"9.484166705035703392326247283838082847e-02"
+                      - big"1.147935971023541171733601324486904546e-01")
+  bhat2end = SVector(
+    convert(T, big"1.726371339430353766966762629176676070e-01"
+             - big"8.933442853113315592708384523126474636e-02"),
+    convert(T, big"3.998243189084371024483169698618455770e-01"
+             - big"4.355871025008616992483722693795608738e-01"),
+    convert(T, big"1.718016807580178450618829007973835152e-01"
+             - big"2.473576188201451146729725866810402672e-01"),
+    convert(T, big"5.881914422155740300718268359027168467e-02"
+             - big"1.129272530455059129782111662594436580e-01"),
+  )
+  bhatfsal = convert(T, big"1.020760551185952388626787099944507877e-01")
+
+  LowStorageRK3SpFSALConstantCache{4,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal)
+end
+
+function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
+end
+
+function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+function RDPK3SpFSAL49ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"-4.655641447335068552684422206224169103e+00"),
+    convert(T, big"-7.720265099645871829248487209517314217e-01"),
+    convert(T, big"-4.024436690519806086742256154738379161e+00"),
+    convert(T, big"-2.129676284018530966221583708648634733e-02"),
+    convert(T, big"-2.435022509790109546199372365866450709e+00"),
+    convert(T, big"1.985627297131987000579523283542615256e-02"),
+    convert(T, big"-2.810791146791038566946663374735713961e-01"),
+    convert(T, big"1.689434168754859644351230590422137972e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"2.499262792574495009336242992898153462e+00"),
+    convert(T, big"5.866820377718875577451517985847920081e-01"),
+    convert(T, big"1.205146086523094569925592464380295241e+00"),
+    convert(T, big"3.474793722186732780030762737753849272e-01"),
+    convert(T, big"1.321346060965113109321230804210670518e+00"),
+    convert(T, big"3.119636464694193615946633676950358444e-01"),
+    convert(T, big"4.351419539684379261368971206040518552e-01"),
+    convert(T, big"2.359698130028753572503744518147537768e-01"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"7.621006678721315291614677352949377871e-01"),
+    convert(T, big"-1.981182504339400567765766904309673119e-01"),
+    convert(T, big"-6.228959218699007450469629366684127462e-01"),
+    convert(T, big"-3.752248380775956442989480369774937099e-01"),
+    convert(T, big"-3.355438309135169811915662336248989661e-01"),
+    convert(T, big"-4.560955005031121479972862973705108039e-02"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"1.262923876648114432874834923838556100e+00"),
+    convert(T, big"7.574967189685911558308119415539596711e-01"),
+    convert(T, big"5.163589453140728104667573195005629833e-01"),
+    convert(T, big"-2.746327421802609557034437892013640319e-02"),
+    convert(T, big"-4.382673178127944142238606608356542890e-01"),
+    convert(T, big"1.273587294602656522645691372699677063e+00"),
+    convert(T, big"-6.294740283927400326554066998751383342e-01"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.836343005184365275160654678626695428e-01")
+  β2end = SVector(
+    convert(T, big"9.736500104654741223716056170419660217e-01"),
+    convert(T, big"3.382359225242515288768487569778320563e-01"),
+    convert(T, big"-3.584943611106183357043212309791897386e-01"),
+    convert(T, big"-4.113944068471528211627210454497620358e-03"),
+    convert(T, big"1.427968894048586363415504654313371031e+00"),
+    convert(T, big"1.808470948394314017665968411915568633e-02"),
+    convert(T, big"1.605770645946802213926893453819236685e-01"),
+    convert(T, big"2.952227015964591648775833803635147962e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.836343005184365275160654678626695428e-01"),
+    convert(T, big"5.484076570002894365286665352032296535e-01"),
+    convert(T, big"3.687228761669438493478872632332010073e-01"),
+    convert(T, big"-6.806126440140844191258463830024463902e-01"),
+    convert(T, big"3.518526124230705801739919476290327750e-01"),
+    convert(T, big"1.665941994879593315477304663913129942e+00"),
+    convert(T, big"9.715279295934715835299192116436237065e-01"),
+    convert(T, big"9.051569840159589594903399929316959062e-01"),
+  )
+
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"2.483675912451591196775756814283216443e-02"
+                      - big"4.503732627263753698356970706617404465e-02")
+  bhat2end = SVector(
+    convert(T, big"1.866327774562103796990092260942180726e-01"
+             - big"1.859217303699847950262276860012454333e-01"),
+    convert(T, big"5.671080795936984495604436622517631183e-02"
+             - big"3.329729672569717599759560403851202805e-02"),
+    convert(T, big"-3.447695439149287702616943808570747099e-03"
+             - big"-4.784204180958975587114459316829942677e-03"),
+    convert(T, big"3.602245056516636472203469198006404016e-03"
+             - big"4.055835961031310727671557609188874328e-03"),
+    convert(T, big"4.545570622145088936800484247980581766e-01"
+             - big"4.185027772596074197662616795629003544e-01"),
+    convert(T, big"-2.434665289427612407531544765622888855e-04"
+             - big"-4.381901968919326084347037216500072323e-03	"),
+    convert(T, big"6.642755361103549971517945063138312147e-02"
+             - big"2.712843796446089829255188189179448399e-02"),
+    convert(T, big"1.613697079523505006226025497715177578e-01"
+             - big"2.952227015964591648775833803635147962e-01"),
+  )
+  bhatfsal = convert(T, big"4.955424859358438183052504342394102722e-02")
+
+  LowStorageRK3SpFSALConstantCache{8,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal)
+end
+
+function alg_cache(alg::RDPK3SpFSAL49,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = RDPK3SpFSAL49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
+end
+
+function alg_cache(alg::RDPK3SpFSAL49,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3SpFSAL49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+function RDPK3SpFSAL510ConstantCache(T, T2)
+  γ12end = SVector(
+    convert(T, big"4.043660121685749695640462197806189975e-01"),
+    convert(T, big"-8.503427289575839690883191973980814832e-01"),
+    convert(T, big"-6.950894175262117526410215315179482885e+00"),
+    convert(T, big"9.238765192731084931855438934978371889e-01"),
+    convert(T, big"-2.563178056509891340215942413817786020e+00"),
+    convert(T, big"2.545744879365226143946122067064118430e-01"),
+    convert(T, big"3.125831707411998258746812355492206137e-01"),
+    convert(T, big"-7.007114414440507927791249989236719346e-01"),
+    convert(T, big"4.839621016023833375810172323297465039e-01"),
+  )
+
+  γ22end = SVector(
+    convert(T, big"6.871467028161416909922221357014564412e-01"),
+    convert(T, big"1.093024748914750833700799552463885117e+00"),
+    convert(T, big"3.225975379607193001678365742708874597e+00"),
+    convert(T, big"1.041153702510101386914019859778740444e+00"),
+    convert(T, big"1.292821487912164945157744726076279306e+00"),
+    convert(T, big"7.391462755788122847651304143259254381e-01"),
+    convert(T, big"1.239129251371800313941948224441873274e-01"),
+    convert(T, big"1.842753472370123193132193302369345580e-01"),
+    convert(T, big"5.712788998796583446479387686662738843e-02"),
+  )
+
+  γ32end = SVector(
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+    convert(T, big"-2.393405133244194727221124311276648940e+00"),
+    convert(T, big"-1.902854422421760920850597670305403139e+00"),
+    convert(T, big"-2.820042207399977261483046412236557428e+00"),
+    convert(T, big"-1.832698465277380999601896111079977378e+00"),
+    convert(T, big"-2.199094483084671192328083958346519535e-01"),
+    convert(T, big"-4.082430635847870963724591602173546218e-01"),
+    convert(T, big"-1.377669797880289713535665985132703979e-01"),
+  )
+
+  δ2end = SVector(
+    convert(T, big"-1.331778419508803397033287009506932673e-01"),
+    convert(T, big"8.260422814750207498262063505871077303e-01"),
+    convert(T, big"1.513700425755728332485300719652378197e+00"),
+    convert(T, big"-1.305810059935023735972298885749903694e+00"),
+    convert(T, big"3.036678802924163246003321318996156380e+00"),
+    convert(T, big"-1.449458274398895177922690618003584514e+00"),
+    convert(T, big"3.834313899176362315089976408899373409e+00"),
+    convert(T, big"4.122293760012985409330881631526514714e+00"),
+    convert(T, big"0.000000000000000000000000000000000000e+00"),
+  )
+
+  β1 = convert(T, big"2.597883554788674084039539165398464630e-01")
+  β2end = SVector(
+    convert(T, big"1.777008889438867858759149597539211023e-02"),
+    convert(T, big"2.481636629715501931294746189266601496e-01"),
+    convert(T, big"7.941736871152005775821844297293296135e-01"),
+    convert(T, big"3.885391285642019129575902994397298066e-01"),
+    convert(T, big"1.455051657916305055730603387469193768e-01"),
+    convert(T, big"1.587517385964749337690916959584348979e-01"),
+    convert(T, big"1.650605617880053419242434594242509601e-01"),
+    convert(T, big"2.118093284937153836908655490906875007e-01"),
+    convert(T, big"1.559392342362059886106995325687547506e-01"),
+  )
+
+  c2end = SVector(
+    convert(T, big"2.597883554788674084039539165398464630e-01"),
+    convert(T, big"9.904573247592460887087003212056568980e-02"),
+    convert(T, big"2.155511890524058691860390281856497503e-01"),
+    convert(T, big"5.007950088969676776844289399972611534e-01"),
+    convert(T, big"5.592251911688643533787800688765883636e-01"),
+    convert(T, big"5.449986978853637084972622392134732553e-01"),
+    convert(T, big"7.615224694532590139829150720490417596e-01"),
+    convert(T, big"8.427062083267360939805493320684741215e-01"),
+    convert(T, big"9.152209805057669959657927210873423883e-01"),
+  )
+
+  # difference of the usual bhat coefficients and the main b coefficients
+  bhat1    = convert(T, big"-2.019255440012066080909442770590267512e-02"
+                      - big"-2.280100321836980811830528665041532799e-03")
+  bhat2end = SVector(
+    convert(T, big"2.737903480959184339932730854141598275e-02"
+             - big"1.407393115790186300730580636032878435e-02"),
+    convert(T, big"3.028818636145965534365173822296811090e-01"
+             - big"2.332691775508456597719992034291118324e-01"),
+    convert(T, big"-3.656843880622222190071445247906780540e-02"
+             - big"4.808266741353862546318531020856621860e-02"),
+    convert(T, big"3.982664774676767729863101188528827405e-01"
+             - big"4.119003217706951892385733111000873172e-01"),
+    convert(T, big"-5.715959421140685436681459970502471634e-02"
+             - big"-1.291461067807736321056740833501596735e-01"),
+    convert(T, big"9.849855103848558320961101178888983150e-02"
+             - big"1.220746013848710098878384114422516148e-01"),
+    convert(T, big"6.654601552456084978615342374581437947e-02"
+             - big"4.357858583174420432201228508067333299e-02"),
+    convert(T, big"9.073479542748112726465375642050504556e-02"
+             - big"1.025076877568080726158907518254273554e-01"),
+    convert(T, big"8.432289325330803924891866923939606351e-02"
+             - big"1.559392342362059886106995325687547506e-01"),
+  )
+  bhatfsal = convert(T, big"4.529095628204896774513180907141004447e-02")
+
+  LowStorageRK3SpFSALConstantCache{9,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal)
+end
+
+function alg_cache(alg::RDPK3SpFSAL510,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  utilde = zero(u)
+  tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tab = RDPK3SpFSAL510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
+end
+
+function alg_cache(alg::RDPK3SpFSAL510,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+  RDPK3SpFSAL510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+
+
 # 2R+ low storage methods introduced by van der Houwen
 @cache struct LowStorageRK2RPCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType

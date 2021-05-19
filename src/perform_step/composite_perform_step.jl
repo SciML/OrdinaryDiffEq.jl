@@ -95,12 +95,7 @@ function reset_alg_dependent_opts!(integrator,alg1,alg2)
   if integrator.opts.qmax == qmax_default(alg1)
     integrator.opts.qmax == qmax_default(alg2)
   end
-  if integrator.opts.beta2 == beta2_default(alg1)
-    integrator.opts.beta2 = beta2_default(alg2)
-  end
-  if integrator.opts.beta1 == beta1_default(alg1,integrator.opts.beta2)
-    integrator.opts.beta1 = beta1_default(alg2,integrator.opts.beta2)
-  end
+  reset_alg_dependent_opts!(integrator.opts.controller, alg1, alg2)
 end
 
 # Write how to transfer the cache variables from one cache to the other

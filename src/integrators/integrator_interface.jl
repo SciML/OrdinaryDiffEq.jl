@@ -301,6 +301,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   integrator.u_modified = false
 
   # full re-initialize the PI in timestepping
+  reinit!(integrator, integrator.opts.controller)
   integrator.qold = integrator.opts.qoldinit
   integrator.q11 = typeof(integrator.q11)(1)
   integrator.erracc = typeof(integrator.erracc)(1)

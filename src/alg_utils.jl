@@ -29,6 +29,10 @@ isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
+isfsal(alg::RDPK3Sp35) = false
+isfsal(alg::RDPK3Sp49) = false
+isfsal(alg::RDPK3Sp510) = false
+
 isfsal(alg::SSPRK22) = false
 isfsal(alg::SSPRK33) = false
 isfsal(alg::SSPRK53) = false
@@ -296,6 +300,12 @@ alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S184) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
+alg_order(alg::RDPK3Sp35) = 3
+alg_order(alg::RDPK3SpFSAL35) = 3
+alg_order(alg::RDPK3Sp49) = 4
+alg_order(alg::RDPK3SpFSAL49) = 4
+alg_order(alg::RDPK3Sp510) = 5
+alg_order(alg::RDPK3SpFSAL510) = 5
 alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 
 alg_order(alg::SSPRK22) = 2
@@ -482,6 +492,71 @@ alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
 alg_adaptive_order(alg::AN5) = 5
 
+
+function default_controller(alg, cache, qoldinit, _beta1=nothing, _beta2=nothing)
+  if ispredictive(alg)
+    return PredictiveController()
+  elseif isstandard(alg)
+    return IController()
+  else # Default is PI-controller
+    QT = typeof(qoldinit)
+    beta1, beta2 = _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+    return PIController(beta1, beta2)
+  end
+end
+
+function default_controller(alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation, ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation}, cache, qoldinit, _beta1=nothing, _beta2=nothing)
+  QT = typeof(qoldinit)
+  beta1, beta2 = _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+  return ExtrapolationController(beta1)
+end
+
+function _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+  if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+    beta2 = _beta2 === nothing ? _composite_beta2_default(alg.algs, cache.current, QT) : _beta2
+    beta1 = _beta1 === nothing ? _composite_beta1_default(alg.algs, cache.current, QT, beta2) : _beta1
+  else
+    beta2 = _beta2 === nothing ? beta2_default(alg) : _beta2
+    beta1 = _beta1 === nothing ? beta1_default(alg,beta2) : _beta1
+  end
+  return convert(QT, beta1)::QT, convert(QT, beta2)::QT
+end
+
+function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.70, -0.23, 0.00))...)
+end
+
+function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.00))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
+end
+
+function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.20, 0.06))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
+  QT = typeof(qoldinit)
+  return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.00))...)
+end
+
+# other special cases in controllers.jl
+function default_controller(alg::Union{JVODE, QNDF}, args...)
+  DummyController()
+end
+
 beta2_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = isadaptive(alg) ? 2//(5alg_order(alg)) : 0
 beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
@@ -637,10 +712,9 @@ ispredictive(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ispredictive(alg::Union{RKC}) = true
 ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
+isstandard(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 isstandard(alg::VCABM) = true
-isstandard(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
-ispi(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = !(ispredictive(alg) || isstandard(alg))
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isWmethod(alg::Rosenbrock23) = true

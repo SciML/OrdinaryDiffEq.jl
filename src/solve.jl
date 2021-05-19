@@ -35,11 +35,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            qmax = qmax_default(alg),
                            qsteady_min = qsteady_min_default(alg),
                            qsteady_max = qsteady_max_default(alg),
-                           qoldinit = isadaptive(alg) ? 1//10^4 : 0,
-                           fullnormalize = true,
-                           failfactor = 2,
                            beta1 = nothing,
                            beta2 = nothing,
+                           qoldinit = isadaptive(alg) ? 1//10^4 : 0,
+                           controller = nothing,
+                           fullnormalize = true,
+                           failfactor = 2,
                            maxiters = adaptive ? 1000000 : typemax(Int),
                            internalnorm = ODE_DEFAULT_NORM,
                            internalopnorm = LinearAlgebra.opnorm,
@@ -270,7 +271,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     # The QT fields are not used for DiscreteProblems
     constvalue(tTypeNoUnits)
   else
-    typeof(internalnorm(u, t))
+    typeof(DiffEqBase.value(internalnorm(u, t)))
   end
 
   k = rateType[]
@@ -294,52 +295,70 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     cache = alg_cache(_alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val(isinplace(prob)))
   end
 
-  if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
-    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
-    beta2 === nothing && ( beta2=_composite_beta2_default(_alg.algs, cache.current, QT) )
-    beta1 === nothing && ( beta1=_composite_beta1_default(_alg.algs, cache.current, QT, beta2) )
-  else
-    id = InterpolationData(f,timeseries,ts,ks,dense,cache)
-    beta2 === nothing && ( beta2=beta2_default(_alg) )
-    beta1 === nothing && ( beta1=beta1_default(_alg,beta2) )
+  # Setting up the step size controller
+  if (beta1 !== nothing || beta2 !== nothing) && controller !== nothing
+    throw(ArgumentError(
+      "Setting both the legacy PID parameters `beta1, beta2 = $((beta1, beta2))` and the `controller = $controller` is not allowed."))
   end
+
+  if (beta1 !== nothing || beta2 !== nothing)
+    message = "Providing the legacy PID parameters `beta1, beta2` is deprecated. Use the keyword argument `controller` instead."
+    Base.depwarn(message, :init)
+    Base.depwarn(message, :solve)
+  end
+
+  if controller === nothing
+    controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+  end
+
 
   dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob; use_end_time=false))
 
   save_end_user = save_end
   save_end = save_end === nothing ? save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat : save_end
 
-  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
-                   typeof(internalnorm),typeof(internalopnorm),typeof(save_end_user),
+  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),
+                   QT,tType,typeof(controller),
+                   typeof(internalnorm),typeof(internalopnorm),
+                   typeof(save_end_user),
                    typeof(callbacks_internal),
                    typeof(isoutofdomain),
-                   typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
-                   typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
-                   typeof(maxiters),typeof(tstops),typeof(saveat),
-                   typeof(d_discontinuities)}(
-                       maxiters,save_everystep,adaptive,abstol_internal,
-                       reltol_internal,QT(gamma),QT(qmax),
-                       QT(qmin),QT(qsteady_max),
-                       QT(qsteady_min),QT(failfactor),tType(dtmax),
-                       tType(dtmin),internalnorm,internalopnorm,save_idxs,tstops_internal,saveat_internal,
+                   typeof(progress_message),typeof(unstable_check),
+                   typeof(tstops_internal),
+                   typeof(d_discontinuities_internal),typeof(userdata),
+                   typeof(save_idxs),
+                   typeof(maxiters),typeof(tstops),
+                   typeof(saveat),typeof(d_discontinuities)}(
+                       maxiters,save_everystep,
+                       adaptive,abstol_internal,reltol_internal,
+                       QT(gamma),QT(qmax),QT(qmin),
+                       QT(qsteady_max),QT(qsteady_min),
+                       QT(qoldinit),QT(failfactor),
+                       tType(dtmax),tType(dtmin),
+                       controller,
+                       internalnorm,internalopnorm,
+                       save_idxs,tstops_internal,saveat_internal,
                        d_discontinuities_internal,
                        tstops,saveat,d_discontinuities,
                        userdata,progress,progress_steps,
-                       progress_name,progress_message,timeseries_errors,dense_errors,
-                       QT(beta1),QT(beta2),QT(qoldinit),dense,
+                       progress_name,progress_message,
+                       timeseries_errors,dense_errors,dense,
                        save_on,save_start,save_end,save_end_user,
-                       callbacks_internal,isoutofdomain,
-                       unstable_check,verbose,
-                       calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
+                       callbacks_internal,
+                       isoutofdomain,unstable_check,
+                       verbose,calck,force_dtmin,
+                       advance_to_tstop,stop_at_next_tstop)
 
   destats = DiffEqBase.DEStats(0)
 
   if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
+    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
     sol = DiffEqBase.build_solution(prob,_alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
                       calculate_error = false, destats=destats)
   else
+    id = InterpolationData(f,timeseries,ts,ks,dense,cache)
     sol = DiffEqBase.build_solution(prob,_alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       calculate_error = false, destats=destats)

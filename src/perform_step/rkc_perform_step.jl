@@ -574,7 +574,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   # The the number of degree for Chebyshev polynomial
   #maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
   maxm = 50
-  mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
+  mdeg = 1 + floor(Int, sqrt(1.54*abs(dt)*integrator.eigen_est + 1))
   mdeg = min(maxm, max(minm, mdeg))
 
   ω₀    = 1 + 2/(13 * (mdeg^2))
