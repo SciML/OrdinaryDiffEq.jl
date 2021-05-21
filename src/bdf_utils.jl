@@ -91,4 +91,4 @@ function update_D!(D, dd, k)
   return nothing
 end
 
-global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
+const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
