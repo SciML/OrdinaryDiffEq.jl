@@ -43,7 +43,6 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
 
       # divergence
       if θ > 2
-        @warn "newton diverge"
         nlsolver.status = Divergence
         break
       end

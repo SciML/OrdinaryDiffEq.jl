@@ -155,7 +155,7 @@ function stepsize_controller!(integrator, alg::QNDF)
   #q
 end
 
-function step_accept_controller!(integrator,alg::QNDF,q)
+function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_order
   #step is accepted, reset count of consecutive failed steps
   integrator.cache.consfailcnt = 0
   integrator.cache.nconsteps += 1
@@ -206,7 +206,7 @@ function step_accept_controller!(integrator,alg::QNDF,q)
         end
       end
 
-      if k < cache.max_order
+      if k < max_order
         expo = 1/(k+2)
         zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
         Fₖ₊₁ = inv(zₖ₊₁)
