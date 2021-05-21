@@ -11,13 +11,6 @@ function calc_R(ρ, k, ::Val{N}) where {N}
   SArray(R)
 end
 
-function update_D!(D::Number, dd, k)
-  D[k+2] = dd - D[k+1]
-  D[k+1] = dd
-  for i in k:-1:1
-    D[i] = D[i] + D[i+1]
-  end
-end
 
 function update_D!(D, dd, k)
   @views @.. D[:,k+2] = dd - D[:,k+1]

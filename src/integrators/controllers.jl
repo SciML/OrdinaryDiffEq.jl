@@ -231,12 +231,6 @@ function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_or
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
-  if q!=one(q) || integrator.cache.order != k
-    integrator.cache.changed = true
-  else
-    integrator.cache.changed = false
-  end
-  integrator.qold = q
   return integrator.dt/q
 end
 
@@ -275,11 +269,6 @@ function step_reject_controller!(integrator,alg::QNDF)
   end
   integrator.dt = hₙ
   integrator.cache.order = kₙ
-  if integrator.dt != h || integrator.cache.order != k
-    integrator.cache.changed = true
-  else
-    integrator.cache.changed = false
-  end
 end
 
 
