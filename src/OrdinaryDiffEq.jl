@@ -197,6 +197,7 @@ using DocStringExtensions
          ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
          ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
          ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+         RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
          KYK2014DGSSPRK_3S2
 
   export RadauIIA3, RadauIIA5
@@ -252,4 +253,6 @@ using DocStringExtensions
   export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
 
   export ShampineCollocationInit, BrownFullBasicInit, NoInit
+
+  export IController, PIController, PIDController
 end # module

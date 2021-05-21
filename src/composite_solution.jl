@@ -24,7 +24,8 @@ function DiffEqBase.build_solution(
         calculate_error = true,
         k=[],
         du=[],
-        interp = !isempty(du) ? HermiteInterpolation(t,u,du) : LinearInterpolation(t,u),
+        interp = !isempty(du) ? 
+          DiffEqBase.HermiteInterpolation(t,u,du) : DiffEqBase.LinearInterpolation(t,u),
         alg_choice=[1], retcode = :Default, destats=DiffEqBase.DEStats(), kwargs...)
 
   T = eltype(eltype(u))

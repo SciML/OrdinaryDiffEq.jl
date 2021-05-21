@@ -171,7 +171,7 @@ end
   duprev, uprev = load_symp_state(integrator)
 
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
-  ku = f.f1(duprev,uprev,p,t)
+  ku = integrator.fsallast.x[1]
   dtsq = dt^2
   half = cache.half
   u = uprev + dt*duprev + dtsq*(half*ku)
@@ -189,7 +189,7 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
-  f.f1(ku,duprev,uprev,p,t)
+  ku = integrator.fsallast.x[1]
   dtsq = dt^2
   half = cache.half
   @.. u = uprev + dt*duprev + dtsq*(half*ku)

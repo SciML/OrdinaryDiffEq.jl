@@ -60,14 +60,22 @@ function set_proposed_dt!(integrator::ODEIntegrator,integrator2::ODEIntegrator)
 end
 
 @inline function DiffEqBase.get_du(integrator::ODEIntegrator)
-  integrator.fsallast
+  return if isdefined(integrator, :fsallast)
+    integrator.fsallast
+  else
+    integrator(integrator.t, Val{1})
+  end
 end
 
 @inline function DiffEqBase.get_du!(out,integrator::ODEIntegrator)
   if typeof(integrator.cache) <: FunctionMapCache
     out .= integrator.cache.tmp
   else
-    out .= integrator.fsallast
+    return if isdefined(integrator, :fsallast)
+      out .= integrator.fsallast
+    else
+      integrator(out, integrator.t, Val{1})
+    end
   end
 end
 
@@ -284,12 +292,16 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
       resize!(integrator.sol.alg_choice,resize_start)
     end
     integrator.saveiter = resize_start
+    if integrator.opts.dense
+      integrator.saveiter_dense = resize_start
+    end
   end
   integrator.iter = 0
   integrator.success_iter = 0
   integrator.u_modified = false
 
   # full re-initialize the PI in timestepping
+  reinit!(integrator, integrator.opts.controller)
   integrator.qold = integrator.opts.qoldinit
   integrator.q11 = typeof(integrator.q11)(1)
   integrator.erracc = typeof(integrator.erracc)(1)

@@ -1,15 +1,17 @@
 using Test, OrdinaryDiffEq
 
-prob = ODEProblem(function (du,u,p,t)
-                    du[1] = 10.0(u[2]-u[1])
-                    du[2] = u[1]*(28.0-u[3]) - u[2]
-                    du[3] = u[1]*u[2] - (8/3)*u[3]
-                  end,
-                  [1.0;0.0;0.0], (0.0, 100.0))
+using SparseArrays
+using LinearAlgebra, Random
+N = 30
+AA = sprand(MersenneTwister(12),  N, N, 0.5)
+mm = sprand(MersenneTwister(123), N, N, 0.5)
+A = DiffEqArrayOperator(AA)
+M = DiffEqArrayOperator(mm'mm)
+u0 = ones(N)
+prob = ODEProblem(ODEFunction(A; mass_matrix=M), u0, (0.0, 1.0))
 
-function buildW(...)::NTuple{3}
-    nothing #= left preconditioner =#, nothing #= right preconditioner =#
+for alg in [Rosenbrock23(), Rosenbrock23(linsolve=LinSolveFactorize(lu))]
+  sol = solve(prob, alg)
+  @test sol.destats.njacs == 0
+  @test sol.destats.nw == 1
 end
-
-nlsolve = NLNewton(buildW, )
-sol = solve(prob, TRBDF2(nlsolve=nlsolve))

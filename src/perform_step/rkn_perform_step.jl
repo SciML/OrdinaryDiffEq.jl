@@ -455,20 +455,16 @@ end
   @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,du,ku,p,t+dt*c3)
-  @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*(c4*duprev[i] + dt*(a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]))
-  end
+  @.. ku = uprev + dt*(c4*duprev + dt*(a51*k1 + a52*k2 + a53*k3 + a54*k4))
 
   f.f1(k5,du,ku,p,t+dt*c4)
-  @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*(c5*duprev[i] + dt*(a61*k1[i]                  + a63*k3[i] + a64*k4[i] + a65*k5[i])) # no a62
-  end
+  @.. ku = uprev + dt*(c5*duprev + dt*(a61*k1 + a63*k3 + a64*k4 + a65*k5)) # no a62
 
   f.f1(k6,du,ku,p,t+dt*c5)
-  @tight_loop_macros for i in uidx
-    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(b1 *k1[i] + b3 *k3[i] + b4 *k4[i] + b5 *k5[i])) # b1 -- b5, no b2
-    @inbounds du[i] = duprev[i]                + dt*(bp1*k1[i] + bp3*k3[i] + bp4*k4[i] + bp5*k5[i] + bp6*k6[i]) # bp1 -- bp6, no bp2
-  end
+
+  @.. u  = uprev  + dt*(duprev + dt*(b1 *k1 + b3 *k3 + b4 *k4 + b5 *k5)) # b1 -- b5, no b2
+  @.. du = duprev + dt*(bp1*k1 + bp3*k3 + bp4*k4 + bp5*k5 + bp6*k6) # bp1 -- bp6, no bp2
+
   #=
   @tight_loop_macros for i in uidx
     @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bhat1*k1.x[2][i] + bhat2*k2.x[2][i] + bhat3*k3.x[2][i]))
@@ -483,10 +479,8 @@ end
   if integrator.opts.adaptive
     duhat, uhat = utilde.x
     dtsq = dt^2
-    @tight_loop_macros for i in uidx
-      @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i])
-      @inbounds duhat[i] = dt*(bptilde1*k1[i] + bptilde3*k3[i] + bptilde4*k4[i] + bptilde5*k5[i] + bptilde6*k6[i])
-    end
+    @.. uhat  = dtsq*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5)
+    @.. duhat = dt*(bptilde1*k1 + bptilde3*k3 + bptilde4*k4 + bptilde5*k5 + bptilde6*k6)
     calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end

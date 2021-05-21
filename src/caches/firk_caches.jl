@@ -33,6 +33,7 @@ mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF
   w1::uType
   w2::uType
   dw12::cuType
+  cubuff::cuType
   cont1::uType
   cont2::uType
   du1::rateType
@@ -71,6 +72,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   z1 = zero(u); z2 = zero(u);
   w1 = zero(u); w2 = zero(u);
   dw12 = similar(u, Complex{eltype(u)})
+  cubuff = similar(u, Complex{eltype(u)})
   cont1 = zero(u); cont2 = zero(u);
 
   fsalfirst = similar(rate_prototype)
@@ -92,7 +94,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   RadauIIA3Cache(u, uprev,
                  z1, z2, w1, w2,
-                 dw12, cont1, cont2,
+                 dw12, cubuff, cont1, cont2,
                  du1, fsalfirst, k, k2, fw1, fw2,
                  J, W1,
                  uf, tab, κ, one(uToltype), 10000,
@@ -136,7 +138,9 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   w2::uType
   w3::uType
   dw1::uType
-  dw23::cuType
+  ubuff::uType
+  dw23::cuType  
+  cubuff::cuType
   cont1::uType
   cont2::uType
   cont3::uType
@@ -178,7 +182,8 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   z1 = zero(u); z2 = zero(u); z3 = zero(u)
   w1 = zero(u); w2 = zero(u); w3 = zero(u)
-  dw1 = zero(u); dw23 = similar(u, Complex{eltype(u)})
+  dw1 = zero(u); ubuff = zero(u)
+  dw23 = similar(u, Complex{eltype(u)}); cubuff = similar(u, Complex{eltype(u)})
   cont1 = zero(u); cont2 = zero(u); cont3 = zero(u)
 
   fsalfirst = similar(rate_prototype)
@@ -200,7 +205,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   RadauIIA5Cache(u, uprev,
                  z1, z2, z3, w1, w2, w3,
-                 dw1, dw23, cont1, cont2, cont3,
+                 dw1, ubuff, dw23, cubuff, cont1, cont2, cont3,
                  du1, fsalfirst, k, k2, k3, fw1, fw2, fw3,
                  J, W1, W2,
                  uf, tab, κ, one(uToltype), 10000,

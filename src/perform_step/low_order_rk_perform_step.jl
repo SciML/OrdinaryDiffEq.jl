@@ -414,7 +414,7 @@ end
   integrator.u = u
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache
     k = integrator.k
     k[9] = f(uprev+dt*(a91*k[1]+a92*k[2]+a93*k[3]+a94*k[4]+a95*k[5]+a96*k[6]+a97*k[7]+a98*k[8]),p,t+c6*dt)
@@ -474,7 +474,7 @@ end
     integrator.EEst = max(EEst1,EEst2)
   end
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
     @.. tmp = uprev+dt*(a91*k[1]+a92*k[2]+a93*k[3]+a94*k[4]+a95*k[5]+a96*k[6]+a97*k[7]+a98*k[8])
@@ -539,7 +539,7 @@ end
   end
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
     k = integrator.k
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
     @tight_loop_macros for i in uidx
@@ -1051,7 +1051,7 @@ end
   alg = unwrap_alg(integrator, true)
   ν = alg.omega*dt
   νsq = ν^2
-  β4 = (d1 + νsq*(d2 + νsq*(d3 + νsq*(d4 + νsq*(d5 + νsq*(d6 + +νsq*d7))))))/(1 + νsq*(d8 + νsq*(d9 + νsq*(d10 + νsq*(d11 + νsq*(d12 + +νsq*d13)))))) 
+  β4 = (d1 + νsq*(d2 + νsq*(d3 + νsq*(d4 + νsq*(d5 + νsq*(d6 + +νsq*d7))))))/(1 + νsq*(d8 + νsq*(d9 + νsq*(d10 + νsq*(d11 + νsq*(d12 + +νsq*d13))))))
   β5 = (e1 + νsq*(e2 + νsq*(e3 + νsq*(e4 + νsq*(e5 + νsq*e6)))))/(1 + νsq*(e8 + νsq*(e9 + νsq*(e10 + νsq*e11))))
   β6 = (f1 + νsq*(f2 + νsq*(f3 + νsq*(f4 + νsq*(f5 + νsq*f6)))))/(1 + νsq*(f8 + νsq*(f9 + νsq*(f10 + νsq*f11))))
 
@@ -1116,7 +1116,7 @@ end
 
   ν = alg.omega*dt
   νsq = ν^2
-  β4 = (d1 + νsq*(d2 + νsq*(d3 + νsq*(d4 + νsq*(d5 + νsq*(d6 + +νsq*d7))))))/(1 + νsq*(d8 + νsq*(d9 + νsq*(d10 + νsq*(d11 + νsq*(d12 + +νsq*d13)))))) 
+  β4 = (d1 + νsq*(d2 + νsq*(d3 + νsq*(d4 + νsq*(d5 + νsq*(d6 + +νsq*d7))))))/(1 + νsq*(d8 + νsq*(d9 + νsq*(d10 + νsq*(d11 + νsq*(d12 + +νsq*d13))))))
   β5 = (e1 + νsq*(e2 + νsq*(e3 + νsq*(e4 + νsq*(e5 + νsq*e6)))))/(1 + νsq*(e8 + νsq*(e9 + νsq*(e10 + νsq*e11))))
   β6 = (f1 + νsq*(f2 + νsq*(f3 + νsq*(f4 + νsq*(f5 + νsq*f6)))))/(1 + νsq*(f8 + νsq*(f9 + νsq*(f10 + νsq*f11))))
 
@@ -1136,7 +1136,7 @@ end
   f(k8, tmp, p, t+c8*dt)
   @.. u = uprev+dt*(β1*k1+β4*k4+β5*k5+β6*k6+β7*k7+β8*k8)
   f(k9, u, p, t+dt)
-  
+
   integrator.destats.nf += 8
   if integrator.opts.adaptive
     @.. utilde = dt*(β1tilde*k1 + β4tilde*k4 + β5tilde*k5 + β6tilde*k6 + β7tilde*k7 + β8tilde*k8 + β9tilde*k9)
@@ -1164,7 +1164,7 @@ end
 @muladd function perform_step!(integrator,cache::RKMConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6 = cache
-  
+
   #k1 = f(uprev, p, t)
   k1 = integrator.fsalfirst
   k2 = f(uprev+α2*dt*k1, p, t+c2*dt)
@@ -1181,7 +1181,7 @@ end
   # integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
-  
+
 function initialize!(integrator,cache::RKMCache)
   @unpack k,fsalfirst = cache
   integrator.kshortsize = 6
@@ -1196,7 +1196,7 @@ function initialize!(integrator,cache::RKMCache)
 
   integrator.destats.nf += 1
 end
-  
+
 @muladd function perform_step!(integrator,cache::RKMCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k,k1,k2,k3,k4,k5,k6 = cache

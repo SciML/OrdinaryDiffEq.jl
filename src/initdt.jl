@@ -5,6 +5,13 @@
   oneunit_tType = oneunit(_tType)
   dtmax_tdir = tdir*dtmax
 
+  dtmin = nextfloat(integrator.opts.dtmin)
+  smalldt = convert(_tType,oneunit_tType*1//10^(6))
+
+  if integrator.isdae
+      return tdir*max(smalldt, dtmin)
+  end
+
   if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
     cache = get_tmp_cache(integrator)
     sk = first(cache)
@@ -60,8 +67,6 @@
   still works for matrix-free definitions of the mass matrix.
   =#
 
-  dtmin = nextfloat(integrator.opts.dtmin)
-  smalldt = convert(_tType,oneunit_tType*1//10^(6))
   if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
     ftmp = zero(f₀)
     try
@@ -129,6 +134,14 @@ end
   oneunit_tType = oneunit(_tType)
   dtmax_tdir = tdir*dtmax
 
+  dtmin = nextfloat(integrator.opts.dtmin)
+  smalldt = convert(_tType,oneunit_tType*1//10^(6))
+
+
+  if integrator.isdae
+      return tdir*max(smalldt, dtmin)
+  end
+
   sk = @.. abstol + internalnorm(u0,t) * reltol
   d₀ = internalnorm(u0 ./ sk,t)
 
@@ -138,9 +151,6 @@ end
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
-
-  dtmin = nextfloat(integrator.opts.dtmin)
-  smalldt = convert(_tType,oneunit_tType*1//10^(6))
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     dt₀ = smalldt

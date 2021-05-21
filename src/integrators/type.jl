@@ -1,4 +1,4 @@
-mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,F7,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
+mutable struct DEOptions{absType,relType,QT,tType,Controller,F1,F2,F3,F4,F5,F6,F7,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
   save_everystep::Bool
   adaptive::Bool
@@ -9,9 +9,11 @@ mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,F7,tstopsTyp
   qmin::QT
   qsteady_max::QT
   qsteady_min::QT
+  qoldinit::QT
   failfactor::QT
   dtmax::tType
   dtmin::tType
+  controller::Controller
   internalnorm::F1
   internalopnorm::F2
   save_idxs::SType
@@ -28,9 +30,6 @@ mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,F7,tstopsTyp
   progress_message::F6
   timeseries_errors::Bool
   dense_errors::Bool
-  beta1::QT
-  beta2::QT
-  qoldinit::QT
   dense::Bool
   save_on::Bool
   save_start::Bool
@@ -49,11 +48,12 @@ end
 """
     ODEIntegrator
 Fundamental `struct` allowing interactively stepping through the numerical solving of a differential equation.
-The full documentation is hosted here: [http://docs.juliadiffeq.org/dev/basics/integrator.html](http://docs.juliadiffeq.org/dev/basics/integrator.html). This docstring
-describes basic functionality only!
+The full documentation is hosted here:
+[https://diffeq.sciml.ai/latest/basics/integrator/](https://diffeq.sciml.ai/latest/basics/integrator/).
+This docstring describes basic functionality only!
 
 Initialize using `integrator = init(prob::ODEProblem, alg; kwargs...)`. The keyword args which are accepted are the same
-[Common Solver Options](http://docs.juliadiffeq.org/dev/basics/common_solver_opts.html#Common-Solver-Options-1)
+[common solver options](https://diffeq.sciml.ai/latest/basics/common_solver_opts/)
 used by `solve`.
 
 

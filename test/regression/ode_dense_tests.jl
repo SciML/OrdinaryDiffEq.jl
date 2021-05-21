@@ -285,6 +285,24 @@ regression_test(ParsaniKetchesonDeconinck3S105(), 1.5e-5, 3.0e-5)
 # ParsaniKetchesonDeconinck3S205
 regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
 
+# RDPK3Sp35
+regression_test(RDPK3Sp35(), 7.0e-4, 1.5e-3)
+
+# RDPK3SpFSAL35
+regression_test(RDPK3SpFSAL35(), 8.5e-4, 2.0e-3)
+
+# RDPK3Sp49
+regression_test(RDPK3Sp49(), 7.5e-5, 1.5e-4)
+
+# RDPK3SpFSAL49
+regression_test(RDPK3SpFSAL49(), 8.5e-5, 1.5e-4)
+
+# RDPK3Sp510
+regression_test(RDPK3Sp510(), 2.5e-4, 3.5e-4)
+
+# RDPK3SpFSAL510
+regression_test(RDPK3SpFSAL510(), 2.5e-4, 3.5e-4)
+
 println("RKs")
 
 # RK4
@@ -377,7 +395,16 @@ regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true, nth_der = 1, dert
 regression_test(Rosenbrock32(), 6e-4, 9e-4; test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # Rodas4
-regression_test(Rodas4(), 8.5e-6, 2e-5)
+regression_test(Rodas4(), 8.5e-6, 2e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas42
+regression_test(Rodas42(), 3e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas4P
+regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas4P2
+regression_test(Rodas4P2(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)

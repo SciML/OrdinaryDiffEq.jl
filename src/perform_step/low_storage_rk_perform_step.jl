@@ -205,6 +205,191 @@ end
 
 
 
+# 3S+ low storage methods: 3S methods adding another memory location for the embedded method (non-FSAL version)
+function initialize!(integrator,cache::LowStorageRK3SpConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+  integrator.kshortsize = 1
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK3SpConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end = cache
+
+  # u1
+  integrator.fsalfirst = f(uprev, p, t)
+  integrator.destats.nf += 1
+  integrator.k[1] = integrator.fsalfirst
+  tmp = uprev
+  u   = tmp + β1*dt*integrator.fsalfirst
+  if integrator.opts.adaptive
+    utilde = bhat1*dt*integrator.fsalfirst
+  end
+
+  # other stages
+  for i in eachindex(γ12end)
+    k   = f(u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
+    tmp = tmp + δ2end[i]*u
+    u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    if integrator.opts.adaptive
+      utilde = utilde + bhat2end[i]*dt*k
+    end
+  end
+
+  if integrator.opts.adaptive
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::LowStorageRK3SpCache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK3SpCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,tmp,utilde,atmp = cache
+  @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end = cache.tab
+
+  # u1
+  f(integrator.fsalfirst, uprev, p, t)
+  integrator.destats.nf += 1
+  @.. tmp = uprev
+  @.. u   = tmp + β1*dt*integrator.fsalfirst
+  if integrator.opts.adaptive
+    @.. utilde = bhat1*dt*integrator.fsalfirst
+  end
+
+  # other stages
+  for i in eachindex(γ12end)
+    f(k, u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
+    @.. tmp = tmp + δ2end[i]*u
+    @.. u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    if integrator.opts.adaptive
+      @.. utilde = utilde + bhat2end[i]*dt*k
+    end
+  end
+
+  if integrator.opts.adaptive
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+end
+
+
+
+# 3S+ FSAL low storage methods: 3S methods adding another memory location for the embedded method (FSAL version)
+function initialize!(integrator,cache::LowStorageRK3SpFSALConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK3SpFSALConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal = cache
+
+  # u1
+  tmp = uprev
+  u   = tmp + β1*dt*integrator.fsalfirst
+  if integrator.opts.adaptive
+    utilde = bhat1*dt*integrator.fsalfirst
+  end
+
+  # other stages
+  for i in eachindex(γ12end)
+    k   = f(u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
+    tmp = tmp + δ2end[i]*u
+    u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    if integrator.opts.adaptive
+      utilde = utilde + bhat2end[i]*dt*k
+    end
+  end
+
+  # FSAL
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
+
+  if integrator.opts.adaptive
+    utilde = utilde + bhatfsal*dt*integrator.fsallast
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::LowStorageRK3SpFSALCache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.destats.nf += 1
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK3SpFSALCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,tmp,utilde,atmp = cache
+  @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal = cache.tab
+
+  # u1
+  @.. tmp = uprev
+  @.. u   = tmp + β1*dt*integrator.fsalfirst
+  if integrator.opts.adaptive
+    @.. utilde = bhat1*dt*integrator.fsalfirst
+  end
+
+  # other stages
+  for i in eachindex(γ12end)
+    f(k, u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
+    @.. tmp = tmp + δ2end[i]*u
+    @.. u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    if integrator.opts.adaptive
+      @.. utilde = utilde + bhat2end[i]*dt*k
+    end
+  end
+
+  # FSAL
+  f(k, u, p, t+dt)
+  integrator.destats.nf += 1
+
+  if integrator.opts.adaptive
+    @.. utilde = utilde + bhatfsal*dt*k
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+end
+
+
+
 # 2R+ low storage methods
 function initialize!(integrator,cache::LowStorageRK2RPConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -296,6 +481,7 @@ end
 # 3R+ low storage methods
 function initialize!(integrator,cache::LowStorageRK3RPConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -323,6 +509,7 @@ end
     uᵢ₋₂  = uᵢ₋₁
     uᵢ₋₁  = u
     k     = f(gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -337,6 +524,7 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 1
   integrator.u = u
 end
 
@@ -348,6 +536,7 @@ function initialize!(integrator,cache::LowStorageRK3RPCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t)
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK3RPCache,repeat_step=false)
@@ -370,6 +559,7 @@ end
     @.. uᵢ₋₂  = uᵢ₋₁
     @.. uᵢ₋₁  = u
     f(k, gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -383,12 +573,14 @@ end
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end
 
 
 # 4R+ low storage methods
 function initialize!(integrator,cache::LowStorageRK4RPConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -420,6 +612,7 @@ end
     uᵢ₋₂  = uᵢ₋₁
     uᵢ₋₁  = u
     k     = f(gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -434,6 +627,7 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 1
   integrator.u = u
 end
 
@@ -445,6 +639,7 @@ function initialize!(integrator,cache::LowStorageRK4RPCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t)
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK4RPCache,repeat_step=false)
@@ -472,6 +667,7 @@ end
     @.. uᵢ₋₂  = uᵢ₋₁
     @.. uᵢ₋₁  = u
     f(k, gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -485,12 +681,14 @@ end
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end
 
 
 # 5R+ low storage methods
 function initialize!(integrator,cache::LowStorageRK5RPConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -526,6 +724,7 @@ end
     uᵢ₋₂  = uᵢ₋₁
     uᵢ₋₁  = u
     k     = f(gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -540,6 +739,7 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 1
   integrator.u = u
 end
 
@@ -551,6 +751,7 @@ function initialize!(integrator,cache::LowStorageRK5RPCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t)
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK5RPCache,repeat_step=false)
@@ -582,6 +783,7 @@ end
     @.. uᵢ₋₂  = uᵢ₋₁
     @.. uᵢ₋₁  = u
     f(k, gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -595,4 +797,5 @@ end
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end

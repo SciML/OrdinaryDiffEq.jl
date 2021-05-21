@@ -187,7 +187,7 @@ function _loopfooter!(integrator)
   elseif integrator.opts.adaptive
     q = stepsize_controller!(integrator,integrator.alg)
     integrator.isout = integrator.opts.isoutofdomain(integrator.u,integrator.p,ttmp)
-    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
+    integrator.accept_step = (!integrator.isout && accept_step_controller(integrator, integrator.opts.controller)) || (integrator.opts.force_dtmin && abs(integrator.dt) <= timedepentdtmin(integrator))
     if integrator.accept_step # Accept
       integrator.destats.naccept += 1
       integrator.last_stepfail = false
@@ -195,7 +195,7 @@ function _loopfooter!(integrator)
       integrator.tprev = integrator.t
       if integrator.t isa AbstractFloat && has_tstop(integrator)
         tstop = integrator.tdir * first_tstop(integrator)
-        abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
+        abs(ttmp - tstop) < 100eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
         integrator.t = ttmp
@@ -210,7 +210,7 @@ function _loopfooter!(integrator)
     integrator.tprev = integrator.t
     if integrator.t isa AbstractFloat && has_tstop(integrator)
       tstop = integrator.tdir * first_tstop(integrator)
-      abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
+      abs(ttmp - tstop) < 100eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
     else
       integrator.t = ttmp
