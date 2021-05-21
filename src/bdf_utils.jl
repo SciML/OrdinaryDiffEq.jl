@@ -83,6 +83,7 @@ function calc_R(ρ, k, ::Val{N}) where {N}
 end
 
 function update_D!(D, dd, k)
+  dd = _vec(dd)
   @views @.. D[:,k+2] = dd - D[:,k+1]
   @views @.. D[:,k+1] = dd
   for i in k:-1:1
