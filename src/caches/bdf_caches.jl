@@ -305,20 +305,26 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   QNDFConstantCache(nlsolver,D,prevD,R,U,1,1,max_order,false,dtprev,h,0,0, EEst1, EEst2, γₖ, tmp)
 end
 
-@cache mutable struct QNDFCache{MO,UType,RUType,rateType,N,coefType2,dtType,EEstType,gammaType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDFCache{MO,UType,RUType,rateType,N,coefType1,dtType,EEstType,gammaType,uType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
+  dd::uType
+  utilde::uType
+  utildem1::uType
+  utildep1::uType
+  ϕ::uType
+  u₀::uType
   nlsolver::N
   U::UType
   RU::RUType
-  D::coefType2
-  Dtmp::coefType2
-  prevD::coefType2
+  D::coefType1
+  Dtmp::coefType1
+  tmp2::uType
+  prevD::coefType1
   order::Int
   prevorder::Int
   max_order::Val{MO}
   changed::Bool
   dtprev::dtType
-  h::dtType
   nconsteps::Int ##Successful Consecutive Step with the same step size
   consfailcnt::Int #Consecutive failed steps count
   EEst1::EEstType #Error Estimator for k-1 order
@@ -326,22 +332,32 @@ end
   γₖ::gammaType
   #tmp::coefType1
   atmp::uNoUnitsType
+  atmpm1::uNoUnitsType
+  atmpp1::uNoUnitsType
 end
 
 function alg_cache(alg::QNDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where MO
-  @unpack kappa = alg
   max_order = MO
-  γ, c = one(eltype(kappa)), 1
+  γ, c = one(eltype(alg.kappa)), 1
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
-
-  dtprev = zero(dt)
-  h = zero(dt)
+  dd = zero(u)
+  utilde = zero(u)
+  utildem1 = zero(u)
+  utildep1 = zero(u)
+  ϕ = zero(u)
+  u₀ = zero(u)
+  dtprev = one(dt)
   u₀ = zero(u) # TODO: predictor
-  D = similar(u, length(u), max_order + 2)
-  Dtmp = similar(D)
-  prevD = similar(D)
-  atmp = similar(u, uEltypeNoUnits)
+  D = zero(similar(u, length(u), max_order + 2))
+  #@show D,2222
+  #@show size(D)
+  Dtmp = zero(similar(D))
+  prevD = zero(similar(D))
+  atmp = zero(similar(u, uEltypeNoUnits))
+  atmpm1 = zero(similar(u, uEltypeNoUnits))
+  atmpp1 = zero(similar(u, uEltypeNoUnits))
+  tmp2 = zero(u)
 
   EEst1 = tTypeNoUnits(1)
   EEst2 = tTypeNoUnits(1)
@@ -357,7 +373,7 @@ function alg_cache(alg::QNDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   RU = Matrix(U)
   γₖ = SVector(ntuple(k->sum(tTypeNoUnits(1//j) for j in 1:k), Val(max_order)))
 
-  QNDFCache(fsalfirst, nlsolver, U, RU, D, Dtmp, prevD, 1, 1, Val(max_order), false, dtprev, h, 0, 0, EEst1, EEst2, γₖ, atmp)
+  QNDFCache(fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, RU, D, Dtmp, tmp2, prevD, 1, 1, Val(max_order), false, dtprev, 0, 0, EEst1, EEst2, γₖ, atmp, atmpm1, atmpp1)
 end
 
 

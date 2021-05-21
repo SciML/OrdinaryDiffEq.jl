@@ -171,7 +171,6 @@ function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_or
     if integrator.cache.nconsteps < integrator.cache.order + 2
       q = one(integrator.qold) #quasi-contsant steps
     else
-      #@show integrator.cache.nconsteps
       zₛ = 1.2 # equivalent to intergrator.opts.gamma
       zᵤ = 0.1
       Fᵤ = 10
@@ -221,18 +220,12 @@ function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_or
           kₙ = k+1
         end
       end
-      # adp order and step conditions
-      #@show k,est, estₖ₋₁, estₖ₊₁,hₖ₋₁,hₖ,hₖ₊₁,hₙ,kₙ
-      #@info cache.D
-      #@show hₙ,hₖ₋₁,hₖ,hₖ₊₁
-
       if hₙ <= h
         hₙ = h
         kₙ = k
       end
       cache.order = kₙ
       q = integrator.dt/hₙ
-      #@show integrator.cache.nconsteps,zₖ₊₁
     end
   end
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
@@ -244,18 +237,14 @@ function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_or
     integrator.cache.changed = false
   end
   integrator.qold = q
-  #@show integrator.dt
   return integrator.dt/q
 end
 
 function step_reject_controller!(integrator,alg::QNDF)
-  #@show integrator.cache.D
-  #append no. of consecutive failed steps
   k = integrator.cache.order
   h = integrator.dt
   integrator.cache.consfailcnt += 1
   integrator.cache.nconsteps = 0
-  #@show integrator.cache.consfailcnt
   if integrator.cache.consfailcnt > 1
     h = h/2
   end
@@ -284,7 +273,6 @@ function step_reject_controller!(integrator,alg::QNDF)
       kₙ = k-1
     end
   end
-  #@show hₙ
   integrator.dt = hₙ
   integrator.cache.order = kₙ
   if integrator.dt != h || integrator.cache.order != k

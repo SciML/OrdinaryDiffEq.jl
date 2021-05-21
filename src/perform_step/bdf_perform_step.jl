@@ -694,14 +694,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   k = order
   κlist = integrator.alg.kappa
   κ = κlist[k]
-  #@show nconsteps, D
-  #κlist = zeros(5)
-  #κ = 0
-  #=if 45<iter<68
-    @show D
-    @show prevD
-    @show dt,dtprev,cache.consfailcnt
-  end=#
+
   if cache.consfailcnt>0
     #@show cache.D
     D = copy(cache.prevD)
@@ -789,20 +782,10 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     end
   end
   if integrator.EEst <= 1.0
-    #cache.u₀ = u₀
-    cache.prevorder = k
     cache.prevD = copy(D)
     cache.dtprev = dt
-    cache.D = D
   end
-  #=if 42<iter<68
-    #@info integrator.EEst, k, cache.nconsteps
-    #@show 22222222
-    ##@show D
-    #@warn cache.D
-  end=#
   integrator.fsallast = f(u, p, t+dt)
-  #@show u-(uprev+dt*integrator.fsallast), k
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -822,38 +805,42 @@ end
 
 function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dtprev,order,D,nlsolver,γₖ = cache
+  @unpack dtprev,order,D,nlsolver,γₖ,dd,atmp,atmpm1,atmpp1,utilde,utildem1,utildep1,ϕ,u₀ = cache
 
-  if dt != dtprev && dtprev != 0
+  if dt != dtprev
     cache.changed=true
   end
   k = order
   κlist = integrator.alg.kappa
   κ = κlist[k]
-  # i (accept)            i+1 (reject)                       i+2
-  #   dt_{i}     dt_{i+1} ρ = dt_{i+1}/dt_{i}    dt_{i+1} ρ = dt_{i+2} / dt_{i+1}
   if cache.consfailcnt > 0
-    D = copy(cache.prevD)
+    copyto!(D, cache.prevD)
   end
-
-  if cache.changed && dtprev!=0
-    ρ = dt/dtprev # this is pretty minor, but you should check `dt == dtprev` first, then compute `rho`, because division is more expensive than comparesion, so we want to minimize the number of floating point number divisions.
-    if ρ != 1
-      integrator.cache.nconsteps = 0
-      @unpack RU, U, Dtmp = cache
-      R = calc_R(ρ, k, Val(max_order))
-      copyto!(RU, R * U)
-      @views mul!(Dtmp[:, 1:k], D[:, 1:k], RU[1:k, 1:k])
-      D, Dtmp = Dtmp, D
-      @pack! cache = D, Dtmp
-    end
+  if cache.changed
+    ρ = dt/dtprev
+    integrator.cache.nconsteps = 0
+    @unpack RU, U, Dtmp = cache
+    R = calc_R(ρ, k, Val(max_order))
+    copyto!(RU, R * U)
+    @views mul!(Dtmp[:, 1:k], D[:, 1:k], RU[1:k, 1:k])
+    D, Dtmp = Dtmp, D
+    @pack! cache = D, Dtmp
   end
 
   α₀ = 1
   β₀ = inv((1-κ)*γₖ[k])
-  # cache the `sum(D[:,1:k], dims=2)`. Write the loop yourself, since `sum` allocates intermediate arrays to accumulate into.
-  u₀ = reshape(sum(D[:,1:k], dims=2) .+ uprev, size(u))  # u₀ is predicted value
-  ϕ = zero(u) # use cache
+  # D[:, j] contains scaled j-th derivative approximation. 
+  # Thus, it’s likely that ||D[:, j+1]|| <= ||D[:, j]|| holds，
+  # we want to sum small numbers first to minimize the accumulation error.
+  # Hence, we sum it backwards.
+  @inbounds for i in 1:length(u₀)
+    s = D[i,k]
+    @simd for j in k-1:-1:1
+      s += D[i,j]
+    end
+    u₀[i] = s + uprev[i]
+  end
+  @.. ϕ = zero(u)
   for i = 1:k
     @views @.. ϕ += γₖ[i] * D[:, i]
   end
@@ -862,14 +849,11 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   mass_matrix = f.mass_matrix
 
   if mass_matrix == I
-    @.. nlsolver.tmp = (u₀/β₀-ϕ)/dt # loop fusion
+    @.. nlsolver.tmp = (u₀/β₀-ϕ)/dt
   else
-    @.. nlsolver.tmp = mass_matrix * (u₀/β₀-ϕ)/dt # this is wrong. @.. broadcasts all the expression after it, but we need `mass_matrix * v` to be a matrix-vector product.
-    # try something like
-    # ```julia
-    # @. tmp2 = (u₀/β₀-ϕ)/dt
-    # mul!(nlsolver.tmp, mass_matrix, tmp2)
-    # ```
+    @unpack tmp2 = cache
+    @.. tmp2 = (u₀/β₀-ϕ)/dt
+    mul!(nlsolver.tmp, mass_matrix, tmp2)
   end
 
   nlsolver.γ = β₀
@@ -879,34 +863,29 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = z
-  dd = u-u₀  # TODO: cache
-  update_D!(dd, D, k) # TODO: the signature should be (D, dd, k)
-
-  # Tsit5 (in-place)
+  @.. dd = u-u₀ 
+  update_D!(D, dd, k)
   if integrator.opts.adaptive 
-    utilde = (κ*γₖ[k]+inv(k+1))*dd # TODO: use `utilde` in cache
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t) # TODO: use `calculate_residual!`
+    @.. utilde = (κ*γₖ[k]+inv(k+1))*dd
+    calculate_residuals!(atmp,utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
     if k > 1
-      dd = D[k]
-      utildem1 = (κlist[k-1]*γₖ[k-1]+inv(k))*dd # TODO: same as the above
-      atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      @.. dd = D[k]
+      @.. utildem1 = (κlist[k-1]*γₖ[k-1]+inv(k))*dd
+      calculate_residuals!(atmpm1, utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.EEst1 = integrator.opts.internalnorm(atmpm1, t)
     end
     if k < max_order
-      dd = D[k+2]
-      utildep1 = (κlist[k+1]*γₖ[k+1]+inv(k+2))*dd # TODO: same as the above
-      atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      @.. dd = D[k+2]
+      @.. utildep1 = (κlist[k+1]*γₖ[k+1]+inv(k+2))*dd
+      calculate_residuals!(atmpp1, utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.EEst2 = integrator.opts.internalnorm(atmpp1, t)
     end
   end
   if integrator.EEst <= 1.0
-    cache.prevorder = k
-    cache.prevD = copy(D) # TODO: remove prevD
-    cache.dtprev = dt # TODO: should always cache dt, even if the step is rejected. [Maybe?] Also, be careful when Newton diverges. It returns earily in the `perform_step!` function.
-    cache.D = D # WUT
+    copyto!(cache.prevD, D)
+    cache.dtprev = dt
   end
-
   f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
   return nothing
