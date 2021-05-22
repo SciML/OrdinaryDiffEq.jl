@@ -1534,7 +1534,8 @@ QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
 
 
-struct QNDF{CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
+struct QNDF{MO,CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
+  max_order::Val{MO}
   linsolve::F
   nlsolve::F2
   diff_type::FDT
@@ -1544,13 +1545,13 @@ struct QNDF{CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{
   kappa::κType
   controller::Symbol
 end
-Base.@pure QNDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Base.@pure QNDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,kappa=promote(-0.1850,-1//9,-0.0823,-0.0415,0),
-                controller = :Standard) =
-                QNDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
+                controller = :Standard) where {MO} =
+                QNDF{MO,chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
                 typeof(κ),typeof(tol),typeof(kappa)}(
-                linsolve,nlsolve,diff_type,κ,tol,extrapolant,kappa,controller)
+                max_order,linsolve,nlsolve,diff_type,κ,tol,extrapolant,kappa,controller)
 
 Base.@pure QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
 

@@ -8,7 +8,7 @@
   end
   nothing
 end
-
+  
 function R!(k, ρ, cache)
   @unpack R = cache
   @inbounds for r = 1:k
@@ -22,6 +22,7 @@ end
 
 # This functions takes help of D2 array to create backward differences array D
 # Ith row of D2 keeps Ith order backward differences (∇ⁱyₙ)
+
 function backward_diff!(cache::OrdinaryDiffEqMutableCache, D, D2, k, flag=true)
   flag && copyto!(D[1], D2[1,1])
   for i = 2:k
@@ -69,4 +70,26 @@ function reinterpolate_history!(cache::OrdinaryDiffEqConstantCache, D, R, k)
   end
 end
 
-global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
+
+function calc_R(ρ, k, ::Val{N}) where {N}
+  R = zero(MMatrix{N,N,typeof(ρ)})
+  @inbounds for r = 1:k
+    R[1,r] = -r * ρ
+    for j = 2:k
+      R[j,r] = R[j-1,r] * ((j-1) - r * ρ)/j
+    end
+  end
+  SArray(R)
+end
+
+function update_D!(D, dd, k)
+  dd = _vec(dd)
+  @views @.. D[:,k+2] = dd - D[:,k+1]
+  @views @.. D[:,k+1] = dd
+  for i in k:-1:1
+    @views @.. D[:,i] = D[:,i] + D[:,i+1]
+  end
+  return nothing
+end
+
+const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]

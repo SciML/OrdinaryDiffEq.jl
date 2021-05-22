@@ -685,132 +685,82 @@ function initialize!(integrator, cache::QNDFConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
+function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack udiff,dts,order,max_order,D,D2,R,U,nlsolver = cache
-  γₖ = cache.γₖ
+  @unpack dtprev,order,D,U,nlsolver,γₖ = cache
   k = order
-  cnt = integrator.iter
-  κ = integrator.alg.kappa[k]
-  flag = true
-  for i in 2:k
-    if dts[i] != dts[1]
-      flag = false
-      break
-    end
+  κlist = integrator.alg.kappa
+  κ = κlist[k]
+  if cache.consfailcnt > 0
+    copyto!(D, cache.prevD)
   end
-  if cnt > k
-    if flag
-      ρ = dt/dts[1]
-      # backward diff
-      n = k+1
-      if cnt == 3
-        n = k
-      end
-      for i = 1:n
-        D2[1,i] = udiff[i]
-      end
-      backward_diff!(cache,D,D2,k)
-      if ρ != 1
-        U!(k,U)
-        R!(k,ρ,cache)
-        mul!(cache.tmp,R,U)
-        reinterpolate_history!(cache,D,cache.tmp,k)
-      end
-    else
-      n = k+1
-      if cnt == 3
-        n = k
-      end
-      for i = 1:n
-        D2[1,i] = udiff[i] * dt/dts[i]
-      end
-      backward_diff!(cache,D,D2,k)
+  if dt != dtprev || cache.prevorder != k
+    ρ = dt/dtprev
+    integrator.cache.nconsteps = 0
+    @unpack U = cache
+    R = calc_R(ρ, k, Val(max_order))
+    RU = R * U
+    Dtmp = D[:, 1:k] * RU[1:k, 1:k]
+    D[:,1:k] = Dtmp
+  end
+
+  α₀ = 1
+  β₀ = inv((1-κ)*γₖ[k])
+  if u isa Number
+    u₀ = sum(D[1:k]) + uprev
+    ϕ = zero(u)
+    for i = 1:k
+      ϕ += γₖ[i]*D[i]
     end
   else
-    κ = zero(integrator.alg.kappa[k])
+    u₀ = reshape(sum(D[:,1:k],dims=2) .+ uprev, size(u))
+    ϕ = zero(u)
     for i = 1:k
-      γₖ[i] = 1//1
+       @.. ϕ += γₖ[i]*D[:,i]
     end
   end
-  β₀ = inv((1-κ)*γₖ[k])
-  α₀ = 1
-
-  # precalculations
-  u₀ = uprev + sum(D)  # u₀ is predicted value
-  ϕ = zero(u)
-  for i = 1:k
-    ϕ += γₖ[i]*D[i]
-  end
-  ϕ *= β₀
   markfirststage!(nlsolver)
-  # initial guess
-  nlsolver.z = uprev + sum(D)
-
+  nlsolver.z = u₀
   mass_matrix = f.mass_matrix
 
   if mass_matrix == I
-    nlsolver.tmp = @.. (u₀ - ϕ)/ (dt * β₀)
+    nlsolver.tmp = @.. (u₀/β₀-ϕ)/dt
   else
-    _tmp = mass_matrix * @.. (u₀ - ϕ)
-    nlsolver.tmp = @.. _tmp / (dt * β₀)
+    nlsolver.tmp = mass_matrix * @.. (u₀/β₀-ϕ)/dt
   end
+
   nlsolver.γ = β₀
   nlsolver.α = α₀
   nlsolver.method = COEFFICIENT_MULTISTEP
 
-  u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  
-  if integrator.opts.adaptive
-    if cnt == 1
-      integrator.EEst = one(integrator.EEst)
-    elseif cnt == 2
-      utilde = (u - uprev) - (udiff[1] * dt/dts[1])
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    else
-      δ = u - uprev
-      for i = 1:k
-        δ -= D[i]
-      end
-      utilde = (κ*γₖ[k] + inv(k+1)) * δ
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  u = z
+  dd = u-u₀
+  update_D!(D, dd, k)
+
+  if integrator.opts.adaptive 
+    utilde = (κ*γₖ[k]+inv(k+1))*dd
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    if k > 1
+      dd = D[:, k]
+      utildem1 = (κlist[k-1]*γₖ[k-1]+inv(k))*dd
+      atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      cache.EEst1 = integrator.opts.internalnorm(atmpm1, t)
     end
-
-    if cnt == 1
-      cache.order = 1
-    elseif cnt <= 3
-      cache.order = 2
-    else
-      errm1 = 0
-      if k > 1
-        utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
-        atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-        errm1 = integrator.opts.internalnorm(atmpm1, t)
-        cache.EEst1 = integrator.opts.internalnorm(atmpm1, t)
-      end
-      backward_diff!(cache,D,D2,k+1,false)
-      δ = u - uprev
-      for i = 1:(k+1)
-        δ -= D2[i,1]
-      end
-      utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
+    if k < max_order
+      dd = D[:, k+2]
+      utildep1 = (κlist[k+1]*γₖ[k+1]+inv(k+2))*dd
       atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      errp1 = integrator.opts.internalnorm(atmpp1, t)
       cache.EEst2 = integrator.opts.internalnorm(atmpp1, t)
-    end # cnt == 1
-  end # integrator.opts.adaptive
-  for i = 6:-1:2
-    dts[i] = dts[i-1]
-    udiff[i] = udiff[i-1]
+    end
   end
-  dts[1] = dt
-  udiff[1] = u - uprev
-  fill!(D, zero(u)); fill!(D2, zero(u))
-  fill!(R, zero(t)); fill!(U, zero(t))
-
+  if integrator.EEst <= 1.0
+    copyto!(cache.prevD, D)
+    cache.dtprev = dt
+    cache.prevorder = k
+  end
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
@@ -829,84 +779,54 @@ function initialize!(integrator, cache::QNDFCache)
   integrator.destats.nf += 1
 end
 
-function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
+function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack udiff,dts,order,max_order,D,D2,R,U,utilde,atmp,nlsolver,nconsteps = cache
-  @unpack z,tmp,ztmp = nlsolver
-  cnt = integrator.iter
+  @unpack dtprev,order,D,nlsolver,γₖ,dd,atmp,atmpm1,atmpp1,utilde,utildem1,utildep1,ϕ,u₀ = cache
+
   k = order
-  κ = integrator.alg.kappa[k]
-  γₖ = cache.γₖ
-  flag = true
-  step_success = true
-  for i in 2:k
-    if dts[i] != dts[1]
-      flag = false
-      break
-    end
+  κlist = integrator.alg.kappa
+  κ = κlist[k]
+  if cache.consfailcnt > 0
+    copyto!(D, cache.prevD)
   end
-  if cnt > k
-    if flag
-      ρ = dt/dts[1]
-      # backward diff
-      n = k+1
-      if cnt == 3
-        n = k
-      end
-      for i = 1:n
-        D2[1,i] .= udiff[i]
-      end
-      backward_diff!(cache,D,D2,k)
-      if ρ != 1
-        U!(k,U)
-        R!(k,ρ,cache)
-        mul!(cache.tmp,R,U)
-        reinterpolate_history!(cache,D,cache.tmp,k)
-      end
-    else
-      n = k+1
-      if cnt == 3
-        n = k
-      end
-      for i = 1:n
-        @.. D2[1,i] = udiff[i] * dt/dts[i]
-      end
-      backward_diff!(cache,D,D2,k)
-    end
-  else
-    κ = zero(integrator.alg.kappa[k])
-    for i = 1:k
-      γₖ[i] = 1//1
-    end
+  if dt != dtprev || cache.prevorder != k
+    ρ = dt/dtprev
+    integrator.cache.nconsteps = 0
+    @unpack RU, U, Dtmp = cache
+    R = calc_R(ρ, k, Val(max_order))
+    copyto!(RU, R * U)
+    @views mul!(Dtmp[:, 1:k], D[:, 1:k], RU[1:k, 1:k])
+    D, Dtmp = Dtmp, D
+    @pack! cache = D, Dtmp
   end
-  β₀ = inv((1-κ)*γₖ[k])
+
   α₀ = 1
-
-  # precalculations
-  ϕ = fill!(utilde, zero(eltype(u)))
-  for i = 1:k
-    @. ϕ += γₖ[i]*D[i]
+  β₀ = inv((1-κ)*γₖ[k])
+  # D[:, j] contains scaled j-th derivative approximation. 
+  # Thus, it’s likely that ||D[:, j+1]|| <= ||D[:, j]|| holds，
+  # we want to sum small numbers first to minimize the accumulation error.
+  # Hence, we sum it backwards.
+  @inbounds for i in 1:length(u₀)
+    s = D[i,k]
+    @simd for j in k-1:-1:1
+      s += D[i,j]
+    end
+    u₀[i] = s + uprev[i]
   end
-  lmul!(β₀,ϕ)
-  tm = fill!(ztmp, zero(eltype(u)))
+  @.. ϕ = zero(u)
   for i = 1:k
-    @. tm += D[i]
+    @views @.. ϕ += γₖ[i] * D[:, i]
   end
-
   markfirststage!(nlsolver)
-  # initial guess
-  @.. nlsolver.z = uprev + tm
-
+  @.. nlsolver.z = u₀
   mass_matrix = f.mass_matrix
-  
-  if mass_matrix === I
-    @.. tmp = (uprev + tm - ϕ)/ (dt * β₀)
-    
+
+  if mass_matrix == I
+    @.. nlsolver.tmp = (u₀/β₀-ϕ)/dt
   else
-    dz = nlsolver.cache.dz
-    @.. dz = uprev + tm - ϕ
-    mul!(ztmp, mass_matrix, dz)
-    @.. tmp = ztmp / (dt * β₀)
+    @unpack tmp2 = cache
+    @.. tmp2 = (u₀/β₀-ϕ)/dt
+    mul!(nlsolver.tmp, mass_matrix, tmp2)
   end
 
   nlsolver.γ = β₀
@@ -916,60 +836,33 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = z
-
-
-  if integrator.opts.adaptive
-    if cnt == 1
-      integrator.EEst = one(integrator.EEst)
-    elseif cnt == 2
-      @.. utilde = (u - uprev) - (udiff[1] * dt/dts[1])
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    else
-      @.. tmp = u - uprev
-      for i = 1:k
-        @. tmp -= D[i]
-      end
-      @.. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    end
-
+  @.. dd = u-u₀ 
+  update_D!(D, dd, k)
+  if integrator.opts.adaptive 
+    @.. utilde = (κ*γₖ[k]+inv(k+1))*dd
+    calculate_residuals!(atmp,utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
     if k > 1
-      @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      cache.EEst1 = integrator.opts.internalnorm(atmp,t)
+      @.. dd = D[:,k]
+      @.. utildem1 = (κlist[k-1]*γₖ[k-1]+inv(k))*dd
+      calculate_residuals!(atmpm1, utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      cache.EEst1 = integrator.opts.internalnorm(atmpm1, t)
     end
-    backward_diff!(cache,D,D2,k+1,false)
-    @.. tmp = u - uprev
-    for i = 1:(k+1)
-      @. tmp -= D2[i,1]
+    if k < max_order
+      @.. dd = D[:,k+2]
+      @.. utildep1 = (κlist[k+1]*γₖ[k+1]+inv(k+2))*dd
+      calculate_residuals!(atmpp1, utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      cache.EEst2 = integrator.opts.internalnorm(atmpp1, t)
     end
-    @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-    cache.EEst2 = integrator.opts.internalnorm(atmp,t)
-    # cnt == 1
-  end # integrator.opts.adaptive
-
-  swap_tmp = udiff[6]
-  for i = 6:-1:2
-    dts[i] = dts[i-1]
-    udiff[i] = udiff[i-1]
   end
-  udiff[1] = swap_tmp
-  dts[1] = dt
-  @.. udiff[1] = u - uprev
-  for i = 1:5
-    fill!(D[i], zero(eltype(u)))
+  if integrator.EEst <= 1.0
+    copyto!(cache.prevD, D)
+    cache.dtprev = dt
+    cache.prevorder = k
   end
-  for i = 1:6, j = 1:6
-    fill!(D2[i,j], zero(eltype(u)))
-  end
-  fill!(R, zero(t)); fill!(U, zero(t))
-
   f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
-
+  return nothing
 end
 
 ### MEBDF2
