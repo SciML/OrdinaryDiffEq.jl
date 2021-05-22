@@ -328,7 +328,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   #Changing uprev2 after D Array has changed with step-size
   uprev2 = uprev-D[1]
 
-  β₀ = 1 
+  β₀ = 1
   α₀ = 1-κ
   α₁ = 1-2*κ
   α₂ = κ
@@ -354,7 +354,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   u = nlsolve!(nlsolver, integrator, cache, repeat_step)
 
   nlsolvefail(nlsolver) && return
-  if integrator.opts.adaptive 
+  if integrator.opts.adaptive
     if integrator.success_iter == 0
       integrator.EEst = one(integrator.EEst)
     else
@@ -411,8 +411,8 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
 
   #Changing uprev2 after D Array has changed with step-size
   uprev2 = uprev - D[1]
-    
-  β₀ = 1 
+
+  β₀ = 1
   α₀ = 1-κ
   α₁ = 1-2*κ
   α₂ = κ
@@ -739,7 +739,7 @@ function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_ste
   dd = u-u₀
   update_D!(D, dd, k)
 
-  if integrator.opts.adaptive 
+  if integrator.opts.adaptive
     utilde = (κ*γₖ[k]+inv(k+1))*dd
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -802,7 +802,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
 
   α₀ = 1
   β₀ = inv((1-κ)*γₖ[k])
-  # D[:, j] contains scaled j-th derivative approximation. 
+  # D[:, j] contains scaled j-th derivative approximation.
   # Thus, it’s likely that ||D[:, j+1]|| <= ||D[:, j]|| holds，
   # we want to sum small numbers first to minimize the accumulation error.
   # Hence, we sum it backwards.
@@ -836,26 +836,24 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
   @.. u = z
-  @.. dd = u-u₀ 
+  @.. dd = u-u₀
   update_D!(D, dd, k)
-  if integrator.opts.adaptive 
-    @.. utilde = (κ*γₖ[k]+inv(k+1))*dd
-    calculate_residuals!(atmp,utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  if integrator.opts.adaptive
+    @unpack abstol, reltol, internalnorm = integrator.opts
+    calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
+    integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
     if k > 1
-      @.. dd = D[:,k]
-      @.. utildem1 = (κlist[k-1]*γₖ[k-1]+inv(k))*dd
-      calculate_residuals!(atmpm1, utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      cache.EEst1 = integrator.opts.internalnorm(atmpm1, t)
+      @views Dk = D[:, k]
+      calculate_residuals!(atmpm1, Dk, _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
+      cache.EEst1 = error_constant(integrator, k-1) * internalnorm(atmpm1, t)
     end
     if k < max_order
-      @.. dd = D[:,k+2]
-      @.. utildep1 = (κlist[k+1]*γₖ[k+1]+inv(k+2))*dd
-      calculate_residuals!(atmpp1, utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      cache.EEst2 = integrator.opts.internalnorm(atmpp1, t)
+      @views Dk2 = D[:, k+2]
+      calculate_residuals!(atmpp1, Dk2, _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
+      cache.EEst2 = error_constant(integrator, k+1) * internalnorm(atmpp1, t)
     end
   end
-  if integrator.EEst <= 1.0
+  if integrator.EEst <= one(integrator.EEst)
     copyto!(cache.prevD, D)
     cache.dtprev = dt
     cache.prevorder = k
