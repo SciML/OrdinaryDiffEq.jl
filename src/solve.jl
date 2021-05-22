@@ -265,7 +265,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     sizehint!(ks,2)
   end
 
-  QT = if tTypeNoUnits <: Integer
+  QT = if tTypeNoUnits <: Union{Integer,AbstractFloat}
     typeof(qmin)
   elseif prob isa DiscreteProblem
     # The QT fields are not used for DiscreteProblems
