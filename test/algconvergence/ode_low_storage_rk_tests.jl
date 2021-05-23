@@ -1123,9 +1123,9 @@ end
     @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
   # test whether aliasing u0 is bad
   new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
   sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
@@ -1135,24 +1135,25 @@ end
 
 @testset "RDPK3Sp49" begin
   alg = RDPK3Sp49()
-  dts = 1 ./ 2 .^(7:-1:3)
+  dts = 1 ./ 2 .^(5:-1:2)
   for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     # higher order as pure quadrature
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
   end
   for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
     @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
+  dts = 1 ./ 2 .^(8:-1:2)
   for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
   # test whether aliasing u0 is bad
   new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
   sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
@@ -1162,28 +1163,23 @@ end
 
 @testset "RDPK3Sp510" begin
   alg = RDPK3Sp510()
-  dts = 1 ./ 2 .^(7:-1:3)
+  dts = 1 ./ 2 .^(4.5:-1:1.5)
   for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    # higher order as pure quadrature
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
-  for (i, prob) in enumerate(test_problems_linear)
+  for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    if i in (1, 2)
-      @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
-    else
-      @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
-    end
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
   # test whether aliasing u0 is bad
   new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
   sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
@@ -1208,9 +1204,9 @@ end
     @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
   # test whether aliasing u0 is bad
   new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
   sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
@@ -1220,24 +1216,25 @@ end
 
 @testset "RDPK3SpFSAL49" begin
   alg = RDPK3SpFSAL49()
-  dts = 1 ./ 2 .^(7:-1:3)
+  dts = 1 ./ 2 .^(5:-1:2)
   for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     # higher order as pure quadrature
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
   end
   for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
     @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
+  dts = 1 ./ 2 .^(8:-1:2)
   for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
   # test whether aliasing u0 is bad
   new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
   sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
@@ -1247,24 +1244,23 @@ end
 
 @testset "RDPK3SpFSAL510" begin
   alg = RDPK3SpFSAL510()
-  dts = 1 ./ 2 .^(7:-1:3)
+  dts = 1 ./ 2 .^(4.5:-1:1.5)
   for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    # higher order as pure quadrature
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test_skip sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
   end
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
   integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
-  @test_broken Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+  @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
   # test whether aliasing u0 is bad
   new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
   sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)

@@ -1522,7 +1522,11 @@ function alg_cache(alg::RDPK3Sp35,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   end
   utilde = zero(u)
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  if eltype(u) === uEltypeNoUnits
+    atmp = utilde # alias the vectors to save memory
+  else
+    atmp = similar(u,uEltypeNoUnits)
+  end
   tab = RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
 end
@@ -1634,7 +1638,11 @@ function alg_cache(alg::RDPK3Sp49,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   end
   utilde = zero(u)
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  if eltype(u) === uEltypeNoUnits
+    atmp = utilde # alias the vectors to save memory
+  else
+    atmp = similar(u,uEltypeNoUnits)
+  end
   tab = RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
 end
@@ -1754,7 +1762,11 @@ function alg_cache(alg::RDPK3Sp510,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   end
   utilde = zero(u)
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  if eltype(u) === uEltypeNoUnits
+    atmp = utilde # alias the vectors to save memory
+  else
+    atmp = similar(u,uEltypeNoUnits)
+  end
   tab = RDPK3Sp510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
 end
@@ -1867,7 +1879,11 @@ function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,uEltypeNoUnits,uBottomElt
   end
   utilde = zero(u)
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  if eltype(u) === uEltypeNoUnits
+    atmp = utilde # alias the vectors to save memory
+  else
+    atmp = similar(u,uEltypeNoUnits)
+  end
   tab = RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
 end
@@ -1980,7 +1996,11 @@ function alg_cache(alg::RDPK3SpFSAL49,u,rate_prototype,uEltypeNoUnits,uBottomElt
   end
   utilde = zero(u)
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  if eltype(u) === uEltypeNoUnits
+    atmp = utilde # alias the vectors to save memory
+  else
+    atmp = similar(u,uEltypeNoUnits)
+  end
   tab = RDPK3SpFSAL49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
 end
@@ -2101,7 +2121,11 @@ function alg_cache(alg::RDPK3SpFSAL510,u,rate_prototype,uEltypeNoUnits,uBottomEl
   end
   utilde = zero(u)
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  if eltype(u) === uEltypeNoUnits
+    atmp = utilde # alias the vectors to save memory
+  else
+    atmp = similar(u,uEltypeNoUnits)
+  end
   tab = RDPK3SpFSAL510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab)
 end
