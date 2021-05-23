@@ -127,13 +127,13 @@ end
   @unpack qold = integrator
   @unpack qmin, qmax, gamma = integrator.opts
   @unpack beta1, beta2 = controller
-  EEst = DiffEqBase.value(integrator.EEst)
+  EEst = integrator.EEst
 
   if iszero(EEst)
     q = inv(qmax)
   else
     q11 = DiffEqBase.fastpow(EEst, beta1)
-    q = q11 / DiffEqBase.fastpow(qold, beta2)
+    q = DiffEqBase.value(q11 / DiffEqBase.fastpow(qold, beta2))
     integrator.q11 = q11
     @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
   end
