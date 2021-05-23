@@ -271,7 +271,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     # The QT fields are not used for DiscreteProblems
     constvalue(tTypeNoUnits)
   else
-    typeof(DiffEqBase.value(internalnorm(u, t)))
+    typeof(internalnorm(u, t))
   end
 
   k = rateType[]
@@ -308,7 +308,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   end
 
   if controller === nothing
-    controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    controller = default_controller(_alg, cache, convert(QT,qoldinit), beta1, beta2)
   end
 
 
