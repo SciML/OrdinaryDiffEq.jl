@@ -273,7 +273,7 @@ function alg_cache(alg::QNDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   γ, c = one(eltype(alg.kappa)), 1
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   dtprev = one(dt)
-  D = similar(u, uEltypeNoUnits, length(u), max_order+2)
+  D = Matrix{uEltypeNoUnits}(undef, length(u), max_order+2)
   fill!(D, zero(uEltypeNoUnits))
   prevD = similar(D)
   fill!(prevD, zero(uEltypeNoUnits))

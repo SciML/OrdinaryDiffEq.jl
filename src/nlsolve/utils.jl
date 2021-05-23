@@ -125,6 +125,8 @@ end
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
                         f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                         γ,c,α,::Val{true})
+  #TODO
+  #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
   isdae = alg isa DAEAlgorithm
@@ -196,6 +198,8 @@ end
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
                         f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                         γ,c,α,::Val{false})
+  #TODO
+  #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
   # define unitless type
   uTolType = real(uBottomEltypeNoUnits)
   isdae = alg isa DAEAlgorithm
