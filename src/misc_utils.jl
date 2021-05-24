@@ -54,3 +54,28 @@ function diffdir(integrator::DiffEqBase.DEIntegrator)
           integrator.t > integrator.sol.prob.tspan[2] - difference ? -true :  true :
           integrator.t < integrator.sol.prob.tspan[2] + difference ?  true : -true
 end
+
+abstract type AbstractThreadingOption end
+struct Sequential <: AbstractThreadingOption end
+struct BaseThreads <: AbstractThreadingOption end
+struct PolyesterThreads <: AbstractThreadingOption end
+
+isthreaded(b::Bool) = b
+isthreaded(::Sequential) = false
+isthreaded(::BaseThreads) = true
+isthreaded(::PolyesterThreads) = true
+
+macro threaded(option, ex)
+  quote
+    opt = $(esc(option))
+    if (opt === BaseThreads()) || ((opt isa Bool) && opt)
+      $(esc(:(Threads.@threads $ex)))
+    elseif opt === PolyesterThreads()
+      $(esc(:(Polyester.@batch $ex)))
+    else
+      $(esc(ex))
+    end
+  end
+end
+
+

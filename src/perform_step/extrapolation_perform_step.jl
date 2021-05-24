@@ -20,7 +20,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
 
   max_order = min(size(T, 1), cur_order + 1)
 
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 1:max_order
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
@@ -40,7 +40,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       # Balance workload of threads by computing T[1,1] with T[max_order,1] on
       # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
       # first column of T matrix
-      Threads.@threads for i in 1:2
+      @threaded integrator.alg.threading for i in 1:2
         startIndex = (i == 1) ? 1 : max_order
         endIndex = (i == 1) ? max_order - 1 : max_order
         for index in startIndex:endIndex
@@ -132,7 +132,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
 
   max_order = min(size(T, 1), cur_order + 1)
 
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 1:max_order
       dt_temp = dt/(2^(i-1)) # Romberg sequence
 
@@ -153,7 +153,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       # Balance workload of threads by computing T[1,1] with T[max_order,1] on
       # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
       # first column of T matrix
-      Threads.@threads for i in 1:2
+      @threaded integrator.alg.threading for i in 1:2
         startIndex = (i == 1) ? 1 : max_order
         endIndex = (i == 1) ? max_order - 1 : max_order
 
@@ -269,7 +269,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     n_curr = win_min # Start with smallest order in the order window
   end
 
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     for index in 1:n_curr + 1
       dt_temp = dt/sequence[index]
@@ -308,7 +308,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     let n_curr=n_curr, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
         integrator=integrator, cache=cache, repeat_step = repeat_step,
         k_tmps=k_tmps, u_tmps=u_tmps, u_tmps2=u_tmps2,diff1=diff1,diff2=diff2
-      Threads.@threads for i in 1:2
+      @threaded integrator.alg.threading for i in 1:2
         startIndex = (i == 1) ? 1 : n_curr + 1
         endIndex = (i == 1) ? n_curr : n_curr + 1
         for index in startIndex:endIndex
@@ -464,7 +464,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
   end
 
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for index in 1:n_curr + 1
       dt_temp = dt/sequence[index]
       W = dt_temp*J - integrator.f.mass_matrix
@@ -498,7 +498,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
     J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     let n_curr=n_curr, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
       uprev=uprev, T=T
-      Threads.@threads for i in 1:2
+      @threaded integrator.alg.threading for i in 1:2
         startIndex = (i==1) ? 1 : n_curr + 1
         endIndex = (i==1) ? n_curr : n_curr + 1
         for index in startIndex:endIndex
@@ -663,7 +663,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   end
 
   #Compute the internal discretisations
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -686,7 +686,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index = startIndex : endIndex
@@ -706,7 +706,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr - i)
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -862,7 +862,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   end
 
   # Compute the internal discretisations
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i = 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -884,7 +884,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
           integrator=integrator,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index = startIndex : endIndex
@@ -903,7 +903,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
     else
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
               p=p, t=t, T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr - i)
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -1026,7 +1026,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1069,7 +1069,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1109,7 +1109,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = 4 * subdividing_sequence[index+1]
@@ -1292,7 +1292,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
 
   # Compute the internal discretisations
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1326,7 +1326,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp2=u_temp2,
           u_temp2=u_temp2,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1360,7 +1360,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
         integrator=integrator,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int = 4 * subdividing_sequence[index+1]
@@ -1500,7 +1500,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   end
 
   #Compute the internal discretisations
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1523,7 +1523,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1544,7 +1544,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -1698,7 +1698,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   end
 
   #Compute the internal discretisations
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
      j_int = sequence_factor * subdividing_sequence[i+1]
      dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1720,7 +1720,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
           integrator=integrator, T=T, p=p, t=t
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index in startIndex:endIndex
@@ -1739,7 +1739,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     else
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
           integrator=integrator, T=T, p=p, t=t
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -1862,7 +1862,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
 
   #Compute the internal discretisations
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1900,7 +1900,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp2=u_temp2,
           u_temp2=u_temp2,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1938,7 +1938,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
         integrator=integrator,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int = 4 * subdividing_sequence[index+1]
@@ -2085,7 +2085,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -2133,7 +2133,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2177,7 +2177,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = 4 * subdividing_sequence[index+1]
@@ -2375,7 +2375,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
   #Compute the internal discretisations
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -2413,7 +2413,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp2=u_temp2,
           u_temp2=u_temp2,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2451,7 +2451,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
         integrator=integrator,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int = sequence_factor * subdividing_sequence[index+1]
@@ -2599,7 +2599,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !integrator.alg.threading
+  if !isthreaded(integrator.alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -2647,7 +2647,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i = 1 : 2
+        @threaded integrator.alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2691,7 +2691,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i in 0:(n_curr ÷ 2)
+        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
