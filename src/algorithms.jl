@@ -93,7 +93,7 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
         :$(sequence) --> :bulirsch"
       sequence = :bulirsch
     end
-    ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(threading),typeof(diff_type)}(
+    ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),typeof(threading)}(
       linsolve,n_max,n_min,n_init,threading,diff_type,sequence)
 end
 
