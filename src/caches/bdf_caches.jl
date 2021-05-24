@@ -336,7 +336,7 @@ function alg_cache(alg::QNDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   u₀ = zero(u)
   dtprev = one(dt)
   u₀ = zero(u)
-  D = similar(u, length(u), max_order + 2)
+  D = similar(u, uEltypeNoUnits, length(u), max_order + 2)
   fill!(D, zero(uEltypeNoUnits))
   Dtmp = similar(D)
   fill!(Dtmp, zero(uEltypeNoUnits))
