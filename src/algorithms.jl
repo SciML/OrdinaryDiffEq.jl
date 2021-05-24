@@ -50,25 +50,25 @@ ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 @inline trivial_limiter!(u, f, p, t) = nothing
 
 struct Euler <: OrdinaryDiffEqAlgorithm end
-struct KuttaPRK2p5 <: OrdinaryDiffEqAlgorithm
-  threading::Bool
+struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
+  threading::TO
 end
 KuttaPRK2p5(;threading=true) = KuttaPRK2p5(threading)
 
-struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   max_order::Int
   min_order::Int
   init_order::Int
-  threading::Bool
+  threading::TO
 end
 AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
 
-struct ImplicitEulerExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+struct ImplicitEulerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_max::Int
   n_min::Int
   n_init::Int
-  threading::Bool
+  threading::TO
   diff_type::FDT
   sequence::Symbol # Name of the subdividing sequence
 end
@@ -93,16 +93,16 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
         :$(sequence) --> :bulirsch"
       sequence = :bulirsch
     end
-    ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(
+    ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),typeof(threading)}(
       linsolve,n_max,n_min,n_init,threading,diff_type,sequence)
 end
 
-struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+struct ExtrapolationMidpointDeuflhard{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
-  threading::Bool
+  threading::TO
   sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
 function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10, sequence = :harmonic, threading = true, sequence_factor = 2)
@@ -141,14 +141,14 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
   ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
 
-struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
   diff_type::FDT
-  threading::Bool
+  threading::TO
 end
 function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
@@ -178,15 +178,15 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
 
   # Initialize algorithm
   ImplicitDeuflhardExtrapolation{chunk_size, autodiff,
-      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,sequence,diff_type,threading)
+      typeof(linsolve), typeof(diff_type), typeof(threading)}(linsolve,n_min,n_init,n_max,sequence,diff_type,threading)
 end
 
-struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+struct ExtrapolationMidpointHairerWanner{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
-  threading::Bool
+  threading::TO
   sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
 function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic, threading = true, sequence_factor = 2)
@@ -226,14 +226,14 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
 
-struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
   diff_type::FDT
-  threading::Bool
+  threading::TO
 end
 function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
@@ -264,18 +264,18 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
 
   # Initialize algorithm
   ImplicitHairerWannerExtrapolation{chunk_size, autodiff,
-      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,
+      typeof(linsolve), typeof(diff_type), typeof(threading)}(linsolve,n_min,n_init,n_max,
       sequence,diff_type,threading)
 end
 
-struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
   diff_type::FDT
-  threading::Bool
+  threading::TO
   sequence_factor::Int
 end
 function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
@@ -307,7 +307,7 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
 
   # Initialize algorithm
   ImplicitEulerBarycentricExtrapolation{chunk_size, autodiff,
-      typeof(linsolve), typeof(diff_type)}(linsolve,n_min,n_init,n_max,
+      typeof(linsolve), typeof(diff_type), typeof(threading)}(linsolve,n_min,n_init,n_max,
       sequence,diff_type,threading,sequence_factor)
 end
 
@@ -2418,17 +2418,17 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 #################################################
 
-struct PDIRK44{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+struct PDIRK44{CS,AD,F,F2,FDT,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
   diff_type::FDT
   extrapolant::Symbol
-  threading::Bool
+  threading::TO
 end
 PDIRK44(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:constant,threading=true) =
-                      PDIRK44{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                      PDIRK44{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),typeof(threading)}(
                       linsolve,nlsolve,diff_type,extrapolant,threading)
 ### Algorithm Groups
 
