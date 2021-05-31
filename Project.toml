@@ -62,11 +62,13 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PoissonRandom = "e409e4f3-bfea-5376-8464-e040bb5c01ab"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Calculus", "DelayDiffEq", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqOperators", "DiffEqProblemLibrary", "DiffEqSensitivity", "ElasticArrays", "InteractiveUtils", "PoissonRandom", "Printf", "Random", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "ModelingToolkit", "Pkg"]
+test = ["Calculus", "DelayDiffEq", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqOperators", "DiffEqProblemLibrary", "DiffEqSensitivity", "ElasticArrays", "InteractiveUtils", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "Zygote", "ModelingToolkit", "Pkg"]
