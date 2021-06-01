@@ -75,7 +75,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},IIP,uType,duType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType,CallbackCacheType,IA} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
+mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},IIP,uType,duType,tType,pType,eigenType,EEstT,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType,CallbackCacheType,IA} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
   sol::SolType
   u::uType
   du::duType
@@ -94,7 +94,7 @@ mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm
   dtpropose::tType
   tdir::tdirType
   eigen_est::eigenType
-  EEst::QT
+  EEst::EEstT
   qold::QT
   q11::QT
   erracc::QT
@@ -125,7 +125,7 @@ mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm
   fsalfirst::FSALType
   fsallast::FSALType
 
-  function ODEIntegrator{algType,IIP,uType,duType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+  function ODEIntegrator{algType,IIP,uType,duType,tType,pType,eigenType,EEstT,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,CacheType,O,FSALType,EventErrorType,CallbackCacheType,InitializeAlgType}(
                 sol,u,du,k,t,dt,f,p,uprev,uprev2,duprev,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
@@ -136,12 +136,12 @@ mutable struct ODEIntegrator{algType<:Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm
       event_last_time,vector_event_last_time,last_event_error,
       accept_step,isout,reeval_fsal,u_modified,reinitialize,isdae,
       opts,destats,initializealg) where {algType,IIP,uType,duType,tType,pType,
-                                         eigenType,tTypeNoUnits,tdirType,
+                                         eigenType,EEstT,tTypeNoUnits,tdirType,
                                          ksEltype,SolType,F,CacheType,O,
                                          FSALType,EventErrorType,
                                          CallbackCacheType,InitializeAlgType}
 
-      new{algType,IIP,uType,duType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+      new{algType,IIP,uType,duType,tType,pType,eigenType,EEstT,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,CacheType,O,FSALType,EventErrorType,CallbackCacheType,InitializeAlgType}(
                   sol,u,du,k,t,dt,f,p,uprev,uprev2,duprev,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
