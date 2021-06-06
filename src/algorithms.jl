@@ -2023,6 +2023,9 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
   year={1999},
   publisher={Elsevier}
 }
+
+RadauIIA3: Fully-Implicit Runge-Kutta Method
+  An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
 struct RadauIIA3{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2055,6 +2058,9 @@ RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={1999},
   publisher={Elsevier}
 }
+
+RadauIIA5: Fully-Implicit Runge-Kutta Method
+   An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
 struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
