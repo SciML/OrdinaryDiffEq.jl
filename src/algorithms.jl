@@ -202,7 +202,10 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
   ImplicitDeuflhardExtrapolation{chunk_size, autodiff,
       typeof(linsolve), typeof(diff_type), typeof(threading)}(linsolve,n_min,n_init,n_max,sequence,diff_type,threading)
 end
-
+"""
+ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
+  Midpoint extrapolation using Barycentric coordinates, following Hairer's ODEX in the adaptivity behavior.
+"""
 struct ExtrapolationMidpointHairerWanner{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
@@ -247,7 +250,10 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   # Initialize algorithm
   ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
-
+"""
+ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
+  Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
+"""
 struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
@@ -338,7 +344,14 @@ Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dis
 Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006.
 doi: https://doi.org/10.1016/j.compfluid.2005.04.003
 """
+"""
+RK46NL: 6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
+        Fixed timestep only.
+"""
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
+"""
+Heun: 2nd order Heun's method
+"""
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
