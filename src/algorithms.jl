@@ -377,8 +377,18 @@ struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
   publisher={Elsevier}
 }
 """
+"""
+RK4: Explicit Runge-Kutta Method
+  The canonical Runge-Kutta Order 4 method.
+  Uses a defect control for adaptive stepping using maximum error over the whole interval.
+"""
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RKM <: OrdinaryDiffEqAlgorithm end
+"""
+Anas5: Explicit Runge-Kutta Method
+  4th order Runge-Kutta method designed for periodic problems.
+  Requires a periodicity estimate which when accurate the method becomes 5th order (and is otherwise 4th order with less error for better estimates).
+"""
 struct Anas5{T} <: OrdinaryDiffEqAlgorithm
   w::T
 end
@@ -388,6 +398,10 @@ Anas5(; w=1) = Anas5(w)
 Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
 Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
 228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
+"""
+"""
+ORK256: Low-Storage Method
+  5-stage, second order low-storage method for wave propogation equations. Fixed timestep only.
 """
 struct ORK256{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
