@@ -2085,7 +2085,11 @@ RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 ################################################################################
 
 # SDIRK Methods
-
+"""
+ImplicitEuler: SDIRK Method
+  A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
+  Strong-stability preserving (SSP).
+"""
 struct ImplicitEuler{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -2100,7 +2104,11 @@ ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),typeof(diff_type)}(linsolve,
                           nlsolve,diff_type,extrapolant,controller)
-
+"""
+ImplicitMidpoint: SDIRK Method
+  A second order A-stable symplectic and symmetric implicit solver.
+  Good for highly stiff equations which need symplectic integration.
+"""
 struct ImplicitMidpoint{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -2116,6 +2124,11 @@ ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 """
 Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
   NY, USA.
+
+Trapezoid: SDIRK Method
+  A second order A-stable symmetric ESDIRK method.
+  "Almost symplectic" without numerical dampening.
+   Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
 """
 struct Trapezoid{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2142,6 +2155,10 @@ Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={1996},
   publisher={Elsevier}
 }
+
+TRBDF2: SDIRK Method
+  A second order A-B-L-S-stable one-step ESDIRK method.
+  Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
 """
 struct TRBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2169,6 +2186,9 @@ TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
   year={2005},
   publisher={ACM}
 }
+
+SDIRK2: SDIRK Method
+   An A-B-L stable 2nd order SDIRK method
 """
 struct SDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2226,6 +2246,9 @@ SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2004},
   publisher={Springer}
 }
+
+Kvaerno3: SDIRK Method
+  An A-L stable stiffly-accurate 3rd order ESDIRK method
 """
 struct Kvaerno3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2249,6 +2272,9 @@ Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2001},
   publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
+
+KenCarp3: SDIRK Method
+  An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting
 """
 struct KenCarp3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2288,6 +2314,9 @@ CFNLIRK3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2005},
   publisher={ACM}
 }
+
+Cash4: SDIRK Method
+  An A-L stable 4th order SDIRK method
 """
 struct Cash4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2373,6 +2402,9 @@ SFSDIRK8(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.),
   Springer (1996)
+
+Hairer4: SDIRK Method
+  An A-L stable 4th order SDIRK method
 """
 struct Hairer4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2393,6 +2425,9 @@ Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.),
   Springer (1996)
+
+Hairer42: SDIRK Method
+  An A-L stable 4th order SDIRK method
 """
 struct Hairer42{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2420,6 +2455,9 @@ Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2004},
   publisher={Springer}
 }
+
+Kvaerno4: SDIRK Method
+  An A-L stable stiffly-accurate 4th order ESDIRK metho
 """
 struct Kvaerno4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2447,6 +2485,9 @@ Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2004},
   publisher={Springer}
 }
+
+Kvaerno5: SDIRK Method
+  An A-L stable stiffly-accurate 5th order ESDIRK method
 """
 struct Kvaerno5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2470,6 +2511,9 @@ Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2001},
   publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
+
+KenCarp4: SDIRK Method
+  An A-L stable stiffly-accurate 4th order ESDIRK method with splitting
 """
 struct KenCarp4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2485,7 +2529,10 @@ KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                    controller = :PI) =
  KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
-
+"""
+KenCarp47: SDIRK Method
+  An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting
+"""
 struct KenCarp47{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -2508,6 +2555,9 @@ KenCarp47(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2001},
   publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
+
+KenCarp5: SDIRK Method
+  An A-L stable stiffly-accurate 5th order ESDIRK method with splitting
 """
 struct KenCarp5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2523,7 +2573,10 @@ KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                    controller = :PI) =
  KenCarp5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
-
+"""
+KenCarp58: SDIRK Method
+  An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting
+"""
 struct KenCarp58{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
