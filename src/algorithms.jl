@@ -350,10 +350,19 @@ RK46NL: 6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
 """
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 """
-Heun: 2nd order Heun's method
+Heun: Explicit Runge-Kutta Method
+  The second order Heun's method. Uses embedded Euler method for adaptivity.
 """
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
+"""
+Ralston: Explicit Runge-Kutta Method
+  The optimized second order midpoint method. Uses embedded Euler method for adaptivity.
+"""
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
+"""
+Midpoint: Explicit Runge-Kutta Method
+  The second order midpoint method. Uses embedded Euler method for adaptivity.
+"""
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
