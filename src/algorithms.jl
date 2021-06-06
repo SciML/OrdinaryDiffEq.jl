@@ -495,6 +495,11 @@ end
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+DGLDDRK84_F: Low-Storage Method
+  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
+  Optimized for PDE discretizations when the maximum spatial step size is not constrained.
+  Fixed timestep only.
 """
 struct DGLDDRK84_F{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -507,6 +512,10 @@ end
 Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+NDBLSRK124: Low-Storage Method
+  12-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
+  Fixed timestep only.
 """
 struct NDBLSRK124{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -519,6 +528,10 @@ end
 Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+NDBLSRK134: Low-Storage Method
+  13-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
+  Fixed timestep only.
 """
 struct NDBLSRK134{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -531,6 +544,10 @@ end
 Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+NDBLSRK144: Low-Storage Method
+  14-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
+  Fixed timestep only.
 """
 struct NDBLSRK144{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -543,6 +560,10 @@ end
 M. Calvo, J. M. Franco, L. Randez. A New Minimum Storage Runge–Kutta Scheme
 for Computational Acoustics. Journal of Computational Physics, 201, pp 1-12, 2004.
 doi: https://doi.org/10.1016/j.jcp.2004.05.012
+
+CFRLDDRK64: Low-Storage Method
+  6-stage, fourth order low-storage, low-dissipation, low-dispersion scheme.
+  Fixed timestep only.
 """
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 
