@@ -1916,6 +1916,10 @@ JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 """
 Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
 Numerische Mathematik, 90 (1), pp 1-18, 2001. doi: https://dx.doi.org/10.1007/s002110100292
+
+ROCK2: Stabilized Explicit Method
+  Second order stabilized Runge-Kutta method.
+  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 """
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
@@ -1928,6 +1932,10 @@ ROCK2(;min_stages=0,max_stages=200,eigen_est=nothing) = ROCK2(min_stages,max_sta
 Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
 Industrial and Applied Mathematics Journal on Scientific Computing, 23(6), pp 2041-2054, 2001.
 doi: https://doi.org/10.1137/S1064827500379549
+
+ROCK4: Stabilized Explicit Method
+  Fourth order stabilized Runge-Kutta method.
+  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 """
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
