@@ -413,6 +413,10 @@ end
   author={Carpenter, Mark H and Kennedy, Christopher A},
   year={1994}
 }
+
+CarpenterKennedy2N54: Low-Storage Method
+  The five-stage, fourth order low-storage method of Carpenter and Kennedy (free 3rd order Hermite interpolant).
+  Fixed timestep only. Designed for hyperbolic PDEs (stability properties).
 """
 struct CarpenterKennedy2N54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -438,6 +442,10 @@ struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
 """
 Deprecated SHLDDRK64 scheme from 'D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
 Computational Acoustics'
+
+HSLDDRK64: Low-Storage Method
+  6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
+  Fixed timestep only.
 """
 struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -453,6 +461,11 @@ end
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+DGLDDRK73_C: Low-Storage Method
+  7-stage, third order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
+  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
+  Fixed timestep only.
 """
 struct DGLDDRK73_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -465,6 +478,11 @@ end
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+DGLDDRK84_C: Low-Storage Method
+  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
+  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
+  Fixed timestep only.
 """
 struct DGLDDRK84_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
