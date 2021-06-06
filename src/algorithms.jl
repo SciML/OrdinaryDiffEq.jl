@@ -1677,6 +1677,9 @@ struct ABM54 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCAB3: Adaptive step size Adams explicit Method
+  The 3rd order Adams method. Bogacki-Shampine 3/2 method is used to calculate starting values. 
 """
 struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1684,6 +1687,9 @@ struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCAB4: Adaptive step size Adams explicit Method
+  The 4th order Adams method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1691,6 +1697,9 @@ struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCAB5: Adaptive step size Adams explicit Method
+  The 5th order Adams method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1698,6 +1707,9 @@ struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM3: Adaptive step size Adams explicit Method
+  The 3rd order Adams-Moulton method. Bogacki-Shampine 3/2 method is used to calculate starting values.
 """
 struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1705,6 +1717,9 @@ struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM4: Adaptive step size Adams explicit Method
+  The 4th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1712,6 +1727,9 @@ struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM5: Adaptive step size Adams explicit Method
+   The 5th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1721,6 +1739,10 @@ struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM: Adaptive step size Adams explicit Method
+  An adaptive order adaptive time Adams Moulton method.
+  It uses an order adaptivity algorithm is derived from Shampine's DDEABM.
 """
 struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
