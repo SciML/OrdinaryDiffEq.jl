@@ -1679,7 +1679,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCAB3: Adaptive step size Adams explicit Method
-  The 3rd order Adams method. Bogacki-Shampine 3/2 method is used to calculate starting values. 
+  The 3rd order Adams method. Bogacki-Shampine 3/2 method is used to calculate starting values.
 """
 struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1772,6 +1772,11 @@ CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       CNLF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                       linsolve,nlsolve,diff_type,extrapolant)
 
+"""
+QNDF1: Multistep Method
+  An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+  Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
+"""
 struct QNDF1{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1790,6 +1795,10 @@ QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
 
+"""
+QNDF1: Multistep Method
+  An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+"""
 struct QNDF2{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1808,7 +1817,11 @@ QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
 
-
+"""
+QNDF: Multistep Method
+  An adaptive order quasi-constant timestep NDF method.
+  Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
+"""
 struct QNDF{MO,CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   max_order::Val{MO}
   linsolve::F
