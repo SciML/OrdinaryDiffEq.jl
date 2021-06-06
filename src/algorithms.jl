@@ -343,8 +343,7 @@ end
 Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion
 Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006.
 doi: https://doi.org/10.1016/j.compfluid.2005.04.003
-"""
-"""
+
 RK46NL: 6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
         Fixed timestep only.
 """
@@ -376,8 +375,7 @@ struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2005},
   publisher={Elsevier}
 }
-"""
-"""
+
 RK4: Explicit Runge-Kutta Method
   The canonical Runge-Kutta Order 4 method.
   Uses a defect control for adaptive stepping using maximum error over the whole interval.
@@ -398,8 +396,7 @@ Anas5(; w=1) = Anas5(w)
 Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
 Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
 228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
-"""
-"""
+
 ORK256: Low-Storage Method
   5-stage, second order low-storage method for wave propogation equations. Fixed timestep only.
 """
