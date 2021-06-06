@@ -74,7 +74,11 @@ struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   threading::TO
 end
 AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
-
+"""
+ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
+   Extrapolation of implicit Euler method with Romberg sequence.
+   Similar to Hairer's SEULEX.
+"""
 struct ImplicitEulerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_max::Int
@@ -108,7 +112,10 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
     ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),typeof(threading)}(
       linsolve,n_max,n_min,n_init,threading,diff_type,sequence)
 end
-
+"""
+ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
+   Midpoint extrapolation using Barycentric coordinates
+"""
 struct ExtrapolationMidpointDeuflhard{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
@@ -152,7 +159,10 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
   # Initialize algorithm
   ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
-
+"""
+ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
+   Midpoint extrapolation using Barycentric coordinates
+"""
 struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
