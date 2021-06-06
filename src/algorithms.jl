@@ -1259,11 +1259,20 @@ struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   Vern9(;lazy=true) = new(lazy)
 end
+"""
+FRK65: Explicit Runge-Kutta
+  Zero Dissipation Runge-Kutta of 6th order.
+  Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
+"""
 struct FRK65{T} <: OrdinaryDiffEqAdaptiveAlgorithm
   omega::T
   FRK65(omega=0.0) = new{typeof(omega)}(omega)
 end
-
+"""
+PFRK87: Explicit Runge-Kutta
+  Phase-fitted Runge-Kutta Runge-Kutta of 8th order.
+  Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
+"""
 struct PFRK87{T} <: OrdinaryDiffEqAdaptiveAlgorithm
   omega::T
   PFRK87(omega=0.0) = new{typeof(omega)}(omega)
