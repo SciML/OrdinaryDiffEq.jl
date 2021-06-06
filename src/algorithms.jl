@@ -1011,6 +1011,9 @@ SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_l
   year={1992},
   publisher={SIAM}
 }
+
+OwrenZen3: Explicit Runge-Kutta Method
+  Owren-Zennaro optimized interpolantion 3/2 method (free 3th order interpolant).
 """
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 """
@@ -1024,6 +1027,9 @@ struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1992},
   publisher={SIAM}
 }
+
+OwrenZen4: Explicit Runge-Kutta Method
+  Owren-Zennaro optimized interpolantion 4/3 method (free 4th order interpolant).
 """
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1038,6 +1044,9 @@ struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1992},
   publisher={SIAM}
 }
+
+OwrenZen5: Explicit Runge-Kutta Method
+  Owren-Zennaro optimized interpolantion 5/4 method (free 5th order interpolant).
 """
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1052,6 +1061,9 @@ struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1989},
   publisher={Elsevier}
 }
+
+BS3: Explicit Runge-Kutta Method
+  Bogacki-Shampine 3/2 method.
 """
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1066,6 +1078,9 @@ struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1980},
   publisher={Elsevier}
 }
+
+DP5: Explicit Runge-Kutta Method
+  Dormand-Prince's 5/4 Runge-Kutta method. (free 4th order interpolant).
 """
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1080,6 +1095,9 @@ struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2011},
   publisher={Elsevier}
 }
+
+Tsit5: Explicit Runge-Kutta Method
+   Tsitouras 5/4 Runge-Kutta method. (free 4th order interpolant).
 """
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1087,6 +1105,9 @@ struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
 Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
 Springer-Verlag.
+
+DP8: Explicit Runge-Kutta Method
+  Hairer's 8/5/3 adaption of the Dormand-Prince Runge-Kutta method. (7th order interpolant).
 """
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1094,6 +1115,12 @@ struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 Tanaka M., Muramatsu S., Yamashita S., (1992), On the Optimization of Some Nine-Stage
 Seventh-order Runge-Kutta Method, Information Processing Society of Japan,
 33 (12), pp. 1512-1526.
+
+TanYam7: Explicit Runge-Kutta Method
+  Tanaka-Yamashita 7 Runge-Kutta method.
+
+TsitPap8: Explicit Runge-Kutta Method
+  Tsitouras-Papakostas 8/7 Runge-Kutta method.
 """
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -1105,6 +1132,9 @@ struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2012},
   publisher={Neural, Parallel \\& Scientific Computations}
 }
+
+Feagin10: Explicit Runge-Kutta Method
+   Feagin's 10th-order Runge-Kutta method.
 """
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1115,12 +1145,18 @@ struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2012},
   publisher={Neural, Parallel \\& Scientific Computations}
 }
+
+Feagin12: Explicit Runge-Kutta Method
+   Feagin's 12th-order Runge-Kutta method.
 """
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
 Feagin, T., “An Explicit Runge-Kutta Method of Order Fourteen,” Numerical
 Algorithms, 2009
+
+Feagin14: Explicit Runge-Kutta Method
+   Feagin's 14th-order Runge-Kutta method.
 """
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1135,6 +1171,9 @@ struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1996},
   publisher={Elsevier}
 }
+
+BS5: Explicit Runge-Kutta Method
+  Bogacki-Shampine 5/4 Runge-Kutta method. (lazy 5th order interpolant).
 """
 struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1152,6 +1191,9 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern6: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 6/5 Runge-Kutta method. (lazy 6th order interpolant).
 """
 struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1169,6 +1211,9 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern7: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 7/6 Runge-Kutta method. (lazy 7th order interpolant).
 """
 struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1186,6 +1231,9 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern8: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 8/7 Runge-Kutta method. (lazy 8th order interpolant)
 """
 struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1203,6 +1251,9 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern9: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 9/8 Runge-Kutta method. (lazy 9th order interpolant)
 """
 struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
