@@ -48,13 +48,25 @@ end
 ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
 @inline trivial_limiter!(u, f, p, t) = nothing
-
+"""
+Euler - The canonical forward Euler method. Fixed timestep only.
+"""
 struct Euler <: OrdinaryDiffEqAlgorithm end
+"""
+KuttaPRK2p5: Parallel Explicit Runge-Kutta Method
+  A 5 parallel, 2 processor explicit Runge-Kutta method of 5th order.
+
+  These methods utilize multithreading on the f calls to parallelize the problem.
+  This requires that simultaneous calls to f are thread-safe.
+"""
 struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
   threading::TO
 end
 KuttaPRK2p5(;threading=true) = KuttaPRK2p5(threading)
-
+"""
+AitkenNeville: Parallelized Explicit Extrapolation Method
+   Euler extrapolation using Aitken-Neville with the Romberg Sequence.
+"""
 struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   max_order::Int
   min_order::Int
