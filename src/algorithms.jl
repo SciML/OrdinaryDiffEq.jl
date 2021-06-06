@@ -1611,6 +1611,9 @@ struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+AB3: Adams-Bashforth Explicit Method
+  The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
 """
 struct AB3 <: OrdinaryDiffEqAlgorithm end
 
@@ -1618,6 +1621,9 @@ struct AB3 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+AB4: Adams-Bashforth Explicit Method
+  The 4-step fourth order multistep method. Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct AB4 <: OrdinaryDiffEqAlgorithm end
 
@@ -1625,6 +1631,9 @@ struct AB4 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+AB5: Adams-Bashforth Explicit Method
+  The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
 """
 struct AB5 <: OrdinaryDiffEqAlgorithm end
 
@@ -1632,6 +1641,10 @@ struct AB5 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+ABM32: Adams-Bashforth Explicit Method
+  It is third order method. In ABM32, AB3 works as predictor and Adams Moulton 2-steps method works as Corrector.
+  Ralston's Second Order Method is used to calculate starting values.
 """
 struct ABM32 <: OrdinaryDiffEqAlgorithm end
 
@@ -1639,6 +1652,10 @@ struct ABM32 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+ABM43: Adams-Bashforth Explicit Method
+  It is fourth order method. In ABM43, AB4 works as predictor and Adams Moulton 3-steps method works as Corrector.
+  Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct ABM43 <: OrdinaryDiffEqAlgorithm end
 
@@ -1646,6 +1663,10 @@ struct ABM43 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+ABM54: Adams-Bashforth Explicit Method
+   It is fifth order method. In ABM54, AB5 works as predictor and Adams Moulton 4-steps method works as Corrector.
+   Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
