@@ -649,6 +649,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S32: Low-Storage Method
+  3-stage, second order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S32 <: OrdinaryDiffEqAlgorithm end
 
@@ -657,6 +660,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S82: Low-Storage Method
+  8-stage, second order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S82 <: OrdinaryDiffEqAlgorithm end
 
@@ -665,6 +671,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S53: Low-Storage Method
+  5-stage, third order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S53 <: OrdinaryDiffEqAlgorithm end
 
@@ -673,6 +682,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S173: Low-Storage Method
+  17-stage, third order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S173 <: OrdinaryDiffEqAlgorithm end
 
@@ -681,6 +693,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S94: Low-Storage Method
+  9-stage, fourth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S94 <: OrdinaryDiffEqAlgorithm end
 
@@ -689,6 +704,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S184: Low-Storage Method
+  18-stage, fourth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S184 <: OrdinaryDiffEqAlgorithm end
 
@@ -697,6 +715,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S105: Low-Storage Method
+  10-stage, fifth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S105 <: OrdinaryDiffEqAlgorithm end
 
@@ -705,6 +726,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S205: Low-Storage Method
+  20-stage, fifth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 
