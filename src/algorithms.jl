@@ -344,6 +344,9 @@ Anas5(; w=1) = Anas5(w)
 Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
 Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
 228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
+
+Like SSPRK methods, ORK256 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct ORK256{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -358,6 +361,9 @@ end
   author={Carpenter, Mark H and Kennedy, Christopher A},
   year={1994}
 }
+
+Like SSPRK methods, CarpenterKennedy2N54 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct CarpenterKennedy2N54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -371,6 +377,9 @@ end
 D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
 Computational Acoustics. Journal of Computational Physics, 143(2), pp 674-681, 1998. doi:
 https://doi.org/10.1006/jcph.1998.5986
+
+Like SSPRK methods, SHLDDRK64 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct SHLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -398,6 +407,9 @@ end
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+Like SSPRK methods, DGLDDRK73_C also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct DGLDDRK73_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -410,6 +422,9 @@ end
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+Like SSPRK methods, DGLDDRK84_C also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct DGLDDRK84_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -422,6 +437,9 @@ end
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+Like SSPRK methods, DGLDDRK84_F also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct DGLDDRK84_F{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -434,6 +452,9 @@ end
 Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+Like SSPRK methods, NDBLSRK124 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct NDBLSRK124{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -446,6 +467,9 @@ end
 Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+Like SSPRK methods, NDBLSRK134 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct NDBLSRK134{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -458,6 +482,9 @@ end
 Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+Like SSPRK methods, NDBLSRK144 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
 struct NDBLSRK144{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
