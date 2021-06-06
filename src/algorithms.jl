@@ -1893,6 +1893,10 @@ Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.
 SBDF4(;kwargs...) = SBDF(4;kwargs...)
 
 # Adams/BDF methods in Nordsieck forms
+"""
+AN5: Adaptive step size Adams explicit Method
+  An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
+"""
 struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE{bType,aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
   algorithm::Symbol
