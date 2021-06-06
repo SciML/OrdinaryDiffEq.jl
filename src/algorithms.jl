@@ -2675,7 +2675,10 @@ end
 GeneralRosenbrock(;chunk_size=0,autodiff=true,
                     factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
                     GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
-
+"""
+RosenbrockW6S4OS: Rosenbrock-W Method
+  A 4th order L-stable Rosenbrock-W method (fixed step only).
+"""
 struct RosenbrockW6S4OS{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
@@ -2727,6 +2730,10 @@ for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EP
               $Alg(adaptive_krylov, m, iop, autodiff, chunksize, diff_type)
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
+"""
+ETD2: Exponential Runge-Kutta Method
+  Second order Exponential Time Differencing method (in development).
+"""
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 
 #########################################
@@ -2735,6 +2742,9 @@ struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
 an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Computer Science,
 29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
+
+ABDF2: Multistep Method
+  An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
 """
 struct ABDF2{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2762,7 +2772,11 @@ struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
 end
 
 ################################################################################
-
+"""
+MEBDF2: Multistep Method
+  The second order Modified Extended BDF method, which has improved stability properties over the standard BDF.
+  Fixed timestep only.
+"""
 struct MEBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -2776,7 +2790,10 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve,nlsolve,diff_type,extrapolant)
 
 #################################################
-
+"""
+PDIRK44: Parallel Diagonally Implicit Runge-Kutta Method
+  A 2 processor 4th order diagonally non-adaptive implicit method.
+"""
 struct PDIRK44{CS,AD,F,F2,FDT,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
