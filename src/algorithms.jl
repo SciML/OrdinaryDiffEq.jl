@@ -48,13 +48,25 @@ end
 ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
 @inline trivial_limiter!(u, f, p, t) = nothing
-
+"""
+Euler - The canonical forward Euler method. Fixed timestep only.
+"""
 struct Euler <: OrdinaryDiffEqAlgorithm end
+"""
+KuttaPRK2p5: Parallel Explicit Runge-Kutta Method
+  A 5 parallel, 2 processor explicit Runge-Kutta method of 5th order.
+
+  These methods utilize multithreading on the f calls to parallelize the problem.
+  This requires that simultaneous calls to f are thread-safe.
+"""
 struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
   threading::TO
 end
 KuttaPRK2p5(;threading=true) = KuttaPRK2p5(threading)
-
+"""
+AitkenNeville: Parallelized Explicit Extrapolation Method
+   Euler extrapolation using Aitken-Neville with the Romberg Sequence.
+"""
 struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   max_order::Int
   min_order::Int
@@ -62,7 +74,11 @@ struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   threading::TO
 end
 AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
-
+"""
+ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
+   Extrapolation of implicit Euler method with Romberg sequence.
+   Similar to Hairer's SEULEX.
+"""
 struct ImplicitEulerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_max::Int
@@ -96,7 +112,10 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
     ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),typeof(threading)}(
       linsolve,n_max,n_min,n_init,threading,diff_type,sequence)
 end
-
+"""
+ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
+   Midpoint extrapolation using Barycentric coordinates
+"""
 struct ExtrapolationMidpointDeuflhard{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
@@ -140,7 +159,10 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
   # Initialize algorithm
   ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
-
+"""
+ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
+   Midpoint extrapolation using Barycentric coordinates
+"""
 struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
@@ -180,7 +202,10 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
   ImplicitDeuflhardExtrapolation{chunk_size, autodiff,
       typeof(linsolve), typeof(diff_type), typeof(threading)}(linsolve,n_min,n_init,n_max,sequence,diff_type,threading)
 end
-
+"""
+ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
+  Midpoint extrapolation using Barycentric coordinates, following Hairer's ODEX in the adaptivity behavior.
+"""
 struct ExtrapolationMidpointHairerWanner{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
@@ -225,7 +250,10 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   # Initialize algorithm
   ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading,sequence_factor)
 end
-
+"""
+ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
+  Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
+"""
 struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   n_min::Int # Minimal extrapolation order
@@ -315,10 +343,25 @@ end
 Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion
 Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006.
 doi: https://doi.org/10.1016/j.compfluid.2005.04.003
+
+RK46NL: 6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
+        Fixed timestep only.
 """
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
+"""
+Heun: Explicit Runge-Kutta Method
+  The second order Heun's method. Uses embedded Euler method for adaptivity.
+"""
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
+"""
+Ralston: Explicit Runge-Kutta Method
+  The optimized second order midpoint method. Uses embedded Euler method for adaptivity.
+"""
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
+"""
+Midpoint: Explicit Runge-Kutta Method
+  The second order midpoint method. Uses embedded Euler method for adaptivity.
+"""
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
@@ -332,9 +375,18 @@ struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2005},
   publisher={Elsevier}
 }
+
+RK4: Explicit Runge-Kutta Method
+  The canonical Runge-Kutta Order 4 method.
+  Uses a defect control for adaptive stepping using maximum error over the whole interval.
 """
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RKM <: OrdinaryDiffEqAlgorithm end
+"""
+Anas5: Explicit Runge-Kutta Method
+  4th order Runge-Kutta method designed for periodic problems.
+  Requires a periodicity estimate which when accurate the method becomes 5th order (and is otherwise 4th order with less error for better estimates).
+"""
 struct Anas5{T} <: OrdinaryDiffEqAlgorithm
   w::T
 end
@@ -344,6 +396,9 @@ Anas5(; w=1) = Anas5(w)
 Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
 Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
 228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
+
+ORK256: Low-Storage Method
+  5-stage, second order low-storage method for wave propogation equations. Fixed timestep only.
 
 Like SSPRK methods, ORK256 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
@@ -361,6 +416,10 @@ end
   author={Carpenter, Mark H and Kennedy, Christopher A},
   year={1994}
 }
+
+CarpenterKennedy2N54: Low-Storage Method
+  The five-stage, fourth order low-storage method of Carpenter and Kennedy (free 3rd order Hermite interpolant).
+  Fixed timestep only. Designed for hyperbolic PDEs (stability properties).
 
 Like SSPRK methods, CarpenterKennedy2N54 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
@@ -392,6 +451,10 @@ struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
 """
 Deprecated SHLDDRK64 scheme from 'D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
 Computational Acoustics'
+
+HSLDDRK64: Low-Storage Method
+  6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
+  Fixed timestep only.
 """
 struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -408,6 +471,11 @@ T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
 
+DGLDDRK73_C: Low-Storage Method
+  7-stage, third order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
+  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
+  Fixed timestep only.
+
 Like SSPRK methods, DGLDDRK73_C also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
@@ -422,6 +490,11 @@ end
 T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+DGLDDRK84_C: Low-Storage Method
+  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
+  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
+  Fixed timestep only.
 
 Like SSPRK methods, DGLDDRK84_C also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
@@ -438,6 +511,11 @@ T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin
 Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
 pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
 
+DGLDDRK84_F: Low-Storage Method
+  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
+  Optimized for PDE discretizations when the maximum spatial step size is not constrained.
+  Fixed timestep only.
+
 Like SSPRK methods, DGLDDRK84_F also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
@@ -452,6 +530,10 @@ end
 Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+NDBLSRK124: Low-Storage Method
+  12-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
+  Fixed timestep only.
 
 Like SSPRK methods, NDBLSRK124 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
@@ -468,6 +550,10 @@ Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta S
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
 
+NDBLSRK134: Low-Storage Method
+  13-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
+  Fixed timestep only.
+
 Like SSPRK methods, NDBLSRK134 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
@@ -483,6 +569,10 @@ Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta S
 Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
 doi: https://doi.org/10.1016/j.jcp.2011.09.003
 
+NDBLSRK144: Low-Storage Method
+  14-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
+  Fixed timestep only.
+
 Like SSPRK methods, NDBLSRK144 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
 where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
 """
@@ -497,6 +587,10 @@ end
 M. Calvo, J. M. Franco, L. Randez. A New Minimum Storage Runge–Kutta Scheme
 for Computational Acoustics. Journal of Computational Physics, 201, pp 1-12, 2004.
 doi: https://doi.org/10.1016/j.jcp.2004.05.012
+
+CFRLDDRK64: Low-Storage Method
+  6-stage, fourth order low-storage, low-dissipation, low-dispersion scheme.
+  Fixed timestep only.
 """
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 
@@ -504,6 +598,60 @@ struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 Kostas Tselios, T. E. Simos. Optimized Runge–Kutta Methods with Minimal Dispersion and Dissipation
 for Problems arising from Computational Ccoustics. Physics Letters A, 393(1-2), pp 38-47, 2007.
 doi: https://doi.org/10.1016/j.physleta.2006.10.072
+
+TSLDDRK74: Low-Storage Method
+  7-stage, fourth order low-storage low-dissipation, low-dispersion scheme with maximal accuracy and stability limit along the imaginary axes.
+  Fixed timestep only.
+
+CKLLSRK43_2: Low-Storage Method
+  4-stage, third order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK54_3C: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK95_4S: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK95_4C: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK95_4M: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK54_3C_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK54_3M_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK54_3N_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK85_4C_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK85_4M_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK85_4P_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK54_3N_4R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK54_3M_4R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK65_4M_4R: Low-Storage Method
+  6-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK85_4FM_4R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+CKLLSRK75_4M_5R: Low-Storage Method
+  7-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+
+
 """
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
 struct CKLLSRK43_2 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -528,6 +676,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S32: Low-Storage Method
+  3-stage, second order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S32 <: OrdinaryDiffEqAlgorithm end
 
@@ -536,6 +687,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S82: Low-Storage Method
+  8-stage, second order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S82 <: OrdinaryDiffEqAlgorithm end
 
@@ -544,6 +698,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S53: Low-Storage Method
+  5-stage, third order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S53 <: OrdinaryDiffEqAlgorithm end
 
@@ -552,6 +709,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S173: Low-Storage Method
+  17-stage, third order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S173 <: OrdinaryDiffEqAlgorithm end
 
@@ -560,6 +720,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S94: Low-Storage Method
+  9-stage, fourth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S94 <: OrdinaryDiffEqAlgorithm end
 
@@ -568,6 +731,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S184: Low-Storage Method
+  18-stage, fourth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S184 <: OrdinaryDiffEqAlgorithm end
 
@@ -576,6 +742,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S105: Low-Storage Method
+  10-stage, fifth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S105 <: OrdinaryDiffEqAlgorithm end
 
@@ -584,6 +753,9 @@ Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
 doi: https://doi.org/10.1137/120885899
+
+ParsaniKetchesonDeconinck3S205: Low-Storage Method
+  20-stage, fifth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
 """
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 
@@ -866,6 +1038,9 @@ SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_l
   year={1992},
   publisher={SIAM}
 }
+
+OwrenZen3: Explicit Runge-Kutta Method
+  Owren-Zennaro optimized interpolantion 3/2 method (free 3th order interpolant).
 """
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 """
@@ -879,6 +1054,9 @@ struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1992},
   publisher={SIAM}
 }
+
+OwrenZen4: Explicit Runge-Kutta Method
+  Owren-Zennaro optimized interpolantion 4/3 method (free 4th order interpolant).
 """
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -893,6 +1071,9 @@ struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1992},
   publisher={SIAM}
 }
+
+OwrenZen5: Explicit Runge-Kutta Method
+  Owren-Zennaro optimized interpolantion 5/4 method (free 5th order interpolant).
 """
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -907,6 +1088,9 @@ struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1989},
   publisher={Elsevier}
 }
+
+BS3: Explicit Runge-Kutta Method
+  Bogacki-Shampine 3/2 method.
 """
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -921,6 +1105,9 @@ struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1980},
   publisher={Elsevier}
 }
+
+DP5: Explicit Runge-Kutta Method
+  Dormand-Prince's 5/4 Runge-Kutta method. (free 4th order interpolant).
 """
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -935,6 +1122,9 @@ struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2011},
   publisher={Elsevier}
 }
+
+Tsit5: Explicit Runge-Kutta Method
+   Tsitouras 5/4 Runge-Kutta method. (free 4th order interpolant).
 """
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -942,6 +1132,9 @@ struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
 Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
 Springer-Verlag.
+
+DP8: Explicit Runge-Kutta Method
+  Hairer's 8/5/3 adaption of the Dormand-Prince Runge-Kutta method. (7th order interpolant).
 """
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -949,6 +1142,12 @@ struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 Tanaka M., Muramatsu S., Yamashita S., (1992), On the Optimization of Some Nine-Stage
 Seventh-order Runge-Kutta Method, Information Processing Society of Japan,
 33 (12), pp. 1512-1526.
+
+TanYam7: Explicit Runge-Kutta Method
+  Tanaka-Yamashita 7 Runge-Kutta method.
+
+TsitPap8: Explicit Runge-Kutta Method
+  Tsitouras-Papakostas 8/7 Runge-Kutta method.
 """
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -960,6 +1159,9 @@ struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2012},
   publisher={Neural, Parallel \\& Scientific Computations}
 }
+
+Feagin10: Explicit Runge-Kutta Method
+   Feagin's 10th-order Runge-Kutta method.
 """
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -970,12 +1172,18 @@ struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2012},
   publisher={Neural, Parallel \\& Scientific Computations}
 }
+
+Feagin12: Explicit Runge-Kutta Method
+   Feagin's 12th-order Runge-Kutta method.
 """
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
 Feagin, T., “An Explicit Runge-Kutta Method of Order Fourteen,” Numerical
 Algorithms, 2009
+
+Feagin14: Explicit Runge-Kutta Method
+   Feagin's 14th-order Runge-Kutta method.
 """
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -990,6 +1198,9 @@ struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1996},
   publisher={Elsevier}
 }
+
+BS5: Explicit Runge-Kutta Method
+  Bogacki-Shampine 5/4 Runge-Kutta method. (lazy 5th order interpolant).
 """
 struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1007,6 +1218,9 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern6: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 6/5 Runge-Kutta method. (lazy 6th order interpolant).
 """
 struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1024,6 +1238,9 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern7: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 7/6 Runge-Kutta method. (lazy 7th order interpolant).
 """
 struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1041,6 +1258,9 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern8: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 8/7 Runge-Kutta method. (lazy 8th order interpolant)
 """
 struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
@@ -1058,16 +1278,28 @@ end
   year={2010},
   publisher={Springer}
 }
+
+Vern9: Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 9/8 Runge-Kutta method. (lazy 9th order interpolant)
 """
 struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   Vern9(;lazy=true) = new(lazy)
 end
+"""
+FRK65: Explicit Runge-Kutta
+  Zero Dissipation Runge-Kutta of 6th order.
+  Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
+"""
 struct FRK65{T} <: OrdinaryDiffEqAdaptiveAlgorithm
   omega::T
   FRK65(omega=0.0) = new{typeof(omega)}(omega)
 end
-
+"""
+PFRK87: Explicit Runge-Kutta
+  Phase-fitted Runge-Kutta Runge-Kutta of 8th order.
+  Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
+"""
 struct PFRK87{T} <: OrdinaryDiffEqAdaptiveAlgorithm
   omega::T
   PFRK87(omega=0.0) = new{typeof(omega)}(omega)
@@ -1406,6 +1638,9 @@ struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+AB3: Adams-Bashforth Explicit Method
+  The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
 """
 struct AB3 <: OrdinaryDiffEqAlgorithm end
 
@@ -1413,6 +1648,9 @@ struct AB3 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+AB4: Adams-Bashforth Explicit Method
+  The 4-step fourth order multistep method. Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct AB4 <: OrdinaryDiffEqAlgorithm end
 
@@ -1420,6 +1658,9 @@ struct AB4 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+AB5: Adams-Bashforth Explicit Method
+  The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
 """
 struct AB5 <: OrdinaryDiffEqAlgorithm end
 
@@ -1427,6 +1668,10 @@ struct AB5 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+ABM32: Adams-Bashforth Explicit Method
+  It is third order method. In ABM32, AB3 works as predictor and Adams Moulton 2-steps method works as Corrector.
+  Ralston's Second Order Method is used to calculate starting values.
 """
 struct ABM32 <: OrdinaryDiffEqAlgorithm end
 
@@ -1434,6 +1679,10 @@ struct ABM32 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+ABM43: Adams-Bashforth Explicit Method
+  It is fourth order method. In ABM43, AB4 works as predictor and Adams Moulton 3-steps method works as Corrector.
+  Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct ABM43 <: OrdinaryDiffEqAlgorithm end
 
@@ -1441,6 +1690,10 @@ struct ABM43 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+ABM54: Adams-Bashforth Explicit Method
+   It is fifth order method. In ABM54, AB5 works as predictor and Adams Moulton 4-steps method works as Corrector.
+   Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
@@ -1451,6 +1704,9 @@ struct ABM54 <: OrdinaryDiffEqAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCAB3: Adaptive step size Adams explicit Method
+  The 3rd order Adams method. Bogacki-Shampine 3/2 method is used to calculate starting values.
 """
 struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1458,6 +1714,9 @@ struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCAB4: Adaptive step size Adams explicit Method
+  The 4th order Adams method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1465,6 +1724,9 @@ struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCAB5: Adaptive step size Adams explicit Method
+  The 5th order Adams method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1472,6 +1734,9 @@ struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM3: Adaptive step size Adams explicit Method
+  The 3rd order Adams-Moulton method. Bogacki-Shampine 3/2 method is used to calculate starting values.
 """
 struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1479,6 +1744,9 @@ struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM4: Adaptive step size Adams explicit Method
+  The 4th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1486,6 +1754,9 @@ struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM5: Adaptive step size Adams explicit Method
+   The 5th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -1495,6 +1766,10 @@ struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 E. Hairer, S. P. Norsett, G. Wanner, Solving Ordinary Differential Equations I, Nonstiff
 Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
+
+VCABM: Adaptive step size Adams explicit Method
+  An adaptive order adaptive time Adams Moulton method.
+  It uses an order adaptivity algorithm is derived from Shampine's DDEABM.
 """
 struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
@@ -1524,6 +1799,11 @@ CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       CNLF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
                       linsolve,nlsolve,diff_type,extrapolant)
 
+"""
+QNDF1: Multistep Method
+  An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+  Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
+"""
 struct QNDF1{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1542,6 +1822,10 @@ QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
 
+"""
+QNDF1: Multistep Method
+  An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+"""
 struct QNDF2{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1560,7 +1844,11 @@ QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
 
-
+"""
+QNDF: Multistep Method
+  An adaptive order quasi-constant timestep NDF method.
+  Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
+"""
 struct QNDF{MO,CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   max_order::Val{MO}
   linsolve::F
@@ -1632,6 +1920,10 @@ Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.
 SBDF4(;kwargs...) = SBDF(4;kwargs...)
 
 # Adams/BDF methods in Nordsieck forms
+"""
+AN5: Adaptive step size Adams explicit Method
+  An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
+"""
 struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE{bType,aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
   algorithm::Symbol
@@ -1651,6 +1943,10 @@ JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 """
 Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
 Numerische Mathematik, 90 (1), pp 1-18, 2001. doi: https://dx.doi.org/10.1007/s002110100292
+
+ROCK2: Stabilized Explicit Method
+  Second order stabilized Runge-Kutta method.
+  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 """
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
@@ -1663,6 +1959,10 @@ ROCK2(;min_stages=0,max_stages=200,eigen_est=nothing) = ROCK2(min_stages,max_sta
 Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
 Industrial and Applied Mathematics Journal on Scientific Computing, 23(6), pp 2041-2054, 2001.
 doi: https://doi.org/10.1137/S1064827500379549
+
+ROCK4: Stabilized Explicit Method
+  Fourth order stabilized Runge-Kutta method.
+  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 """
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
   min_stages::Int
@@ -1750,6 +2050,9 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
   year={1999},
   publisher={Elsevier}
 }
+
+RadauIIA3: Fully-Implicit Runge-Kutta Method
+  An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
 struct RadauIIA3{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -1782,6 +2085,9 @@ RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={1999},
   publisher={Elsevier}
 }
+
+RadauIIA5: Fully-Implicit Runge-Kutta Method
+   An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
 struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -1806,7 +2112,11 @@ RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 ################################################################################
 
 # SDIRK Methods
-
+"""
+ImplicitEuler: SDIRK Method
+  A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
+  Strong-stability preserving (SSP).
+"""
 struct ImplicitEuler{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1821,7 +2131,11 @@ ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),typeof(diff_type)}(linsolve,
                           nlsolve,diff_type,extrapolant,controller)
-
+"""
+ImplicitMidpoint: SDIRK Method
+  A second order A-stable symplectic and symmetric implicit solver.
+  Good for highly stiff equations which need symplectic integration.
+"""
 struct ImplicitMidpoint{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -1837,6 +2151,11 @@ ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 """
 Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
   NY, USA.
+
+Trapezoid: SDIRK Method
+  A second order A-stable symmetric ESDIRK method.
+  "Almost symplectic" without numerical dampening.
+   Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
 """
 struct Trapezoid{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -1863,6 +2182,10 @@ Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={1996},
   publisher={Elsevier}
 }
+
+TRBDF2: SDIRK Method
+  A second order A-B-L-S-stable one-step ESDIRK method.
+  Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
 """
 struct TRBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -1890,6 +2213,9 @@ TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
   year={2005},
   publisher={ACM}
 }
+
+SDIRK2: SDIRK Method
+   An A-B-L stable 2nd order SDIRK method
 """
 struct SDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -1947,6 +2273,9 @@ SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2004},
   publisher={Springer}
 }
+
+Kvaerno3: SDIRK Method
+  An A-L stable stiffly-accurate 3rd order ESDIRK method
 """
 struct Kvaerno3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -1970,6 +2299,9 @@ Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2001},
   publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
+
+KenCarp3: SDIRK Method
+  An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting
 """
 struct KenCarp3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2009,6 +2341,9 @@ CFNLIRK3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2005},
   publisher={ACM}
 }
+
+Cash4: SDIRK Method
+  An A-L stable 4th order SDIRK method
 """
 struct Cash4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2094,6 +2429,9 @@ SFSDIRK8(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.),
   Springer (1996)
+
+Hairer4: SDIRK Method
+  An A-L stable 4th order SDIRK method
 """
 struct Hairer4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2114,6 +2452,9 @@ Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.),
   Springer (1996)
+
+Hairer42: SDIRK Method
+  An A-L stable 4th order SDIRK method
 """
 struct Hairer42{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2141,6 +2482,9 @@ Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2004},
   publisher={Springer}
 }
+
+Kvaerno4: SDIRK Method
+  An A-L stable stiffly-accurate 4th order ESDIRK metho
 """
 struct Kvaerno4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2168,6 +2512,9 @@ Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2004},
   publisher={Springer}
 }
+
+Kvaerno5: SDIRK Method
+  An A-L stable stiffly-accurate 5th order ESDIRK method
 """
 struct Kvaerno5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2191,6 +2538,9 @@ Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2001},
   publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
+
+KenCarp4: SDIRK Method
+  An A-L stable stiffly-accurate 4th order ESDIRK method with splitting
 """
 struct KenCarp4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2206,7 +2556,10 @@ KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                    controller = :PI) =
  KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
-
+"""
+KenCarp47: SDIRK Method
+  An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting
+"""
 struct KenCarp47{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -2229,6 +2582,9 @@ KenCarp47(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
   year={2001},
   publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
+
+KenCarp5: SDIRK Method
+  An A-L stable stiffly-accurate 5th order ESDIRK method with splitting
 """
 struct KenCarp5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2244,7 +2600,10 @@ KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                    controller = :PI) =
  KenCarp5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
-
+"""
+KenCarp58: SDIRK Method
+  An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting
+"""
 struct KenCarp58{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -2343,7 +2702,10 @@ end
 GeneralRosenbrock(;chunk_size=0,autodiff=true,
                     factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
                     GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
-
+"""
+RosenbrockW6S4OS: Rosenbrock-W Method
+  A 4th order L-stable Rosenbrock-W method (fixed step only).
+"""
 struct RosenbrockW6S4OS{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
@@ -2395,6 +2757,10 @@ for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EP
               $Alg(adaptive_krylov, m, iop, autodiff, chunksize, diff_type)
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
+"""
+ETD2: Exponential Runge-Kutta Method
+  Second order Exponential Time Differencing method (in development).
+"""
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 
 #########################################
@@ -2403,6 +2769,9 @@ struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 E. Alberdi Celayaa, J. J. Anza Aguirrezabalab, P. Chatzipantelidisc. Implementation of
 an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Computer Science,
 29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
+
+ABDF2: Multistep Method
+  An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
 """
 struct ABDF2{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
@@ -2430,7 +2799,11 @@ struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
 end
 
 ################################################################################
-
+"""
+MEBDF2: Multistep Method
+  The second order Modified Extended BDF method, which has improved stability properties over the standard BDF.
+  Fixed timestep only.
+"""
 struct MEBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
@@ -2444,7 +2817,10 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve,nlsolve,diff_type,extrapolant)
 
 #################################################
-
+"""
+PDIRK44: Parallel Diagonally Implicit Runge-Kutta Method
+  A 2 processor 4th order diagonally non-adaptive implicit method.
+"""
 struct PDIRK44{CS,AD,F,F2,FDT,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
