@@ -794,7 +794,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
@@ -810,7 +810,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     @.. du1 = dtC31*k1 + dtC32*k2
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
@@ -826,7 +826,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
@@ -842,7 +842,7 @@ end
     @.. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + du2
   end
 
@@ -858,7 +858,7 @@ end
     @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
   else
     @.. du1 = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + du2
   end
 
@@ -1110,7 +1110,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
@@ -1126,7 +1126,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     @.. du1 = dtC31*k1 + dtC32*k2
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
@@ -1142,7 +1142,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
@@ -1158,7 +1158,7 @@ end
     @.. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + dtd5*dT + du2
   end
 
@@ -1174,7 +1174,7 @@ end
     @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
   else
     @.. du1 = dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + du2
   end
 
@@ -1190,7 +1190,7 @@ end
     @.. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
   else
     @.. du1 = dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + du2
   end
 
@@ -1206,7 +1206,7 @@ end
     @.. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
   else
     @.. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
-    mul!(du2,mass_matrix,du1)
+    mul!(vec(du2),mass_matrix,vec(du1))
     @.. linsolve_tmp = du + du2
   end
 
