@@ -972,3 +972,163 @@ end
  f(integrator.fsallast,u,p,t+dt)
  integrator.destats.nf += 1
 end
+
+
+function initialize!(integrator, cache::FBDFConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_step=false) where max_order
+  @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,consfailcnt,nconsteps,nlsolver,weights,prev_order = cache
+  @unpack t,dt,u,f,p,iter,uprev = integrator
+  k = order
+  @show k
+
+  #@show integrator.success_iter,t,dt,consfailcnt
+  if integrator.success_iter == 0
+    weights[1] = 1/dt
+    ts[1] = t
+    u_history[:,1] .= u
+  elseif integrator.success_iter == 1
+    weights[2] = weights[1]
+    weights[1] = -weights[2]
+    ts[2] = t
+    u_history[:,2] .= u
+  elseif consfailcnt == 0
+    t_old = ts[1]
+    if order <= prev_order
+      for i in 1:k
+        ts[i] = ts[i+(prev_order-order)+1]
+        u_history[:,i] = u_history[:,i+(prev_order-order)+1]
+      end
+    end
+    ts[k+1] = t
+    u_history[:,k+1] .= u
+
+    if order <= prev_order
+      for j in 1:k
+        weights[j] = weights[j]*((t_old-ts[j])/(ts[j]-t))
+      end
+    else
+      for j in 1:k
+        weights[j] = weights[j]*inv(ts[j]-t)
+      end
+    end
+    weights[k+1] = 1
+    for j in 1:k
+      weights[k+1] *= inv(t-ts[j])
+    end
+    
+  end
+
+  u₀ = zero(u)
+  #u₀ = interpolation_sols(weights, u₀, u_history, t+dt, ts)
+  #@show weights, ts, u_history
+  if iter != 1
+    if typeof(u) <: Number
+      for i in 1:k+1
+        u₀ += weights[i]/(t+dt-ts[i])*u_history[i]
+      end
+      for i in 1:k+1
+        u₀ *= t+dt-ts[i]
+      end
+    else
+      for i in 1:k+1
+        @.. u₀ += weights[i]/(t+dt-ts[i])*u_history[:,i]
+      end
+      for i in 1:k+1
+        @.. u₀ *= t+dt-ts[i]
+      end
+    end
+  else
+    u₀ = u
+  end
+
+  markfirststage!(nlsolver)
+  nlsolver.z = u₀
+  mass_matrix = f.mass_matrix
+  equi_ts = t - dt * 1:(k-1)
+
+  fill!(u_corrector,zero(eltype(u)))
+  #interpolation_sols!(weights, u_corrector, u_history, equi_dts, ts)
+  if typeof(u) <: Number
+    for j in 1:k-1
+      for i in 1:k+1
+        u_corrector[j] += weights[i]/(equi_ts[j]-ts[i])*u_history[i]
+      end
+      for i in 1:k+1
+        u_corrector[j] *= equi_ts[j] - ts[i]
+      end
+    end
+    tmp = - u * bdf_coeffs[k,2]
+    for i in 1:k-1
+      tmp -= u_corrector[i] * bdf_coeffs[k,i+2]
+    end
+  else
+    for j in 1:k-1
+      for i in 1:k+1
+        @.. u_corrector[:,j] += weights[i]/(equi_ts[j]-ts[i])*u_history[:,i]
+      end
+      for i in 1:k+1
+        @.. u_corrector[:,j] *= equi_ts[j] - ts[i]
+      end
+    end
+    tmp =  -u * bdf_coeffs[k,2]
+    for i in 1:k-1
+      tmp -= u_corrector[:,i] * bdf_coeffs[k,i+2]
+    end
+  end
+
+  if mass_matrix == I
+    nlsolver.tmp = tmp/dt
+  else
+    nlsolver.tmp = mass_matrix * tmp/dt
+  end
+  β₀ = inv(bdf_coeffs[k,1])
+  α₀ = 1 #bdf_coeffs[k,1]
+  nlsolver.γ = β₀
+  nlsolver.α = α₀
+
+  nlsolver.method = COEFFICIENT_MULTISTEP
+
+  u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+  
+  terk = (u - u₀)
+  if iter != 1
+    for j in 2:k+1
+      terk *= j*dt/(t+dt-ts[j-1])
+    end
+  end
+  #@show terk,u₀,u,t,dt
+
+  if integrator.opts.adaptive
+    cache.terk = terk#integrator.opts.internalnorm(terk,t)
+    if k > 1
+      terkm1 = terk*(t+dt-ts[k])/((k+1)*dt)
+      cache.terkm1 = integrator.opts.internalnorm(terkm1,t)
+    end
+    if k > 2
+      terkm2 = terkm1*(t+dt-ts[k-1])/((k)*dt)
+      cache.terkm2 = integrator.opts.internalnorm(terkm2,t)
+    end
+    if nconsteps > k+1 && k < max_order
+      terkp1 = terk*(k+2)*dt/(t+dt-t_old)
+      cache.terkp1 = integrator.opts.internalnorm(terkp1,t)
+    end
+  end
+
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
