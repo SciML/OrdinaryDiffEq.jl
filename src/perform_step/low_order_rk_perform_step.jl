@@ -172,7 +172,7 @@ function initialize!(integrator,cache::OwrenZen4Cache)
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
-  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
@@ -997,7 +997,7 @@ function initialize!(integrator, cache::RKO65Cache)
 
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
 
-  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
   integrator.destats.nf += 1
 
