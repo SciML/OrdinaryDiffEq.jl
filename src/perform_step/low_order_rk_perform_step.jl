@@ -165,7 +165,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::OwrenZen4Cache,f=integrator.f)
+function initialize!(integrator,cache::OwrenZen4Cache)
   integrator.kshortsize = 6
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
@@ -984,7 +984,7 @@ end
 end
 
 
-function initialize!(integrator, cache::RKO65Cache, f=integrator.f)
+function initialize!(integrator, cache::RKO65Cache)
   @unpack k,fsalfirst = cache
   integrator.kshortsize = 6
   resize!(integrator.k, integrator.kshortsize)
