@@ -442,8 +442,8 @@ end
   integrator.destats.nf += 1
 end
 
-function initialize!(integrator,cache::Feagin14ConstantCache,f=integrator.f)
-  integrator.fsalfirst = f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+function initialize!(integrator,cache::Feagin14ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
