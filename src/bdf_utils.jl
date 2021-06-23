@@ -95,42 +95,16 @@ end
 const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
 
 ###FBDF
-
-function compute_weights(ts, y_history, ::Val{N}) where {N}
-  ω = zero(MVector{N,eltype(y_history)})
-  ω[1] = 1
-  @inbounds for j in 2:N
-    for k in 1:j-2
-      ω[k] = (ts[k] - ts[j])ω[k]
-    end
-    ω[j] = 1
-    for k in 1:j
-      ω[j] *= (ts[j] - ts[k])
-    end
-  end
-  @inbounds for j = 1:N
-    ω[j] = inv(ω[j])
-  end
-  SArray(ω)
-end
-
-function interpolation_sols(weights, u::Vector, u_history, t, ts)
-  for i in 1:k+1
-    u += weights[i]/(t-ts[i])*u_history[i,:]
-  end
-  for i in 1:k+1
-    u *= t+dt - ts[i]
-  end
-  u
-end
-
-function interpolation_sols!(weights, u::Matrix, u_history, t::Vector, ts)
-  for j in 1:k
-    for i in 1:k+1
-      @.. u[j,:] += weights[i]/(t[j]-ts[i])*u_history[i,:]
-    end
-    for i in 1:k+1
-      @.. u[j,:] *= t[j] - ts[i]
-    end
+function compute_weights!(ts,k,weights)
+  for i = 1:k
+      weights[i] = one(eltype(weights))
+      for j = 1:i-1
+          weights[i] *= ts[i] - ts[j]
+      end
+      for j = i+1:k
+          weights[i] *= ts[i] - ts[j]
+      end
+      weights[i] = 1/weights[i]
   end
 end
+

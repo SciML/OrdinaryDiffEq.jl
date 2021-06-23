@@ -553,52 +553,49 @@ end
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
 
 
-function stepsize_controller!(integrator, alg::FBDF)
+function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
   @unpack ts,bdf_coeffs,terkm2, terkm1, terk, terkp1,r = cache
   cache.prev_order = cache.order
   k = cache.order
-  terk_tmp = terk
-  terk = integrator.opts.internalnorm(terk,t)
-  @show terkm2, terkm1,terk,terkp1
-  if terkm2 >= terkm1 >= terk >= terkp1 && integrator.cache.nconsteps >= integrator.cache.order + 2
+  terkm2_norm, terkm1_norm, terk_norm, terkp1_norm = integrator.opts.internalnorm(terkm2,t), integrator.opts.internalnorm(terkm1,t), integrator.opts.internalnorm(terk,t), integrator.opts.internalnorm(terkp1,t)
+  #terk = integrator.opts.internalnorm(terk,t)
+  #@show terkm2_norm, terkm1_norm,terk_norm,terkp1_norm
+
+  if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk_norm < terkp1_norm) ||
+    (k == 2 && terkm1_norm < terk_norm < terkp1_norm) ||
+    (k > 2 && terkm2_norm < terkm1_norm < terk_norm < terkp1_norm))
     k += 1
+    terk = terkp1
   else
-    while !(terkm2 >= terkm1 >= terk >= terkp1) && k > 1
+    p = 3
+    while !(terkm2_norm < terkm1_norm < terk_norm < terkp1_norm) && k > 2
       terkm1 = terkm2
       terk = terkm1
       terkp1 = terk
-      if k > 2
-        terkm2 *= (t+dt-ts[k-2])/((k-1)*dt)
-      else
-        terkm2 = integrator.u
-      end
+      terkm2 *= (t+dt-ts[p])/((k-1)*dt)
       k -= 1
+      terkm2_norm, terkm1_norm, terk_norm, terkp1_norm = integrator.opts.internalnorm(terkm2,t), integrator.opts.internalnorm(terkm1,t), integrator.opts.internalnorm(terk,t), integrator.opts.internalnorm(terkp1,t)
+    end
+    if !(terkm1_norm < terk_norm < terkp1_norm) && k == 2
+      @show terkm1,terk,terkm1_norm,terk_norm,terkp1,terkp1_norm
+       k -= 1
+       terk = terkm1
     end
   end
-  cache.order = k
+  if k != cache.order
+    integrator.cache.nconsteps = 0
+    cache.prev_order = cache.order
+    cache.order = k
+  end
+  #@show lte,integrator.EEst
+  atmp = calculate_residuals(terk, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+  terk = integrator.opts.internalnorm(atmp,t)
 
-  r[1] = 0
-  for j in 2:k
-    r[j] = (1-j)
-    for i in 2:k+1
-      r[j] *= ((t+dt-j*dt)-ts[i-1])/(i*dt) #TODO: This should be noticed that whether it uses the correct ts elements.
-    end
-  end
-  lte = -1/(1+k)
-  for j in 2:k
-    lte -= bdf_coeffs[k,j]*r[j]
-  end
-  
-  lte *= terk_tmp
-  atmp = calculate_residuals(lte, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-  integrator.EEst = integrator.opts.internalnorm(atmp,t)
-  #@show integrator.EEst
-  k = integrator.cache.order
-  if iszero(integrator.EEst)
+  if iszero(terk)
     q = inv(integrator.opts.qmax)
   else
-    q = 1/(2*integrator.EEst)^(-1/(k+1))
+    q = 1/((2*terk/(k+1))^(-1/(k+1)))
   end
   integrator.qold = q
   q
@@ -618,7 +615,7 @@ function step_reject_controller!(integrator,alg::FBDF)
   integrator.cache.nconsteps = 0
   dt = integrator.dt/integrator.qold
   if integrator.cache.consfailcnt == 1
-    dt *= 0.9
+    dt *= 0.8
   else
     dt *= 0.25
   end

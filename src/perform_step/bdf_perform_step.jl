@@ -987,23 +987,21 @@ function initialize!(integrator, cache::FBDFConstantCache)
 end
 
 function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_step=false) where max_order
-  @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,consfailcnt,nconsteps,nlsolver,weights,prev_order = cache
+  @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,consfailcnt,nconsteps,nlsolver,weights,prev_order= cache
   @unpack t,dt,u,f,p,iter,uprev = integrator
   k = order
-  @show k
 
-  #@show integrator.success_iter,t,dt,consfailcnt
   if integrator.success_iter == 0
     weights[1] = 1/dt
     ts[1] = t
-    u_history[:,1] .= u
+    @.. u_history[:,1] = uprev
   elseif integrator.success_iter == 1
     weights[2] = weights[1]
     weights[1] = -weights[2]
     ts[2] = t
-    u_history[:,2] .= u
-  elseif consfailcnt == 0
-    t_old = ts[1]
+    @.. u_history[:,2] = uprev
+  elseif consfailcnt == 0 || k != prev_order
+    cache.t_old = ts[1]
     if order <= prev_order
       for i in 1:k
         ts[i] = ts[i+(prev_order-order)+1]
@@ -1011,12 +1009,18 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
       end
     end
     ts[k+1] = t
-    u_history[:,k+1] .= u
-
-    if order <= prev_order
-      for j in 1:k
-        weights[j] = weights[j]*((t_old-ts[j])/(ts[j]-t))
+    @.. u_history[:,k+1] = uprev
+  end
+  
+  if integrator.success_iter > 1
+    if k == 1
+      weights[1] = inv(ts[1]-t)
+    elseif k == prev_order
+      for j in 2:k+1
+        weights[j-1] = weights[j]*((ts[j-1]-cache.t_old)/(ts[j-1]-t))
       end
+    elseif k < prev_order
+        compute_weights!(ts,k,weights)
     else
       for j in 1:k
         weights[j] = weights[j]*inv(ts[j]-t)
@@ -1026,12 +1030,10 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     for j in 1:k
       weights[k+1] *= inv(t-ts[j])
     end
-    
   end
+    
 
   u₀ = zero(u)
-  #u₀ = interpolation_sols(weights, u₀, u_history, t+dt, ts)
-  #@show weights, ts, u_history
   if iter != 1
     if typeof(u) <: Number
       for i in 1:k+1
@@ -1058,17 +1060,27 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   equi_ts = t - dt * 1:(k-1)
 
   fill!(u_corrector,zero(eltype(u)))
+  #@show ts,equi_ts
   #interpolation_sols!(weights, u_corrector, u_history, equi_dts, ts)
   if typeof(u) <: Number
     for j in 1:k-1
       for i in 1:k+1
-        u_corrector[j] += weights[i]/(equi_ts[j]-ts[i])*u_history[i]
+        if equi_ts[j] == ts[i]
+          u_corrector[j] += 0
+        else
+          u_corrector[j] += weights[i]/(equi_ts[j]-ts[i])*u_history[i]
+        end
       end
       for i in 1:k+1
         u_corrector[j] *= equi_ts[j] - ts[i]
       end
+      for i in 1:k+1
+        if equi_ts[j] == ts[i]
+          u_corrector[j] += u_history[i]
+        end
+      end
     end
-    tmp = - u * bdf_coeffs[k,2]
+    tmp = - uprev * bdf_coeffs[k,2]
     for i in 1:k-1
       tmp -= u_corrector[i] * bdf_coeffs[k,i+2]
     end
@@ -1081,26 +1093,30 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
         @.. u_corrector[:,j] *= equi_ts[j] - ts[i]
       end
     end
-    tmp =  -u * bdf_coeffs[k,2]
+    tmp = - uprev * bdf_coeffs[k,2]
     for i in 1:k-1
       tmp -= u_corrector[:,i] * bdf_coeffs[k,i+2]
     end
   end
-
+  
+  #@show tmp,uprev
   if mass_matrix == I
     nlsolver.tmp = tmp/dt
   else
     nlsolver.tmp = mass_matrix * tmp/dt
   end
-  β₀ = inv(bdf_coeffs[k,1])
-  α₀ = 1 #bdf_coeffs[k,1]
+  β₀ = 1
+  α₀ = bdf_coeffs[k,1]
   nlsolver.γ = β₀
   nlsolver.α = α₀
 
   nlsolver.method = COEFFICIENT_MULTISTEP
-
-  u = nlsolve!(nlsolver, integrator, cache, repeat_step)
+  z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
+
+  u = z
+
+  @show k,dt,u,u₀,t,cache.nconsteps,weights,ts,u_history
   
   terk = (u - u₀)
   if iter != 1
@@ -1108,21 +1124,39 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
       terk *= j*dt/(t+dt-ts[j-1])
     end
   end
-  #@show terk,u₀,u,t,dt
+
+  r[1] = 0
+  for j in 2:k
+    r[j] = (1-j)
+    for i in 2:k+1
+      r[j] *= ((t+dt-j*dt)-ts[k+2-i])/(i*dt) #TODO: This should be noticed that whether it uses the correct ts elements.
+    end
+  end
+  lte = -1/(1+k)
+  for j in 2:k
+    lte -= bdf_coeffs[k,j]*r[j]
+  end
+  lte *= terk
 
   if integrator.opts.adaptive
-    cache.terk = terk#integrator.opts.internalnorm(terk,t)
+    cache.terk = terk #integrator.opts.internalnorm(terk,t)
+    atmp = calculate_residuals(lte, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    @info integrator.EEst
     if k > 1
-      terkm1 = terk*(t+dt-ts[k])/((k+1)*dt)
-      cache.terkm1 = integrator.opts.internalnorm(terkm1,t)
+      cache.terkm1 = terk*(t+dt-ts[1])/((k+1)*dt)
+      @show cache.terkm1, cache.terk
+      #cache.terkm1 = integrator.opts.internalnorm(terkm1,t)
     end
     if k > 2
-      terkm2 = terkm1*(t+dt-ts[k-1])/((k)*dt)
-      cache.terkm2 = integrator.opts.internalnorm(terkm2,t)
+      cache.terkm2 = cache.terkm1*(t+dt-ts[2])/((k)*dt)
+      #cache.terkm2 = integrator.opts.internalnorm(terkm2,t)
     end
     if nconsteps > k+1 && k < max_order
-      terkp1 = terk*(k+2)*dt/(t+dt-t_old)
-      cache.terkp1 = integrator.opts.internalnorm(terkp1,t)
+      cache.terkp1 = cache.terk*(k+2)*dt/(t+dt-cache.t_old)
+      #cache.terkp1 = integrator.opts.internalnorm(terkp1,t)
+    else
+      cache.terkp1 = Inf
     end
   end
 

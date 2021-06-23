@@ -594,6 +594,7 @@ gamma_default(alg::ImplicitEulerExtrapolation) = (65//100)^beta1_default(alg,bet
 gamma_default(alg::ImplicitEulerBarycentricExtrapolation) = (80//100)^beta1_default(alg,beta2_default(alg))
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1
+qsteady_min_default(alg::FBDF) = 9//10
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
