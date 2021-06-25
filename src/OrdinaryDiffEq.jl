@@ -23,7 +23,7 @@ using DocStringExtensions
 
   using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper, UDerivativeWrapper
 
-  import RecursiveArrayTools: chain, recursivecopy!
+  import RecursiveArrayTools: chain, recursivecopy!, AllObserved
 
   using UnPack, ForwardDiff, RecursiveArrayTools,
         DataStructures, FiniteDiff, ArrayInterface
