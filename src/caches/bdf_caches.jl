@@ -395,7 +395,7 @@ function alg_cache(alg::MEBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   MEBDF2ConstantCache(nlsolver)
 end
 
-@cache mutable struct FBDFConstantCache{MO,N,tsType,tType,uType,uuType,coeffType,EEstType,rType,wType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct FBDFConstantCache{MO,N,tsType,tType,uType,uuType,coeffType,EEstType,rType,wType#=,fdwType=#} <: OrdinaryDiffEqConstantCache
   nlsolver::N
   ts::tsType
   t_old::tType
@@ -413,6 +413,7 @@ end
   terkp1::EEstType
   r::rType
   weights::wType
+  fd_weights::Any
 end
 
 function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where MO
@@ -441,6 +442,7 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   nconsteps = 0
   consfailcnt = 0
   t_old = zero(t)
+  fd_weights = similar(weights)
 
-  FBDFConstantCache(nlsolver,ts,t_old,u_history,order,prev_order,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights)
+  FBDFConstantCache(nlsolver,ts,t_old,u_history,order,prev_order,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights,fd_weights)
 end

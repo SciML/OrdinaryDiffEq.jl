@@ -558,29 +558,41 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   @unpack ts,bdf_coeffs,terkm2, terkm1, terk, terkp1,r = cache
   cache.prev_order = cache.order
   k = cache.order
-  terkm2_norm, terkm1_norm, terk_norm, terkp1_norm = integrator.opts.internalnorm(terkm2,t), integrator.opts.internalnorm(terkm1,t), integrator.opts.internalnorm(terk,t), integrator.opts.internalnorm(terkp1,t)
-  #terk = integrator.opts.internalnorm(terk,t)
-  #@show terkm2_norm, terkm1_norm,terk_norm,terkp1_norm
+  #@show terk,terkm1
 
-  if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk_norm < terkp1_norm) ||
-    (k == 2 && terkm1_norm < terk_norm < terkp1_norm) ||
-    (k > 2 && terkm2_norm < terkm1_norm < terk_norm < terkp1_norm))
+  if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk >= terkp1) ||
+    (k == 2 && terkm1 >= terk >= terkp1) ||
+    (k > 2 && terkm2 >= terkm1 >= terk >= terkp1))
     k += 1
     terk = terkp1
   else
-    p = 3
-    while !(terkm2_norm < terkm1_norm < terk_norm < terkp1_norm) && k > 2
-      terkm1 = terkm2
-      terk = terkm1
+    p = 2
+    while !(terkm2 > terkm1 > terk > terkp1) && k > 2
       terkp1 = terk
-      terkm2 *= (t+dt-ts[p])/((k-1)*dt)
+      terk = terkm1
+      terkm1 = terkm2
+
+      terkm2 = cache.fd_weights[k-p,1] * u
+      if eltype(u) <: Number
+        for i in 2:k-p
+          terkm2 += fd_weights[i,k-p] * u_history[i-1]
+        end
+        #@show fd_weights,u_history,u,terk
+        terkm2 *= abs(dt^(k-p))
+      else
+        for i in 2:k-1
+          @.. terkm2 += fd_weights[i,k-p] * u_history[:,i-1]
+        end
+        @.. terkm2 *= abs(dt^(k-p))
+      end
+      atmp = calculate_residuals(terkm2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      cache.terkm2 = integrator.opts.internalnorm(atmp,t)
+      p += 1
       k -= 1
-      terkm2_norm, terkm1_norm, terk_norm, terkp1_norm = integrator.opts.internalnorm(terkm2,t), integrator.opts.internalnorm(terkm1,t), integrator.opts.internalnorm(terk,t), integrator.opts.internalnorm(terkp1,t)
     end
-    if !(terkm1_norm < terk_norm < terkp1_norm) && k == 2
-      @show terkm1,terk,terkm1_norm,terk_norm,terkp1,terkp1_norm
-       k -= 1
-       terk = terkm1
+    if !(terkm1 > terk > terkp1) && k == 2
+      k -= 1
+      terk = terkm1
     end
   end
   if k != cache.order
@@ -588,10 +600,6 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
     cache.prev_order = cache.order
     cache.order = k
   end
-  #@show lte,integrator.EEst
-  atmp = calculate_residuals(terk, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-  terk = integrator.opts.internalnorm(atmp,t)
-
   if iszero(terk)
     q = inv(integrator.opts.qmax)
   else
@@ -613,12 +621,14 @@ end
 function step_reject_controller!(integrator,alg::FBDF)
   integrator.cache.consfailcnt += 1
   integrator.cache.nconsteps = 0
-  dt = integrator.dt/integrator.qold
+  dt = integrator.dt
+  #@show dt, integrator.cache.consfailcnt
   if integrator.cache.consfailcnt == 1
     dt *= 0.8
   else
     dt *= 0.25
   end
+  #@show dt
   integrator.dt = dt
 end
 

@@ -96,15 +96,78 @@ const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
 
 ###FBDF
 function compute_weights!(ts,k,weights)
-  for i = 1:k
+  for i = 1:k+1
       weights[i] = one(eltype(weights))
       for j = 1:i-1
           weights[i] *= ts[i] - ts[j]
       end
-      for j = i+1:k
+      for j = i+1:k+1
           weights[i] *= ts[i] - ts[j]
       end
       weights[i] = 1/weights[i]
   end
 end
 
+
+function calc_Lagrange_interp(k,weights,t,ts,u_history,u::Number)
+  #@show t,ts,u_history
+  if t in ts
+    i = searchsortedfirst(ts,t,rev=true)
+    return u_history[i]
+  else
+    for i in 1:k+1
+      u += weights[i]/(t-ts[i])*u_history[i]
+    end
+    for i in 1:k+1
+      u *= t-ts[i]
+    end
+  end
+  #@show weights
+  u
+end
+
+function calc_Lagrange_interp(k,weights,t,ts,u_history,u)
+  if t in ts
+    i = searchsortedfirst(ts,t)
+    return u_history[:,i]
+  else
+    for i in 1:k+1
+      @.. u += weights[i]/(t-ts[i])*u_history[:,i]
+    end
+    for i in 1:k+1
+      @.. u *= t-ts[i]
+    end
+  end
+  u
+end
+
+function calc_finite_difference_weights(ts,t,order)
+  c = zeros(eltype(ts), order+1, order+1)
+  ts = copy(ts)
+  pushfirst!(ts,t)
+  #i-th column of c is the (i-1) th derivative weights at time t
+  c1 = one(t)
+  c4 = ts[1] - t
+  c[1,1] = one(t)
+  for i in 2:order+1
+    c2 = one(t)
+    c5 = c4
+    c4 = ts[i] - t
+    for j = 1:i-1
+      c3 = ts[i] - ts[j]
+      c2 *= c3
+      if j == i-1
+        for k in i:-1:2
+          c[i,k] = c1*((k-1)*c[i-1,k-1]-c5*c[i-1,k])/c2
+        end
+        c[i,1] = -c1*c5*c[i-1,1]/c2
+      end
+      for k in i:-1:2
+        c[j,k] = (c4*c[j,k] - (k-1)*c[j,k-1])/c3
+      end
+      c[j,1] = c4*c[j,1]/c3
+    end
+    c1 = c2
+  end
+  return c
+end
