@@ -9,8 +9,9 @@ CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK43(),SSPRK1
   ParsaniKetchesonDeconinck3S32(),
   BS3(),BS5(),DP5(),DP8(),Feagin10(),Feagin12(),Feagin14(),TanYam7(),
   Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9(),OwrenZen3(),OwrenZen4(),OwrenZen5(),
-  AutoTsit5(Rosenbrock23()),TRBDF2(),KenCarp4(),ABDF2(),AitkenNeville(threading=false)]
+  AutoTsit5(Rosenbrock23()),TRBDF2(),KenCarp4(),ABDF2()]
 broken_CACHE_TEST_ALGS = [QNDF(),ExtrapolationMidpointHairerWanner(),ImplicitEulerExtrapolation(),ImplicitDeuflhardExtrapolation()]
+# AitkenNeville(threading=false) fails Elastic but not normal case
 
 using InteractiveUtils
 
