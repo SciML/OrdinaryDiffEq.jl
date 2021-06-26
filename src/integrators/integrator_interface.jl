@@ -118,7 +118,9 @@ function resize!(integrator::ODEIntegrator, i::Int)
   @unpack cache = integrator
 
   for c in full_cache(cache)
-    resize!(c,i)
+    # Skip nothings which may exist in the cache since extra variables
+    # may be required for things like units
+    c !== nothing && resize!(c,i)
   end
   resize_nlsolver!(integrator, i)
   resize_J_W!(cache, integrator, i)
