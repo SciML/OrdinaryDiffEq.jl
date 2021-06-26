@@ -606,6 +606,9 @@ qsteady_max_default(alg::QNDF2) = 2//1
 qsteady_max_default(alg::QNDF) = 2//1
 qsteady_max_default(alg::FBDF) = 2//1
 
+#TODO
+#DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
+
 FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time} = scale_by_time
 
 # SSP coefficients

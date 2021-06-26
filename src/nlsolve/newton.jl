@@ -97,6 +97,11 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
   atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)
+  # NDF and BDF are special because the truncation error is directly
+  # propertional to the total displacement.
+  if integrator.alg isa QNDF
+    ndz *= error_constant(integrator, alg_order(integrator.alg))
+  end
 
   # compute next iterate
   nlsolver.ztmp = z .- dz
@@ -180,6 +185,11 @@ end
 
   calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
   ndz = opts.internalnorm(atmp, t)
+  # NDF and BDF are special because the truncation error is directly
+  # propertional to the total displacement.
+  if integrator.alg isa QNDF
+    ndz *= error_constant(integrator, alg_order(integrator.alg))
+  end
 
   # compute next iterate
   @.. ztmp = z - dz

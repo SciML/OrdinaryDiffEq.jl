@@ -1,4 +1,3 @@
-# bdf_utils
 @inline function U!(k, U)
   @inbounds for r = 1:k
     U[1,r] = -r
@@ -8,7 +7,7 @@
   end
   nothing
 end
-  
+
 function R!(k, ρ, cache)
   @unpack R = cache
   @inbounds for r = 1:k
@@ -70,7 +69,6 @@ function reinterpolate_history!(cache::OrdinaryDiffEqConstantCache, D, R, k)
   end
 end
 
-
 function calc_R(ρ, k, ::Val{N}) where {N}
   R = zero(MMatrix{N,N,typeof(ρ)})
   @inbounds for r = 1:k
@@ -94,7 +92,13 @@ end
 
 const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
 
-###FBDF
+error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
+function error_constant(integrator, alg::QNDF, k)
+  @unpack γₖ = integrator.cache
+  κ = alg.kappa[k]
+  κ*γₖ[k] + inv(k+1)
+end
+
 function compute_weights!(ts,k,weights)
   for i = 1:k+1
       weights[i] = one(eltype(weights))
@@ -107,7 +111,6 @@ function compute_weights!(ts,k,weights)
       weights[i] = 1/weights[i]
   end
 end
-
 
 function calc_Lagrange_interp(k,weights,t,ts,u_history,u::Number)
   #@show t,ts,u_history

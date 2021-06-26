@@ -125,6 +125,11 @@ end
         sequence = seq, threading = true)
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ alg.n_init + 0.5 atol=newTol #Superconvergence
+      algp = ImplicitEulerBarycentricExtrapolation(min_order = j,
+        init_order = j, max_order=j,
+        sequence = seq, threading = OrdinaryDiffEq.PolyesterThreads())
+      simp = test_convergence(dts,prob,algp)
+      @test simp.𝒪est[:final] ≈ algp.n_init + 0.5 atol=newTol #Superconvergence
     end
     # Regression test
     sol = solve(prob,ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
@@ -141,7 +146,7 @@ end
     for j = 1:6
       alg = ImplicitDeuflhardExtrapolation(min_order = j,
         init_order = j, max_order=j,
-        sequence = seq,threading=false)
+        sequence = seq,threading=OrdinaryDiffEq.Sequential())
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
     end
@@ -169,7 +174,7 @@ end
 
     # Regression test
     alg = ImplicitDeuflhardExtrapolation(max_order=9, min_order=1,
-      init_order=9, sequence=seq,threading=true)
+      init_order=9, sequence=seq,threading=OrdinaryDiffEq.BaseThreads())
     sol = solve(prob, alg, reltol=1e-3)
     @test length(sol.u) < 10
   end
@@ -204,7 +209,7 @@ end
     for j = 1:6
       alg = ImplicitHairerWannerExtrapolation(min_order = j,
         init_order = j, max_order=j,
-        sequence = seq,threading=true)
+        sequence = seq,threading=OrdinaryDiffEq.PolyesterThreads())
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) - 1 atol=testTol
     end
@@ -227,7 +232,7 @@ end
       for j = 1:6
         alg = ExtrapolationMidpointDeuflhard(min_order = j,
           init_order = j, max_order=j,
-          sequence = seq, threading=false)
+          sequence = seq, threading=OrdinaryDiffEq.Sequential())
         sim = test_convergence(dts,prob,alg)
         @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
       end

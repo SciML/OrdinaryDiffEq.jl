@@ -59,6 +59,7 @@ using DocStringExtensions
                           forwarddiff_color_jacobian, ForwardColorJacCache,
                           default_chunk_size, getsize
 
+  import Polyester
   using MacroTools, Adapt
 
   const CompiledFloats = Union{Float32,Float64,

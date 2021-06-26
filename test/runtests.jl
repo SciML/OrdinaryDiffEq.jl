@@ -125,10 +125,8 @@ if !is_APPVEYOR && GROUP == "AlgConvergence_III"
 end
 
 if !is_APPVEYOR && GROUP == "Downstream"
-  @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
   activate_downstream_env()
-  Pkg.test("DiffEqCallbacks")
-  Pkg.test("DiffEqSensitivity")
+  @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
 end
 
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"

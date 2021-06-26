@@ -192,7 +192,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
+function ode_interpolation(tvals,id::I,idxs,deriv::D,p,continuity::Symbol=:left) where {I,D}
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
@@ -240,7 +240,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
+function ode_interpolation!(vals,tvals,id::I,idxs,deriv::D,p,continuity::Symbol=:left) where {I,D}
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
@@ -304,7 +304,7 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left)
+function ode_interpolation(tval::Number,id::I,idxs,deriv::D,p,continuity::Symbol=:left) where {I,D}
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
 
@@ -346,7 +346,7 @@ ode_interpolation!(out,tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=:left)
+function ode_interpolation!(out,tval::Number,id::I,idxs,deriv::D,p,continuity::Symbol=:left) where {I,D}
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
 

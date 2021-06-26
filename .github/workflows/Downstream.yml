@@ -19,6 +19,8 @@ jobs:
         package:
           - {user: SciML, repo: DelayDiffEq.jl, group: All}
           - {user: SciML, repo: StochasticDiffEq.jl, group: All}
+          - {user: SciML, repo: DiffEqCallbacks.jl, group: All}
+          - {user: SciML, repo: DiffEqSensitivity.jl, group: Downstream}
 
     steps:
       - uses: actions/checkout@v2

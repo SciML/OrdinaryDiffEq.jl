@@ -247,3 +247,28 @@ end
     @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
   end
 end
+
+# Check https://github.com/SciML/DifferentialEquations.jl/issues/757
+using OrdinaryDiffEq, LinearAlgebra
+n = 3
+Λ_func = t -> exp(-t)*ones(n) |> Diagonal |> Matrix
+τ = 0.2
+function dynamics!(du,u,p,t)
+    du .= u - Λ_func(t-τ)
+    nothing
+end
+function dynamics(u,p,t)
+    u - Λ_func(t-τ)
+end
+
+x0 = zeros(n, n)
+M = zeros(n*n) |> Diagonal |> Matrix
+f = ODEFunction(dynamics!, mass_matrix=M)
+tspan = (0, 10.0)
+prob = ODEProblem(f, x0, tspan)
+foop = ODEFunction(dynamics, mass_matrix=M)
+proboop = ODEProblem(f, x0, tspan)
+sol = solve(prob,Rodas5())
+sol = solve(prob,Rodas4(),initializealg = ShampineCollocationInit())
+sol = solve(proboop,Rodas5())
+sol = solve(proboop,Rodas4(),initializealg = ShampineCollocationInit())

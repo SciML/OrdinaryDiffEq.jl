@@ -265,13 +265,13 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
     sizehint!(ks,2)
   end
 
-  QT = if tTypeNoUnits <: Integer
-    typeof(qmin)
+  QT, EEstT = if tTypeNoUnits <: Integer
+    typeof(qmin), typeof(qmin)
   elseif prob isa DiscreteProblem
     # The QT fields are not used for DiscreteProblems
-    constvalue(tTypeNoUnits)
+    constvalue(tTypeNoUnits), constvalue(tTypeNoUnits)
   else
-    typeof(DiffEqBase.value(internalnorm(u, t)))
+    typeof(DiffEqBase.value(internalnorm(u, t))), typeof(internalnorm(u, t))
   end
 
   k = rateType[]
@@ -308,7 +308,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   end
 
   if controller === nothing
-    controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    controller = default_controller(_alg, cache, qoldinit,
+                                    beta1 === nothing ? nothing : beta1,
+                                    beta2 === nothing ? nothing : beta2)
   end
 
 
@@ -389,7 +391,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   kshortsize = 0
   reeval_fsal = false
   u_modified = false
-  EEst = QT(1)
+  EEst = EEstT(1)
   just_hit_tstop = false
   isout = false
   accept_step = false
@@ -410,7 +412,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   integrator = ODEIntegrator{typeof(_alg),isinplace(prob),uType,typeof(du),
                              tType,typeof(p),
-                             typeof(eigen_est),
+                             typeof(eigen_est),typeof(EEst),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(_alg,rate_prototype),
@@ -428,6 +430,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                              isout,reeval_fsal,
                              u_modified,reinitiailize,isdae,
                              opts,destats,initializealg)
+
   if initialize_integrator
     if isdae
       DiffEqBase.initialize_dae!(integrator)

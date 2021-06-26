@@ -76,19 +76,19 @@
       return tdir*max(smalldt, dtmin)
     end
   end
-
+  
   if integrator.opts.verbose && any(x->any(isnan, x), f₀)
     @warn("First function call produced NaNs. Exiting.")
   end
 
   @.. tmp = f₀/sk*oneunit_tType
   d₁ = internalnorm(tmp,t)
-
-  if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = smalldt
-  else
-    dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
-  end
+  dt₀ = OrdinaryDiffEq.ArrayInterface.IfElse.ifelse((d₀ < 1//10^(5)) | (d₁ < 1//10^(5)), smalldt, convert(_tType,oneunit_tType*(d₀/d₁)/100))
+  # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
+  #   dt₀ = smalldt
+  # else
+  #   dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
+  # end
   dt₀ = min(dt₀,dtmax_tdir)
 
   if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType)*oneunit(_tType)

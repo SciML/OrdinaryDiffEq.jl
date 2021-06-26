@@ -165,14 +165,14 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::OwrenZen4Cache,f=integrator.f)
+function initialize!(integrator,cache::OwrenZen4Cache)
   integrator.kshortsize = 6
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
-  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
@@ -984,7 +984,7 @@ end
 end
 
 
-function initialize!(integrator, cache::RKO65Cache, f=integrator.f)
+function initialize!(integrator, cache::RKO65Cache)
   @unpack k,fsalfirst = cache
   integrator.kshortsize = 6
   resize!(integrator.k, integrator.kshortsize)
@@ -997,7 +997,7 @@ function initialize!(integrator, cache::RKO65Cache, f=integrator.f)
 
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
 
-  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
   integrator.destats.nf += 1
 
