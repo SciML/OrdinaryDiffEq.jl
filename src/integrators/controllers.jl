@@ -567,12 +567,13 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
     terk = terkp1
   else
     p = 2
+    #@show k, terkm2 , terkm1 , terk , terkp1
     while !(terkm2 > terkm1 > terk > terkp1) && k > 2
       terkp1 = terk
       terk = terkm1
       terkm1 = terkm2
-
-      terkm2 = cache.fd_weights[k-p,1] * u
+      fd_weights = calc_finite_difference_weights(ts,t+dt,k-p)
+      terkm2 = fd_weights[k-p,1] * u
       if eltype(u) <: Number
         for i in 2:k-p
           terkm2 += fd_weights[i,k-p] * u_history[i-1]

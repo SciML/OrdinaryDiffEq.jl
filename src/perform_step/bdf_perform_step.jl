@@ -1023,7 +1023,11 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   markfirststage!(nlsolver)
   nlsolver.z = u₀
   mass_matrix = f.mass_matrix
-  equi_ts = t - dt * 1:(k-1)
+  
+  equi_ts = zeros(k-1)
+  for i in 1:k-1
+    equi_ts[i] = t - dt*i
+  end
   #=if k == 3
     @show t,dt,equi_ts
   end=#
@@ -1095,6 +1099,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     cache.terk = integrator.opts.internalnorm(atmp,t)
     
     if k > 1
+      fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k-1)
       terkm1 = fd_weights[1,k] * u
 
       if eltype(u) <: Number
@@ -1109,11 +1114,11 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
         end
         @.. terkm1 *= abs(dt^(k-1))
       end
-  
       atmp = terkm1 * error_weights
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
+      fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k-2)
       terkm2 = fd_weights[1,k-1] * u
 
       if eltype(u) <: Number
@@ -1142,7 +1147,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   
 
   #if k ==3
-  #@show k,t,dt,u₀,u,nconsteps,consfailcnt, integrator.EEst,uprev,u_corrector
+  #  @show length(equi_ts),equi_ts
+    @show k,t,dt,u₀,u,nconsteps,consfailcnt, integrator.EEst,uprev,u_corrector
   #end
 
   integrator.fsallast = f(u, p, t+dt)
