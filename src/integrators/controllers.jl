@@ -555,7 +555,7 @@ end
 
 function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
-  @unpack ts,bdf_coeffs,terkm2, terkm1, terk, terkp1,r = cache
+  @unpack ts,bdf_coeffs,terkm2, terkm1, terk, terkp1,r,u_history = cache
   cache.prev_order = cache.order
   k = cache.order
   #@show terk,terkm1
@@ -566,29 +566,29 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
     k += 1
     terk = terkp1
   else
-    p = 2
     #@show k, terkm2 , terkm1 , terk , terkp1
     while !(terkm2 > terkm1 > terk > terkp1) && k > 2
       terkp1 = terk
       terk = terkm1
       terkm1 = terkm2
-      fd_weights = calc_finite_difference_weights(ts,t+dt,k-p)
-      terkm2 = fd_weights[k-p,1] * u
-      if eltype(u) <: Number
-        for i in 2:k-p
-          terkm2 += fd_weights[i,k-p] * u_history[i-1]
+
+      fd_weights = calc_finite_difference_weights(ts,t+dt,k-2)
+      
+      terkm2 = @.. fd_weights[k-2,1] * u
+      if typeof(u) <: Number
+        for i in 2:k-2
+          terkm2 += fd_weights[i,k-2] * u_history[i-1]
         end
         #@show fd_weights,u_history,u,terk
-        terkm2 *= abs(dt^(k-p))
+        terkm2 *= abs(dt^(k-2))
       else
         for i in 2:k-1
-          @.. terkm2 += fd_weights[i,k-p] * u_history[:,i-1]
+          @.. terkm2 += fd_weights[i,k-2] * u_history[:,i-1]
         end
-        @.. terkm2 *= abs(dt^(k-p))
+        @.. terkm2 *= abs(dt^(k-2))
       end
       atmp = calculate_residuals(terkm2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      cache.terkm2 = integrator.opts.internalnorm(atmp,t)
-      p += 1
+      terkm2 = integrator.opts.internalnorm(atmp,t)
       k -= 1
     end
     if !(terkm1 > terk > terkp1) && k == 2

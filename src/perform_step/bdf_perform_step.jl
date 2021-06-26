@@ -1033,13 +1033,24 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   end=#
 
   fill!(u_corrector,zero(eltype(u)))
-  for i in 1:k-1
-    u_corrector[i] = calc_Lagrange_interp(k,weights,equi_ts[i],ts,u_history,u_corrector[i])
+  if u isa Number
+    for i in 1:k-1
+      u_corrector[i] = calc_Lagrange_interp(k,weights,equi_ts[i],ts,u_history,u_corrector[i])
+    end
+    tmp = - uprev * bdf_coeffs[k,2]
+    for i in 1:k-1
+      tmp -= u_corrector[i] * bdf_coeffs[k,i+2]
+    end
+  else
+    for i in 1:k-1
+      u_corrector[:,i] = calc_Lagrange_interp(k,weights,equi_ts[i],ts,u_history,u_corrector[:,i])
+    end
+    tmp = - uprev * bdf_coeffs[k,2]
+    for i in 1:k-1
+      @.. tmp -= u_corrector[:,i] * bdf_coeffs[k,i+2]
+    end
   end
-  tmp = - uprev * bdf_coeffs[k,2]
-  for i in 1:k-1
-    tmp -= u_corrector[i] * bdf_coeffs[k,i+2]
-  end
+
   
   if mass_matrix == I
     nlsolver.tmp = tmp/dt
@@ -1077,13 +1088,13 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   error_weights = calculate_residuals(1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
   if integrator.opts.adaptive
-    atmp = lte * error_weights
+    atmp = @.. lte * error_weights
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
 
     fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k)
     terk = fd_weights[1,k+1] * u
 
-    if eltype(u) <: Number
+    if typeof(u) <: Number
       for i in 2:k+1
         terk += fd_weights[i,k+1] * u_history[i-1]
       end
@@ -1095,14 +1106,14 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
       @.. terk *= abs(dt^(k))
     end
 
-    atmp = terk * error_weights
+    atmp = @.. terk * error_weights
     cache.terk = integrator.opts.internalnorm(atmp,t)
     
     if k > 1
       fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k-1)
       terkm1 = fd_weights[1,k] * u
 
-      if eltype(u) <: Number
+      if typeof(u) <: Number
         for i in 2:k
           terkm1 += fd_weights[i,k] * u_history[i-1]
         end
@@ -1114,14 +1125,14 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
         end
         @.. terkm1 *= abs(dt^(k-1))
       end
-      atmp = terkm1 * error_weights
+      atmp = @.. terkm1 * error_weights
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
       fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k-2)
       terkm2 = fd_weights[1,k-1] * u
 
-      if eltype(u) <: Number
+      if typeof(u) <: Number
         for i in 2:k-1
           terkm2 += fd_weights[i,k-1] * u_history[i-1]
         end
@@ -1134,7 +1145,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
         @.. terkm2 *= abs(dt^(k-2))
       end
   
-      atmp = terkm2 * error_weights
+      atmp = @.. terkm2 * error_weights
       cache.terkm2 = integrator.opts.internalnorm(atmp,t)
     end
     if nconsteps > k+1 && k < max_order
@@ -1148,7 +1159,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
 
   #if k ==3
   #  @show length(equi_ts),equi_ts
-    @show k,t,dt,u₀,u,nconsteps,consfailcnt, integrator.EEst,uprev,u_corrector
+    #@show k,t,dt,u₀,u,nconsteps,consfailcnt, integrator.EEst,uprev,u_corrector
   #end
 
   integrator.fsallast = f(u, p, t+dt)

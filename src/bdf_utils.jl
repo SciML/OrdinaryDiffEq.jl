@@ -128,7 +128,7 @@ end
 
 function calc_Lagrange_interp(k,weights,t,ts,u_history,u)
   if t in ts
-    i = searchsortedfirst(ts,t)
+    i = searchsortedfirst(ts,t,rev=true)
     return u_history[:,i]
   else
     for i in 1:k+1
