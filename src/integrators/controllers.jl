@@ -555,14 +555,14 @@ end
 
 function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
-  @unpack ts,bdf_coeffs,terkm2, terkm1, terk, terkp1,r,u_history = cache
+  @unpack ts,terkm2, terkm1, terk, terkp1,r,u_history = cache
   cache.prev_order = cache.order
   k = cache.order
   #@show terk,terkm1
 
-  if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk >= terkp1) ||
-    (k == 2 && terkm1 >= terk >= terkp1) ||
-    (k > 2 && terkm2 >= terkm1 >= terk >= terkp1))
+  if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk > terkp1) ||
+    (k == 2 && terkm1 > terk > terkp1) ||
+    (k > 2 && terkm2 > terkm1 > terk > terkp1))
     k += 1
     terk = terkp1
   else
@@ -571,9 +571,7 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
       terkp1 = terk
       terk = terkm1
       terkm1 = terkm2
-
       fd_weights = calc_finite_difference_weights(ts,t+dt,k-2)
-      
       terkm2 = @.. fd_weights[k-2,1] * u
       if typeof(u) <: Number
         for i in 2:k-2
@@ -582,7 +580,7 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
         #@show fd_weights,u_history,u,terk
         terkm2 *= abs(dt^(k-2))
       else
-        for i in 2:k-1
+        for i in 2:k-2
           @.. terkm2 += fd_weights[i,k-2] * u_history[:,i-1]
         end
         @.. terkm2 *= abs(dt^(k-2))
@@ -598,13 +596,12 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   end
   if k != cache.order
     integrator.cache.nconsteps = 0
-    cache.prev_order = cache.order
     cache.order = k
   end
   if iszero(terk)
     q = inv(integrator.opts.qmax)
   else
-    q = 1/((2*terk/(k+1))^(-1/(k+1)))
+    q = ((2*terk/(k+1))^(1/(k+1)))
   end
   integrator.qold = q
   q
@@ -612,10 +609,14 @@ end
 
 function step_accept_controller!(integrator,alg::FBDF{max_order},q) where max_order
   integrator.cache.consfailcnt = 0
-  integrator.cache.nconsteps += 1
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
+  #if q == one(q) && integrator.cache.order == integrator.cache.prev_order
+    integrator.cache.nconsteps += 1
+  #else
+  #  integrator.cache.nconsteps = 1
+  #end
   return integrator.dt/q
 end
 
@@ -625,7 +626,7 @@ function step_reject_controller!(integrator,alg::FBDF)
   dt = integrator.dt
   #@show dt, integrator.cache.consfailcnt
   if integrator.cache.consfailcnt == 1
-    dt *= 0.8
+    dt *= 0.5
   else
     dt *= 0.25
   end

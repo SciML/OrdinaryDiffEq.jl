@@ -1053,8 +1053,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   else
     nlsolver.tmp = mass_matrix * tmp/dt
   end
-  β₀ = 1
-  α₀ = bdf_coeffs[k,1]
+  β₀ = inv(bdf_coeffs[k,1])
+  α₀ = 1 #bdf_coeffs[k,1]
   nlsolver.γ = β₀
   nlsolver.α = α₀
 
@@ -1062,7 +1062,6 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   u = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
-  r[1] = 0
   for j in 2:k
     r[j] = (1-j)
     for i in 2:k+1
@@ -1087,8 +1086,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     atmp = @.. lte * error_weights
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
 
-    fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k)
-    terk = fd_weights[1,k+1] * u
+    fd_weights = fd_weights = calc_finite_difference_weights(ts,t+dt,k)
+    terk = @.. fd_weights[1,k+1] * u
 
     if typeof(u) <: Number
       for i in 2:k+1
@@ -1106,7 +1105,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     cache.terk = integrator.opts.internalnorm(atmp,t)
     
     if k > 1
-      fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k-1)
+      fd_weights = fd_weights = calc_finite_difference_weights(ts,t+dt,k-1)
       terkm1 = fd_weights[1,k] * u
 
       if typeof(u) <: Number
@@ -1125,7 +1124,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      fd_weights = cache.fd_weights = calc_finite_difference_weights(ts,t+dt,k-2)
+      fd_weights = fd_weights = calc_finite_difference_weights(ts,t+dt,k-2)
       terkm2 = fd_weights[1,k-1] * u
 
       if typeof(u) <: Number
@@ -1155,7 +1154,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
 
   #if k ==3
   #  @show length(equi_ts),equi_ts
-    #@show k,t,dt,u₀,u,nconsteps,consfailcnt, integrator.EEst,uprev,u_corrector
+    #@show k,nconsteps,consfailcnt, t,dt,u₀,integrator.EEst,u,uprev,u_corrector
   #end
 
   integrator.fsallast = f(u, p, t+dt)
