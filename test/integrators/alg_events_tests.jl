@@ -41,6 +41,27 @@ function test_callback_mvector(alg; kwargs...)
     sol.u[end][1] ≈ exp(1)
 end
 
+function test_callback_adaptive_multistep(alg; kwargs...)
+    function f(du,u,p,t)
+        du[1] = u[2]
+        du[2] = -p
+    end
+    function condition(u,t,integrator) # Event when event_f(u,t) == 0
+        u[1]
+    end
+    function affect!(integrator)
+        integrator.u[2] = -integrator.u[2]
+    end
+    cb = ContinuousCallback(condition,affect!)
+    u0 = [50.0,0.0]
+    tspan = (0.0,15.0)
+    p = 9.8
+    prob = ODEProblem(f,u0,tspan,p,callback=cb)
+    sol1 = solve(prob, Tsit5(); kwargs...)
+    sol2 = solve(prob, alg; kwargs...)
+    sol1.u[end][1] ≈ sol2.u[end][1] && sol1.u[end][2] ≈ sol2.u[end][2]
+end
+
 println("inplace")
 @test test_callback_inplace(BS3())
 @test test_callback_inplace(BS5())
@@ -76,6 +97,7 @@ println("inplace")
 @test test_callback_inplace(VCABM3())
 @test test_callback_inplace(VCABM4())
 @test test_callback_inplace(VCABM5())
+@test test_callback_inplace(QNDF())
 
 println("outofplace")
 @test test_callback_outofplace(BS3())
@@ -112,6 +134,7 @@ println("outofplace")
 @test test_callback_outofplace(VCABM3())
 @test test_callback_outofplace(VCABM4())
 @test test_callback_outofplace(VCABM5())
+@test test_callback_inplace(QNDF())
 
 println("scalar")
 @test test_callback_scalar(BS3())
@@ -148,6 +171,7 @@ println("scalar")
 @test test_callback_scalar(VCABM3())
 @test test_callback_scalar(VCABM4())
 @test test_callback_scalar(VCABM5())
+@test test_callback_inplace(QNDF())
 
 println("svector")
 @test test_callback_svector(BS3())
@@ -184,6 +208,7 @@ println("svector")
 @test test_callback_svector(VCABM3())
 @test test_callback_svector(VCABM4())
 @test test_callback_svector(VCABM5())
+@test test_callback_inplace(QNDF())
 
 print("mvector")
 @test test_callback_mvector(BS3())
@@ -237,3 +262,7 @@ print(".")
 print(".")
 @test test_callback_mvector(VCABM5())
 println(".")
+@test test_callback_inplace(QNDF())
+
+println("adaptive multistep methods")
+@test test_callback_adaptive_multistep(QNDF(),reltol=1e-8,abstol=1e-8)

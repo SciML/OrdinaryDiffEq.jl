@@ -447,7 +447,7 @@ function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_or
     if integrator.cache.nconsteps < integrator.cache.order + 2
       q = one(integrator.qold) #quasi-contsant steps
     else
-      zₛ = 1.2 # equivalent to intergrator.opts.gamma
+      zₛ = 1.2 # equivalent to integrator.opts.gamma
       zᵤ = 0.1
       Fᵤ = 10
       expo = 1/(k+1)
@@ -518,7 +518,7 @@ function step_reject_controller!(integrator,alg::QNDF)
   if integrator.cache.consfailcnt > 1
     h = h/2
   end
-  zₛ = 1.2  # equivalent to intergrator.opts.gamma
+  zₛ = 1.2  # equivalent to integrator.opts.gamma
   expo = 1/(k+1)
   z = zₛ * ((integrator.EEst)^expo)
   F = inv(z)
