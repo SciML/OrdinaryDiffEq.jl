@@ -47,6 +47,11 @@ cache.
 function calc_J(integrator, cache)
   @unpack t,uprev,f,p,alg = integrator
 
+  if is_forward_sense(f)
+    uprev = @view uprev[1:f.numindvar]
+    f = unwrap_sense(f)
+  end
+
   if alg isa DAEAlgorithm
     if DiffEqBase.has_jac(f)
       J = f.jac(duprev, uprev, p, t)
@@ -88,6 +93,10 @@ either automatic or finite differencing will be used depending on the `cache`.
 """
 function calc_J!(J, integrator, cache)
   @unpack t,uprev,f,p,alg = integrator
+  if is_forward_sense(f)
+    uprev = @view uprev[1:f.numindvar]
+    f = unwrap_sense(f)
+  end
 
   if alg isa DAEAlgorithm
     if DiffEqBase.has_jac(f)
@@ -570,6 +579,12 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
 end
 
 function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
+  is_forward = is_forward_sense(f)
+  if is_forward
+    u = @view u[1:f.numindvar]
+    uprev = @view uprev[1:f.numindvar]
+    f = unwrap_sense(f)
+  end
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator{IIP}(f, u, dt)
@@ -598,8 +613,13 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
       ArrayInterface.lu_instance(J)
     end
   end
+  if is_forward
+    W = f.mass_matrix === I ? ForwardSensitivityW(W, nothing) : ForwardSensitivityW(W, similar(W))
+  end
   return J, W
 end
 
-build_uf(alg,nf,t,p,::Val{true}) = UJacobianWrapper(nf,t,p)
-build_uf(alg,nf,t,p,::Val{false}) = UDerivativeWrapper(nf,t,p)
+is_forward_sense(nf) = nf isa ODEForwardSensitivityFunction
+unwrap_sense(nf) = is_forward_sense(nf) ? nf.f : nf
+build_uf(alg,nf,t,p,::Val{true}) = UJacobianWrapper(unwrap_sense(nf),t,p)
+build_uf(alg,nf,t,p,::Val{false}) = UDerivativeWrapper(unwrap_sense(nf),t,p)
