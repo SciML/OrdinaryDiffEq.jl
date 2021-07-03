@@ -378,10 +378,11 @@ end
 @noinline _throwWMerror(W, mass_matrix) = throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
 @noinline _throwJMerror(J, mass_matrix) = throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 
-using DiffEqBase: ForwardSensitivityJacobian
-@inline function jacobian2W!(W::ForwardSensitivityJacobian, mass_matrix::MT, dtgamma::Number, J::ForwardSensitivityJacobian, W_transform::Bool) where MT
-  mass_matrix === I || error("Non-idenity mass matrix is not supported at the moment.")
-  jacobian2W!(parent(W), mass_matrix, dtgamma, parent(J), W_transform)
+@inline function jacobian2W!(W::ForwardSensitivityW, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool) where MT
+  @unpack W1, W2 = W
+  jacobian2W!(W1, mass_matrix, dtgamma, J, W_transform)
+  W2 === nothing || jacobian2W!(W2, I, dtgamma, J, W_transform)
+  nothing
 end
 @inline function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
