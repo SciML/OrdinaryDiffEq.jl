@@ -117,6 +117,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
 end
 
 function DiffEqBase.build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where transform
+  #=
   if is_forward_sense(f)
     uprev = @view uprev[1:f.numindvar]
     u = @view u[1:f.numindvar]
@@ -125,6 +126,7 @@ function DiffEqBase.build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,::Val{transfor
     du2 = @view du2[1:f.numindvar]
     f = unwrap_sense(f)
   end
+  =#
 
   if !DiffEqBase.has_jac(f) && ((!transform && !DiffEqBase.has_Wfact(f)) || (transform && !DiffEqBase.has_Wfact_t(f)))
     jac_prototype = f.jac_prototype

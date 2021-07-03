@@ -1,23 +1,21 @@
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
-  @inbounds begin
-    @unpack t,dt,uprev,u,f,p = integrator
-    @unpack du2,fsalfirst,dT,tf,linsolve_tmp = cache
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack du2,fsalfirst,dT,tf,linsolve_tmp = cache
 
-    # Time derivative
-    if !repeat_step # skip calculation if step is repeated
-      if DiffEqBase.has_tgrad(f)
-        f.tgrad(dT, uprev, p, t)
-      else
-        tf.uprev = uprev
-        tf.p = p
-        derivative!(dT, tf, t, du2, integrator, cache.grad_config)
-      end
+  # Time derivative
+  if !repeat_step # skip calculation if step is repeated
+    if DiffEqBase.has_tgrad(f)
+      f.tgrad(dT, uprev, p, t)
+    else
+      tf.uprev = uprev
+      tf.p = p
+      derivative!(dT, tf, t, du2, integrator, cache.grad_config)
     end
-
-    f(fsalfirst, uprev, p, t)
-    integrator.destats.nf += 1
-    @.. linsolve_tmp = fsalfirst + dtd1*dT
   end
+
+  f(fsalfirst, uprev, p, t)
+  integrator.destats.nf += 1
+  @.. linsolve_tmp = fsalfirst + dtd1*dT
 end
 
 function calc_tderivative(integrator, cache)
@@ -47,13 +45,15 @@ cache.
 function calc_J(integrator, cache)
   @unpack t,uprev,f,p,alg = integrator
 
+  #=
   if is_forward_sense(f)
     uprev = @view uprev[1:f.numindvar]
     f = unwrap_sense(f)
   end
+  =#
 
   if alg isa DAEAlgorithm
-    if DiffEqBase.has_jac(f)
+    if DiffEqBase.has_jac(f) && !is_forward_sense(f)
       J = f.jac(duprev, uprev, p, t)
     else
       @unpack uf = cache
@@ -61,7 +61,7 @@ function calc_J(integrator, cache)
       J = jacobian(uf, x, integrator)
     end
   else
-    if DiffEqBase.has_jac(f)
+    if DiffEqBase.has_jac(f) && !is_forward_sense(f)
       J = f.jac(uprev, p, t)
     else
       @unpack uf = cache
@@ -93,36 +93,38 @@ either automatic or finite differencing will be used depending on the `cache`.
 """
 function calc_J!(J, integrator, cache)
   @unpack t,uprev,f,p,alg = integrator
+  #=
   is_forward = is_forward_sense(f)
   sensef = f
   if is_forward
     uprev = @view uprev[1:f.numindvar]
     f = unwrap_sense(f)
   end
+  =#
 
   if alg isa DAEAlgorithm
-    if DiffEqBase.has_jac(f)
+    if DiffEqBase.has_jac(f) && !is_forward_sense(f)
       duprev = integrator.duprev
       uf = cache.uf
       f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
     else
       @unpack du1, uf, jac_config = cache
-      if is_forward
-        du1 = @view uprev[1:sensef.numindvar]
-      end
+      #if is_forward
+      #  du1 = @view uprev[1:sensef.numindvar]
+      #end
       # using `dz` as temporary array
       x = cache.dz
       fill!(x, zero(eltype(x)))
       jacobian!(J, uf, x, du1, integrator, jac_config)
     end
   else
-    if DiffEqBase.has_jac(f)
+    if DiffEqBase.has_jac(f) && !is_forward_sense(f)
       f.jac(J, uprev, p, t)
     else
       @unpack du1, uf, jac_config = cache
-      if is_forward
-        du1 = @view uprev[1:sensef.numindvar]
-      end
+      #if is_forward
+      #  du1 = @view uprev[1:sensef.numindvar]
+      #end
 
       uf.f = nlsolve_f(f, alg)
       uf.t = t
@@ -454,12 +456,12 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   is_compos = integrator.alg isa CompositeAlgorithm
 
   # handle Wfact
-  if W_transform && DiffEqBase.has_Wfact_t(f)
+  if W_transform && DiffEqBase.has_Wfact_t(f) && !is_forward_sense(f)
     f.Wfact_t(W, u, p, dtgamma, t)
     isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
     is_compos && (integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) + inv(dtgamma)) # TODO: better estimate
     return nothing
-  elseif !W_transform && DiffEqBase.has_Wfact(f)
+  elseif !W_transform && DiffEqBase.has_Wfact(f) && !is_forward_sense(f)
     f.Wfact(W, u, p, dtgamma, t)
     isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
     if is_compos
@@ -518,7 +520,7 @@ end
   if islin
     J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
     W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
-  elseif DiffEqBase.has_jac(f)
+  elseif DiffEqBase.has_jac(f) && !is_forward_sense(f)
     J = f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
@@ -588,12 +590,14 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
 end
 
 function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
+  #=
   is_forward = is_forward_sense(f)
   if is_forward
     u = @view u[1:f.numindvar]
     uprev = @view uprev[1:f.numindvar]
     f = unwrap_sense(f)
   end
+  =#
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator{IIP}(f, u, dt)
@@ -601,7 +605,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
   elseif IIP && f.jac_prototype !== nothing
     J = similar(f.jac_prototype)
     W = similar(J)
-  elseif islin || (!IIP && DiffEqBase.has_jac(f))
+  elseif islin || (!IIP && DiffEqBase.has_jac(f) && !is_forward_sense(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
@@ -622,13 +626,16 @@ function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
       ArrayInterface.lu_instance(J)
     end
   end
+  #=
   if is_forward
     W = f.mass_matrix === I ? ForwardSensitivityW(W, nothing) : ForwardSensitivityW(W, similar(W))
   end
+  =#
   return J, W
 end
 
 is_forward_sense(nf) = nf isa ODEForwardSensitivityFunction
-unwrap_sense(nf) = is_forward_sense(nf) ? nf.f : nf
+#unwrap_sense(nf) = is_forward_sense(nf) ? nf.f : nf
+unwrap_sense(f) = f
 build_uf(alg,nf,t,p,::Val{true}) = UJacobianWrapper(unwrap_sense(nf),t,p)
 build_uf(alg,nf,t,p,::Val{false}) = UDerivativeWrapper(unwrap_sense(nf),t,p)
