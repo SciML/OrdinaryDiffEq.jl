@@ -93,7 +93,9 @@ either automatic or finite differencing will be used depending on the `cache`.
 """
 function calc_J!(J, integrator, cache)
   @unpack t,uprev,f,p,alg = integrator
-  if is_forward_sense(f)
+  is_forward = is_forward_sense(f)
+  sensef = f
+  if is_forward
     uprev = @view uprev[1:f.numindvar]
     f = unwrap_sense(f)
   end
@@ -105,6 +107,9 @@ function calc_J!(J, integrator, cache)
       f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
     else
       @unpack du1, uf, jac_config = cache
+      if is_forward
+        du1 = @view uprev[1:sensef.numindvar]
+      end
       # using `dz` as temporary array
       x = cache.dz
       fill!(x, zero(eltype(x)))
@@ -115,6 +120,9 @@ function calc_J!(J, integrator, cache)
       f.jac(J, uprev, p, t)
     else
       @unpack du1, uf, jac_config = cache
+      if is_forward
+        du1 = @view uprev[1:sensef.numindvar]
+      end
 
       uf.f = nlsolve_f(f, alg)
       uf.t = t
