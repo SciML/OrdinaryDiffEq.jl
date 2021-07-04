@@ -59,8 +59,8 @@ sol = solve(prob,TRBDF2(),callback=callback,dt=1/2)
 @test length(sol[end]) > 1
 
 Jv = JacVecOperator(f,u0,nothing,0.0)
-f2 = ODEFunction(f;jac_prototype=Jv)
-prob2 = ODEProblem(f2,u0,tspan)
+ff2 = ODEFunction(f;jac_prototype=Jv)
+prob2 = ODEProblem(ff2,u0,tspan)
 sol = solve(prob2,TRBDF2(linsolve=LinSolveGMRES()),callback=callback)
 
 for alg in CACHE_TEST_ALGS
