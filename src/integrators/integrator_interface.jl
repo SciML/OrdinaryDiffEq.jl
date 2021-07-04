@@ -148,12 +148,15 @@ function resize_J_W!(cache, integrator, i)
     nf = nlsolve_f(f, integrator.alg)
     islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
     if !islin
-      J = similar(f.jac_prototype, i, i)
-      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      if isa(cache.J, DiffEqBase.AbstractDiffEqLinearOperator)
+        resize!(cache.J,i)
+      else
+        J = similar(f.jac_prototype, i, i)
         J = DiffEqArrayOperator(J; update_func=f.jac)
       end
-
-      cache.W = WOperator(f.mass_matrix, integrator.dt, J, true)
+      cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(
+                          f.mass_matrix, integrator.dt, cache.J, integrator.u;
+                          transform = cache.W.transform)
       cache.J = cache.W.J
     end
   else
