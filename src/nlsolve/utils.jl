@@ -396,6 +396,8 @@ function resize_nlsolver!(integrator::DiffEqBase.DEIntegrator, i::Int)
     resize!(nlsolver, integrator, i)
   end
 
+  nlsolver.alg isa NLNewton && resize!(nlsolver.cache.linsolve,i)
+
   # make it reset everything since the caches changed size!
   nlsolver.cache.firstcall = true
 
