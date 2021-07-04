@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
-using Random
+using Random, DiffEqOperators
 using ElasticArrays
 Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK43(),SSPRK104(),
