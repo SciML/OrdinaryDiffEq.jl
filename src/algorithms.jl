@@ -47,7 +47,7 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
-@inline trivial_limiter!(u, f, p, t) = nothing
+@inline trivial_limiter!(u, integrator, p, t) = nothing
 """
 Euler - The canonical forward Euler method. Fixed timestep only.
 """
@@ -400,8 +400,8 @@ Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Phy
 ORK256: Low-Storage Method
   5-stage, second order low-storage method for wave propogation equations. Fixed timestep only.
 
-Like SSPRK methods, ORK256 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, ORK256 also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct ORK256{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -421,8 +421,8 @@ CarpenterKennedy2N54: Low-Storage Method
   The five-stage, fourth order low-storage method of Carpenter and Kennedy (free 3rd order Hermite interpolant).
   Fixed timestep only. Designed for hyperbolic PDEs (stability properties).
 
-Like SSPRK methods, CarpenterKennedy2N54 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, CarpenterKennedy2N54 also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct CarpenterKennedy2N54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -437,8 +437,8 @@ D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutt
 Computational Acoustics. Journal of Computational Physics, 143(2), pp 674-681, 1998. doi:
 https://doi.org/10.1006/jcph.1998.5986
 
-Like SSPRK methods, SHLDDRK64 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, SHLDDRK64 also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct SHLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -476,8 +476,8 @@ DGLDDRK73_C: Low-Storage Method
   Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
   Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK73_C also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, DGLDDRK73_C also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct DGLDDRK73_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -496,8 +496,8 @@ DGLDDRK84_C: Low-Storage Method
   Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
   Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK84_C also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, DGLDDRK84_C also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct DGLDDRK84_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -516,8 +516,8 @@ DGLDDRK84_F: Low-Storage Method
   Optimized for PDE discretizations when the maximum spatial step size is not constrained.
   Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK84_F also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, DGLDDRK84_F also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct DGLDDRK84_F{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -535,8 +535,8 @@ NDBLSRK124: Low-Storage Method
   12-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
   Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK124 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, NDBLSRK124 also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct NDBLSRK124{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -554,8 +554,8 @@ NDBLSRK134: Low-Storage Method
   13-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
   Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK134 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, NDBLSRK134 also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct NDBLSRK134{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
@@ -573,8 +573,8 @@ NDBLSRK144: Low-Storage Method
   14-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
   Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK144 also takes optional arguments `stage_limiter!`, `step_limiter!`, 
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, f, p, t)`.
+Like SSPRK methods, NDBLSRK144 also takes optional arguments `stage_limiter!`, `step_limiter!`,
+where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
 struct NDBLSRK144{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
