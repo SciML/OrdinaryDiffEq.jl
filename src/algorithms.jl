@@ -2557,6 +2557,16 @@ KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 """
+@article{kennedy2019higher,
+  title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
+  author={Kennedy, Christopher A and Carpenter, Mark H},
+  journal={Applied Numerical Mathematics},
+  volume={136},
+  pages={183--205},
+  year={2019},
+  publisher={Elsevier}
+}
+
 KenCarp47: SDIRK Method
   An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting
 """
@@ -2601,6 +2611,16 @@ KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  KenCarp5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 """
+@article{kennedy2019higher,
+  title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
+  author={Kennedy, Christopher A and Carpenter, Mark H},
+  journal={Applied Numerical Mathematics},
+  volume={136},
+  pages={183--205},
+  year={2019},
+  publisher={Elsevier}
+}
+
 KenCarp58: SDIRK Method
   An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting
 """
