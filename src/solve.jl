@@ -22,7 +22,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            save_end = nothing,
                            callback = nothing,
                            dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
-                           calck = (callback !== nothing && callback != CallbackSet()) || (dense), # and no dense output
+                           calck = (callback !== nothing && callback != CallbackSet()) || (dense) || !isempty(saveat), # and no dense output
                            dt = alg isa FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
                            dtmin = nothing,
                            dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
