@@ -380,7 +380,13 @@ end
       copyto!(W, J)
       idxs = diagind(W)
       λ = -mass_matrix.λ
-      @.. @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
+      if ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.fast_scalar_indexing(W)
+          for i in 1:size(J,1)
+              W[i,i] = muladd(λ, invdtgamma, J[i,i])
+          end
+      else
+          @.. @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
+      end
     else
       @.. W = muladd(-mass_matrix, invdtgamma, J)
     end

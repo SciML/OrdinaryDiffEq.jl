@@ -60,14 +60,14 @@ end
       f(ArrayFuse(tmp, u, (A2end[i], dt, B2end[i])), u, p, t+c2end[i]*dt)
     else
       @.. tmp = A2end[i]*tmp
-      stage_limiter!(u, f, p, t+c2end[i]*dt)
+      stage_limiter!(u, integrator, p, t+c2end[i]*dt)
       f(k, u, p, t+c2end[i]*dt)
       @.. tmp += dt * k
       @.. u   = u + B2end[i]*tmp
     end
     integrator.destats.nf += 1
   end
-  step_limiter!(u, f, p, t+dt)
+  step_limiter!(u, integrator, p, t+dt)
 end
 
 # 2C low storage methods

@@ -153,3 +153,21 @@ sol = solve(ode, Tsit5(), save_everystep=false) # okay, as expected
 @info "Warning Expected"
 sol = solve(ode, Tsit5(), save_everystep=false, maxiters=3) # doesn't save the final solution anymore!
 @test length(sol) == 2
+
+# Check that calck is appropriately set with just saveat
+# https://discourse.julialang.org/t/dp5-algorithm-failing-to-solve-simple-sir-problem/64835
+function SIR!(du,u,pars,t)
+    β, γ = pars
+    S, I, R = u
+
+    dS = -β*S*I
+    dI = β*S*I - γ*I
+    dR = γ*I
+    du .= [dS, dI, dR]
+end
+
+t_obs = collect(0:1.0:218)
+prob = ODEProblem(SIR!, [0.99, 0.01, 0.0], (t_obs[1], t_obs[end]), [0.20, 0.15])
+sol = solve(prob, DP5(), reltol = 1e-6, abstol = 1e-6, saveat=t_obs)
+@test maximum(sol) <= 1
+@test minimum(sol) >= 0
