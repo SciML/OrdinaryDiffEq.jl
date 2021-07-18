@@ -266,3 +266,4 @@ println(".")
 
 println("adaptive multistep methods")
 @test test_callback_adaptive_multistep(QNDF(),reltol=1e-8,abstol=1e-8)
+@test test_callback_adaptive_multistep(FBDF(),reltol=1e-8,abstol=1e-8)

@@ -555,7 +555,7 @@ end
 
 function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
-  @unpack ts,terkm2, terkm1, terk, terkp1,r,u_history = cache
+  @unpack ts_tmp,terkm2, terkm1, terk, terkp1, r,u_history = cache
   cache.prev_order = cache.order
   k = cache.order
   #@show terk,terkm1
@@ -571,21 +571,29 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
       terkp1 = terk
       terk = terkm1
       terkm1 = terkm2
-      fd_weights = calc_finite_difference_weights(ts,t+dt,k-2)
-      terkm2 = @.. fd_weights[k-2,1] * u
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k-2))
+      if integrator.cache isa OrdinaryDiffEqMutableCache
+        @unpack terk_tmp = integrator.cache
+      end
+      terk_tmp = @.. fd_weights[k-2,1] * u
       if typeof(u) <: Number
         for i in 2:k-2
-          terkm2 += fd_weights[i,k-2] * u_history[i-1]
+          terk_tmp += fd_weights[i,k-2] * u_history[i-1]
         end
         #@show fd_weights,u_history,u,terk
-        terkm2 *= abs(dt^(k-2))
+        terk_tmp *= abs(dt^(k-2))
       else
         for i in 2:k-2
-          @.. terkm2 += fd_weights[i,k-2] * u_history[:,i-1]
+          @.. @views terk_tmp += fd_weights[i,k-2] * u_history[:,i-1]
         end
-        @.. terkm2 *= abs(dt^(k-2))
+        @.. terk_tmp *= abs(dt^(k-2))
       end
-      atmp = calculate_residuals(terkm2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      if integrator.cache isa OrdinaryDiffEqConstantCache
+        atmp = calculate_residuals(terk_tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      else
+        @unpack atmp = integrator.cache
+        calculate_residuals!(atmp,terk_tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      end
       terkm2 = integrator.opts.internalnorm(atmp,t)
       k -= 1
     end
@@ -612,11 +620,8 @@ function step_accept_controller!(integrator,alg::FBDF{max_order},q) where max_or
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
-  #if q == one(q) && integrator.cache.order == integrator.cache.prev_order
-    integrator.cache.nconsteps += 1
-  #else
-  #  integrator.cache.nconsteps = 1
-  #end
+  integrator.cache.nconsteps += 1
+  integrator.cache.nonevesuccsteps += 1
   return integrator.dt/q
 end
 

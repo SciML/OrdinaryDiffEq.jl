@@ -144,7 +144,22 @@ function calc_Lagrange_interp(k,weights,t,ts,u_history,u)
   u
 end
 
-function calc_finite_difference_weights(ts,t,order)
+function calc_Lagrange_interp!(k,weights,t,ts,u_history,u)
+  if t in ts
+    i = searchsortedfirst(ts,t,rev=true)
+    @.. u = u_history[:,i]
+  else
+    for i in 1:k+1
+      @.. u += weights[i]/(t-ts[i])*u_history[:,i]
+    end
+    for i in 1:k+1
+      @.. u *= t-ts[i]
+    end
+  end
+end
+
+#This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
+#=function calc_finite_difference_weights(ts,t,order)
   c = zero(MMatrix{order+1,order+1,eltype(ts)})
   ts = copy(ts)
   for i in order+1:-1:1
@@ -173,6 +188,35 @@ function calc_finite_difference_weights(ts,t,order)
         c[j,k] = (c4*c[j,k] - (k-1)*c[j,k-1])/c3
       end
       c[j,1] = zero(t)#c4*c[j,1]/c3
+    end
+    c1 = c2
+  end
+  return SArray(c)
+end=#
+
+function calc_finite_difference_weights(ts,t,::Val{N}) where {N}
+  order = N
+  c = zero(MMatrix{order+1,order+1,eltype(ts)})
+  c1 = one(t)
+  c4 = ts[1] - t
+  c[1,1] = one(t)
+  for i in 2:order+1
+    c2 = one(t)
+    c5 = c4
+    c4 = ts[i] - t
+    for j = 1:i-1
+      c3 = ts[i] - ts[j]
+      c2 *= c3
+      if j == i-1
+        for k in i:-1:2
+          c[i,k] = c1*((k-1)*c[i-1,k-1]-c5*c[i-1,k])/c2
+        end
+        c[i,1] = zero(t)
+      end
+      for k in i:-1:2
+        c[j,k] = (c4*c[j,k] - (k-1)*c[j,k-1])/c3
+      end
+      c[j,1] = zero(t)
     end
     c1 = c2
   end
