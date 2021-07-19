@@ -203,6 +203,13 @@ end
   sim23 = test_convergence(dts,prob,MEBDF2(nlsolve = NLAnderson()),reltol=1e-2)
   @test sim23.𝒪est[:final] ≈ 2 atol=testTol
 
+  #FBDF
+  sim = test_convergence(dts,prob,FBDF())
+  @test sim.𝒪est[:final] ≈ 2 atol=testTol
+
+  sim22 = test_convergence(dts,prob,FBDF(nlsolve = NLFunctional()))
+  @test sim22.𝒪est[:final] ≈ 2 atol=testTol
+
   println("Higher Order")
 
   dts = (1/2) .^ (5:-1:1)

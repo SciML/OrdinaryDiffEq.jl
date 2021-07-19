@@ -984,7 +984,6 @@ end
  integrator.destats.nf += 1
 end
 
-
 function initialize!(integrator, cache::FBDFConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -999,7 +998,7 @@ end
 
 function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_step=false) where max_order
   @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,nlsolver,weights,ts_tmp = cache
-  @unpack t,dt,u,f,p,iter,uprev = integrator
+  @unpack t,dt,u,f,p,uprev = integrator
 
   if integrator.u_modified
     order = 1
@@ -1197,7 +1196,7 @@ function initialize!(integrator, cache::FBDFCache)
 end
 
 function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=false) where max_order
-  @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,nlsolver,weights,terk_tmp,terkp1_tmp,atmp,tmp,error_weights,equi_ts,u₀,ts_tmp = cache
+  @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,nlsolver,weights,terk_tmp,terkp1_tmp,atmp,tmp,equi_ts,u₀,ts_tmp = cache
   @unpack t,dt,u,f,p,uprev = integrator
 
   if integrator.u_modified
@@ -1251,7 +1250,6 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
   end
 
   fill!(u_corrector,zero(eltype(u)))
-
   for i in 1:k-1
     @views calc_Lagrange_interp!(k,weights,equi_ts[i],ts,u_history,u_corrector[:,i])
   end
@@ -1260,7 +1258,6 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     @.. @views tmp -= u_corrector[:,i] * bdf_coeffs[k,i+2]
   end
 
-  
   if mass_matrix == I
     @.. nlsolver.tmp = tmp/dt
   else

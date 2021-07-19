@@ -553,7 +553,7 @@ end
 
 function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
-  @unpack ts_tmp,terkm2, terkm1, terk, terkp1, r,u_history = cache
+  @unpack ts_tmp,terkm2, terkm1, terk, terkp1,u_history = cache
   cache.prev_order = cache.order
   k = cache.order
 
