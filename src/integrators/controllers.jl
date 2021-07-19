@@ -585,10 +585,10 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
         @.. terk_tmp *= abs(dt^(k-2))
       end
       if integrator.cache isa OrdinaryDiffEqConstantCache
-        atmp = calculate_residuals(terk_tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       else
         @unpack atmp = integrator.cache
-        calculate_residuals!(atmp,terk_tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        calculate_residuals!(atmp,_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       end
       terkm2 = integrator.opts.internalnorm(atmp,t)
       k -= 1

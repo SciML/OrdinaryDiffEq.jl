@@ -453,7 +453,7 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   FBDFConstantCache(nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights,nonevesuccsteps)
 end
 
-@cache mutable struct FBDFCache{MO,N,rateType,uNoUnitsType,tsType,tType,uType,uuType,coeffType,EEstType,rType,wType,ewType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct FBDFCache{MO,N,rateType,uNoUnitsType,tsType,tType,uType,uuType,coeffType,EEstType,rType,wType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
   nlsolver::N
   ts::tsType
@@ -478,7 +478,6 @@ end
   terkp1_tmp::uType
   r::rType
   weights::wType
-  error_weights::ewType
   equi_ts::tsType
   nonevesuccsteps::Int
 end
@@ -514,12 +513,11 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   t_old = zero(t)
   atmp = similar(u, uEltypeNoUnits)
   fill!(atmp,zero(uEltypeNoUnits))
-  error_weights = similar(u)
   u₀ = similar(u)
   equi_ts = similar(ts)
   tmp = similar(u)
   ts_tmp = similar(ts)
   nonevesuccsteps = 0
 
-  FBDFCache(fsalfirst,nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,u₀,bdf_coeffs,Val(5),nconsteps,consfailcnt,tmp,atmp,terkm2,terkm1,terk,terkp1,terk_tmp,terkp1_tmp,r,weights,error_weights,equi_ts,nonevesuccsteps)
+  FBDFCache(fsalfirst,nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,u₀,bdf_coeffs,Val(5),nconsteps,consfailcnt,tmp,atmp,terkm2,terkm1,terk,terkp1,terk_tmp,terkp1_tmp,r,weights,equi_ts,nonevesuccsteps)
 end
