@@ -1051,9 +1051,6 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   for i in 1:k-1
     equi_ts[i] = t - dt*i
   end
-  #=if k == 3
-    @show t,dt,equi_ts
-  end=#
 
   fill!(u_corrector,zero(eltype(u)))
   if u isa Number
@@ -1074,7 +1071,6 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     end
   end
 
-  
   if mass_matrix == I
     nlsolver.tmp = tmp/dt
   else
@@ -1119,7 +1115,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     atmp = @.. lte * error_weights
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
 
-    fd_weights = fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k))
+    fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k,Val(max_order))
     terk = @.. fd_weights[1,k+1] * u
 
     if u isa Number
@@ -1138,14 +1134,13 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     cache.terk = integrator.opts.internalnorm(atmp,t)
     
     if k > 1
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k-1))
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
       terkm1 = fd_weights[1,k] * u
 
       if u isa Number
         for i in 2:k
           terkm1 += fd_weights[i,k] * u_history[i-1]
         end
-        #@show fd_weights,u_history,u,terk
         terkm1 *= abs(dt^(k-1))
       else
         for i in 2:k
@@ -1157,14 +1152,13 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k-2))
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
       terkm2 = fd_weights[1,k-1] * u
 
       if u isa Number
         for i in 2:k-1
           terkm2 += fd_weights[i,k-1] * u_history[i-1]
         end
-        #@show fd_weights,u_history,u,terk
         terkm2 *= abs(dt^(k-2))
       else
         for i in 2:k-1
@@ -1182,19 +1176,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     else
       cache.terkp1 = zero(cache.terk)
     end
-    #if nonevesuccsteps >6000
-    #  @show integrator.destats
-    #end
   end
-  
 
-  #if k ==3
-  #  @show length(equi_ts),equi_ts
-    #@show k,nconsteps,consfailcnt, t,dt,u₀,integrator.EEst,u,uprev,u_corrector
-  #end
-  #if cache.consfailcnt >3
-  #  @show integrator.destats
-  #end
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
@@ -1226,7 +1209,6 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     fill!(u_corrector,zero(eltype(u_corrector)))
     cache.nonevesuccsteps = 0
   end
-
   @unpack nonevesuccsteps,consfailcnt,nconsteps = cache
   
   k = order
@@ -1324,18 +1306,17 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     #@.. atmp = terk_tmp * error_weights
     calculate_residuals!(atmp, terk_tmp, uprev, u, abstol, reltol, internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    #@show ts_tmp,t+dt
-    fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k))
+    fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k,Val(max_order))
     @.. terk_tmp = fd_weights[1,k+1] * u
     for i in 2:k+1
       @.. @views terk_tmp += fd_weights[i,k+1] * u_history[:,i-1]
     end
     @.. terk_tmp *= abs(dt^(k))
-    calculate_residuals!(atmp, terk_tmp, uprev, u, abstol, reltol, internalnorm,  t)
+    calculate_residuals!(atmp, terk_tmp, uprev, u, abstol, reltol, internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
     
     if k > 1
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k-1))
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
       @.. terk_tmp = fd_weights[1,k] * u
       for i in 2:k
         @.. @views terk_tmp += fd_weights[i,k] * u_history[:,i-1]
@@ -1345,7 +1326,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k-2))
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
       @.. terk_tmp = fd_weights[1,k-1] * u
       for i in 2:k-1
         @.. @views terk_tmp += fd_weights[i,k-1] * u_history[:,i-1]
@@ -1361,12 +1342,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
       cache.terkp1 = zero(cache.terkp1)
     end
   end
-  #if nonevesuccsteps >6300
-  #@show integrator.destats
-  #end
-  #if cache.consfailcnt >2
-  #  @show integrator.destats
-  #end
+
   f(integrator.fsallast,u,p,t+dt)
   integrator.destats.nf += 1
 end

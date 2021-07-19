@@ -194,9 +194,9 @@ end
   return SArray(c)
 end=#
 
-function calc_finite_difference_weights(ts,t,::Val{N}) where {N}
-  order = N
-  c = zero(MMatrix{order+1,order+1,eltype(ts)})
+function calc_finite_difference_weights(ts,t,order,::Val{N}) where {N}
+  max_order = N
+  c = zero(MMatrix{max_order+1,max_order+1,eltype(ts)})
   c1 = one(t)
   c4 = ts[1] - t
   c[1,1] = one(t)
@@ -204,7 +204,7 @@ function calc_finite_difference_weights(ts,t,::Val{N}) where {N}
     c2 = one(t)
     c5 = c4
     c4 = ts[i] - t
-    for j = 1:i-1
+    @inbounds for j = 1:i-1
       c3 = ts[i] - ts[j]
       c2 *= c3
       if j == i-1

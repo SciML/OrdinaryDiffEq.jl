@@ -431,6 +431,10 @@ end
 # QNBDF
 stepsize_controller!(integrator, alg::QNDF) = nothing
 
+# this stepsize and order controller is taken from
+# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
+# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
+
 function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_order
   #step is accepted, reset count of consecutive failed steps
   integrator.cache.consfailcnt = 0
@@ -547,18 +551,11 @@ function step_reject_controller!(integrator,alg::QNDF)
   integrator.cache.order = kₙ
 end
 
-
-# this stepsize and order controller is taken from
-# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
-# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
-
-
 function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
   @unpack ts_tmp,terkm2, terkm1, terk, terkp1, r,u_history = cache
   cache.prev_order = cache.order
   k = cache.order
-  #@show terk,terkm1
 
   if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk > terkp1) ||
     (k == 2 && terkm1 > terk > terkp1) ||
@@ -566,12 +563,11 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
     k += 1
     terk = terkp1
   else
-    #@show k, terkm2 , terkm1 , terk , terkp1
     while !(terkm2 > terkm1 > terk > terkp1) && k > 2
       terkp1 = terk
       terk = terkm1
       terkm1 = terkm2
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,Val(k-2))
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
       if integrator.cache isa OrdinaryDiffEqMutableCache
         @unpack terk_tmp = integrator.cache
       end
@@ -629,13 +625,11 @@ function step_reject_controller!(integrator,alg::FBDF)
   integrator.cache.consfailcnt += 1
   integrator.cache.nconsteps = 0
   dt = integrator.dt
-  #@show dt, integrator.cache.consfailcnt
   if integrator.cache.consfailcnt == 1
     dt *= 0.5
   else
     dt *= 0.25
   end
-  #@show dt
   integrator.dt = dt
 end
 
