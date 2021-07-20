@@ -431,6 +431,10 @@ end
 # QNBDF
 stepsize_controller!(integrator, alg::QNDF) = nothing
 
+# this stepsize and order controller is taken from
+# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
+# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
+
 function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_order
   #step is accepted, reset count of consecutive failed steps
   integrator.cache.consfailcnt = 0
@@ -547,12 +551,87 @@ function step_reject_controller!(integrator,alg::QNDF)
   integrator.cache.order = kₙ
 end
 
+function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
+  @unpack t,dt,u,cache,uprev = integrator
+  @unpack ts_tmp,terkm2, terkm1, terk, terkp1,u_history = cache
+  cache.prev_order = cache.order
+  k = cache.order
 
-# this stepsize and order controller is taken from
-# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
-# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
+  if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk > terkp1) ||
+    (k == 2 && terkm1 > terk > terkp1) ||
+    (k > 2 && terkm2 > terkm1 > terk > terkp1))
+    k += 1
+    terk = terkp1
+  else
+    while !(terkm2 > terkm1 > terk > terkp1) && k > 2
+      terkp1 = terk
+      terk = terkm1
+      terkm1 = terkm2
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
+      if integrator.cache isa OrdinaryDiffEqMutableCache
+        @unpack terk_tmp = integrator.cache
+      end
+      terk_tmp = @.. fd_weights[k-2,1] * u
+      if typeof(u) <: Number
+        for i in 2:k-2
+          terk_tmp += fd_weights[i,k-2] * u_history[i-1]
+        end
+        #@show fd_weights,u_history,u,terk
+        terk_tmp *= abs(dt^(k-2))
+      else
+        for i in 2:k-2
+          @.. @views terk_tmp += fd_weights[i,k-2] * u_history[:,i-1]
+        end
+        @.. terk_tmp *= abs(dt^(k-2))
+      end
+      if integrator.cache isa OrdinaryDiffEqConstantCache
+        atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      else
+        @unpack atmp = integrator.cache
+        calculate_residuals!(atmp,_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      end
+      terkm2 = integrator.opts.internalnorm(atmp,t)
+      k -= 1
+    end
+    if !(terkm1 > terk > terkp1) && k == 2
+      k -= 1
+      terk = terkm1
+    end
+  end
+  if k != cache.order
+    integrator.cache.nconsteps = 0
+    cache.order = k
+  end
+  if iszero(terk)
+    q = inv(integrator.opts.qmax)
+  else
+    q = ((2*terk/(k+1))^(1/(k+1)))
+  end
+  integrator.qold = q
+  q
+end
 
+function step_accept_controller!(integrator,alg::FBDF{max_order},q) where max_order
+  integrator.cache.consfailcnt = 0
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
+  integrator.cache.nconsteps += 1
+  integrator.cache.nonevesuccsteps += 1
+  return integrator.dt/q
+end
 
+function step_reject_controller!(integrator,alg::FBDF)
+  integrator.cache.consfailcnt += 1
+  integrator.cache.nconsteps = 0
+  dt = integrator.dt
+  if integrator.cache.consfailcnt == 1
+    dt *= 0.5
+  else
+    dt *= 0.25
+  end
+  integrator.dt = dt
+end
 
 # Extrapolation methods
 mutable struct ExtrapolationController{QT} <: AbstractController
