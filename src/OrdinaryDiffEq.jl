@@ -35,7 +35,7 @@ using DocStringExtensions
   using NLsolve
   # Required by temporary fix in not in-place methods with 12+ broadcasts
   # `MVector` is used by Nordsieck forms
-  import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix
+  import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
@@ -239,7 +239,7 @@ using DocStringExtensions
 
   export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
-  export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF
+  export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF
 
   export SBDF2, SBDF3, SBDF4
 

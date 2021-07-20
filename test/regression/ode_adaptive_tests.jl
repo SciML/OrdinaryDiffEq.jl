@@ -28,6 +28,8 @@ tspan = (0.0,100.0)
 prob = ODEProblem{false}(lorenz,u0,tspan)
 sol = solve(prob,QNDF())
 @test length(sol.t) < 5000
+sol = solve(prob,FBDF())
+@test length(sol.t) < 6600
 
 function lorenz(du,u,p,t)
   du[1] = 10.0(u[2]-u[1])
@@ -39,3 +41,5 @@ tspan = (0.0,100.0)
 prob = ODEProblem{true}(lorenz,u0,tspan)
 sol = solve(prob,QNDF())
 @test length(sol.t) < 5000
+sol = solve(prob,FBDF())
+@test length(sol.t) < 6600
