@@ -1015,21 +1015,21 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   if nonevesuccsteps == 0
     weights[1] = 1/dt
     ts[1] = t
-    @.. u_history[:,1] = _vec(uprev)
+    u_history[:,1] .= _vec(uprev)
   elseif nonevesuccsteps == 1
     weights[1] = inv(t-ts[1])
     weights[2] = inv(ts[1]-t)
     ts[2] = ts[1]
     ts[1] = t
     @.. u_history[:,2] = u_history[:,1]
-    @.. u_history[:,1] = _vec(uprev)
+    u_history[:,1] .= _vec(uprev)
   elseif consfailcnt == 0
     for i in k+2:-1:2
       ts[i] = ts[i-1]
       u_history[:,i] = u_history[:,i-1]
     end
     ts[1] = t
-    @.. u_history[:,1] = _vec(uprev)
+    u_history[:,1] .= _vec(uprev)
   end
   
   if nonevesuccsteps >= 1
@@ -1038,11 +1038,12 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     
   u₀ = zero(u)
   if nonevesuccsteps >= 1
-    u₀ = calc_Lagrange_interp(k,weights,t+dt,ts,u_history,_vec(u₀))
+    u₀ = calc_Lagrange_interp(k,weights,t+dt,ts,u_history,u₀)
   else
     u₀ = u
   end
   markfirststage!(nlsolver)
+  
   nlsolver.z = u₀
   mass_matrix = f.mass_matrix
   
@@ -1066,7 +1067,9 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     end
     tmp = - uprev * bdf_coeffs[k,2]
     for i in 1:k-1
-      @.. tmp -= u_corrector[:,i] * bdf_coeffs[k,i+2]
+      for j in eachindex(tmp)
+        tmp[j] -= u_corrector[j,i]*bdf_coeffs[k,i+2]
+      end
     end
   end
 
@@ -1122,7 +1125,9 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
       terk *= abs(dt^(k))
     else
       for i in 2:k+1
-        terk += fd_weights[i,k+1] * u_history[:,i-1]
+        for j in eachindex(terk)
+          terk[j] += fd_weights[i,k+1] * u_history[j,i-1]
+        end
       end
       terk *= abs(dt^(k))
     end
@@ -1141,7 +1146,9 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
         terkm1 *= abs(dt^(k-1))
       else
         for i in 2:k
-          terkm1 += fd_weights[i,k] * u_history[:,i-1]
+          for j in eachindex(terkm1)
+            terkm1[j] += fd_weights[i,k] * u_history[j,i-1]
+          end
         end
         terkm1 *= abs(dt^(k-1))
       end
@@ -1159,7 +1166,9 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
         terkm2 *= abs(dt^(k-2))
       else
         for i in 2:k-1
-          terkm2 += fd_weights[i,k-1] * u_history[:,i-1]
+          for j in eachindex(terkm2)
+            terkm2[j] += fd_weights[i,k-1] * u_history[j,i-1]
+          end
         end
         terkm2 *= abs(dt^(k-2))
       end
@@ -1228,14 +1237,13 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     ts[1] = t
     u_history[:,1] .= _vec(uprev)
   end
-  
   if nonevesuccsteps >= 1
     compute_weights!(ts,k,weights)
   end
     
   @.. u₀ = zero(u)
   if nonevesuccsteps >= 1
-    calc_Lagrange_interp!(k,weights,t+dt,ts,u_history,_vec(u₀))
+    calc_Lagrange_interp!(k,weights,t+dt,ts,u_history,u₀)
   else
     @.. u₀ = u
   end
@@ -1253,7 +1261,10 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
   end
   @.. tmp = - uprev * bdf_coeffs[k,2]
   for i in 1:k-1
-    @.. @views tmp -= u_corrector[:,i] * bdf_coeffs[k,i+2]
+    for j in eachindex(tmp)
+      tmp[j] -= u_corrector[j,i]*bdf_coeffs[k,i+2]
+    end
+    #@.. @views tmp -= u_corrector[:,i] * bdf_coeffs[k,i+2]
   end
 
   if mass_matrix == I
@@ -1304,7 +1315,9 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k,Val(max_order))
     @.. terk_tmp = fd_weights[1,k+1] * u
     for i in 2:k+1
-      @.. @views terk_tmp += fd_weights[i,k+1] * u_history[:,i-1]
+      for j in eachindex(terk_tmp)
+        terk_tmp[j] += fd_weights[i,k+1] * u_history[j,i-1]
+      end
     end
     @.. terk_tmp *= abs(dt^(k))
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
@@ -1314,7 +1327,9 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
       fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
       @.. terk_tmp = fd_weights[1,k] * u
       for i in 2:k
-        @.. @views terk_tmp += fd_weights[i,k] * u_history[:,i-1]
+        for j in eachindex(terk_tmp)
+          terk_tmp[j] += fd_weights[i,k] * u_history[j,i-1]
+        end
       end
       @.. terk_tmp *= abs(dt^(k-1))
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -1324,7 +1339,9 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
       fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
       @.. terk_tmp = fd_weights[1,k-1] * u
       for i in 2:k-1
-        @.. @views terk_tmp += fd_weights[i,k-1] * u_history[:,i-1]
+        for j in eachindex(terk_tmp)
+          terk_tmp[j] += fd_weights[i,k-1] * u_history[j,i-1]
+        end
       end
       @.. terk_tmp *= abs(dt^(k-2))
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)

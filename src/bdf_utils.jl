@@ -132,10 +132,15 @@ end
 function calc_Lagrange_interp(k,weights,t,ts,u_history,u)
   if t in ts
     i = searchsortedfirst(ts,t,rev=true)
-    return u_history[:,i]
+    for j in eachindex(u)
+      u[j] = u_history[j,i]
+    end
+    return u
   else
     for i in 1:k+1
-      @.. u += weights[i]/(t-ts[i])*u_history[:,i]
+      for j in eachindex(u)
+        u[j] += weights[i]/(t-ts[i])*u_history[j,i]
+      end
     end
     for i in 1:k+1
       @.. u *= t-ts[i]
@@ -147,10 +152,14 @@ end
 function calc_Lagrange_interp!(k,weights,t,ts,u_history,u)
   if t in ts
     i = searchsortedfirst(ts,t,rev=true)
-    @.. u = u_history[:,i]
+    for j in eachindex(u)
+      u[j] = u_history[j,i]
+    end
   else
     for i in 1:k+1
-      @.. u += weights[i]/(t-ts[i])*u_history[:,i]
+      for j in eachindex(u)
+        u[j] += weights[i]/(t-ts[i])*u_history[j,i]
+      end
     end
     for i in 1:k+1
       @.. u *= t-ts[i]
