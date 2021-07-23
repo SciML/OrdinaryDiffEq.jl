@@ -1038,7 +1038,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     
   u₀ = zero(u)
   if nonevesuccsteps >= 1
-    @.. u₀ = $calc_Lagrange_interp(k,weights,t+dt,ts,u_history,u₀)
+    u₀ = calc_Lagrange_interp(k,weights,t+dt,ts,u_history,u₀)
   else
     u₀ = u
   end
