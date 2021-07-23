@@ -1015,21 +1015,21 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
   if nonevesuccsteps == 0
     weights[1] = 1/dt
     ts[1] = t
-    u_history[:,1] .= _vec(uprev)
+    @.. u_history[:,1] = $_vec(uprev)
   elseif nonevesuccsteps == 1
     weights[1] = inv(t-ts[1])
     weights[2] = inv(ts[1]-t)
     ts[2] = ts[1]
     ts[1] = t
     @.. u_history[:,2] = u_history[:,1]
-    u_history[:,1] .= _vec(uprev)
+    @.. u_history[:,1] = $_vec(uprev)
   elseif consfailcnt == 0
     for i in k+2:-1:2
       ts[i] = ts[i-1]
       u_history[:,i] = u_history[:,i-1]
     end
     ts[1] = t
-    u_history[:,1] .= _vec(uprev)
+    @.. u_history[:,1] = $_vec(uprev)
   end
   
   if nonevesuccsteps >= 1
@@ -1038,7 +1038,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     
   u₀ = zero(u)
   if nonevesuccsteps >= 1
-    u₀ = calc_Lagrange_interp(k,weights,t+dt,ts,u_history,u₀)
+    @.. u₀ = $calc_Lagrange_interp(k,weights,t+dt,ts,u_history,u₀)
   else
     u₀ = u
   end
@@ -1221,21 +1221,21 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
   if nonevesuccsteps == 0
     weights[1] = 1/dt
     ts[1] = t
-    u_history[:,1] .= _vec(uprev)
+    @.. u_history[:,1] = $_vec(uprev)
   elseif nonevesuccsteps == 1
     weights[1] = inv(t-ts[1])
     weights[2] = inv(ts[1]-t)
     ts[2] = ts[1]
     ts[1] = t
     @.. u_history[:,2] = u_history[:,1]
-    u_history[:,1] .= _vec(uprev)
+    @.. u_history[:,1] = $_vec(uprev)
   elseif consfailcnt == 0
     for i in k+2:-1:2
       ts[i] = ts[i-1]
       @.. u_history[:,i] = u_history[:,i-1]
     end
     ts[1] = t
-    u_history[:,1] .= _vec(uprev)
+    @.. u_history[:,1] = $_vec(uprev)
   end
   if nonevesuccsteps >= 1
     compute_weights!(ts,k,weights)
