@@ -113,7 +113,6 @@ function compute_weights!(ts,k,weights)
 end
 
 function calc_Lagrange_interp(k,weights,t,ts,u_history,u::Number)
-  #@show t,ts,u_history
   if t in ts
     i = searchsortedfirst(ts,t,rev=true)
     return u_history[i]
@@ -125,22 +124,18 @@ function calc_Lagrange_interp(k,weights,t,ts,u_history,u::Number)
       u *= t-ts[i]
     end
   end
-  #@show weights
   u
 end
 
 function calc_Lagrange_interp(k,weights,t,ts,u_history,u)
+  vc = _vec(u)
   if t in ts
     i = searchsortedfirst(ts,t,rev=true)
-    for j in eachindex(u)
-      u[j] = u_history[j,i]
-    end
+    @.. @views vc = u_history[:,i]
     return u
   else
     for i in 1:k+1
-      for j in eachindex(u)
-        u[j] += weights[i]/(t-ts[i])*u_history[j,i]
-      end
+      @.. @views vc += weights[i]/(t-ts[i])*u_history[:,i]
     end
     for i in 1:k+1
       @.. u *= t-ts[i]
@@ -150,16 +145,13 @@ function calc_Lagrange_interp(k,weights,t,ts,u_history,u)
 end
 
 function calc_Lagrange_interp!(k,weights,t,ts,u_history,u)
+  vc = _vec(u)
   if t in ts
     i = searchsortedfirst(ts,t,rev=true)
-    for j in eachindex(u)
-      u[j] = u_history[j,i]
-    end
+    @.. @views vc = u_history[:,i]
   else
     for i in 1:k+1
-      for j in eachindex(u)
-        u[j] += weights[i]/(t-ts[i])*u_history[j,i]
-      end
+      @.. @views vc += weights[i]/(t-ts[i])*u_history[:,i]
     end
     for i in 1:k+1
       @.. u *= t-ts[i]
