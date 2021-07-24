@@ -1021,12 +1021,12 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     weights[2] = inv(ts[1]-t)
     ts[2] = ts[1]
     ts[1] = t
-    @.. u_history[:,2] = u_history[:,1]
+    @.. @views u_history[:,2] = u_history[:,1]
     @.. u_history[:,1] = $_vec(uprev)
   elseif consfailcnt == 0
     for i in k+2:-1:2
       ts[i] = ts[i-1]
-      @.. u_history[:,i] = u_history[:,i-1]
+      @.. @views u_history[:,i] = u_history[:,i-1]
     end
     ts[1] = t
     @.. u_history[:,1] = $_vec(uprev)
