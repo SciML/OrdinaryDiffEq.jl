@@ -1063,7 +1063,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     end
   else
     for i in 1:k-1
-      @views u_corrector[:,i] = calc_Lagrange_interp(k,weights,equi_ts[i],ts,u_history,u_corrector[:,i])
+      @.. @views u_corrector[:,i] = $calc_Lagrange_interp(k,weights,equi_ts[i],ts,u_history,u_corrector[:,i])
     end
     tmp = - uprev * bdf_coeffs[k,2]
     vc = _vec(tmp)
