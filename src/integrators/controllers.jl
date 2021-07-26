@@ -579,8 +579,9 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
         #@show fd_weights,u_history,u,terk
         terk_tmp *= abs(dt^(k-2))
       else
+        vc = _vec(terk_tmp)
         for i in 2:k-2
-          @.. @views terk_tmp += fd_weights[i,k-2] * u_history[:,i-1]
+          @.. @views vc += fd_weights[i,k-2] * u_history[:,i-1]
         end
         @.. terk_tmp *= abs(dt^(k-2))
       end

@@ -492,11 +492,12 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                   11//6 -3 3//2 -1//3  0 0 ;
                   25//12 -4 3 -4//3 1//4 0 ;
                   137//60 -5 5 -10//3 5//4 -1//5]
-  ts = zero(Vector{typeof(t)}(undef,max_order+2)) #ts is the successful past points, it will be updated after successful step
-  u_history = zero(Matrix{eltype(u)}(undef,length(u),max_order+2))
+  ts = Vector{typeof(t)}(undef,max_order+2) #ts is the successful past points, it will be updated after successful step
+  u_history = Matrix{eltype(u)}(undef,length(u),max_order+2)
   order = 1
   prev_order = 1
   u_corrector = similar(u_history)
+  fill!(ts,zero(t))
   fill!(u_corrector,zero(eltype(u)))
   fill!(u_history,zero(eltype(u_history)))
   terkm2 = tTypeNoUnits(1)
@@ -505,8 +506,10 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   terkp1 = tTypeNoUnits(1)
   terk_tmp = similar(u)
   terkp1_tmp = similar(u)
-  r = zero(Vector{typeof(t)}(undef,max_order+2)) 
-  weights = zero(Vector{typeof(t)}(undef,max_order+2))
+  r = Vector{typeof(t)}(undef,max_order+2)
+  weights = Vector{typeof(t)}(undef,max_order+2)
+  fill!(r,zero(t))
+  fill!(weights,zero(t))
   weights[1] = 1
   nconsteps = 0
   consfailcnt = 0
