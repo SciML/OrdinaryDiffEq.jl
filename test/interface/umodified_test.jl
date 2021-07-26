@@ -27,7 +27,7 @@ for τ in tvector
   # evolve until rescaling:
   push!(integ1.opts.tstops, τ); step!(integ1)
   push!(integ2.opts.tstops, τ); step!(integ2)
-  dist = norm(integ1.u .- integ2.u)
+  global dist = norm(integ1.u .- integ2.u)
   # Rescale:
   if dist ≥ threshold
     # Rescale and reset everything:
