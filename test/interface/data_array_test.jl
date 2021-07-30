@@ -158,8 +158,8 @@ end
 
   tstop =[tstop1;tstop2]
   sol = solve(prob,Tsit5(),callback = cbs, tstops=tstop)
-  @test_broken solve(prob,Rodas4(),callback = cbs, tstops=tstop) isa ODESolution
-  @test_broken sol = solve(prob,Kvaerno3(),callback = cbs, tstops=tstop) isa ODESolution
+  sol = solve(prob,Rodas4(),callback = cbs, tstops=tstop)
+  sol = solve(prob,Kvaerno3(),callback = cbs, tstops=tstop)
   sol = solve(prob,Rodas4(autodiff=false),callback = cbs, tstops=tstop)
   sol = solve(prob,Kvaerno3(autodiff=false),callback = cbs, tstops=tstop)
 end
