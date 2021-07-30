@@ -124,6 +124,7 @@ end
   if isdae
     @.. ztmp = (tmp + α * z) * invγdt
     @.. ustep = uprev + z
+    #@.. ustep = integrator.cache.u₀ + z
     f(k, ztmp, ustep, p, tstep)
     b = vec(k)
   else

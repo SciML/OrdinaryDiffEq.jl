@@ -3,6 +3,7 @@ $(DocStringExtensions.README)
 """
 module OrdinaryDiffEq
 
+using Base: Integer
 using DocStringExtensions
   using Reexport
   @reexport using DiffEqBase
@@ -251,7 +252,7 @@ using DocStringExtensions
   export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitEulerExtrapolation,
          ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation, ImplicitEulerBarycentricExtrapolation
 
-  export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
+  export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2, DFBDF
 
   export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
