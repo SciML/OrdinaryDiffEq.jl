@@ -44,7 +44,7 @@ function jacobian_autodiff(f, x::AbstractArray, odefun, alg)
   sparsity,colorvec = sparsity_colorvec(odefun,x)
   maxcolor = maximum(colorvec)
   chunk_size = get_chunksize(alg)===Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
-  num_of_chunks = chunk_size===nothing ? Int(ceil(maxcolor / getsize(default_chunk_size(maxcolor)))) :
+  num_of_chunks = chunk_size===nothing ? Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
                                         Int(ceil(maxcolor / chunk_size))
   (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity,
                               jac_prototype = jac_prototype, chunksize=chunk_size),
