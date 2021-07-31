@@ -10,13 +10,13 @@ mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   current::Int
 end
 
-function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {V}
+function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {V,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   caches = __alg_cache(alg.algs,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(V))
   CompositeCache(caches,alg.choice_function,1)
 end
 
 # map + closure approach doesn't infer
-@generated function __alg_cache(algs::T,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {T <: Tuple, V}
+@generated function __alg_cache(algs::T,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {T <: Tuple, V,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   return Expr(:tuple, map(1:length(T.types)) do i
     :(alg_cache(algs[$i],u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val($V)))
   end...)
