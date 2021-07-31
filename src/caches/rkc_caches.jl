@@ -33,7 +33,7 @@ function alg_cache(alg::ROCK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   ROCK2Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, tmp, atmp, fsalfirst, k, constantcache)
 end
 
-function alg_cache(alg::ROCK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ROCK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   ROCK2ConstantCache(uEltypeNoUnits, uEltypeNoUnits, u)
 end
 
@@ -76,7 +76,7 @@ function alg_cache(alg::ROCK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   ROCK4Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, fsalfirst, k, constantcache)
 end
 
-function alg_cache(alg::ROCK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ROCK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   ROCK4ConstantCache(constvalue(uEltypeNoUnits), constvalue(uEltypeNoUnits),u)
 end
 
@@ -107,7 +107,7 @@ function alg_cache(alg::RKC,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   RKCCache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, constantcache)
 end
 
-function alg_cache(alg::RKC,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::RKC,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   RKCConstantCache(u)
 end
 
@@ -135,7 +135,7 @@ end
   constantcache::C
 end
 
-function alg_cache(alg::IRKC,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::IRKC,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   γ, c = 1.0, 1.0
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},γ,c,Val(false))
   zprev = u
@@ -199,7 +199,7 @@ function alg_cache(alg::ESERK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   ESERK4Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
 end
 
-function alg_cache(alg::ESERK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ESERK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   ESERK4ConstantCache(u)
 end
 
@@ -241,7 +241,7 @@ function alg_cache(alg::ESERK5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   ESERK5Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
 end
 
-function alg_cache(alg::ESERK5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ESERK5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   ESERK5ConstantCache(u)
 end
 
@@ -279,6 +279,6 @@ function alg_cache(alg::SERK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   SERK2Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
 end
 
-function alg_cache(alg::SERK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::SERK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   SERK2ConstantCache(u)
 end

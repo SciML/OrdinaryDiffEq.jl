@@ -36,7 +36,7 @@ end
 
 struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::FunctionMap,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = FunctionMapConstantCache()
+alg_cache(alg::FunctionMap,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = FunctionMapConstantCache()
 
 @cache struct ExplicitRKCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -84,7 +84,7 @@ function ExplicitRKConstantCache(tableau,rate_prototype)
   ExplicitRKConstantCache(A,c,α,αEEst,stages,kk)
 end
 
-alg_cache(alg::ExplicitRK,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = ExplicitRKConstantCache(alg.tableau,rate_prototype)
+alg_cache(alg::ExplicitRK,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = ExplicitRKConstantCache(alg.tableau,rate_prototype)
 
 get_chunksize(cache::DiffEqBase.DECache) = error("This cache does not have a chunksize.")
 get_chunksize(cache::ODEChunkCache{CS}) where {CS} = CS

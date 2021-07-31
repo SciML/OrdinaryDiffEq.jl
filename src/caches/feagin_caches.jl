@@ -35,7 +35,7 @@ function alg_cache(alg::Feagin10,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   Feagin10Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,k,tab)
 end
 
-alg_cache(alg::Feagin10,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = Feagin10ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::Feagin10,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Feagin10ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 @cache struct Feagin12Cache{uType,uNoUnitsType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -84,7 +84,7 @@ function alg_cache(alg::Feagin12,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   Feagin12Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,k,tab)
 end
 
-alg_cache(alg::Feagin12,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = Feagin12ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::Feagin12,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Feagin12ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 
 @cache struct Feagin14Cache{uType,uNoUnitsType,rateType,TabType} <: OrdinaryDiffEqMutableCache
@@ -149,4 +149,4 @@ function alg_cache(alg::Feagin14,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
                 k31,k32,k33,k34,k35,tmp,atmp,k,tab)
 end
 
-alg_cache(alg::Feagin14,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = Feagin14ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::Feagin14,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Feagin14ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))

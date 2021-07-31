@@ -77,6 +77,6 @@ function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,::Type{uEltypeNoUnits},::Ty
   KuttaPRK2p5Cache(u,uprev,k,k1,k2,k3,k4,k5_6,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   KuttaPRK2p5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end

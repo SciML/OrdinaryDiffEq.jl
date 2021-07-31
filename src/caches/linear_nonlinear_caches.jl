@@ -72,7 +72,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
   end
 
   @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
     if alg.krylov
       ops = nothing # no caching
     else
@@ -333,7 +333,7 @@ for (Alg, Cache) in [(:Exp4, :Exp4ConstantCache),
     uf::FType   # derivative wrapper
   end
   @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
@@ -648,7 +648,7 @@ for (Alg, Cache) in [(:Exprb32, :Exprb32ConstantCache),
     uf::FType   # derivative wrapper
   end
   @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
@@ -767,7 +767,7 @@ struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
   B0::expType # -ϕ2(hA)
 end
 
-function alg_cache(alg::ETD2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ETD2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
   Phi = phi(dt*A, 2)
   ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])

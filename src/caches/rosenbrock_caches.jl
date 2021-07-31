@@ -123,7 +123,7 @@ function Rosenbrock23ConstantCache(T::Type,tf,uf,J,W,linsolve)
   Rosenbrock23ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
 end
 
-function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -146,7 +146,7 @@ function Rosenbrock32ConstantCache(T::Type,tf,uf,J,W,linsolve)
   Rosenbrock32ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
 end
 
-function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -219,7 +219,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
                     linsolve,jac_config,grad_config)
 end
 
-function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -289,7 +289,7 @@ struct Rosenbrock34ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConst
   linsolve::F
 end
 
-function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -385,7 +385,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
                     linsolve,jac_config,grad_config)
 end
 
-function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -425,7 +425,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
                     linsolve,jac_config,grad_config)
 end
 
-function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -465,7 +465,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
                     linsolve,jac_config,grad_config)
 end
 
-function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -505,7 +505,7 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
                     linsolve,jac_config,grad_config)
 end
 
-function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
@@ -592,7 +592,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
                     linsolve,jac_config,grad_config)
 end
 
-function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))

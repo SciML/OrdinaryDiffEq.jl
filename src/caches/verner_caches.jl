@@ -32,7 +32,7 @@ struct Vern6ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
   tab::TabType
 end
 
-function alg_cache(alg::Vern6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Vern6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = Vern6Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   Vern6ConstantCache(tab)
 end
@@ -71,7 +71,7 @@ struct Vern7ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
   tab::TabType
 end
 
-function alg_cache(alg::Vern7,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Vern7,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = Vern7Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   Vern7ConstantCache(tab)
 end
@@ -117,7 +117,7 @@ struct Vern8ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
   tab::TabType
 end
 
-function alg_cache(alg::Vern8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Vern8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = Vern8Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   Vern8ConstantCache(tab)
 end
@@ -167,7 +167,7 @@ struct Vern9ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
   tab::TabType
 end
 
-function alg_cache(alg::Vern9,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::Vern9,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = Vern9Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   Vern9ConstantCache(tab)
 end
