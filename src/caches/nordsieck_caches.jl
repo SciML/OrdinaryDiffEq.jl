@@ -18,7 +18,7 @@ mutable struct AN5ConstantCache{zType,lType,dtsType,dType,tsit5Type} <: Ordinary
   order::Int
 end
 
-function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::AN5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   N = 5
   z = [zero(rate_prototype) for i in 1:N+1]
   Δ = u
@@ -54,7 +54,7 @@ mutable struct AN5Cache{uType,dType,rateType,zType,lType,dtsType,tsit5Type} <: O
   order::Int
 end
 
-function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::AN5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   #################################################
   # Tsit5
   tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -122,7 +122,7 @@ mutable struct JVODEConstantCache{zType,lType,dtsType,dType,tsit5Type,etaType} <
   maxη::etaType
 end
 
-function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::JVODE,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   N = 12
   z = [rate_prototype for i in 1:N+1]
   Δ = u
@@ -181,7 +181,7 @@ mutable struct JVODECache{uType,rateType,zType,lType,dtsType,dType,etaType,tsit5
   maxη::etaType
 end
 
-function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::JVODE,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   #################################################
   # Tsit5
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector

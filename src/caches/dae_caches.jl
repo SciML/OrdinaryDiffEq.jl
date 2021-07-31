@@ -12,23 +12,23 @@ mutable struct DImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
   nlsolver::N
 end
 
-function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1, 1
   α = 1
-  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(false))
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},γ,c,α,Val(false))
 
   DImplicitEulerConstantCache(nlsolver)
 end
 
-function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
 
   γ, c = 1, 1
   α = 1
   k₁ = zero(rate_prototype)
   k₂ = zero(rate_prototype)
-  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(true))
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},γ,c,α,Val(true))
 
   atmp = similar(u,uEltypeNoUnits)
 
@@ -42,11 +42,11 @@ end
   fsalfirstprev::rate_prototype
 end
 
-function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1//1, 1
   α = 1//1
-  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(false))
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},γ,c,α,Val(false))
   eulercache = DImplicitEulerConstantCache(nlsolver)
 
   dtₙ₋₁ = one(dt)
@@ -67,11 +67,11 @@ end
   dtₙ₋₁::dtType
 end
 
-function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1//1, 1
   α = 1//1
-  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(true))
+  nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},γ,c,α,Val(true))
   fsalfirst = zero(rate_prototype)
 
   fsalfirstprev = zero(rate_prototype)

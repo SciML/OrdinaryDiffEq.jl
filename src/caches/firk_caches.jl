@@ -13,8 +13,8 @@ mutable struct RadauIIA3ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
   J::JType
 end
 
-function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   uf  = UDerivativeWrapper(f, t, p)
   uToltype = constvalue(uBottomEltypeNoUnits)
   tab = RadauIIA3Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -61,8 +61,8 @@ mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF
   status::DiffEqBase.NLStatus
 end
 
-function alg_cache(alg::RadauIIA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   uf = UJacobianWrapper(f, t, p)
   uToltype = constvalue(uBottomEltypeNoUnits)
   tab = RadauIIA3Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -116,8 +116,8 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqCon
   J::JType
 end
 
-function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::RadauIIA5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   uf  = UDerivativeWrapper(f, t, p)
   uToltype = constvalue(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -139,7 +139,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   w3::uType
   dw1::uType
   ubuff::uType
-  dw23::cuType  
+  dw23::cuType
   cubuff::cuType
   cont1::uType
   cont2::uType
@@ -172,8 +172,8 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   status::DiffEqBase.NLStatus
 end
 
-function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::RadauIIA5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   uf = UJacobianWrapper(f, t, p)
   uToltype = constvalue(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
