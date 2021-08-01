@@ -71,8 +71,8 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
     uf::FType   # derivative wrapper
   end
 
-  @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+  @eval function alg_cache(alg::$Alg,u,rate_prototype,::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
     if alg.krylov
       ops = nothing # no caching
     else
@@ -97,7 +97,7 @@ Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 `plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
-function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist)
+function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm,u,::Type{uEltypeNoUnits},uprev,f,t,dt,p,du1,tmp,dz,plist) where uEltypeNoUnits
   n = length(u); T = eltype(u)
   # Allocate cache for ForwardDiff
   if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
@@ -332,8 +332,8 @@ for (Alg, Cache) in [(:Exp4, :Exp4ConstantCache),
   @eval struct $Cache{FType} <: ExpRKConstantCache
     uf::FType   # derivative wrapper
   end
-  @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+  @eval function alg_cache(alg::$Alg,u,rate_prototype,::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
@@ -647,8 +647,8 @@ for (Alg, Cache) in [(:Exprb32, :Exprb32ConstantCache),
   @eval struct $Cache{FType} <: ExpRKConstantCache
     uf::FType   # derivative wrapper
   end
-  @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
-    uBottomEltypeNoUnits,::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+  @eval function alg_cache(alg::$Alg,u,rate_prototype,::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
     if DiffEqBase.has_jac(f)
       uf = nothing
     else
@@ -667,7 +667,7 @@ Construct the non-standard caches (not uType or rateType) for Exprb integrators.
 `plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
-function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,p,du1,tmp,dz,plist)
+function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,u,::Type{uEltypeNoUnits},uprev,f,t,p,du1,tmp,dz,plist) where uEltypeNoUnits
   if f isa SplitFunction
     error("Algorithm $alg cannnot be used for split problems. Consider reformat to a regular `ODEProblem`")
   end

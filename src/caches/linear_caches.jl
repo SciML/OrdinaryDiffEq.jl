@@ -18,7 +18,7 @@ end
 struct MagnusMidpointConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusMidpoint,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusMidpoint,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusMidpointConstantCache()
 end
@@ -43,7 +43,7 @@ end
 struct RKMK2ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::RKMK2,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::RKMK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   RKMK2ConstantCache()
 end
@@ -68,7 +68,7 @@ end
 struct LieRK4ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::LieRK4,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::LieRK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   LieRK4ConstantCache()
 end
@@ -93,7 +93,7 @@ end
 struct CG3ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::CG3,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::CG3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   CG3ConstantCache()
 end
@@ -118,7 +118,7 @@ end
 struct CG2ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::CG2,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::CG2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   CG2ConstantCache()
 end
@@ -143,7 +143,7 @@ end
 struct RKMK4ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::RKMK4,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::RKMK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   RKMK4ConstantCache()
 end
@@ -173,7 +173,7 @@ end
 struct MagnusAdapt4ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusAdapt4,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusAdapt4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusAdapt4ConstantCache()
 end
@@ -198,7 +198,7 @@ end
 struct MagnusNC8ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusNC8,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusNC8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusNC8ConstantCache()
 end
@@ -223,7 +223,7 @@ end
 struct MagnusGL4ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusGL4,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusGL4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusGL4ConstantCache()
 end
@@ -248,7 +248,7 @@ end
 struct MagnusGL8ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusGL8,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusGL8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusGL8ConstantCache()
 end
@@ -274,7 +274,7 @@ end
 struct MagnusNC6ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusNC6,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusNC6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusNC6ConstantCache()
 end
@@ -299,7 +299,7 @@ end
 struct MagnusGL6ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusGL6,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusGL6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusGL6ConstantCache()
 end
@@ -323,7 +323,7 @@ end
 struct MagnusGauss4ConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusGauss4,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusGauss4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusGauss4ConstantCache()
 end
@@ -348,7 +348,7 @@ end
 struct LieEulerConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::LieEuler,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::LieEuler,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   LieEulerConstantCache()
 end
@@ -394,7 +394,7 @@ end
 struct MagnusLeapfrogConstantCache <: OrdinaryDiffEqConstantCache
 end
 
-function alg_cache(alg::MagnusLeapfrog,u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::MagnusLeapfrog,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   MagnusLeapfrogConstantCache()
 end

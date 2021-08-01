@@ -173,7 +173,7 @@ struct SDIRK22ConstantCache{uType,tType,N,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::SDIRK22,u,rate_prototype,::Type{uEltypeNoUnits},::Type{tTypeNoUnits},::Type{uBottomEltypeNoUnits},
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = SDIRK22Tableau(constvalue(uBottomEltypeNoUnits))
   uprev3 = u

@@ -420,7 +420,7 @@ end
   nonevesuccsteps::Int
 end
 
-function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} where MO
+function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} where MO
   γ, c = 1.0, 1.0
   max_order = MO
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
@@ -442,14 +442,14 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   terkm1= tTypeNoUnits(1)
   terk= tTypeNoUnits(1)
   terkp1 = tTypeNoUnits(1)
-  r = zero(Vector{typeof(t)}(undef,max_order+2)) 
+  r = zero(Vector{typeof(t)}(undef,max_order+2))
   weights = zero(Vector{typeof(t)}(undef,max_order+2))
   weights[1] = 1
   nconsteps = 0
   consfailcnt = 0
   t_old = zero(t)
   nonevesuccsteps = 0
-  
+
   FBDFConstantCache(nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights,nonevesuccsteps)
 end
 
@@ -482,7 +482,7 @@ end
   nonevesuccsteps::Int
 end
 
-function alg_cache(alg::FBDF{MO},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where MO
+function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {MO,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   γ, c = 1.0, 1.0
   fsalfirst = zero(rate_prototype)
   max_order = MO
