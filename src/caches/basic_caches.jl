@@ -10,13 +10,13 @@ mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   current::Int
 end
 
-function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {V}
+function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {V,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   caches = __alg_cache(alg.algs,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val(V))
   CompositeCache(caches,alg.choice_function,1)
 end
 
 # map + closure approach doesn't infer
-@generated function __alg_cache(algs::T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {T <: Tuple, V}
+@generated function __alg_cache(algs::T,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{V}) where {T <: Tuple, V,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   return Expr(:tuple, map(1:length(T.types)) do i
     :(alg_cache(algs[$i],u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val($V)))
   end...)
@@ -30,13 +30,13 @@ alg_cache(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) where {F} = ODEEmptyCac
   tmp::rateType
 end
 
-function alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::FunctionMap,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   FunctionMapCache(u,uprev,FunctionMap_scale_by_time(alg) ? rate_prototype : (eltype(u) <: Enum ? copy(u) : zero(u)))
 end
 
 struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = FunctionMapConstantCache()
+alg_cache(alg::FunctionMap,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = FunctionMapConstantCache()
 
 @cache struct ExplicitRKCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -50,7 +50,7 @@ alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tab::TabType
 end
 
-function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::ExplicitRK,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   kk = Vector{typeof(rate_prototype)}(undef, 0)
   for i = 1:alg.tableau.stages
     push!(kk,zero(rate_prototype))
@@ -84,7 +84,7 @@ function ExplicitRKConstantCache(tableau,rate_prototype)
   ExplicitRKConstantCache(A,c,α,αEEst,stages,kk)
 end
 
-alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = ExplicitRKConstantCache(alg.tableau,rate_prototype)
+alg_cache(alg::ExplicitRK,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = ExplicitRKConstantCache(alg.tableau,rate_prototype)
 
 get_chunksize(cache::DiffEqBase.DECache) = error("This cache does not have a chunksize.")
 get_chunksize(cache::ODEChunkCache{CS}) where {CS} = CS

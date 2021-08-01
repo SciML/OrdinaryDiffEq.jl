@@ -25,7 +25,7 @@ end
   step_no::Int
 end
 
-function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::AitkenNeville,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tmp = zero(u)
   utilde = zero(u)
   k = zero(rate_prototype)
@@ -56,7 +56,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps)
 end
 
-function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::AitkenNeville,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   dtpropose = zero(dt)
   cur_order = max(alg.init_order, alg.min_order)
   T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
@@ -100,8 +100,8 @@ end
 
   #Stepsizing caches
   work::Array{QType, 1}
-  dt_new::Array{QType,1} 
-  
+  dt_new::Array{QType,1}
+
   # Values to check overflow in T1 computation
   diff1::Array{uType,1}
   diff2::Array{uType,1}
@@ -125,10 +125,10 @@ end
 
   #Stepsizing caches
   work::Array{QType, 1}
-  dt_new::Array{QType,1} 
+  dt_new::Array{QType,1}
 end
 
-function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   dtpropose = zero(dt)
   #cur_order = max(alg.init_order, alg.min_order)
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
@@ -161,7 +161,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   ImplicitEulerExtrapolationConstantCache(Q,dtpropose,T,n_curr,n_old,A,step_no,sigma,tf,uf,sequence,stage_number,work,dt_new)
 end
 
-function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   u_tmp = zero(u)
   u_tmps = Array{typeof(u_tmp),1}(undef, Threads.nthreads())
 
@@ -502,7 +502,7 @@ end
   stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 end
 
-function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
     # Initialize cache's members
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -550,7 +550,7 @@ end
   stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 end
 
-function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   utilde = zero(u)
   u_temp1 = zero(u)
@@ -631,10 +631,10 @@ end
   grad_config::GCType
   # Values to check overflow in T1 computation
   diff1::Array{uType,1}
-  diff2::Array{uType,1}  
+  diff2::Array{uType,1}
 end
 
-function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -648,9 +648,9 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   #==
   Work calculation in Deuflhard is referenced from here: https://link.springer.com/article/10.1007/BF01418332
   A[1] := CJAC + CLR + (N[1] + 1)(CF + CS)
-  A[J] := A[J-1] - N[J]*(CF + CS) + CLR + CS      J = 2, 3, 4..... 
+  A[J] := A[J-1] - N[J]*(CF + CS) + CLR + CS      J = 2, 3, 4.....
   CF = 1; CJ = n*CF ; CS = CLR = 0
-  n = Dimension of the jacobian (particularly gaussian decomposition of I - hJ (n,n) matrix) 
+  n = Dimension of the jacobian (particularly gaussian decomposition of I - hJ (n,n) matrix)
   Since we are using 4*N sequence and doing 4*N - 1 Computations
   A[J] := A[J-1] - (4*N[J] - 1)*(CF + CS) + CLR + CS      J = 2, 3, 4.....
   ===#
@@ -663,7 +663,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   end
 
   #Update stage_number by the jacobian size
-  jac_dim = typeof(rate_prototype) <: Union{CompiledFloats,BigFloat} ? 1 : sum(size(rate_prototype)) 
+  jac_dim = typeof(rate_prototype) <: Union{CompiledFloats,BigFloat} ? 1 : sum(size(rate_prototype))
   stage_number = stage_number .+ jac_dim
 
   tf = TimeDerivativeWrapper(f,u,p)
@@ -671,7 +671,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   ImplicitDeuflhardExtrapolationConstantCache(Q,n_curr,n_old,coefficients,stage_number,tf,uf)
 end
 
-function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   utilde = zero(u)
   u_temp1 = zero(u)
   u_temp2 = zero(u)
@@ -723,7 +723,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
   linsolve_tmps = Array{typeof(linsolve_tmp),1}(undef, Threads.nthreads())
-  
+
   for i=1:Threads.nthreads()
     linsolve_tmps[i] = zero(rate_prototype)
   end
@@ -762,10 +762,10 @@ end
 
   #Stepsizing caches
   work::Array{QType, 1}
-  dt_new::Array{QType,1} 
+  dt_new::Array{QType,1}
 end
 
-function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -814,13 +814,13 @@ end
   stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
   sigma::Rational{Int} # Parameter for order selection
 
-  #Stepsizing caches  
+  #Stepsizing caches
   work::Array{QType, 1}
   dt_new::Array{QType,1}
 end
 
 
-function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   utilde = zero(u)
   u_temp1 = zero(u)
@@ -868,10 +868,10 @@ end
 
   #Stepsizing caches
   work::Array{QType, 1}
-  dt_new::Array{QType,1}   
+  dt_new::Array{QType,1}
 end
 
-function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -955,11 +955,11 @@ end
 
   #Stepsizing caches
   work::Array{QType, 1}
-  dt_new::Array{QType,1} 
+  dt_new::Array{QType,1}
 end
 
 
-function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   utilde = zero(u)
   u_temp1 = zero(u)
@@ -1006,12 +1006,12 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
       W[i] = zero(W_el)
     end
   end
-  
+
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
   linsolve_tmps = Array{typeof(linsolve_tmp),1}(undef, Threads.nthreads())
-  
+
   for i=1:Threads.nthreads()
     linsolve_tmps[i] = zero(rate_prototype)
   end
@@ -1025,14 +1025,14 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
-  
+
   diff1 = Array{typeof(u),1}(undef, Threads.nthreads())
   diff2 = Array{typeof(u),1}(undef, Threads.nthreads())
   for i=1:Threads.nthreads()
     diff1[i] = zero(u)
     diff2[i] = zero(u)
   end
-  
+
   # Initialize the cache
   ImplicitHairerWannerExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,
@@ -1058,7 +1058,7 @@ end
   dt_new::Array{QType,1}
 end
 
-function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
@@ -1125,11 +1125,11 @@ end
   diff2::Array{uType,1}
   #Stepsizing caches
   work::Array{QType, 1}
-  dt_new::Array{QType,1} 
+  dt_new::Array{QType,1}
 end
 
 
-function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   # Initialize cache's members
   utilde = zero(u)
   u_temp1 = zero(u)
@@ -1176,12 +1176,12 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
       W[i] = zero(W_el)
     end
   end
-  
+
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
   linsolve_tmps = Array{typeof(linsolve_tmp),1}(undef, Threads.nthreads())
-  
+
   for i=1:Threads.nthreads()
     linsolve_tmps[i] = zero(rate_prototype)
   end
@@ -1195,14 +1195,14 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,u
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
-  
+
   diff1 = Array{typeof(u),1}(undef, Threads.nthreads())
   diff2 = Array{typeof(u),1}(undef, Threads.nthreads())
   for i=1:Threads.nthreads()
     diff1[i] = zero(u)
     diff2[i] = zero(u)
   end
-  
+
   # Initialize the cache
   ImplicitEulerBarycentricExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmps,

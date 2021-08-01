@@ -170,6 +170,19 @@ using DocStringExtensions
   include("interp_func.jl")
   include("composite_algs.jl")
 
+  function lorenz(du,u,p,t)
+    du[1] = 10.0(u[2]-u[1])
+    du[2] = u[1]*(28.0-u[3]) - u[2]
+    du[3] = u[1]*u[2] - (8/3)*u[3]
+  end
+  lorenzprob = ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
+  solve(lorenzprob,Tsit5())
+  solve(lorenzprob,Rosenbrock23())
+  solve(lorenzprob,TRBDF2())
+  solve(lorenzprob,Rodas4(autodiff=false))
+  solve(lorenzprob,KenCarp4(autodiff=false))
+  solve(lorenzprob,Rodas5())
+
   #General Functions
   export solve, solve!, init, step!
 
