@@ -121,7 +121,7 @@ function _postamble!(integrator)
   solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
-  if !(integrator.sol isa DAESolution)
+  if !(integrator.sol isa DAESolution) && integrator.opts.dense
     resize!(integrator.sol.k,integrator.saveiter_dense)
   end
   if integrator.opts.progress
