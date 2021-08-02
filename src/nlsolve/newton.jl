@@ -123,8 +123,12 @@ end
 
   if isdae
     @.. ztmp = (tmp + α * z) * invγdt
-    @.. ustep = uprev + z
-    #@.. ustep = integrator.cache.u₀ + z
+    # not all predictors are uprev, for other forms of predictors, defined in u₀
+    if hasproperty(integrator.cache, :u₀)
+      @.. ustep = integrator.cache.u₀ + z
+    else
+      @.. ustep = uprev + z
+    end
     f(k, ztmp, ustep, p, tstep)
     b = vec(k)
   else

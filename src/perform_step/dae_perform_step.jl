@@ -219,13 +219,10 @@ end
 function initialize!(integrator, cache::DFBDFConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
+  integrator.k[1] = integrator.du
 end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_step=false) where max_order
@@ -240,7 +237,6 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
     fill!(u_history,zero(eltype(u_history)))
     fill!(u_corrector,zero(eltype(u_corrector)))
     cache.nonevesuccsteps = 0
-    integrator.fsalfirst = (u - uprev) / dt
   end
   @unpack nonevesuccsteps,consfailcnt,nconsteps = cache
 

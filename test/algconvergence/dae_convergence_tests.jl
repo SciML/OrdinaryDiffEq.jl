@@ -26,6 +26,8 @@ prob_dae_linear_iip = DAEProblem(
 
 	sim14 = test_convergence(dts,prob,DABDF2(;autodiff=false))
 	@test sim14.𝒪est[:final] ≈ 2 atol=testTol
+
+	@test_nowarn solve(prob,FBDF())
 end
 
 f_dae_linear = (du, u, p, t) -> (@. du - u)
@@ -49,4 +51,6 @@ prob_dae_linear_oop = DAEProblem(
 
 	sim24 = test_convergence(dts,prob,DABDF2(;autodiff=false))
 	@test sim24.𝒪est[:final] ≈ 2 atol=testTol
+
+	@test_nowarn solve(prob,FBDF())
 end

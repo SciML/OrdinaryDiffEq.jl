@@ -85,6 +85,12 @@ integrator = init(prob, DImplicitEuler())
 @test integrator.du[2] ≈  0.04 atol=1e-9
 @test integrator.u ≈ u₀ atol=1e-9
 
+integrator = init(prob, DFBDF())
+
+@test integrator.du[1] ≈ -0.04 atol=1e-9
+@test integrator.du[2] ≈  0.04 atol=1e-9
+@test integrator.u ≈ u₀ atol=1e-9
+
 u₀ = [1.0, 0, 0.2]
 prob = DAEProblem(f,du₀,u₀,tspan,differential_vars=differential_vars)
 integrator = init(prob, DABDF2())
@@ -115,6 +121,12 @@ integrator = init(prob, DABDF2())
 @test integrator.u ≈ u₀ atol=1e-9
 
 integrator = init(prob, DImplicitEuler())
+
+@test integrator.du[1] ≈ -0.04 atol=1e-9
+@test integrator.du[2] ≈  0.04 atol=1e-9
+@test integrator.u ≈ u₀ atol=1e-9
+
+integrator = init(prob, DFBDF())
 
 @test integrator.du[1] ≈ -0.04 atol=1e-9
 @test integrator.du[2] ≈  0.04 atol=1e-9

@@ -3,7 +3,6 @@ $(DocStringExtensions.README)
 """
 module OrdinaryDiffEq
 
-using Base: Integer
 using DocStringExtensions
   using Reexport
   @reexport using DiffEqBase
