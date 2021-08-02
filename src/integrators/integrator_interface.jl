@@ -163,7 +163,11 @@ function resize_J_W!(cache, integrator, i)
     if cache.J !== nothing
       cache.J = similar(cache.J, i, i)
     end
-    cache.W = similar(cache.W, i, i)
+    if typeof(cache.W) <: Vector{Matrix{Float64}}
+      fill!(cache.W,similar(eltype(cache.W),i,i))
+    else
+      cache.W = similar(cache.W, i, i)
+    end
   end
 
   nothing
