@@ -2930,14 +2930,14 @@ DABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           nlsolve,diff_type,extrapolant,controller)
 
 struct DFBDF{MO,CS,AD,F,F2,FDT,K,T} <: DAEAlgorithm{CS,AD}
-max_order::Val{MO}
-linsolve::F
-nlsolve::F2
-diff_type::FDT
-κ::K
-tol::T
-extrapolant::Symbol
-controller::Symbol
+  max_order::Val{MO}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  κ::K
+  tol::T
+  extrapolant::Symbol
+  controller::Symbol
 end
 Base.@pure DFBDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
