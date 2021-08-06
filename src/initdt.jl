@@ -16,7 +16,7 @@
     cache = get_tmp_cache(integrator)
     sk = first(cache)
     if u0 isa Array && abstol isa Number && reltol isa Number
-      @inbounds @simd for i in eachindex(u0)
+      @inbounds @simd ivdep for i in eachindex(u0)
         sk[i] = abstol+internalnorm(u0[i],t)*reltol
       end
     else
@@ -41,7 +41,7 @@
 
   if u0 isa Array
     tmp = similar(u0)
-    @inbounds @simd for i in eachindex(u0)
+    @inbounds @simd ivdep for i in eachindex(u0)
       tmp[i] = u0[i]/sk[i]
     end
   else
@@ -96,7 +96,7 @@
   end
 
   if u0 isa Array
-    @inbounds @simd for i in eachindex(u0)
+    @inbounds @simd ivdep for i in eachindex(u0)
       tmp[i] = f₀[i]/sk[i]*oneunit_tType
     end
   else
@@ -123,7 +123,7 @@
   u₁ = zero(u0) # required by DEDataArray
 
   if u0 isa Array
-    @inbounds @simd for i in eachindex(u0)
+    @inbounds @simd ivdep for i in eachindex(u0)
       u₁[i] = u0[i] + dt₀_tdir*f₀[i]
     end
   else
@@ -143,7 +143,7 @@
   f₀ == f₁ && return tdir*max(dtmin, 100dt₀)
 
   if u0 isa Array
-    @inbounds @simd for i in eachindex(u0)
+    @inbounds @simd ivdep for i in eachindex(u0)
       tmp[i] = (f₁[i]-f₀[i])/sk[i]*oneunit_tType
     end
   else
