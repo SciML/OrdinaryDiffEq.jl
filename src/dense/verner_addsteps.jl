@@ -97,6 +97,106 @@ end
   nothing
 end
 
+@muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Vern7Cache{<:Array},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k) < 10 || always_calc_begin
+    @unpack c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107 = cache.tab
+    @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,tmp = cache
+    f(k1,uprev,p,t)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a021*k1[i])
+    end
+    f(k2,tmp,p,t+c2*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a031*k1[i]+a032*k2[i])
+    end
+    f(k3,tmp,p,t+c3*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a041*k1[i]+a043*k3[i])
+    end
+    f(k4,tmp,p,t+c4*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a051*k1[i]+a053*k3[i]+a054*k4[i])
+    end
+    f(k5,tmp,p,t+c5*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a061*k1[i]+a063*k3[i]+a064*k4[i]+a065*k5[i])
+    end
+    f(k6,tmp,p,t+c6*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a071*k1[i]+a073*k3[i]+a074*k4[i]+a075*k5[i]+a076*k6[i])
+    end
+    f(k7,tmp,p,t+c7*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a081*k1[i]+a083*k3[i]+a084*k4[i]+a085*k5[i]+a086*k6[i]+a087*k7[i])
+    end
+    f(k8,tmp,p,t+c8*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a091*k1[i]+a093*k3[i]+a094*k4[i]+a095*k5[i]+a096*k6[i]+a097*k7[i]+a098*k8[i])
+    end
+    f(k9,tmp,p,t+dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
+    end
+    f(k10,tmp,p,t+dt)
+
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+    copyat_or_push!(k,5,k5)
+    copyat_or_push!(k,6,k6)
+    copyat_or_push!(k,7,k7)
+    copyat_or_push!(k,8,k8)
+    copyat_or_push!(k,9,k9)
+    copyat_or_push!(k,10,k10)
+  end
+  if (allow_calc_end && length(k)< 16) || force_calc_end # Have not added the extra stages yet
+    @unpack tmp = cache
+    rtmp = similar(cache.k1)
+    @unpack c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613 = cache.tab.extra
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1101*k[1][i]+a1104*k[4][i]+a1105*k[5][i]+a1106*k[6][i]+a1107*k[7][i]+a1108*k[8][i]+a1109*k[9][i])
+    end
+    f(rtmp,tmp,p,t+c11*dt); copyat_or_push!(k,11,rtmp)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1211*k[11][i])
+    end
+    f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1301*k[1][i]+a1304*k[4][i]+a1305*k[5][i]+a1306*k[6][i]+a1307*k[7][i]+a1308*k[8][i]+a1309*k[9][i]+a1311*k[11][i]+a1312*k[12][i])
+    end
+    f(rtmp,tmp,p,t+c13*dt); copyat_or_push!(k,13,rtmp)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1401*k[1][i]+a1404*k[4][i]+a1405*k[5][i]+a1406*k[6][i]+a1407*k[7][i]+a1408*k[8][i]+a1409*k[9][i]+a1411*k[11][i]+a1412*k[12][i]+a1413*k[13][i])
+    end
+    f(rtmp,tmp,p,t+c14*dt); copyat_or_push!(k,14,rtmp)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1501*k[1][i]+a1504*k[4][i]+a1505*k[5][i]+a1506*k[6][i]+a1507*k[7][i]+a1508*k[8][i]+a1509*k[9][i]+a1511*k[11][i]+a1512*k[12][i]+a1513*k[13][i])
+    end
+    f(rtmp,tmp,p,t+c15*dt); copyat_or_push!(k,15,rtmp)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1601*k[1][i]+a1604*k[4][i]+a1605*k[5][i]+a1606*k[6][i]+a1607*k[7][i]+a1608*k[8][i]+a1609*k[9][i]+a1611*k[11][i]+a1612*k[12][i]+a1613*k[13][i])
+    end
+    f(rtmp,tmp,p,t+c16*dt); copyat_or_push!(k,16,rtmp)
+  end
+  nothing
+end
+
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Vern8Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k) <13 || always_calc_begin
     @unpack c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310 = cache.tab

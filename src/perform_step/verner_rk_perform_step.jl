@@ -272,9 +272,129 @@ end
     f(k[13],tmp,p,t+c13*dt)
     @.. tmp = uprev+dt*(a1401*k[1]+a1404*k[4]+a1405*k[5]+a1406*k[6]+a1407*k[7]+a1408*k[8]+a1409*k[9]+a1411*k[11]+a1412*k[12]+a1413*k[13])
     f(k[14],tmp,p,t+c14*dt)
-    tmp=  uprev+dt*(a1501*k[1]+a1504*k[4]+a1505*k[5]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1511*k[11]+a1512*k[12]+a1513*k[13])
+    @.. tmp = uprev+dt*(a1501*k[1]+a1504*k[4]+a1505*k[5]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1511*k[11]+a1512*k[12]+a1513*k[13])
     f(k[15],tmp,p,t+c15*dt)
     @.. tmp = uprev+dt*(a1601*k[1]+a1604*k[4]+a1605*k[5]+a1606*k[6]+a1607*k[7]+a1608*k[8]+a1609*k[9]+a1611*k[11]+a1612*k[12]+a1613*k[13])
+    f(k[16],tmp,p,t+c16*dt)
+    integrator.destats.nf += 6
+  end
+  return nothing
+end
+
+@muladd function perform_step!(integrator, cache::Vern7Cache{<:Array}, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9,btilde10 = cache.tab
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,rtmp,atmp = cache
+  f(k1, uprev, p, t)
+  a = dt*a021
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+a*k1[i]
+  end
+  f(k2, tmp, p, t + c2*dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a031*k1[i]+a032*k2[i])
+  end
+  f(k3, tmp, p, t + c3*dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a041*k1[i]+a043*k3[i])
+  end
+  f(k4, tmp, p, t + c4*dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a051*k1[i]+a053*k3[i]+a054*k4[i])
+  end
+  f(k5, tmp, p, t + c5*dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a061*k1[i]+a063*k3[i]+a064*k4[i]+a065*k5[i])
+  end
+  f(k6, tmp, p, t + c6*dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a071*k1[i]+a073*k3[i]+a074*k4[i]+a075*k5[i]+a076*k6[i])
+  end
+  f(k7, tmp, p, t + c7*dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a081*k1[i]+a083*k3[i]+a084*k4[i]+a085*k5[i]+a086*k6[i]+a087*k7[i])
+  end
+  f(k8, tmp, p, t + c8*dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a091*k1[i]+a093*k3[i]+a094*k4[i]+a095*k5[i]+a096*k6[i]+a097*k7[i]+a098*k8[i])
+  end
+  f(k9, tmp, p, t+dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
+  end
+  f(k10, tmp, p, t+dt)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
+  end
+  integrator.destats.nf += 10
+
+  if integrator.alg isa CompositeAlgorithm
+    g10 = u
+    g9 = tmp
+    @inbounds @simd ivdep for i in eachindex(u)
+      rtmp[i] = k10[i] - k9[i]
+    end
+    ϱu = integrator.opts.internalnorm(rtmp,t)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      utilde[i] = g10[i] - g9[i]
+    end
+    ϱd = integrator.opts.internalnorm(utilde,t)
+    integrator.eigen_est = ϱu/ϱd
+  end
+  if integrator.opts.adaptive
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      utilde[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i])
+    end
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+  alg = unwrap_alg(integrator, false)
+  if !alg.lazy && (integrator.opts.adaptive == false || accept_step_controller(integrator, integrator.opts.controller))
+    k = integrator.k
+    @unpack tmp = cache
+    @unpack c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613 = cache.tab.extra
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1101*k[1][i]+a1104*k[4][i]+a1105*k[5][i]+a1106*k[6][i]+a1107*k[7][i]+a1108*k[8][i]+a1109*k[9][i])
+    end
+    f(k[11],tmp,p,t+c11*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1211*k[11][i])
+    end
+    f(k[12],tmp,p,t+c12*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1301*k[1][i]+a1304*k[4][i]+a1305*k[5][i]+a1306*k[6][i]+a1307*k[7][i]+a1308*k[8][i]+a1309*k[9][i]+a1311*k[11][i]+a1312*k[12][i])
+    end
+    f(k[13],tmp,p,t+c13*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1401*k[1][i]+a1404*k[4][i]+a1405*k[5][i]+a1406*k[6][i]+a1407*k[7][i]+a1408*k[8][i]+a1409*k[9][i]+a1411*k[11][i]+a1412*k[12][i]+a1413*k[13][i])
+    end
+    f(k[14],tmp,p,t+c14*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1501*k[1][i]+a1504*k[4][i]+a1505*k[5][i]+a1506*k[6][i]+a1507*k[7][i]+a1508*k[8][i]+a1509*k[9][i]+a1511*k[11][i]+a1512*k[12][i]+a1513*k[13][i])
+    end
+
+    f(k[15],tmp,p,t+c15*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a1601*k[1][i]+a1604*k[4][i]+a1605*k[5][i]+a1606*k[6][i]+a1607*k[7][i]+a1608*k[8][i]+a1609*k[9][i]+a1611*k[11][i]+a1612*k[12][i]+a1613*k[13][i])
+    end
     f(k[16],tmp,p,t+c16*dt)
     integrator.destats.nf += 6
   end

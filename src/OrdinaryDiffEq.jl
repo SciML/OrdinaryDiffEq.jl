@@ -179,6 +179,8 @@ using DocStringExtensions
   end
   lorenzprob = ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
   solve(lorenzprob,Tsit5())
+  solve(lorenzprob,Vern7())
+  solve(lorenzprob,Vern9())
   solve(lorenzprob,Rosenbrock23())(5.0)
   solve(lorenzprob,TRBDF2())
   solve(lorenzprob,Rodas4(autodiff=false))
