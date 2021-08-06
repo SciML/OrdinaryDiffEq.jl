@@ -85,7 +85,7 @@
     ftmp = zero(f₀)
     try
       integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
-      f₀ .= ftmp
+      copyto!(f₀,ftmp)
     catch
       return tdir*max(smalldt, dtmin)
     end
