@@ -134,7 +134,7 @@
 
   if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
     integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
-    f₁ .= ftmp
+    copyto!(f₁,ftmp)
   end
 
   # Constant zone before callback
