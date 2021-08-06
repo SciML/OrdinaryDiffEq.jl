@@ -13,6 +13,8 @@ using DocStringExtensions
 
   using LinearAlgebra
 
+  using LoopVectorization
+
   # Interfaces
   import DiffEqBase: solve!, step!, initialize!, isadaptive
 
