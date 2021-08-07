@@ -36,6 +36,14 @@ end
   out
 end
 
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rosenbrock23Cache{<:Array},idxs::Nothing,T::Type{Val{0}})
+  @rosenbrock2332pre0
+  @inbounds @simd ivdep for i in eachindex(out)
+    out[i] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
+  end
+  out
+end
+
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock23Cache,Rosenbrock32ConstantCache,Rosenbrock32Cache},idxs,T::Type{Val{0}})
   @rosenbrock2332pre0
   @views @.. out = y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
@@ -95,13 +103,21 @@ end
   out
 end
 
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rodas4Cache{<:Array},idxs::Nothing,T::Type{Val{0}})
+  Θ1 = 1 - Θ
+  @inbounds @simd ivdep for i in eachindex(out)
+    out[i] = Θ1*y₀[i] + Θ*(y₁[i] + Θ1*(k[1][i] + Θ*k[2][i]))
+  end
+  out
+end
+
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rodas4ConstantCache,Rodas4Cache},idxs,T::Type{Val{0}})
   Θ1 = 1 - Θ
   @views @.. out = Θ1*y₀[idxs] + Θ*(y₁[idxs] + Θ1*(k[1][idxs] + Θ*k[2][idxs]))
   out
 end
 
-# First Derivative 
+# First Derivative
 @muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4ConstantCache,idxs::Nothing,T::Type{Val{1}})
   @inbounds (k[1] + Θ*(-2*k[1] + 2*k[2] - 3*k[2]*Θ) - y₀ + y₁)/dt
 end

@@ -197,6 +197,112 @@ end
   ndz
 end
 
+@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton,true,<:Array}, integrator)
+  @unpack uprev,t,p,dt,opts = integrator
+  @unpack z,tmp,ztmp,γ,α,iter,cache = nlsolver
+  @unpack W_γdt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
+
+  f = nlsolve_f(integrator)
+  isdae = f isa DAEFunction
+
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nf += 1
+  end
+
+  if isdae
+    @inbounds @simd ivdep for i in eachindex(z)
+      ztmp[i] = (tmp[i] + α * z[i]) * invγdt
+    end
+    @inbounds @simd ivdep for i in eachindex(z)
+      ustep[i] = uprev[i] + z[i]
+    end
+    f(k, ztmp, ustep, p, tstep)
+    b = vec(k)
+  else
+    mass_matrix = integrator.f.mass_matrix
+    if nlsolver.method === COEFFICIENT_MULTISTEP
+      ustep = z
+      f(k, z, p, tstep)
+      if mass_matrix === I
+        @inbounds @simd ivdep for i in eachindex(z)
+          ztmp[i] = tmp[i] + k[i] - (α * invγdt) * z[i]
+        end
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+
+        @inbounds @simd ivdep for i in eachindex(z)
+          ztmp[i] = tmp[i] + k[i] - (α * invγdt) * ztmp[i]
+        end
+      end
+    else
+
+      @inbounds @simd ivdep for i in eachindex(z)
+        ustep[i] = tmp[i] + γ * z[i]
+      end
+      f(k, ustep, p, tstep)
+      if mass_matrix === I
+        @inbounds @simd ivdep for i in eachindex(z)
+          ztmp[i] = (dt * k[i] - z[i]) * invγdt
+        end
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(vec(ztmp), mass_matrix, vec(z))
+        @inbounds @simd ivdep for i in eachindex(z)
+          ztmp[i] = (dt * k[i] - ztmp[i]) * invγdt
+        end
+      end
+    end
+    b = vec(ztmp)
+  end
+
+  # update W
+  if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    update_coefficients!(W, ustep, p, tstep)
+  end
+
+  if integrator.opts.adaptive
+    reltol = integrator.opts.reltol
+  else
+    reltol = eps(eltype(dz))
+  end
+
+  linsolve(vec(dz), W, b, iter == 1 && new_W;
+           Pl=DiffEqBase.ScaleVector(weight, true),
+           Pr=DiffEqBase.ScaleVector(weight, false), reltol=reltol)
+
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nsolve += 1
+  end
+
+  # relaxed Newton
+  # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential
+  # Equations. A Review, by Christopher A. Kennedy and Mark H. Carpenter
+  # page 54.
+  if isdae
+    γdt = α * invγdt
+  else
+    γdt = γ * dt
+  end
+
+  !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
+
+  calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
+  ndz = opts.internalnorm(atmp, t)
+  # NDF and BDF are special because the truncation error is directly
+  # propertional to the total displacement.
+  if integrator.alg isa QNDF
+    ndz *= error_constant(integrator, alg_order(integrator.alg))
+  end
+
+  # compute next iterate
+  @inbounds @simd ivdep for i in eachindex(z)
+    ztmp[i] = z[i] - dz[i]
+  end
+
+  ndz
+end
+
 ## resize!
 
 function Base.resize!(nlcache::NLNewtonCache, ::AbstractNLSolver, integrator, i::Int)
