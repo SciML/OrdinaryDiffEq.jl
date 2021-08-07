@@ -15,7 +15,13 @@
   if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
     cache = get_tmp_cache(integrator)
     sk = first(cache)
-    @.. sk = abstol+internalnorm(u0,t)*reltol
+    if u0 isa Array && abstol isa Number && reltol isa Number
+      @inbounds @simd ivdep for i in eachindex(u0)
+        sk[i] = abstol+internalnorm(u0[i],t)*reltol
+      end
+    else
+      @.. sk = abstol+internalnorm(u0,t)*reltol
+    end
   else
     sk = @.. abstol+internalnorm(u0,t)*reltol
   end
@@ -32,7 +38,15 @@
 
   # TODO: use more caches
   #tmp = cache[2]
-  tmp = @.. u0/sk
+
+  if u0 isa Array
+    tmp = similar(u0,typeof(u0[1]/sk[1]))
+    @inbounds @simd ivdep for i in eachindex(u0)
+      tmp[i] = u0[i]/sk[i]
+    end
+  else
+    tmp = @.. u0/sk
+  end
 
   d₀ = internalnorm(tmp,t)
 
@@ -71,17 +85,24 @@
     ftmp = zero(f₀)
     try
       integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
-      f₀ .= ftmp
+      copyto!(f₀,ftmp)
     catch
       return tdir*max(smalldt, dtmin)
     end
   end
-  
+
   if integrator.opts.verbose && any(x->any(isnan, x), f₀)
     @warn("First function call produced NaNs. Exiting.")
   end
 
-  @.. tmp = f₀/sk*oneunit_tType
+  if u0 isa Array
+    @inbounds @simd ivdep for i in eachindex(u0)
+      tmp[i] = f₀[i]/sk[i]*oneunit_tType
+    end
+  else
+    @.. tmp = f₀/sk*oneunit_tType
+  end
+
   d₁ = internalnorm(tmp,t)
   dt₀ = OrdinaryDiffEq.ArrayInterface.IfElse.ifelse((d₀ < 1//10^(5)) | (d₁ < 1//10^(5)), smalldt, convert(_tType,oneunit_tType*(d₀/d₁)/100))
   # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
@@ -100,13 +121,20 @@
   dt₀_tdir = tdir*dt₀
 
   u₁ = zero(u0) # required by DEDataArray
-  @.. u₁ = u0 + dt₀_tdir*f₀
+
+  if u0 isa Array
+    @inbounds @simd ivdep for i in eachindex(u0)
+      u₁[i] = u0[i] + dt₀_tdir*f₀[i]
+    end
+  else
+    @.. u₁ = u0 + dt₀_tdir*f₀
+  end
   f₁ = zero(f₀)
   f(f₁,u₁,p,t+dt₀_tdir)
 
   if prob.f.mass_matrix != I && (!(typeof(prob.f)<:DynamicalODEFunction) || any(mm != I for mm in prob.f.mass_matrix))
     integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
-    f₁ .= ftmp
+    copyto!(f₁,ftmp)
   end
 
   # Constant zone before callback
@@ -114,7 +142,14 @@
   # Avoids AD issues
   f₀ == f₁ && return tdir*max(dtmin, 100dt₀)
 
-  @.. tmp = (f₁-f₀)/sk*oneunit_tType
+  if u0 isa Array
+    @inbounds @simd ivdep for i in eachindex(u0)
+      tmp[i] = (f₁[i]-f₀[i])/sk[i]*oneunit_tType
+    end
+  else
+    @.. tmp = (f₁-f₀)/sk*oneunit_tType
+  end
+
   d₂ = internalnorm(tmp,t)/dt₀*oneunit_tType
   # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
 

@@ -146,6 +146,51 @@ end
   nothing
 end
 
+@muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5Cache{<:Array},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k)<7 || always_calc_begin
+    @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76 = cache.tab
+    @unpack k1,k2,k3,k4,k5,k6,k7,tmp = cache
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a21*k1[i])
+    end
+    f(k2,tmp,p,t+c1*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+    end
+    f(k3,tmp,p,t+c2*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+    end
+    f(k4,tmp,p,t+c3*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+    end
+    f(k5,tmp,p,t+c4*dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+    end
+    f(k6,tmp,p,t+dt)
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+    end
+    f(k7,tmp,p,t+dt)
+
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+    copyat_or_push!(k,5,k5)
+    copyat_or_push!(k,6,k6)
+    copyat_or_push!(k,7,k7)
+  end
+  nothing
+end
+
 """
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
