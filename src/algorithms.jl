@@ -171,7 +171,7 @@ struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitE
     threading::TO
 end
 function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
+  linsolve=DEFAULT_linsolve,nlsolve=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
@@ -261,7 +261,7 @@ struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplic
     threading::TO
 end
 function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
+  linsolve=DEFAULT_linsolve,nlsolve=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -303,7 +303,7 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqIm
   sequence_factor::Int
 end
 function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
+  linsolve=DEFAULT_linsolve,nlsolve=Val{:forward},
   min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -1832,7 +1832,7 @@ QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                  controller = :Standard) =
                  QNDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
                  typeof(kappa)}(
-                 linsolve,diff_type,extrapolant,kappa,controller)
+                 linsolve,nlsolve,extrapolant,kappa,controller)
 
 QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
 
@@ -1857,7 +1857,7 @@ Base.@pure QNDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=
                 controller = :Standard) where {MO} =
                 QNDF{MO,chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol),typeof(kappa)}(
-                max_order,linsolve,diff_type,κ,tol,extrapolant,kappa,controller)
+                max_order,linsolve,nlsolve,κ,tol,extrapolant,kappa,controller)
 
 Base.@pure QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
 
@@ -1876,7 +1876,7 @@ Base.@pure FBDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=
                 extrapolant=:linear,controller = :Standard) where {MO} =
                 FBDF{MO,chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol)}(
-                max_order,linsolve,diff_type,κ,tol,extrapolant,controller)
+                max_order,linsolve,nlsolve,κ,tol,extrapolant,controller)
 
 """
 Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
@@ -1896,7 +1896,7 @@ SBDF(order;chunk_size=0,autodiff=true,diff_type=Val{:forward},
      extrapolant=:linear) =
      SBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
      typeof(κ),typeof(tol)}(
-     linsolve,diff_type,κ,tol,extrapolant,order)
+     linsolve,nlsolve,κ,tol,extrapolant,order)
 
  """
  Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
@@ -2015,7 +2015,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                  extrapolant=:linear,controller = :Standard,eigen_est=nothing) =
   IRKC{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,typeof(κ),typeof(tol),typeof(eigen_est)}(
-                 linsolve,diff_type,κ,tol,extrapolant,controller,eigen_est)
+                 linsolve,nlsolve,κ,tol,extrapolant,controller,eigen_est)
 
 ################################################################################
 
@@ -2077,7 +2077,7 @@ RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                                 RadauIIA3{chunk_size,autodiff,typeof(linsolve),
                                 diff_type,
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                                  linsolve,diff_type,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                                  linsolve,nlsolve,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 """
 @article{hairer1999stiff,
@@ -2148,7 +2148,7 @@ ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
                       ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant)
+                      linsolve,nlsolve,extrapolant)
 
 """
 Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
@@ -2170,7 +2170,7 @@ Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                                             extrapolant=:linear,
                       controller = :PI) =
                       Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant,controller)
+                      linsolve,nlsolve,extrapolant,controller)
 
 """
 @article{hosea1996analysis,
@@ -2242,7 +2242,7 @@ SDIRK22(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                                             extrapolant=:linear,
                       controller = :PI) =
                       Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant,controller)
+                      linsolve,nlsolve,extrapolant,controller)
 
 
 struct SSPSDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT} # Not adaptive
@@ -2322,7 +2322,7 @@ CFNLIRK3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
                       CFNLIRK3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant)
+                      linsolve,nlsolve,extrapolant)
 
 """
 @article{hindmarsh2005sundials,
@@ -2364,7 +2364,7 @@ SFSDIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
                       SFSDIRK4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant)
+                      linsolve,nlsolve,extrapolant)
 
                       struct SFSDIRK5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
                         linsolve::F
@@ -2375,7 +2375,7 @@ SFSDIRK5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
                       SFSDIRK5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant)
+                      linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK6{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   linsolve::F
@@ -2387,7 +2387,7 @@ SFSDIRK6(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
                       SFSDIRK6{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant)
+                      linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK7{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   linsolve::F
@@ -2399,7 +2399,7 @@ SFSDIRK7(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
                       SFSDIRK7{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant)
+                      linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK8{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
 linsolve::F
@@ -2411,7 +2411,7 @@ SFSDIRK8(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                     linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                     extrapolant=:linear) =
                     SFSDIRK8{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                    linsolve,diff_type,extrapolant)
+                    linsolve,nlsolve,extrapolant)
 
 """
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
@@ -2629,7 +2629,7 @@ end
 ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    extrapolant=:linear,controller = :PI) =
- ESDIRK54I8L2SA{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(linsolve,diff_type,extrapolant,controller)
+ ESDIRK54I8L2SA{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(linsolve,nlsolve,extrapolant,controller)
 
 ################################################################################
 
@@ -2782,7 +2782,7 @@ ABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
       controller=:Standard) =
 ABDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
       typeof(κ),typeof(tol)}(
-      linsolve,diff_type,κ,tol,smooth_est,extrapolant,controller)
+      linsolve,nlsolve,κ,tol,smooth_est,extrapolant,controller)
 
 #########################################
 
@@ -2806,7 +2806,7 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:constant) =
                       MEBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-                      linsolve,diff_type,extrapolant)
+                      linsolve,nlsolve,extrapolant)
 
 #################################################
 """
@@ -2823,7 +2823,7 @@ PDIRK44(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:constant,threading=true) =
                       PDIRK44{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,typeof(threading)}(
-                      linsolve,diff_type,extrapolant,threading)
+                      linsolve,nlsolve,extrapolant,threading)
 ### Algorithm Groups
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
@@ -2847,7 +2847,7 @@ end
 DBDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),extrapolant=:linear) =
      DBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
-     linsolve,diff_type,extrapolant)
+     linsolve,nlsolve,extrapolant)
 =#
 
 struct DImplicitEuler{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
