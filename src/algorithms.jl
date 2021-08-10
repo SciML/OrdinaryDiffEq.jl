@@ -2022,7 +2022,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 # Linear Methods
 
 for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4,:CG2,:CG3]
-  @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm{Val{:forward}}
+  @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
     krylov::Bool
     m::Int
     iop::Int
@@ -2723,7 +2723,7 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
     autodiff::Bool
     chunksize::Int
   end
-  @eval $Alg{FDT}(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0,
+  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0,
             diff_type = Val{:forward}) = $Alg{diff_type}(krylov, m, iop, autodiff,
             chunksize)
 end
