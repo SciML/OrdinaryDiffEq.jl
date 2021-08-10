@@ -2077,7 +2077,7 @@ RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                                 RadauIIA3{chunk_size,autodiff,typeof(linsolve),
                                 diff_type,
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                                  linsolve,nlsolve,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                                  linsolve,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 """
 @article{hairer1999stiff,
@@ -2111,7 +2111,7 @@ RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           RadauIIA5{chunk_size,autodiff,typeof(linsolve),
                           diff_type,
                           typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                            linsolve,nlsolve,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                            linsolve,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 ################################################################################
 
