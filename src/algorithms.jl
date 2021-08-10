@@ -2005,7 +2005,7 @@ SERK2(;controller=:PI,eigen_est=nothing) = SERK2(controller,eigen_est)
 struct IRKC{CS,AD,F,F2,FDT,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   linsolve::F
   nlsolve::F2
-    κ::K
+  κ::K
   tol::T
   extrapolant::Symbol
   controller::Symbol
@@ -2022,7 +2022,7 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 # Linear Methods
 
 for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4,:CG2,:CG3]
-  @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
+  @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm{Val{:forward}}
     krylov::Bool
     m::Int
     iop::Int
@@ -2032,7 +2032,7 @@ end
 
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
+struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward}}
   krylov::Symbol
   m::Int
   iop::Int
