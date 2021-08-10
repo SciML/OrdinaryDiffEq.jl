@@ -12,9 +12,9 @@ abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT} <:  OrdinaryDiffEqImp
 const NewtonAlgorithm = Union{OrdinaryDiffEqNewtonAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm}
 const RosenbrockAlgorithm = Union{OrdinaryDiffEqRosenbrockAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm}
 
-abstract type OrdinaryDiffEqExponentialAlgorithm <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm end
+abstract type OrdinaryDiffEqExponentialAlgorithm{FDT} <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT} <: OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward}} end
 const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -2716,20 +2716,20 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
     Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
   """
-  @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm
+  @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm{FDT}
     krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
   end
-  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0,
+  @eval $Alg{FDT}(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0,
             diff_type = Val{:forward}) = $Alg{diff_type}(krylov, m, iop, autodiff,
             chunksize)
 end
 const ETD1 = NorsettEuler # alias
 for Alg in [:Exprb32, :Exprb43]
-  @eval struct $Alg{FDT} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
+  @eval struct $Alg{FDT} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT}
     m::Int
     iop::Int
     autodiff::Bool
@@ -2739,23 +2739,23 @@ for Alg in [:Exprb32, :Exprb43]
             diff_type = Val{:forward}) = $Alg{diff_type}(m, iop, autodiff, chunksize, diff_type)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
-  @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm
+  @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm{FDT}
     adaptive_krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
-      end
+  end
   @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true,
               chunksize=0, diff_type = Val{:forward}) =
-              $Alg(adaptive_krylov, m, iop, autodiff, chunksize, diff_type)
+              $Alg{diff_type}(adaptive_krylov, m, iop, autodiff, chunksize)
 end
-struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
+struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward}} end
 """
 ETD2: Exponential Runge-Kutta Method
   Second order Exponential Time Differencing method (in development).
 """
-struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
+struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward}} end
 
 #########################################
 
