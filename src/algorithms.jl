@@ -171,7 +171,7 @@ struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitE
     threading::TO
 end
 function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_linsolve,nlsolve=Val{:forward},
+  linsolve=DEFAULT_LINSOLVE,nlsolve=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
@@ -261,7 +261,7 @@ struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplic
     threading::TO
 end
 function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_linsolve,nlsolve=Val{:forward},
+  linsolve=DEFAULT_LINSOLVE,nlsolve=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -303,7 +303,7 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqIm
   sequence_factor::Int
 end
 function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_linsolve,nlsolve=Val{:forward},
+  linsolve=DEFAULT_LINSOLVE,nlsolve=Val{:forward},
   min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
