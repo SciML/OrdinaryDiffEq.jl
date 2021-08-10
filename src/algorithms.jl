@@ -171,7 +171,7 @@ struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitE
     threading::TO
 end
 function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_LINSOLVE,nlsolve=Val{:forward},
+  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
@@ -261,7 +261,7 @@ struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplic
     threading::TO
 end
 function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_LINSOLVE,nlsolve=Val{:forward},
+  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -303,7 +303,7 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqIm
   sequence_factor::Int
 end
 function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
-  linsolve=DEFAULT_LINSOLVE,nlsolve=Val{:forward},
+  linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -2736,7 +2736,7 @@ for Alg in [:Exprb32, :Exprb43]
     chunksize::Int
   end
   @eval $Alg(;m=30, iop=0, autodiff=true, chunksize=0,
-            diff_type = Val{:forward}) = $Alg{diff_type}(m, iop, autodiff, chunksize, diff_type)
+            diff_type = Val{:forward}) = $Alg{diff_type}(m, iop, autodiff, chunksize)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
   @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm{FDT}
@@ -2862,7 +2862,7 @@ DImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           controller=:Standard) =
                           DImplicitEuler{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
-                          diff_type,extrapolant,controller)
+                          nlsolve,extrapolant,controller)
 
 
 struct DABDF2{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
