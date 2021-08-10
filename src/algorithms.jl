@@ -2133,7 +2133,7 @@ ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           controller=:PI) =
                           ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
-                          diff_type,extrapolant,controller)
+                          nlsolve,extrapolant,controller)
 """
 ImplicitMidpoint: SDIRK Method
   A second order A-stable symplectic and symmetric implicit solver.
