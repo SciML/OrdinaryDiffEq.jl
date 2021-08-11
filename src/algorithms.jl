@@ -2877,4 +2877,4 @@ DABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           controller=:Standard) =
                           DABDF2{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
-                          diff_type,extrapolant,controller)
+                          nlsolve,extrapolant,controller)
