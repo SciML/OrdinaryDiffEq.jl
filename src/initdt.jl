@@ -23,7 +23,14 @@
       @.. sk = abstol+internalnorm(u0,t)*reltol
     end
   else
-    sk = @.. abstol+internalnorm(u0,t)*reltol
+    if u0 isa Array && abstol isa Number && reltol isa Number
+      sk = similar(u0,typeof(internalnorm(first(u0),t)*reltol))
+      @inbounds @simd ivdep for i in eachindex(u0)
+        sk[i] = abstol+internalnorm(u0[i],t)*reltol
+      end
+    else
+      sk = @.. abstol+internalnorm(u0,t)*reltol
+    end
   end
 
   if get_current_isfsal(integrator.alg, integrator.cache) && typeof(integrator) <: ODEIntegrator
@@ -32,7 +39,12 @@
     f(f₀,u0,p,t)
   else
     # TODO: use more caches
-    f₀ = zero.(u0./t)
+    if u0 isa Array
+      f₀ = similar(u0,eltype(first(u0)*t))
+      fill!(f₀,false)
+    else
+      f₀ = zero.(u0./t)
+    end
     f(f₀,u0,p,t)
   end
 
