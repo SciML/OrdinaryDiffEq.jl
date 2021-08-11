@@ -5,7 +5,8 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [k₁,k₂]
+  integrator.k[1] = k₁
+  integrator.k[2] = k₂
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
   integrator.destats.nf += 1
 end
@@ -374,7 +375,8 @@ function initialize!(integrator, cache::Union{Rosenbrock33Cache,
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [fsalfirst,fsallast]
+  integrator.k[1] = fsalfirst
+  integrator.k[2] = fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
   integrator.destats.nf += 1
 end
@@ -836,7 +838,8 @@ function initialize!(integrator, cache::Rodas4Cache)
   integrator.kshortsize = 2
   @unpack dense1,dense2 = cache
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [dense1,dense2]
+  integrator.k[1] = dense1
+  integrator.k[2] = dense2
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step=false)

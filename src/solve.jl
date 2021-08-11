@@ -516,8 +516,8 @@ function handle_dt!(integrator)
 end
 
 # time stops
-function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where T
-  tstops_internal = BinaryMinHeap{T}()
+@inline function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where T
+  tstops_internal = BinaryHeap{T}(DataStructures.FasterForward())
 
   t0, tf = tspan
   tdir = sign(tf - t0)
@@ -545,7 +545,7 @@ end
 
 # saving time points
 function initialize_saveat(::Type{T}, saveat, tspan) where T
-  saveat_internal = BinaryMinHeap{T}()
+  saveat_internal = BinaryHeap{T}(DataStructures.FasterForward())
 
   t0, tf = tspan
   tdir = sign(tf - t0)
@@ -569,7 +569,7 @@ end
 
 # discontinuities
 function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where T
-  d_discontinuities_internal = BinaryMinHeap{T}()
+  d_discontinuities_internal = BinaryHeap{T}(DataStructures.FasterForward())
   sizehint!(d_discontinuities_internal, length(d_discontinuities))
 
   t0, tf = tspan
