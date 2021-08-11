@@ -1,4 +1,4 @@
-﻿isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
+isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 
 DiffEqBase.isdiscrete(alg::FunctionMap) = true
 
@@ -143,7 +143,21 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     else
       maximum(prob.f.color)
     end
-    remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
+
+    if hasfield(typeof(alg),:linsolve)
+      linsolve = if alg.linsolve isa DefaultLinSolve && u0 isa Array && eltype(u0) <: Float64
+        DiffEqBase.LUFactorize()
+      else
+        alg.linsolve
+      end
+      remake(alg,chunk_size=ForwardDiff.pickchunksize(x),linsolve=linsolve)
+    else
+      remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
+    end
+end
+
+function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
+    CompositeAlgorithm(Tuple(DiffEqBase.prepare_alg(alg,u0,p,prob) for alg in algs),alg.choice_function)
 end
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
