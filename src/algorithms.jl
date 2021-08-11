@@ -21,23 +21,24 @@ abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdapt
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT} end
 
+# DAE Specific Algorithms
+abstract type DAEAlgorithm{CS,AD,FDT} <: DiffEqBase.AbstractDAEAlgorithm end
+
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
 
-function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm, kwargs...)
+function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
   T = DiffEqBase.remaker_of(thing)
   T(; DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
 end
 
-function DiffEqBase.remake(thing::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT}, kwargs...) where {CS, AD, FDT}
-  T = DiffEqBase.remaker_of(thing)
-  T(; chunk_size=CS,autodiff=AD,DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
+function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT},
+                        DAEAlgorithm{CS,AD,FDT}}; kwargs...) where {CS, AD, FDT}
+  T = SciMLBase.remaker_of(thing)
+  T(; chunk_size=CS,autodiff=AD,SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
 end
 
-function DiffEqBase.remake(thing::OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT}, kwargs...) where {CS, AD, FDT}
-  T = DiffEqBase.remaker_of(thing)
-  T(; chunk_size=CS,autodiff=AD,DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
-end
 ###############################################################################
 
 # RK methods
@@ -2832,10 +2833,6 @@ const MultistepAlgorithms = Union{IRKN3,IRKN4,
 
 const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
                               KenCarp3,KenCarp4,KenCarp47,KenCarp5,KenCarp58,CFNLIRK3}
-
-
-# DAE Specific Algorithms
-abstract type DAEAlgorithm{CS,AD,FDT} <: DiffEqBase.AbstractDAEAlgorithm end
 
 #=
 struct DBDF{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
