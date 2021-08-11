@@ -169,7 +169,7 @@ function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
   grad_config
 end
 
-function build_grad_config(alg,f,tf::F,du1,t) where {F}
+function build_grad_config(alg,f::F1,tf::F2,du1,t) where {F1,F2}
   if !DiffEqBase.has_tgrad(f)
     if alg_autodiff(alg)
       dualt = Dual{typeof(ForwardDiff.Tag(tf,eltype(t)))}(t, t)

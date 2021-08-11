@@ -31,7 +31,9 @@ function calc_tderivative!(integrator::ODEIntegrator{algType,IIP,<:Array}, cache
         f.tgrad(dT, uprev, p, t)
       else
         tf.uprev = uprev
-        tf.p = p
+        if !(p isa DiffEqBase.NullParameters)
+          tf.p = p
+        end
         derivative!(dT, tf, t, du2, integrator, cache.grad_config)
       end
     end
@@ -133,7 +135,9 @@ function calc_J!(J, integrator, cache)
 
       uf.f = nlsolve_f(f, alg)
       uf.t = t
-      uf.p = p
+      if !(p isa DiffEqBase.NullParameters)
+        uf.p = p
+      end
 
       jacobian!(J, uf, uprev, du1, integrator, jac_config)
     end
@@ -594,7 +598,7 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
   nothing
 end
 
-function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
+function build_J_W(alg,u,uprev,p,t,dt,f::F,uEltypeNoUnits,::Val{IIP}) where {IIP,F}
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator{IIP}(f, u, dt)
