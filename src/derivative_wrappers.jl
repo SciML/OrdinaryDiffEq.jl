@@ -173,7 +173,12 @@ function build_grad_config(alg,f::F1,tf::F2,du1,t) where {F1,F2}
   if !DiffEqBase.has_tgrad(f)
     if alg_autodiff(alg)
       dualt = Dual{typeof(ForwardDiff.Tag(tf,eltype(t)))}(t, t)
-      grad_config = ArrayInterface.restructure(du1,du1 .* dualt)
+      if du1 isa Array
+        grad_config = similar(du1,eltype(first(du1)*dualt))
+        fill!(grad_config,false)
+      else
+        grad_config = ArrayInterface.restructure(du1,du1 .* dualt)
+      end
     else
       grad_config = FiniteDiff.GradientCache(du1,t,alg_difftype(alg))
     end
