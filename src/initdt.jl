@@ -40,7 +40,7 @@
   else
     # TODO: use more caches
     if u0 isa Array
-      T = eltype(first(u0)*t)
+      T = eltype(first(u0)/t)
       f₀ = similar(u0,T)
       fill!(f₀,zero(T))
     else
