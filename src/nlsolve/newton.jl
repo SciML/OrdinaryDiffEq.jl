@@ -211,7 +211,6 @@ end
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,tmp,ztmp,γ,α,iter,cache = nlsolver
   @unpack W_γdt,ustep,tstep,k,atmp,dz,W,new_W,invγdt,linsolve,weight = cache
-
   f = nlsolve_f(integrator)
   isdae = f isa DAEFunction
 
@@ -223,8 +222,15 @@ end
     @inbounds @simd ivdep for i in eachindex(z)
       ztmp[i] = (tmp[i] + α * z[i]) * invγdt
     end
-    @inbounds @simd ivdep for i in eachindex(z)
-      ustep[i] = uprev[i] + z[i]
+    if isdefined(integrator.cache, :u₀)
+      @inbounds @simd ivdep for i in eachindex(z)
+        ustep[i] = integrator.cache.u₀[i] + z[i]
+      end
+      #@.. ustep = integrator.cache.u₀ + z
+    else
+      @inbounds @simd ivdep for i in eachindex(z)
+        ustep[i] = uprev[i] + z[i]
+      end
     end
     f(k, ztmp, ustep, p, tstep)
     b = vec(k)
