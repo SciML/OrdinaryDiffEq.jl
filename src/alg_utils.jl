@@ -113,6 +113,7 @@ isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
 isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
+isadaptive(alg::DFBDF) = true
 
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
@@ -448,6 +449,7 @@ alg_order(alg::PDIRK44) = 4
 
 alg_order(alg::DImplicitEuler) = 1
 alg_order(alg::DABDF2) = 2
+alg_order(alg::DFBDF) = 1#dummy value
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)

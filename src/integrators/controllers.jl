@@ -551,7 +551,7 @@ function step_reject_controller!(integrator,alg::QNDF)
   integrator.cache.order = kₙ
 end
 
-function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
+function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_order}}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
   @unpack ts_tmp,terkm2, terkm1, terk, terkp1,u_history = cache
   cache.prev_order = cache.order
@@ -612,7 +612,7 @@ function stepsize_controller!(integrator, alg::FBDF{max_order}) where max_order
   q
 end
 
-function step_accept_controller!(integrator,alg::FBDF{max_order},q) where max_order
+function step_accept_controller!(integrator,alg::Union{FBDF{max_order},DFBDF{max_order}},q) where max_order
   integrator.cache.consfailcnt = 0
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
@@ -622,7 +622,7 @@ function step_accept_controller!(integrator,alg::FBDF{max_order},q) where max_or
   return integrator.dt/q
 end
 
-function step_reject_controller!(integrator,alg::FBDF)
+function step_reject_controller!(integrator,alg::Union{FBDF,DFBDF})
   integrator.cache.consfailcnt += 1
   integrator.cache.nconsteps = 0
   dt = integrator.dt

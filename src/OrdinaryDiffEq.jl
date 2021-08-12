@@ -273,7 +273,7 @@ using DocStringExtensions
   export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitEulerExtrapolation,
          ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation, ImplicitEulerBarycentricExtrapolation
 
-  export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2
+  export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2, DFBDF
 
   export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
