@@ -413,10 +413,22 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idx
     # typeof(y₀) can be these if saveidxs gives a single value
     _ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T)
   elseif typeof(idxs) <: Nothing
-    out = oneunit(Θ) .* y₁
+    if y₁ isa Array{<:Number}
+      out = similar(y₁,eltype(first(y₁)*oneunit(Θ)))
+      copyto!(out,y₁)
+    else
+      out = oneunit(Θ) .* y₁
+    end
     _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
   else
-    out = oneunit(Θ) .* y₁[idxs]
+    if y₁ isa Array{<:Number}
+      out = similar(y₁,eltype(first(y₁)*oneunit(Θ)),axes(idxs))
+      for i in eachindex(idxs)
+        out[i] = y₁[idxs[i]]
+      end
+    else
+      out = oneunit(Θ) .* y₁[idxs]
+    end
     _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
   end
 end

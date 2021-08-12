@@ -8,7 +8,7 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
         integrator.destats.nf += 1
     else
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
-        fdtype = alg.diff_type
+        fdtype = alg_difftype(alg)
         if fdtype == Val{:forward} || fdtype == Val{:central}
             tmp *= 2
             if eltype(df)<:Complex
@@ -29,8 +29,8 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
       integrator.destats.nf += 1
       d = ForwardDiff.derivative(f, x)
     else
-      d = FiniteDiff.finite_difference_derivative(f, x, alg.diff_type, dir = diffdir(integrator))
-      if alg.diff_type == Val{:central} || alg.diff_type == Val{:forward}
+      d = FiniteDiff.finite_difference_derivative(f, x, alg_difftype(alg), dir = diffdir(integrator))
+      if alg_difftype(alg) === Val{:central} || alg_difftype(alg) === Val{:forward}
           tmp *= 2
       end
       integrator.destats.nf += tmp
@@ -44,17 +44,17 @@ function jacobian_autodiff(f, x::AbstractArray, odefun, alg)
   sparsity,colorvec = sparsity_colorvec(odefun,x)
   maxcolor = maximum(colorvec)
   chunk_size = get_chunksize(alg)===Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
-  num_of_chunks = chunk_size===nothing ? Int(ceil(maxcolor / getsize(default_chunk_size(maxcolor)))) :
+  num_of_chunks = chunk_size===nothing ? Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
                                         Int(ceil(maxcolor / chunk_size))
   (forwarddiff_color_jacobian(f,x,colorvec = colorvec, sparsity = sparsity,
                               jac_prototype = jac_prototype, chunksize=chunk_size),
    num_of_chunks)
 end
 
-function _nfcount(N,diff_type)
-  if diff_type==Val{:complex}
+function _nfcount(N,::Type{diff_type}) where diff_type
+  if diff_type===Val{:complex}
     tmp = N
-  elseif diff_type==Val{:forward}
+  elseif diff_type===Val{:forward}
     tmp = N + 1
   else
     tmp = 2N
@@ -62,9 +62,9 @@ function _nfcount(N,diff_type)
   tmp
 end
 
-jacobian_finitediff(f, x, diff_type, dir, colorvec, sparsity, jac_prototype) =
+jacobian_finitediff(f, x, ::Type{diff_type}, dir, colorvec, sparsity, jac_prototype) where {diff_type} =
     (FiniteDiff.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir),2)
-function jacobian_finitediff(f, x::AbstractArray, diff_type, dir, colorvec, sparsity, jac_prototype)
+function jacobian_finitediff(f, x::AbstractArray, ::Type{diff_type}, dir, colorvec, sparsity, jac_prototype) where {diff_type}
   f_in = diff_type === Val{:forward} ? f(x) : similar(x)
   ret_eltype = eltype(f_in)
   J = FiniteDiff.finite_difference_jacobian(f, x, diff_type, ret_eltype, f_in,
@@ -80,7 +80,7 @@ function jacobian(f, x, integrator)
       jac_prototype = integrator.f.jac_prototype
       sparsity,colorvec = sparsity_colorvec(integrator.f,x)
       dir = diffdir(integrator)
-      J, tmp = jacobian_finitediff(f, x, alg.diff_type, dir, colorvec, sparsity, jac_prototype)
+      J, tmp = jacobian_finitediff(f, x, alg_difftype(alg), dir, colorvec, sparsity, jac_prototype)
     end
     integrator.destats.nf += tmp
     J
@@ -99,7 +99,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
       forwarddiff_color_jacobian!(J,f,x,jac_config)
       integrator.destats.nf += 1
     else
-      isforward = alg.diff_type === Val{:forward}
+      isforward = alg_difftype(alg) === Val{:forward}
       if isforward
         forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
         f(forwardcache, x)
@@ -113,7 +113,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
     nothing
 end
 
-function DiffEqBase.build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where transform
+function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where {transform,F1,F2}
   if !DiffEqBase.has_jac(f) && ((!transform && !DiffEqBase.has_Wfact(f)) || (transform && !DiffEqBase.has_Wfact_t(f)))
     jac_prototype = f.jac_prototype
     sparsity,colorvec = sparsity_colorvec(f,u)
@@ -121,10 +121,10 @@ function DiffEqBase.build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,::Val{transfor
       _chunksize = get_chunksize(alg)===Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
       jac_config = ForwardColorJacCache(uf,uprev,_chunksize;colorvec=colorvec,sparsity=sparsity)
     else
-      if alg.diff_type != Val{:complex}
-        jac_config = FiniteDiff.JacobianCache(tmp,du1,du2,alg.diff_type,colorvec=colorvec,sparsity=sparsity)
+      if alg_difftype(alg) !== Val{:complex}
+        jac_config = FiniteDiff.JacobianCache(tmp,du1,du2,alg_difftype(alg),colorvec=colorvec,sparsity=sparsity)
       else
-        jac_config = FiniteDiff.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u),colorvec=colorvec,sparsity=sparsity)
+        jac_config = FiniteDiff.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg_difftype(alg),eltype(u),colorvec=colorvec,sparsity=sparsity)
       end
     end
   else
@@ -169,13 +169,18 @@ function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
   grad_config
 end
 
-function build_grad_config(alg,f,tf,du1,t)
+function build_grad_config(alg,f::F1,tf::F2,du1,t) where {F1,F2}
   if !DiffEqBase.has_tgrad(f)
     if alg_autodiff(alg)
       dualt = Dual{typeof(ForwardDiff.Tag(tf,eltype(t)))}(t, t)
-      grad_config = ArrayInterface.restructure(du1,du1 .* dualt)
+      if du1 isa Array
+        grad_config = similar(du1,eltype(first(du1)*dualt))
+        fill!(grad_config,false)
+      else
+        grad_config = ArrayInterface.restructure(du1,du1 .* dualt)
+      end
     else
-      grad_config = FiniteDiff.GradientCache(du1,t,alg.diff_type)
+      grad_config = FiniteDiff.GradientCache(du1,t,alg_difftype(alg))
     end
   else
     grad_config = nothing

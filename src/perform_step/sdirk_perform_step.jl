@@ -436,6 +436,74 @@ end
   @.. integrator.fsallast = z/dt
 end
 
+@muladd function perform_step!(integrator, cache::TRBDF2Cache{<:Array}, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack zprev,zᵧ,atmp,nlsolver = cache
+  @unpack z,tmp = nlsolver
+  W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
+  b = nlsolver.ztmp
+  @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
+  alg = unwrap_alg(integrator, true)
+
+  # FSAL
+  @inbounds @simd ivdep for i in eachindex(u)
+    zprev[i] = dt*integrator.fsalfirst[i]
+  end
+  markfirststage!(nlsolver)
+
+  ##### Solve Trapezoid Step
+
+  # TODO: Add extrapolation
+  copyto!(zᵧ,zprev)
+  copyto!(z,zᵧ)
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i] + d*zprev[i]
+  end
+  nlsolver.c = γ
+  zᵧ .= nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  ################################## Solve BDF2 Step
+
+  ### Initial Guess From Shampine
+  @inbounds @simd ivdep for i in eachindex(u)
+    z[i] = α1*zprev[i] + α2*zᵧ[i]
+  end
+  @inbounds @simd ivdep for i in eachindex(u)
+    tmp[i] = uprev[i] + ω*zprev[i] + ω*zᵧ[i]
+  end
+  nlsolver.c = 1
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
+  nlsolve!(nlsolver, integrator, cache, repeat_step)
+  nlsolvefail(nlsolver) && return
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = tmp[i] + d*z[i]
+  end
+
+  ################################### Finalize
+
+  if integrator.opts.adaptive
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = btilde1*zprev[i] + btilde2*zᵧ[i] + btilde3*z[i]
+    end
+    if alg.smooth_est && isnewton(nlsolver) # From Shampine
+      est = nlsolver.cache.dz
+      nlsolver.cache.linsolve(vec(est),W,vec(tmp),false)
+      integrator.destats.nsolve += 1
+    else
+      est = tmp
+    end
+    calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    integrator.fsallast[i] = z[i]/dt
+  end
+end
+
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   nlsolver = cache.nlsolver

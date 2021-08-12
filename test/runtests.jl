@@ -29,7 +29,6 @@ if GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
   @time @safetestset "save_idxs Tests" begin include("interface/ode_saveidxs_tests.jl") end
   @time @safetestset "Scalar Handling Tests" begin include("interface/scalar_handling_tests.jl") end
   @time @safetestset "Static Array Tests" begin include("interface/static_array_tests.jl") end
-  @time @safetestset "Data Array Tests" begin include("interface/data_array_test.jl") end
   @time @safetestset "u_modifed Tests" begin include("interface/umodified_test.jl") end
   @time @safetestset "Composite Algorithm Tests" begin include("interface/composite_algorithm_test.jl") end
   @time @safetestset "Complex Tests" begin include("interface/complex_tests.jl") end

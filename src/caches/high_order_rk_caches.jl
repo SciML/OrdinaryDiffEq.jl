@@ -18,7 +18,7 @@
   tab::TabType
 end
 
-function alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::TanYam7,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = TanYam7ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype); k2 = zero(rate_prototype) ; k3 = zero(rate_prototype); k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6 = zero(rate_prototype) ; k7 = zero(rate_prototype); k8 = zero(rate_prototype)
@@ -27,7 +27,7 @@ function alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   TanYam7Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,k,tab)
 end
 
-alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = TanYam7ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::TanYam7,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = TanYam7ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 @cache struct DP8Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -62,7 +62,7 @@ alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTyp
   tab::TabType
 end
 
-function alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::DP8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k1 = zero(rate_prototype); k2  = zero(rate_prototype); k3  = zero(rate_prototype);  k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6  = zero(rate_prototype); k7  = zero(rate_prototype);  k8 = zero(rate_prototype)
   k9 = zero(rate_prototype); k10 = zero(rate_prototype); k11 = zero(rate_prototype); k12 = zero(rate_prototype)
@@ -87,7 +87,7 @@ function alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
            utilde,tmp,atmp,tab)
 end
 
-alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = DP8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::DP8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = DP8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 @cache struct TsitPap8Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -112,7 +112,7 @@ alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoU
   tab::TabType
 end
 
-function alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::TsitPap8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = TsitPap8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype)
@@ -122,7 +122,7 @@ function alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   TsitPap8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,tmp,atmp,k,tab)
 end
 
-alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = TsitPap8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::TsitPap8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = TsitPap8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 @cache struct PFRK87Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -147,7 +147,7 @@ alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTy
   tab::TabType
 end
 
-function alg_cache(alg::PFRK87,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+function alg_cache(alg::PFRK87,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   tab = PFRK87ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype) 
   k2 = zero(rate_prototype)
@@ -169,4 +169,4 @@ function alg_cache(alg::PFRK87,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   PFRK87Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,tmp,atmp,k,tab)
 end
 
-alg_cache(alg::PFRK87,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) = PFRK87ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+alg_cache(alg::PFRK87,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = PFRK87ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))

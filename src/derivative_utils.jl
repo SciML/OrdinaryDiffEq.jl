@@ -20,6 +20,32 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   end
 end
 
+function calc_tderivative!(integrator::ODEIntegrator{algType,IIP,<:Array}, cache, dtd1, repeat_step) where {algType,IIP}
+  @inbounds begin
+    @unpack t,dt,uprev,u,f,p = integrator
+    @unpack du2,fsalfirst,dT,tf,linsolve_tmp = cache
+
+    # Time derivative
+    if !repeat_step # skip calculation if step is repeated
+      if DiffEqBase.has_tgrad(f)
+        f.tgrad(dT, uprev, p, t)
+      else
+        tf.uprev = uprev
+        if !(p isa DiffEqBase.NullParameters)
+          tf.p = p
+        end
+        derivative!(dT, tf, t, du2, integrator, cache.grad_config)
+      end
+    end
+
+    f(fsalfirst, uprev, p, t)
+    integrator.destats.nf += 1
+    @inbounds @simd ivdep for i in eachindex(uprev)
+      linsolve_tmp[i] = fsalfirst[i] + dtd1*dT[i]
+    end
+  end
+end
+
 function calc_tderivative(integrator, cache)
   @unpack t,dt,uprev,u,f,p = integrator
 
@@ -109,7 +135,9 @@ function calc_J!(J, integrator, cache)
 
       uf.f = nlsolve_f(f, alg)
       uf.t = t
-      uf.p = p
+      if !(p isa DiffEqBase.NullParameters)
+        uf.p = p
+      end
 
       jacobian!(J, uf, uprev, du1, integrator, jac_config)
     end
@@ -570,7 +598,7 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
   nothing
 end
 
-function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{IIP}) where IIP
+function build_J_W(alg,u,uprev,p,t,dt,f::F,uEltypeNoUnits,::Val{IIP}) where {IIP,F}
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator{IIP}(f, u, dt)

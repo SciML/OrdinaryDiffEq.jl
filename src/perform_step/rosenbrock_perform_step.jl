@@ -5,7 +5,8 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [k₁,k₂]
+  integrator.k[1] = k₁
+  integrator.k[2] = k₂
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
   integrator.destats.nf += 1
 end
@@ -54,7 +55,7 @@ end
   integrator.destats.nf += 1
 
   if mass_matrix == I
-    tmp .= k₁
+    copyto!(tmp,k₁)
   else
     mul!(vec(tmp),mass_matrix,k₁)
   end
@@ -85,6 +86,98 @@ end
     integrator.destats.nsolve += 1
 
     @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+end
+
+@muladd function perform_step!(integrator, cache::Rosenbrock23Cache{<:Array}, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p,opts = integrator
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
+  @unpack c₃₂,d = cache.tab
+
+  # Assignments
+  sizeu  = size(u)
+  mass_matrix = integrator.f.mass_matrix
+
+  # Precalculations
+  γ = dt*d
+  dto2 = dt/2
+  dto6 = dt/6
+
+  new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+
+  calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
+                       opts.abstol, opts.reltol, opts.internalnorm, t)
+
+  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), new_W,
+      Pl=DiffEqBase.ScaleVector(weight, true),
+      Pr=DiffEqBase.ScaleVector(weight, false), reltol=opts.reltol)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k₁[i] = -k₁[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + dto2*k₁[i]
+  end
+  f(f₁,u,p,t+dto2)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    copyto!(tmp,k₁)
+  else
+    mul!(vec(tmp),mass_matrix,k₁)
+  end
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    linsolve_tmp[i] = f₁[i] - tmp[i]
+  end
+  cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k₂[i] = -k₂[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k₂[i] += k₁[i]
+  end
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + dt*k₂[i]
+  end
+
+  if integrator.opts.adaptive
+    f( fsallast,  u, p, t+dt)
+    integrator.destats.nf += 1
+
+    if mass_matrix == I
+      @inbounds @simd ivdep for i in eachindex(u)
+        linsolve_tmp[i] = fsallast[i] - c₃₂*(k₂[i]-f₁[i]) - 2(k₁[i]-fsalfirst[i]) + dt*dT[i]
+      end
+    else
+      @inbounds @simd ivdep for i in eachindex(u)
+        du2[i] = c₃₂*k₂[i] + 2k₁[i]
+      end
+      mul!(du1,mass_matrix,du2)
+
+      @inbounds @simd ivdep for i in eachindex(u)
+        linsolve_tmp[i] = fsallast[i] - du1[i] + c₃₂*f₁[i] + 2fsalfirst[i] + dt*dT[i]
+      end
+    end
+
+
+    cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      k₃[i] = -k₃[i]
+    end
+    integrator.destats.nsolve += 1
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = dto6*(k₁[i] - 2*k₂[i] + k₃[i])
+    end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -282,7 +375,8 @@ function initialize!(integrator, cache::Union{Rosenbrock33Cache,
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [fsalfirst,fsallast]
+  integrator.k[1] = fsalfirst
+  integrator.k[2] = fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
   integrator.destats.nf += 1
 end
@@ -744,7 +838,8 @@ function initialize!(integrator, cache::Rodas4Cache)
   integrator.kshortsize = 2
   @unpack dense1,dense2 = cache
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [dense1,dense2]
+  integrator.k[1] = dense1
+  integrator.k[2] = dense2
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step=false)
@@ -878,6 +973,203 @@ end
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
     @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+  end
+end
+
+@muladd function perform_step!(integrator, cache::Rodas4Cache{<:Array}, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack du,du1,du2,dT,J,W,uf,tf,k1,k2,k3,k4,k5,k6,linsolve_tmp,jac_config,atmp = cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
+
+  # Assignments
+  sizeu  = size(u)
+  uidx = eachindex(integrator.uprev)
+  mass_matrix = integrator.f.mass_matrix
+
+  # Precalculations
+  dtC21 = C21/dt
+  dtC31 = C31/dt
+  dtC32 = C32/dt
+  dtC41 = C41/dt
+  dtC42 = C42/dt
+  dtC43 = C43/dt
+  dtC51 = C51/dt
+  dtC52 = C52/dt
+  dtC53 = C53/dt
+  dtC54 = C54/dt
+  dtC61 = C61/dt
+  dtC62 = C62/dt
+  dtC63 = C63/dt
+  dtC64 = C64/dt
+  dtC65 = C65/dt
+
+  dtd1 = dt*d1
+  dtd2 = dt*d2
+  dtd3 = dt*d3
+  dtd4 = dt*d4
+  dtgamma = dt*gamma
+
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k1[i] = -k1[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a21*k1[i]
+  end
+  f( du,  u, p, t+c2*dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd2*dT[i] + dtC21*k1[i]
+    end
+  else
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC21*k1[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd2*dT[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k2[i] = -k2[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a31*k1[i] + a32*k2[i]
+  end
+  f( du,  u, p, t+c3*dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd3*dT[i] + (dtC31*k1[i] + dtC32*k2[i])
+    end
+  else
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC31*k1[i] + dtC32*k2[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd3*dT[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k3[i] = -k3[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a41*k1[i] + a42*k2[i] + a43*k3[i]
+  end
+  f( du,  u, p, t+c4*dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd4*dT[i] + (dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i])
+    end
+  else
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd4*dT[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k4[i] = -k4[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]
+  end
+  f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
+    end
+  else
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k5[i] = -k5[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] += k5[i]
+  end
+  f( du,  u, p, t + dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i])
+    end
+  else
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k6[i] = -k6[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] += k6[i]
+  end
+
+  if integrator.opts.adaptive
+    calculate_residuals!(atmp, k6, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  if integrator.opts.calck
+    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
+    @inbounds @simd ivdep for i in eachindex(u)
+      integrator.k[1][i] = h21*k1[i] + h22*k2[i] + h23*k3[i] + h24*k4[i] + h25*k5[i]
+      integrator.k[2][i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i]
+    end
   end
 end
 
@@ -1215,6 +1507,282 @@ end
   integrator.destats.nsolve += 1
 
   u .+= k8
+  f( fsallast,  u, p, t+dt)
+  integrator.destats.nf += 1
+
+  if integrator.opts.adaptive
+    calculate_residuals!(atmp, k8, uprev, u, integrator.opts.abstol,
+                         integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  if integrator.opts.calck
+    #=
+    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
+    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    =#
+  end
+end
+
+@muladd function perform_step!(integrator, cache::Rosenbrock5Cache{<:Array}, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp = cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
+
+  # Assignments
+  sizeu  = size(u)
+  uidx = eachindex(integrator.uprev)
+  mass_matrix = integrator.f.mass_matrix
+
+  # Precalculations
+  dtC21 = C21/dt
+  dtC31 = C31/dt
+  dtC32 = C32/dt
+  dtC41 = C41/dt
+  dtC42 = C42/dt
+  dtC43 = C43/dt
+  dtC51 = C51/dt
+  dtC52 = C52/dt
+  dtC53 = C53/dt
+  dtC54 = C54/dt
+  dtC61 = C61/dt
+  dtC62 = C62/dt
+  dtC63 = C63/dt
+  dtC64 = C64/dt
+  dtC65 = C65/dt
+  dtC71 = C71/dt
+  dtC72 = C72/dt
+  dtC73 = C73/dt
+  dtC74 = C74/dt
+  dtC75 = C75/dt
+  dtC76 = C76/dt
+  dtC81 = C81/dt
+  dtC82 = C82/dt
+  dtC83 = C83/dt
+  dtC84 = C84/dt
+  dtC85 = C85/dt
+  dtC86 = C86/dt
+  dtC87 = C87/dt
+
+  dtd1 = dt*d1
+  dtd2 = dt*d2
+  dtd3 = dt*d3
+  dtd4 = dt*d4
+  dtd5 = dt*d5
+  dtgamma = dt*gamma
+
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+  @inbounds @simd ivdep for i in eachindex(u)
+    k1[i] = -k1[i]
+  end
+
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a21*k1[i]
+  end
+  f( du,  u, p, t+c2*dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd2*dT[i] + dtC21*k1[i]
+    end
+  else
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC21*k1[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd2*dT[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k2[i] = -k2[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a31*k1[i] + a32*k2[i]
+  end
+  f( du,  u, p, t+c3*dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd3*dT[i] + (dtC31*k1[i] + dtC32*k2[i])
+    end
+  else
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC31*k1[i] + dtC32*k2[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd3*dT[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k3[i] = -k3[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a41*k1[i] + a42*k2[i] + a43*k3[i]
+  end
+  f( du,  u, p, t+c4*dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd4*dT[i] + (dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i])
+    end
+  else
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd4*dT[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k4[i] = -k4[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]
+  end
+  f( du,  u, p, t+c5*dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
+    end
+  else
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + dtd5*dT[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k5[i] = -k5[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] = uprev[i] + a61*k1[i] + a62*k2[i] + a63*k3[i] + a64*k4[i] + a65*k5[i]
+  end
+  f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i])
+    end
+  else
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k6[i] = -k6[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] += k6[i]
+  end
+  f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
+    end
+  else
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k7), W, vec(linsolve_tmp))
+  @inbounds @simd ivdep for i in eachindex(u)
+    k7[i] = -k7[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] += k7[i]
+  end
+  f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
+
+  if mass_matrix == I
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
+    end
+  else
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      du1[i] = dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i]
+    end
+    mul!(vec(du2),mass_matrix,vec(du1))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      linsolve_tmp[i] = du[i] + du2[i]
+    end
+  end
+
+  cache.linsolve(vec(k8), W, vec(linsolve_tmp))
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    k8[i] = -k8[i]
+  end
+  integrator.destats.nsolve += 1
+
+  @inbounds @simd ivdep for i in eachindex(u)
+    u[i] += k8[i]
+  end
   f( fsallast,  u, p, t+dt)
   integrator.destats.nf += 1
 
