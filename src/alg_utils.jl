@@ -157,7 +157,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
 end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
-    CompositeAlgorithm(Tuple(DiffEqBase.prepare_alg(alg,u0,p,prob) for alg in algs),alg.choice_function)
+    CompositeAlgorithm(Tuple(DiffEqBase.prepare_alg(alg,u0,p,prob) for alg in alg.algs),alg.choice_function)
 end
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
