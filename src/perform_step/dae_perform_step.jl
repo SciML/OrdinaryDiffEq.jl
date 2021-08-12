@@ -219,10 +219,12 @@ end
 function initialize!(integrator, cache::DFBDFConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.du, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
-
   # Avoid undefined entries if k is an array of arrays
-  integrator.k[1] = integrator.du
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_step=false) where max_order
@@ -239,7 +241,6 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
     cache.nonevesuccsteps = 0
   end
   @unpack nonevesuccsteps,consfailcnt,nconsteps = cache
-
   k = order
   if nonevesuccsteps == 0
     weights[1] = 1/dt
@@ -264,17 +265,13 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
   if nonevesuccsteps >= 1
     compute_weights!(ts,k,weights)
   end
-    
-  u₀ = zero(u)
+  cache.u₀ = zero(u)
   if nonevesuccsteps >= 1
-    u₀ = calc_Lagrange_interp(k,weights,t+dt,ts,u_history,u₀)
+    cache.u₀ = calc_Lagrange_interp(k,weights,t+dt,ts,u_history,cache.u₀)
   else
-    u₀ = u
+    cache.u₀ = u
   end
   markfirststage!(nlsolver)
-  
-  nlsolver.z = zero(u₀)
-
   equi_ts = zeros(k-1)
   for i in 1:k-1
     equi_ts[i] = t - dt*i
@@ -300,20 +297,18 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
     end
   end
 
-  nlsolver.tmp = tmp + u₀
-  β₀ = bdf_coeffs[k,1]
-  α₀ = 1//1 #bdf_coeffs[k,1]
-  nlsolver.γ = β₀
-  nlsolver.α = α₀
+  nlsolver.tmp = tmp + cache.u₀
+  nlsolver.z = zero(nlsolver.z)
+  nlsolver.γ = bdf_coeffs[k,1]
+  nlsolver.α = 1//1
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) &&  return
-
-  u = u₀ + z
+  u = z + cache.u₀
 
   for j in 2:k
     r[j] = (1-j)
     for i in 2:k+1
-      r[j] *= ((t+dt-j*dt)-ts[i])/(i*dt) #TODO: This should be noticed that whether it uses the correct ts elements.
+      r[j] *= ((t+dt-j*dt)-ts[i])/(i*dt)
     end
   end
 
@@ -324,7 +319,7 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
 
   lte = -1/(1+k)
   for j in 2:k
-    lte -= bdf_coeffs[k,j]*r[j]
+    lte -= (bdf_coeffs[k,j]//bdf_coeffs[k,1])*r[j]
   end
   lte *= terkp1
 
@@ -400,14 +395,8 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
       cache.terkp1 = zero(cache.terk)
     end
   end
-
-  integrator.destats.nf += 1
   integrator.u = u
   integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
-  if integrator.opts.calck
-    integrator.k[2] = integrator.k[1]
-    integrator.k[1] = integrator.du
-  end
 end
 
 function initialize!(integrator, cache::DFBDFCache)
@@ -417,6 +406,8 @@ function initialize!(integrator, cache::DFBDFCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+  #integrator.f(integrator.fsalfirst, integrator.du, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  #integrator.destats.nf += 1
 end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=false) where max_order
@@ -482,7 +473,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
   end
 
   @.. nlsolver.tmp = tmp + u₀
-  @.. nlsolver.z = zero(eltype(nlsolver.z))#newton dae uprev!=u₀
+  @.. nlsolver.z = zero(eltype(nlsolver.z))
   nlsolver.γ = bdf_coeffs[k,1]
   nlsolver.α = 1//1
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
@@ -492,7 +483,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
   for j in 2:k
     r[j] = (1-j)
     for i in 2:k+1
-      r[j] *= ((t+dt-j*dt)-ts[i])/(i*dt) #TODO: This should be noticed that whether it uses the correct ts elements.
+      r[j] *= ((t+dt-j*dt)-ts[i])/(i*dt)
     end
   end
 
@@ -503,7 +494,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
 
   lte = -1/(1+k)
   for j in 2:k
-    lte -= bdf_coeffs[k,j]*r[j]
+    lte -= (bdf_coeffs[k,j]//bdf_coeffs[k,1])*r[j]
   end
   @.. terk_tmp = lte * terkp1_tmp
   if integrator.opts.adaptive
@@ -553,6 +544,5 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
       cache.terkp1 = zero(cache.terkp1)
     end
   end
-  integrator.destats.nf += 1
-  @.. integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
+  @.. integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt) #TODO Lorenz plot seems not smooth
 end

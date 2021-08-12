@@ -96,7 +96,8 @@ end
   u_history::uuType
   order::Int
   prev_order::Int
-  u_corrector::uType
+  u₀::uType
+  u_corrector::uuType
   bdf_coeffs::coeffType
   max_order::Val{MO}
   nconsteps::Int
@@ -140,8 +141,9 @@ function alg_cache(alg::DFBDF{MO},du,u,res_prototype,rate_prototype,uEltypeNoUni
   consfailcnt = 0
   t_old = zero(t)
   nonevesuccsteps = 0
+  u₀ = zero(u)
   
-  DFBDFConstantCache(nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights,nonevesuccsteps)
+  DFBDFConstantCache(nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u₀,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights,nonevesuccsteps)
 end
 
 @cache mutable struct DFBDFCache{MO,N,rateType,uNoUnitsType,tsType,tType,uType,uuType,coeffType,EEstType,rType,wType} <: OrdinaryDiffEqMutableCache

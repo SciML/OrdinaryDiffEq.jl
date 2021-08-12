@@ -56,7 +56,12 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   isdae = f isa DAEFunction
 
   if isdae
-    ustep = @. uprev + z
+    # not all predictors are uprev, for other forms of predictors, defined in u₀
+    if isdefined(integrator.cache, :u₀)
+      ustep = @.. integrator.cache.u₀ + z
+    else
+      ustep = @.. uprev + z
+    end
     dustep = @. (tmp + α * z) * invγdt
     ztmp = f(dustep, ustep, p, t)
   else
@@ -124,7 +129,7 @@ end
   if isdae
     @.. ztmp = (tmp + α * z) * invγdt
     # not all predictors are uprev, for other forms of predictors, defined in u₀
-    if hasproperty(integrator.cache, :u₀)
+    if isdefined(integrator.cache, :u₀)
       @.. ustep = integrator.cache.u₀ + z
     else
       @.. ustep = uprev + z
