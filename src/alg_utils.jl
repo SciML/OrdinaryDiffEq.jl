@@ -63,6 +63,14 @@ end
 issplit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 issplit(alg::SplitAlgorithms) = true
 
+function _composite_beta1_default(algs::Tuple{T1,T2}, current, ::Type{QT}, beta2) where {T1, T2, QT}
+  if current == 1
+    return QT(beta1_default(algs[1], beta2))
+  elseif current == 2
+    return QT(beta1_default(algs[2], beta2))
+  end
+end
+
 @generated function _composite_beta1_default(algs::T, current, ::Type{QT}, beta2) where {T <: Tuple, QT}
   expr = Expr(:block)
   for i in 1:length(T.types)
@@ -74,6 +82,15 @@ issplit(alg::SplitAlgorithms) = true
   end
   return expr
 end
+
+function _composite_beta2_default(algs::Tuple{T1,T2}, current, ::Type{QT}) where {T1, T2, QT}
+  if current == 1
+    return QT(beta2_default(algs[1]))
+  elseif current == 2
+    return QT(beta2_default(algs[2]))
+  end
+end
+
 @generated function _composite_beta2_default(algs::T, current, ::Type{QT}) where {T <: Tuple, QT}
   expr = Expr(:block)
   for i in 1:length(T.types)
