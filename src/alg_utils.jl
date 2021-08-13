@@ -164,7 +164,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     x = if prob.f.colorvec === nothing
       length(u0)
     else
-      maximum(prob.f.color)
+      maximum(prob.f.colorvec)
     end
 
     remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
