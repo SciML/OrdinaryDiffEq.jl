@@ -167,18 +167,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
       maximum(prob.f.color)
     end
 
-    if hasfield(typeof(alg),:linsolve)
-      linsolve = if alg.linsolve isa DefaultLinSolve && u0 isa Array && eltype(u0) <: Float64 &&
-                    (prob.f.jac_prototype isa Matrix || prob.f.jac_prototype === nothing) &&
-                    !(prob.f isa SciMLBase.AbstractDiffEqOperator)
-        DiffEqBase.LUFactorize()
-      else
-        alg.linsolve
-      end
-      remake(alg,chunk_size=ForwardDiff.pickchunksize(x),linsolve=linsolve)
-    else
-      remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
-    end
+    remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
 end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
