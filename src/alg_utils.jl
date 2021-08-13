@@ -169,7 +169,8 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
 
     if hasfield(typeof(alg),:linsolve)
       linsolve = if alg.linsolve isa DefaultLinSolve && u0 isa Array && eltype(u0) <: Float64 &&
-                    (prob.f.jac_prototype isa Matrix || prob.f.jac_prototype === nothing)
+                    (prob.f.jac_prototype isa Matrix || prob.f.jac_prototype === nothing) &&
+                    !(prob.f isa DiffEqOperator)
         DiffEqBase.LUFactorize()
       else
         alg.linsolve
