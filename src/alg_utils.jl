@@ -150,10 +150,10 @@ get_chunksize(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
 get_chunksize(alg::ExponentialAlgorithm) = Val(alg.chunksize)
 
 get_chunksize_int(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
-get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
-get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
-get_chunksize(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
-get_chunksize(alg::ExponentialAlgorithm) = Val(alg.chunksize)
+get_chunksize_int(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize_int(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize_int(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize_int(alg::ExponentialAlgorithm) = alg.chunksize
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
