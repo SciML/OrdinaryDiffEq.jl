@@ -1,4 +1,4 @@
-﻿isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
+isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 
 DiffEqBase.isdiscrete(alg::FunctionMap) = true
 
@@ -63,6 +63,14 @@ end
 issplit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 issplit(alg::SplitAlgorithms) = true
 
+function _composite_beta1_default(algs::Tuple{T1,T2}, current, ::Type{QT}, beta2) where {T1, T2, QT}
+  if current == 1
+    return QT(beta1_default(algs[1], beta2))
+  elseif current == 2
+    return QT(beta1_default(algs[2], beta2))
+  end
+end
+
 @generated function _composite_beta1_default(algs::T, current, ::Type{QT}, beta2) where {T <: Tuple, QT}
   expr = Expr(:block)
   for i in 1:length(T.types)
@@ -74,6 +82,15 @@ issplit(alg::SplitAlgorithms) = true
   end
   return expr
 end
+
+function _composite_beta2_default(algs::Tuple{T1,T2}, current, ::Type{QT}) where {T1, T2, QT}
+  if current == 1
+    return QT(beta2_default(algs[1]))
+  elseif current == 2
+    return QT(beta2_default(algs[2]))
+  end
+end
+
 @generated function _composite_beta2_default(algs::T, current, ::Type{QT}) where {T <: Tuple, QT}
   expr = Expr(:block)
   for i in 1:length(T.types)
@@ -132,7 +149,35 @@ get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD}
 get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
 get_chunksize(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
 get_chunksize(alg::ExponentialAlgorithm) = Val(alg.chunksize)
+
+get_chunksize_int(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
+get_chunksize_int(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize_int(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize_int(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize_int(alg::ExponentialAlgorithm) = alg.chunksize
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
+
+function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
+                        OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
+                        DAEAlgorithm{0,AD,FDT}},u0,p,prob) where {AD,FDT}
+    # If chunksize is zero, pick chunksize right at the start of solve and
+    # then do function barrier to infer the full solve
+    x = if prob.f.colorvec === nothing
+      length(u0)
+    else
+      maximum(prob.f.colorvec)
+    end
+
+    if typeof(alg) <: OrdinaryDiffEqImplicitExtrapolationAlgorithm
+      return alg # remake fails, should get fixed
+    else
+      remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
+    end
+end
+
+function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
+    CompositeAlgorithm(Tuple(DiffEqBase.prepare_alg(alg,u0,p,prob) for alg in alg.algs),alg.choice_function)
+end
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = AD

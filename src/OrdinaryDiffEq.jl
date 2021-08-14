@@ -180,6 +180,7 @@ using DocStringExtensions
         du[3] = u[1]*u[2] - (8/3)*u[3]
       end
       lorenzprob = ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
+      solve(lorenzprob,BS3())
       solve(lorenzprob,Tsit5())
       solve(lorenzprob,Vern7())
       solve(lorenzprob,Vern9())
@@ -188,6 +189,16 @@ using DocStringExtensions
       solve(lorenzprob,Rodas4(autodiff=false))
       solve(lorenzprob,KenCarp4(autodiff=false))
       solve(lorenzprob,Rodas5())
+      solve(lorenzprob,QNDF())
+      solve(lorenzprob,QNDF(autodiff=false))
+      solve(lorenzprob,AutoTsit5(Rosenbrock23()))
+      solve(lorenzprob,AutoTsit5(Rosenbrock23(autodiff=false)))
+      solve(lorenzprob,AutoTsit5(TRBDF2(autodiff=false)))
+      solve(lorenzprob,AutoVern7(Rodas4(autodiff=false)))
+      solve(lorenzprob,AutoVern7(TRBDF2(autodiff=false)))
+      solve(lorenzprob,AutoVern9(Rodas5(autodiff=false)))
+      solve(lorenzprob,AutoVern9(KenCarp47(autodiff=false)))
+      solve(lorenzprob,AutoVern7(Rodas5()))
       break
     end
   end

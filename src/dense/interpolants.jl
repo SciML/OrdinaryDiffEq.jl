@@ -289,9 +289,14 @@ end
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Tsit5ConstantCache,Tsit5Cache},idxs::Nothing,T::Type{Val{0}})
   @tsit5pre0
   @inbounds @.. out = y₀ + dt*(k[1]*b1Θ + k[2]*b2Θ + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ)
-  #@inbounds for i in eachindex(out)
-  #  out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
-  #end
+  out
+end
+
+@muladd function _ode_interpolant!(out::Array,Θ,dt,y₀,y₁,k,cache::Union{Tsit5ConstantCache,Tsit5Cache},idxs::Nothing,T::Type{Val{0}})
+  @tsit5pre0
+  @inbounds @simd ivdep for i in eachindex(out)
+    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
+  end
   out
 end
 
@@ -301,6 +306,14 @@ end
   #@inbounds for (j,i) in enumerate(idxs)
   #  out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
   #end
+  out
+end
+
+@muladd function _ode_interpolant!(out::Array,Θ,dt,y₀,y₁,k,cache::Union{Tsit5ConstantCache,Tsit5Cache},idxs,T::Type{Val{0}})
+  @tsit5pre0
+  @inbounds for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
+  end
   out
 end
 
