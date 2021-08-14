@@ -1892,7 +1892,7 @@ struct SBDF{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   order::Int
 end
-SBDF(_order;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SBDF(order;chunk_size=0,autodiff=true,diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear) =
      SBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
