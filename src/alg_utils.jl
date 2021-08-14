@@ -167,7 +167,11 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
       maximum(prob.f.colorvec)
     end
 
-    remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
+    if typeof(alg) <: OrdinaryDiffEqImplicitExtrapolationAlgorithm
+      return alg # remake fails, should get fixed
+    else
+      remake(alg,chunk_size=ForwardDiff.pickchunksize(x))
+    end
 end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
