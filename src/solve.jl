@@ -22,7 +22,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            save_end = nothing,
                            callback = nothing,
                            dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
-                           calck = (callback !== nothing && callback != CallbackSet()) || (dense) || !isempty(saveat), # and no dense output
+                           calck = (callback !== nothing && callback !== CallbackSet()) || (dense) || !isempty(saveat), # and no dense output
                            dt = alg isa FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
                            dtmin = nothing,
                            dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
@@ -207,13 +207,13 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   callbacks_internal = CallbackSet(callback)
 
-  max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
-  if max_len_cb isa VectorContinuousCallback
+  max_len_cb = DiffEqBase.max_vector_callback_length_int(callbacks_internal)
+  if max_len_cb !== nothing
     uBottomEltypeReal = real(uBottomEltype)
     if isinplace(prob)
-      callback_cache = DiffEqBase.CallbackCache(u,max_len_cb.len,uBottomEltypeReal,uBottomEltypeReal)
+      callback_cache = DiffEqBase.CallbackCache(u,max_len_cb,uBottomEltypeReal,uBottomEltypeReal)
     else
-      callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltypeReal,uBottomEltypeReal)
+      callback_cache = DiffEqBase.CallbackCache(max_len_cb,uBottomEltypeReal,uBottomEltypeReal)
     end
   else
     callback_cache = nothing
