@@ -185,7 +185,7 @@ the error estimates scaled by the tolerance (Söderlind, 2003).
 The step size factor is limited by the `limiter` with default value
 ```
 limiter(x) = one(x) + atan(x - one(x))
-````
+```
 as proposed by Söderlind and Wang (2006). A step will be accepted whenever the
 predicted step size change is bigger than `accept_safety`. Otherwise, the step
 is rejected and re-tried with the predicted step size.
@@ -333,7 +333,7 @@ integrator.dtacc = integrator.dt
 integrator.erracc = max(1e-2,integrator.EEst)
 integrator.dt/qacc
 ```
-When it rejects, its the same as the [`IController`](@ref):
+When it rejects, it's the same as the [`IController`](@ref):
 ```julia
 if integrator.success_iter == 0
   integrator.dt *= 0.1
