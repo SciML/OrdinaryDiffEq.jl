@@ -5,7 +5,6 @@ using RecursiveArrayTools
 u0 = [fill(2, MVector{2,Float64}), ones(MVector{2,Float64})]
 g(u,p,t) = SA[u[1] + u[2],u[1]]
 f = (du, u, p, t) -> begin
-    @show eltype(u)
     for i in 1:2
         du[i] = g(u[i],p,t)
     end
