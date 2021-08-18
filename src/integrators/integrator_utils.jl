@@ -392,11 +392,11 @@ DiffEqBase.nlsolve_f(f, alg::DAEAlgorithm) = f
 DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
-function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
+function (integrator::ODEIntegrator)(t,::Type{deriv}=Val{0};idxs=nothing) where {deriv}
   current_interpolant(t,integrator,idxs,deriv)
 end
 
-(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=nothing) = current_interpolant!(val,t,integrator,idxs,deriv)
+(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},::Type{deriv}=Val{0};idxs=nothing) where {deriv} = current_interpolant!(val,t,integrator,idxs,deriv)
 
 # Interface used by DelayDiffEq
 has_tstop(integrator) = !isempty(integrator.opts.tstops)
