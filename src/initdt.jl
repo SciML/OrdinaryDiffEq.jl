@@ -39,7 +39,7 @@
     f(f₀,u0,p,t)
   else
     # TODO: use more caches
-    if u0 isa Array
+    if u0 isa Array && eltype(u0) isa Number
       T = eltype(first(u0)/t)
       f₀ = similar(u0,T)
       fill!(f₀,zero(T))
