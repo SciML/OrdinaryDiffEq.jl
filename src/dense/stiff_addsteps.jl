@@ -2,7 +2,13 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Consta
   if length(k)<2 || always_calc_begin
     @unpack tf,uf,d = cache
     γ = dt*d
-    dT = ForwardDiff.derivative(tf, t)
+    tf.u = uprev
+    if cache.autodiff
+      dT = ForwardDiff.derivative(tf, t)
+    else
+      dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
+    end
+
     mass_matrix = f.mass_matrix
     if typeof(uprev) <: AbstractArray
       J = ForwardDiff.jacobian(uf, uprev)
@@ -138,7 +144,11 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4ConstantCache,alwa
 
     # Time derivative
     tf.u = uprev
-    dT = ForwardDiff.derivative(tf, t)
+    if cache.autodiff
+      dT = ForwardDiff.derivative(tf, t)
+    else
+      dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
+    end
 
     # Jacobian
     uf.t = t
