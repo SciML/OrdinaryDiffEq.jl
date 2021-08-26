@@ -159,7 +159,7 @@ get_chunksize_int(alg::ExponentialAlgorithm) = alg.chunksize
 
 function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
                         OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
-                        DAEAlgorithm{0,AD,FDT}},u0,p,prob) where {AD,FDT}
+                        DAEAlgorithm{0,AD,FDT}},u0::AbstractArray,p,prob) where {AD,FDT}
     # If chunksize is zero, pick chunksize right at the start of solve and
     # then do function barrier to infer the full solve
     x = if prob.f.colorvec === nothing
