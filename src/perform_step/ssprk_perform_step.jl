@@ -111,6 +111,79 @@ end
   integrator.u = u
 end
 
+function initialize!(integrator,cache::KYKSSPRK52Cache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::KYKSSPRK52Cache, repeat_step=false)
+  @unpack t, dt, uprev, u, f, p = integrator
+  @unpack k, tmp, fsalfirst = cache
+  @unpack α10, α20, α21, α30, α32, α40, α41, α43, α50, α51, α52, α54, β10, β21, β30, β32, β40, β41, β43, β50, β51, β52, β54, c1, c2, c3, c4 = cache.tab
+
+  δ = fsalfirst
+  # u1 -> stored as u
+  @.. u1 = α10*uprev + dt*β10*δ
+  f(k, u1, p, t + c1*dt)
+  # u2
+  @.. u2 = α20*uprev + α21*u1 + dt*β21*k
+  f(k, u2, p, t + c2*dt)
+  # u3
+  @.. u3 = α30*uprev + α32*u2 + dt*β32*k
+  f(k, u3, p, t + c3*dt)
+  # u4
+  @.. u4 = α40*uprev +α41*u1 + α43*u3 + dt*β43*k
+  f(k, u4, p, t + c4*dt)
+  # u
+  @.. u = α50*uprev + α51*u1 + α52*u2 + α54*u4 + dt*β54*k
+  f(k, u, p, t + dt)
+
+  u .= k
+  #stage_limiter!(u, f, p, t+dt)
+  #step_limiter!(u, f, p, t+dt)
+  #integrator.destats.nf += 5
+end
+
+function initialize!(integrator,cache::KYKSSPRK52ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.kshortsize = 1
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::KYKSSPRK52ConstantCache)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack α10, α20, α21, α30, α32, α40, α41, α43, α50, α51, α52, α54, β10, β21, β30, β32, β40, β41, β43, β50, β51, β52, β54, c1, c2, c3, c4 = cache
+
+  #u1
+  δ = integrator.fsalfirst
+  u1 = α10*uprev + dt*β10*δ
+  k = f(u1, p, t + c1*dt)
+  #u2
+  u2 = α20*uprev + α21*u1 + dt*β21*k
+  k = f(u2, p, t + c2*dt)
+  #u3
+  u3 = α30*uprev + α32*u2 + dt*β32*k #+ dt*β30*δ 
+  k = f(u3, p, t + c3*dt)
+  #u4
+  u4 = α40*uprev +α41*u1 + α43*u3 + dt*β43*k #+ dt*β40*δ 
+  k = f(u4, p, t + c4*dt)
+  #u
+  u = α50*uprev + α51*u1 + α52*u2 + α54*u4 + dt*β54*k #+ dt*β50*δ 
+
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+end
+
 function initialize!(integrator,cache::SHLDDRK52ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
