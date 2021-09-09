@@ -19,6 +19,9 @@ setfirststage!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, val::Bool) =
 setfirststage!(::Any, val::Bool) = nothing
 markfirststage!(nlsolver::AbstractNLSolver) = setfirststage!(nlsolver, true)
 
+getnfails(_) = 0
+getnfails(nlsolver::AbstractNLSolver) = nlsolver.nfails
+
 set_new_W!(nlsolver::AbstractNLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
 set_new_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, val::Bool)::Bool =
   nlcache.new_W = val

@@ -1211,7 +1211,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     cache.nonevesuccsteps = 0
   end
   @unpack nonevesuccsteps,consfailcnt,nconsteps = cache
-  
+
   k = order
   if nonevesuccsteps == 0
     weights[1] = 1/dt
@@ -1235,7 +1235,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
   if nonevesuccsteps >= 1
     compute_weights!(ts,k,weights)
   end
-    
+
   @.. u₀ = zero(u)
   if nonevesuccsteps >= 1
     calc_Lagrange_interp!(k,weights,t+dt,ts,u_history,u₀)
@@ -1245,7 +1245,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
   markfirststage!(nlsolver)
   @.. nlsolver.z = u₀
   mass_matrix = f.mass_matrix
-  
+
   for i in 1:k-1
     equi_ts[i] = t - dt*i
   end
@@ -1308,7 +1308,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     @.. terk_tmp *= abs(dt^(k))
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
-    
+
     if k > 1
       fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
       @.. terk_tmp = fd_weights[1,k] * u

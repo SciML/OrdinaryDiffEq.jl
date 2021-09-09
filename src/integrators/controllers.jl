@@ -551,6 +551,22 @@ function step_reject_controller!(integrator,alg::QNDF)
   integrator.cache.order = kₙ
 end
 
+function post_newton_controller!(integrator, alg)
+  integrator.dt = integrator.dt/integrator.opts.failfactor
+  nothing
+end
+
+function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
+  @unpack cache = integrator
+  if cache.order > 1 && cache.nlsolver.nfails >= 3
+    cache.order -= 1
+  end
+  integrator.dt = integrator.dt/integrator.opts.failfactor
+  integrator.cache.consfailcnt += 1
+  integrator.cache.nconsteps = 0
+  nothing
+end
+
 function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_order}}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
   @unpack ts_tmp,terkm2, terkm1, terk, terkp1,u_history = cache

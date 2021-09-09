@@ -168,7 +168,6 @@ end
 loopfooter!(integrator::ODEIntegrator) = _loopfooter!(integrator)
 
 function _loopfooter!(integrator)
-
   # Carry-over from callback
   # This is set to true if u_modified requires callback FSAL reset
   # But not set to false when reset so algorithms can check if reset occurred
@@ -177,13 +176,13 @@ function _loopfooter!(integrator)
   integrator.do_error_check = true
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
-      if integrator.opts.adaptive
-        integrator.dt = integrator.dt/integrator.opts.failfactor
-      elseif integrator.last_stepfail
-        return
-      end
-      integrator.last_stepfail = true
-      integrator.accept_step = false
+    if integrator.opts.adaptive
+      post_newton_controller!(integrator, integrator.alg)
+    elseif integrator.last_stepfail
+      return
+    end
+    integrator.last_stepfail = true
+    integrator.accept_step = false
   elseif integrator.opts.adaptive
     q = stepsize_controller!(integrator,integrator.alg)
     integrator.isout = integrator.opts.isoutofdomain(integrator.u,integrator.p,ttmp)
