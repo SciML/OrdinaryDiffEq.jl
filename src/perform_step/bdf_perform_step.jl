@@ -1137,10 +1137,10 @@ end
 
 function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=false) where max_order
 
-  reinitFBDF!(integrator, cache)
   @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,nlsolver,weights,terk_tmp,terkp1_tmp,atmp,tmp,equi_ts,u₀,ts_tmp = cache
   @unpack t,dt,u,f,p,uprev = integrator
 
+  reinitFBDF!(integrator, cache)
   k = order
   @.. u₀ = zero(u) #predictor
   if cache.iters_from_event >= 1
@@ -1207,7 +1207,6 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     ts_tmp[1] = t+dt
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
-
     estimate_terk!(integrator, cache, k+1, max_order)
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
