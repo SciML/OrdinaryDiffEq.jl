@@ -409,15 +409,15 @@ end
   u_corrector::uType
   bdf_coeffs::coeffType
   max_order::Val{MO}
-  nconsteps::Int
-  consfailcnt::Int
+  nconsteps::Int # consecutive success steps
+  consfailcnt::Int #consecutive failed step counts
   terkm2::EEstType
   terkm1::EEstType
   terk::EEstType
   terkp1::EEstType
   r::rType
   weights::wType
-  nonevesuccsteps::Int
+  iters_from_event::Int
 end
 
 function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} where MO
@@ -448,9 +448,9 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   nconsteps = 0
   consfailcnt = 0
   t_old = zero(t)
-  nonevesuccsteps = 0
+  iters_from_event = 0
 
-  FBDFConstantCache(nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights,nonevesuccsteps)
+  FBDFConstantCache(nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,bdf_coeffs,Val(5),nconsteps,consfailcnt,terkm2,terkm1,terk,terkp1,r,weights,iters_from_event)
 end
 
 @cache mutable struct FBDFCache{MO,N,rateType,uNoUnitsType,tsType,tType,uType,uuType,coeffType,EEstType,rType,wType} <: OrdinaryDiffEqMutableCache
@@ -466,20 +466,20 @@ end
   u₀::uType
   bdf_coeffs::coeffType
   max_order::Val{MO}
-  nconsteps::Int
-  consfailcnt::Int
+  nconsteps::Int # consecutive success steps
+  consfailcnt::Int #consecutive failed step counts
   tmp::uType
   atmp::uNoUnitsType
   terkm2::EEstType
   terkm1::EEstType
-  terk::EEstType
+  terk::EEstType #terk corresponds to hᵏyᵏ(tₙ₊₁)
   terkp1::EEstType
   terk_tmp::uType
   terkp1_tmp::uType
   r::rType
-  weights::wType
+  weights::wType #weights of Lagrangian formula
   equi_ts::tsType
-  nonevesuccsteps::Int
+  iters_from_event::Int
 end
 
 function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {MO,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -520,7 +520,7 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   equi_ts = similar(ts)
   tmp = similar(u)
   ts_tmp = similar(ts)
-  nonevesuccsteps = 0
+  iters_from_event = 0
 
-  FBDFCache(fsalfirst,nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,u₀,bdf_coeffs,Val(5),nconsteps,consfailcnt,tmp,atmp,terkm2,terkm1,terk,terkp1,terk_tmp,terkp1_tmp,r,weights,equi_ts,nonevesuccsteps)
+  FBDFCache(fsalfirst,nlsolver,ts,ts_tmp,t_old,u_history,order,prev_order,u_corrector,u₀,bdf_coeffs,Val(5),nconsteps,consfailcnt,tmp,atmp,terkm2,terkm1,terk,terkp1,terk_tmp,terkp1_tmp,r,weights,equi_ts,iters_from_event)
 end
