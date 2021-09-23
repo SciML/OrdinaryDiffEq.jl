@@ -65,7 +65,7 @@ function alg_cache(alg::AN5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits); tmp = zero(u)
-  tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
+  tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab,trivial_limiter!,trivial_limiter!)
   #################################################
   N = 5
   Δ = similar(atmp)
@@ -190,7 +190,7 @@ function alg_cache(alg::JVODE,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits); tmp = zero(u)
-  tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
+  tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab,trivial_limiter!,trivial_limiter!)
   #################################################
   fsalfirst = zero(rate_prototype)
   N = 12
