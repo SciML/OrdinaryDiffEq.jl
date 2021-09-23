@@ -284,7 +284,7 @@ alg_cache(alg::BS5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeN
   tab::TabType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  Tsit5(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, tab, stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!) = new{typeof(u), typeof(uprev), typeof(k1), typeof(k2), typeof(k3), typeof(k4), typeof(k5), typeof(k6), typeof(k7), typeof(utilde), typeof(tmp), typeof(atmp), typeof(tab), typeof(stage_limiter!), typeof(step_limiter!)}(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, tab, stage_limiter!, step_limiter!)
+  Tsit5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, tab, stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!) = new{typeof(u), typeof(uprev), typeof(k1), typeof(k2), typeof(k3), typeof(k4), typeof(k5), typeof(k6), typeof(k7), typeof(utilde), typeof(tmp), typeof(atmp), typeof(tab), typeof(stage_limiter!), typeof(step_limiter!)}(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, tab, stage_limiter!, step_limiter!)
 end
 
 @cache struct RK46NLCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
