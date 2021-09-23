@@ -1123,7 +1123,11 @@ struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 Tsit5: Explicit Runge-Kutta Method
    Tsitouras 5/4 Runge-Kutta method. (free 4th order interpolant).
 """
-struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Tsit5{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  Tsit5(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 
 """
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
