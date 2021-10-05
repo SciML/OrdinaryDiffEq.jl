@@ -762,13 +762,21 @@ struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp35 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3Sp35{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  RDPK3Sp35(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 
 """
     RDPK3SpFSAL35()
@@ -777,13 +785,21 @@ A third-order, five-stage explicit Runge-Kutta method with embedded error estima
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL35 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3SpFSAL35{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  RDPK3SpFSAL35(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 
 """
     RDPK3Sp49()
@@ -791,13 +807,21 @@ struct RDPK3SpFSAL35 <: OrdinaryDiffEqAdaptiveAlgorithm end
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
+  Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+  and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+  of the form `limiter!(u, integrator, p, t)`.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp49 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3Sp49{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  RDPK3Sp49(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 
 """
     RDPK3SpFSAL49()
@@ -806,13 +830,21 @@ A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estim
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL49 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3SpFSAL49{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  RDPK3SpFSAL49(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 
 """
     RDPK3Sp510()
@@ -820,13 +852,21 @@ struct RDPK3SpFSAL49 <: OrdinaryDiffEqAdaptiveAlgorithm end
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
+  Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+  and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+  of the form `limiter!(u, integrator, p, t)`.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp510 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3Sp510{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  RDPK3Sp510(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 
 """
     RDPK3SpFSAL510()
@@ -835,13 +875,21 @@ A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimat
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL510 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3SpFSAL510{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  RDPK3SpFSAL510(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 
 struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 
