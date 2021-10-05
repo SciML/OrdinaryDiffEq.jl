@@ -261,7 +261,7 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK3SpCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,tmp,utilde,atmp = cache
+  @unpack k,tmp,utilde,atmp,stage_limiter!,step_limiter! = cache
   @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end = cache.tab
 
   # u1
@@ -275,6 +275,7 @@ end
 
   # other stages
   for i in eachindex(γ12end)
+    stage_limiter!(u, integrator, p, t+c2end[i]*dt)
     f(k, u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
     @.. tmp = tmp + δ2end[i]*u
@@ -283,6 +284,9 @@ end
       @.. utilde = utilde + bhat2end[i]*dt*k
     end
   end
+
+  stage_limiter!(u, integrator, p, t+dt)
+  step_limiter!(u, integrator, p, t+dt)
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
@@ -356,7 +360,7 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK3SpFSALCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,tmp,utilde,atmp = cache
+  @unpack k,tmp,utilde,atmp,stage_limiter!,step_limiter! = cache
   @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal = cache.tab
 
   # u1
@@ -368,6 +372,7 @@ end
 
   # other stages
   for i in eachindex(γ12end)
+    stage_limiter!(u, integrator, p, t+c2end[i]*dt)
     f(k, u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
     @.. tmp = tmp + δ2end[i]*u
@@ -376,6 +381,9 @@ end
       @.. utilde = utilde + bhat2end[i]*dt*k
     end
   end
+
+  stage_limiter!(u, integrator, p, t+dt)
+  step_limiter!(u, integrator, p, t+dt)
 
   # FSAL
   f(k, u, p, t+dt)
