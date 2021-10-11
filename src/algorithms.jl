@@ -1850,6 +1850,8 @@ CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 QNDF1: Multistep Method
   An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
   Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
+
+See also `QNDF`.
 """
 struct QNDF1{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   linsolve::F
@@ -1866,11 +1868,18 @@ QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                  typeof(kappa)}(
                  linsolve,nlsolve,extrapolant,kappa,controller)
 
+"""
+QBDF1: Multistep Method
+
+An alias of `QNDF1` with κ=0.
+"""
 QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
 
 """
-QNDF1: Multistep Method
+QNDF2: Multistep Method
   An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+
+See also `QNDF`.
 """
 struct QNDF2{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   linsolve::F
@@ -1887,12 +1896,28 @@ QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                  typeof(kappa)}(
                  linsolve,nlsolve,extrapolant,kappa,controller)
 
+"""
+QBDF2: Multistep Method
+
+An alias of `QNDF2` with κ=0.
+"""
 QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
 
 """
 QNDF: Multistep Method
   An adaptive order quasi-constant timestep NDF method.
   Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
+
+@article{shampine1997matlab,
+  title={The matlab ode suite},
+  author={Shampine, Lawrence F and Reichelt, Mark W},
+  journal={SIAM journal on scientific computing},
+  volume={18},
+  number={1},
+  pages={1--22},
+  year={1997},
+  publisher={SIAM}
+}
 """
 struct QNDF{MO,CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   max_order::Val{MO}
@@ -1912,9 +1937,26 @@ Base.@pure QNDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=
                 typeof(κ),typeof(tol),typeof(kappa)}(
                 max_order,linsolve,nlsolve,κ,tol,extrapolant,kappa,controller)
 
+"""
+QBDF: Multistep Method
+
+An alias of `QNDF` with κ=0.
+"""
 Base.@pure QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
 
+"""
+FBDF: Fixed leading coefficient BDF
 
+An adaptive order quasi-constant timestep NDF method.
+Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
+
+@article{shampine2002solving,
+  title={Solving 0= F (t, y (t), y′(t)) in Matlab},
+  author={Shampine, Lawrence F},
+  year={2002},
+  publisher={Walter de Gruyter GmbH \\& Co. KG}
+}
+"""
 struct FBDF{MO,CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   max_order::Val{MO}
   linsolve::F
