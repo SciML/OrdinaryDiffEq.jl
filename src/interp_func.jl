@@ -20,7 +20,7 @@ struct CompositeInterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiff
 end
 
 function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where {cacheType}
-    DiffEqBase.interp_summary(cacheType, interp.dense)
+  DiffEqBase.interp_summary(cacheType, interp.dense)
 end
 DiffEqBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType<:FunctionMapConstantCache} = "left-endpoint piecewise constant"
 DiffEqBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType<:FunctionMapCache} = "left-endpoint piecewise constant"
