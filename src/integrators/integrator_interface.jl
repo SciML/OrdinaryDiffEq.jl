@@ -330,6 +330,7 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
   integrator.opts.internalnorm,integrator.sol.prob,integrator)
   integrator.destats.nf += 2
+  set_proposed_dt!(integrator, integrator.dt)
 end
 
 function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
