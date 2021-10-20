@@ -40,10 +40,22 @@ end
                   integrator.dt,f,integrator.p,integrator.cache,
                   always_calc_begin,allow_calc_end,force_calc_end)
   else
-    DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
-                  integrator.dt,f,integrator.p,
-                  @inbounds(integrator.cache.caches[integrator.cache.current]),
-                  always_calc_begin,allow_calc_end,force_calc_end)
+    if integrator.cache.current == 1
+      DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
+                    integrator.dt,f,integrator.p,
+                    @inbounds(integrator.cache.caches[1]),
+                    always_calc_begin,allow_calc_end,force_calc_end)
+    elseif integrator.cache.current == 2
+      DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
+                    integrator.dt,f,integrator.p,
+                    @inbounds(integrator.cache.caches[2]),
+                    always_calc_begin,allow_calc_end,force_calc_end)
+    else
+      DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
+                    integrator.dt,f,integrator.p,
+                    @inbounds(integrator.cache.caches[integrator.cache.current]),
+                    always_calc_begin,allow_calc_end,force_calc_end)
+    end
   end
 end
 @inline DiffEqBase.addsteps!(integrator::ODEIntegrator,args...) = _ode_addsteps!(integrator,args...)
