@@ -1496,6 +1496,23 @@ DP5: Explicit Runge-Kutta Method
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
+    Tsit5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+            step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+            thread = OrdinaryDiffEq.False())
+
+A fourth-order, five-stage explicit Runge-Kutta method with embedded error
+estimator of Tsitouras. Free 4th order interpolant.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 @article{tsitouras2011runge,
   title={Runge--Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption},
   author={Tsitouras, Ch},
@@ -1506,14 +1523,22 @@ struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2011},
   publisher={Elsevier}
 }
-
-Tsit5: Explicit Runge-Kutta Method
-   Tsitouras 5/4 Runge-Kutta method. (free 4th order interpolant).
 """
-struct Tsit5{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct Tsit5{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  Tsit5(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+  thread::Thread
+end
+
+Tsit5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = Tsit5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+Tsit5(stage_limiter!, step_limiter! = trivial_limiter!) = Tsit5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::Tsit5)
+  print(io, "Tsit5(stage_limiter! = ", alg.stage_limiter!,
+                ", step_limiter! = ", alg.step_limiter!,
+                ", thread = ", alg.thread, ")")
 end
 
 """
