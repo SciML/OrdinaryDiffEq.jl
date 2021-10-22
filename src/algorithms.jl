@@ -759,7 +759,7 @@ struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 """
     RDPK3Sp35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                thread=False())
+                thread = False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
@@ -769,9 +769,9 @@ and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = False()`, default)
-or use multiple threads (`thread = True()`) when Julia is started
-with multiple threads.
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -799,7 +799,7 @@ end
 """
     RDPK3SpFSAL35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                    thread=False())
+                    thread = False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -810,9 +810,9 @@ and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = False()`, default)
-or use multiple threads (`thread = True()`) when Julia is started
-with multiple threads.
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -840,7 +840,7 @@ end
 """
     RDPK3Sp49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                thread=False())
+                thread = False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
@@ -850,9 +850,9 @@ and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = False()`, default)
-or use multiple threads (`thread = True()`) when Julia is started
-with multiple threads.
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -880,7 +880,7 @@ end
 """
     RDPK3SpFSAL49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                    thread=False())
+                    thread = False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -891,9 +891,9 @@ and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = False()`, default)
-or use multiple threads (`thread = True()`) when Julia is started
-with multiple threads.
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -921,7 +921,7 @@ end
 """
     RDPK3Sp510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                 thread=False())
+                 thread = False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
@@ -931,9 +931,9 @@ and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = False()`, default)
-or use multiple threads (`thread = True()`) when Julia is started
-with multiple threads.
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -961,7 +961,7 @@ end
 """
     RDPK3SpFSAL510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                      step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                     thread=False())
+                     thread = False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -972,9 +972,9 @@ and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
 The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = False()`, default)
-or use multiple threads (`thread = True()`) when Julia is started
-with multiple threads.
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)

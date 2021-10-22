@@ -49,8 +49,7 @@ using DocStringExtensions
 
   using DiffEqBase: check_error!, @def, _vec, _reshape
 
-  using DiffEqBase: @..
-  @reexport using DiffEqBase: True, False
+  using DiffEqBase: @.., True, False
 
   using DiffEqBase: AbstractNLSolverAlgorithm, AbstractNLSolverCache, NLStatus
   using DiffEqBase: nlsolve_f, qrdelete!, qradd!, build_jac_config, resize_jac_config!
