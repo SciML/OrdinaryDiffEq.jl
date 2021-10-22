@@ -389,60 +389,140 @@ struct Anas5{T} <: OrdinaryDiffEqAlgorithm
 end
 Anas5(; w=1) = Anas5(w)
 
-"""
-Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
-Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
-228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
 
-ORK256: Low-Storage Method
-  5-stage, second order low-storage method for wave propogation equations. Fixed timestep only.
-
-Like SSPRK methods, ORK256 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
-struct ORK256{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+    ORK256(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False(),
+             williamson_condition = true)
+
+A second-order, five-stage explicit Runge-Kutta method for wave propogation
+equations. Fixed timestep only.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Matteo Bernardini, Sergio Pirozzoli.
+  A General Strategy for the Optimization of Runge-Kutta Schemes for Wave
+  Propagation Phenomena.
+  Journal of Computational Physics, 228(11), pp 4182-4199, 2009.
+  doi: https://doi.org/10.1016/j.jcp.2009.02.032
+"""
+struct ORK256{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  ORK256(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+ORK256(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+ORK256(stage_limiter!, step_limiter! = trivial_limiter!) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::ORK256)
+  print(io, "ORK256(stage_limiter! = ", alg.stage_limiter!,
+                 ", step_limiter! = ", alg.step_limiter!,
+                 ", thread = ", alg.thread,
+                 ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
+    CarpenterKennedy2N54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                           step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                           thread = OrdinaryDiffEq.False(),
+                           williamson_condition = true)
+
+A fourth-order, five-stage explicit low-storage method of Carpenter and Kennedy
+(free 3rd order Hermite interpolant). Fixed timestep only. Designed for
+hyperbolic PDEs (stability properties).
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 @article{carpenter1994fourth,
   title={Fourth-order 2N-storage Runge-Kutta schemes},
   author={Carpenter, Mark H and Kennedy, Christopher A},
   year={1994}
 }
-
-CarpenterKennedy2N54: Low-Storage Method
-  The five-stage, fourth order low-storage method of Carpenter and Kennedy (free 3rd order Hermite interpolant).
-  Fixed timestep only. Designed for hyperbolic PDEs (stability properties).
-
-Like SSPRK methods, CarpenterKennedy2N54 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
-struct CarpenterKennedy2N54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct CarpenterKennedy2N54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  CarpenterKennedy2N54(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+CarpenterKennedy2N54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+CarpenterKennedy2N54(stage_limiter!, step_limiter! = trivial_limiter!) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::CarpenterKennedy2N54)
+  print(io, "CarpenterKennedy2N54(stage_limiter! = ", alg.stage_limiter!,
+                               ", step_limiter! = ", alg.step_limiter!,
+                               ", thread = ", alg.thread,
+                               ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 
 """
-D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
-Computational Acoustics. Journal of Computational Physics, 143(2), pp 674-681, 1998. doi:
-https://doi.org/10.1006/jcph.1998.5986
+    SHLDDRK64(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread = OrdinaryDiffEq.False(),
+                williamson_condition = true)
 
-Like SSPRK methods, SHLDDRK64 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+A fourth-order, six-stage explicit low-storage method. Fixed timestep only.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- D. Stanescu, W. G. Habashi.
+  2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for Computational
+  Acoustics.
+  Journal of Computational Physics, 143(2), pp 674-681, 1998.
+  doi: https://doi.org/10.1006/jcph.1998.5986
 """
-struct SHLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SHLDDRK64{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  SHLDDRK64(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
+
+SHLDDRK64(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+SHLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SHLDDRK64)
+  print(io, "SHLDDRK64(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread,
+                    ", williamson_condition = ", alg.williamson_condition, ")")
+end
+
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
 struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
 """
@@ -464,120 +544,270 @@ struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
 end
 
 """
-T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
-Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
-pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+    DGLDDRK73_C(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False(),
+                  williamson_condition = true)
 
-DGLDDRK73_C: Low-Storage Method
-  7-stage, third order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
-  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
-  Fixed timestep only.
+7-stage, third order low-storage low-dissipation, low-dispersion scheme for
+discontinuous Galerkin space discretizations applied to wave propagation problems.
+Optimized for PDE discretizations when maximum spatial step is small due to
+geometric features of computational domain. Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK73_C also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- T. Toulorge, W. Desmet.
+  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+  Applied to Wave Propagation Problems.
+  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK73_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK73_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  DGLDDRK73_C(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+DGLDDRK73_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::DGLDDRK73_C)
+  print(io, "DGLDDRK73_C(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread,
+                      ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
-Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
-pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+    DGLDDRK84_C(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False(),
+                  williamson_condition = true)
 
-DGLDDRK84_C: Low-Storage Method
-  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
-  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
-  Fixed timestep only.
+8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
+discontinuous Galerkin space discretizations applied to wave propagation problems.
+Optimized for PDE discretizations when maximum spatial step is small due to
+geometric features of computational domain. Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK84_C also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- T. Toulorge, W. Desmet.
+  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+  Applied to Wave Propagation Problems.
+  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK84_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  DGLDDRK84_C(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+DGLDDRK84_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+DGLDDRK84_C(stage_limiter!, step_limiter! = trivial_limiter!) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::DGLDDRK84_C)
+  print(io, "DGLDDRK84_C(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread,
+                      ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
-Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
-pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+    DGLDDRK84_F(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False(),
+                  williamson_condition = true)
 
-DGLDDRK84_F: Low-Storage Method
-  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
-  Optimized for PDE discretizations when the maximum spatial step size is not constrained.
-  Fixed timestep only.
+8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
+discontinuous Galerkin space discretizations applied to wave propagation problems.
+Optimized for PDE discretizations when the maximum spatial step size is not
+constrained. Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK84_F also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- T. Toulorge, W. Desmet.
+  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+  Applied to Wave Propagation Problems.
+  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_F{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK84_F{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  DGLDDRK84_F(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+DGLDDRK84_F(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::DGLDDRK84_F)
+  print(io, "DGLDDRK84_F(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread,
+                      ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
-Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
-doi: https://doi.org/10.1016/j.jcp.2011.09.003
+    NDBLSRK124(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread = OrdinaryDiffEq.False(),
+                 williamson_condition = true)
 
-NDBLSRK124: Low-Storage Method
-  12-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
-  Fixed timestep only.
+12-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK124 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Jens Niegemann, Richard Diehl, Kurt Busch.
+  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+  Journal of Computational Physics, 231, pp 364-372, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK124{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK124{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  NDBLSRK124(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+NDBLSRK124(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+NDBLSRK124(stage_limiter!, step_limiter! = trivial_limiter!) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::NDBLSRK124)
+  print(io, "NDBLSRK124(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread,
+                     ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
-Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
-doi: https://doi.org/10.1016/j.jcp.2011.09.003
+    NDBLSRK134(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread = OrdinaryDiffEq.False(),
+                 williamson_condition = true)
 
-NDBLSRK134: Low-Storage Method
-  13-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
-  Fixed timestep only.
+13-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK134 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Jens Niegemann, Richard Diehl, Kurt Busch.
+  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+  Journal of Computational Physics, 231, pp 364-372, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK134{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK134{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  NDBLSRK134(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+NDBLSRK134(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::NDBLSRK134)
+  print(io, "NDBLSRK134(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread,
+                     ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
-Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
-doi: https://doi.org/10.1016/j.jcp.2011.09.003
+    NDBLSRK144(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread = OrdinaryDiffEq.False(),
+                 williamson_condition = true)
 
-NDBLSRK144: Low-Storage Method
-  14-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
-  Fixed timestep only.
+14-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK144 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Jens Niegemann, Richard Diehl, Kurt Busch.
+  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+  Journal of Computational Physics, 231, pp 364-372, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK144{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK144{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  NDBLSRK144(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+NDBLSRK144(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+NDBLSRK144(stage_limiter!, step_limiter! = trivial_limiter!) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::NDBLSRK144)
+  print(io, "NDBLSRK144(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread,
+                     ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
@@ -759,7 +989,7 @@ struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 """
     RDPK3Sp35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                thread = False())
+                thread = OrdinaryDiffEq.False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
@@ -788,7 +1018,7 @@ end
 RDPK3Sp35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
 
 # for backwards compatibility
-RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
 
 function Base.show(io::IO, alg::RDPK3Sp35)
   print(io, "RDPK3Sp35(stage_limiter! = ", alg.stage_limiter!,
@@ -799,7 +1029,7 @@ end
 """
     RDPK3SpFSAL35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                    thread = False())
+                    thread = OrdinaryDiffEq.False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -829,7 +1059,7 @@ end
 RDPK3SpFSAL35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
 
 # for backwards compatibility
-RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
 
 function Base.show(io::IO, alg::RDPK3SpFSAL35)
   print(io, "RDPK3SpFSAL35(stage_limiter! = ", alg.stage_limiter!,
@@ -840,7 +1070,7 @@ end
 """
     RDPK3Sp49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                thread = False())
+                thread = OrdinaryDiffEq.False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
@@ -869,7 +1099,7 @@ end
 RDPK3Sp49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
 
 # for backwards compatibility
-RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
 
 function Base.show(io::IO, alg::RDPK3Sp49)
   print(io, "RDPK3Sp49(stage_limiter! = ", alg.stage_limiter!,
@@ -880,7 +1110,7 @@ end
 """
     RDPK3SpFSAL49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                    thread = False())
+                    thread = OrdinaryDiffEq.False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -910,7 +1140,7 @@ end
 RDPK3SpFSAL49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
 
 # for backwards compatibility
-RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
 
 function Base.show(io::IO, alg::RDPK3SpFSAL49)
   print(io, "RDPK3SpFSAL49(stage_limiter! = ", alg.stage_limiter!,
@@ -921,7 +1151,7 @@ end
 """
     RDPK3Sp510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                 thread = False())
+                 thread = OrdinaryDiffEq.False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
@@ -950,7 +1180,7 @@ end
 RDPK3Sp510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
 
 # for backwards compatibility
-RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
 
 function Base.show(io::IO, alg::RDPK3Sp510)
   print(io, "RDPK3Sp510(stage_limiter! = ", alg.stage_limiter!,
@@ -961,7 +1191,7 @@ end
 """
     RDPK3SpFSAL510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                      step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-                     thread = False())
+                     thread = OrdinaryDiffEq.False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -991,7 +1221,7 @@ end
 RDPK3SpFSAL510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
 
 # for backwards compatibility
-RDPK3SpFSAL510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+RDPK3SpFSAL510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
 
 function Base.show(io::IO, alg::RDPK3SpFSAL510)
   print(io, "RDPK3SpFSAL510(stage_limiter! = ", alg.stage_limiter!,

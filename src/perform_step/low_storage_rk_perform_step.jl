@@ -46,27 +46,28 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NCache,repeat_step=false)
   @unpack t,dt,u,f,p = integrator
-  @unpack k,tmp,williamson_condition,stage_limiter!,step_limiter! = cache
+  @unpack k,tmp,williamson_condition,stage_limiter!,step_limiter!,thread = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
   f(k, u, p, t)
   integrator.destats.nf += 1
-  @.. tmp = dt*k
-  @.. u   = u + B1*tmp
+  @.. thread=thread tmp = dt*k
+  @.. thread=thread u   = u + B1*tmp
   # other stages
   for i in eachindex(A2end)
     if williamson_condition
       f(ArrayFuse(tmp, u, (A2end[i], dt, B2end[i])), u, p, t+c2end[i]*dt)
     else
-      @.. tmp = A2end[i]*tmp
+      @.. thread=thread tmp = A2end[i]*tmp
       stage_limiter!(u, integrator, p, t+c2end[i]*dt)
       f(k, u, p, t+c2end[i]*dt)
-      @.. tmp += dt * k
-      @.. u   = u + B2end[i]*tmp
+      @.. thread=thread tmp += dt * k
+      @.. thread=thread u   = u + B2end[i]*tmp
     end
     integrator.destats.nf += 1
   end
+  stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
 end
 
