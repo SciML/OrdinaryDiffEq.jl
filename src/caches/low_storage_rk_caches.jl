@@ -1427,7 +1427,7 @@ end
 #   Optimized Runge-Kutta Methods with Automatic Step Size Control for
 #   Compressible Computational Fluid Dynamics
 #   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
-@cache struct LowStorageRK3SpCache{uType,rateType,uNoUnitsType,TabType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+@cache struct LowStorageRK3SpCache{uType,rateType,uNoUnitsType,TabType,StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -1438,6 +1438,7 @@ end
   tab::TabType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
 
 struct LowStorageRK3SpConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
@@ -1530,7 +1531,7 @@ function alg_cache(alg::RDPK3Sp35,u,rate_prototype,::Type{uEltypeNoUnits},::Type
     atmp = similar(u,uEltypeNoUnits)
   end
   tab = RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!)
+  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
 function alg_cache(alg::RDPK3Sp35,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -1646,7 +1647,7 @@ function alg_cache(alg::RDPK3Sp49,u,rate_prototype,::Type{uEltypeNoUnits},::Type
     atmp = similar(u,uEltypeNoUnits)
   end
   tab = RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!)
+  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
 function alg_cache(alg::RDPK3Sp49,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -1770,7 +1771,7 @@ function alg_cache(alg::RDPK3Sp510,u,rate_prototype,::Type{uEltypeNoUnits},::Typ
     atmp = similar(u,uEltypeNoUnits)
   end
   tab = RDPK3Sp510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!)
+  LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
 function alg_cache(alg::RDPK3Sp510,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -1784,7 +1785,7 @@ end
 #   Optimized Runge-Kutta Methods with Automatic Step Size Control for
 #   Compressible Computational Fluid Dynamics
 #   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
-@cache struct LowStorageRK3SpFSALCache{uType,rateType,uNoUnitsType,TabType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+@cache struct LowStorageRK3SpFSALCache{uType,rateType,uNoUnitsType,TabType,StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -1795,6 +1796,7 @@ end
   tab::TabType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
 
 struct LowStorageRK3SpFSALConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
@@ -1889,7 +1891,7 @@ function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,::Type{uEltypeNoUnits},::
     atmp = similar(u,uEltypeNoUnits)
   end
   tab = RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!)
+  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
 function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -2006,7 +2008,7 @@ function alg_cache(alg::RDPK3SpFSAL49,u,rate_prototype,::Type{uEltypeNoUnits},::
     atmp = similar(u,uEltypeNoUnits)
   end
   tab = RDPK3SpFSAL49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!)
+  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
 function alg_cache(alg::RDPK3SpFSAL49,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -2131,7 +2133,7 @@ function alg_cache(alg::RDPK3SpFSAL510,u,rate_prototype,::Type{uEltypeNoUnits},:
     atmp = similar(u,uEltypeNoUnits)
   end
   tab = RDPK3SpFSAL510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!)
+  LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
 function alg_cache(alg::RDPK3SpFSAL510,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}

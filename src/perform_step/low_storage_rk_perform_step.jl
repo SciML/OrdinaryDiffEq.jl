@@ -261,16 +261,16 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK3SpCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,tmp,utilde,atmp,stage_limiter!,step_limiter! = cache
+  @unpack k,tmp,utilde,atmp,stage_limiter!,step_limiter!,thread = cache
   @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end = cache.tab
 
   # u1
   f(integrator.fsalfirst, uprev, p, t)
   integrator.destats.nf += 1
-  @.. tmp = uprev
-  @.. u   = tmp + β1*dt*integrator.fsalfirst
+  @.. thread=thread tmp = uprev
+  @.. thread=thread u   = tmp + β1*dt*integrator.fsalfirst
   if integrator.opts.adaptive
-    @.. utilde = bhat1*dt*integrator.fsalfirst
+    @.. thread=thread utilde = bhat1*dt*integrator.fsalfirst
   end
 
   # other stages
@@ -278,10 +278,10 @@ end
     stage_limiter!(u, integrator, p, t+c2end[i]*dt)
     f(k, u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
-    @.. tmp = tmp + δ2end[i]*u
-    @.. u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    @.. thread=thread tmp = tmp + δ2end[i]*u
+    @.. thread=thread u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
     if integrator.opts.adaptive
-      @.. utilde = utilde + bhat2end[i]*dt*k
+      @.. thread=thread utilde = utilde + bhat2end[i]*dt*k
     end
   end
 
@@ -360,14 +360,14 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK3SpFSALCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,tmp,utilde,atmp,stage_limiter!,step_limiter! = cache
+  @unpack k,tmp,utilde,atmp,stage_limiter!,step_limiter!,thread = cache
   @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal = cache.tab
 
   # u1
-  @.. tmp = uprev
-  @.. u   = tmp + β1*dt*integrator.fsalfirst
+  @.. thread=thread tmp = uprev
+  @.. thread=thread u   = tmp + β1*dt*integrator.fsalfirst
   if integrator.opts.adaptive
-    @.. utilde = bhat1*dt*integrator.fsalfirst
+    @.. thread=thread utilde = bhat1*dt*integrator.fsalfirst
   end
 
   # other stages
@@ -375,10 +375,10 @@ end
     stage_limiter!(u, integrator, p, t+c2end[i]*dt)
     f(k, u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
-    @.. tmp = tmp + δ2end[i]*u
-    @.. u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    @.. thread=thread tmp = tmp + δ2end[i]*u
+    @.. thread=thread u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
     if integrator.opts.adaptive
-      @.. utilde = utilde + bhat2end[i]*dt*k
+      @.. thread=thread utilde = utilde + bhat2end[i]*dt*k
     end
   end
 
@@ -390,7 +390,7 @@ end
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
-    @.. utilde = utilde + bhatfsal*dt*k
+    @.. thread=thread utilde = utilde + bhatfsal*dt*k
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end

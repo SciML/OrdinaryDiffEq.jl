@@ -757,7 +757,9 @@ ParsaniKetchesonDeconinck3S205: Low-Storage Method
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 
 """
-    RDPK3Sp35()
+    RDPK3Sp35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread=False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
@@ -766,20 +768,38 @@ Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = False()`, default)
+or use multiple threads (`thread = True()`) when Julia is started
+with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp35{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RDPK3Sp35{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  RDPK3Sp35(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+  thread::Thread
+end
+
+RDPK3Sp35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+
+function Base.show(io::IO, alg::RDPK3Sp35)
+  print(io, "RDPK3Sp35(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread, ")")
 end
 
 """
-    RDPK3SpFSAL35()
+    RDPK3SpFSAL35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    thread=False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -789,27 +809,50 @@ Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = False()`, default)
+or use multiple threads (`thread = True()`) when Julia is started
+with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL35{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RDPK3SpFSAL35{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  RDPK3SpFSAL35(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+  thread::Thread
+end
+
+RDPK3SpFSAL35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+
+function Base.show(io::IO, alg::RDPK3SpFSAL35)
+  print(io, "RDPK3SpFSAL35(stage_limiter! = ", alg.stage_limiter!,
+                        ", step_limiter! = ", alg.step_limiter!,
+                        ", thread = ", alg.thread, ")")
 end
 
 """
-    RDPK3Sp49()
+    RDPK3Sp49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread=False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
-  Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-  and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-  of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = False()`, default)
+or use multiple threads (`thread = True()`) when Julia is started
+with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -817,14 +860,27 @@ designed for spectral element discretizations of compressible fluid mechanics.
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp49{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RDPK3Sp49{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  RDPK3Sp49(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+  thread::Thread
+end
+
+RDPK3Sp49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+
+function Base.show(io::IO, alg::RDPK3Sp49)
+  print(io, "RDPK3Sp49(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread, ")")
 end
 
 """
-    RDPK3SpFSAL49()
+    RDPK3SpFSAL49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    thread=False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -834,27 +890,50 @@ Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = False()`, default)
+or use multiple threads (`thread = True()`) when Julia is started
+with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL49{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RDPK3SpFSAL49{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  RDPK3SpFSAL49(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+  thread::Thread
+end
+
+RDPK3SpFSAL49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+
+function Base.show(io::IO, alg::RDPK3SpFSAL49)
+  print(io, "RDPK3SpFSAL49(stage_limiter! = ", alg.stage_limiter!,
+                        ", step_limiter! = ", alg.step_limiter!,
+                        ", thread = ", alg.thread, ")")
 end
 
 """
-    RDPK3Sp510()
+    RDPK3Sp510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread=False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
-  Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-  and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-  of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = False()`, default)
+or use multiple threads (`thread = True()`) when Julia is started
+with multiple threads.
 
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -862,14 +941,27 @@ designed for spectral element discretizations of compressible fluid mechanics.
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp510{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RDPK3Sp510{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  RDPK3Sp510(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+  thread::Thread
+end
+
+RDPK3Sp510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+
+function Base.show(io::IO, alg::RDPK3Sp510)
+  print(io, "RDPK3Sp510(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread, ")")
 end
 
 """
-    RDPK3SpFSAL510()
+    RDPK3SpFSAL510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                     thread=False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
@@ -879,17 +971,34 @@ Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
 of the form `limiter!(u, integrator, p, t)`.
 
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = False()`, default)
+or use multiple threads (`thread = True()`) when Julia is started
+with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL510{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct RDPK3SpFSAL510{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  RDPK3SpFSAL510(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+  thread::Thread
 end
+
+RDPK3SpFSAL510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3SpFSAL510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), True}(stage_limiter!, step_limiter!, True())
+
+function Base.show(io::IO, alg::RDPK3SpFSAL510)
+  print(io, "RDPK3SpFSAL510(stage_limiter! = ", alg.stage_limiter!,
+                         ", step_limiter! = ", alg.step_limiter!,
+                         ", thread = ", alg.thread, ")")
+end
+
 
 struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 
