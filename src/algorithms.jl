@@ -1462,6 +1462,23 @@ OwrenZen5: Explicit Runge-Kutta Method
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
+    BS3(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+          step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+          thread = OrdinaryDiffEq.False())
+
+A third-order, four-stage explicit FSAL Runge-Kutta method with embedded error
+estimator of Bogacki and Shampine.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 @article{bogacki19893,
   title={A 3 (2) pair of Runge-Kutta formulas},
   author={Bogacki, Przemyslaw and Shampine, Lawrence F},
@@ -1472,11 +1489,20 @@ struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1989},
   publisher={Elsevier}
 }
-
-BS3: Explicit Runge-Kutta Method
-  Bogacki-Shampine 3/2 method.
 """
-struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct BS3{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+BS3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = BS3{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+function Base.show(io::IO, alg::BS3)
+  print(io, "BS3(stage_limiter! = ", alg.stage_limiter!,
+              ", step_limiter! = ", alg.step_limiter!,
+              ", thread = ", alg.thread, ")")
+end
 
 """
 @article{dormand1980family,
