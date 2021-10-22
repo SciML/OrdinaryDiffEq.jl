@@ -289,7 +289,7 @@ end
   step_limiter!(u, integrator, p, t+dt)
 
   if integrator.opts.adaptive
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t, thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
@@ -391,7 +391,7 @@ end
 
   if integrator.opts.adaptive
     @.. thread=thread utilde = utilde + bhatfsal*dt*k
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t, thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
