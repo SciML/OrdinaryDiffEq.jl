@@ -62,7 +62,7 @@ end
       @.. thread=thread tmp = A2end[i]*tmp
       stage_limiter!(u, integrator, p, t+c2end[i]*dt)
       f(k, u, p, t+c2end[i]*dt)
-      @.. thread=thread tmp += dt * k
+      @.. thread=thread tmp = tmp + dt * k
       @.. thread=thread u   = u + B2end[i]*tmp
     end
     integrator.destats.nf += 1
