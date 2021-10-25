@@ -30,7 +30,9 @@ const deriv_test_points = range(0, stop=1, length=5)
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
 function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false, nth_der = 1, dertol=1e-6)
-  println("\n", alg)
+  println("\n")
+  show(stdout, alg)
+  println()
 
   sol = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
   @inferred sol(interpolation_results_1d, interpolation_points)
@@ -308,21 +310,27 @@ regression_test(ParsaniKetchesonDeconinck3S105(), 1.5e-5, 3.0e-5)
 regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
 
 # RDPK3Sp35
+@test RDPK3Sp35() == RDPK3Sp35(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(RDPK3Sp35(), 7.0e-4, 1.5e-3)
 
 # RDPK3SpFSAL35
+@test RDPK3SpFSAL35() == RDPK3SpFSAL35(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(RDPK3SpFSAL35(), 8.5e-4, 2.0e-3)
 
 # RDPK3Sp49
+@test RDPK3Sp49() == RDPK3Sp49(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(RDPK3Sp49(), 7.5e-5, 1.5e-4)
 
 # RDPK3SpFSAL49
+@test RDPK3SpFSAL49() == RDPK3SpFSAL49(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(RDPK3SpFSAL49(), 8.5e-5, 1.5e-4)
 
 # RDPK3Sp510
+@test RDPK3Sp510() == RDPK3Sp510(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(RDPK3Sp510(), 2.5e-4, 3.5e-4)
 
 # RDPK3SpFSAL510
+@test RDPK3SpFSAL510() == RDPK3SpFSAL510(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(RDPK3SpFSAL510(), 2.5e-4, 3.5e-4)
 
 println("RKs")
@@ -346,6 +354,7 @@ regression_test(OwrenZen4(), 6.5e-6, 1.5e-5; test_diff1 = true, nth_der = 4, der
 regression_test(OwrenZen5(), 1.5e-6, 2.5e-6; test_diff1 = true, nth_der = 5, dertol = 1e-8)
 
 # Tsit5
+@test Tsit5() == Tsit5(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true, nth_der = 4, dertol = 1e-6)
 
 # TanYam7
