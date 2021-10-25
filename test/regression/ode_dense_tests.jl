@@ -140,71 +140,93 @@ regression_test(Midpoint(), 1.5e-2, 2.3e-2)
 println("SSPRKs")
 
 # SSPRK22
+@test SSPRK22() == SSPRK22(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true, nth_der = 2, dertol = 1e-15)
 
 # SSPRK33
+@test SSPRK33() == SSPRK33(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK33(), 7.5e-4, 7.5e-3; test_diff1 = true, nth_der = 2, dertol = 1e-15)
 
 # SSPRK53
+@test SSPRK53() == SSPRK53(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK53(), 2.5e-4, 4.0e-4; test_diff1 = true)
 
 # SSPRK53_2N1
+@test SSPRK53_2N1() == SSPRK53_2N1(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK53_2N1(), 3.0e-4, 5.5e-4; test_diff1 = true)
 
 # SSPRK53_2N2
+@test SSPRK53_2N2() == SSPRK53_2N2(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK53_2N2(), 2.5e-4, 5.0e-4; test_diff1 = true)
 
 # SSPRK63
+@test SSPRK63() == SSPRK63(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK63(), 1.5e-4, 3.0e-4; test_diff1 = true)
 
 # SSPRK73
+@test SSPRK73() == SSPRK73(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK73(), 9.0e-5, 2.0e-4; test_diff1 = true)
 
 # SSPRK83
+@test SSPRK83() == SSPRK83(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK83(), 6.5e-5, 1.5e-4; test_diff1 = true)
 
 # SSPRK43
+@test SSPRK43() == SSPRK43(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK43(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1e-13)
 
 # SSPRK432
+@test SSPRK432() == SSPRK432(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1e-13)
 
 # SSPRK932
+@test SSPRK932() == SSPRK932(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK932(), 6.0e-5, 1.0e-4; test_diff1 = true)
 
 # SSPRK54
+@test SSPRK54() == SSPRK54(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK54(), 3.5e-5, 5.5e-5)
 
 # SSPRK104
+@test SSPRK22() == SSPRK22(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SSPRK104(), 1.5e-5, 3e-5)
 
 println("Low Storage RKs")
 
 # ORK256
+@test ORK256() == ORK256(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ORK256(), 3.0e-5, 5.0e-5)
 
 # CarpenterKennedy2N54
+@test CarpenterKennedy2N54() == CarpenterKennedy2N54(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
 
 # SHLDDRK64
+@test SHLDDRK64() == SHLDDRK64(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(SHLDDRK64(), 3.0e-5, 3.0e-5)
 
 # DGLDDRK73_C
+@test DGLDDRK73_C() == DGLDDRK73_C(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(DGLDDRK73_C(), 3.0e-4, 3.0e-4)
 
 # DGLDDRK84_C
+@test DGLDDRK84_C() == DGLDDRK84_C(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(DGLDDRK84_C(), 3.0e-5, 5.0e-5)
 
 # DGLDDRK84_F
+@test DGLDDRK84_F() == DGLDDRK84_F(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(DGLDDRK84_F(), 3.0e-5, 5.0e-5)
 
 # NDBLSRK124
+@test NDBLSRK124() == NDBLSRK124(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(NDBLSRK124(), 3.0e-5, 3.0e-5)
 
 # NDBLSRK134
+@test NDBLSRK134() == NDBLSRK134(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(NDBLSRK134(), 3.0e-5, 3.0e-5)
 
 # NDBLSRK144
+@test NDBLSRK144() == NDBLSRK144(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(NDBLSRK144(), 3.0e-5, 3.0e-5)
 
 # CFRLDDRK64

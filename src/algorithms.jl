@@ -425,7 +425,7 @@ end
 ORK256(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-ORK256(stage_limiter!, step_limiter! = trivial_limiter!) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+ORK256(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::ORK256)
   print(io, "ORK256(stage_limiter! = ", alg.stage_limiter!,
@@ -470,7 +470,7 @@ end
 CarpenterKennedy2N54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-CarpenterKennedy2N54(stage_limiter!, step_limiter! = trivial_limiter!) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+CarpenterKennedy2N54(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::CarpenterKennedy2N54)
   print(io, "CarpenterKennedy2N54(stage_limiter! = ", alg.stage_limiter!,
@@ -514,7 +514,7 @@ end
 SHLDDRK64(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-SHLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SHLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::SHLDDRK64)
   print(io, "SHLDDRK64(stage_limiter! = ", alg.stage_limiter!,
@@ -580,7 +580,7 @@ end
 DGLDDRK73_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::DGLDDRK73_C)
   print(io, "DGLDDRK73_C(stage_limiter! = ", alg.stage_limiter!,
@@ -626,7 +626,7 @@ end
 DGLDDRK84_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-DGLDDRK84_C(stage_limiter!, step_limiter! = trivial_limiter!) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+DGLDDRK84_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::DGLDDRK84_C)
   print(io, "DGLDDRK84_C(stage_limiter! = ", alg.stage_limiter!,
@@ -672,7 +672,7 @@ end
 DGLDDRK84_F(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::DGLDDRK84_F)
   print(io, "DGLDDRK84_F(stage_limiter! = ", alg.stage_limiter!,
@@ -715,7 +715,7 @@ end
 NDBLSRK124(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-NDBLSRK124(stage_limiter!, step_limiter! = trivial_limiter!) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+NDBLSRK124(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::NDBLSRK124)
   print(io, "NDBLSRK124(stage_limiter! = ", alg.stage_limiter!,
@@ -758,7 +758,7 @@ end
 NDBLSRK134(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::NDBLSRK134)
   print(io, "NDBLSRK134(stage_limiter! = ", alg.stage_limiter!,
@@ -801,7 +801,7 @@ end
 NDBLSRK144(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
 
 # for backwards compatibility
-NDBLSRK144(stage_limiter!, step_limiter! = trivial_limiter!) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+NDBLSRK144(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
 
 function Base.show(io::IO, alg::NDBLSRK144)
   print(io, "NDBLSRK144(stage_limiter! = ", alg.stage_limiter!,
