@@ -105,7 +105,7 @@ function alg_cache(alg::KYKSSPRK42,u,rate_prototype,::Type{uEltypeNoUnits},::Typ
   KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SSPRK53Cache{uType,rateType,TabType,StageLimiter,StepLimiterThread} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK53Cache{uType,rateType,TabType,StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
