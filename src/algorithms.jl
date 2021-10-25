@@ -829,73 +829,103 @@ doi: https://doi.org/10.1016/j.physleta.2006.10.072
 TSLDDRK74: Low-Storage Method
   7-stage, fourth order low-storage low-dissipation, low-dispersion scheme with maximal accuracy and stability limit along the imaginary axes.
   Fixed timestep only.
-
-CKLLSRK43_2: Low-Storage Method
-  4-stage, third order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3C: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK95_4S: Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK95_4C: Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK95_4M: Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3C_3R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3M_3R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3N_3R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4C_3R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4M_3R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4P_3R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3N_4R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3M_4R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK65_4M_4R: Low-Storage Method
-  6-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4FM_4R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK75_4M_5R: Low-Storage Method
-  7-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-
 """
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
+
+"""
+CKLLSRK43_2: Low-Storage Method
+  4-stage, third order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK43_2 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3C: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3C <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK95_4S: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK95_4S <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK95_4C: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK95_4C <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK95_4M: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK95_4M <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3C_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3C_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3M_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3M_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3N_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3N_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4C_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4C_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4M_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4M_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4P_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4P_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3N_4R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3N_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3M_4R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3M_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK65_4M_4R: Low-Storage Method
+  6-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK65_4M_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4FM_4R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4FM_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK75_4M_5R: Low-Storage Method
+  7-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK75_4M_5R <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
