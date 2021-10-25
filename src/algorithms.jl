@@ -415,7 +415,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 228(11), pp 4182-4199, 2009.
   doi: https://doi.org/10.1016/j.jcp.2009.02.032
 """
-struct ORK256{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct ORK256{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -460,7 +460,7 @@ Julia is started with multiple threads.
   year={1994}
 }
 """
-struct CarpenterKennedy2N54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct CarpenterKennedy2N54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -504,7 +504,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 143(2), pp 674-681, 1998.
   doi: https://doi.org/10.1006/jcph.1998.5986
 """
-struct SHLDDRK64{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SHLDDRK64{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -570,7 +570,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
   doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK73_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct DGLDDRK73_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -616,7 +616,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
   doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct DGLDDRK84_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -662,7 +662,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
   doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_F{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct DGLDDRK84_F{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -705,7 +705,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 231, pp 364-372, 2012.
   doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK124{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct NDBLSRK124{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -748,7 +748,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 231, pp 364-372, 2012.
   doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK134{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct NDBLSRK134{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -791,7 +791,7 @@ Julia is started with multiple threads.
   Journal of Computational Physics, 231, pp 364-372, 2012.
   doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK144{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct NDBLSRK144{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
