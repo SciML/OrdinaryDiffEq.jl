@@ -89,6 +89,7 @@ for (ff_time_derivative, u0) in
   @test sol.errors[:final] < 6e-3
 
   for alg in CACHE_TEST_ALGS
+    @show alg
     sol = solve(prob,alg,dt=1/10)
     if !(typeof(alg) <: Euler)
       @test sol.errors[:final] < 4e-14

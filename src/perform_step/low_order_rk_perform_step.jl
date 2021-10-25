@@ -44,22 +44,26 @@ end
 
 @muladd function perform_step!(integrator, cache::BS3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,k4,utilde,tmp,atmp = cache
+  @unpack k2,k3,k4,utilde,tmp,atmp,stage_limiter!,step_limiter!,thread = cache
   @unpack a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4 = cache.tab
   # k1 = cache.fsalfirst
   k1 = integrator.fsalfirst
   a1 = dt*a21
-  @.. tmp = uprev+a1*k1
+  @.. thread=thread tmp = uprev+a1*k1
+  stage_limiter!(tmp, integrator, p, t+c1*dt)
   f(k2, tmp, p, t+c1*dt)
   a2 = dt*a32
-  @.. tmp = uprev+a2*k2
+  @.. thread=thread tmp = uprev+a2*k2
+  stage_limiter!(tmp, integrator, p, t+c2*dt)
   f(k3, tmp, p, t+c2*dt)
-  @.. u = uprev+dt*(a41*k1+a42*k2+a43*k3)
+  @.. thread=thread u = uprev+dt*(a41*k1+a42*k2+a43*k3)
+  stage_limiter!(u, integrator, p, t+dt)
+  step_limiter!(u, integrator, p, t+dt)
   f(k4, u, p, t+dt)
   integrator.destats.nf += 3
   if integrator.opts.adaptive
-    @.. utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    @.. thread=thread utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t,thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
@@ -627,47 +631,47 @@ end
 @muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
-  @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,stage_limiter!,step_limiter! = cache
+  @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,stage_limiter!,step_limiter!,thread = cache
   a = dt*a21
-  @.. tmp = uprev+a*k1
+  @.. thread=thread tmp = uprev+a*k1
   stage_limiter!(tmp, f, p, t+c1*dt)
   f(k2, tmp, p, t+c1*dt)
-  @.. tmp = uprev+dt*(a31*k1+a32*k2)
+  @.. thread=thread tmp = uprev+dt*(a31*k1+a32*k2)
   stage_limiter!(tmp, f, p, t+c2*dt)
   f(k3, tmp, p, t+c2*dt)
-  @.. tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
+  @.. thread=thread tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
   stage_limiter!(tmp, f, p, t+c3*dt)
   f(k4, tmp, p, t+c3*dt)
-  @.. tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
+  @.. thread=thread tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
   stage_limiter!(tmp, f, p, t+c4*dt)
   f(k5, tmp, p, t+c4*dt)
-  @.. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
+  @.. thread=thread tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
   stage_limiter!(tmp, f, p, t+dt)
   f(k6, tmp, p, t+dt)
-  @.. u = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
+  @.. thread=thread u = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
   stage_limiter!(u, f, p, t+dt)
+  step_limiter!(u, f, p, t+dt)
   f(k7, u, p, t+dt)
   integrator.destats.nf += 6
-  step_limiter!(u, f, p, t+dt)
   if integrator.alg isa CompositeAlgorithm
     g7 = u
     g6 = tmp
     # Hairer II, page 22
-    @.. utilde = k7 - k6
+    @.. thread=thread utilde = k7 - k6
     ϱu = integrator.opts.internalnorm(utilde,t)
-    @.. utilde = g7 - g6
+    @.. thread=thread utilde = g7 - g6
     ϱd = integrator.opts.internalnorm(utilde,t)
     integrator.eigen_est = ϱu/ϱd
   end
   if integrator.opts.adaptive
-    @.. utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    @.. thread=thread utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t,thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   return nothing
 end
 
-@muladd function perform_step!(integrator, cache::Tsit5Cache{<:Array}, repeat_step=false)
+@muladd function perform_step!(integrator, cache::Tsit5Cache{uType,rateType,uNoUnitsType,TabType,StageLimiter,StepLimiter,Thread}, repeat_step=false) where {uType<:Array,rateType,uNoUnitsType,TabType,StageLimiter,StepLimiter,Thread<:False}
   @unpack t,dt,uprev,u,f,p = integrator
   uidx = eachindex(integrator.uprev)
   @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
