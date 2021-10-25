@@ -1269,97 +1269,379 @@ doi: https://doi.org/10.1016/j.amc.2019.02.047
 """
 struct RKO65 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
 
-"""
-Shu, Chi-Wang, and Stanley Osher. "Efficient implementation of essentially
-non-oscillatory shock-capturing schemes." Journal of Computational Physics
-77.2 (1988): 439-471.
-"""
-struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-end
-SSPRK22(stage_limiter! = trivial_limiter!) = SSPRK22(stage_limiter!, trivial_limiter!)
 
 """
-Shu, Chi-Wang, and Stanley Osher. "Efficient implementation of essentially
-non-oscillatory shock-capturing schemes." Journal of Computational Physics
-77.2 (1988): 439-471.
+    SSPRK22(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A second-order, two-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Shu, Chi-Wang, and Stanley Osher.
+  "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
+  Journal of Computational Physics 77.2 (1988): 439-471.
+  https://doi.org/10.1016/0021-9991(88)90177-5
 """
-struct SSPRK33{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK22{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK33(stage_limiter! = trivial_limiter!) = SSPRK33(stage_limiter!, trivial_limiter!)
+
+SSPRK22(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK22{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK22(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK22{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK22)
+  print(io, "SSPRK22(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK33(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, three-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Shu, Chi-Wang, and Stanley Osher.
+  "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
+  Journal of Computational Physics 77.2 (1988): 439-471.
+  https://doi.org/10.1016/0021-9991(88)90177-5
 """
-struct SSPRK53{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK33{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
+
+SSPRK33(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK33{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK33{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK33)
+  print(io, "SSPRK33(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
+
+"""
+    SSPRK53(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
+"""
+struct SSPRK53{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+SSPRK53(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53)
+  print(io, "SSPRK53(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
+
 struct KYKSSPRK42 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
-SSPRK53(stage_limiter! = trivial_limiter!) = SSPRK53(stage_limiter!, trivial_limiter!)
 
 """
-Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+    SSPRK53_2N1(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Higueras and T. Roldán.
+  "New third order low-storage SSP explicit Runge–Kutta methods".
+  arXiv:1809.04807v1.
 """
-struct SSPRK53_2N1{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK53_2N1{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK53_2N1(stage_limiter! = trivial_limiter!) = SSPRK53_2N1(stage_limiter!, trivial_limiter!)
+
+SSPRK53_2N1(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_2N1{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53_2N1(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_2N1{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53_2N1)
+  print(io, "SSPRK53_2N1(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread, ")")
+end
 
 """
-Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+    SSPRK53_2N2(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Higueras and T. Roldán.
+  "New third order low-storage SSP explicit Runge–Kutta methods".
+  arXiv:1809.04807v1.
 """
-struct SSPRK53_2N2{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK53_2N2{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK53_2N2(stage_limiter! = trivial_limiter!) = SSPRK53_2N2(stage_limiter!, trivial_limiter!)
+
+SSPRK53_2N2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_2N2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53_2N2(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_2N2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53_2N2)
+  print(io, "SSPRK53_2N2(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread, ")")
+end
 
 """
-Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+    SSPRK53_H(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Higueras and T. Roldán.
+  "New third order low-storage SSP explicit Runge–Kutta methods".
+  arXiv:1809.04807v1.
 """
-struct SSPRK53_H{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK53_H{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK53_H(stage_limiter! = trivial_limiter!) = SSPRK53_H(stage_limiter!, trivial_limiter!)
+
+SSPRK53_H(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_H{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53_H(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_H{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53_H)
+  print(io, "SSPRK53_H(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK63(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, six-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK63{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK63{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK63(stage_limiter! = trivial_limiter!) = SSPRK63(stage_limiter!, trivial_limiter!)
+
+SSPRK63(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK63{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK63(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK63{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK63)
+  print(io, "SSPRK63(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK73(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, seven-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK73{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK73{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK73(stage_limiter! = trivial_limiter!) = SSPRK73(stage_limiter!, trivial_limiter!)
+
+SSPRK73(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK73{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK73(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK73{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK73)
+  print(io, "SSPRK73(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK83(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, eight-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK83{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK83{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK83(stage_limiter! = trivial_limiter!) = SSPRK83(stage_limiter!, trivial_limiter!)
+
+SSPRK83(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK83{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK83(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK83{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK83)
+  print(io, "SSPRK83(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
+    SSPRK43(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, four-stage explicit strong stability preserving (SSP) method.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 Optimal third-order explicit SSP method with four stages discovered by
 - J. F. B. M. Kraaijevanger.
   "Contractivity of Runge-Kutta methods."
@@ -1372,31 +1654,70 @@ Embedded method constructed by
   optimal explicit strong stability preserving Runge–Kutta methods."
   [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
 
-Efficient implementation (and optimized controller) described in
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+Efficient implementation (and optimized controller) developed by
+- Hendrik Ranocha, Lisandro Dalcin, Matteo Parsani, David I. Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct SSPRK43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SSPRK43{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK43(stage_limiter! = trivial_limiter!) = SSPRK43(stage_limiter!, trivial_limiter!)
+
+SSPRK43(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK43{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK43(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK43{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK43)
+  print(io, "SSPRK43(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
-Strong stability preserving Runge-Kutta and multistep time discretizations.
-World Scientific, 2011.
-Example 6.1.
+    SSPRK432(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               thread = OrdinaryDiffEq.False())
 
-Consider using `SSPRK43` instead, which uses the same main method and an improved embedded method.
+A third-order, four-stage explicit strong stability preserving (SSP) method.
+
+Consider using `SSPRK43` instead, which uses the same main method and an
+improved embedded method.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
+  Strong stability preserving Runge-Kutta and multistep time discretizations.
+  World Scientific, 2011.
+  Example 6.1.
 """
-struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SSPRK432{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK432(stage_limiter! = trivial_limiter!) = SSPRK432(stage_limiter!, trivial_limiter!)
+
+SSPRK432(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK432{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK432(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK432{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK432)
+  print(io, "SSPRK432(stage_limiter! = ", alg.stage_limiter!,
+                   ", step_limiter! = ", alg.step_limiter!,
+                   ", thread = ", alg.thread, ")")
+end
 
 struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
@@ -1410,36 +1731,124 @@ end
 SSPRKMSVS32(stage_limiter! = trivial_limiter!) = SSPRKMSVS32(stage_limiter!, trivial_limiter!)
 
 """
-Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu. Strong stability
-preserving Runge-Kutta and multistep time discretizations. World Scientific,
-2011.
+    SSPRK932(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               thread = OrdinaryDiffEq.False())
+
+A third-order, nine-stage explicit strong stability preserving (SSP) method.
+
+Consider using `SSPRK43` instead, which uses the same main method and an
+improved embedded method.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
+  Strong stability preserving Runge-Kutta and multistep time discretizations.
+  World Scientific, 2011.
 """
-struct SSPRK932{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SSPRK932{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK932(stage_limiter! = trivial_limiter!) = SSPRK932(stage_limiter!, trivial_limiter!)
+
+SSPRK932(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK932{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK932(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK932{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK932)
+  print(io, "SSPRK932(stage_limiter! = ", alg.stage_limiter!,
+                   ", step_limiter! = ", alg.step_limiter!,
+                   ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A fourth-order, five-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK54(stage_limiter! = trivial_limiter!) = SSPRK54(stage_limiter!, trivial_limiter!)
+
+SSPRK54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK54(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK54)
+  print(io, "SSPRK54(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ketcheson, David I. "Highly efficient strong stability-preserving Runge–Kutta
-methods with low-storage implementations." SIAM Journal on Scientific
-Computing 30.4 (2008): 2113-2136.
+    SSPRK104(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               thread = OrdinaryDiffEq.False())
+
+A fourth-order, ten-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ketcheson, David I.
+  "Highly efficient strong stability-preserving Runge–Kutta methods with
+  low-storage implementations."
+  SIAM Journal on Scientific Computing 30.4 (2008): 2113-2136.
 """
-struct SSPRK104{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK104{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_limiter!)
+
+SSPRK104(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK104{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK104(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK104{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK104)
+  print(io, "SSPRK104(stage_limiter! = ", alg.stage_limiter!,
+                   ", step_limiter! = ", alg.step_limiter!,
+                   ", thread = ", alg.thread, ")")
+end
 
 """
 @article{owren1992derivation,
