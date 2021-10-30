@@ -329,6 +329,7 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
   integrator.dt = ode_determine_initdt(integrator.u,integrator.t,
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
   integrator.opts.internalnorm,integrator.sol.prob,integrator)
+  integrator.dtpropose = integrator.dt
   integrator.destats.nf += 2
 end
 
