@@ -104,10 +104,6 @@
     end
   end
 
-  if integrator.opts.verbose && any(x->any(isnan, x), f₀)
-    @warn("First function call produced NaNs. Exiting.")
-  end
-
   if u0 isa Array
     @inbounds @simd ivdep for i in eachindex(u0)
       tmp[i] = f₀[i]/sk[i]*oneunit_tType
@@ -117,6 +113,15 @@
   end
 
   d₁ = internalnorm(tmp,t)
+
+  # Better than checking any(x->any(isnan, x), f₀)
+  # because it also checks if partials are NaN
+  # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
+  if integrator.opts.verbose && isnan(d₁)
+    @warn("First function call produced NaNs. Exiting.")
+    return tdir*dtmin
+  end
+
   dt₀ = OrdinaryDiffEq.ArrayInterface.IfElse.ifelse((d₀ < 1//10^(5)) | (d₁ < 1//10^(5)), smalldt, convert(_tType,oneunit_tType*(d₀/d₁)/100))
   # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
   #   dt₀ = smalldt
