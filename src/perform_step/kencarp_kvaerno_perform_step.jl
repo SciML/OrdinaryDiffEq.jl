@@ -684,7 +684,7 @@ end
   z₅ = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
-  u = nlsolver.tmp + γ*z₅
+  u = nlsolver.tmp + γ*z₄
 
   ################################### Finalize
 
@@ -1875,7 +1875,7 @@ end
   nlsolver.tmp = tmp
 
   z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
-  nlsolvefail(nlsolver) && return  
+  nlsolvefail(nlsolver) && return
 
 
   u = nlsolver.tmp + γ*z₇
@@ -2068,7 +2068,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     f2( k7, u,p,t+dt); k7 .*= dt
     integrator.destats.nf += 1
-    @.. u = uprev + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + γ*z₇ + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 
+    @.. u = uprev + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + γ*z₇ + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7
   end
 
   ################################### Finalize
@@ -2355,7 +2355,7 @@ end
   # TODO: Allow other choices here
   z₂ .= z₁
   nlsolver.z = z₂
-  
+
   @.. tmp = uprev + γ*z₁
 
   if typeof(integrator.f) <: SplitFunction
@@ -2379,7 +2379,7 @@ end
     @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
-    @.. z₃ = α31*z₁ + α32*z₂    
+    @.. z₃ = α31*z₁ + α32*z₂
     @.. tmp = uprev + a31*z₁ + a32*z₂
   end
   nlsolver.z = z₃
@@ -2469,7 +2469,7 @@ end
     integrator.destats.nf2 += 1
     @.. tmp = uprev + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea82*k2 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
   else
-    @.. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅ + α86*z₆ + α87*z₇ 
+    @.. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅ + α86*z₆ + α87*z₇
     @.. tmp = uprev + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
   end
   nlsolver.z = z₈
@@ -2482,7 +2482,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     f2( k8, u,p,t+dt); k8 .*= dt
     integrator.destats.nf += 1
-    @.. u = uprev + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8     
+    @.. u = uprev + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
   end
 
   ################################### Finalize
@@ -2510,5 +2510,5 @@ end
     integrator.f(integrator.fsallast,u,p,t+dt)
   else
     @.. integrator.fsallast = z₈/dt
-  end   
+  end
 end
