@@ -291,7 +291,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit,
 
   isad = alg_autodiff(integrator.alg)
   if isad
-    chunk = Val{ForwardDiff.pickchunksize(count(algebraic_vars))}
+    chunk = count(algebraic_vars)
     _tmp = PreallocationTools.dualcache(tmp, chunk)
     _du_tmp = PreallocationTools.dualcache(tmp, chunk)
   else
