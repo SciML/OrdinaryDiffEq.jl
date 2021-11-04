@@ -36,7 +36,7 @@ function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{
                         OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT},
                         DAEAlgorithm{CS,AD,FDT}}; kwargs...) where {CS, AD, FDT}
   T = SciMLBase.remaker_of(thing)
-  T(; chunk_size=CS,autodiff=Val(AD),SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
+  T(; chunk_size=Val(CS),autodiff=Val(AD),SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
 end
 
 ###############################################################################
@@ -89,7 +89,7 @@ struct ImplicitEulerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtra
   sequence::Symbol # Name of the subdividing sequence
 end
 
-function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitEulerExtrapolation(;chunk_size=Val(0),autodiff=true,
     diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
     max_order=12,min_order=3,init_order=5,threading=true,sequence = :bulirsch)
 
@@ -109,7 +109,7 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
         :$(sequence) --> :bulirsch"
       sequence = :bulirsch
     end
-    ImplicitEulerExtrapolation{chunk_size,_unwrap_val(autodiff),typeof(linsolve),diff_type,typeof(threading)}(
+    ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type,typeof(threading)}(
       linsolve,n_max,n_min,n_init,threading,sequence)
 end
 """
@@ -171,7 +171,7 @@ struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitE
   sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
-function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitDeuflhardExtrapolation(;chunk_size=Val(0),autodiff=Val(true),
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 1 <=  min_order <= init_order <= max_order:
@@ -198,7 +198,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
   end
 
   # Initialize algorithm
-  ImplicitDeuflhardExtrapolation{chunk_size, _unwrap_val(autodiff),
+  ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
       typeof(linsolve), diff_type, typeof(threading)}(linsolve,n_min,n_init,n_max,sequence,threading)
 end
 """
@@ -261,7 +261,7 @@ struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplic
   sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
-function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitHairerWannerExtrapolation(;chunk_size=Val(0),autodiff=Val(true),
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 2 <=  min_order
@@ -289,7 +289,7 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
   end
 
   # Initialize algorithm
-  ImplicitHairerWannerExtrapolation{chunk_size, _unwrap_val(autodiff),
+  ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
       typeof(linsolve), diff_type, typeof(threading)}(linsolve,n_min,n_init,n_max,
       sequence,threading)
 end
@@ -303,7 +303,7 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqIm
     threading::TO
   sequence_factor::Int
 end
-function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val(0),autodiff=Val(true),
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
@@ -331,7 +331,7 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
   end
 
   # Initialize algorithm
-  ImplicitEulerBarycentricExtrapolation{chunk_size, _unwrap_val(autodiff),
+  ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
       typeof(linsolve), diff_type, typeof(threading)}(linsolve,n_min,n_init,n_max,
       sequence,threading,sequence_factor)
 end
@@ -2658,10 +2658,10 @@ struct CNAB2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-CNAB2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+CNAB2(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CNAB2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      CNAB2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct CNLF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -2669,10 +2669,10 @@ struct CNLF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+CNLF2(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CNLF2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      CNLF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 """
@@ -2689,11 +2689,11 @@ struct QNDF1{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,
   kappa::κType
   controller::Symbol
 end
-QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+QNDF1(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                   extrapolant=:linear,kappa = -0.1850,
                  controller = :Standard) =
-                 QNDF1{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+                 QNDF1{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                  typeof(kappa)}(
                  linsolve,nlsolve,extrapolant,kappa,controller)
 
@@ -2717,11 +2717,11 @@ struct QNDF2{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,
   kappa::κType
   controller::Symbol
 end
-QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+QNDF2(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                   extrapolant=:linear,kappa = -1//9,
                  controller = :Standard) =
-                 QNDF2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+                 QNDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                  typeof(kappa)}(
                  linsolve,nlsolve,extrapolant,kappa,controller)
 
@@ -2758,11 +2758,11 @@ struct QNDF{MO,CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorit
   kappa::κType
   controller::Symbol
 end
-Base.@pure QNDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Base.@pure QNDF(;max_order::Val{MO}=Val(5),chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,kappa=promote(-0.1850,-1//9,-0.0823,-0.0415,0),
                 controller = :Standard) where {MO} =
-                QNDF{MO,chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+                QNDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol),typeof(kappa)}(
                 max_order,linsolve,nlsolve,κ,tol,extrapolant,kappa,controller)
 
@@ -2795,10 +2795,10 @@ struct FBDF{MO,CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,A
   extrapolant::Symbol
   controller::Symbol
 end
-Base.@pure FBDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Base.@pure FBDF(;max_order::Val{MO}=Val(5),chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,controller = :Standard) where {MO} =
-                FBDF{MO,chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+                FBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol)}(
                 max_order,linsolve,nlsolve,κ,tol,extrapolant,controller)
 
@@ -2815,19 +2815,19 @@ struct SBDF{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   order::Int
 end
-SBDF(order;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SBDF(order;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear) =
-     SBDF{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
      typeof(κ),typeof(tol)}(
      linsolve,nlsolve,κ,tol,extrapolant,order)
 
 # All keyword form needed for remake
-SBDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SBDF(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear,
      order) =
-     SBDF{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
      typeof(κ),typeof(tol)}(
      linsolve,nlsolve,κ,tol,extrapolant,order)
 
@@ -2944,10 +2944,10 @@ struct IRKC{CS,AD,F,F2,FDT,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD
   controller::Symbol
   eigen_est::E
 end
-IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+IRKC(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                  extrapolant=:linear,controller = :Standard,eigen_est=nothing) =
-  IRKC{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,typeof(κ),typeof(tol),typeof(eigen_est)}(
+  IRKC{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,typeof(κ),typeof(tol),typeof(eigen_est)}(
                  linsolve,nlsolve,κ,tol,extrapolant,controller,eigen_est)
 
 ################################################################################
@@ -3003,11 +3003,11 @@ struct RadauIIA3{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   controller::Symbol
 end
 
-RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+RadauIIA3(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                                 linsolve=DEFAULT_LINSOLVE,
                                 extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                                 controller=:Predictive,κ=nothing,maxiters=10) =
-                                RadauIIA3{chunk_size,_unwrap_val(autodiff),typeof(linsolve),
+                                RadauIIA3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                                 diff_type,
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
                                   linsolve,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
@@ -3037,11 +3037,11 @@ struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   new_W_γdt_cutoff::C2
   controller::Symbol
 end
-RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+RadauIIA5(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,
                           extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                           controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
-                          RadauIIA5{chunk_size,_unwrap_val(autodiff),typeof(linsolve),
+                          RadauIIA5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           diff_type,
                           typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
                             linsolve,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
@@ -3060,11 +3060,11 @@ struct ImplicitEuler{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS
   extrapolant::Symbol
   controller::Symbol
 end
-ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ImplicitEuler(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:PI) =
-                          ImplicitEuler{chunk_size,_unwrap_val(autodiff),typeof(linsolve),
+                          ImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
                           nlsolve,extrapolant,controller)
 """
@@ -3077,10 +3077,10 @@ struct ImplicitMidpoint{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,F
   nlsolve::F2
   extrapolant::Symbol
 end
-ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ImplicitMidpoint(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      ImplicitMidpoint{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      ImplicitMidpoint{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 """
@@ -3098,11 +3098,11 @@ struct Trapezoid{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Trapezoid(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                             extrapolant=:linear,
                       controller = :PI) =
-                      Trapezoid{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant,controller)
 
 """
@@ -3128,11 +3128,11 @@ struct TRBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT
   extrapolant::Symbol
   controller::Symbol
 end
-TRBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+TRBDF2(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                  smooth_est=true,extrapolant=:linear,
                  controller = :PI) =
-TRBDF2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+TRBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
       linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3157,11 +3157,11 @@ struct SDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT
   extrapolant::Symbol
   controller::Symbol
 end
-SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SDIRK2(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- SDIRK2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ SDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 struct SDIRK22{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
@@ -3170,11 +3170,11 @@ struct SDIRK22{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FD
   extrapolant::Symbol
   controller::Symbol
 end
-SDIRK22(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SDIRK22(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                             extrapolant=:linear,
                       controller = :PI) =
-                      Trapezoid{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant,controller)
 
 
@@ -3185,11 +3185,11 @@ struct SSPSDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT} # N
   extrapolant::Symbol
   controller::Symbol
 end
-SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SSPSDIRK2(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:constant,
                    controller = :PI) =
- SSPSDIRK2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ SSPSDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3214,11 +3214,11 @@ struct Kvaerno3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Kvaerno3(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno3{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ Kvaerno3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3239,11 +3239,11 @@ struct KenCarp3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp3(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp3{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 struct CFNLIRK3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -3251,10 +3251,10 @@ struct CFNLIRK3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-CFNLIRK3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+CFNLIRK3(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CFNLIRK3{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      CFNLIRK3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 """
@@ -3280,11 +3280,11 @@ struct Cash4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   embedding::Int
   controller::Symbol
 end
-Cash4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Cash4(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI,embedding=3) =
- Cash4{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ Cash4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,embedding,controller)
 
 
@@ -3293,10 +3293,10 @@ struct SFSDIRK4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-SFSDIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK4(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK4{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
                       struct SFSDIRK5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -3304,10 +3304,10 @@ SFSDIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                         nlsolve::F2
                                               extrapolant::Symbol
                       end
-SFSDIRK5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK5(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK5{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK6{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -3316,10 +3316,10 @@ struct SFSDIRK6{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
 end
 
-SFSDIRK6(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK6(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK6{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK6{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK7{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -3328,10 +3328,10 @@ struct SFSDIRK7{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
 end
 
-SFSDIRK7(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK7(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK7{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK7{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK8{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -3340,10 +3340,10 @@ nlsolve::F2
 extrapolant::Symbol
 end
 
-SFSDIRK8(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK8(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                     linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                     extrapolant=:linear) =
-                    SFSDIRK8{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                    SFSDIRK8{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                     linsolve,nlsolve,extrapolant)
 
 """
@@ -3361,11 +3361,11 @@ struct Hairer4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FD
   extrapolant::Symbol
   controller::Symbol
 end
-Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Hairer4(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Hairer4{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ Hairer4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3383,11 +3383,11 @@ struct Hairer42{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Hairer42(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Hairer42{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ Hairer42{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3412,11 +3412,11 @@ struct Kvaerno4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Kvaerno4(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno4{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ Kvaerno4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3441,11 +3441,11 @@ struct Kvaerno5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Kvaerno5(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno5{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ Kvaerno5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3466,11 +3466,11 @@ struct KenCarp4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp4(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp4{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 """
 @article{kennedy2019higher,
@@ -3493,11 +3493,11 @@ struct KenCarp47{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp47(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp47(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp47{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp47{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -3518,11 +3518,11 @@ struct KenCarp5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp5(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp5{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 """
 @article{kennedy2019higher,
@@ -3545,11 +3545,11 @@ struct KenCarp58{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp58(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp58(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp58{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp58{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
@@ -3559,10 +3559,10 @@ struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{C
   extrapolant::Symbol
   controller::Symbol
 end
-ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ESDIRK54I8L2SA(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    extrapolant=:linear,controller = :PI) =
- ESDIRK54I8L2SA{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(linsolve,nlsolve,extrapolant,controller)
+ ESDIRK54I8L2SA{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(linsolve,nlsolve,extrapolant,controller)
 
 ################################################################################
 
@@ -3623,7 +3623,7 @@ for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1
     struct $Alg{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT}
       linsolve::F
     end
-    $Alg(;chunk_size=0,autodiff=Val(true),diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE) = $Alg{chunk_size,_unwrap_val(autodiff),typeof(linsolve),diff_type}(linsolve)
+    $Alg(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type}(linsolve)
   end
 end
 
@@ -3632,9 +3632,9 @@ struct GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlg
   factorization::F
 end
 
-GeneralRosenbrock(;chunk_size=0,autodiff=true,
+GeneralRosenbrock(;chunk_size=Val(0),autodiff=true,
                     factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
-                    GeneralRosenbrock{chunk_size,_unwrap_val(autodiff),typeof(factorization),typeof(tableau)}(tableau,factorization)
+                    GeneralRosenbrock{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(factorization),typeof(tableau)}(tableau,factorization)
 """
 RosenbrockW6S4OS: Rosenbrock-W Method
   A 4th order L-stable Rosenbrock-W method (fixed step only).
@@ -3642,7 +3642,7 @@ RosenbrockW6S4OS: Rosenbrock-W Method
 struct RosenbrockW6S4OS{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT}
   linsolve::F
 end
-RosenbrockW6S4OS(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosenbrockW6S4OS{chunk_size,_unwrap_val(autodiff),typeof(linsolve),diff_type}(linsolve)
+RosenbrockW6S4OS(;chunk_size=Val(0),autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosenbrockW6S4OS{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type}(linsolve)
 ######################################
 
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
@@ -3711,11 +3711,11 @@ struct ABDF2{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-ABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ABDF2(;chunk_size=Val(0),autodiff=true,diff_type=Val{:forward},
       κ=nothing,tol=nothing,linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
       smooth_est=true,extrapolant=:linear,
       controller=:Standard) =
-ABDF2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+ABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
       typeof(κ),typeof(tol)}(
       linsolve,nlsolve,κ,tol,smooth_est,extrapolant,controller)
 
@@ -3737,10 +3737,10 @@ struct MEBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+MEBDF2(;chunk_size=Val(0),autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:constant) =
-                      MEBDF2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
+                      MEBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 #################################################
@@ -3754,10 +3754,10 @@ struct PDIRK44{CS,AD,F,F2,FDT,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   threading::TO
 end
-PDIRK44(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+PDIRK44(;chunk_size=Val(0),autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:constant,threading=true) =
-                      PDIRK44{chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,typeof(threading)}(
+PDIRK44{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,typeof(threading)}(
                       linsolve,nlsolve,extrapolant,threading)
 ### Algorithm Groups
 
@@ -3775,9 +3775,9 @@ struct DBDF{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
 end
 
-DBDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+DBDF(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),extrapolant=:linear) =
-     DBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+     DBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
      linsolve,nlsolve,extrapolant)
 =#
 
@@ -3787,11 +3787,11 @@ struct DImplicitEuler{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   controller::Symbol
 end
-DImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+DImplicitEuler(;chunk_size=Val(0),autodiff=true,diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:Standard) =
-                          DImplicitEuler{chunk_size,_unwrap_val(autodiff),typeof(linsolve),
+                          DImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
                           nlsolve,extrapolant,controller)
 
@@ -3802,11 +3802,11 @@ struct DABDF2{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   controller::Symbol
 end
-DABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+DABDF2(;chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:Standard) =
-                          DABDF2{chunk_size,_unwrap_val(autodiff),typeof(linsolve),
+                          DABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
                           nlsolve,extrapolant,controller)
 
@@ -3819,9 +3819,9 @@ struct DFBDF{MO,CS,AD,F,F2,FDT,K,T} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   controller::Symbol
 end
-Base.@pure DFBDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Base.@pure DFBDF(;max_order::Val{MO}=Val(5),chunk_size=Val(0),autodiff=Val(true),diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,controller = :Standard) where {MO} =
-                DFBDF{MO,chunk_size,_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
+                DFBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol)}(
                 max_order,linsolve,nlsolve,κ,tol,extrapolant,controller)
