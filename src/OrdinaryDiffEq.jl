@@ -32,6 +32,8 @@ using DocStringExtensions
 
   import ForwardDiff.Dual
 
+  import PreallocationTools
+
   using ExponentialUtilities
 
   using NLsolve
