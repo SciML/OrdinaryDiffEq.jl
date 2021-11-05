@@ -134,7 +134,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     @.. integrator.u = integrator.uprev + z
   else
     isad = alg_autodiff(integrator.alg)
-    _tmp = isad ? PreallocationTools.dualcache(tmp, length(tmp)) : tmp
+    _tmp = isad ? PreallocationTools.dualcache(tmp, ForwardDiff.pickchunksize(length(tmp))) : tmp
     nlequation! = @closure (out,u) -> begin
       update_coefficients!(M,u,p,t)
       #M * (u-u0)/dt - f(u,p,t)
@@ -291,7 +291,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit,
 
   isad = alg_autodiff(integrator.alg)
   if isad
-    chunk = count(algebraic_vars)
+    chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
     _tmp = PreallocationTools.dualcache(tmp, chunk)
     _du_tmp = PreallocationTools.dualcache(tmp, chunk)
   else
