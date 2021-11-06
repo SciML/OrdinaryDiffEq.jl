@@ -193,12 +193,15 @@ function _loopfooter!(integrator)
       integrator.last_stepfail = false
       dtnew = DiffEqBase.value(step_accept_controller!(integrator,integrator.alg,q)) * oneunit(integrator.dt)
       integrator.tprev = integrator.t
-      if integrator.t isa AbstractFloat && has_tstop(integrator)
+      integrator.t = if has_tstop(integrator)
         tstop = integrator.tdir * first_tstop(integrator)
-        abs(ttmp - tstop) < 100eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
-                                  (integrator.t = tstop) : (integrator.t = ttmp)
+        if abs(ttmp - tstop) < 100eps(float(max(integrator.t,tstop)/oneunit(integrator.t)))*oneunit(integrator.t)
+          tstop
+        else
+          ttmp
+        end
       else
-        integrator.t = ttmp
+        ttmp
       end
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
@@ -208,12 +211,15 @@ function _loopfooter!(integrator)
   elseif !integrator.opts.adaptive #Not adaptive
     integrator.destats.naccept += 1
     integrator.tprev = integrator.t
-    if integrator.t isa AbstractFloat && has_tstop(integrator)
+    integrator.t = if has_tstop(integrator)
       tstop = integrator.tdir * first_tstop(integrator)
-      abs(ttmp - tstop) < 100eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
-                                  (integrator.t = tstop) : (integrator.t = ttmp)
+      if abs(ttmp - tstop) < 100eps(float(integrator.t/oneunit(integrator.t)))*oneunit(integrator.t)
+        tstop
+      else
+        ttmp
+      end
     else
-      integrator.t = ttmp
+      ttmp
     end
     integrator.last_stepfail = false
     integrator.accept_step = true
