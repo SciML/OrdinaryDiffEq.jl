@@ -134,7 +134,7 @@ function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{
 end
 
 get_chunksize(jac_config::ForwardDiff.JacobianConfig{T,V,N,D}) where {T,V,N,D} = Val(N) # don't degrade compile time information to runtime information
-_unwrap(::Val{N}) where {N} = N
+_unwrap(::Val{N}) where {N} = N::Int
 get_chunksize_int(x) = _unwrap(get_chunksize(x))
 
 function DiffEqBase.resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
