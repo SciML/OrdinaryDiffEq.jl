@@ -567,6 +567,40 @@ function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
   nothing
 end
 
+function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEqMutableCache, max_order)
+  @unpack t,dt,u,cache,uprev = integrator
+  @unpack atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history = cache
+  k = cache.order
+  # only when the order of amount of terk follows the order of step size, and achieve enough constant step size, the order could be increased.
+  if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk > terkp1) ||
+    (k == 2 && terkm1 > terk > terkp1) ||
+    (k > 2 && terkm2 > terkm1 > terk > terkp1))
+    k += 1
+    terk = terkp1
+  else
+    while !(terkm2 > terkm1 > terk > terkp1) && k > 2
+      terkp1 = terk
+      terk = terkm1
+      terkm1 = terkm2
+      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
+      terk_tmp = @.. fd_weights[k-2,1] * u
+      vc = _vec(terk_tmp)
+      for i in 2:k-2
+        @.. @views vc += fd_weights[i,k-2] * u_history[:,i-1]
+      end
+      @.. terk_tmp *= abs(dt^(k-2))
+      calculate_residuals!(atmp,_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      terkm2 = integrator.opts.internalnorm(atmp,t)
+      k -= 1
+    end
+    if !(terkm1 > terk > terkp1) && k == 2
+      k -= 1
+      terk = terkm1
+    end
+  end
+  return k, terk
+end
+
 function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEqConstantCache, max_order)
   @unpack t,dt,u,cache,uprev = integrator
   @unpack ts_tmp,terkm2, terkm1, terk, terkp1,u_history = cache
