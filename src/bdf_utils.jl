@@ -112,6 +112,7 @@ function compute_weights!(ts,k,weights)
   end
 end
 
+#This uses lagrangian interpolation to calculate the predictor
 function calc_Lagrange_interp(k,weights,t,ts,u_history,u::Number)
   if t in ts
     i = searchsortedfirst(ts,t,rev=true)
@@ -160,7 +161,7 @@ function calc_Lagrange_interp!(k,weights,t,ts,u_history,u)
 end
 
 #This code refers to https://epubs.siam.org/doi/abs/10.1137/S0036144596322507
-
+#Compute all derivatives through k of the polynomials of k+1 points
 function calc_finite_difference_weights(ts,t,order,::Val{N}) where {N}
   max_order = N
   c = zero(MMatrix{max_order+1,max_order+1,eltype(ts)})
@@ -189,3 +190,77 @@ function calc_finite_difference_weights(ts,t,order,::Val{N}) where {N}
   end
   return SArray(c)
 end
+
+function reinitFBDF!(integrator, cache)
+  # This function is used for initialize weights and arrays that store past history information. It will be used in the first-time step advancing and event handling.
+  @unpack weights, consfailcnt, nconsteps, ts, u_history, u_corrector,iters_from_event, order = cache
+  @unpack t,dt,uprev = integrator
+
+  if integrator.u_modified
+    cache.order = 1
+    cache.consfailcnt = cache.nconsteps = 0
+    fill!(weights,zero(eltype(weights)))
+    fill!(ts,zero(eltype(ts)))
+    fill!(u_history,zero(eltype(u_history)))
+    fill!(u_corrector,zero(eltype(u_corrector)))
+    cache.iters_from_event = 0
+  end
+
+  if iters_from_event == 0
+    weights[1] = 1/dt
+    ts[1] = t
+    @.. u_history[:,1] = $_vec(uprev)
+  elseif iters_from_event == 1
+    ts[2] = ts[1]
+    ts[1] = t
+    @.. @views u_history[:,2] = u_history[:,1]
+    @.. u_history[:,1] = $_vec(uprev)
+  elseif consfailcnt == 0
+    for i in order+2:-1:2
+      ts[i] = ts[i-1]
+      @.. @views u_history[:,i] = u_history[:,i-1]
+    end
+    ts[1] = t
+    @.. u_history[:,1] = $_vec(uprev)
+  end
+  if iters_from_event >= 1
+    compute_weights!(ts,order,weights)
+  end
+end
+
+function estimate_terk!(integrator, cache, k, max_order)
+  #calculate hᵏ⁻¹yᵏ⁻¹
+  @unpack ts_tmp, terk_tmp, u_history = cache
+  @unpack t, dt, u = integrator
+  fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
+  @.. terk_tmp = fd_weights[1,k] * u
+  vc = _vec(terk_tmp)
+  for i in 2:k
+    @.. @views vc += fd_weights[i,k] * u_history[:,i-1]
+  end
+  @.. terk_tmp *= abs(dt^(k-1))
+end
+
+function estimate_terk(integrator, cache, k, max_order, u)
+  @unpack ts_tmp, u_history = cache
+  @unpack t, dt = integrator
+  fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
+  terk = @.. fd_weights[1,k] * u
+    #@show terk,fd_weights[1,k+1]
+  if u isa Number
+    for i in 2:k
+      terk += fd_weights[i,k] * u_history[i-1]
+    end
+    terk *= abs(dt^(k-1))
+  else
+    vc = _vec(terk)
+    for i in 2:k
+      #@show vc
+      @.. @views vc += fd_weights[i,k] * u_history[:,i-1]
+      #@show vc ,fd_weights[i,k] * u_history[:,i-1]
+    end
+    terk *= abs(dt^(k-1))
+  end
+  return terk
+end
+

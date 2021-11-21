@@ -36,7 +36,7 @@ function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{
                         OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT},
                         DAEAlgorithm{CS,AD,FDT}}; kwargs...) where {CS, AD, FDT}
   T = SciMLBase.remaker_of(thing)
-  T(; chunk_size=CS,autodiff=AD,SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
+  T(; chunk_size=Val{CS}(),autodiff=Val{AD}(),SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
 end
 
 ###############################################################################
@@ -89,7 +89,7 @@ struct ImplicitEulerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitExtra
   sequence::Symbol # Name of the subdividing sequence
 end
 
-function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true,
     diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
     max_order=12,min_order=3,init_order=5,threading=true,sequence = :bulirsch)
 
@@ -109,7 +109,7 @@ function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,
         :$(sequence) --> :bulirsch"
       sequence = :bulirsch
     end
-    ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),diff_type,typeof(threading)}(
+    ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type,typeof(threading)}(
       linsolve,n_max,n_min,n_init,threading,sequence)
 end
 """
@@ -171,7 +171,7 @@ struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplicitE
   sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
-function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(),
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 1 <=  min_order <= init_order <= max_order:
@@ -198,7 +198,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,
   end
 
   # Initialize algorithm
-  ImplicitDeuflhardExtrapolation{chunk_size, autodiff,
+  ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
       typeof(linsolve), diff_type, typeof(threading)}(linsolve,n_min,n_init,n_max,sequence,threading)
 end
 """
@@ -261,7 +261,7 @@ struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqImplic
   sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
-function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(),
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 2 <=  min_order
@@ -289,7 +289,7 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,
   end
 
   # Initialize algorithm
-  ImplicitHairerWannerExtrapolation{chunk_size, autodiff,
+  ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
       typeof(linsolve), diff_type, typeof(threading)}(linsolve,n_min,n_init,n_max,
       sequence,threading)
 end
@@ -303,7 +303,7 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,TO} <: OrdinaryDiffEqIm
     threading::TO
   sequence_factor::Int
 end
-function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
+function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(),
   linsolve=DEFAULT_LINSOLVE,diff_type=Val{:forward},
   min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
@@ -331,7 +331,7 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=0,autodiff=true,
   end
 
   # Initialize algorithm
-  ImplicitEulerBarycentricExtrapolation{chunk_size, autodiff,
+  ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
       typeof(linsolve), diff_type, typeof(threading)}(linsolve,n_min,n_init,n_max,
       sequence,threading,sequence_factor)
 end
@@ -389,60 +389,140 @@ struct Anas5{T} <: OrdinaryDiffEqAlgorithm
 end
 Anas5(; w=1) = Anas5(w)
 
-"""
-Matteo Bernardini, Sergio Pirozzoli. A General Strategy for the Optimization of
-Runge-Kutta Schemes for Wave Propagation Phenomena. Journal of Computational Physics,
-228(11), pp 4182-4199, 2009. doi: https://doi.org/10.1016/j.jcp.2009.02.032
 
-ORK256: Low-Storage Method
-  5-stage, second order low-storage method for wave propogation equations. Fixed timestep only.
-
-Like SSPRK methods, ORK256 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
-struct ORK256{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+    ORK256(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False(),
+             williamson_condition = true)
+
+A second-order, five-stage explicit Runge-Kutta method for wave propogation
+equations. Fixed timestep only.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Matteo Bernardini, Sergio Pirozzoli.
+  A General Strategy for the Optimization of Runge-Kutta Schemes for Wave
+  Propagation Phenomena.
+  Journal of Computational Physics, 228(11), pp 4182-4199, 2009.
+  doi: https://doi.org/10.1016/j.jcp.2009.02.032
+"""
+struct ORK256{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  ORK256(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+ORK256(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+ORK256(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::ORK256)
+  print(io, "ORK256(stage_limiter! = ", alg.stage_limiter!,
+                 ", step_limiter! = ", alg.step_limiter!,
+                 ", thread = ", alg.thread,
+                 ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
+    CarpenterKennedy2N54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                           step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                           thread = OrdinaryDiffEq.False(),
+                           williamson_condition = true)
+
+A fourth-order, five-stage explicit low-storage method of Carpenter and Kennedy
+(free 3rd order Hermite interpolant). Fixed timestep only. Designed for
+hyperbolic PDEs (stability properties).
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 @article{carpenter1994fourth,
   title={Fourth-order 2N-storage Runge-Kutta schemes},
   author={Carpenter, Mark H and Kennedy, Christopher A},
   year={1994}
 }
-
-CarpenterKennedy2N54: Low-Storage Method
-  The five-stage, fourth order low-storage method of Carpenter and Kennedy (free 3rd order Hermite interpolant).
-  Fixed timestep only. Designed for hyperbolic PDEs (stability properties).
-
-Like SSPRK methods, CarpenterKennedy2N54 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
 """
-struct CarpenterKennedy2N54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct CarpenterKennedy2N54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  CarpenterKennedy2N54(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+CarpenterKennedy2N54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+CarpenterKennedy2N54(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::CarpenterKennedy2N54)
+  print(io, "CarpenterKennedy2N54(stage_limiter! = ", alg.stage_limiter!,
+                               ", step_limiter! = ", alg.step_limiter!,
+                               ", thread = ", alg.thread,
+                               ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 
 """
-D. Stanescu, W. G. Habashi. 2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for
-Computational Acoustics. Journal of Computational Physics, 143(2), pp 674-681, 1998. doi:
-https://doi.org/10.1006/jcph.1998.5986
+    SHLDDRK64(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread = OrdinaryDiffEq.False(),
+                williamson_condition = true)
 
-Like SSPRK methods, SHLDDRK64 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+A fourth-order, six-stage explicit low-storage method. Fixed timestep only.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- D. Stanescu, W. G. Habashi.
+  2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for Computational
+  Acoustics.
+  Journal of Computational Physics, 143(2), pp 674-681, 1998.
+  doi: https://doi.org/10.1006/jcph.1998.5986
 """
-struct SHLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SHLDDRK64{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  SHLDDRK64(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
 end
+
+SHLDDRK64(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+SHLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::SHLDDRK64)
+  print(io, "SHLDDRK64(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread,
+                    ", williamson_condition = ", alg.williamson_condition, ")")
+end
+
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
 struct SHLDDRK_2N <: OrdinaryDiffEqAlgorithm end
 """
@@ -464,120 +544,270 @@ struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
 end
 
 """
-T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
-Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
-pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+    DGLDDRK73_C(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False(),
+                  williamson_condition = true)
 
-DGLDDRK73_C: Low-Storage Method
-  7-stage, third order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
-  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
-  Fixed timestep only.
+7-stage, third order low-storage low-dissipation, low-dispersion scheme for
+discontinuous Galerkin space discretizations applied to wave propagation problems.
+Optimized for PDE discretizations when maximum spatial step is small due to
+geometric features of computational domain. Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK73_C also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- T. Toulorge, W. Desmet.
+  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+  Applied to Wave Propagation Problems.
+  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK73_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK73_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  DGLDDRK73_C(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+DGLDDRK73_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::DGLDDRK73_C)
+  print(io, "DGLDDRK73_C(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread,
+                      ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
-Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
-pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+    DGLDDRK84_C(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False(),
+                  williamson_condition = true)
 
-DGLDDRK84_C: Low-Storage Method
-  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
-  Optimized for PDE discretizations when maximum spatial step is small due to geometric features of computational domain.
-  Fixed timestep only.
+8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
+discontinuous Galerkin space discretizations applied to wave propagation problems.
+Optimized for PDE discretizations when maximum spatial step is small due to
+geometric features of computational domain. Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK84_C also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- T. Toulorge, W. Desmet.
+  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+  Applied to Wave Propagation Problems.
+  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_C{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK84_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  DGLDDRK84_C(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+DGLDDRK84_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+DGLDDRK84_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::DGLDDRK84_C)
+  print(io, "DGLDDRK84_C(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread,
+                      ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-T. Toulorge, W. Desmet. Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space
-Discretizations Applied to Wave Propagation Problems. Journal of Computational Physics, 231(4),
-pp 2067-2091, 2012. doi: https://doi.org/10.1016/j.jcp.2011.11.024
+    DGLDDRK84_F(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False(),
+                  williamson_condition = true)
 
-DGLDDRK84_F: Low-Storage Method
-  8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for discontinuous Galerkin space discretizations applied to wave propagation problems.
-  Optimized for PDE discretizations when the maximum spatial step size is not constrained.
-  Fixed timestep only.
+8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
+discontinuous Galerkin space discretizations applied to wave propagation problems.
+Optimized for PDE discretizations when the maximum spatial step size is not
+constrained. Fixed timestep only.
 
-Like SSPRK methods, DGLDDRK84_F also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- T. Toulorge, W. Desmet.
+  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+  Applied to Wave Propagation Problems.
+  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
-struct DGLDDRK84_F{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct DGLDDRK84_F{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  DGLDDRK84_F(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+DGLDDRK84_F(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::DGLDDRK84_F)
+  print(io, "DGLDDRK84_F(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread,
+                      ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
-Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
-doi: https://doi.org/10.1016/j.jcp.2011.09.003
+    NDBLSRK124(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread = OrdinaryDiffEq.False(),
+                 williamson_condition = true)
 
-NDBLSRK124: Low-Storage Method
-  12-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
-  Fixed timestep only.
+12-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK124 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Jens Niegemann, Richard Diehl, Kurt Busch.
+  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+  Journal of Computational Physics, 231, pp 364-372, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK124{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK124{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  NDBLSRK124(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+NDBLSRK124(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+NDBLSRK124(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::NDBLSRK124)
+  print(io, "NDBLSRK124(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread,
+                     ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
-Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
-doi: https://doi.org/10.1016/j.jcp.2011.09.003
+    NDBLSRK134(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread = OrdinaryDiffEq.False(),
+                 williamson_condition = true)
 
-NDBLSRK134: Low-Storage Method
-  13-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
-  Fixed timestep only.
+13-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK134 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Jens Niegemann, Richard Diehl, Kurt Busch.
+  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+  Journal of Computational Physics, 231, pp 364-372, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK134{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK134{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  NDBLSRK134(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+NDBLSRK134(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::NDBLSRK134)
+  print(io, "NDBLSRK134(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread,
+                     ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
-Jens Niegemann, Richard Diehl, Kurt Busch. Efficient Low-Storage Runge–Kutta Schemes with
-Optimized Stability Regions. Journal of Computational Physics, 231, pp 364-372, 2012.
-doi: https://doi.org/10.1016/j.jcp.2011.09.003
+    NDBLSRK144(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread = OrdinaryDiffEq.False(),
+                 williamson_condition = true)
 
-NDBLSRK144: Low-Storage Method
-  14-stage, fourth order low-storage method with optimized stability regions for advection-dominated problems.
-  Fixed timestep only.
+14-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.
 
-Like SSPRK methods, NDBLSRK144 also takes optional arguments `stage_limiter!`, `step_limiter!`,
-where `stage_limiter!` and `step_limiter!` are functions of the form `limiter!(u, integrator, p, t)`.
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Jens Niegemann, Richard Diehl, Kurt Busch.
+  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+  Journal of Computational Physics, 231, pp 364-372, 2012.
+  doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
-struct NDBLSRK144{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct NDBLSRK144{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
   williamson_condition::Bool
-  NDBLSRK144(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true) = new{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!, williamson_condition)
+end
+
+NDBLSRK144(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+
+# for backwards compatibility
+NDBLSRK144(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+
+function Base.show(io::IO, alg::NDBLSRK144)
+  print(io, "NDBLSRK144(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread,
+                     ", williamson_condition = ", alg.williamson_condition, ")")
 end
 
 """
@@ -599,73 +829,103 @@ doi: https://doi.org/10.1016/j.physleta.2006.10.072
 TSLDDRK74: Low-Storage Method
   7-stage, fourth order low-storage low-dissipation, low-dispersion scheme with maximal accuracy and stability limit along the imaginary axes.
   Fixed timestep only.
-
-CKLLSRK43_2: Low-Storage Method
-  4-stage, third order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3C: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK95_4S: Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK95_4C: Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK95_4M: Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3C_3R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3M_3R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3N_3R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4C_3R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4M_3R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4P_3R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3N_4R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK54_3M_4R: Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK65_4M_4R: Low-Storage Method
-  6-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK85_4FM_4R: Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-CKLLSRK75_4M_5R: Low-Storage Method
-  7-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
-
-
 """
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
+
+"""
+CKLLSRK43_2: Low-Storage Method
+  4-stage, third order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK43_2 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3C: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3C <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK95_4S: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK95_4S <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK95_4C: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK95_4C <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK95_4M: Low-Storage Method
+  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK95_4M <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3C_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3C_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3M_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3M_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3N_3R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3N_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4C_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4C_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4M_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4M_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4P_3R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4P_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3N_4R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3N_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK54_3M_4R: Low-Storage Method
+  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK54_3M_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK65_4M_4R: Low-Storage Method
+  6-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK65_4M_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK85_4FM_4R: Low-Storage Method
+  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK85_4FM_4R <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
+CKLLSRK75_4M_5R: Low-Storage Method
+  7-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+"""
 struct CKLLSRK75_4M_5R <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
@@ -757,91 +1017,248 @@ ParsaniKetchesonDeconinck3S205: Low-Storage Method
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
 
 """
-    RDPK3Sp35()
+    RDPK3Sp35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread = OrdinaryDiffEq.False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp35 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3Sp35{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+RDPK3Sp35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::RDPK3Sp35)
+  print(io, "RDPK3Sp35(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread, ")")
+end
 
 """
-    RDPK3SpFSAL35()
+    RDPK3SpFSAL35(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    thread = OrdinaryDiffEq.False())
 
 A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL35 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3SpFSAL35{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+RDPK3SpFSAL35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::RDPK3SpFSAL35)
+  print(io, "RDPK3SpFSAL35(stage_limiter! = ", alg.stage_limiter!,
+                        ", step_limiter! = ", alg.step_limiter!,
+                        ", thread = ", alg.thread, ")")
+end
 
 """
-    RDPK3Sp49()
+    RDPK3Sp49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread = OrdinaryDiffEq.False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp49 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3Sp49{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+RDPK3Sp49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::RDPK3Sp49)
+  print(io, "RDPK3Sp49(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread, ")")
+end
 
 """
-    RDPK3SpFSAL49()
+    RDPK3SpFSAL49(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                    thread = OrdinaryDiffEq.False())
 
 A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL49 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3SpFSAL49{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+RDPK3SpFSAL49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::RDPK3SpFSAL49)
+  print(io, "RDPK3SpFSAL49(stage_limiter! = ", alg.stage_limiter!,
+                        ", step_limiter! = ", alg.step_limiter!,
+                        ", thread = ", alg.thread, ")")
+end
 
 """
-    RDPK3Sp510()
+    RDPK3Sp510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                 thread = OrdinaryDiffEq.False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3Sp510 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3Sp510{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+RDPK3Sp510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::RDPK3Sp510)
+  print(io, "RDPK3Sp510(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread, ")")
+end
 
 """
-    RDPK3SpFSAL510()
+    RDPK3SpFSAL510(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                     step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                     thread = OrdinaryDiffEq.False())
 
 A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.
 
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
 ## References
 - Ranocha, Dalcin, Parsani, Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct RDPK3SpFSAL510 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RDPK3SpFSAL510{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+RDPK3SpFSAL510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+RDPK3SpFSAL510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::RDPK3SpFSAL510)
+  print(io, "RDPK3SpFSAL510(stage_limiter! = ", alg.stage_limiter!,
+                         ", step_limiter! = ", alg.step_limiter!,
+                         ", thread = ", alg.thread, ")")
+end
+
 
 struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
 
@@ -852,97 +1269,379 @@ doi: https://doi.org/10.1016/j.amc.2019.02.047
 """
 struct RKO65 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
 
-"""
-Shu, Chi-Wang, and Stanley Osher. "Efficient implementation of essentially
-non-oscillatory shock-capturing schemes." Journal of Computational Physics
-77.2 (1988): 439-471.
-"""
-struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-end
-SSPRK22(stage_limiter! = trivial_limiter!) = SSPRK22(stage_limiter!, trivial_limiter!)
 
 """
-Shu, Chi-Wang, and Stanley Osher. "Efficient implementation of essentially
-non-oscillatory shock-capturing schemes." Journal of Computational Physics
-77.2 (1988): 439-471.
+    SSPRK22(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A second-order, two-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Shu, Chi-Wang, and Stanley Osher.
+  "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
+  Journal of Computational Physics 77.2 (1988): 439-471.
+  https://doi.org/10.1016/0021-9991(88)90177-5
 """
-struct SSPRK33{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK22{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK33(stage_limiter! = trivial_limiter!) = SSPRK33(stage_limiter!, trivial_limiter!)
+
+SSPRK22(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK22{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK22(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK22{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK22)
+  print(io, "SSPRK22(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK33(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, three-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Shu, Chi-Wang, and Stanley Osher.
+  "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
+  Journal of Computational Physics 77.2 (1988): 439-471.
+  https://doi.org/10.1016/0021-9991(88)90177-5
 """
-struct SSPRK53{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK33{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
+
+SSPRK33(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK33{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK33{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK33)
+  print(io, "SSPRK33(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
+
+"""
+    SSPRK53(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
+"""
+struct SSPRK53{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+SSPRK53(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53)
+  print(io, "SSPRK53(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
+
 struct KYKSSPRK42 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
-SSPRK53(stage_limiter! = trivial_limiter!) = SSPRK53(stage_limiter!, trivial_limiter!)
 
 """
-Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+    SSPRK53_2N1(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Higueras and T. Roldán.
+  "New third order low-storage SSP explicit Runge–Kutta methods".
+  arXiv:1809.04807v1.
 """
-struct SSPRK53_2N1{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK53_2N1{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK53_2N1(stage_limiter! = trivial_limiter!) = SSPRK53_2N1(stage_limiter!, trivial_limiter!)
+
+SSPRK53_2N1(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_2N1{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53_2N1(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_2N1{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53_2N1)
+  print(io, "SSPRK53_2N1(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread, ")")
+end
 
 """
-Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+    SSPRK53_2N2(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Higueras and T. Roldán.
+  "New third order low-storage SSP explicit Runge–Kutta methods".
+  arXiv:1809.04807v1.
 """
-struct SSPRK53_2N2{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK53_2N2{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK53_2N2(stage_limiter! = trivial_limiter!) = SSPRK53_2N2(stage_limiter!, trivial_limiter!)
+
+SSPRK53_2N2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_2N2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53_2N2(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_2N2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53_2N2)
+  print(io, "SSPRK53_2N2(stage_limiter! = ", alg.stage_limiter!,
+                      ", step_limiter! = ", alg.step_limiter!,
+                      ", thread = ", alg.thread, ")")
+end
 
 """
-Higueras and T. Roldán. "New third order low-storage SSP explicit Runge–Kutta methods". arXiv:1809.04807v1.
+    SSPRK53_H(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                thread = OrdinaryDiffEq.False())
+
+A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Higueras and T. Roldán.
+  "New third order low-storage SSP explicit Runge–Kutta methods".
+  arXiv:1809.04807v1.
 """
-struct SSPRK53_H{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK53_H{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK53_H(stage_limiter! = trivial_limiter!) = SSPRK53_H(stage_limiter!, trivial_limiter!)
+
+SSPRK53_H(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_H{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK53_H(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_H{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK53_H)
+  print(io, "SSPRK53_H(stage_limiter! = ", alg.stage_limiter!,
+                    ", step_limiter! = ", alg.step_limiter!,
+                    ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK63(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, six-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK63{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK63{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK63(stage_limiter! = trivial_limiter!) = SSPRK63(stage_limiter!, trivial_limiter!)
+
+SSPRK63(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK63{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK63(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK63{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK63)
+  print(io, "SSPRK63(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK73(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, seven-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK73{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK73{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK73(stage_limiter! = trivial_limiter!) = SSPRK73(stage_limiter!, trivial_limiter!)
+
+SSPRK73(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK73{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK73(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK73{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK73)
+  print(io, "SSPRK73(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK83(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, eight-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK83{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK83{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK83(stage_limiter! = trivial_limiter!) = SSPRK83(stage_limiter!, trivial_limiter!)
+
+SSPRK83(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK83{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK83(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK83{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK83)
+  print(io, "SSPRK83(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
+    SSPRK43(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A third-order, four-stage explicit strong stability preserving (SSP) method.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 Optimal third-order explicit SSP method with four stages discovered by
 - J. F. B. M. Kraaijevanger.
   "Contractivity of Runge-Kutta methods."
@@ -955,31 +1654,70 @@ Embedded method constructed by
   optimal explicit strong stability preserving Runge–Kutta methods."
   [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
 
-Efficient implementation (and optimized controller) described in
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
+Efficient implementation (and optimized controller) developed by
+- Hendrik Ranocha, Lisandro Dalcin, Matteo Parsani, David I. Ketcheson (2021)
   Optimized Runge-Kutta Methods with Automatic Step Size Control for
   Compressible Computational Fluid Dynamics
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
-struct SSPRK43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SSPRK43{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK43(stage_limiter! = trivial_limiter!) = SSPRK43(stage_limiter!, trivial_limiter!)
+
+SSPRK43(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK43{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK43(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK43{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK43)
+  print(io, "SSPRK43(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
-Strong stability preserving Runge-Kutta and multistep time discretizations.
-World Scientific, 2011.
-Example 6.1.
+    SSPRK432(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               thread = OrdinaryDiffEq.False())
 
-Consider using `SSPRK43` instead, which uses the same main method and an improved embedded method.
+A third-order, four-stage explicit strong stability preserving (SSP) method.
+
+Consider using `SSPRK43` instead, which uses the same main method and an
+improved embedded method.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
+  Strong stability preserving Runge-Kutta and multistep time discretizations.
+  World Scientific, 2011.
+  Example 6.1.
 """
-struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SSPRK432{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK432(stage_limiter! = trivial_limiter!) = SSPRK432(stage_limiter!, trivial_limiter!)
+
+SSPRK432(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK432{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK432(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK432{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK432)
+  print(io, "SSPRK432(stage_limiter! = ", alg.stage_limiter!,
+                   ", step_limiter! = ", alg.step_limiter!,
+                   ", thread = ", alg.thread, ")")
+end
 
 struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
@@ -993,36 +1731,124 @@ end
 SSPRKMSVS32(stage_limiter! = trivial_limiter!) = SSPRKMSVS32(stage_limiter!, trivial_limiter!)
 
 """
-Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu. Strong stability
-preserving Runge-Kutta and multistep time discretizations. World Scientific,
-2011.
+    SSPRK932(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               thread = OrdinaryDiffEq.False())
+
+A third-order, nine-stage explicit strong stability preserving (SSP) method.
+
+Consider using `SSPRK43` instead, which uses the same main method and an
+improved embedded method.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
+  Strong stability preserving Runge-Kutta and multistep time discretizations.
+  World Scientific, 2011.
 """
-struct SSPRK932{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct SSPRK932{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK932(stage_limiter! = trivial_limiter!) = SSPRK932(stage_limiter!, trivial_limiter!)
+
+SSPRK932(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK932{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK932(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK932{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK932)
+  print(io, "SSPRK932(stage_limiter! = ", alg.stage_limiter!,
+                   ", step_limiter! = ", alg.step_limiter!,
+                   ", thread = ", alg.thread, ")")
+end
 
 """
-Ruuth, Steven. "Global optimization of explicit strong-stability-preserving
-Runge-Kutta methods." Mathematics of Computation 75.253 (2006): 183-207.
+    SSPRK54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+              thread = OrdinaryDiffEq.False())
+
+A fourth-order, five-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ruuth, Steven.
+  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+  Mathematics of Computation 75.253 (2006): 183-207.
 """
-struct SSPRK54{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK54(stage_limiter! = trivial_limiter!) = SSPRK54(stage_limiter!, trivial_limiter!)
+
+SSPRK54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK54(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK54)
+  print(io, "SSPRK54(stage_limiter! = ", alg.stage_limiter!,
+                  ", step_limiter! = ", alg.step_limiter!,
+                  ", thread = ", alg.thread, ")")
+end
 
 """
-Ketcheson, David I. "Highly efficient strong stability-preserving Runge–Kutta
-methods with low-storage implementations." SIAM Journal on Scientific
-Computing 30.4 (2008): 2113-2136.
+    SSPRK104(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+               thread = OrdinaryDiffEq.False())
+
+A fourth-order, ten-stage explicit strong stability preserving (SSP) method.
+Fixed timestep only.
+
+Like all SSPRK methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
+- Ketcheson, David I.
+  "Highly efficient strong stability-preserving Runge–Kutta methods with
+  low-storage implementations."
+  SIAM Journal on Scientific Computing 30.4 (2008): 2113-2136.
 """
-struct SSPRK104{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+struct SSPRK104{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
+  thread::Thread
 end
-SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_limiter!)
+
+SSPRK104(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK104{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+SSPRK104(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK104{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::SSPRK104)
+  print(io, "SSPRK104(stage_limiter! = ", alg.stage_limiter!,
+                   ", step_limiter! = ", alg.step_limiter!,
+                   ", thread = ", alg.thread, ")")
+end
 
 """
 @article{owren1992derivation,
@@ -1075,6 +1901,23 @@ OwrenZen5: Explicit Runge-Kutta Method
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
+    BS3(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+          step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+          thread = OrdinaryDiffEq.False())
+
+A third-order, four-stage explicit FSAL Runge-Kutta method with embedded error
+estimator of Bogacki and Shampine.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 @article{bogacki19893,
   title={A 3 (2) pair of Runge-Kutta formulas},
   author={Bogacki, Przemyslaw and Shampine, Lawrence F},
@@ -1085,11 +1928,20 @@ struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={1989},
   publisher={Elsevier}
 }
-
-BS3: Explicit Runge-Kutta Method
-  Bogacki-Shampine 3/2 method.
 """
-struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct BS3{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+BS3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = BS3{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+function Base.show(io::IO, alg::BS3)
+  print(io, "BS3(stage_limiter! = ", alg.stage_limiter!,
+              ", step_limiter! = ", alg.step_limiter!,
+              ", thread = ", alg.thread, ")")
+end
 
 """
 @article{dormand1980family,
@@ -1109,6 +1961,23 @@ DP5: Explicit Runge-Kutta Method
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
+    Tsit5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+            step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+            thread = OrdinaryDiffEq.False())
+
+A fourth-order, five-stage explicit Runge-Kutta method with embedded error
+estimator of Tsitouras. Free 4th order interpolant.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## References
 @article{tsitouras2011runge,
   title={Runge--Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption},
   author={Tsitouras, Ch},
@@ -1119,11 +1988,23 @@ struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2011},
   publisher={Elsevier}
 }
-
-Tsit5: Explicit Runge-Kutta Method
-   Tsitouras 5/4 Runge-Kutta method. (free 4th order interpolant).
 """
-struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Tsit5{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+Tsit5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = Tsit5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+
+# for backwards compatibility
+Tsit5(stage_limiter!, step_limiter! = trivial_limiter!) = Tsit5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+
+function Base.show(io::IO, alg::Tsit5)
+  print(io, "Tsit5(stage_limiter! = ", alg.stage_limiter!,
+                ", step_limiter! = ", alg.step_limiter!,
+                ", thread = ", alg.thread, ")")
+end
 
 """
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
@@ -1777,10 +2658,10 @@ struct CNAB2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-CNAB2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+CNAB2(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CNAB2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      CNAB2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct CNLF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -1788,16 +2669,18 @@ struct CNLF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+CNLF2(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CNLF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      CNLF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 """
 QNDF1: Multistep Method
   An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
   Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
+
+See also `QNDF`.
 """
 struct QNDF1{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   linsolve::F
@@ -1806,19 +2689,26 @@ struct QNDF1{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,
   kappa::κType
   controller::Symbol
 end
-QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+QNDF1(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                   extrapolant=:linear,kappa = -0.1850,
                  controller = :Standard) =
-                 QNDF1{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+                 QNDF1{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                  typeof(kappa)}(
                  linsolve,nlsolve,extrapolant,kappa,controller)
 
+"""
+QBDF1: Multistep Method
+
+An alias of `QNDF1` with κ=0.
+"""
 QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
 
 """
-QNDF1: Multistep Method
+QNDF2: Multistep Method
   An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+
+See also `QNDF`.
 """
 struct QNDF2{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   linsolve::F
@@ -1827,20 +2717,36 @@ struct QNDF2{CS,AD,F,F2,FDT,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,
   kappa::κType
   controller::Symbol
 end
-QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+QNDF2(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                   extrapolant=:linear,kappa = -1//9,
                  controller = :Standard) =
-                 QNDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+                 QNDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                  typeof(kappa)}(
                  linsolve,nlsolve,extrapolant,kappa,controller)
 
+"""
+QBDF2: Multistep Method
+
+An alias of `QNDF2` with κ=0.
+"""
 QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
 
 """
 QNDF: Multistep Method
   An adaptive order quasi-constant timestep NDF method.
   Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
+
+@article{shampine1997matlab,
+  title={The matlab ode suite},
+  author={Shampine, Lawrence F and Reichelt, Mark W},
+  journal={SIAM journal on scientific computing},
+  volume={18},
+  number={1},
+  pages={1--22},
+  year={1997},
+  publisher={SIAM}
+}
 """
 struct QNDF{MO,CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   max_order::Val{MO}
@@ -1852,17 +2758,34 @@ struct QNDF{MO,CS,AD,F,F2,FDT,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorit
   kappa::κType
   controller::Symbol
 end
-Base.@pure QNDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
+QNDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,kappa=promote(-0.1850,-1//9,-0.0823,-0.0415,0),
                 controller = :Standard) where {MO} =
-                QNDF{MO,chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+                QNDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol),typeof(kappa)}(
                 max_order,linsolve,nlsolve,κ,tol,extrapolant,kappa,controller)
 
-Base.@pure QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
+"""
+QBDF: Multistep Method
 
+An alias of `QNDF` with κ=0.
+"""
+QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
 
+"""
+FBDF: Fixed leading coefficient BDF
+
+An adaptive order quasi-constant timestep NDF method.
+Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
+
+@article{shampine2002solving,
+  title={Solving 0= F (t, y (t), y′(t)) in Matlab},
+  author={Shampine, Lawrence F},
+  year={2002},
+  publisher={Walter de Gruyter GmbH \\& Co. KG}
+}
+"""
 struct FBDF{MO,CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   max_order::Val{MO}
   linsolve::F
@@ -1872,10 +2795,10 @@ struct FBDF{MO,CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,A
   extrapolant::Symbol
   controller::Symbol
 end
-Base.@pure FBDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
+FBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,controller = :Standard) where {MO} =
-                FBDF{MO,chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+                FBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol)}(
                 max_order,linsolve,nlsolve,κ,tol,extrapolant,controller)
 
@@ -1892,19 +2815,19 @@ struct SBDF{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   order::Int
 end
-SBDF(order;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SBDF(order;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear) =
-     SBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
      typeof(κ),typeof(tol)}(
      linsolve,nlsolve,κ,tol,extrapolant,order)
 
 # All keyword form needed for remake
-SBDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SBDF(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear,
      order) =
-     SBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
      typeof(κ),typeof(tol)}(
      linsolve,nlsolve,κ,tol,extrapolant,order)
 
@@ -2021,10 +2944,10 @@ struct IRKC{CS,AD,F,F2,FDT,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD
   controller::Symbol
   eigen_est::E
 end
-IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+IRKC(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                  extrapolant=:linear,controller = :Standard,eigen_est=nothing) =
-  IRKC{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,typeof(κ),typeof(tol),typeof(eigen_est)}(
+  IRKC{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,typeof(κ),typeof(tol),typeof(eigen_est)}(
                  linsolve,nlsolve,κ,tol,extrapolant,controller,eigen_est)
 
 ################################################################################
@@ -2080,11 +3003,11 @@ struct RadauIIA3{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   controller::Symbol
 end
 
-RadauIIA3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                                 linsolve=DEFAULT_LINSOLVE,
                                 extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                                 controller=:Predictive,κ=nothing,maxiters=10) =
-                                RadauIIA3{chunk_size,autodiff,typeof(linsolve),
+                                RadauIIA3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                                 diff_type,
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
                                   linsolve,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
@@ -2114,11 +3037,11 @@ struct RadauIIA5{CS,AD,F,FDT,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   new_W_γdt_cutoff::C2
   controller::Symbol
 end
-RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+RadauIIA5(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,
                           extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                           controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
-                          RadauIIA5{chunk_size,autodiff,typeof(linsolve),
+                          RadauIIA5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           diff_type,
                           typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
                             linsolve,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
@@ -2137,11 +3060,11 @@ struct ImplicitEuler{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS
   extrapolant::Symbol
   controller::Symbol
 end
-ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ImplicitEuler(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:PI) =
-                          ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          ImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
                           nlsolve,extrapolant,controller)
 """
@@ -2154,10 +3077,10 @@ struct ImplicitMidpoint{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,F
   nlsolve::F2
   extrapolant::Symbol
 end
-ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ImplicitMidpoint(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      ImplicitMidpoint{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 """
@@ -2175,11 +3098,11 @@ struct Trapezoid{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Trapezoid(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                             extrapolant=:linear,
                       controller = :PI) =
-                      Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant,controller)
 
 """
@@ -2205,11 +3128,11 @@ struct TRBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT
   extrapolant::Symbol
   controller::Symbol
 end
-TRBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+TRBDF2(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                  smooth_est=true,extrapolant=:linear,
                  controller = :PI) =
-TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+TRBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
       linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2234,11 +3157,11 @@ struct SDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT
   extrapolant::Symbol
   controller::Symbol
 end
-SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- SDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ SDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 struct SDIRK22{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
@@ -2247,11 +3170,11 @@ struct SDIRK22{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FD
   extrapolant::Symbol
   controller::Symbol
 end
-SDIRK22(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SDIRK22(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                             extrapolant=:linear,
                       controller = :PI) =
-                      Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant,controller)
 
 
@@ -2262,11 +3185,11 @@ struct SSPSDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT} # N
   extrapolant::Symbol
   controller::Symbol
 end
-SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SSPSDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:constant,
                    controller = :PI) =
- SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ SSPSDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2291,11 +3214,11 @@ struct Kvaerno3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Kvaerno3(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ Kvaerno3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2316,11 +3239,11 @@ struct KenCarp3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp3(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 struct CFNLIRK3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -2328,10 +3251,10 @@ struct CFNLIRK3{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-CFNLIRK3(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+CFNLIRK3(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CFNLIRK3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      CFNLIRK3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 """
@@ -2357,11 +3280,11 @@ struct Cash4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT}
   embedding::Int
   controller::Symbol
 end
-Cash4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Cash4(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI,embedding=3) =
- Cash4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ Cash4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,embedding,controller)
 
 
@@ -2370,10 +3293,10 @@ struct SFSDIRK4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-SFSDIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK4(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
                       struct SFSDIRK5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -2381,10 +3304,10 @@ SFSDIRK4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                         nlsolve::F2
                                               extrapolant::Symbol
                       end
-SFSDIRK5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK5(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK6{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -2393,10 +3316,10 @@ struct SFSDIRK6{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
 end
 
-SFSDIRK6(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK6(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK6{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK6{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK7{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -2405,10 +3328,10 @@ struct SFSDIRK7{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
 end
 
-SFSDIRK7(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK7(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK7{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      SFSDIRK7{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 struct SFSDIRK8{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
@@ -2417,10 +3340,10 @@ nlsolve::F2
 extrapolant::Symbol
 end
 
-SFSDIRK8(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+SFSDIRK8(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                     linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                     extrapolant=:linear) =
-                    SFSDIRK8{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                    SFSDIRK8{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                     linsolve,nlsolve,extrapolant)
 
 """
@@ -2438,11 +3361,11 @@ struct Hairer4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FD
   extrapolant::Symbol
   controller::Symbol
 end
-Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Hairer4(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Hairer4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ Hairer4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2460,11 +3383,11 @@ struct Hairer42{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Hairer42(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Hairer42{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ Hairer42{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2489,11 +3412,11 @@ struct Kvaerno4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Kvaerno4(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ Kvaerno4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2518,11 +3441,11 @@ struct Kvaerno5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+Kvaerno5(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ Kvaerno5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2543,11 +3466,11 @@ struct KenCarp4{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp4(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 """
 @article{kennedy2019higher,
@@ -2570,11 +3493,11 @@ struct KenCarp47{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp47(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp47(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp47{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp47{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 """
@@ -2595,11 +3518,11 @@ struct KenCarp5{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,F
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp5(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 """
 @article{kennedy2019higher,
@@ -2622,11 +3545,11 @@ struct KenCarp58{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp58(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+KenCarp58(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp58{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+ KenCarp58{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
         linsolve,nlsolve,smooth_est,extrapolant,controller)
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
@@ -2636,10 +3559,10 @@ struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{C
   extrapolant::Symbol
   controller::Symbol
 end
-ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ESDIRK54I8L2SA(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    extrapolant=:linear,controller = :PI) =
- ESDIRK54I8L2SA{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(linsolve,nlsolve,extrapolant,controller)
+ ESDIRK54I8L2SA{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(linsolve,nlsolve,extrapolant,controller)
 
 ################################################################################
 
@@ -2692,13 +3615,15 @@ Scientific Computing, 18 (1), pp. 1-22.
 différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
 University of Geneva, Switzerland.
 =#
+_unwrap_val(::Val{B}) where {B} = B
+_unwrap_val(B) = B
 
 for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5]
   @eval begin
     struct $Alg{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT}
       linsolve::F
     end
-    $Alg(;chunk_size=0,autodiff=true,diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE) = $Alg{chunk_size,autodiff,typeof(linsolve),diff_type}(linsolve)
+    $Alg(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type}(linsolve)
   end
 end
 
@@ -2707,9 +3632,9 @@ struct GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlg
   factorization::F
 end
 
-GeneralRosenbrock(;chunk_size=0,autodiff=true,
+GeneralRosenbrock(;chunk_size=Val{0}(),autodiff=true,
                     factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
-                    GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
+                    GeneralRosenbrock{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(factorization),typeof(tableau)}(tableau,factorization)
 """
 RosenbrockW6S4OS: Rosenbrock-W Method
   A 4th order L-stable Rosenbrock-W method (fixed step only).
@@ -2717,7 +3642,7 @@ RosenbrockW6S4OS: Rosenbrock-W Method
 struct RosenbrockW6S4OS{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT}
   linsolve::F
 end
-RosenbrockW6S4OS(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosenbrockW6S4OS{chunk_size,autodiff,typeof(linsolve),diff_type}(linsolve)
+RosenbrockW6S4OS(;chunk_size=Val{0}(),autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosenbrockW6S4OS{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type}(linsolve)
 ######################################
 
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
@@ -2734,7 +3659,7 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
     chunksize::Int
   end
   @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0,
-            diff_type = Val{:forward}) = $Alg{diff_type}(krylov, m, iop, autodiff,
+            diff_type = Val{:forward}) = $Alg{diff_type}(krylov, m, iop, _unwrap_val(autodiff),
             chunksize)
 end
 const ETD1 = NorsettEuler # alias
@@ -2746,7 +3671,7 @@ for Alg in [:Exprb32, :Exprb43]
     chunksize::Int
   end
   @eval $Alg(;m=30, iop=0, autodiff=true, chunksize=0,
-            diff_type = Val{:forward}) = $Alg{diff_type}(m, iop, autodiff, chunksize)
+            diff_type = Val{:forward}) = $Alg{diff_type}(m, iop, _unwrap_val(autodiff), chunksize)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
   @eval struct $Alg{FDT} <: OrdinaryDiffEqExponentialAlgorithm{FDT}
@@ -2758,7 +3683,7 @@ for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EP
   end
   @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true,
               chunksize=0, diff_type = Val{:forward}) =
-              $Alg{diff_type}(adaptive_krylov, m, iop, autodiff, chunksize)
+              $Alg{diff_type}(adaptive_krylov, m, iop, _unwrap_val(autodiff), chunksize)
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward}} end
 """
@@ -2786,11 +3711,11 @@ struct ABDF2{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,
   extrapolant::Symbol
   controller::Symbol
 end
-ABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+ABDF2(;chunk_size=Val{0}(),autodiff=true,diff_type=Val{:forward},
       κ=nothing,tol=nothing,linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
       smooth_est=true,extrapolant=:linear,
       controller=:Standard) =
-ABDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+ABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
       typeof(κ),typeof(tol)}(
       linsolve,nlsolve,κ,tol,smooth_est,extrapolant,controller)
 
@@ -2812,10 +3737,10 @@ struct MEBDF2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   nlsolve::F2
   extrapolant::Symbol
 end
-MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+MEBDF2(;chunk_size=Val{0}(),autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:constant) =
-                      MEBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+                      MEBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
                       linsolve,nlsolve,extrapolant)
 
 #################################################
@@ -2829,10 +3754,10 @@ struct PDIRK44{CS,AD,F,F2,FDT,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   threading::TO
 end
-PDIRK44(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+PDIRK44(;chunk_size=Val{0}(),autodiff=true,diff_type=Val{:forward},
                       linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                       extrapolant=:constant,threading=true) =
-                      PDIRK44{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,typeof(threading)}(
+PDIRK44{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,typeof(threading)}(
                       linsolve,nlsolve,extrapolant,threading)
 ### Algorithm Groups
 
@@ -2850,9 +3775,9 @@ struct DBDF{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
 end
 
-DBDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),extrapolant=:linear) =
-     DBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type}(
+     DBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type}(
      linsolve,nlsolve,extrapolant)
 =#
 
@@ -2862,11 +3787,11 @@ struct DImplicitEuler{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   controller::Symbol
 end
-DImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+DImplicitEuler(;chunk_size=Val{0}(),autodiff=true,diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:Standard) =
-                          DImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          DImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
                           nlsolve,extrapolant,controller)
 
@@ -2877,11 +3802,11 @@ struct DABDF2{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   controller::Symbol
 end
-DABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+DABDF2(;chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:Standard) =
-                          DABDF2{chunk_size,autodiff,typeof(linsolve),
+                          DABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
                           typeof(nlsolve),diff_type}(linsolve,
                           nlsolve,extrapolant,controller)
 
@@ -2894,9 +3819,9 @@ struct DFBDF{MO,CS,AD,F,F2,FDT,K,T} <: DAEAlgorithm{CS,AD,FDT}
   extrapolant::Symbol
   controller::Symbol
 end
-Base.@pure DFBDF(;max_order::Val{MO}=Val(5),chunk_size=0,autodiff=true,diff_type=Val{:forward},
+DFBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(),diff_type=Val{:forward},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,controller = :Standard) where {MO} =
-                DFBDF{MO,chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),diff_type,
+                DFBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,
                 typeof(κ),typeof(tol)}(
                 max_order,linsolve,nlsolve,κ,tol,extrapolant,controller)

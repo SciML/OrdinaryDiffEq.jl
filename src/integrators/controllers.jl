@@ -567,12 +567,10 @@ function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
   nothing
 end
 
-function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_order}}) where max_order
+function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEqConstantCache, max_order)
   @unpack t,dt,u,cache,uprev = integrator
   @unpack ts_tmp,terkm2, terkm1, terk, terkp1,u_history = cache
-  cache.prev_order = cache.order
   k = cache.order
-
   if k < max_order && integrator.cache.nconsteps >= integrator.cache.order + 2 && ((k == 1 && terk > terkp1) ||
     (k == 2 && terkm1 > terk > terkp1) ||
     (k > 2 && terkm2 > terkm1 > terk > terkp1))
@@ -584,9 +582,6 @@ function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_o
       terk = terkm1
       terkm1 = terkm2
       fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
-      if integrator.cache isa OrdinaryDiffEqMutableCache
-        @unpack terk_tmp = integrator.cache
-      end
       terk_tmp = @.. fd_weights[k-2,1] * u
       if typeof(u) <: Number
         for i in 2:k-2
@@ -601,12 +596,7 @@ function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_o
         end
         @.. terk_tmp *= abs(dt^(k-2))
       end
-      if integrator.cache isa OrdinaryDiffEqConstantCache
-        atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      else
-        @unpack atmp = integrator.cache
-        calculate_residuals!(atmp,_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      end
+      atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       terkm2 = integrator.opts.internalnorm(atmp,t)
       k -= 1
     end
@@ -615,6 +605,13 @@ function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_o
       terk = terkm1
     end
   end
+  return k, terk
+end
+
+function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_order}}) where max_order
+  @unpack cache = integrator
+  cache.prev_order = cache.order
+  k, terk = choose_order!(alg, integrator, cache, max_order)
   if k != cache.order
     integrator.cache.nconsteps = 0
     cache.order = k
@@ -634,7 +631,7 @@ function step_accept_controller!(integrator,alg::Union{FBDF{max_order},DFBDF{max
     q = one(q)
   end
   integrator.cache.nconsteps += 1
-  integrator.cache.nonevesuccsteps += 1
+  integrator.cache.iters_from_event += 1
   return integrator.dt/q
 end
 

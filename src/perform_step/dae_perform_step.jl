@@ -228,45 +228,13 @@ function initialize!(integrator, cache::DFBDFConstantCache)
 end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_step=false) where max_order
-  @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,nlsolver,weights,ts_tmp = cache
+  @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,nlsolver,weights,ts_tmp, iters_from_event, nconsteps = cache
   @unpack t,dt,u,f,p,uprev = integrator
 
-  if integrator.u_modified
-    order = 1
-    cache.consfailcnt = cache.nconsteps = 0
-    fill!(weights,zero(eltype(weights)))
-    fill!(ts,zero(eltype(ts)))
-    fill!(u_history,zero(eltype(u_history)))
-    fill!(u_corrector,zero(eltype(u_corrector)))
-    cache.nonevesuccsteps = 0
-  end
-  @unpack nonevesuccsteps,consfailcnt,nconsteps = cache
   k = order
-  if nonevesuccsteps == 0
-    weights[1] = 1/dt
-    ts[1] = t
-    @.. u_history[:,1] = $_vec(uprev)
-  elseif nonevesuccsteps == 1
-    weights[1] = inv(t-ts[1])
-    weights[2] = inv(ts[1]-t)
-    ts[2] = ts[1]
-    ts[1] = t
-    @.. @views u_history[:,2] = u_history[:,1]
-    @.. u_history[:,1] = $_vec(uprev)
-  elseif consfailcnt == 0
-    for i in k+2:-1:2
-      ts[i] = ts[i-1]
-      @.. @views u_history[:,i] = u_history[:,i-1]
-    end
-    ts[1] = t
-    @.. u_history[:,1] = $_vec(uprev)
-  end
-  
-  if nonevesuccsteps >= 1
-    compute_weights!(ts,k,weights)
-  end
+  reinitFBDF!(integrator, cache)
   cache.u₀ = zero(u)
-  if nonevesuccsteps >= 1
+  if iters_from_event >= 1
     cache.u₀ = calc_Lagrange_interp(k,weights,t+dt,ts,u_history,cache.u₀)
   else
     cache.u₀ = u
@@ -331,60 +299,18 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
     atmp = calculate_residuals(_vec(lte), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
 
-    fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k,Val(max_order))
-    terk = @.. fd_weights[1,k+1] * u
 
-    if u isa Number
-      for i in 2:k+1
-        terk += fd_weights[i,k+1] * u_history[i-1]
-      end
-      terk *= abs(dt^(k))
-    else
-      vc = _vec(terk)
-      for i in 2:k+1
-        @.. @views vc += fd_weights[i,k+1] * u_history[:,i-1]
-      end
-      terk *= abs(dt^(k))
-    end
-
+    terk = estimate_terk(integrator, cache, k+1, max_order, u)
     atmp = calculate_residuals(_vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
     
     if k > 1
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
-      terkm1 = fd_weights[1,k] * u
-
-      if u isa Number
-        for i in 2:k
-          terkm1 += fd_weights[i,k] * u_history[i-1]
-        end
-        terkm1 *= abs(dt^(k-1))
-      else
-        vc = _vec(terkm1)
-        for i in 2:k
-          @.. @views vc += fd_weights[i,k] * u_history[:,i-1]
-        end
-        terkm1 *= abs(dt^(k-1))
-      end
+      terkm1 = estimate_terk(integrator, cache, k, max_order, u)
       atmp = calculate_residuals(_vec(terkm1), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
-      terkm2 = fd_weights[1,k-1] * u
-
-      if u isa Number
-        for i in 2:k-1
-          terkm2 += fd_weights[i,k-1] * u_history[i-1]
-        end
-        terkm2 *= abs(dt^(k-2))
-      else
-        vc = _vec(terkm2)
-        for i in 2:k-1
-          @.. @views vc += fd_weights[i,k-1] * u_history[:,i-1]
-        end
-        terkm2 *= abs(dt^(k-2))
-      end
+      terkm2 = estimate_terk(integrator, cache, k-1, max_order, u)
       atmp = calculate_residuals(_vec(terkm2), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm2 = integrator.opts.internalnorm(atmp,t)
     end
@@ -414,43 +340,10 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
   @unpack ts,u_history,order,u_corrector,bdf_coeffs,r,nlsolver,weights,terk_tmp,terkp1_tmp,atmp,tmp,equi_ts,u₀,ts_tmp = cache
   @unpack t,dt,u,f,p,uprev = integrator
 
-  if integrator.u_modified
-    order = 1
-    cache.consfailcnt = cache.nconsteps = 0
-    fill!(weights,zero(eltype(weights)))
-    fill!(ts,zero(eltype(ts)))
-    fill!(u_history,zero(eltype(u_history)))
-    fill!(u_corrector,zero(eltype(u_corrector)))
-    cache.nonevesuccsteps = 0
-  end
-  @unpack nonevesuccsteps,consfailcnt,nconsteps = cache
-  
+  reinitFBDF!(integrator, cache)
   k = order
-  if nonevesuccsteps == 0
-    weights[1] = 1/dt
-    ts[1] = t
-    @.. u_history[:,1] = $_vec(uprev)
-  elseif nonevesuccsteps == 1
-    weights[1] = inv(t-ts[1])
-    weights[2] = inv(ts[1]-t)
-    ts[2] = ts[1]
-    ts[1] = t
-    @.. @views u_history[:,2] = u_history[:,1]
-    @.. u_history[:,1] = $_vec(uprev)
-  elseif consfailcnt == 0 && nlsolver.status == Convergence
-    for i in k+2:-1:2
-      ts[i] = ts[i-1]
-      @.. @views u_history[:,i] = u_history[:,i-1]
-    end
-    ts[1] = t
-    @.. u_history[:,1] = $_vec(uprev)
-  end
-  if nonevesuccsteps >= 1
-    compute_weights!(ts,k,weights)
-  end
-    
   @.. u₀ = zero(u)
-  if nonevesuccsteps >= 1
+  if cache.iters_from_event >= 1
     calc_Lagrange_interp!(k,weights,t+dt,ts,u_history,u₀)
   else
     @.. u₀ = u
@@ -505,39 +398,21 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
     ts_tmp[1] = t+dt
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k,Val(max_order))
-    @.. terk_tmp = fd_weights[1,k+1] * u
-    vc = _vec(terk_tmp)
-    for i in 2:k+1
-      @.. @views vc += fd_weights[i,k+1] * u_history[:,i-1]
-    end
-    @.. terk_tmp *= abs(dt^(k))
+    estimate_terk!(integrator, cache, k+1, max_order)
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
     
     if k > 1
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
-      @.. terk_tmp = fd_weights[1,k] * u
-      vc = _vec(terk_tmp)
-      for i in 2:k
-        @.. @views vc += fd_weights[i,k] *u_history[:,i-1]
-      end
-      @.. terk_tmp *= abs(dt^(k-1))
+      estimate_terk!(integrator, cache, k, max_order)
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
-      @.. terk_tmp = fd_weights[1,k-1] * u
-      vc = _vec(terk_tmp)
-      for i in 2:k-1
-        @.. @views vc += fd_weights[i,k-1] *u_history[:,i-1]
-      end
-      @.. terk_tmp *= abs(dt^(k-2))
+      estimate_terk!(integrator, cache, k-1, max_order)
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm2 = integrator.opts.internalnorm(atmp,t)
     end
-    if nconsteps > k+1 && k < max_order
+    if cache.nconsteps > k+1 && k < max_order
       calculate_residuals!(atmp, _vec(terkp1_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkp1 = integrator.opts.internalnorm(atmp,t)
     else

@@ -63,7 +63,7 @@ end
 issplit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 issplit(alg::SplitAlgorithms) = true
 
-function _composite_beta1_default(algs::Tuple{T1,T2}, current, ::Type{QT}, beta2) where {T1, T2, QT}
+function _composite_beta1_default(algs::Tuple{T1,T2}, current, ::Val{QT}, beta2) where {T1, T2, QT}
   if current == 1
     return QT(beta1_default(algs[1], beta2))
   elseif current == 2
@@ -71,7 +71,7 @@ function _composite_beta1_default(algs::Tuple{T1,T2}, current, ::Type{QT}, beta2
   end
 end
 
-@generated function _composite_beta1_default(algs::T, current, ::Type{QT}, beta2) where {T <: Tuple, QT}
+@generated function _composite_beta1_default(algs::T, current, ::Val{QT}, beta2) where {T <: Tuple, QT}
   expr = Expr(:block)
   for i in 1:length(T.types)
     push!(expr.args, quote
@@ -83,7 +83,7 @@ end
   return expr
 end
 
-function _composite_beta2_default(algs::Tuple{T1,T2}, current, ::Type{QT}) where {T1, T2, QT}
+function _composite_beta2_default(algs::Tuple{T1,T2}, current, ::Val{QT}) where {T1, T2, QT}
   if current == 1
     return QT(beta2_default(algs[1]))
   elseif current == 2
@@ -91,7 +91,7 @@ function _composite_beta2_default(algs::Tuple{T1,T2}, current, ::Type{QT}) where
   end
 end
 
-@generated function _composite_beta2_default(algs::T, current, ::Type{QT}) where {T <: Tuple, QT}
+@generated function _composite_beta2_default(algs::T, current, ::Val{QT}) where {T <: Tuple, QT}
   expr = Expr(:block)
   for i in 1:length(T.types)
     push!(expr.args, quote
@@ -176,7 +176,8 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
 end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
-    CompositeAlgorithm(Tuple(DiffEqBase.prepare_alg(alg,u0,p,prob) for alg in alg.algs),alg.choice_function)
+  algs = map(alg -> DiffEqBase.prepare_alg(alg, u0, p, prob), alg.algs)
+  CompositeAlgorithm(algs, alg.choice_function)
 end
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
@@ -538,21 +539,21 @@ function default_controller(alg, cache, qoldinit, _beta1=nothing, _beta2=nothing
     return IController()
   else # Default is PI-controller
     QT = typeof(qoldinit)
-    beta1, beta2 = _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+    beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
     return PIController(beta1, beta2)
   end
 end
 
 function default_controller(alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation, ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation, ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation}, cache, qoldinit, _beta1=nothing, _beta2=nothing)
   QT = typeof(qoldinit)
-  beta1, beta2 = _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+  beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
   return ExtrapolationController(beta1)
 end
 
-function _digest_beta1_beta2(alg, cache, QT, _beta1, _beta2)
+function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-    beta2 = _beta2 === nothing ? _composite_beta2_default(alg.algs, cache.current, QT) : _beta2
-    beta1 = _beta1 === nothing ? _composite_beta1_default(alg.algs, cache.current, QT, beta2) : _beta1
+    beta2 = _beta2 === nothing ? _composite_beta2_default(alg.algs, cache.current, Val(QT)) : _beta2
+    beta1 = _beta1 === nothing ? _composite_beta1_default(alg.algs, cache.current, Val(QT), beta2) : _beta1
   else
     beta2 = _beta2 === nothing ? beta2_default(alg) : _beta2
     beta1 = _beta1 === nothing ? beta1_default(alg,beta2) : _beta1
