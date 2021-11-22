@@ -34,6 +34,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
     ndz = compute_step!(nlsolver, integrator)
     if !isfinite(ndz)
       nlsolver.status = Divergence
+      nlsolver.nfails += 1
       break
     end
 
@@ -44,6 +45,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
       # divergence
       if θ > 2
         nlsolver.status = Divergence
+        nlsolver.nfails += 1
         break
       end
     end
@@ -54,12 +56,14 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
     iter > 1 && (η = θ / (1 - θ))
     if (iter == 1 && ndz < 1e-5) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
       nlsolver.status = Convergence
+      nlsolver.nfails = 0
       break
     end
   end
 
   if isnewton(nlsolver) && nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator)
     nlsolver.status = TryAgain
+    nlsolver.nfails += 1
     @goto REDO
   end
 

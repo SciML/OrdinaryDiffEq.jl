@@ -27,15 +27,16 @@ mutable struct NLSolver{algType,iip,uType,gamType,tmpType,tType,C<:AbstractNLSol
   status::NLStatus
   cache::C
   method::MethodType
+  nfails::Int
 end
 
 # default to DIRK
-function NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold, iter, maxiters, status, cache, method=DIRK, tmp2=nothing) where {iip,tType}
+function NLSolver{iip,tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold, iter, maxiters, status, cache, method=DIRK, tmp2=nothing, nfails::Int=0) where {iip,tType}
   NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache)}(
     z, tmp, tmp2, ztmp, γ,
     convert(tType, c), convert(tType, α), alg,
     convert(tType, κ), convert(tType, fast_convergence_cutoff),
-    convert(tType, ηold), iter, maxiters, status, cache, method
+    convert(tType, ηold), iter, maxiters, status, cache, method, nfails,
   )
 end
 

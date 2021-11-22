@@ -1151,7 +1151,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
   markfirststage!(nlsolver)
   @.. nlsolver.z = u₀
   mass_matrix = f.mass_matrix
-  
+
   for i in 1:k-1
     equi_ts[i] = t - dt*i
   end
@@ -1210,6 +1210,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     estimate_terk!(integrator, cache, k+1, max_order)
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
+
     if k > 1
       estimate_terk!(integrator, cache, k, max_order)
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
