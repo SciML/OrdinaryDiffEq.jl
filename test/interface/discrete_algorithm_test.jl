@@ -40,3 +40,24 @@ end
   sol = solve(prob, FunctionMap())
   @test eltype(sol.t) <: Integer
 end
+
+@testset "DiscreteProblem in-place time definition" begin
+  function f(un,p,t_np1)
+    un + t_np1
+  end
+
+  prob2 = DiscreteProblem(f,0,(0,5))
+  sol2 = solve(prob2,FunctionMap())
+
+  @test sol2.u == [0,1,3,6,10,15]
+
+  function f!(u_np1,un,p,t_np1)
+    u_np1[1] = un[1] + 1
+    u_np1[2] = un[2] + t_np1
+  end
+
+  prob3 = DiscreteProblem(f!,[0,0],(0,5))
+  sol3 = solve(prob3,FunctionMap())
+
+  @test sol3.u == [[0,0],[1,1],[2,3],[3,6],[4,10],[5,15]]
+end
