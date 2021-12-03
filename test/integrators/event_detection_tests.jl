@@ -56,7 +56,7 @@ u0 = [50.0,0.0]
 p = 9.8
 prob = ODEProblem(f,u0,tspan,p)
 sol = solve(prob,Tsit5(),callback=cb2)
-@test minimum(sol') > -40
+@test minimum(Array(sol)) > -40
 
 function fball(du,u,p,t)
   du[1] = u[2]
