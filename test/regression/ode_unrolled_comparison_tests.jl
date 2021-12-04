@@ -65,7 +65,7 @@ sol2 =solve(prob,BS5(),dt=1/2^6)
 ### Tsit5()
 
 println("Tsit5")
-dts = (1/2) .^ (7:-1:3)
+dts = (1/2) .^ (7:-1:4)
 sim = test_convergence(dts,probnum,Tsit5())
 @test abs.(sim.𝒪est[:l2]-5) < testTol+.1
 sim = test_convergence(dts,prob,Tsit5())
