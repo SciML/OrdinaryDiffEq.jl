@@ -95,9 +95,9 @@ end
   println("Exprb32, inplace")
   regression_test(prob_ip, Exprb32(m=N), 3e-4)
   println("Exprb43, out-of-place")
-  regression_test(prob, Exprb43(m=N), 2e-4)
+  regression_test(prob, Exprb43(m=N), 3e-4)
   println("Exprb43, inplace")
-  regression_test(prob_ip, Exprb43(m=N), 2e-4)
+  regression_test(prob_ip, Exprb43(m=N), 3e-4)
 end
 end
 
