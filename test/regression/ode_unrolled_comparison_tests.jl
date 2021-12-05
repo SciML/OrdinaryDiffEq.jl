@@ -65,11 +65,11 @@ sol2 =solve(prob,BS5(),dt=1/2^6)
 ### Tsit5()
 
 println("Tsit5")
-dts = (1/2) .^ (7:-1:4)
+dts = (1/2) .^ (7:-1:3)
 sim = test_convergence(dts,probnum,Tsit5())
-@test abs.(sim.𝒪est[:l2]-5) < testTol+.1
+@test abs.(sim.𝒪est[:l2]-5) < testTol+.2
 sim = test_convergence(dts,prob,Tsit5())
-@test abs.(sim.𝒪est[:l2]-5) < testTol+.1
+@test abs.(sim.𝒪est[:l2]-5) < testTol+.2
 
 tabalg = ExplicitRK(tableau=constructTsitouras5())
 sol1 =solve(probnum,Tsit5(),dt=1/2^6,adaptive=false,save_everystep=false)
