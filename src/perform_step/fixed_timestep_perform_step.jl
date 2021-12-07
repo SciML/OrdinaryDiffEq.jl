@@ -8,11 +8,11 @@ function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=fa
   if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT &&
      !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&  integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT)
     if FunctionMap_scale_by_time(integrator.alg)
-      tmp = f(uprev, p, t + dt)
+      tmp = f(uprev, p, t)
       integrator.destats.nf += 1
       @muladd integrator.u = @.. uprev + dt * tmp
     else
-      integrator.u = f(uprev, p, t + dt)
+      integrator.u = f(uprev, p, t)
       integrator.destats.nf += 1
     end
   end
@@ -29,10 +29,10 @@ function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
   if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
      !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&  integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
     if FunctionMap_scale_by_time(integrator.alg)
-      f(tmp, uprev, p, t+dt)
+      f(tmp, uprev, p, t)
       @muladd @.. u = uprev + dt*tmp
     else
-      f(u,uprev,p,t+dt)
+      f(u,uprev,p,t)
     end
     integrator.destats.nf += 1
     if typeof(u) <: DEDataArray # Needs to get the fields, since updated uprev
