@@ -181,7 +181,7 @@ to be a diffeq operator --- it will automatically be converted to one.
 internal cache (can be specified in the constructor; default to regular `Vector`).
 It supports all of `AbstractDiffEqLinearOperator`'s interface.
 """
-mutable struct WOperator{IIP,T,
+struct WOperator{IIP,T,
   MType,
   GType,
   JType <: DiffEqBase.AbstractDiffEqLinearOperator,
@@ -246,7 +246,6 @@ function WOperator{IIP}(f, u, gamma; transform=false) where IIP
   return WOperator{IIP}(mass_matrix, gamma, J, u; transform=transform)
 end
 
-set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where IIP
   if !IIP
