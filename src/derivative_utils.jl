@@ -598,7 +598,7 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
   nothing
 end
 
-function build_J_W(alg,u,uprev,p,t,dt,f::F,uEltypeNoUnits,::Val{IIP}) where {IIP,F}
+function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) where {IIP,uEltypeNoUnits,F}
   islin, isode = islinearfunction(f, alg)
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator{IIP}(f, u, dt)
