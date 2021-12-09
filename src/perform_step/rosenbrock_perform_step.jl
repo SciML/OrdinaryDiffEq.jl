@@ -388,9 +388,10 @@ end
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31
+  dtC32 = C32*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -459,9 +460,10 @@ end
   utilde = du
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -526,12 +528,13 @@ end
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
+  invdt =inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -610,12 +613,13 @@ end
   utilde = du
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -720,21 +724,22 @@ end
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
-  dtC51 = C51/dt
-  dtC52 = C52/dt
-  dtC53 = C53/dt
-  dtC54 = C54/dt
-  dtC61 = C61/dt
-  dtC62 = C62/dt
-  dtC63 = C63/dt
-  dtC64 = C64/dt
-  dtC65 = C65/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
+  dtC51 = C51*invdt
+  dtC52 = C52*invdt
+  dtC53 = C53*invdt
+  dtC54 = C54*invdt
+  dtC61 = C61*invdt
+  dtC62 = C62*invdt
+  dtC63 = C63*invdt
+  dtC64 = C64*invdt
+  dtC65 = C65*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -853,21 +858,22 @@ end
   mass_matrix = integrator.f.mass_matrix
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
-  dtC51 = C51/dt
-  dtC52 = C52/dt
-  dtC53 = C53/dt
-  dtC54 = C54/dt
-  dtC61 = C61/dt
-  dtC62 = C62/dt
-  dtC63 = C63/dt
-  dtC64 = C64/dt
-  dtC65 = C65/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
+  dtC51 = C51*invdt
+  dtC52 = C52*invdt
+  dtC53 = C53*invdt
+  dtC54 = C54*invdt
+  dtC61 = C61*invdt
+  dtC62 = C62*invdt
+  dtC63 = C63*invdt
+  dtC64 = C64*invdt
+  dtC65 = C65*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -987,21 +993,22 @@ end
   mass_matrix = integrator.f.mass_matrix
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
-  dtC51 = C51/dt
-  dtC52 = C52/dt
-  dtC53 = C53/dt
-  dtC54 = C54/dt
-  dtC61 = C61/dt
-  dtC62 = C62/dt
-  dtC63 = C63/dt
-  dtC64 = C64/dt
-  dtC65 = C65/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
+  dtC51 = C51*invdt
+  dtC52 = C52*invdt
+  dtC53 = C53*invdt
+  dtC54 = C54*invdt
+  dtC61 = C61*invdt
+  dtC62 = C62*invdt
+  dtC63 = C63*invdt
+  dtC64 = C64*invdt
+  dtC65 = C65*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -1183,34 +1190,35 @@ end
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
-  dtC51 = C51/dt
-  dtC52 = C52/dt
-  dtC53 = C53/dt
-  dtC54 = C54/dt
-  dtC61 = C61/dt
-  dtC62 = C62/dt
-  dtC63 = C63/dt
-  dtC64 = C64/dt
-  dtC65 = C65/dt
-  dtC71 = C71/dt
-  dtC72 = C72/dt
-  dtC73 = C73/dt
-  dtC74 = C74/dt
-  dtC75 = C75/dt
-  dtC76 = C76/dt
-  dtC81 = C81/dt
-  dtC82 = C82/dt
-  dtC83 = C83/dt
-  dtC84 = C84/dt
-  dtC85 = C85/dt
-  dtC86 = C86/dt
-  dtC87 = C87/dt
+  *invdt=inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
+  dtC51 = C51*invdt
+  dtC52 = C52*invdt
+  dtC53 = C53*invdt
+  dtC54 = C54*invdt
+  dtC61 = C61*invdt
+  dtC62 = C62*invdt
+  dtC63 = C63*invdt
+  dtC64 = C64*invdt
+  dtC65 = C65*invdt
+  dtC71 = C71*invdt
+  dtC72 = C72*invdt
+  dtC73 = C73*invdt
+  dtC74 = C74*invdt
+  dtC75 = C75*invdt
+  dtC76 = C76*invdt
+  dtC81 = C81*invdt
+  dtC82 = C82*invdt
+  dtC83 = C83*invdt
+  dtC84 = C84*invdt
+  dtC85 = C85*invdt
+  dtC86 = C86*invdt
+  dtC87 = C87*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -1352,34 +1360,35 @@ end
   mass_matrix = integrator.f.mass_matrix
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
-  dtC51 = C51/dt
-  dtC52 = C52/dt
-  dtC53 = C53/dt
-  dtC54 = C54/dt
-  dtC61 = C61/dt
-  dtC62 = C62/dt
-  dtC63 = C63/dt
-  dtC64 = C64/dt
-  dtC65 = C65/dt
-  dtC71 = C71/dt
-  dtC72 = C72/dt
-  dtC73 = C73/dt
-  dtC74 = C74/dt
-  dtC75 = C75/dt
-  dtC76 = C76/dt
-  dtC81 = C81/dt
-  dtC82 = C82/dt
-  dtC83 = C83/dt
-  dtC84 = C84/dt
-  dtC85 = C85/dt
-  dtC86 = C86/dt
-  dtC87 = C87/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
+  dtC51 = C51*invdt
+  dtC52 = C52*invdt
+  dtC53 = C53*invdt
+  dtC54 = C54*invdt
+  dtC61 = C61*invdt
+  dtC62 = C62*invdt
+  dtC63 = C63*invdt
+  dtC64 = C64*invdt
+  dtC65 = C65*invdt
+  dtC71 = C71*invdt
+  dtC72 = C72*invdt
+  dtC73 = C73*invdt
+  dtC74 = C74*invdt
+  dtC75 = C75*invdt
+  dtC76 = C76*invdt
+  dtC81 = C81*invdt
+  dtC82 = C82*invdt
+  dtC83 = C83*invdt
+  dtC84 = C84*invdt
+  dtC85 = C85*invdt
+  dtC86 = C86*invdt
+  dtC87 = C87*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
@@ -1536,34 +1545,35 @@ end
   mass_matrix = integrator.f.mass_matrix
 
   # Precalculations
-  dtC21 = C21/dt
-  dtC31 = C31/dt
-  dtC32 = C32/dt
-  dtC41 = C41/dt
-  dtC42 = C42/dt
-  dtC43 = C43/dt
-  dtC51 = C51/dt
-  dtC52 = C52/dt
-  dtC53 = C53/dt
-  dtC54 = C54/dt
-  dtC61 = C61/dt
-  dtC62 = C62/dt
-  dtC63 = C63/dt
-  dtC64 = C64/dt
-  dtC65 = C65/dt
-  dtC71 = C71/dt
-  dtC72 = C72/dt
-  dtC73 = C73/dt
-  dtC74 = C74/dt
-  dtC75 = C75/dt
-  dtC76 = C76/dt
-  dtC81 = C81/dt
-  dtC82 = C82/dt
-  dtC83 = C83/dt
-  dtC84 = C84/dt
-  dtC85 = C85/dt
-  dtC86 = C86/dt
-  dtC87 = C87/dt
+  invdt = inv(dt)
+  dtC21 = C21*invdt
+  dtC31 = C31*invdt
+  dtC32 = C32*invdt
+  dtC41 = C41*invdt
+  dtC42 = C42*invdt
+  dtC43 = C43*invdt
+  dtC51 = C51*invdt
+  dtC52 = C52*invdt
+  dtC53 = C53*invdt
+  dtC54 = C54*invdt
+  dtC61 = C61*invdt
+  dtC62 = C62*invdt
+  dtC63 = C63*invdt
+  dtC64 = C64*invdt
+  dtC65 = C65*invdt
+  dtC71 = C71*invdt
+  dtC72 = C72*invdt
+  dtC73 = C73*invdt
+  dtC74 = C74*invdt
+  dtC75 = C75*invdt
+  dtC76 = C76*invdt
+  dtC81 = C81*invdt
+  dtC82 = C82*invdt
+  dtC83 = C83*invdt
+  dtC84 = C84*invdt
+  dtC85 = C85*invdt
+  dtC86 = C86*invdt
+  dtC87 = C87*invdt
 
   dtd1 = dt*d1
   dtd2 = dt*d2
