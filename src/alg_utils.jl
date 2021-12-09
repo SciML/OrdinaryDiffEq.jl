@@ -171,18 +171,29 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     if typeof(alg) <: OrdinaryDiffEqImplicitExtrapolationAlgorithm
       return alg # remake fails, should get fixed
     else
-      chunk_size = ForwardDiff.pickchunksize(x)
-      if chunk_size > 8
-        cs = Val{8}()
-        remake(alg,chunk_size=cs)
-      elseif chunk_size > 4
-        cs = Val{4}()
-        remake(alg,chunk_size=cs)
-      else
-        cs = Val{1}()
+      L = ArrayInterface.known_length(typeof(u0))
+      if L === nothing # dynamic sized
+        chunk_size = ForwardDiff.pickchunksize(x)
+        if chunk_size > 8
+          cs = Val{8}()
+          remake(alg,chunk_size=cs)
+        elseif chunk_size > 4
+          cs = Val{4}()
+          remake(alg,chunk_size=cs)
+        else
+          cs = Val{1}()
+          remake(alg,chunk_size=cs)
+        end
+      else # statically sized
+        chunk_size = pick_static_chunksize(Val{L}())
         remake(alg,chunk_size=cs)
       end
     end
+end
+
+@generated function pick_static_chunksize(::Val{chunksize}) where chunksize
+  x = ForwardDiff.pickchunksize(chunksize)
+  :(Val{$x}())
 end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
