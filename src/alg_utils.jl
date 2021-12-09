@@ -171,7 +171,15 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     if typeof(alg) <: OrdinaryDiffEqImplicitExtrapolationAlgorithm
       return alg # remake fails, should get fixed
     else
-      remake(alg,chunk_size=Val{ForwardDiff.pickchunksize(x)}())
+      chunk_size = ForwardDiff.pickchunksize(x)
+      if chunk_size > 8
+        cs = Val{8}()
+      elseif chunk_size > 4
+        cs = Val{4}()
+      else
+        cs = Val{1}()
+      end
+      remake(alg,chunk_size=cs)
     end
 end
 
