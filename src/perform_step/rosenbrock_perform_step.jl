@@ -390,7 +390,7 @@ end
   # Precalculations
   invdt = inv(dt)
   dtC21 = C21*invdt
-  dtC31 = C31
+  dtC31 = C31*invdt
   dtC32 = C32*invdt
 
   dtd1 = dt*d1
@@ -528,7 +528,7 @@ end
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
 
   # Precalculations
-  invdt =inv(dt)
+  invdt = inv(dt)
   dtC21 = C21*invdt
   dtC31 = C31*invdt
   dtC32 = C32*invdt
@@ -1190,7 +1190,7 @@ end
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Precalculations
-  *invdt=inv(dt)
+  invdt = inv(dt)
   dtC21 = C21*invdt
   dtC31 = C31*invdt
   dtC32 = C32*invdt
