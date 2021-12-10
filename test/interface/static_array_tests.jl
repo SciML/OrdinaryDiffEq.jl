@@ -39,7 +39,7 @@ ode = ODEProblem(f, u0, (0.,1.))
 sol = solve(ode, Euler(), dt=1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 integrator = init(ode, ImplicitEuler())
-@test OrdinaryDiffEq.get_W(integrator.cache.nlsolver) isa StaticArrays.LU
+@test OrdinaryDiffEq.get_W(integrator.cache.nlsolver) isa StaticArrays.StaticArray
 sol = solve(ode, ImplicitEuler())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 sol = solve(ode, ImplicitEuler(nlsolve=NLAnderson()))

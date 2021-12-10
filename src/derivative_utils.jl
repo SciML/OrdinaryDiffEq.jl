@@ -624,12 +624,10 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
       deepcopy(f.jac_prototype)
     end
     isdae = alg isa DAEAlgorithm
-    W = if isdae
-      J
-    elseif IIP
+    W = if IIP
       similar(J)
     else
-      ArrayInterface.lu_instance(J)
+      J
     end
   end
   return J, W
