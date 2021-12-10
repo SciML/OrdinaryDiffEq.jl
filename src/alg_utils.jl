@@ -174,10 +174,10 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
       L = ArrayInterface.known_length(typeof(u0))
       if L === nothing # dynamic sized
         chunk_size = ForwardDiff.pickchunksize(x)
-        if chunk_size > 8
+        if chunk_size >= 8
           cs = Val{8}()
           remake(alg,chunk_size=cs)
-        elseif chunk_size > 4
+        elseif chunk_size >= 4
           cs = Val{4}()
           remake(alg,chunk_size=cs)
         else
