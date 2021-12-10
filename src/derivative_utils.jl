@@ -531,10 +531,15 @@ end
     W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
   elseif DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
+    if typeof(J) <: StaticArray
+      W = W_transform ? J - mass_matrix*inv(dtgamma) :
+                             dtgamma*J - mass_matrix
+    else
+      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+        J = DiffEqArrayOperator(J)
+      end
+      W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
     end
-    W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
@@ -544,7 +549,7 @@ end
     else
       W_full = W_transform ? J - mass_matrix*inv(dtgamma) :
                              dtgamma*J - mass_matrix
-      W = W_full isa Number ? W_full : DiffEqBase.default_factorize(W_full)
+      W = W_full isa Number || typeof(W_full) <: StaticArray ? W_full : DiffEqBase.default_factorize(W_full)
     end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
