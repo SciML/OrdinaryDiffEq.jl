@@ -94,8 +94,8 @@ function rober(u,p,t)
 end
 prob = ODEProblem{false}(rober,SA[1.0,0.0,0.0],(0.0,1e5),SA[0.04,3e7,1e4])
 # Defaults to reltol=1e-3, abstol=1e-6
-sol = solve(prob,Rosenbrock23(chunk_size = Val{3}()),save_everystep=false)
-sol = solve(prob,Rodas4(chunk_size = Val{3}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rosenbrock23(chunk_size = Val{3}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rodas4(chunk_size = Val{3}()),save_everystep=false)
 
 function hires_4(u,p,t)
   y1,y2,y3,y4 = u
@@ -109,8 +109,8 @@ end
 u0 = SA[1,0,0,0.0057]
 prob = ODEProblem(hires_4,u0,(0.0,321.8122))
 # Defaults to reltol=1e-3, abstol=1e-6
-sol = solve(prob,Rosenbrock23(chunk_size = Val{4}()),save_everystep=false)
-sol = solve(prob,Rodas5(chunk_size = Val{4}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rosenbrock23(chunk_size = Val{4}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rodas5(chunk_size = Val{4}()),save_everystep=false)
 
 function hires_5(u,p,t)
   y1,y2,y3,y4,y5 = u
@@ -125,8 +125,8 @@ end
 u0 = SA[1,0,0,0,0.0057]
 prob = ODEProblem(hires_5,u0,(0.0,321.8122))
 # Defaults to reltol=1e-3, abstol=1e-6
-sol = solve(prob,Rosenbrock23(chunk_size = Val{5}()),save_everystep=false)
-sol = solve(prob,Rodas4(chunk_size = Val{5}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rosenbrock23(chunk_size = Val{5}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rodas4(chunk_size = Val{5}()),save_everystep=false)
 
 function hires(u,p,t)
   y1,y2,y3,y4,y5,y6,y7,y8 = u
@@ -145,8 +145,8 @@ end
 u0 = SA[1,0,0,0,0,0,0,0.0057]
 prob = ODEProblem(hires,u0,(0.0,321.8122))
 # Defaults to reltol=1e-3, abstol=1e-6
-sol = solve(prob,Rosenbrock23(chunk_size = Val{8}()),save_everystep=false)
-sol = solve(prob,Rodas5(chunk_size = Val{8}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rosenbrock23(chunk_size = Val{8}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rodas5(chunk_size = Val{8}()),save_everystep=false)
 
 const k1=.35e0
 const k2=.266e2
@@ -234,5 +234,5 @@ u0[9]  = 0.01
 u0[17] = 0.007
 u0 = SA[u0...]
 prob = ODEProblem(f,u0,(0.0,60.0))
-sol = solve(prob,Rosenbrock23(chunk_size = Val{8}()),save_everystep=false)
-sol = solve(prob,Rodas5(chunk_size = Val{8}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rosenbrock23(chunk_size = Val{8}()),save_everystep=false)
+@test_nowarn sol = solve(prob,Rodas5(chunk_size = Val{8}()),save_everystep=false)

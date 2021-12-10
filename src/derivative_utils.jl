@@ -2,7 +2,7 @@ const ROSENBROCK_INV_CUTOFF = 7 # https://github.com/SciML/OrdinaryDiffEq.jl/pul
 
 struct StaticWOperator{isinv, T}
     W::T
-    function StaticWOperator(W::T,callinv = false) where T
+    function StaticWOperator(W::T,callinv = true) where T
         isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
 
         # when constructing W for the first time for the type
