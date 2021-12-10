@@ -369,7 +369,7 @@ end
     tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
+      est = _reshape(get_W(nlsolver) * _vec(tmp), axes(tmp))
     else
       est = tmp
     end

@@ -550,7 +550,7 @@ end
       W_full = W_transform ? J - mass_matrix*inv(dtgamma) :
                              dtgamma*J - mass_matrix
       len = ArrayInterface.known_length(typeof(W_full))
-      W = W_full isa Number || (len !== nothing && len < 16) ? W_full : DiffEqBase.default_factorize(W_full)
+      W = W_full isa Number || (len !== nothing && len < 1000000) ? inv(W_full) : DiffEqBase.default_factorize(W_full)
     end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
@@ -631,7 +631,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
       similar(J)
     else
       len = ArrayInterface.known_length(typeof(J))
-      if len === nothing || len >= 16
+      if len === nothing || len >= 1000000
         ArrayInterface.lu_instance(J)
       else
         J
