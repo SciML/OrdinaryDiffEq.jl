@@ -494,6 +494,7 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
     return integrator.sol
   end
   integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol,:Success)
+  nothing
 end
 
 # Helpers
@@ -513,6 +514,8 @@ function handle_dt!(integrator)
   elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) && integrator.tdir < 0
     integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
   end
+
+  nothing
 end
 
 # time stops
@@ -617,4 +620,5 @@ function initialize_callbacks!(integrator, initialize_save = true)
 
   # reset this as it is now handled so the integrators should proceed as normal
   integrator.u_modified = false
+  nothing
 end

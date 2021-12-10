@@ -23,6 +23,7 @@ function loopheader!(integrator)
   fix_dt_at_bounds!(integrator)
   modify_dt_for_tstops!(integrator)
   integrator.force_stepfail = false
+  nothing
 end
 
 last_step_failed(integrator::ODEIntegrator) =
@@ -42,6 +43,7 @@ function modify_dt_for_tstops!(integrator)
       integrator.dt = integrator.tdir * min(abs(integrator.dtcache), abs(tdir_tstop - tdir_t)) # step! to the end
     end
   end
+  nothing
 end
 
 # Want to extend savevalues! for DDEIntegrator
@@ -131,6 +133,7 @@ function _postamble!(integrator)
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress="done")
   end
+  nothing
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)
@@ -162,6 +165,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
       copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
     end
   end
+  nothing
 end
 
 # Want to extend loopfooter! for DDEIntegrator
@@ -274,10 +278,13 @@ function handle_callbacks!(integrator)
     integrator.do_error_check = false
     handle_callback_modifiers!(integrator)
   end
+  
+  nothing
 end
 
 function handle_callback_modifiers!(integrator::ODEIntegrator)
   integrator.reeval_fsal = true
+  nothing
 end
 
 function apply_step!(integrator)
@@ -326,6 +333,7 @@ function apply_step!(integrator)
       end
     end
   end
+  nothing
 end
 
 handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
@@ -341,6 +349,7 @@ function calc_dt_propose!(integrator,dtnew)
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
   dtpropose = integrator.tdir*max(abs(dtpropose),timedepentdtmin(integrator))
   integrator.dtpropose = dtpropose
+  nothing
 end
 
 function fix_dt_at_bounds!(integrator)
@@ -376,6 +385,7 @@ function handle_tstop!(integrator)
       end
     end
   end
+  nothing
 end
 
 function reset_fsal!(integrator)
@@ -390,6 +400,7 @@ function reset_fsal!(integrator)
   end
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false
+  nothing
 end
 
 DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && issplit(alg) ? f.f1 : f
