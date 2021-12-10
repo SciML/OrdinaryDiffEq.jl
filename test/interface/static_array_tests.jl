@@ -83,3 +83,156 @@ solap = solve(probap,dt=1e-2,Heun())
 sol = solve(prob,dt=1e-2,Tsit5())
 solap = solve(probap,dt=1e-2,Tsit5())
 @test sol(30) ≈ solap(30) atol=4e-6
+
+function rober(u,p,t)
+  y₁,y₂,y₃ = u
+  k₁,k₂,k₃ = p
+  dy₁ = -k₁*y₁+k₃*y₂*y₃
+  dy₂ =  k₁*y₁-k₂*y₂^2-k₃*y₂*y₃
+  dy₃ =  k₂*y₂^2
+  SA[dy₁,dy₂,dy₃]
+end
+prob = ODEProblem{false}(rober,SA[1.0,0.0,0.0],(0.0,1e5),SA[0.04,3e7,1e4])
+# Defaults to reltol=1e-3, abstol=1e-6
+sol = solve(prob,Rosenbrock23(chunk_size = Val{3}()),save_everystep=false)
+sol = solve(prob,Rodas4(chunk_size = Val{3}()),save_everystep=false)
+
+function hires_4(u,p,t)
+  y1,y2,y3,y4 = u
+  dy1 = -1.71*y1 + 0.43*y2 + 8.32*y3 + 0.0007
+  dy2 = 1.71*y1 - 8.75*y2
+  dy3 = -10.03*y3 + 0.43*y4 + 0.035*y2
+  dy4 = 8.32*y2 + 1.71*y3 - 1.12*y4
+  SA[dy1,dy2,dy3,dy4]
+end
+
+u0 = SA[1,0,0,0.0057]
+prob = ODEProblem(hires_4,u0,(0.0,321.8122))
+# Defaults to reltol=1e-3, abstol=1e-6
+sol = solve(prob,Rosenbrock23(chunk_size = Val{4}()),save_everystep=false)
+sol = solve(prob,Rodas5(chunk_size = Val{4}()),save_everystep=false)
+
+function hires_5(u,p,t)
+  y1,y2,y3,y4,y5 = u
+  dy1 = -1.71*y1 + 0.43*y2 + 8.32*y3 + 0.0007
+  dy2 = 1.71*y1 - 8.75*y2
+  dy3 = -10.03*y3 + 0.43*y4 + 0.035*y5
+  dy4 = 8.32*y2 + 1.71*y3 - 1.12*y4
+  dy5 = -1.745*y5 + 0.43*y2 + 0.43*y4
+  SA[dy1,dy2,dy3,dy4,dy5]
+end
+
+u0 = SA[1,0,0,0,0.0057]
+prob = ODEProblem(hires_5,u0,(0.0,321.8122))
+# Defaults to reltol=1e-3, abstol=1e-6
+sol = solve(prob,Rosenbrock23(chunk_size = Val{5}()),save_everystep=false)
+sol = solve(prob,Rodas4(chunk_size = Val{5}()),save_everystep=false)
+
+function hires(u,p,t)
+  y1,y2,y3,y4,y5,y6,y7,y8 = u
+  dy1 = -1.71*y1 + 0.43*y2 + 8.32*y3 + 0.0007
+  dy2 = 1.71*y1 - 8.75*y2
+  dy3 = -10.03*y3 + 0.43*y4 + 0.035*y5
+  dy4 = 8.32*y2 + 1.71*y3 - 1.12*y4
+  dy5 = -1.745*y5 + 0.43*y6 + 0.43*y7
+  dy6 = -280.0*y6*y8 + 0.69*y4 + 1.71*y5 -
+           0.43*y6 + 0.69*y7
+  dy7 = 280.0*y6*y8 - 1.81*y7
+  dy8 = -280.0*y6*y8 + 1.81*y7
+  SA[dy1,dy2,dy3,dy4,dy5,dy6,dy7,dy8]
+end
+
+u0 = SA[1,0,0,0,0,0,0,0.0057]
+prob = ODEProblem(hires,u0,(0.0,321.8122))
+# Defaults to reltol=1e-3, abstol=1e-6
+sol = solve(prob,Rosenbrock23(chunk_size = Val{8}()),save_everystep=false)
+sol = solve(prob,Rodas5(chunk_size = Val{8}()),save_everystep=false)
+
+const k1=.35e0
+const k2=.266e2
+const k3=.123e5
+const k4=.86e-3
+const k5=.82e-3
+const k6=.15e5
+const k7=.13e-3
+const k8=.24e5
+const k9=.165e5
+const k10=.9e4
+const k11=.22e-1
+const k12=.12e5
+const k13=.188e1
+const k14=.163e5
+const k15=.48e7
+const k16=.35e-3
+const k17=.175e-1
+const k18=.1e9
+const k19=.444e12
+const k20=.124e4
+const k21=.21e1
+const k22=.578e1
+const k23=.474e-1
+const k24=.178e4
+const k25=.312e1
+
+function f(y,p,t)
+ r1  = k1 *y[1]
+ r2  = k2 *y[2]*y[4]
+ r3  = k3 *y[5]*y[2]
+ r4  = k4 *y[7]
+ r5  = k5 *y[7]
+ r6  = k6 *y[7]*y[6]
+ r7  = k7 *y[9]
+ r8  = k8 *y[9]*y[6]
+ r9  = k9 *y[11]*y[2]
+ r10 = k10*y[11]*y[1]
+ r11 = k11*y[13]
+ r12 = k12*y[10]*y[2]
+ r13 = k13*y[14]
+ r14 = k14*y[1]*y[6]
+ r15 = k15*y[3]
+ r16 = k16*y[4]
+ r17 = k17*y[4]
+ r18 = k18*y[16]
+ r19 = k19*y[16]
+ r20 = k20*y[17]*y[6]
+ r21 = k21*y[19]
+ r22 = k22*y[19]
+ r23 = k23*y[1]*y[4]
+ r24 = k24*y[19]*y[1]
+ r25 = k25*y[20]
+
+ dy1  = -r1-r10-r14-r23-r24+
+          r2+r3+r9+r11+r12+r22+r25
+ dy2  = -r2-r3-r9-r12+r1+r21
+ dy3  = -r15+r1+r17+r19+r22
+ dy4  = -r2-r16-r17-r23+r15
+ dy5  = -r3+r4+r4+r6+r7+r13+r20
+ dy6  = -r6-r8-r14-r20+r3+r18+r18
+ dy7  = -r4-r5-r6+r13
+ dy8  = r4+r5+r6+r7
+ dy9  = -r7-r8
+ dy10 = -r12+r7+r9
+ dy11 = -r9-r10+r8+r11
+ dy12 = r9
+ dy13 = -r11+r10
+ dy14 = -r13+r12
+ dy15 = r14
+ dy16 = -r18-r19+r16
+ dy17 = -r20
+ dy18 = r20
+ dy19 = -r21-r22-r24+r23+r25
+ dy20 = -r25+r24
+ SA[dy1,dy2,dy3,dy4,dy5,dy6,dy7,dy8,dy9,dy10,dy11,dy12,dy13,dy14,dy15,dy16,dy17,dy18,dy19,dy20]
+end
+
+u0 = zeros(20)
+u0[2]  = 0.2
+u0[4]  = 0.04
+u0[7]  = 0.1
+u0[8]  = 0.3
+u0[9]  = 0.01
+u0[17] = 0.007
+u0 = SA[u0...]
+prob = ODEProblem(f,u0,(0.0,60.0))
+sol = solve(prob,Rosenbrock23(chunk_size = Val{8}()),save_everystep=false)
+sol = solve(prob,Rodas5(chunk_size = Val{8}()),save_everystep=false)

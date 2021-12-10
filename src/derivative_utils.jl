@@ -1,4 +1,22 @@
-const ROSENBROCK_INV_CUTOFF = 7*7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
+const ROSENBROCK_INV_CUTOFF = 7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
+
+struct StaticWOperator{isinv, T}
+    W::T
+    function StaticWOperator(W::T,callinv = false) where T
+        isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
+
+        # when constructing W for the first time for the type
+        # inv(W) can be singular
+        _W = if isinv && callinv
+          inv(W)
+        else
+          W
+        end
+        new{isinv, T}(_W)
+    end
+end
+isinv(W::StaticWOperator{S}) where S = S
+Base.:\(W::StaticWOperator, v) = isinv(W) ? W.W * v : W.W \ v
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   @inbounds begin
@@ -554,8 +572,8 @@ end
       len = ArrayInterface.known_length(typeof(W_full))
       W = if W_full isa Number
         W_full
-      elseif len !== nothing && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas5} && len < ROSENBROCK_INV_CUTOFF
-        inv(W_full)
+      elseif len !== nothing && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+        StaticWOperator(W_full)
       else
         DiffEqBase.default_factorize(W_full)
       end
@@ -639,8 +657,8 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
       similar(J)
     else
       len = ArrayInterface.known_length(typeof(J))
-      if len !== nothing && typeof(alg) <: Union{Rosenbrock23,Rodas4,Rodas5} && len < ROSENBROCK_INV_CUTOFF
-        J
+      if len !== nothing && typeof(alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+        StaticWOperator(J,false)
       else
         ArrayInterface.lu_instance(J)
       end
