@@ -16,7 +16,8 @@ for x in 0:0.001:5
     prob = ODEProblem(f,eltype(p).([1.0,0.0]),eltype(p).((0.0,1.0)),copy(p))
     integrator = init(prob,Tsit5(),abstol=1e-14,reltol=1e-14,callback=cb)
     step!(integrator)
-    solve!(integrator).u[end]
+    solve!(integrator)
+    integrator.u[end]
   end
   p = [2.0, x]
   called = false
@@ -43,7 +44,8 @@ for x in 2.1:0.001:5
     prob = ODEProblem(f2,eltype(p).([1.0,0.0]),eltype(p).((0.0,1.0)),copy(p))
     integrator = init(prob,Tsit5(),abstol=1e-12,reltol=1e-12,callback=cb)
     step!(integrator)
-    solve!(integrator).u[end]
+    solve!(integrator)
+    integrator.u[end]
   end
   p = [2.0, x]
   findiff = Calculus.finite_difference_jacobian(test_f2,p)
@@ -99,7 +101,8 @@ for x in 1.0:0.001:2.5
     prob = ODEProblem(lotka_volterra,eltype(p).([1.0,1.0]),eltype(p).((0.0,10.0)),copy(p))
     integrator = init(prob,Tsit5(),abstol=1e-12,reltol=1e-12,callback=cb)
     step!(integrator)
-    solve!(integrator).u[end]
+    solve!(integrator)
+    integrator.u[end]
   end
 
   findiff = Calculus.finite_difference_jacobian(test_lotka,p)
