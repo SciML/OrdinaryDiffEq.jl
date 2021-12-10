@@ -1,3 +1,5 @@
+const ROSENBROCK_INV_CUTOFF = 7*7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
+
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
@@ -550,7 +552,13 @@ end
       W_full = W_transform ? J - mass_matrix*inv(dtgamma) :
                              dtgamma*J - mass_matrix
       len = ArrayInterface.known_length(typeof(W_full))
-      W = W_full isa Number || (len !== nothing && len < 1000000) ? inv(W_full) : DiffEqBase.default_factorize(W_full)
+      W = if W_full isa Number
+        W_full
+      elseif len !== nothing && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas5} && len < ROSENBROCK_INV_CUTOFF
+        inv(W_full)
+      else
+        DiffEqBase.default_factorize(W_full)
+      end
     end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
@@ -631,10 +639,10 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
       similar(J)
     else
       len = ArrayInterface.known_length(typeof(J))
-      if len === nothing || len >= 1000000
-        ArrayInterface.lu_instance(J)
-      else
+      if len !== nothing && typeof(alg) <: Union{Rosenbrock23,Rodas4,Rodas5} && len < ROSENBROCK_INV_CUTOFF
         J
+      else
+        ArrayInterface.lu_instance(J)
       end
     end
   end

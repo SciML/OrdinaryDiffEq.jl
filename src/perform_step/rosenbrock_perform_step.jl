@@ -260,15 +260,24 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, γ, repeat_step)
-  k₁ = _reshape(W*-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
+
+  #https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
+  len = ArrayInterface.known_length(typeof(W))
+  ⊗ = if len !== nothing && len < ROSENBROCK_INV_CUTOFF
+    *
+  else
+    \
+  end
+
+  k₁ = _reshape(W⊗-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
   integrator.destats.nf += 1
 
   if mass_matrix == I
-    k₂ = _reshape(W*-_vec(f₁-k₁), axes(uprev)) + k₁
+    k₂ = _reshape(W⊗-_vec(f₁-k₁), axes(uprev)) + k₁
   else
-    k₂ = _reshape(W*-_vec(f₁-mass_matrix*k₁), axes(uprev)) + k₁
+    k₂ = _reshape(W⊗-_vec(f₁-mass_matrix*k₁), axes(uprev)) + k₁
   end
   integrator.destats.nsolve += 1
   u = uprev  + dt*k₂
@@ -278,10 +287,10 @@ end
     integrator.destats.nf += 1
 
     if mass_matrix == I
-      k₃ = _reshape(W*-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+      k₃ = _reshape(W⊗-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
     else
       linsolve_tmp = integrator.fsallast - mass_matrix*(c₃₂*k₂ + 2*k₁) +c₃₂*f₁ + 2*integrator.fsalfirst + dt*dT
-      k₃ = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+      k₃ = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
     end
     integrator.destats.nsolve += 1
 
@@ -750,12 +759,20 @@ end
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
 
+  #https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
+  len = ArrayInterface.known_length(typeof(W))
+  ⊗ = if len !== nothing && len < ROSENBROCK_INV_CUTOFF
+    *
+  else
+    \
+  end
+
   du = f(uprev, p, t)
   integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd1*dT
 
-  k1 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k1 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
@@ -767,7 +784,7 @@ end
     linsolve_tmp =  du + dtd2*dT + mass_matrix * (dtC21*k1)
   end
 
-  k2 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k2 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
@@ -779,7 +796,7 @@ end
     linsolve_tmp =  du + dtd3*dT + mass_matrix * (dtC31*k1 + dtC32*k2)
   end
 
-  k3 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k3 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(u, p, t+c4*dt)
@@ -791,7 +808,7 @@ end
     linsolve_tmp =  du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
   end
 
-  k4 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k4 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(u, p, t+dt)
@@ -803,7 +820,7 @@ end
     linsolve_tmp =  du + mass_matrix * (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   end
 
-  k5 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k5 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k5
   du = f(u, p, t+dt)
@@ -815,7 +832,7 @@ end
     linsolve_tmp =  du + mass_matrix * (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
   end
 
-  k6 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k6 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k6
 
@@ -1226,12 +1243,20 @@ end
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
 
+  #https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
+  len = ArrayInterface.known_length(typeof(W))
+  ⊗ = if len !== nothing && len < ROSENBROCK_INV_CUTOFF
+    *
+  else
+    \
+  end
+
   du1 = f(uprev, p, t)
   integrator.destats.nf += 1
 
   linsolve_tmp =  du1 + dtd1*dT
 
-  k1 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k1 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
@@ -1243,7 +1268,7 @@ end
     linsolve_tmp = du + dtd2*dT + mass_matrix * (dtC21*k1)
   end
 
-  k2 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k2 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
@@ -1255,7 +1280,7 @@ end
     linsolve_tmp =  du + dtd3*dT + mass_matrix * (dtC31*k1 + dtC32*k2)
   end
 
-  k3 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k3 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(u, p, t+c4*dt)
@@ -1267,7 +1292,7 @@ end
     linsolve_tmp =  du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
   end
 
-  k4 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k4 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(u, p, t+c5*dt)
@@ -1279,7 +1304,7 @@ end
     linsolve_tmp = du + dtd5*dT + mass_matrix * (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   end
 
-  k5 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k5 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
   du = f(u, p, t+dt)
@@ -1291,7 +1316,7 @@ end
     linsolve_tmp =  du + mass_matrix * (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
   end
 
-  k6 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k6 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k6
   du = f(u, p, t+dt)
@@ -1303,7 +1328,7 @@ end
     linsolve_tmp = du + mass_matrix * (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
   end
 
-  k7 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k7 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k7
   du = f(u, p, t+dt)
@@ -1315,7 +1340,7 @@ end
     linsolve_tmp = du + mass_matrix * (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
   end
 
-  k8 = _reshape(W*-_vec(linsolve_tmp), axes(uprev))
+  k8 = _reshape(W⊗-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k8
   du = f(u, p, t+dt)
