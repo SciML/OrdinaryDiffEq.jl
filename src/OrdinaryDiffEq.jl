@@ -15,6 +15,8 @@ using DocStringExtensions
 
   using LoopVectorization
 
+  using LinearSolve
+
   # Interfaces
   import DiffEqBase: solve!, step!, initialize!, isadaptive
 
@@ -178,6 +180,7 @@ using DocStringExtensions
   include("interp_func.jl")
   include("composite_algs.jl")
 
+  #=
   let
     while true
       function lorenz(du,u,p,t)
@@ -208,6 +211,7 @@ using DocStringExtensions
       break
     end
   end
+  =#
 
   #General Functions
   export solve, solve!, init, step!

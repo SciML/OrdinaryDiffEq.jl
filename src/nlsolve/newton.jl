@@ -173,9 +173,12 @@ end
     reltol = eps(eltype(dz))
   end
 
-  linsolve(vec(dz), W, b, iter == 1 && new_W;
-           Pl=DiffEqBase.ScaleVector(weight, true),
-           Pr=DiffEqBase.ScaleVector(weight, false), reltol=reltol)
+  if iter == 1 && new_W
+    linsolve = set_A(linsolve,W)
+  end
+  linsolve = set_b(linsolve,b)
+  linres = solve(linsolve,weights=weight,reltol=reltol)
+  copyto!(dz,linres.u)
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
@@ -283,9 +286,12 @@ end
     reltol = eps(eltype(dz))
   end
 
-  linsolve(vec(dz), W, b, iter == 1 && new_W;
-           Pl=DiffEqBase.ScaleVector(weight, true),
-           Pr=DiffEqBase.ScaleVector(weight, false), reltol=reltol)
+  if iter == 1 && new_W
+    linsolve = set_A(linsolve,W)
+  end
+  linsolve = set_b(linsolve,b)
+  linres = solve(linsolve,weights=weight,reltol=reltol)
+  copyto!(dz,linres.u)
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1

@@ -146,12 +146,14 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
+    J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
     if islinear(f)
       du1 = rate_prototype
       uf = nothing
       jac_config = nothing
-      linsolve = alg.linsolve(Val{:init},nf,u)
+      linprob = LinearProblem(nf,vec(u); u0=vec(u))
+      linsolve = init(linprob,alg.linsolve)
     else
       du1 = zero(rate_prototype)
       if isdae
@@ -160,7 +162,8 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
         uf = build_uf(alg,nf,t,p,Val(true))
       end
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
-      linsolve = alg.linsolve(Val{:init},uf,u)
+      linprob = LinearProblem(W,vec(u); u0=vec(u))
+      linsolve = init(linprob,alg.linsolve)
     end
 
     # TODO: check if the solver is iterative
@@ -168,8 +171,6 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
-
-    J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
     nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,true,true,tType(dt),du1,uf,jac_config,
                             linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff),t)

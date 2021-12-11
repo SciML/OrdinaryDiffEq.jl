@@ -43,11 +43,15 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
 
-  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), new_W,
-      Pl=DiffEqBase.ScaleVector(weight, true),
-      Pr=DiffEqBase.ScaleVector(weight, false), reltol=opts.reltol)
+  linsolve = cache.linsolve
+  if new_W
+    linsolve = set_A(linsolve,W)
+  end
+  linsolve = set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,weights=weight,reltol=opts.reltol)
+  vecu = vec(linres.u)
 
-  @.. k₁ = -k₁
+  @.. vec(k₁) = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto2*k₁
@@ -61,8 +65,12 @@ end
   end
 
   @.. linsolve_tmp = f₁ - tmp
-  cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
-  @.. k₂ = -k₂
+
+  linsolve = set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,weights=weight,reltol=opts.reltol)
+  vecu = vec(linres.u)
+
+  @.. k₂ = -vecu
   integrator.destats.nsolve += 1
 
   @.. k₂ += k₁
@@ -80,9 +88,11 @@ end
       @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
     end
 
+    linsolve = set_b(linsolve,vec(linsolve_tmp))
+    linres = solve(linsolve,weights=weight,reltol=opts.reltol)
+    vecu = vec(linres.u)
 
-    cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
-    @.. k₃ = -k₃
+    @.. k₃ = -vecu
     integrator.destats.nsolve += 1
 
     @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
@@ -91,6 +101,7 @@ end
   end
 end
 
+#=
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache{<:Array}, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,opts = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
@@ -182,6 +193,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
+=#
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
