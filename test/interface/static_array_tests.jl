@@ -39,7 +39,7 @@ ode = ODEProblem(f, u0, (0.,1.))
 sol = solve(ode, Euler(), dt=1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 integrator = init(ode, ImplicitEuler())
-@test OrdinaryDiffEq.get_W(integrator.cache.nlsolver) isa StaticArrays.StaticArray
+@test OrdinaryDiffEq.get_W(integrator.cache.nlsolver) isa StaticArrays.LU
 sol = solve(ode, ImplicitEuler())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 sol = solve(ode, ImplicitEuler(nlsolve=NLAnderson()))
@@ -174,7 +174,7 @@ const k23=.474e-1
 const k24=.178e4
 const k25=.312e1
 
-function f(y,p,t)
+function pollu(y,p,t)
  r1  = k1 *y[1]
  r2  = k2 *y[2]*y[4]
  r3  = k3 *y[5]*y[2]
@@ -233,6 +233,6 @@ u0[8]  = 0.3
 u0[9]  = 0.01
 u0[17] = 0.007
 u0 = SA[u0...]
-prob = ODEProblem(f,u0,(0.0,60.0))
+prob = ODEProblem(pollu,u0,(0.0,60.0))
 @test_nowarn sol = solve(prob,Rosenbrock23(chunk_size = Val{8}()),save_everystep=false)
 @test_nowarn sol = solve(prob,Rodas5(chunk_size = Val{8}()),save_everystep=false)
