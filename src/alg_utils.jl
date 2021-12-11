@@ -160,6 +160,7 @@ get_chunksize_int(alg::ExponentialAlgorithm) = alg.chunksize
 function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
                         OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
                         DAEAlgorithm{0,AD,FDT}},u0::AbstractArray,p,prob) where {AD,FDT}
+    sizeof(eltype(u0)) > 24 && return remake(alg, chunk_size=Val{1}())
     # If chunksize is zero, pick chunksize right at the start of solve and
     # then do function barrier to infer the full solve
     x = if prob.f.colorvec === nothing
@@ -180,12 +181,6 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
         remake(alg,chunk_size=cs)
       end
     end
-end
-function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
-                        OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
-                        DAEAlgorithm{0,AD,FDT}},u0::AbstractArray{<:ForwardDiff.Dual},p,prob) where {AD,FDT}
-# If our element type consists of dual numbers already, we prefer a chunk size of `1`.
-  remake(alg,chunk_size=Val(1))
 end
 
 @generated function pick_static_chunksize(::Val{chunksize}) where chunksize
