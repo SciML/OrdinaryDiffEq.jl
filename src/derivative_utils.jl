@@ -1,3 +1,23 @@
+const ROSENBROCK_INV_CUTOFF = 7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
+
+struct StaticWOperator{isinv, T}
+    W::T
+    function StaticWOperator(W::T,callinv = true) where T
+        isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
+
+        # when constructing W for the first time for the type
+        # inv(W) can be singular
+        _W = if isinv && callinv
+          inv(W)
+        else
+          W
+        end
+        new{isinv, T}(_W)
+    end
+end
+isinv(W::StaticWOperator{S}) where S = S
+Base.:\(W::StaticWOperator, v) = isinv(W) ? W.W * v : W.W \ v
+
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
@@ -531,10 +551,15 @@ end
     W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
   elseif DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
+    if typeof(J) <: StaticArray && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+      W = W_transform ? J - mass_matrix*inv(dtgamma) :
+                             dtgamma*J - mass_matrix
+    else
+      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+        J = DiffEqArrayOperator(J)
+      end
+      W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
     end
-    W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
@@ -544,7 +569,14 @@ end
     else
       W_full = W_transform ? J - mass_matrix*inv(dtgamma) :
                              dtgamma*J - mass_matrix
-      W = W_full isa Number ? W_full : DiffEqBase.default_factorize(W_full)
+      len = ArrayInterface.known_length(typeof(W_full))
+      W = if W_full isa Number
+        W_full
+      elseif len !== nothing && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+        StaticWOperator(W_full)
+      else
+        DiffEqBase.default_factorize(W_full)
+      end
     end
   end
   (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
@@ -624,7 +656,12 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
     elseif IIP
       similar(J)
     else
-      ArrayInterface.lu_instance(J)
+      len = ArrayInterface.known_length(typeof(J))
+      if len !== nothing && typeof(alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+        StaticWOperator(J,false)
+      else
+        ArrayInterface.lu_instance(J)
+      end
     end
   end
   return J, W
