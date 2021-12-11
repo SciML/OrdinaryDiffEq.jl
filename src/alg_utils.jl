@@ -181,6 +181,12 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
       end
     end
 end
+function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
+                        OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
+                        DAEAlgorithm{0,AD,FDT}},u0::AbstractArray{<:ForwardDiff.Dual},p,prob) where {AD,FDT}
+# If our element type consists of dual numbers already, we prefer a chunk size of `1`.
+  remake(alg,chunk_size=Val(1))
+end
 
 @generated function pick_static_chunksize(::Val{chunksize}) where chunksize
   x = ForwardDiff.pickchunksize(chunksize)
