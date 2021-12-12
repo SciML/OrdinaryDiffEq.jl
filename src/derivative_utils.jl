@@ -266,7 +266,7 @@ function WOperator{IIP}(f, u, gamma; transform=false) where IIP
   return WOperator{IIP}(mass_matrix, gamma, J, u; transform=transform)
 end
 
-DiffEqBase.isinplace(::WOperator{IIP}) where IIP = IIP
+SciMLBase.isinplace(::WOperator{IIP}) where IIP = IIP
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
