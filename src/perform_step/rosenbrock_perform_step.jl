@@ -48,7 +48,8 @@ end
     linsolve = set_A(linsolve,W)
   end
   linsolve = set_b(linsolve,vec(linsolve_tmp))
-  linres = solve(linsolve,weights=weight,reltol=opts.reltol)
+  linsolve = set_prec(linsolve,scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
 
   @.. vec(k₁) = -vecu
@@ -67,7 +68,7 @@ end
   @.. linsolve_tmp = f₁ - tmp
 
   linsolve = set_b(linsolve,vec(linsolve_tmp))
-  linres = solve(linsolve,weights=weight,reltol=opts.reltol)
+  linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
 
   @.. k₂ = -vecu
@@ -89,7 +90,7 @@ end
     end
 
     linsolve = set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,weights=weight,reltol=opts.reltol)
+    linres = solve(linsolve,reltol=opts.reltol)
     vecu = vec(linres.u)
 
     @.. k₃ = -vecu

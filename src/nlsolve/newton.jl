@@ -177,7 +177,8 @@ end
     linsolve = set_A(linsolve,W)
   end
   linsolve = set_b(linsolve,b)
-  linres = solve(linsolve,weights=weight,reltol=reltol)
+  linsolve = set_prec(linsolve,scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
 
   if DiffEqBase.has_destats(integrator)
@@ -290,7 +291,8 @@ end
     linsolve = set_A(linsolve,W)
   end
   linsolve = set_b(linsolve,b)
-  linres = solve(linsolve,weights=weight,reltol=reltol)
+  linsolve = set_prec(linsolve,scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
 
   if DiffEqBase.has_destats(integrator)
