@@ -51,8 +51,9 @@ end
   linsolve = set_prec(linsolve,scaling_preconditioner(weight)...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
+  veck₁ = vec(k₁)
 
-  @.. vec(k₁) = -vecu
+  @.. veck₁ = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto2*k₁
