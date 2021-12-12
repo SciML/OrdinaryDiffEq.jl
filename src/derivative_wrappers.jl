@@ -2,7 +2,13 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivtive for all elements in gradient
     if alg_autodiff(alg)
-        xdual = Dual{typeof(ForwardDiff.Tag(f,eltype(x)))}(x,1)
+        T = if standardtag(alg)
+          typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(),eltype(x)))
+        else
+          typeof(ForwardDiff.Tag(f,eltype(x)))
+        end
+
+        xdual = Dual{T}(x,1)
         f(grad_config,xdual)
         df .= first.(ForwardDiff.partials.(grad_config))
         integrator.destats.nf += 1
@@ -119,7 +125,14 @@ function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{
     sparsity,colorvec = sparsity_colorvec(f,u)
     if alg_autodiff(alg)
       _chunksize = get_chunksize(alg)===Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
-      jac_config = ForwardColorJacCache(uf,uprev,_chunksize;colorvec=colorvec,sparsity=sparsity)
+
+      T = if standardtag(alg)
+        ForwardDiff.Tag(OrdinaryDiffEqTag(),eltype(u))
+      else
+        typeof(ForwardDiff.Tag(uf,eltype(u)))
+      end
+
+      jac_config = ForwardColorJacCache(uf,uprev,_chunksize;colorvec=colorvec,sparsity=sparsity,tag=T)
     else
       if alg_difftype(alg) !== Val{:complex}
         jac_config = FiniteDiff.JacobianCache(tmp,du1,du2,alg_difftype(alg),colorvec=colorvec,sparsity=sparsity)
@@ -172,7 +185,14 @@ end
 function build_grad_config(alg,f::F1,tf::F2,du1,t) where {F1,F2}
   if !DiffEqBase.has_tgrad(f)
     if alg_autodiff(alg)
-      dualt = Dual{typeof(ForwardDiff.Tag(tf,eltype(t)))}(t, t)
+
+      T = if standardtag(alg)
+        typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(),eltype(t)))
+      else
+        typeof(ForwardDiff.Tag(f,eltype(t)))
+      end
+
+      dualt = Dual{T}(t, t)
       if du1 isa Array
         grad_config = similar(du1,eltype(first(du1)*dualt))
         fill!(grad_config,false)
