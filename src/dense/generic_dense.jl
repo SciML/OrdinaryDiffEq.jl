@@ -129,6 +129,14 @@ end
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
+@inline function current_interpolant!(val,t::Array,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+  Θ = similar(t)
+  @inbounds @simd for i in eachindex(t)
+    Θ[i] = (t[i]-integrator.tprev)/integrator.dt
+  end
+  [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
+end
+
 @inline function current_extrapolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
@@ -473,6 +481,13 @@ end
 @muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,::Type{Val{true}},idxs::Nothing,T::Type{Val{0}}) # Default interpolant is Hermite
   #@.. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
   @inbounds @.. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+end
+
+@muladd function hermite_interpolant(Θ,dt,y₀::Array,y₁,k,::Type{Val{true}},idxs::Nothing,T::Type{Val{0}}) # Default interpolant is Hermite
+  out = similar(y₀)
+  @inbounds @simd for i in eachindex(y₀)
+    out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+  end
 end
 
 @muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
