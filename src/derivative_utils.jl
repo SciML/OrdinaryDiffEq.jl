@@ -473,7 +473,7 @@ function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_t
   else
     if MT <: UniformScaling
       idxs = diagind(W)
-      @inbounds for i in eachindex(W)
+      @inbounds @simd ivdep for i in eachindex(W)
         W[i] = dtgamma*J[i]
       end
       λ = -mass_matrix.λ
@@ -481,7 +481,7 @@ function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_t
         W[i] = W[i] + λ
       end
     else
-      @inbounds for i in eachindex(W)
+      @inbounds @simd ivdep for i in eachindex(W)
         W[i] = muladd(dtgamma, J[i], -mass_matrix[i])
       end
     end

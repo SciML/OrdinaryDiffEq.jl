@@ -131,7 +131,7 @@ end
 
 @inline function current_interpolant!(val,t::Array,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = similar(t)
-  @inbounds @simd for i in eachindex(t)
+  @inbounds @simd ivdep for i in eachindex(t)
     Θ[i] = (t[i]-integrator.tprev)/integrator.dt
   end
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
@@ -485,7 +485,7 @@ end
 
 @muladd function hermite_interpolant(Θ,dt,y₀::Array,y₁,k,::Type{Val{true}},idxs::Nothing,T::Type{Val{0}}) # Default interpolant is Hermite
   out = similar(y₀)
-  @inbounds @simd for i in eachindex(y₀)
+  @inbounds @simd ivdep for i in eachindex(y₀)
     out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
   end
 end
@@ -500,7 +500,7 @@ end
 end
 
 @muladd function hermite_interpolant!(out::Array,Θ,dt,y₀,y₁,k,idxs::Nothing,T::Type{Val{0}}) # Default interpolant is Hermite
-  @inbounds @simd for i in eachindex(out)
+  @inbounds @simd ivdep for i in eachindex(out)
     out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
   end
   out
@@ -539,7 +539,7 @@ end
 end
 
 @muladd function hermite_interpolant!(out::Array,Θ,dt,y₀,y₁,k,idxs::Nothing,T::Type{Val{1}}) # Default interpolant is Hermite
-  @inbounds @simd for i in eachindex(out)
+  @inbounds @simd ivdep for i in eachindex(out)
     out[i] = k[1][i] + Θ*(-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(3*dt*k[1][i] + 3*dt*k[2][i] + 6*y₀[i] - 6*y₁[i]) + 6*y₁[i])/dt
   end
   out
@@ -581,7 +581,7 @@ end
 end
 
 @muladd function hermite_interpolant!(out::Array,Θ,dt,y₀,y₁,k,idxs::Nothing,T::Type{Val{2}}) # Default interpolant is Hermite
-  @inbounds @simd for i in eachindex(out)
+  @inbounds @simd ivdep for i in eachindex(out)
     out[i] = (-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i]) + 6*y₁[i])/(dt*dt)
   end
   out
@@ -628,7 +628,7 @@ end
 end
 
 @muladd function hermite_interpolant!(out::Array,Θ,dt,y₀,y₁,k,idxs::Nothing,T::Type{Val{3}}) # Default interpolant is Hermite
-  @inbounds @simd for i in eachindex(out)
+  @inbounds @simd ivdep for i in eachindex(out)
     out[i] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
   end
   out
