@@ -48,7 +48,7 @@ end
     linsolve = LinearSolve.set_A(linsolve,W)
   end
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)

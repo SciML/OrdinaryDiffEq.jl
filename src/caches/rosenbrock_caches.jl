@@ -74,7 +74,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
 
-  linprob = LinearProblem(W,vec(u); u0=vec(u))
+  linprob = LinearProblem(W,copy(vec(u)); u0=copy(vec(u)))
   linsolve = init(linprob,alg.linsolve)
 
   grad_config = build_grad_config(alg,f,tf,du1,t)

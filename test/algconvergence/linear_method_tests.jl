@@ -15,7 +15,7 @@ sol_analytic = exp(1.0 * Matrix(A)) * u0
 @test isapprox(sol1, sol_analytic, rtol=1e-10)
 @test isapprox(sol2, sol_analytic, rtol=1e-10)
 @test isapprox(sol3, sol_analytic, rtol=1e-10)
-@test isapprox(sol4, sol_analytic, rtol=1e-8)
+@test isapprox(sol4, sol_analytic, rtol=1e-7)
 
 # u' = A(t)u solvers
 function update_func(A,u,p,t)
