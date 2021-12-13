@@ -159,7 +159,9 @@ get_chunksize_int(alg::ExponentialAlgorithm) = alg.chunksize
 
 function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
                         OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
-                        DAEAlgorithm{0,AD,FDT}},u0::AbstractArray,p,prob) where {AD,FDT}
+                        DAEAlgorithm{0,AD,FDT}},u0::AbstractArray{T},p,prob) where {AD,FDT,T}
+    alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
+    isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}())
     # If chunksize is zero, pick chunksize right at the start of solve and
     # then do function barrier to infer the full solve
     x = if prob.f.colorvec === nothing
@@ -168,17 +170,13 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
       maximum(prob.f.colorvec)
     end
 
-    if typeof(alg) <: OrdinaryDiffEqImplicitExtrapolationAlgorithm
-      return alg # remake fails, should get fixed
-    else
-      L = ArrayInterface.known_length(typeof(u0))
-      if L === nothing # dynamic sized
-        cs = ForwardDiff.pickchunksize(x)
-        remake(alg,chunk_size=cs)
-      else # statically sized
-        cs = pick_static_chunksize(Val{L}())
-        remake(alg,chunk_size=cs)
-      end
+    L = ArrayInterface.known_length(typeof(u0))
+    if L === nothing # dynamic sized
+      cs = ForwardDiff.pickchunksize(x)
+      remake(alg,chunk_size=cs)
+    else # statically sized
+      cs = pick_static_chunksize(Val{L}())
+      remake(alg,chunk_size=cs)
     end
 end
 
