@@ -429,7 +429,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
         linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
         linres = solve(linsolve,reltol=opts.reltol)
         vecu = vec(linres.u)
-        vecklast = vec($klst)
+        vecklast = vec($klast)
         @.. $klast = -vecu
 
         integrator.destats.nsolve += 1
