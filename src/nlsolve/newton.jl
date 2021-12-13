@@ -174,10 +174,10 @@ end
   end
 
   if iter == 1 && new_W
-    linsolve = set_A(linsolve,W)
+    linsolve = LinearSolve.set_A(linsolve,W)
   end
-  linsolve = set_b(linsolve,b)
-  linsolve = set_prec(linsolve,scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_b(linsolve,b)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
 
@@ -288,10 +288,10 @@ end
   end
 
   if iter == 1 && new_W
-    linsolve = set_A(linsolve,W)
+    linsolve = LinearSolve.set_A(linsolve,W)
   end
-  linsolve = set_b(linsolve,b)
-  linsolve = set_prec(linsolve,scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_b(linsolve,b)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
 

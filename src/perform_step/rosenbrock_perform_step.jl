@@ -45,10 +45,10 @@ end
 
   linsolve = cache.linsolve
   if new_W
-    linsolve = set_A(linsolve,W)
+    linsolve = LinearSolve.set_A(linsolve,W)
   end
-  linsolve = set_b(linsolve,vec(linsolve_tmp))
-  linsolve = set_prec(linsolve,scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -68,11 +68,12 @@ end
 
   @.. linsolve_tmp = f₁ - tmp
 
-  linsolve = set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
+  veck2 = vec(k₂)
 
-  @.. k₂ = -vecu
+  @.. veck2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. k₂ += k₁
@@ -90,7 +91,7 @@ end
       @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
     end
 
-    linsolve = set_b(linsolve,vec(linsolve_tmp))
+    linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
     linres = solve(linsolve,reltol=opts.reltol)
     vecu = vec(linres.u)
 
