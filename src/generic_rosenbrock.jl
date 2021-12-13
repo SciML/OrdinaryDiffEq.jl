@@ -213,7 +213,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     for field in fields
         if @capture(field, valsym_Symbol::valtype_)
             push!(valsyms, valsym)
-            
+
             if match(r"^k[1-9]+$", String(valsym)) !== nothing
                 push!(ksinit, :($valsym = zero(rate_prototype)))
             end
@@ -225,7 +225,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-            linsolve = alg.linsolve(Val{:init},uf,u)
+            linprob = LinearProblem(W,copy(u); u0=copy(u))
+            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
@@ -244,7 +245,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            linsolve = alg.linsolve(Val{:init},uf,u)
+            linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
             $cachename($(valsyms...))
@@ -394,8 +396,16 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             repeatstepexpr=[:(!repeat_step)]
         end
         push!(iterexprs,quote
-            cache.linsolve(vec($ki), W, vec(linsolve_tmp), $(repeatstepexpr...))
-            @.. $ki = -$ki
+
+            linsolve = cache.linsolve
+            linsolve = LinearSolve.set_A(linsolve,W)
+            linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+            #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+            linres = solve(linsolve,reltol=opts.reltol)
+            vecu = vec(linres.u)
+            vecki = vec($ki)
+
+            @.. vecki = -vecu
             integrator.destats.nsolve += 1
             @.. u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
@@ -415,8 +425,13 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     klast=Symbol(:k,n)
     biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
     push!(iterexprs,quote
-        cache.linsolve(vec($klast), W, vec(linsolve_tmp))
-        @.. $klast = -$klast
+
+        linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+        linres = solve(linsolve,reltol=opts.reltol)
+        vecu = vec(linres.u)
+        vecklast = vec($klst)
+        @.. $klast = -vecu
+
         integrator.destats.nsolve += 1
         @.. u = +(uprev,$(biki...))
     end)
@@ -748,8 +763,13 @@ macro Rosenbrock4(part)
             end
         end
         specialstep=quote
-            cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-            @.. k3 = -k3
+
+            linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+            linres = solve(linsolve,reltol=opts.reltol)
+            vecu = vec(linres.u)
+            veck3 = vec(k3)
+            @.. veck3 = -vecu
+
             integrator.destats.nsolve += 1
             #@.. u = uprev + a31*k1 + a32*k2 #a4j=a3j
             #f( du,  u, p, t+c3*dt) #reduced function call

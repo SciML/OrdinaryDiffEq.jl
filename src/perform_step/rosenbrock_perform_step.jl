@@ -44,9 +44,7 @@ end
                        opts.abstol, opts.reltol, opts.internalnorm, t)
 
   linsolve = cache.linsolve
-  if new_W
-    linsolve = LinearSolve.set_A(linsolve,W)
-  end
+  linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
   linres = solve(linsolve,reltol=opts.reltol)
@@ -104,7 +102,6 @@ end
   end
 end
 
-#=
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache{<:Array}, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,opts = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
@@ -124,12 +121,16 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        opts.abstol, opts.reltol, opts.internalnorm, t)
 
-  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), new_W,
-      Pl=DiffEqBase.ScaleVector(weight, true),
-      Pr=DiffEqBase.ScaleVector(weight, false), reltol=opts.reltol)
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck₁ = vec(k₁)
 
   @inbounds @simd ivdep for i in eachindex(u)
-    k₁[i] = -k₁[i]
+    veck₁[i] = -vecu[i]
   end
   integrator.destats.nsolve += 1
 
@@ -148,10 +149,10 @@ end
   @inbounds @simd ivdep for i in eachindex(u)
     linsolve_tmp[i] = f₁[i] - tmp[i]
   end
-  cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
-
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k₂[i] = -k₂[i]
+    k₂[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -182,10 +183,10 @@ end
     end
 
 
-    cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
-
+    linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+    linres = solve(linsolve,reltol=opts.reltol)
     @inbounds @simd ivdep for i in eachindex(u)
-      k₃[i] = -k₃[i]
+      k₃[i] = -linres.u[i]
     end
     integrator.destats.nsolve += 1
 
@@ -196,7 +197,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
-=#
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
@@ -214,8 +214,15 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
-  @.. k₁ = -k₁
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck₁ = vec(k₁)
+
+  @.. veck₁ = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto2*k₁
@@ -230,8 +237,12 @@ end
 
   @.. linsolve_tmp = f₁ - tmp
 
-  cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
-  @.. k₂ = -k₂
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck2 = vec(k₂)
+
+  @.. veck2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. k₂ += k₁
@@ -247,8 +258,11 @@ end
     @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
-  cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
-  @.. k₃ = -k₃
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+
+  @.. k₃ = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto6*(k₁ + 4k₂ + k₃)
@@ -485,8 +499,15 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-  @.. k1 = -k1
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck1 = vec(k1)
+
+  @.. veck1 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a21*k1
@@ -501,8 +522,11 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-  @.. k2 = -k2
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k2 = -vecu
+
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -517,8 +541,11 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-  @.. k3 = -k3
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k3 = -vecu
+
   integrator.destats.nsolve += 1
 
   @.. u = uprev + b1*k1 + b2*k2 + b3*k3
@@ -640,8 +667,15 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-  @.. k1 = -k1
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck₁ = vec(k₁)
+
+  @.. veck₁ = -vecu
   integrator.destats.nsolve += 1
 
   #=
@@ -660,8 +694,10 @@ end
     @.. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
-  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-  @.. k2 = -k2
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -676,8 +712,10 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-  @.. k3 = -k3
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k3 = -vecu
   integrator.destats.nsolve += 1
 
   if mass_matrix == I
@@ -688,8 +726,10 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-  @.. k4 = -k4
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k4 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
@@ -892,8 +932,16 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-  @.. k1 = -k1
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck₁ = vec(k₁)
+
+  @.. veck₁ = -vecu
+
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a21*k1
@@ -908,8 +956,10 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-  @.. k2 = -k2
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -924,8 +974,10 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-  @.. k3 = -k3
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k3 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -940,8 +992,10 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-  @.. k4 = -k4
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k4 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -956,8 +1010,10 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
-  @.. k5 = -k5
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k5 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k5
@@ -972,8 +1028,10 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
-  @.. k6 = -k6
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k6 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k6
@@ -1026,10 +1084,16 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck₁ = vec(k₁)
 
   @inbounds @simd ivdep for i in eachindex(u)
-    k1[i] = -k1[i]
+    veck₁[i] = -vecu[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1054,10 +1118,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k2[i] = -k2[i]
+    k2[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1083,9 +1147,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k3[i] = -k3[i]
+    k3[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1110,9 +1175,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k4[i] = -k4[i]
+    k4[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1137,9 +1203,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k5[i] = -k5[i]
+    k5[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1163,9 +1230,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k6[i] = -k6[i]
+    k6[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1405,8 +1473,15 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-  @.. k1 = -k1
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck₁ = vec(k₁)
+
+  @.. veck₁ = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a21*k1
@@ -1421,8 +1496,10 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-  @.. k2 = -k2
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -1437,8 +1514,10 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-  @.. k3 = -k3
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k3 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -1453,8 +1532,10 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-  @.. k4 = -k4
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k4 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -1469,8 +1550,10 @@ end
     @.. linsolve_tmp = du + dtd5*dT + du2
   end
 
-  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
-  @.. k5 = -k5
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k5 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
@@ -1485,8 +1568,10 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
-  @.. k6 = -k6
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k6 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k6
@@ -1501,8 +1586,10 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  cache.linsolve(vec(k7), W, vec(linsolve_tmp))
-  @.. k7 = -k7
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k7 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k7
@@ -1517,8 +1604,10 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  cache.linsolve(vec(k8), W, vec(linsolve_tmp))
-  @.. k8 = -k8
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  @.. k8 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k8
@@ -1589,9 +1678,16 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+  linsolve = cache.linsolve
+  linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linres = solve(linsolve,reltol=opts.reltol)
+  vecu = vec(linres.u)
+  veck₁ = vec(k₁)
+
   @inbounds @simd ivdep for i in eachindex(u)
-    k1[i] = -k1[i]
+    veck₁[i] = -vecu[i]
   end
 
   integrator.destats.nsolve += 1
@@ -1617,10 +1713,12 @@ end
     end
   end
 
-  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k2[i] = -k2[i]
+    k2[i] = -linres.u[i]
   end
+
   integrator.destats.nsolve += 1
 
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1646,9 +1744,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k3[i] = -k3[i]
+    k3[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1674,10 +1773,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k4[i] = -k4[i]
+    k4[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1703,9 +1802,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k5[i] = -k5[i]
+    k5[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1731,10 +1831,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
-
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k6[i] = -k6[i]
+    k6[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1760,9 +1860,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k7), W, vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k7[i] = -k7[i]
+    k7[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1788,10 +1889,10 @@ end
     end
   end
 
-  cache.linsolve(vec(k8), W, vec(linsolve_tmp))
-
+  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linres = solve(linsolve,reltol=opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
-    k8[i] = -k8[i]
+    k8[i] = -linres.u[i]
   end
   integrator.destats.nsolve += 1
 
