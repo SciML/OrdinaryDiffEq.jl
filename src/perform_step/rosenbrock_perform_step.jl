@@ -199,7 +199,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f,p,opts = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack c₃₂,d = cache.tab
 
