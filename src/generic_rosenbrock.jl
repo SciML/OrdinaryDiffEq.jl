@@ -247,7 +247,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+            linprob = LinearProblem(W,vec(tmp); u0=vec(linsolve_tmp))
             linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
