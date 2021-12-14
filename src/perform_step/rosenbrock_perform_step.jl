@@ -125,7 +125,6 @@ end
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
-  @show size(linsolve.A), size(linsolve.b), size(linsolve.u)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
