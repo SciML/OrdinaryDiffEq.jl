@@ -682,9 +682,9 @@ end
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
-  veck₁ = vec(k₁)
+  veck1 = vec(k1)
 
-  @.. veck₁ = -vecu
+  @.. veck1 = -vecu
   integrator.destats.nsolve += 1
 
   #=
@@ -950,9 +950,9 @@ end
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
-  veck₁ = vec(k₁)
+  veck1 = vec(k1)
 
-  @.. veck₁ = -vecu
+  @.. veck1 = -vecu
 
   integrator.destats.nsolve += 1
 
@@ -1105,10 +1105,10 @@ end
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
-  veck₁ = vec(k₁)
+  veck1 = vec(k1)
 
   @inbounds @simd ivdep for i in eachindex(u)
-    veck₁[i] = -vecu[i]
+    veck1[i] = -vecu[i]
   end
   integrator.destats.nsolve += 1
 
@@ -1497,9 +1497,9 @@ end
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
-  veck₁ = vec(k₁)
+  veck1 = vec(k1)
 
-  @.. veck₁ = -vecu
+  @.. veck1 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a21*k1
@@ -1705,10 +1705,10 @@ end
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
-  veck₁ = vec(k₁)
+  veck1 = vec(k1)
 
   @inbounds @simd ivdep for i in eachindex(u)
-    veck₁[i] = -vecu[i]
+    veck1[i] = -vecu[i]
   end
 
   integrator.destats.nsolve += 1
