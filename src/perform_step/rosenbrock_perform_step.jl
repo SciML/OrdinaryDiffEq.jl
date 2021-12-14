@@ -46,7 +46,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -124,7 +124,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -217,7 +217,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -502,7 +502,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck1 = vec(k1)
@@ -670,7 +670,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -935,7 +935,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -1087,7 +1087,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -1476,7 +1476,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
@@ -1681,7 +1681,7 @@ end
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-  #linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(weight)...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
   linres = solve(linsolve,reltol=opts.reltol)
   vecu = vec(linres.u)
   veck₁ = vec(k₁)
