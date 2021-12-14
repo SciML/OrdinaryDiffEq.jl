@@ -45,6 +45,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -99,6 +100,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -108,7 +110,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstantCache
@@ -191,6 +193,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -214,6 +217,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
@@ -223,7 +227,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock33Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -253,6 +257,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -276,6 +281,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas3Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -286,7 +292,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock34Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -356,6 +362,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -383,6 +390,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas4Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -394,7 +402,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -425,6 +433,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas42Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -436,7 +445,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -467,6 +476,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -478,7 +488,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -509,6 +519,7 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -520,7 +531,7 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -569,6 +580,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -598,6 +610,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -609,7 +622,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,k7,k8,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 

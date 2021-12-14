@@ -188,6 +188,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             W::WType
             tmp::rateType
             atmp::uNoUnitsType
+            weight::uNoUnitsType
             tab::TabType
             tf::TFType
             uf::UFType
@@ -240,6 +241,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
+            weight = similar(u, uEltypeNoUnits)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
             tf = TimeGradientWrapper(f,uprev,p)
@@ -452,7 +454,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
             @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp = cache
+            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
             $unpacktabexpr
 
             # Assignments
@@ -464,6 +466,10 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             $(dtCij...)
             $(dtdi...)
             dtgamma = dt*gamma
+
+            calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
+                                 integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+
             calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
             $(iterexprs...)
