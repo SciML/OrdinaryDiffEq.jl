@@ -4,7 +4,7 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-@inline function _searchsortedfirst(v::AbstractVector, x, lo::Integer, forward::Bool)
+function _searchsortedfirst(v::AbstractVector, x, lo::Integer, forward::Bool)
     u = oftype(lo, 1)
     lo = lo - u
     hi = length(v) + u
@@ -19,7 +19,7 @@
     return hi
 end
 
-@inline function _searchsortedlast(v::AbstractVector, x, lo::Integer, forward::Bool)
+function _searchsortedlast(v::AbstractVector, x, lo::Integer, forward::Bool)
   u = oftype(lo, 1)
   lo = lo - u
   hi = length(v) + u
@@ -34,7 +34,7 @@ end
   return lo
 end
 
-@inline function _ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+function _ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if !(typeof(integrator.cache) <: CompositeCache)
     DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                   integrator.dt,f,integrator.p,integrator.cache,
@@ -58,9 +58,9 @@ end
     end
   end
 end
-@inline DiffEqBase.addsteps!(integrator::ODEIntegrator,args...) = _ode_addsteps!(integrator,args...)
+DiffEqBase.addsteps!(integrator::ODEIntegrator,args...) = _ode_addsteps!(integrator,args...)
 
-@inline function ode_interpolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function ode_interpolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   DiffEqBase.addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -85,7 +85,7 @@ end
   return expr
 end
 
-@inline function ode_interpolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function ode_interpolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   DiffEqBase.addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -109,27 +109,27 @@ end
   return expr
 end
 
-@inline function current_interpolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function current_interpolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant(t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function current_interpolant(t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_interpolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function current_interpolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function current_interpolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_interpolant!(val,t::Array,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function current_interpolant!(val,t::Array,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = similar(t)
   @inbounds @simd ivdep for i in eachindex(t)
     Θ[i] = (t[i]-integrator.tprev)/integrator.dt
@@ -137,27 +137,27 @@ end
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant(t::AbstractArray,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant(t::AbstractArray,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function ode_extrapolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function ode_extrapolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   DiffEqBase.addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -182,7 +182,7 @@ end
 end
 
 
-@inline function ode_extrapolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
+function ode_extrapolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   DiffEqBase.addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -647,23 +647,23 @@ end
 
 ######################## Linear Interpolants
 
-@muladd @inline function linear_interpolant(Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{0}})
+@muladd function linear_interpolant(Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{0}})
   Θm1 = (1-Θ)
   @.. Θm1*y₀ + Θ*y₁
 end
 
-@muladd @inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
+@muladd function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
   Θm1 = (1-Θ)
   @.. Θm1*y₀[idxs] + Θ*y₁[idxs]
 end
 
-@muladd @inline function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{0}})
+@muladd function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{0}})
   Θm1 = (1-Θ)
   @.. out = Θm1*y₀ + Θ*y₁
   out
 end
 
-@muladd @inline function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
+@muladd function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
   Θm1 = (1-Θ)
   @views @.. out = Θm1*y₀[idxs] + Θ*y₁[idxs]
   out
@@ -672,20 +672,20 @@ end
 """
 Linear Interpolation
 """
-@inline function linear_interpolant(Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{1}})
+function linear_interpolant(Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{1}})
   (y₁ - y₀)/dt
 end
 
-@inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
+function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
   @.. (y₁[idxs] - y₀[idxs])/dt
 end
 
-@inline function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{1}})
+function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs::Nothing,T::Type{Val{1}})
   @.. out = (y₁ - y₀)/dt
   out
 end
 
-@inline function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
+function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
   @views @.. out = (y₁[idxs] - y₀[idxs])/dt
   out
 end

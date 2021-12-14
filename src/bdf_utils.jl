@@ -1,4 +1,4 @@
-@inline function U!(k, U)
+function U!(k, U)
   @inbounds for r = 1:k
     U[1,r] = -r
     for j = 2:k
@@ -263,4 +263,3 @@ function estimate_terk(integrator, cache, k, max_order, u)
   end
   return terk
 end
-

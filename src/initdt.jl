@@ -232,7 +232,7 @@ end
   return tdir*max(dtmin, min(100dt₀,dt₁,dtmax_tdir))
 end
 
-@inline function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractDAEProblem{duType,uType,tType},integrator) where {duType,uType,tType}
+function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractDAEProblem{duType,uType,tType},integrator) where {duType,uType,tType}
   _tType = eltype(tType)
   oneunit_tType = oneunit(_tType)
   return convert(_tType,oneunit_tType*1//10^(6))

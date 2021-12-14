@@ -48,7 +48,7 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
-@inline trivial_limiter!(u, integrator, p, t) = nothing
+trivial_limiter!(u, integrator, p, t) = nothing
 """
 Euler - The canonical forward Euler method. Fixed timestep only.
 """
