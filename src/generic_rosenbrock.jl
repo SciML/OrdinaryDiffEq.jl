@@ -403,7 +403,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             linsolve = LinearSolve.set_A(linsolve,W)
             linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
             linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
-            linres = solve(linsolve,reltol=opts.reltol)
+            linres = solve(linsolve,reltol=integrator.opts.reltol)
             vecu = vec(linres.u)
             vecki = vec($ki)
 
@@ -429,7 +429,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     push!(iterexprs,quote
 
         linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-        linres = solve(linsolve,reltol=opts.reltol)
+        linres = solve(linsolve,reltol=integrator.opts.reltol)
         vecu = vec(linres.u)
         vecklast = vec($klast)
         @.. $klast = -vecu
@@ -771,7 +771,7 @@ macro Rosenbrock4(part)
         specialstep=quote
 
             linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-            linres = solve(linsolve,reltol=opts.reltol)
+            linres = solve(linsolve,reltol=integrator.opts.reltol)
             vecu = vec(linres.u)
             veck3 = vec(k3)
             @.. veck3 = -vecu
