@@ -131,7 +131,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock23ConstantCache(constvalue(uBottomEltypeNoUnits),tf,uf,J,W,linsolve,alg_autodiff(alg))
 end
@@ -156,7 +156,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock32ConstantCache(constvalue(uBottomEltypeNoUnits),tf,uf,J,W,linsolve,alg_autodiff(alg))
 end
@@ -231,7 +231,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock33ConstantCache(tf,uf,ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
@@ -303,7 +303,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock34ConstantCache(tf,uf,Rodas3Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
@@ -402,7 +402,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas4Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
@@ -444,7 +444,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas42Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
@@ -486,7 +486,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
@@ -528,7 +528,7 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
@@ -617,7 +617,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linprob = LinearProblem(W,tmp; u0=linsolve_tmp)
+  linprob = LinearProblem(W,copy(u); u0=copy(u))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock5ConstantCache(tf,uf,Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
