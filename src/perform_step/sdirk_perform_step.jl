@@ -426,7 +426,7 @@ end
       est = nlsolver.cache.dz
 
       linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
-      linres = solve(linsolve,reltol=opts.reltol)
+      linres = solve(linsolve,reltol=integrator.opts.reltol)
       vecu = vec(linres.u)
       vecest = vec(est)
       copyto!(vecest,vecu)
@@ -498,7 +498,7 @@ end
       est = nlsolver.cache.dz
 
       linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
-      linres = solve(linsolve,reltol=opts.reltol)
+      linres = solve(linsolve,reltol=integrator.opts.reltol)
       vecu = vec(linres.u)
       vecest = vec(est)
       copyto!(vecest,vecu)
@@ -610,7 +610,7 @@ end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
       linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
-      linres = solve(linsolve,reltol=opts.reltol)
+      linres = solve(linsolve,reltol=integrator.opts.reltol)
       vecu = vec(linres.u)
       vecest = vec(est)
       copyto!(vecest,vecu)
@@ -1046,7 +1046,7 @@ end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
       linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
-      linres = solve(linsolve,reltol=opts.reltol)
+      linres = solve(linsolve,reltol=integrator.opts.reltol)
       vecu = vec(linres.u)
       vecest = vec(est)
       copyto!(vecest,vecu)
@@ -2041,7 +2041,7 @@ end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
       linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
-      linres = solve(linsolve,reltol=opts.reltol)
+      linres = solve(linsolve,reltol=integrator.opts.reltol)
       vecu = vec(linres.u)
       vecest = vec(est)
       copyto!(vecest,vecu)
