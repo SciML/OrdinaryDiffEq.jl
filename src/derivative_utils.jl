@@ -429,7 +429,7 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
       idxs = diagind(W)
       λ = -mass_matrix.λ
       if ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.fast_scalar_indexing(W)
-          for i in 1:size(J,1)
+          @inbounds for i in 1:size(J,1)
               W[i,i] = muladd(λ, invdtgamma, J[i,i])
           end
       else
@@ -446,6 +446,44 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
       @.. @view(W[idxs]) = @view(W[idxs]) + λ
     else
       @.. W = muladd(dtgamma, J, -mass_matrix)
+    end
+  end
+  return nothing
+end
+
+function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_transform::Bool)::Nothing where MT
+  # check size and dimension
+  iijj = axes(W)
+  @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
+  mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
+  @inbounds if W_transform
+    invdtgamma = inv(dtgamma)
+    if MT <: UniformScaling
+      copyto!(W, J)
+      idxs = diagind(W)
+      λ = -mass_matrix.λ
+      @inbounds for i in 1:size(J,1)
+          W[i,i] = muladd(λ, invdtgamma, J[i,i])
+      end
+    else
+      @inbounds for i in eachindex(W)
+        W[i] = muladd(-mass_matrix[i], invdtgamma, J[i])
+      end
+    end
+  else
+    if MT <: UniformScaling
+      idxs = diagind(W)
+      @inbounds @simd ivdep for i in eachindex(W)
+        W[i] = dtgamma*J[i]
+      end
+      λ = -mass_matrix.λ
+      @inbounds for i in idxs
+        W[i] = W[i] + λ
+      end
+    else
+      @inbounds @simd ivdep for i in eachindex(W)
+        W[i] = muladd(dtgamma, J[i], -mass_matrix[i])
+      end
     end
   end
   return nothing
