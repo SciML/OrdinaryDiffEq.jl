@@ -45,14 +45,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, γ, J, false)
 
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-                         integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-
     linsolve = cache.linsolve
     linsolve = LinearSolve.set_A(linsolve,W)
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
 
     vecu = vec(linres.u)
     veck₁ = vec(k₁)
@@ -71,7 +67,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     @.. linsolve_tmp = f₁ - tmp
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck2 = vec(k₂)
 
@@ -106,14 +102,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, γ, J, false)
 
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-                         integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-
     linsolve = cache.linsolve
     linsolve = LinearSolve.set_A(linsolve,W)
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck₁ = vec(k₁)
 
@@ -134,7 +126,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck2 = vec(k₂)
 
@@ -276,14 +268,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-                         integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-
     linsolve = cache.linsolve
     linsolve = LinearSolve.set_A(linsolve,W)
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck1 = vec(k1)
 
@@ -300,7 +288,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck2 = vec(k2)
     @.. veck2 = -vecu
@@ -316,7 +304,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck3 = vec(k3)
     @.. veck3 = -vecu
@@ -332,7 +320,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck4 = vec(k4)
     @.. veck4 = -vecu
@@ -348,7 +336,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck5 = vec(k5)
     @.. veck5 = -vecu
@@ -406,14 +394,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-                         integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-
     linsolve = cache.linsolve
     linsolve = LinearSolve.set_A(linsolve,W)
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck1 = vec(k1)
 
@@ -441,7 +425,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck2 = vec(k2)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -467,7 +451,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck3 = vec(k3)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -492,7 +476,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck4 = vec(k4)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -516,7 +500,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
 
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    linres = solve(linsolve)
     vecu = vec(linres.u)
     veck5 = vec(k5)
     @.. veck5 = -vecu
