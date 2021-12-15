@@ -53,7 +53,7 @@ for f in [f_oop, f_ip]
   prob_std = ODEProblem(odefun_std,u0,tspan)
 
   for ad in [true, false]
-    for Solver in [Rodas5, Trapezoid, KenCarp4]
+    for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4]
       for tol in [nothing, 1e-10]
         sol_std=solve(prob_std,Solver(autodiff=ad),reltol=tol,abstol=tol)
         @test sol_std.retcode==:Success
