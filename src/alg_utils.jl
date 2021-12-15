@@ -199,10 +199,15 @@ alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
 
-alg_difftype(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT},
-                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT},
-                        OrdinaryDiffEqExponentialAlgorithm{FDT},
-                        DAEAlgorithm{CS,AD,FDT}}) where {CS,AD,FDT} = FDT
+alg_difftype(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST},
+                        DAEAlgorithm{CS,AD,FDT,ST}}) where {CS,AD,FDT,ST} = FDT
+
+standardtag(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST},
+                        DAEAlgorithm{CS,AD,FDT,ST}}) where {CS,AD,FDT,ST} = ST
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
