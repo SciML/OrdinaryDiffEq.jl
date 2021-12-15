@@ -8,7 +8,7 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
           typeof(ForwardDiff.Tag(f,eltype(x)))
         end
 
-        xdual = Dual{T,eltype(x),1}(x,1)
+        xdual = Dual{T,eltype(x),1}(x,ForwardDiff.Partials((one(eltype(x)),)))
         f(grad_config,xdual)
         df .= first.(ForwardDiff.partials.(grad_config))
         integrator.destats.nf += 1
@@ -192,7 +192,7 @@ function build_grad_config(alg,f::F1,tf::F2,du1,t) where {F1,F2}
         typeof(ForwardDiff.Tag(f,eltype(t)))
       end
 
-      dualt = Dual{T,eltype(t),1}(t, t)
+      dualt = Dual{T,eltype(t),1}(t, ForwardDiff.Partials((t,)))
       if du1 isa Array
         grad_config = similar(du1,eltype(first(du1)*dualt))
         fill!(grad_config,false)
