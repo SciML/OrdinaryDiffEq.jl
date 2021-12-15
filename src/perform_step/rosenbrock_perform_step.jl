@@ -92,8 +92,9 @@ end
     linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
     linres = solve(linsolve,reltol=integrator.opts.reltol)
     vecu = vec(linres.u)
+    veck3 = vec(k₃)
+    @.. veck3 = -vecu
 
-    @.. k₃ = -vecu
     integrator.destats.nsolve += 1
 
     @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
@@ -264,8 +265,9 @@ end
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
+  veck3 = vec(k₃)
 
-  @.. k₃ = -vecu
+  @.. veck3 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto6*(k₁ + 4k₂ + k₃)
@@ -531,7 +533,9 @@ end
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
-  @.. k2 = -vecu
+  veck2 = vec(k2)
+
+  @.. veck2 = -vecu
 
   integrator.destats.nsolve += 1
 
@@ -550,7 +554,9 @@ end
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
-  @.. k3 = -vecu
+  veck3 = vec(k3)
+
+  @.. veck3 = -vecu
 
   integrator.destats.nsolve += 1
 
@@ -705,8 +711,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k2 = -vecu
+  veck2 = vec(k2)
+  @.. veck2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -723,8 +729,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k3 = -vecu
+  veck3 = vec(k3)
+  @.. veck3 = -vecu
   integrator.destats.nsolve += 1
 
   if mass_matrix == I
@@ -737,8 +743,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k4 = -vecu
+  veck4 = vec(k4)
+  @.. veck4 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
@@ -970,8 +976,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k2 = -vecu
+  veck2 = vec(k2)
+  @.. veck2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -988,8 +994,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k3 = -vecu
+  veck3 = vec(k3)
+  @.. veck3 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -1006,8 +1012,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k4 = -vecu
+  veck4 = vec(k4)
+  @.. veck4 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -1024,8 +1030,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k5 = -vecu
+  veck5 = vec(k5)
+  @.. veck5 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k5
@@ -1042,8 +1048,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k6 = -vecu
+  veck6 = vec(k6)
+  @.. veck6 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k6
@@ -1516,8 +1522,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k2 = -vecu
+  veck2 = vec(k2)
+  @.. veck2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -1534,8 +1540,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k3 = -vecu
+  veck3 = vec(k3)
+  @.. veck3 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -1552,8 +1558,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k4 = -vecu
+  veck4 = vec(k4)
+  @.. veck4 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -1570,8 +1576,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k5 = -vecu
+  veck5 = vec(k5)
+  @.. veck5 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
@@ -1588,8 +1594,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k6 = -vecu
+  veck6 = vec(k6)
+  @.. veck6 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k6
@@ -1606,8 +1612,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k7 = -vecu
+  veck7 = vec(k7)
+  @.. veck7 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k7
@@ -1624,8 +1630,8 @@ end
 
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  vecu = vec(linres.u)
-  @.. k8 = -vecu
+  veck8 = vec(k8)
+  @.. veck8 = -vecu
   integrator.destats.nsolve += 1
 
   u .+= k8
