@@ -171,7 +171,6 @@ struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImplic
   sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
-  linsolve=nothing,diff_type=Val{:forward},
 function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),
   linsolve=nothing,diff_type=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
@@ -262,7 +261,7 @@ struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImp
   sequence::Symbol # Name of the subdividing sequence
   threading::TO
 end
-  linsolve=nothing,diff_type=Val{:forward},
+
 function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),
   linsolve=nothing,diff_type=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
@@ -305,7 +304,7 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffE
     threading::TO
   sequence_factor::Int
 end
-  linsolve=nothing,diff_type=Val{:forward},
+
 function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),
   linsolve=nothing,diff_type=Val{:forward},
   min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
