@@ -264,7 +264,16 @@ end
 
     @. cubuff = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
     needfactor = iter==1
-    linsolve2(vec(dw12), W1, vec(cubuff), needfactor)
+
+    linsolve = cache.linsolve2
+    if needfactor
+      linsolve = LinearSolve.set_A(linsolve,W)
+    end
+    linsolve = LinearSolve.set_b(linsolve,vec(cubuff))
+    linres = solve(linsolve,reltol=integrator.opts.reltol)
+    vecu = vec(linres.u)
+    copyto!(dw12,linres.u)
+
     integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
@@ -591,9 +600,27 @@ end
 
     @.. ubuff = fw1 - γdt*Mw1
     needfactor = iter==1 && new_W
-    linsolve1(vec(dw1), W1, vec(ubuff), needfactor)
+
+    linsolve1 = cache.linsolve1
+    if needfactor
+      linsolve1 = LinearSolve.set_A(linsolve1,W1)
+    end
+    linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
+    linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
+    vecu = vec(linres1.u)
+    copyto!(dw1,linres1.u)
+
     @.. cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
-    linsolve2(vec(dw23), W2, vec(cubuff), needfactor)
+
+    linsolve2 = cache.linsolve2
+    if needfactor
+      linsolve2 = LinearSolve.set_A(linsolve2,W2)
+    end
+    linsolve2 = LinearSolve.set_b(linsolve2,vec(cubuff))
+    linres2 = solve(linsolve2,reltol=integrator.opts.reltol)
+    vecu = vec(linres2.u)
+    copyto!(dw23,linres2.u)
+
     integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
     @.. dw2 = real(dw23)
@@ -653,7 +680,15 @@ end
     @.. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
     @.. ubuff = integrator.fsalfirst + tmp
-    alg.smooth_est && (linsolve1(vec(utilde), W1, vec(ubuff), false); integrator.destats.nsolve += 1)
+
+    if alg.smooth_est
+      linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
+      linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
+      vecu = vec(linres1.u)
+      copyto!(utilde,linres1.u)
+      integrator.destats.nsolve += 1
+    end
+
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -664,7 +699,15 @@ end
       f(fsallast, utilde, p, t)
       integrator.destats.nf += 1
       @.. ubuff = fsallast + tmp
-      alg.smooth_est && (linsolve1(vec(utilde), W1, vec(ubuff), false); integrator.destats.nsolve += 1)
+
+      if alg.smooth_est
+        linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
+        linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
+        vecu = vec(linres1.u)
+        copyto!(utilde,linres1.u)
+        integrator.destats.nsolve += 1
+      end
+
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
     end
