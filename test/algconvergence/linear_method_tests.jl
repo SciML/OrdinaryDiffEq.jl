@@ -8,12 +8,6 @@ u0 = ones(2)
 prob = ODEProblem(A,u0,(0.0,1.0))
 solve(prob, LinearExponential(krylov=:off))
 
-@which OrdinaryDiffEq.nothing
-
-
-
-
-
 sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
 sol4 = solve(prob, Rosenbrock23(), reltol=1e-12, abstol=1e-12)(1.0)
 sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
