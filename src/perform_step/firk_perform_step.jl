@@ -267,7 +267,7 @@ end
 
     linsolve = cache.linsolve2
     if needfactor
-      linsolve = LinearSolve.set_A(linsolve,W2)
+      linsolve = LinearSolve.set_A(linsolve,W1)
     end
     linsolve = LinearSolve.set_b(linsolve,vec(cubuff))
     linres = solve(linsolve,reltol=integrator.opts.reltol)
