@@ -177,7 +177,7 @@ end
     linsolve = LinearSolve.set_A(linsolve,W)
   end
   linsolve = LinearSolve.set_b(linsolve,b)
-  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
 
@@ -291,7 +291,7 @@ end
     linsolve = LinearSolve.set_A(linsolve,W)
   end
   linsolve = LinearSolve.set_b(linsolve,b)
-  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.scaling_preconditioner(vec(weight))...)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
 
