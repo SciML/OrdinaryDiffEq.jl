@@ -66,7 +66,7 @@ end
 
   @.. linsolve_tmp = f₁ - tmp
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
   veck2 = vec(k₂)
@@ -89,7 +89,7 @@ end
       @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
     end
 
-    linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+    linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
     linres = solve(linsolve,reltol=integrator.opts.reltol)
     vecu = vec(linres.u)
     veck3 = vec(k₃)
@@ -121,7 +121,6 @@ end
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
   linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
@@ -148,7 +147,7 @@ end
   @inbounds @simd ivdep for i in eachindex(u)
     linsolve_tmp[i] = f₁[i] - tmp[i]
   end
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k₂[i] = -linres.u[i]
@@ -182,7 +181,7 @@ end
     end
 
 
-    linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+    linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
     linres = solve(linsolve,reltol=integrator.opts.reltol)
     @inbounds @simd ivdep for i in eachindex(u)
       k₃[i] = -linres.u[i]
@@ -239,7 +238,7 @@ end
 
   @.. linsolve_tmp = f₁ - tmp
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
   veck2 = vec(k₂)
@@ -260,7 +259,7 @@ end
     @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
   veck3 = vec(k₃)
@@ -528,7 +527,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
   veck2 = vec(k2)
@@ -549,7 +548,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = vec(linres.u)
   veck3 = vec(k3)
@@ -707,7 +706,7 @@ end
     @.. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck2 = vec(k2)
   @.. veck2 = -vecu
@@ -725,7 +724,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck3 = vec(k3)
   @.. veck3 = -vecu
@@ -739,7 +738,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck4 = vec(k4)
   @.. veck4 = -vecu
@@ -972,7 +971,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck2 = vec(k2)
   @.. veck2 = -vecu
@@ -990,7 +989,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck3 = vec(k3)
   @.. veck3 = -vecu
@@ -1008,7 +1007,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck4 = vec(k4)
   @.. veck4 = -vecu
@@ -1026,7 +1025,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck5 = vec(k5)
   @.. veck5 = -vecu
@@ -1044,7 +1043,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck6 = vec(k6)
   @.. veck6 = -vecu
@@ -1135,7 +1134,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k2[i] = -linres.u[i]
@@ -1164,7 +1163,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k3[i] = -linres.u[i]
@@ -1192,7 +1191,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k4[i] = -linres.u[i]
@@ -1220,7 +1219,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k5[i] = -linres.u[i]
@@ -1247,7 +1246,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k6[i] = -linres.u[i]
@@ -1516,7 +1515,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck2 = vec(k2)
   @.. veck2 = -vecu
@@ -1534,7 +1533,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck3 = vec(k3)
   @.. veck3 = -vecu
@@ -1552,7 +1551,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck4 = vec(k4)
   @.. veck4 = -vecu
@@ -1570,7 +1569,7 @@ end
     @.. linsolve_tmp = du + dtd5*dT + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck5 = vec(k5)
   @.. veck5 = -vecu
@@ -1588,7 +1587,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck6 = vec(k6)
   @.. veck6 = -vecu
@@ -1606,7 +1605,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck7 = vec(k7)
   @.. veck7 = -vecu
@@ -1624,7 +1623,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck8 = vec(k8)
   @.. veck8 = -vecu
@@ -1736,7 +1735,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k2[i] = -linres.u[i]
@@ -1767,7 +1766,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k3[i] = -linres.u[i]
@@ -1796,7 +1795,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k4[i] = -linres.u[i]
@@ -1825,7 +1824,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k5[i] = -linres.u[i]
@@ -1854,7 +1853,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k6[i] = -linres.u[i]
@@ -1883,7 +1882,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k7[i] = -linres.u[i]
@@ -1912,7 +1911,7 @@ end
     end
   end
 
-  linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+  linsolve = LinearSolve.set_b(linres.cache,vec(linsolve_tmp))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
     k8[i] = -linres.u[i]

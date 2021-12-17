@@ -273,6 +273,7 @@ end
     linres = solve(linsolve,reltol=integrator.opts.reltol)
     vecu = vec(linres.u)
     copyto!(dw12,linres.u)
+    cache.linsolve = linres.cache
 
     integrator.destats.nsolve += 1
     dw1 = real(dw12)
@@ -609,6 +610,7 @@ end
     linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
     vecu = vec(linres1.u)
     copyto!(dw1,linres1.u)
+    cache.linsolve1 = linres.cache
 
     @.. cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
 
@@ -620,6 +622,7 @@ end
     linres2 = solve(linsolve2,reltol=integrator.opts.reltol)
     vecu = vec(linres2.u)
     copyto!(dw23,linres2.u)
+    cache.linsolve2 = linres.cache
 
     integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
@@ -682,7 +685,7 @@ end
     @.. ubuff = integrator.fsalfirst + tmp
 
     if alg.smooth_est
-      linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
+      linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
       linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
       vecu = vec(linres1.u)
       copyto!(utilde,linres1.u)
@@ -701,7 +704,7 @@ end
       @.. ubuff = fsallast + tmp
 
       if alg.smooth_est
-        linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
+        linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
         linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
         vecu = vec(linres1.u)
         copyto!(utilde,linres1.u)

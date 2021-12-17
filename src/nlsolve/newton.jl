@@ -180,6 +180,7 @@ end
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
+  cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
@@ -294,6 +295,7 @@ end
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
+  cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
