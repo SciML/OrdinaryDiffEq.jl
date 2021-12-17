@@ -148,6 +148,9 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     nf = nlsolve_f(f, alg)
     J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
+    # TODO: check if the solver is iterative
+    weight = zero(u)
+
     if islinear(f)
       du1 = rate_prototype
       uf = nothing
@@ -169,9 +172,6 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
                       Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                       Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
     end
-
-    # TODO: check if the solver is iterative
-    weight = zero(u)
 
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
