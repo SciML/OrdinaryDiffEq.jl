@@ -178,6 +178,7 @@ end
   end
   linsolve = LinearSolve.set_b(linsolve,b)
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
+  fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
   cache.linsolve = linres.cache
@@ -293,6 +294,7 @@ end
   end
   linsolve = LinearSolve.set_b(linsolve,b)
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
+  fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=reltol)
   copyto!(dz,linres.u)
   cache.linsolve = linres.cache

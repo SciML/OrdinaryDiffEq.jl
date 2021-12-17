@@ -9,8 +9,6 @@ prob = ODEProblem(A,u0,(0.0,1.0))
 solve(prob, LinearExponential(krylov=:off))
 
 sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
-sol4 = solve(prob, Rosenbrock23(), reltol=1e-12, abstol=1e-12)(1.0)
-sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
 sol2 = solve(prob, LinearExponential(krylov=:simple))(1.0)
 sol3 = solve(prob, LinearExponential(krylov=:adaptive))(1.0)
 sol4 = solve(prob, Rosenbrock23(), reltol=1e-12, abstol=1e-12)(1.0)

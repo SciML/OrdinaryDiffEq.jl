@@ -270,6 +270,7 @@ end
       linsolve = LinearSolve.set_A(linsolve,W1)
     end
     linsolve = LinearSolve.set_b(linsolve,vec(cubuff))
+    fill!(linsolve.u,false)
     linres = solve(linsolve,reltol=integrator.opts.reltol)
     vecu = vec(linres.u)
     copyto!(dw12,linres.u)
@@ -607,6 +608,7 @@ end
       linsolve1 = LinearSolve.set_A(linsolve1,W1)
     end
     linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
+    fill!(linsolve1.u,false)
     linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
     vecu = vec(linres1.u)
     copyto!(dw1,linres1.u)
@@ -619,6 +621,7 @@ end
       linsolve2 = LinearSolve.set_A(linsolve2,W2)
     end
     linsolve2 = LinearSolve.set_b(linsolve2,vec(cubuff))
+    fill!(linsolve2.u,false)
     linres2 = solve(linsolve2,reltol=integrator.opts.reltol)
     vecu = vec(linres2.u)
     copyto!(dw23,linres2.u)
@@ -686,6 +689,7 @@ end
 
     if alg.smooth_est
       linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
+      fill!(linsolve1.u,false)
       linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
       vecu = vec(linres1.u)
       copyto!(utilde,linres1.u)
@@ -705,6 +709,7 @@ end
 
       if alg.smooth_est
         linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
+        fill!(linsolve1.u,false)
         linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
         vecu = vec(linres1.u)
         copyto!(utilde,linres1.u)
