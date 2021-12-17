@@ -154,7 +154,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       jac_config = nothing
       linprob = LinearProblem(nf,copy(vec(u)); u0=copy(vec(u)))
       linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                       Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
     else
       du1 = zero(rate_prototype)
@@ -166,7 +166,7 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
       linprob = LinearProblem(W,copy(vec(u)); u0=copy(vec(u)))
       linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                       Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
     end
 

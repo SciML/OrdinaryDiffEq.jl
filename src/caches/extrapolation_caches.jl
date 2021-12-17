@@ -231,7 +231,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uElty
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
   linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
@@ -239,7 +239,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uElty
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
     linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
 
@@ -738,7 +738,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,::Type{u
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
   linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
@@ -746,7 +746,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,::Type{u
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
     linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
@@ -1033,7 +1033,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,::Typ
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
   linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
@@ -1041,7 +1041,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,::Typ
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
     linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
@@ -1210,7 +1210,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,:
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
   linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
@@ -1218,7 +1218,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,:
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
     linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                 Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)

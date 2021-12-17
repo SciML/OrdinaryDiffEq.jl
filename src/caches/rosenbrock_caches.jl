@@ -77,7 +77,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
 
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   grad_config = build_grad_config(alg,f,tf,du1,t)
@@ -110,7 +110,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
@@ -228,7 +228,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
@@ -295,7 +295,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
@@ -406,7 +406,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
@@ -451,7 +451,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
@@ -496,7 +496,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
@@ -541,7 +541,7 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
@@ -634,7 +634,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                  Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
