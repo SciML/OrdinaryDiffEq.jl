@@ -153,7 +153,9 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       uf = nothing
       jac_config = nothing
       linprob = LinearProblem(nf,copy(vec(u)); u0=copy(vec(u)))
-      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                      Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
     else
       du1 = zero(rate_prototype)
       if isdae
@@ -163,7 +165,9 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       end
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
       linprob = LinearProblem(W,copy(vec(u)); u0=copy(vec(u)))
-      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                      Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
     end
 
     # TODO: check if the solver is iterative

@@ -230,13 +230,17 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uElty
   end
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
-  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
   linsolve[1] = linsolve1
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
-    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
 
   res = uEltypeNoUnits.(zero(u))
@@ -733,13 +737,17 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,::Type{u
   end
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
-  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
   linsolve[1] = linsolve1
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
-    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
@@ -1024,13 +1032,17 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,::Typ
   end
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
-  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
   linsolve[1] = linsolve1
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
-    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
@@ -1197,13 +1209,17 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,:
   end
 
   linprob = LinearProblem(W,vec(linsolve_tmps[1]); u0=vec(k_tmps[1]))
-  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   linsolve = Array{typeof(linsolve1),1}(undef, Threads.nthreads())
   linsolve[1] = linsolve1
   for i=2:Threads.nthreads()
     linprob = LinearProblem(W,vec(linsolve_tmps[i]); u0=vec(k_tmps[i]))
-    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+    linsolve[i] = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)

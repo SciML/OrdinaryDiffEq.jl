@@ -89,9 +89,13 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
   linprob = LinearProblem(W1,vec(cubuff); u0=vec(dw12))
-  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                   Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   linprob = LinearProblem(W1,vec(cubuff); u0=vec(dw12))
-  linsolve2 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve2 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                   Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   rtol = reltol isa Number ? reltol : similar(reltol)
   atol = reltol isa Number ? reltol : similar(reltol)
@@ -204,9 +208,13 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
   linprob = LinearProblem(W1,vec(ubuff); u0=vec(dw1))
-  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                   Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
   linprob = LinearProblem(W2,vec(cubuff); u0=vec(dw23))
-  linsolve2 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  linsolve2 = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                   Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight))
+                   Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
 
   rtol = reltol isa Number ? reltol : similar(reltol)
   atol = reltol isa Number ? reltol : similar(reltol)
