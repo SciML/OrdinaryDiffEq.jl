@@ -686,7 +686,7 @@ end
 
     if alg.smooth_est
       linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
-      linsolve2 = LinearSolve.set_u(linsolve2,vec(utilde))
+      linsolve1 = LinearSolve.set_u(linsolve1,vec(utilde))
       fill!(linsolve1.u,false)
       linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
       cache.linsolve1 = linres1.cache

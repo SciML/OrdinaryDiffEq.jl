@@ -120,6 +120,8 @@ function resize!(integrator::ODEIntegrator, i::Int)
   for c in full_cache(cache)
     # Skip nothings which may exist in the cache since extra variables
     # may be required for things like units
+    @show c === cache.linsolve_tmp
+    @show c === cache.linsolve.u
     c !== nothing && resize!(c,i)
   end
   resize_nlsolver!(integrator, i)

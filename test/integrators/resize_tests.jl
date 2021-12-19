@@ -184,5 +184,8 @@ function runSim(method)
 end
 
 runSim(BS3())
-runSim(Rosenbrock23())
-runSim(Rosenbrock23(autodiff=false))
+
+# cannot resize array with shared data
+# This is incorrect: https://discourse.julialang.org/t/how-to-unshare-an-array/66441
+@test_broken runSim(Rosenbrock23())
+@test_broken runSim(Rosenbrock23(autodiff=false))
