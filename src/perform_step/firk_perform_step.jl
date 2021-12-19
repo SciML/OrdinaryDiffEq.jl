@@ -265,7 +265,7 @@ end
     @. cubuff = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
     needfactor = iter==1
 
-    linsolve = cache.linsolve2
+    linsolve = cache.linsolve
     if needfactor
       linsolve = LinearSolve.set_A(linsolve,W1)
     end
@@ -273,7 +273,7 @@ end
     linsolve = LinearSolve.set_u(linsolve,vec(dw12))
     fill!(linsolve.u,false)
     linres = solve(linsolve,reltol=integrator.opts.reltol)
-    cache.linsolve2 = linres.cache
+    cache.linsolve = linres.cache
 
     integrator.destats.nsolve += 1
     dw1 = real(dw12)
