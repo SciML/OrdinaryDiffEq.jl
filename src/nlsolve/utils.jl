@@ -155,10 +155,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       du1 = rate_prototype
       uf = nothing
       jac_config = nothing
-      linprob = LinearProblem(W,vec(k); u0=vec(dz))
+      linprob = LinearProblem(W,_vec(k); u0=_vec(dz))
       linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                      Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                      Pr = Diagonal(vec(weight)))
+                      Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                      Pr = Diagonal(_vec(weight)))
     else
       du1 = zero(rate_prototype)
       if isdae
@@ -167,10 +167,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
         uf = build_uf(alg,nf,t,p,Val(true))
       end
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
-      linprob = LinearProblem(W,vec(k); u0=vec(dz))
+      linprob = LinearProblem(W,_vec(k); u0=_vec(dz))
       linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                      Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                      Pr = Diagonal(vec(weight)))
+                      Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                      Pr = Diagonal(_vec(weight)))
     end
 
     tType = typeof(t)
@@ -356,7 +356,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
 
   # replace/add difference of residuals as right-most column to QR decomposition
   @.. dzold = dz - dzold
-  qradd!(Q, R, vec(dzold), history)
+  qradd!(Q, R, _vec(dzold), history)
 
   # update cached values
   @.. dzold = dz
@@ -379,7 +379,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
 
   # solve least squares problem
   γscur = view(γs, 1:history)
-  ldiv!(Rcur, mul!(γscur, Qcur', vec(dz)))
+  ldiv!(Rcur, mul!(γscur, Qcur', _vec(dz)))
 
   # update next iterate
   for i in 1:history

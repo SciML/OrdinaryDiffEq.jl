@@ -172,7 +172,7 @@ end
         @.. dz = ztmp - z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
-        mul!(vec(ztmp), mass_matrix, vec(z))
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. dz = (tmp + k) * γdt - α * ztmp
         @.. ztmp = dz + z
       end
@@ -184,7 +184,7 @@ end
         @.. dz = ztmp - z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
-        mul!(vec(ztmp), mass_matrix, vec(z))
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. dz = dt * k - ztmp
         @.. ztmp = z + dz
       end

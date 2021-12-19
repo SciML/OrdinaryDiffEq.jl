@@ -205,7 +205,7 @@ end
           dw12, cubuff,
           k, k2, fw1, fw2,
           J, W1,
-          tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
+          tmp, atmp, jac_config, rtol, atol = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
   @unpack maxiters = alg
@@ -269,8 +269,8 @@ end
     if needfactor
       linsolve = LinearSolve.set_A(linsolve,W1)
     end
-    linsolve = LinearSolve.set_b(linsolve,vec(cubuff))
-    linsolve = LinearSolve.set_u(linsolve,vec(dw12))
+    linsolve = LinearSolve.set_b(linsolve,_vec(cubuff))
+    linsolve = LinearSolve.set_u(linsolve,_vec(dw12))
     fill!(linsolve.u,false)
     linres = solve(linsolve,reltol=integrator.opts.reltol)
     cache.linsolve = linres.cache
@@ -606,8 +606,8 @@ end
     if needfactor
       linsolve1 = LinearSolve.set_A(linsolve1,W1)
     end
-    linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
-    linsolve1 = LinearSolve.set_u(linsolve1,vec(dw1))
+    linsolve1 = LinearSolve.set_b(linsolve1,_vec(ubuff))
+    linsolve1 = LinearSolve.set_u(linsolve1,_vec(dw1))
     fill!(linsolve1.u,false)
     linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
     cache.linsolve1 = linres1.cache
@@ -618,8 +618,8 @@ end
     if needfactor
       linsolve2 = LinearSolve.set_A(linsolve2,W2)
     end
-    linsolve2 = LinearSolve.set_b(linsolve2,vec(cubuff))
-    linsolve2 = LinearSolve.set_u(linsolve2,vec(dw23))
+    linsolve2 = LinearSolve.set_b(linsolve2,_vec(cubuff))
+    linsolve2 = LinearSolve.set_u(linsolve2,_vec(dw23))
     fill!(linsolve2.u,false)
     linres2 = solve(linsolve2,reltol=integrator.opts.reltol)
     cache.linsolve2 = linres2.cache
@@ -685,8 +685,8 @@ end
     @.. ubuff = integrator.fsalfirst + tmp
 
     if alg.smooth_est
-      linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
-      linsolve1 = LinearSolve.set_u(linsolve1,vec(utilde))
+      linsolve1 = LinearSolve.set_b(cache.linsolve1,_vec(ubuff))
+      linsolve1 = LinearSolve.set_u(linsolve1,_vec(utilde))
       fill!(linsolve1.u,false)
       linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
       cache.linsolve1 = linres1.cache
@@ -705,8 +705,8 @@ end
       @.. ubuff = fsallast + tmp
 
       if alg.smooth_est
-        linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
-        linsolve1 = LinearSolve.set_u(linsolve1,vec(utilde))
+        linsolve1 = LinearSolve.set_b(cache.linsolve1,_vec(ubuff))
+        linsolve1 = LinearSolve.set_u(linsolve1,_vec(utilde))
         fill!(linsolve1.u,false)
         linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
         cache.linsolve1 = linres1.cache

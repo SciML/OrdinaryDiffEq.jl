@@ -425,10 +425,10 @@ end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
 
-      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
+      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,_vec(tmp))
       linres = solve(linsolve,reltol=integrator.opts.reltol)
-      vecu = vec(linres.u)
-      vecest = vec(est)
+      vecu = _vec(linres.u)
+      vecest = _vec(est)
       copyto!(vecest,vecu)
 
       integrator.destats.nsolve += 1
@@ -497,10 +497,10 @@ end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
 
-      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
+      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,_vec(tmp))
       linres = solve(linsolve,reltol=integrator.opts.reltol)
-      vecu = vec(linres.u)
-      vecest = vec(est)
+      vecu = _vec(linres.u)
+      vecest = _vec(est)
       copyto!(vecest,vecu)
 
       integrator.destats.nsolve += 1
@@ -609,10 +609,10 @@ end
     @.. tmp = z₁/2 - z₂/2
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
-      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
+      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,_vec(tmp))
       linres = solve(linsolve,reltol=integrator.opts.reltol)
-      vecu = vec(linres.u)
-      vecest = vec(est)
+      vecu = _vec(linres.u)
+      vecest = _vec(est)
       copyto!(vecest,vecu)
       integrator.destats.nsolve += 1
     else
@@ -1045,10 +1045,10 @@ end
     @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
-      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
+      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,_vec(tmp))
       linres = solve(linsolve,reltol=integrator.opts.reltol)
-      vecu = vec(linres.u)
-      vecest = vec(est)
+      vecu = _vec(linres.u)
+      vecest = _vec(est)
       copyto!(vecest,vecu)
       integrator.destats.nsolve += 1
     else
@@ -2040,10 +2040,10 @@ end
     @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
-      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,vec(tmp))
+      linsolve = LinearSolve.set_b(nlsolver.cache.linsolve,_vec(tmp))
       linres = solve(linsolve,reltol=integrator.opts.reltol)
-      vecu = vec(linres.u)
-      vecest = vec(est)
+      vecu = _vec(linres.u)
+      vecest = _vec(est)
       copyto!(vecest,vecu)
 
       integrator.destats.nsolve += 1

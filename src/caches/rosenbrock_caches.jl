@@ -75,10 +75,10 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
 
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
 
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
@@ -108,10 +108,10 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
@@ -226,10 +226,10 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock33Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
@@ -293,10 +293,10 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock34Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
@@ -404,10 +404,10 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
@@ -449,10 +449,10 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
@@ -494,10 +494,10 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
@@ -539,10 +539,10 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
@@ -632,10 +632,10 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                  Pr = Diagonal(vec(weight)))
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,

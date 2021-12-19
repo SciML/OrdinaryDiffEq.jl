@@ -1,6 +1,6 @@
-using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
+using OrdinaryDiffEq, DiffEqBase, Test
 using Random, DiffEqOperators
-using ElasticArrays
+using ElasticArrays, LinearSolve
 Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK43(),SSPRK104(),
   CarpenterKennedy2N54(), SHLDDRK64(), ORK256(), DGLDDRK73_C(),
@@ -61,7 +61,8 @@ sol = solve(prob,TRBDF2(),callback=callback,dt=1/2)
 Jv = JacVecOperator(f,u0,nothing,0.0)
 ff2 = ODEFunction(f;jac_prototype=Jv)
 prob2 = ODEProblem(ff2,u0,tspan)
-sol = solve(prob2,TRBDF2(linsolve=LinSolveGMRES()),callback=callback)
+sol = solve(prob2,TRBDF2(linsolve=LinearSolve.IterativeSolversJL_GMRES()),callback=callback)
+@test length(sol[end]) > 1
 
 for alg in CACHE_TEST_ALGS
   @show alg

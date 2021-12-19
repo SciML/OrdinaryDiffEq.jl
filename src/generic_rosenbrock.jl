@@ -245,10 +245,10 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
+            linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
             linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                            Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
-                            Pr = Diagonal(vec(weight)))
+                            Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                            Pr = Diagonal(_vec(weight)))
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
             $cachename($(valsyms...))
@@ -401,12 +401,12 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
 
             linsolve = cache.linsolve
             linsolve = LinearSolve.set_A(linsolve,W)
-            linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-            linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(vec(weight))),Diagonal(vec(weight)))
+            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
+            linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
             fill!(linsolve.u,false)
             linres = solve(linsolve,reltol=integrator.opts.reltol)
-            vecu = vec(linres.u)
-            vecki = vec($ki)
+            vecu = _vec(linres.u)
+            vecki = _vec($ki)
 
             @.. vecki = -vecu
             integrator.destats.nsolve += 1
@@ -429,11 +429,11 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
     push!(iterexprs,quote
 
-        linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
         fill!(linsolve.u,false)
         linres = solve(linsolve,reltol=integrator.opts.reltol)
-        vecu = vec(linres.u)
-        vecklast = vec($klast)
+        vecu = _vec(linres.u)
+        vecklast = _vec($klast)
         @.. vecklast = -vecu
 
         integrator.destats.nsolve += 1
@@ -772,11 +772,11 @@ macro Rosenbrock4(part)
         end
         specialstep=quote
 
-            linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
+            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
             fill!(linsolve.u,false)
             linres = solve(linsolve,reltol=integrator.opts.reltol)
-            vecu = vec(linres.u)
-            veck3 = vec(k3)
+            vecu = _vec(linres.u)
+            veck3 = _vec(k3)
             @.. veck3 = -vecu
 
             integrator.destats.nsolve += 1

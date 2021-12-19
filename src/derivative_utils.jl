@@ -350,32 +350,31 @@ function Base.:\(W::WOperator, x::Number)
 end
 
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
-  vec = Base.vec
   if W.transform
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
       a = -W.mass_matrix.λ / W.gamma
       @.. Y = a * B
     else
-      mul!(vec(Y), W.mass_matrix, vec(B))
+      mul!(_vec(Y), W.mass_matrix, _vec(B))
       lmul!(-1/W.gamma, Y)
     end
     # Compute J * B and add
-    mul!(vec(W._func_cache), W.J, vec(B))
-    vec(Y) .+= vec(W._func_cache)
+    mul!(_vec(W._func_cache), W.J, _vec(B))
+    _vec(Y) .+= _vec(W._func_cache)
   else
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
-      vY = vec(Y)
-      vB = vec(B)
+      vY = _vec(Y)
+      vB = _vec(B)
       @.. vY = W.mass_matrix.λ * vB
     else
-      mul!(vec(Y), W.mass_matrix, vec(B))
+      mul!(_vec(Y), W.mass_matrix, _vec(B))
     end
     # Compute J * B
-    mul!(vec(W._func_cache), W.J, vec(B))
+    mul!(_vec(W._func_cache), W.J, _vec(B))
     # Add result
-    axpby!(W.gamma, vec(W._func_cache), -one(W.gamma), vec(Y))
+    axpby!(W.gamma, _vec(W._func_cache), -one(W.gamma), _vec(Y))
   end
 end
 

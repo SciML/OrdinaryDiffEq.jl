@@ -10,7 +10,7 @@ end
 
 function alg_cache(alg::MagnusMidpoint,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusMidpointCache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -35,7 +35,7 @@ end
 
 function alg_cache(alg::RKMK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   RKMK2Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -60,7 +60,7 @@ end
 
 function alg_cache(alg::LieRK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   LieRK4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -85,7 +85,7 @@ end
 
 function alg_cache(alg::CG3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   CG3Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -110,7 +110,7 @@ end
 
 function alg_cache(alg::CG2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   CG2Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -135,7 +135,7 @@ end
 
 function alg_cache(alg::RKMK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   RKMK4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -162,7 +162,7 @@ end
 
 function alg_cache(alg::MagnusAdapt4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   utilde = zero(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -190,7 +190,7 @@ end
 
 function alg_cache(alg::MagnusNC8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusNC8Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -215,7 +215,7 @@ end
 
 function alg_cache(alg::MagnusGL4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusGL4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -240,7 +240,7 @@ end
 
 function alg_cache(alg::MagnusGL8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusGL8Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -266,7 +266,7 @@ end
 
 function alg_cache(alg::MagnusNC6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusNC6Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -291,7 +291,7 @@ end
 
 function alg_cache(alg::MagnusGL6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusGL6Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -315,7 +315,7 @@ end
 
 function alg_cache(alg::MagnusGauss4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusGauss4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -340,7 +340,7 @@ end
 
 function alg_cache(alg::LieEuler,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   LieEulerCache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end
@@ -386,7 +386,7 @@ end
 
 function alg_cache(alg::MagnusLeapfrog,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+  W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MagnusLeapfrogCache(u,uprev,uprev2,zero(u),fsalfirst,W,k)
 end

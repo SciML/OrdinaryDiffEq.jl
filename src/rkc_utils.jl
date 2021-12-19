@@ -87,7 +87,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
       if (nind != 1)
         ind = 1 + iter % nind
         # val = (uprev[ind] - (z[ind] - uprev[ind]))*one(eltype(z))*2
-        vec(z) .= vec(z) .* (1 .- 2 .*((1:length(z)) .== ind))
+        _vec(z) .= _vec(z) .* (1 .- 2 .*((1:length(z)) .== ind))
       else
         z = -z
       end
@@ -186,7 +186,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
       if (nind != 1)
         ind = 1 + iter % nind
         # val = (uprev[ind] - (z[ind] - uprev[ind]))*one(eltype(z))
-        vec(z) .= vec(z) .* (1 .- 2 .*((1:length(z)) .== ind))
+        _vec(z) .= _vec(z) .* (1 .- 2 .*((1:length(z)) .== ind))
       else
         z = -z
       end

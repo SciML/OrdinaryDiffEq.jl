@@ -115,7 +115,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
   update_coefficients!(M, u0, p, t)
   f(tmp, u0, p, t)
-  tmp .= ArrayInterface.restructure(tmp,algebraic_eqs .* vec(tmp))
+  tmp .= ArrayInterface.restructure(tmp,algebraic_eqs .* _vec(tmp))
 
   integrator.opts.internalnorm(tmp, t) <= integrator.opts.abstol && return
 
@@ -140,7 +140,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
       #M * (u-u0)/dt - f(u,p,t)
       tmp = isad ? PreallocationTools.get_tmp(_tmp, u) : _tmp
       @. tmp = (u - u0)/dt
-      mul!(vec(out),M,vec(tmp))
+      mul!(_vec(out),M,_vec(tmp))
       f(tmp,u,p,t)
       out .-= tmp
       nothing
@@ -172,7 +172,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
   update_coefficients!(M,u0,p,t)
   du = f(u0,p,t)
-  resid = @view vec(du)[algebraic_eqs]
+  resid = @view _vec(du)[algebraic_eqs]
 
   integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
@@ -284,7 +284,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit,
 
   f(tmp,u,p,t)
 
-  tmp .= ArrayInterface.restructure(tmp,algebraic_eqs .* vec(tmp))
+  tmp .= ArrayInterface.restructure(tmp,algebraic_eqs .* _vec(tmp))
 
   integrator.opts.internalnorm(tmp,t) <= alg.abstol && return
   alg_u = @view u[algebraic_vars]
@@ -331,7 +331,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 
   du = f(u0,p,t)
-  resid = @view vec(du)[algebraic_eqs]
+  resid = @view _vec(du)[algebraic_eqs]
 
   integrator.opts.internalnorm(resid,t) <= alg.abstol && return
 
