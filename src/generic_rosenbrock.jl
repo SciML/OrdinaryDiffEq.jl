@@ -402,7 +402,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             linsolve = cache.linsolve
             linsolve = LinearSolve.set_A(linsolve,W)
             linsolve = LinearSolve.set_b(linsolve,vec(linsolve_tmp))
-            linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
+            linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(vec(weight))),Diagonal(vec(weight)))
             fill!(linsolve.u,false)
             linres = solve(linsolve,reltol=integrator.opts.reltol)
             vecu = vec(linres.u)
