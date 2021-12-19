@@ -270,10 +270,9 @@ end
       linsolve = LinearSolve.set_A(linsolve,W1)
     end
     linsolve = LinearSolve.set_b(linsolve,vec(cubuff))
+    linsolve = LinearSolve.set_u(linsolve,dw12)
     fill!(linsolve.u,false)
     linres = solve(linsolve,reltol=integrator.opts.reltol)
-    vecu = vec(linres.u)
-    copyto!(dw12,linres.u)
     cache.linsolve2 = linres.cache
 
     integrator.destats.nsolve += 1
@@ -608,10 +607,9 @@ end
       linsolve1 = LinearSolve.set_A(linsolve1,W1)
     end
     linsolve1 = LinearSolve.set_b(linsolve1,vec(ubuff))
+    linsolve1 = LinearSolve.set_u(linsolve1,dw1)
     fill!(linsolve1.u,false)
     linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
-    vecu = vec(linres1.u)
-    copyto!(dw1,linres1.u)
     cache.linsolve1 = linres1.cache
 
     @.. cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
@@ -621,10 +619,9 @@ end
       linsolve2 = LinearSolve.set_A(linsolve2,W2)
     end
     linsolve2 = LinearSolve.set_b(linsolve2,vec(cubuff))
+    linsolve2 = LinearSolve.set_u(linsolve2,dw23)
     fill!(linsolve2.u,false)
     linres2 = solve(linsolve2,reltol=integrator.opts.reltol)
-    vecu = vec(linres2.u)
-    copyto!(dw23,linres2.u)
     cache.linsolve2 = linres2.cache
 
     integrator.destats.nsolve += 2
@@ -689,10 +686,9 @@ end
 
     if alg.smooth_est
       linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
+      linsolve2 = LinearSolve.set_u(linsolve2,utilde)
       fill!(linsolve1.u,false)
       linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
-      vecu = vec(linres1.u)
-      copyto!(utilde,linres1.u)
       cache.linsolve1 = linres1.cache
       integrator.destats.nsolve += 1
     end
@@ -710,10 +706,9 @@ end
 
       if alg.smooth_est
         linsolve1 = LinearSolve.set_b(cache.linsolve1,vec(ubuff))
+        linsolve1 = LinearSolve.set_u(linsolve1,utilde)
         fill!(linsolve1.u,false)
         linres1 = solve(linsolve1,reltol=integrator.opts.reltol)
-        vecu = vec(linres1.u)
-        copyto!(utilde,linres1.u)
         cache.linsolve1 = linres1.cache
         integrator.destats.nsolve += 1
       end

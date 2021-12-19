@@ -247,8 +247,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             linsolve_tmp = zero(rate_prototype)
             linprob = LinearProblem(W,vec(linsolve_tmp); u0=vec(tmp))
             linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                            Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
-                            Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
+                            Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
+                            Pr = Diagonal(vec(weight)))
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
             $cachename($(valsyms...))

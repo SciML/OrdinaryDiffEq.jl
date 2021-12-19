@@ -177,10 +177,10 @@ end
     linsolve = LinearSolve.set_A(linsolve,W)
   end
   linsolve = LinearSolve.set_b(linsolve,b)
-  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
+  linsolve = LinearSolve.set_u(linsolve,dz)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(vec(weight))),Diagonal(vec(weight)))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=reltol)
-  copyto!(dz,linres.u)
   cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)
@@ -293,10 +293,10 @@ end
     linsolve = LinearSolve.set_A(linsolve,W)
   end
   linsolve = LinearSolve.set_b(linsolve,b)
-  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvDiagonalPreconditioner(vec(weight)),LinearSolve.DiagonalPreconditioner(vec(weight)))
+  linsolve = LinearSolve.set_u(linsolve,dz)
+  linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(vec(weight))),Diagonal(vec(weight)))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=reltol)
-  copyto!(dz,linres.u)
   cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)

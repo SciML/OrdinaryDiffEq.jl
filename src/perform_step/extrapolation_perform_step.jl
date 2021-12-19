@@ -2232,7 +2232,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         fill!(linsolve.u,false)
         linres = solve(linsolve,reltol=integrator.opts.reltol)
         linsolve = linres.cache
-        copyto!(k[1],linres.u)
+        copyto!(k,linres.u)
 
         integrator.destats.nsolve += 1
         @.. k = -k
@@ -2806,7 +2806,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       fill!(linsolve.u,false)
       linres = solve(linsolve,reltol=integrator.opts.reltol)
       linsolve = linres.cache
-      copyto!(k[1],linres.u)
+      copyto!(k,linres.u)
 
       integrator.destats.nsolve += 1
       @.. k = -k

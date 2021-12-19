@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators, Random, LinearAlgebra
+using OrdinaryDiffEq, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
 using OrdinaryDiffEq: alg_order
 
 @testset "Caching Out-of-place" begin
@@ -38,11 +38,11 @@ end
   end
 
   dts = 1 ./2 .^(14:-1:10)
-  Alg = KenCarp3(linsolve=LinSolveGMRES(abstol=1e-16,reltol=1e-16))
+  Alg = KenCarp3(linsolve=LinearSolve.IterativeSolversJL_GMRES(abstol=1e-16,reltol=1e-16))
   sim  = test_convergence(dts,prob,Alg)
   @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
 
-  dts = 1 ./2 .^(8:-1:4) 
+  dts = 1 ./2 .^(8:-1:4)
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
   @test sim.𝒪est[:l2] ≈  4 atol=0.1
   @test sim.𝒪est[:L2] ≈ 4 atol=0.1

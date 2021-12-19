@@ -155,10 +155,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
       du1 = rate_prototype
       uf = nothing
       jac_config = nothing
-      linprob = LinearProblem(nf,copy(vec(u)); u0=copy(vec(u)))
+      linprob = LinearProblem(W,k; u0=dz)
       linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
-                      Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
+                      Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
+                      Pr = Diagonal(vec(weight)))
     else
       du1 = zero(rate_prototype)
       if isdae
@@ -167,10 +167,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
         uf = build_uf(alg,nf,t,p,Val(true))
       end
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
-      linprob = LinearProblem(W,copy(vec(u)); u0=copy(vec(u)))
+      linprob = LinearProblem(W,k; u0=dz)
       linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                      Pl = LinearSolve.InvDiagonalPreconditioner(vec(weight)),
-                      Pr = LinearSolve.DiagonalPreconditioner(vec(weight)))
+                      Pl = LinearSolve.InvPreconditioner(Diagonal(vec(weight))),
+                      Pr = Diagonal(vec(weight)))
     end
 
     tType = typeof(t)
