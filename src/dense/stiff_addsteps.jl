@@ -64,7 +64,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     @.. linsolve_tmp = f₁ - tmp
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
 
@@ -121,7 +121,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
       linsolve_tmp[i] = f₁[i] - tmp[i]
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
 
@@ -281,7 +281,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd2*dT + du2
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k2)
     @.. veck2 = -vecu
@@ -296,7 +296,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd3*dT + du2
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k3)
     @.. veck3 = -vecu
@@ -311,7 +311,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd4*dT + du2
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck4 = _vec(k4)
     @.. veck4 = -vecu
@@ -326,7 +326,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + du2
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck5 = _vec(k5)
     @.. veck5 = -vecu
@@ -412,7 +412,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k2)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -437,7 +437,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k3)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -461,7 +461,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck4 = _vec(k4)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -484,7 +484,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linres = dolinsolve(nothing, linsolve; b = _vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck5 = _vec(k5)
     @.. veck5 = -vecu
