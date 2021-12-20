@@ -800,9 +800,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     @.. gprev = dt*0.5*(du₂ - f2ⱼ₋₁) + dt*(0.5 - μs₁)*(du₁ - f1ⱼ₋₁)
 
     linsolve = nlsolver.cache.linsolve
-    linsolve = LinearSolve.set_b(linsolve,_vec(gprev))
-    linres = solve(linsolve,reltol=integrator.opts.reltol)
-    copyto!(tmp,linres.u)
+    linres = dolinsolve(integrator, linsolve; b = _vec(gprev), u = _vec(tmp))
 
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)

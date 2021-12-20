@@ -285,11 +285,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-        fill!(linsolve.u,false)
-        linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = k_tmps[1])
         linsolve = linres.cache
-        copyto!(k_tmps[1],linres.u)
 
         integrator.destats.nsolve += 1
         @.. k_tmps[1] = -k_tmps[1]
@@ -333,12 +330,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
               if !repeat_step
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-              fill!(linsolve.u,false)
-              linres = solve(linsolve,reltol=integrator.opts.reltol)
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
               linsolve = linres.cache
-
-              copyto!(k_tmps[Threads.threadid()],linres.u)
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. u_tmps2[Threads.threadid()] = u_tmps[Threads.threadid()]
@@ -419,11 +412,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
           if !repeat_step
             linsolve = LinearSolve.set_A(linsolve,W[1])
           end
-          linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-          fill!(linsolve.u,false)
-          linres = solve(linsolve,reltol=integrator.opts.reltol)
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k_tmps[1]))
           linsolve = linres.cache
-          copyto!(k_tmps[1],linres.u)
 
           integrator.destats.nsolve += 1
           @.. k_tmps[1] = -k_tmps[1]
@@ -1070,11 +1060,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       if !repeat_step
         linsolve = LinearSolve.set_A(linsolve,W[1])
       end
-      linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-      fill!(linsolve.u,false)
-      linres = solve(linsolve,reltol=integrator.opts.reltol)
+      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
       linsolve = linres.cache
-      copyto!(k,linres.u)
 
       integrator.destats.nsolve += 1
       @.. k = -k
@@ -1089,11 +1076,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-        fill!(linsolve.u,false)
-        linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
         linsolve = linres.cache
-        copyto!(k,linres.u)
 
         integrator.destats.nsolve += 1
         @.. k = -k
@@ -1135,11 +1119,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-            fill!(linsolve.u,false)
-            linres = solve(linsolve,reltol=integrator.opts.reltol)
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
             linsolve = linres.cache
-            copyto!(k_tmps[Threads.threadid()],linres.u)
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + k_tmps[Threads.threadid()] # Euler starting step
@@ -1152,11 +1133,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               if !repeat_step
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-              fill!(linsolve.u,false)
-              linres = solve(linsolve,reltol=integrator.opts.reltol)
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
               linsolve = linres.cache
-              copyto!(k_tmps[Threads.threadid()],linres.u)
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = 2*u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()] + 2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -1193,11 +1171,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-            fill!(linsolve.u,false)
-            linres = solve(linsolve,reltol=integrator.opts.reltol)
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
             linsolve = linres.cache
-            copyto!(k_tmps[Threads.threadid()],linres.u)
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + k_tmps[Threads.threadid()] # Euler starting step
@@ -1210,11 +1185,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               if !repeat_step
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-              fill!(linsolve.u,false)
-              linres = solve(linsolve,reltol=integrator.opts.reltol)
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
               linsolve = linres.cache
-              copyto!(k_tmps[Threads.threadid()],linres.u)
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = 2*u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()] + 2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -1291,11 +1263,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-        fill!(linsolve.u,false)
-        linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
         linsolve = linres.cache
-        copyto!(k,linres.u)
 
         integrator.destats.nsolve += 1
         @.. k = -k
@@ -1309,11 +1278,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
           if !repeat_step
             linsolve = LinearSolve.set_A(linsolve,W[1])
           end
-          linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-          fill!(linsolve.u,false)
-          linres = solve(linsolve,reltol=integrator.opts.reltol)
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
           linsolve = linres.cache
-          copyto!(k,linres.u)
 
           integrator.destats.nsolve += 1
           @.. k = -k
@@ -2209,11 +2175,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       if !repeat_step
         linsolve = LinearSolve.set_A(linsolve,W[1])
       end
-      linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-      fill!(linsolve.u,false)
-      linres = solve(linsolve,reltol=integrator.opts.reltol)
+      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
       linsolve = linres.cache
-      copyto!(k,linres.u)
 
       integrator.destats.nsolve += 1
       @.. k = -k
@@ -2228,11 +2191,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-        fill!(linsolve.u,false)
-        linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
         linsolve = linres.cache
-        copyto!(k,linres.u)
 
         integrator.destats.nsolve += 1
         @.. k = -k
@@ -2279,11 +2239,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-            fill!(linsolve.u,false)
-            linres = solve(linsolve,reltol=integrator.opts.reltol)
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
             linsolve = linres.cache
-            copyto!(k_tmps[Threads.threadid()],linres.u)
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + k_tmps[Threads.threadid()] # Euler starting step
@@ -2296,11 +2253,9 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               if !repeat_step
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-              fill!(linsolve.u,false)
-              linres = solve(linsolve,reltol=integrator.opts.reltol)
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
               linsolve = linres.cache
-              copyto!(k_tmps[Threads.threadid()],linres.u)
+
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = 2*u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()] + 2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
               if(j == j_int_temp + 1)
@@ -2340,11 +2295,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-            fill!(linsolve.u,false)
-            linres = solve(linsolve,reltol=integrator.opts.reltol)
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
             linsolve = linres.cache
-            copyto!(k_tmps[Threads.threadid()],linres.u)
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + k_tmps[Threads.threadid()] # Euler starting step
@@ -2357,11 +2309,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               if !repeat_step
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-              fill!(linsolve.u,false)
-              linres = solve(linsolve,reltol=integrator.opts.reltol)
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
               linsolve = linres.cache
-              copyto!(k_tmps[Threads.threadid()],linres.u)
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = 2*u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()] + 2*k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -2446,11 +2395,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-        fill!(linsolve.u,false)
-        linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
         linsolve = linres.cache
-        copyto!(k,linres.u)
 
         integrator.destats.nsolve += 1
         @.. k = -k
@@ -2464,11 +2410,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
           if !repeat_step
             linsolve = LinearSolve.set_A(linsolve,W[1])
           end
-          linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-          fill!(linsolve.u,false)
-          linres = solve(linsolve,reltol=integrator.opts.reltol)
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
           linsolve = linres.cache
-          copyto!(k,linres.u)
 
           integrator.destats.nsolve += 1
           @.. k = -k
@@ -2802,11 +2745,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       if !repeat_step
         linsolve = LinearSolve.set_A(linsolve,W[1])
       end
-      linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-      fill!(linsolve.u,false)
-      linres = solve(linsolve,reltol=integrator.opts.reltol)
+      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
       linsolve = linres.cache
-      copyto!(k,linres.u)
 
       integrator.destats.nsolve += 1
       @.. k = -k
@@ -2821,11 +2761,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-        fill!(linsolve.u,false)
-        linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
         linsolve = linres.cache
-        copyto!(k,linres.u)
 
         integrator.destats.nsolve += 1
         @.. k = -k
@@ -2872,11 +2809,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-            fill!(linsolve.u,false)
-            linres = solve(linsolve,reltol=integrator.opts.reltol)
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
             linsolve = linres.cache
-            copyto!(k_tmps[Threads.threadid()],linres.u)
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + k_tmps[Threads.threadid()] # Euler starting step
@@ -2889,11 +2823,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               if !repeat_step
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-              fill!(linsolve.u,false)
-              linres = solve(linsolve,reltol=integrator.opts.reltol)
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
               linsolve = linres.cache
-              copyto!(k_tmps[Threads.threadid()],linres.u)
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = u_temp3[Threads.threadid()] + k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -2934,11 +2865,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-            fill!(linsolve.u,false)
-            linres = solve(linsolve,reltol=integrator.opts.reltol)
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
             linsolve = linres.cache
-            copyto!(k_tmps[Threads.threadid()],linres.u)
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + k_tmps[Threads.threadid()] # Euler starting step
@@ -2951,11 +2879,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               if !repeat_step
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[Threads.threadid()]))
-              fill!(linsolve.u,false)
-              linres = solve(linsolve,reltol=integrator.opts.reltol)
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
               linsolve = linres.cache
-              copyto!(k_tmps[Threads.threadid()],linres.u)
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
               @.. T[index+1] = u_temp3[Threads.threadid()] + k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -3042,11 +2967,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-        fill!(linsolve.u,false)
-        linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
         linsolve = linres.cache
-        copyto!(k,linres.u)
 
         integrator.destats.nsolve += 1
         @.. k = -k
@@ -3060,11 +2982,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
           if !repeat_step
             linsolve = LinearSolve.set_A(linsolve,W[1])
           end
-          linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmps[1]))
-          fill!(linsolve.u,false)
-          linres = solve(linsolve,reltol=integrator.opts.reltol)
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
           linsolve = linres.cache
-          copyto!(k,linres.u)
 
           integrator.destats.nsolve += 1
           @.. k = -k

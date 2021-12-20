@@ -46,9 +46,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     jacobian2W!(W, mass_matrix, γ, J, false)
 
     linsolve = cache.linsolve
-    linsolve = LinearSolve.set_A(linsolve,W)
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; A = W, b = _vec(linsolve_tmp))
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -66,8 +64,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     @.. linsolve_tmp = f₁ - tmp
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
 
@@ -77,6 +74,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
+    cache.linsolve = linres.cache
   end
   nothing
 end
@@ -103,9 +101,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     jacobian2W!(W, mass_matrix, γ, J, false)
 
     linsolve = cache.linsolve
-    linsolve = LinearSolve.set_A(linsolve,W)
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; A = W, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
 
@@ -125,8 +121,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
       linsolve_tmp[i] = f₁[i] - tmp[i]
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
 
@@ -137,6 +132,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
 
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
+    cache.linsolve = linres.cache
   end
   nothing
 end
@@ -269,9 +265,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
     linsolve = cache.linsolve
-    linsolve = LinearSolve.set_A(linsolve,W)
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; A = W, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck1 = _vec(k1)
 
@@ -287,8 +281,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd2*dT + du2
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k2)
     @.. veck2 = -vecu
@@ -303,8 +296,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd3*dT + du2
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k3)
     @.. veck3 = -vecu
@@ -319,8 +311,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd4*dT + du2
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck4 = _vec(k4)
     @.. veck4 = -vecu
@@ -335,8 +326,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + du2
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck5 = _vec(k5)
     @.. veck5 = -vecu
@@ -395,9 +385,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
     linsolve = cache.linsolve
-    linsolve = LinearSolve.set_A(linsolve,W)
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; A = W, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck1 = _vec(k1)
 
@@ -424,8 +412,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k2)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -450,8 +437,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k3)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -475,8 +461,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck4 = _vec(k4)
     @inbounds @simd ivdep for i in eachindex(u)
@@ -499,8 +484,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
-    linres = solve(linsolve)
+    linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck5 = _vec(k5)
     @.. veck5 = -vecu
