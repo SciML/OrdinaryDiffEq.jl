@@ -409,8 +409,6 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
 
             @.. vecki = -vecu
 
-            @show W, $ki
-
             integrator.destats.nsolve += 1
             @.. u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
