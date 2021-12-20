@@ -676,7 +676,7 @@ end
     @.. ubuff = integrator.fsalfirst + tmp
 
     if alg.smooth_est
-      linres1 = dolinsolve(integrator, linsolve1; b = _vec(ubuff), u = _vec(utilde))
+      linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff), u = _vec(utilde))
       cache.linsolve1 = linres1.cache
       integrator.destats.nsolve += 1
     end
@@ -693,7 +693,7 @@ end
       @.. ubuff = fsallast + tmp
 
       if alg.smooth_est
-        linres1 = dolinsolve(integrator, linsolve1; b = _vec(ubuff), u = _vec(utilde))
+        linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff), u = _vec(utilde))
         cache.linsolve1 = linres1.cache
         integrator.destats.nsolve += 1
       end

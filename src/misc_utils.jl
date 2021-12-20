@@ -80,9 +80,14 @@ end
 
 function dolinsolve(integrator, linsolve; A = nothing, u = nothing, b = nothing,
                              Pl = nothing, Pr = nothing,
-                             reltol=integrator.opts.reltol)
+                             reltol = integrator === nothing ? nothing : integrator.opts.reltol)
   A !== nothing && (linsolve = LinearSolve.set_A(linsolve,A))
   b !== nothing && (linsolve = LinearSolve.set_b(linsolve,b))
   (Pl !== nothing || Pr !== nothing) && (linsolve = LinearSolve.set_prec(Pl,Pr))
-  linres = solve(linsolve;reltol)
+
+  linres = if reltol === nothing
+    solve(linsolve;reltol)
+  else
+    solve(linsolve;reltol)
+  end
 end
