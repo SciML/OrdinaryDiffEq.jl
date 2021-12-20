@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, CUDA, Test
-CuArrays.allowscalar(false)
+CUDA.allowscalar(false)
 N = 256
 # Define the initial condition as normal arrays
 u0 = zeros(N,N,3)
