@@ -247,7 +247,7 @@ end
     @. fw1 = TI11 * fsallast + TI12 * k2
     @. fw2 = TI21 * fsallast + TI22 * k2
 
-    if mass_matrix == I
+    if mass_matrix === I
       Mw1 = w1
       Mw2 = w2
     elseif mass_matrix isa UniformScaling
@@ -579,7 +579,7 @@ end
     @.. fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
     @.. fw3 = TI31 * fsallast + TI32 * k2 + TI33 * k3
 
-    if mass_matrix == I
+    if mass_matrix === I
       Mw1 = w1
       Mw2 = w2
       Mw3 = w3

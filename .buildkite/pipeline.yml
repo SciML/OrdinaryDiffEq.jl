@@ -1,5 +1,5 @@
 steps:
-  - label: "Julia 1"
+  - label: "GPU"
     plugins:
       - JuliaCI/julia#v1:
           version: "1"
@@ -8,11 +8,130 @@ steps:
     agents:
       queue: "juliagpu"
       cuda: "*"
+    env:
+      GROUP: 'GPU'
+      JULIA_PKG_SERVER: "" # it often struggles with our large artifacts
+      # SECRET_CODECOV_TOKEN: "..."
     timeout_in_minutes: 30
     # Don't run Buildkite if the commit message includes the text [skip tests]
     if: build.message !~ /\[skip tests\]/
 
-env:
-  GROUP: GPU
-  JULIA_PKG_SERVER: "" # it often struggles with our large artifacts
-  # SECRET_CODECOV_TOKEN: "..."
+  - label: "Regression_I"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Regression_I'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "Regression_I LTS"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1.6"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Regression_I'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "Regression_II"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Regression_II'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "Regression_II LTS"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1.6"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Regression_II'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "Multithreading"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Multithreading'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "Multithreading LTS"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1.6"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Multithreading'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "Integrators_II"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Integrators_II'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "Integrators_II LTS"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1.6"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'Integrators_II'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/

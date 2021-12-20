@@ -58,7 +58,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     @.. tmp = uprev + dto2*k₁
     f(f₁,tmp,p,t+dto2)
 
-    if mass_matrix == I
+    if mass_matrix === I
       tmp .= k₁
     else
       mul!(tmp,mass_matrix,k₁)
@@ -115,7 +115,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     end
     f(f₁,tmp,p,t+dto2)
 
-    if mass_matrix == I
+    if mass_matrix === I
       copyto!(tmp,k₁)
     else
       mul!(tmp,mass_matrix,k₁)
@@ -279,7 +279,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     @.. tmp = uprev + a21*k1
     f( du,  tmp, p, t+c2*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
     else
       @.. du1 = dtC21*k1
@@ -295,7 +295,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     @.. tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
     else
       @.. du1 = dtC31*k1 + dtC32*k2
@@ -311,7 +311,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     @.. tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
     else
       @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -327,7 +327,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     @.. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
     else
       @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
@@ -409,7 +409,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
     f( du,  tmp, p, t+c2*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + dtd2*dT[i] + dtC21*k1[i]
       end
@@ -436,7 +436,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
     f( du,  tmp, p, t+c3*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + dtd3*dT[i] + (dtC31*k1[i] + dtC32*k2[i])
       end
@@ -460,7 +460,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
     f( du,  tmp, p, t+c4*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + dtd4*dT[i] + (dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i])
       end
@@ -485,7 +485,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     end
     f( du,  tmp, p, t+dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
       end

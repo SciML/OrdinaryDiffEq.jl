@@ -467,7 +467,7 @@ function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_t
           W[i,i] = muladd(λ, invdtgamma, J[i,i])
       end
     else
-      @inbounds for i in eachindex(W)
+      @inbounds @simd ivdep for i in eachindex(W)
         W[i] = muladd(-mass_matrix[i], invdtgamma, J[i])
       end
     end

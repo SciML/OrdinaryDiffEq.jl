@@ -313,7 +313,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             u=+(uprev,$(aijkj...))
             du = f(u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
-            if mass_matrix == I
+            if mass_matrix === I
                 linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
             else
                 linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+($(Cijkj...)))
@@ -399,25 +399,27 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
         end
         push!(iterexprs,quote
 
-            linsolve = cache.linsolve
-            linsolve = LinearSolve.set_A(linsolve,W)
             linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
             linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
             fill!(linsolve.u,false)
             linres = solve(linsolve,reltol=integrator.opts.reltol)
+            linsolve = linres.cache
             vecu = _vec(linres.u)
             vecki = _vec($ki)
 
             @.. vecki = -vecu
+
+            @show W, $ki
+
             integrator.destats.nsolve += 1
             @.. u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
-            if mass_matrix == I
+            if mass_matrix === I
                 @.. linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
             else
                 @.. du1 = +($(dtCijkj...))
-                mul!(du2,mass_matrix,du1)
+                mul!(_vec(du2),mass_matrix,_vec(du1))
                 @.. linsolve_tmp = du + $dtdj*dT + du2
             end
         end)
@@ -432,6 +434,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
         linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
         fill!(linsolve.u,false)
         linres = solve(linsolve,reltol=integrator.opts.reltol)
+        linsolve = linres.cache
         vecu = _vec(linres.u)
         vecklast = _vec($klast)
         @.. vecklast = -vecu
@@ -473,6 +476,11 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
                                  integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
             calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+            linsolve = cache.linsolve
+            if !repeat_step
+                linsolve = LinearSolve.set_A(linsolve,W)
+            end
 
             $(iterexprs...)
 
@@ -764,7 +772,7 @@ macro Rosenbrock4(part)
             integrator.destats.nsolve += 1
             #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
             #du = f(u, p, t+c3*dt) #reduced function call
-            if mass_matrix == I
+            if mass_matrix === I
                 linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
             else
                 linsolve_tmp = du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
@@ -782,7 +790,7 @@ macro Rosenbrock4(part)
             integrator.destats.nsolve += 1
             #@.. u = uprev + a31*k1 + a32*k2 #a4j=a3j
             #f( du,  u, p, t+c3*dt) #reduced function call
-            if mass_matrix == I
+            if mass_matrix === I
                 @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
             else
                 @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3

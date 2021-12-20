@@ -731,7 +731,7 @@ function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_ste
   nlsolver.z = u₀
   mass_matrix = f.mass_matrix
 
-  if mass_matrix == I
+  if mass_matrix === I
     nlsolver.tmp = @.. (u₀/β₀-ϕ)/dt
   else
     nlsolver.tmp = mass_matrix * @.. (u₀/β₀-ϕ)/dt
@@ -834,7 +834,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   @.. nlsolver.z = u₀
   mass_matrix = f.mass_matrix
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. nlsolver.tmp = (u₀/β₀-ϕ)/dt
   else
     @unpack tmp2 = cache
@@ -1038,7 +1038,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     end
   end
 
-  if mass_matrix == I
+  if mass_matrix === I
     nlsolver.tmp = tmp/dt
   else
     nlsolver.tmp = mass_matrix * tmp/dt
@@ -1166,7 +1166,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     @.. @views vc -= u_corrector[:,i] * bdf_coeffs[k,i+2]
   end
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. nlsolver.tmp = tmp/dt
   else
     @.. nlsolver.tmp = mass_matrix * tmp/dt

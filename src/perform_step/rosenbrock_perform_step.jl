@@ -58,7 +58,7 @@ end
   f(f₁,u,p,t+dto2)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     copyto!(tmp,k₁)
   else
     mul!(_vec(tmp),mass_matrix,k₁)
@@ -82,7 +82,7 @@ end
     f( fsallast,  u, p, t+dt)
     integrator.destats.nf += 1
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
     else
       @.. du2 = c₃₂*k₂ + 2k₁
@@ -133,6 +133,7 @@ end
   @inbounds @simd ivdep for i in eachindex(u)
     k₁[i] = -linres.u[i]
   end
+  @show W,k₁
 
   integrator.destats.nsolve += 1
 
@@ -142,7 +143,7 @@ end
   f(f₁,u,p,t+dto2)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     copyto!(tmp,k₁)
   else
     mul!(_vec(tmp),mass_matrix,k₁)
@@ -173,7 +174,7 @@ end
     f( fsallast,  u, p, t+dt)
     integrator.destats.nf += 1
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = fsallast[i] - c₃₂*(k₂[i]-f₁[i]) - 2(k₁[i]-fsalfirst[i]) + dt*dT[i]
       end
@@ -240,7 +241,7 @@ end
   f(f₁,u,p,t+dto2)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     tmp .= k₁
   else
     mul!(tmp,mass_matrix,k₁)
@@ -262,7 +263,7 @@ end
   f( fsallast,  tmp, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
   else
     @.. du2 = c₃₂*k₂ + 2k₁
@@ -308,7 +309,7 @@ end
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
   else
     k₂ = _reshape(W\-_vec(f₁-mass_matrix*k₁), axes(uprev)) + k₁
@@ -320,7 +321,7 @@ end
     integrator.fsallast = f(u, p, t+dt)
     integrator.destats.nf += 1
 
-    if mass_matrix == I
+    if mass_matrix === I
       k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
     else
       linsolve_tmp = integrator.fsallast - mass_matrix*(c₃₂*k₂ + 2*k₁) +c₃₂*f₁ + 2*integrator.fsalfirst + dt*dT
@@ -361,7 +362,7 @@ end
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
   else
     linsolve_tmp = f₁ - mass_matrix * k₁
@@ -373,7 +374,7 @@ end
   integrator.fsallast = f(tmp, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
   else
     linsolve_tmp = integrator.fsallast - mass_matrix*(c₃₂*k₂ + 2k₁) + c₃₂*f₁ + 2*integrator.fsalfirst + dt*dT
@@ -455,7 +456,7 @@ end
   du = f(u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd2*dT + dtC21*k1
   else
     linsolve_tmp =  du + dtd2*dT + mass_matrix * (dtC21*k1)
@@ -467,7 +468,7 @@ end
   du = f(u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     linsolve_tmp =  du + dtd3*dT + mass_matrix * (dtC31*k1 + dtC32*k2)
@@ -531,7 +532,7 @@ end
   f( du,  u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
@@ -553,7 +554,7 @@ end
   f( du,  u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     @.. du1 = dtC31*k1 + dtC32*k2
@@ -618,7 +619,7 @@ end
   u = uprev # +a21*k1 a21 == 0
   # du = f(u, p, t+c2*dt) c2 == 0 and a21 == 0 => du = f(uprev, p, t) == fsalfirst
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  integrator.fsalfirst + dtd2*dT + dtC21*k1
   else
     linsolve_tmp =  integrator.fsalfirst + dtd2*dT + mass_matrix * (dtC21*k1)
@@ -630,7 +631,7 @@ end
   du = f(u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     linsolve_tmp =  du + dtd3*dT + mass_matrix * (dtC31*k1 + dtC32*k2)
@@ -639,7 +640,7 @@ end
   k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
   else
     linsolve_tmp =  du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
@@ -712,7 +713,7 @@ end
   f(du, u, p, t+c2*dt)
   =#
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = fsalfirst + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
@@ -731,7 +732,7 @@ end
   f( du,  u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     @.. du1 = dtC31*k1 + dtC32*k2
@@ -746,7 +747,7 @@ end
   @.. veck3 = -vecu
   integrator.destats.nsolve += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
   else
     @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -845,7 +846,7 @@ end
   du = f(u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd2*dT + dtC21*k1
   else
     linsolve_tmp =  du + dtd2*dT + mass_matrix * (dtC21*k1)
@@ -857,7 +858,7 @@ end
   du = f(u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     linsolve_tmp =  du + dtd3*dT + mass_matrix * (dtC31*k1 + dtC32*k2)
@@ -869,7 +870,7 @@ end
   du = f(u, p, t+c4*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     linsolve_tmp =  du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
@@ -881,7 +882,7 @@ end
   du = f(u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     linsolve_tmp =  du + mass_matrix * (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
@@ -893,7 +894,7 @@ end
   du = f(u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
   else
     linsolve_tmp =  du + mass_matrix * (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
@@ -980,7 +981,7 @@ end
   f( du,  u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
@@ -999,7 +1000,7 @@ end
   f( du,  u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     @.. du1 = dtC31*k1 + dtC32*k2
@@ -1018,7 +1019,7 @@ end
   f( du,  u, p, t+c4*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -1037,7 +1038,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
@@ -1056,7 +1057,7 @@ end
   f( du,  u, p, t + dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
   else
     @.. du1 = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
@@ -1141,7 +1142,7 @@ end
   f( du,  u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + dtd2*dT[i] + dtC21*k1[i]
     end
@@ -1170,7 +1171,7 @@ end
   f( du,  u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + dtd3*dT[i] + (dtC31*k1[i] + dtC32*k2[i])
     end
@@ -1200,7 +1201,7 @@ end
   f( du,  u, p, t+c4*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + dtd4*dT[i] + (dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i])
     end
@@ -1229,7 +1230,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
     end
@@ -1258,7 +1259,7 @@ end
   f( du,  u, p, t + dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i])
     end
@@ -1363,7 +1364,7 @@ end
   du = f(u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd2*dT + dtC21*k1
   else
     linsolve_tmp = du + dtd2*dT + mass_matrix * (dtC21*k1)
@@ -1375,7 +1376,7 @@ end
   du = f(u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     linsolve_tmp =  du + dtd3*dT + mass_matrix * (dtC31*k1 + dtC32*k2)
@@ -1387,7 +1388,7 @@ end
   du = f(u, p, t+c4*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     linsolve_tmp =  du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
@@ -1399,7 +1400,7 @@ end
   du = f(u, p, t+c5*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     linsolve_tmp = du + dtd5*dT + mass_matrix * (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
@@ -1411,7 +1412,7 @@ end
   du = f(u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
   else
     linsolve_tmp =  du + mass_matrix * (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
@@ -1423,7 +1424,7 @@ end
   du = f(u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
   else
     linsolve_tmp = du + mass_matrix * (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
@@ -1435,7 +1436,7 @@ end
   du = f(u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
   else
     linsolve_tmp = du + mass_matrix * (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
@@ -1534,7 +1535,7 @@ end
   f( du,  u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
@@ -1553,7 +1554,7 @@ end
   f( du,  u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     @.. du1 = dtC31*k1 + dtC32*k2
@@ -1572,7 +1573,7 @@ end
   f( du,  u, p, t+c4*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -1591,7 +1592,7 @@ end
   f( du,  u, p, t+c5*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
@@ -1610,7 +1611,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
   else
     @.. du1 = dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5
@@ -1629,7 +1630,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
   else
     @.. du1 = dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
@@ -1648,7 +1649,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @.. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
   else
     @.. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
@@ -1754,7 +1755,7 @@ end
   f( du,  u, p, t+c2*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + dtd2*dT[i] + dtC21*k1[i]
     end
@@ -1784,7 +1785,7 @@ end
   f( du,  u, p, t+c3*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
 
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + dtd3*dT[i] + (dtC31*k1[i] + dtC32*k2[i])
@@ -1815,7 +1816,7 @@ end
   f( du,  u, p, t+c4*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + dtd4*dT[i] + (dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i])
     end
@@ -1845,7 +1846,7 @@ end
   f( du,  u, p, t+c5*dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + dtd5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
     end
@@ -1875,7 +1876,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i])
     end
@@ -1905,7 +1906,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
     end
@@ -1935,7 +1936,7 @@ end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
-  if mass_matrix == I
+  if mass_matrix === I
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
     end
