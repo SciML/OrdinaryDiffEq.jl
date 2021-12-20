@@ -74,7 +74,7 @@ using DocStringExtensions
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
                                                         K<:Union{Float64,Float32}}}
 
-  struct OrdinaryDiffEqTag end 
+  struct OrdinaryDiffEqTag end
 
   include("misc_utils.jl")
   include("algorithms.jl")
@@ -180,7 +180,6 @@ using DocStringExtensions
   include("interp_func.jl")
   include("composite_algs.jl")
 
-  #=
   let
     while true
       function lorenz(du,u,p,t)
@@ -211,7 +210,6 @@ using DocStringExtensions
       break
     end
   end
-  =#
 
   #General Functions
   export solve, solve!, init, step!
