@@ -133,7 +133,6 @@ end
   @inbounds @simd ivdep for i in eachindex(u)
     k₁[i] = -linres.u[i]
   end
-  @show W,k₁
 
   integrator.destats.nsolve += 1
 
