@@ -47,6 +47,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     linsolve = cache.linsolve
     linsolve = LinearSolve.set_A(linsolve,W)
+    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
     linres = solve(linsolve)
 
     vecu = _vec(linres.u)
@@ -65,6 +66,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     @.. linsolve_tmp = f₁ - tmp
 
+    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
     linres = solve(linsolve)
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
@@ -102,6 +104,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
 
     linsolve = cache.linsolve
     linsolve = LinearSolve.set_A(linsolve,W)
+    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
     linres = solve(linsolve)
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
@@ -121,6 +124,8 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = f₁[i] - tmp[i]
     end
+
+    linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
     linres = solve(linsolve)
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)

@@ -45,6 +45,7 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -65,6 +66,7 @@ end
 
   @.. linsolve_tmp = f₁ - tmp
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -88,6 +90,7 @@ end
       @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
     end
 
+    linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
     fill!(linsolve.u,false)
     linres = solve(linsolve,reltol=integrator.opts.reltol)
     vecu = _vec(linres.u)
@@ -122,6 +125,7 @@ end
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
@@ -148,6 +152,7 @@ end
     linsolve_tmp[i] = f₁[i] - tmp[i]
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
 
@@ -183,6 +188,8 @@ end
       end
     end
 
+
+    linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
     fill!(linsolve.u,false)
     linres = solve(linsolve,reltol=integrator.opts.reltol)
 
@@ -220,9 +227,13 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  @.. k₁ = -tmp
+  vecu = _vec(linres.u)
+  veck₁ = _vec(k₁)
+
+  @.. veck₁ = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto2*k₁
@@ -237,9 +248,13 @@ end
 
   @.. linsolve_tmp = f₁ - tmp
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  @.. k₂ = -tmp
+  vecu = _vec(linres.u)
+  veck2 = _vec(k₂)
+
+  @.. veck2 = -vecu
   integrator.destats.nsolve += 1
 
   @.. k₂ += k₁
@@ -255,9 +270,13 @@ end
     @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
-  @.. k₃ = -tmp
+  vecu = _vec(linres.u)
+  veck3 = _vec(k₃)
+
+  @.. veck3 = -vecu
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto6*(k₁ + 4k₂ + k₃)
@@ -499,6 +518,7 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -519,6 +539,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -540,6 +561,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -673,6 +695,7 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -697,6 +720,7 @@ end
     @.. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck2 = _vec(k2)
@@ -715,6 +739,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck3 = _vec(k3)
@@ -729,6 +754,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck4 = _vec(k4)
@@ -940,6 +966,7 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -961,6 +988,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck2 = _vec(k2)
@@ -979,6 +1007,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck3 = _vec(k3)
@@ -997,6 +1026,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck4 = _vec(k4)
@@ -1015,6 +1045,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck5 = _vec(k5)
@@ -1033,6 +1064,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck6 = _vec(k6)
@@ -1094,6 +1126,7 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
 
@@ -1123,6 +1156,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1152,6 +1186,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1180,6 +1215,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1208,6 +1244,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1235,6 +1272,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1483,6 +1521,7 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -1503,6 +1542,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck2 = _vec(k2)
@@ -1521,6 +1561,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck3 = _vec(k3)
@@ -1539,6 +1580,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck4 = _vec(k4)
@@ -1557,6 +1599,7 @@ end
     @.. linsolve_tmp = du + dtd5*dT + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck5 = _vec(k5)
@@ -1575,6 +1618,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck6 = _vec(k6)
@@ -1593,6 +1637,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck7 = _vec(k7)
@@ -1611,6 +1656,7 @@ end
     @.. linsolve_tmp = du + du2
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   veck8 = _vec(k8)
@@ -1690,6 +1736,7 @@ end
 
   linsolve = cache.linsolve
   linsolve = LinearSolve.set_A(linsolve,W)
+  linsolve = LinearSolve.set_b(linsolve,_vec(linsolve_tmp))
   linsolve = LinearSolve.set_prec(linsolve,LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),Diagonal(_vec(weight)))
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   vecu = _vec(linres.u)
@@ -1722,6 +1769,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1753,6 +1801,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1782,6 +1831,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1811,6 +1861,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1840,6 +1891,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1869,6 +1921,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1898,6 +1951,7 @@ end
     end
   end
 
+  linsolve = LinearSolve.set_b(linres.cache,_vec(linsolve_tmp))
   fill!(linsolve.u,false)
   linres = solve(linsolve,reltol=integrator.opts.reltol)
   @inbounds @simd ivdep for i in eachindex(u)
