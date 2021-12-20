@@ -15,6 +15,8 @@ using DocStringExtensions
 
   using LoopVectorization
 
+  using LinearSolve
+
   # Interfaces
   import DiffEqBase: solve!, step!, initialize!, isadaptive
 
@@ -72,7 +74,7 @@ using DocStringExtensions
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
                                                         K<:Union{Float64,Float32}}}
 
-  struct OrdinaryDiffEqTag end 
+  struct OrdinaryDiffEqTag end
 
   include("misc_utils.jl")
   include("algorithms.jl")

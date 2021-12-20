@@ -113,21 +113,21 @@ DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
 DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
 DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
-function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                        tTypeNoUnits,γ,c,iip)
+function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                        ::Type{tTypeNoUnits},γ,c,iip) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                         tTypeNoUnits,γ,c,1,iip)
 end
 
-function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                        tTypeNoUnits,γ,c,α,iip)
+function build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},
+                        ::Type{tTypeNoUnits},γ,c,α,iip) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   build_nlsolver(alg,alg.nlsolve,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,
                  uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,iip)
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
-                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                        γ,c,α,::Val{true})
+                        f,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},
+                        γ,c,α,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   #TODO
   #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
   # define unitless type
@@ -146,12 +146,19 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 
   if nlalg isa NLNewton
     nf = nlsolve_f(f, alg)
+    J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+
+    # TODO: check if the solver is iterative
+    weight = zero(u)
 
     if islinear(f)
       du1 = rate_prototype
       uf = nothing
       jac_config = nothing
-      linsolve = alg.linsolve(Val{:init},nf,u)
+      linprob = LinearProblem(W,_vec(k); u0=_vec(dz))
+      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                      Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                      Pr = Diagonal(_vec(weight)))
     else
       du1 = zero(rate_prototype)
       if isdae
@@ -160,16 +167,14 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
         uf = build_uf(alg,nf,t,p,Val(true))
       end
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
-      linsolve = alg.linsolve(Val{:init},uf,u)
+      linprob = LinearProblem(W,_vec(k); u0=_vec(dz))
+      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                      Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                      Pr = Diagonal(_vec(weight)))
     end
-
-    # TODO: check if the solver is iterative
-    weight = zero(u)
 
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
-
-    J, W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
 
     nlcache = NLNewtonCache(ustep,tstep,k,atmp,dz,J,W,true,true,true,tType(dt),du1,uf,jac_config,
                             linsolve,weight,invγdt,tType(nlalg.new_W_dt_cutoff),t)
@@ -199,8 +204,8 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
 end
 
 function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,uprev,p,t,dt,
-                        f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                        γ,c,α,::Val{false})
+                        f,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},
+                        γ,c,α,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   #TODO
   #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
   # define unitless type
@@ -351,7 +356,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
 
   # replace/add difference of residuals as right-most column to QR decomposition
   @.. dzold = dz - dzold
-  qradd!(Q, R, vec(dzold), history)
+  qradd!(Q, R, _vec(dzold), history)
 
   # update cached values
   @.. dzold = dz
@@ -374,7 +379,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
 
   # solve least squares problem
   γscur = view(γs, 1:history)
-  ldiv!(Rcur, mul!(γscur, Qcur', vec(dz)))
+  ldiv!(Rcur, mul!(γscur, Qcur', _vec(dz)))
 
   # update next iterate
   for i in 1:history

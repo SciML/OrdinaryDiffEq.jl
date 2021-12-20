@@ -188,6 +188,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             W::WType
             tmp::rateType
             atmp::uNoUnitsType
+            weight::uNoUnitsType
             tab::TabType
             tf::TFType
             uf::UFType
@@ -213,7 +214,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     for field in fields
         if @capture(field, valsym_Symbol::valtype_)
             push!(valsyms, valsym)
-            
+
             if match(r"^k[1-9]+$", String(valsym)) !== nothing
                 push!(ksinit, :($valsym = zero(rate_prototype)))
             end
@@ -225,8 +226,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-            linsolve = alg.linsolve(Val{:init},uf,u)
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
             du = zero(rate_prototype)
@@ -239,12 +239,16 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
+            weight = similar(u, uEltypeNoUnits)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
             tf = TimeGradientWrapper(f,uprev,p)
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
-            linsolve = alg.linsolve(Val{:init},uf,u)
+            linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                            Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                            Pr = Diagonal(_vec(weight)))
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
             $cachename($(valsyms...))
@@ -309,7 +313,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             u=+(uprev,$(aijkj...))
             du = f(u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
-            if mass_matrix == I
+            if mass_matrix === I
                 linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
             else
                 linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+($(Cijkj...)))
@@ -394,17 +398,23 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             repeatstepexpr=[:(!repeat_step)]
         end
         push!(iterexprs,quote
-            cache.linsolve(vec($ki), W, vec(linsolve_tmp), $(repeatstepexpr...))
-            @.. $ki = -$ki
+
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
+            linsolve = linres.cache
+            vecu = _vec(linres.u)
+            vecki = _vec($ki)
+
+            @.. vecki = -vecu
+
             integrator.destats.nsolve += 1
             @.. u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
-            if mass_matrix == I
+            if mass_matrix === I
                 @.. linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
             else
                 @.. du1 = +($(dtCijkj...))
-                mul!(du2,mass_matrix,du1)
+                mul!(_vec(du2),mass_matrix,_vec(du1))
                 @.. linsolve_tmp = du + $dtdj*dT + du2
             end
         end)
@@ -415,8 +425,13 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     klast=Symbol(:k,n)
     biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
     push!(iterexprs,quote
-        cache.linsolve(vec($klast), W, vec(linsolve_tmp))
-        @.. $klast = -$klast
+
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
+        linsolve = linres.cache
+        vecu = _vec(linres.u)
+        vecklast = _vec($klast)
+        @.. vecklast = -vecu
+
         integrator.destats.nsolve += 1
         @.. u = +(uprev,$(biki...))
     end)
@@ -437,7 +452,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
             @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp = cache
+            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
             $unpacktabexpr
 
             # Assignments
@@ -449,7 +464,16 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             $(dtCij...)
             $(dtdi...)
             dtgamma = dt*gamma
+
+            calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
+                                 integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+
             calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+            linsolve = cache.linsolve
+            if !repeat_step
+                linsolve = LinearSolve.set_A(linsolve,W)
+            end
 
             $(iterexprs...)
 
@@ -741,19 +765,25 @@ macro Rosenbrock4(part)
             integrator.destats.nsolve += 1
             #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
             #du = f(u, p, t+c3*dt) #reduced function call
-            if mass_matrix == I
+            if mass_matrix === I
                 linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
             else
                 linsolve_tmp = du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
             end
         end
         specialstep=quote
-            cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-            @.. k3 = -k3
+
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
+            linsolve = linres.cache
+            cache.linsolve = linsolve
+            vecu = _vec(linres.u)
+            veck3 = _vec(k3)
+            @.. veck3 = -vecu
+
             integrator.destats.nsolve += 1
             #@.. u = uprev + a31*k1 + a32*k2 #a4j=a3j
             #f( du,  u, p, t+c3*dt) #reduced function call
-            if mass_matrix == I
+            if mass_matrix === I
                 @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
             else
                 @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3

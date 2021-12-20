@@ -184,5 +184,6 @@ function runSim(method)
 end
 
 runSim(BS3())
+
 runSim(Rosenbrock23())
 runSim(Rosenbrock23(autodiff=false))

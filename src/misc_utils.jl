@@ -78,4 +78,17 @@ macro threaded(option, ex)
   end
 end
 
+function dolinsolve(integrator, linsolve; A = nothing, u = nothing, b = nothing,
+                             Pl = nothing, Pr = nothing,
+                             reltol = integrator === nothing ? nothing : integrator.opts.reltol)
+  A !== nothing && (linsolve = LinearSolve.set_A(linsolve,A))
+  b !== nothing && (linsolve = LinearSolve.set_b(linsolve,b))
+  u !== nothing && (linsolve = LinearSolve.set_u(linsolve,u))
+  (Pl !== nothing || Pr !== nothing) && (linsolve = LinearSolve.set_prec(Pl,Pr))
 
+  linres = if reltol === nothing
+    solve(linsolve;reltol)
+  else
+    solve(linsolve;reltol)
+  end
+end

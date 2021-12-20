@@ -165,7 +165,9 @@ end
     @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -406,7 +408,9 @@ end
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -776,7 +780,9 @@ end
     @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -1104,7 +1110,9 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -1306,7 +1314,9 @@ end
     @.. tmp = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -1712,7 +1722,9 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -2083,7 +2095,9 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -2497,7 +2511,9 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       est = nlsolver.cache.dz
-      nlsolver.cache.linsolve(vec(est),get_W(nlsolver),vec(tmp),false)
+
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+
       integrator.destats.nsolve += 1
     else
       est = tmp

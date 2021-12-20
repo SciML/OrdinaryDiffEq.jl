@@ -169,6 +169,7 @@ function resize_J_W!(cache, integrator, i)
   nothing
 end
 
+Base.resize!(p::LinearSolve.LinearCache,i) = p
 resize_non_user_cache!(integrator::ODEIntegrator,i::Int) = resize_non_user_cache!(integrator,integrator.cache,i)
 deleteat_non_user_cache!(integrator::ODEIntegrator,i) = deleteat_non_user_cache!(integrator,integrator.cache,i)
 addat_non_user_cache!(integrator::ODEIntegrator,i) = addat_non_user_cache!(integrator,integrator.cache,i)

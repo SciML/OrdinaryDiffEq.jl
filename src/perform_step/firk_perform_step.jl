@@ -205,7 +205,7 @@ end
           dw12, cubuff,
           k, k2, fw1, fw2,
           J, W1,
-          tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
+          tmp, atmp, jac_config, rtol, atol = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
   @unpack maxiters = alg
@@ -247,7 +247,7 @@ end
     @. fw1 = TI11 * fsallast + TI12 * k2
     @. fw2 = TI21 * fsallast + TI22 * k2
 
-    if mass_matrix == I
+    if mass_matrix === I
       Mw1 = w1
       Mw2 = w2
     elseif mass_matrix isa UniformScaling
@@ -264,7 +264,14 @@ end
 
     @. cubuff = complex(fw1 - αdt*Mw1 + βdt*Mw2, fw2 - βdt*Mw1 - αdt*Mw2)
     needfactor = iter==1
-    linsolve2(vec(dw12), W1, vec(cubuff), needfactor)
+
+    linsolve = cache.linsolve
+    if needfactor
+      linsolve = LinearSolve.set_A(linsolve,W1)
+    end
+    linres = dolinsolve(integrator, linsolve; b = _vec(cubuff), u = _vec(dw12))
+    cache.linsolve = linres.cache
+
     integrator.destats.nsolve += 1
     dw1 = real(dw12)
     dw2 = imag(dw12)
@@ -569,7 +576,7 @@ end
     @.. fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
     @.. fw3 = TI31 * fsallast + TI32 * k2 + TI33 * k3
 
-    if mass_matrix == I
+    if mass_matrix === I
       Mw1 = w1
       Mw2 = w2
       Mw3 = w3
@@ -591,9 +598,23 @@ end
 
     @.. ubuff = fw1 - γdt*Mw1
     needfactor = iter==1 && new_W
-    linsolve1(vec(dw1), W1, vec(ubuff), needfactor)
+
+    linsolve1 = cache.linsolve1
+    if needfactor
+      linsolve1 = LinearSolve.set_A(linsolve1,W1)
+    end
+    linres1 = dolinsolve(integrator, linsolve1; b = _vec(ubuff), u = _vec(dw1))
+    cache.linsolve1 = linres1.cache
+
     @.. cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
-    linsolve2(vec(dw23), W2, vec(cubuff), needfactor)
+
+    linsolve2 = cache.linsolve2
+    if needfactor
+      linsolve2 = LinearSolve.set_A(linsolve2,W2)
+    end
+    linres2 = dolinsolve(integrator, linsolve2; b = _vec(cubuff), u = _vec(dw23))
+    cache.linsolve2 = linres2.cache
+
     integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
     @.. dw2 = real(dw23)
@@ -653,7 +674,13 @@ end
     @.. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
     @.. ubuff = integrator.fsalfirst + tmp
-    alg.smooth_est && (linsolve1(vec(utilde), W1, vec(ubuff), false); integrator.destats.nsolve += 1)
+
+    if alg.smooth_est
+      linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff), u = _vec(utilde))
+      cache.linsolve1 = linres1.cache
+      integrator.destats.nsolve += 1
+    end
+
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -664,7 +691,13 @@ end
       f(fsallast, utilde, p, t)
       integrator.destats.nf += 1
       @.. ubuff = fsallast + tmp
-      alg.smooth_est && (linsolve1(vec(utilde), W1, vec(ubuff), false); integrator.destats.nsolve += 1)
+
+      if alg.smooth_est
+        linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff), u = _vec(utilde))
+        cache.linsolve1 = linres1.cache
+        integrator.destats.nsolve += 1
+      end
+
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
     end

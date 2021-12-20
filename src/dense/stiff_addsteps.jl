@@ -28,7 +28,7 @@ end
 
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
-    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
+    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,weight = cache
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
@@ -44,30 +44,44 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, γ, J, false)
-    cache.linsolve(vec(k₁),W,vec(linsolve_tmp),true)
-    @.. k₁ = -k₁
+
+    linsolve = cache.linsolve
+    linres = dolinsolve(nothing, linsolve; A = W, b = _vec(linsolve_tmp))
+
+    vecu = _vec(linres.u)
+    veck₁ = _vec(k₁)
+
+    @.. veck₁ = -vecu
+
     @.. tmp = uprev + dto2*k₁
     f(f₁,tmp,p,t+dto2)
 
-    if mass_matrix == I
+    if mass_matrix === I
       tmp .= k₁
     else
       mul!(tmp,mass_matrix,k₁)
     end
 
     @.. linsolve_tmp = f₁ - tmp
-    cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
+
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck2 = _vec(k₂)
+
+    @.. veck2 = -vecu
+
     @.. k₂ += k₁
 
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
+    cache.linsolve = linres.cache
   end
   nothing
 end
 
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Array},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
-    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
+    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,weight = cache
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
@@ -85,14 +99,19 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, γ, J, false)
-    cache.linsolve(vec(k₁),W,vec(linsolve_tmp),true)
+
+    linsolve = cache.linsolve
+    linres = dolinsolve(nothing, linsolve; A = W, b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck₁ = _vec(k₁)
+
     @inbounds @simd ivdep for i in eachindex(u)
-      k₁[i] = -k₁[i]
+      veck₁[i] = -vecu[i]
       tmp[i] = uprev[i] + dto2*k₁[i]
     end
     f(f₁,tmp,p,t+dto2)
 
-    if mass_matrix == I
+    if mass_matrix === I
       copyto!(tmp,k₁)
     else
       mul!(tmp,mass_matrix,k₁)
@@ -101,14 +120,19 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = f₁[i] - tmp[i]
     end
-    cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
+
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck2 = _vec(k₂)
 
     @inbounds @simd ivdep for i in eachindex(u)
+      veck2[i] = -vecu[i]
       k₂[i] += k₁[i]
     end
 
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
+    cache.linsolve = linres.cache
   end
   nothing
 end
@@ -202,7 +226,7 @@ end
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
 
-    @unpack du,du1,du2,tmp,k1,k2,k3,k4,k5,k6,dT,J,W,uf,tf,linsolve_tmp,jac_config,fsalfirst = cache
+    @unpack du,du1,du2,tmp,k1,k2,k3,k4,k5,k6,dT,J,W,uf,tf,linsolve_tmp,jac_config,fsalfirst,weight = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
     # Assignments
@@ -239,12 +263,17 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
-    cache.linsolve(vec(k1), W, vec(linsolve_tmp), true)
-    @.. k1 = -k1
+
+    linsolve = cache.linsolve
+    linres = dolinsolve(nothing, linsolve; A = W, b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck1 = _vec(k1)
+
+    @.. veck1 = -vecu
     @.. tmp = uprev + a21*k1
     f( du,  tmp, p, t+c2*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
     else
       @.. du1 = dtC21*k1
@@ -252,12 +281,14 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd2*dT + du2
     end
 
-    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-    @.. k2 = -k2
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck2 = _vec(k2)
+    @.. veck2 = -vecu
     @.. tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
     else
       @.. du1 = dtC31*k1 + dtC32*k2
@@ -265,12 +296,14 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd3*dT + du2
     end
 
-    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-    @.. k3 = -k3
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck3 = _vec(k3)
+    @.. veck3 = -vecu
     @.. tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
     else
       @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -278,12 +311,14 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd4*dT + du2
     end
 
-    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-    @.. k4 = -k4
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck4 = _vec(k4)
+    @.. veck4 = -vecu
     @.. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @.. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
     else
       @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
@@ -291,8 +326,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + du2
     end
 
-    cache.linsolve(vec(k5), W, vec(linsolve_tmp))
-    @.. k5 = -k5
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck5 = _vec(k5)
+    @.. veck5 = -vecu
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
     @.. k6 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     copyat_or_push!(k,1,copy(k6))
@@ -346,16 +383,21 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
-    cache.linsolve(vec(k1), W, vec(linsolve_tmp), true)
+
+    linsolve = cache.linsolve
+    linres = dolinsolve(nothing, linsolve; A = W, b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck1 = _vec(k1)
+
     @inbounds @simd ivdep for i in eachindex(u)
-      k1[i] = -k1[i]
+      veck1[i] = -vecu[i]
     end
     @inbounds @simd ivdep for i in eachindex(u)
       tmp[i] = uprev[i] + a21*k1[i]
     end
     f( du,  tmp, p, t+c2*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + dtd2*dT[i] + dtC21*k1[i]
       end
@@ -370,16 +412,18 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck2 = _vec(k2)
     @inbounds @simd ivdep for i in eachindex(u)
-      k2[i] = -k2[i]
+      veck2[i] = -vecu[i]
     end
     @inbounds @simd ivdep for i in eachindex(u)
       tmp[i] = uprev[i] + a31*k1[i] + a32*k2[i]
     end
     f( du,  tmp, p, t+c3*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + dtd3*dT[i] + (dtC31*k1[i] + dtC32*k2[i])
       end
@@ -393,14 +437,16 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck3 = _vec(k3)
     @inbounds @simd ivdep for i in eachindex(u)
-      k3[i] = -k3[i]
+      veck3[i] = -vecu[i]
       tmp[i] = uprev[i] + a41*k1[i] + a42*k2[i] + a43*k3[i]
     end
     f( du,  tmp, p, t+c4*dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + dtd4*dT[i] + (dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i])
       end
@@ -415,14 +461,16 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck4 = _vec(k4)
     @inbounds @simd ivdep for i in eachindex(u)
-      k4[i] = -k4[i]
+      veck4[i] = -vecu[i]
       tmp[i] = uprev[i] + a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]
     end
     f( du,  tmp, p, t+dt)
 
-    if mass_matrix == I
+    if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = du[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
       end
@@ -436,9 +484,12 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
       end
     end
 
-    cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+    linres = dolinsolve(nothing, linres.cache; b = _vec(linsolve_tmp))
+    vecu = _vec(linres.u)
+    veck5 = _vec(k5)
+    @.. veck5 = -vecu
     @inbounds @simd ivdep for i in eachindex(u)
-      k5[i] = -k5[i]
+      veck5[i] = -vecu[i]
     end
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
 

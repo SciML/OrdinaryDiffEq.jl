@@ -1,4 +1,4 @@
-﻿abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
+abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 ################################################################################
 
 # Shampine's Low-order Rosenbrocks
@@ -45,6 +45,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -73,7 +74,11 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
 
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
@@ -97,15 +102,19 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstantCache
@@ -128,7 +137,8 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock23ConstantCache(constvalue(uBottomEltypeNoUnits),tf,uf,J,W,linsolve,alg_autodiff(alg))
 end
 
@@ -152,7 +162,8 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock32ConstantCache(constvalue(uBottomEltypeNoUnits),tf,uf,J,W,linsolve,alg_autodiff(alg))
 end
 
@@ -186,6 +197,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -209,15 +221,19 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock33Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -225,7 +241,8 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock33ConstantCache(tf,uf,ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
 
@@ -246,6 +263,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -269,16 +287,20 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas3Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock34Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -295,7 +317,8 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock34ConstantCache(tf,uf,Rodas3Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
 
@@ -347,6 +370,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -374,17 +398,21 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas4Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -392,7 +420,8 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas4Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
 
@@ -414,17 +443,21 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas42Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -432,7 +465,8 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas42Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
 
@@ -454,17 +488,21 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -472,7 +510,8 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
 
@@ -494,17 +533,21 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -512,7 +555,8 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rodas4ConstantCache(tf,uf,Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve,alg_autodiff(alg))
 end
 
@@ -552,6 +596,7 @@ end
   W::WType
   tmp::rateType
   atmp::uNoUnitsType
+  weight::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -581,17 +626,21 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
   tab = Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                  Pr = Diagonal(_vec(weight)))
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,k7,k8,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -599,7 +648,8 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   tf = TimeDerivativeWrapper(f,u,p)
   uf = UDerivativeWrapper(f,t,p)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock5ConstantCache(tf,uf,Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
 

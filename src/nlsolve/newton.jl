@@ -135,7 +135,7 @@ end
       @.. ustep = uprev + z
     end
     f(k, ztmp, ustep, p, tstep)
-    b = vec(k)
+    b = _vec(k)
   else
     mass_matrix = integrator.f.mass_matrix
     if nlsolver.method === COEFFICIENT_MULTISTEP
@@ -145,7 +145,7 @@ end
         @.. ztmp = tmp + k - (α * invγdt) * z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
-        mul!(vec(ztmp), mass_matrix, vec(z))
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. ztmp = tmp + k - (α * invγdt) * ztmp
       end
     else
@@ -155,11 +155,11 @@ end
         @.. ztmp = (dt * k - z) * invγdt
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
-        mul!(vec(ztmp), mass_matrix, vec(z))
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. ztmp = (dt * k - ztmp) * invγdt
       end
     end
-    b = vec(ztmp)
+    b = _vec(ztmp)
   end
 
   # update W
@@ -173,9 +173,11 @@ end
     reltol = eps(eltype(dz))
   end
 
-  linsolve(vec(dz), W, b, iter == 1 && new_W;
-           Pl=DiffEqBase.ScaleVector(weight, true),
-           Pr=DiffEqBase.ScaleVector(weight, false), reltol=reltol)
+  if iter == 1 && new_W
+    linsolve = LinearSolve.set_A(linsolve,W)
+  end
+  linres = dolinsolve(integrator, linsolve; b = _vec(b), u = _vec(dz), reltol = reltol)
+  cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1
@@ -233,7 +235,7 @@ end
       end
     end
     f(k, ztmp, ustep, p, tstep)
-    b = vec(k)
+    b = _vec(k)
   else
     mass_matrix = integrator.f.mass_matrix
     if nlsolver.method === COEFFICIENT_MULTISTEP
@@ -245,7 +247,7 @@ end
         end
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
-        mul!(vec(ztmp), mass_matrix, vec(z))
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
 
         @inbounds @simd ivdep for i in eachindex(z)
           ztmp[i] = tmp[i] + k[i] - (α * invγdt) * ztmp[i]
@@ -263,13 +265,13 @@ end
         end
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
-        mul!(vec(ztmp), mass_matrix, vec(z))
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
         @inbounds @simd ivdep for i in eachindex(z)
           ztmp[i] = (dt * k[i] - ztmp[i]) * invγdt
         end
       end
     end
-    b = vec(ztmp)
+    b = _vec(ztmp)
   end
 
   # update W
@@ -283,9 +285,11 @@ end
     reltol = eps(eltype(dz))
   end
 
-  linsolve(vec(dz), W, b, iter == 1 && new_W;
-           Pl=DiffEqBase.ScaleVector(weight, true),
-           Pr=DiffEqBase.ScaleVector(weight, false), reltol=reltol)
+  if iter == 1 && new_W
+    linsolve = LinearSolve.set_A(linsolve,W)
+  end
+  linres = dolinsolve(integrator, linsolve; b = _vec(b), u = _vec(dz), reltol = reltol)
+  cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)
     integrator.destats.nsolve += 1

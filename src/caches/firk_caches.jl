@@ -25,7 +25,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, DiffEqBase.Convergence, J)
 end
 
-mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
+mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF,JC,F1,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   z1::uType
@@ -52,8 +52,7 @@ mutable struct RadauIIA3Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,UF
   tmp::uType
   atmp::uNoUnitsType
   jac_config::JC
-  linsolve1::F1
-  linsolve2::F2
+  linsolve::F1
   rtol::rTol
   atol::aTol
   dtprev::Dt
@@ -87,8 +86,12 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   tmp = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
-  linsolve1 = alg.linsolve(Val{:init}, uf, u)
-  linsolve2 = alg.linsolve(Val{:init}, uf, u)
+
+  linprob = LinearProblem(W1,_vec(cubuff); u0=_vec(dw12))
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+                   #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                   #Pr = Diagonal(_vec(weight)))
+
   rtol = reltol isa Number ? reltol : similar(reltol)
   atol = reltol isa Number ? reltol : similar(reltol)
 
@@ -98,7 +101,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
                  du1, fsalfirst, k, k2, fw1, fw2,
                  J, W1,
                  uf, tab, κ, one(uToltype), 10000,
-                 tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt, DiffEqBase.Convergence)
+                 tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt, DiffEqBase.Convergence)
 end
 
 mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U,JType} <: OrdinaryDiffEqConstantCache
@@ -198,8 +201,16 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   tmp = zero(u)
   atmp = similar(u,uEltypeNoUnits)
   jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
-  linsolve1 = alg.linsolve(Val{:init}, uf, u)
-  linsolve2 = alg.linsolve(Val{:init}, uf, u)
+
+  linprob = LinearProblem(W1,_vec(ubuff); u0=_vec(dw1))
+  linsolve1 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+                   #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                   #Pr = Diagonal(_vec(weight)))
+  linprob = LinearProblem(W2,_vec(cubuff); u0=_vec(dw23))
+  linsolve2 = init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+                   #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                   #Pr = Diagonal(_vec(weight)))
+
   rtol = reltol isa Number ? reltol : similar(reltol)
   atol = reltol isa Number ? reltol : similar(reltol)
 

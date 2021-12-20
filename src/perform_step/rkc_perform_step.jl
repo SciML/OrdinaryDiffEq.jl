@@ -108,7 +108,7 @@ end
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
     @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
-    if i < ccache.mdeg 
+    if i < ccache.mdeg
       @.. uᵢ₋₂ = uᵢ₋₁
       @.. uᵢ₋₁ = u
     end
@@ -300,10 +300,10 @@ end
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     tᵢ₋₁ = (dt*μ) - ν*tᵢ₋₂ - κ*tᵢ₋₃
     @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
-    if i < ccache.mdeg 
+    if i < ccache.mdeg
       @.. uᵢ₋₂ = uᵢ₋₁
       @.. uᵢ₋₁ = u
-    end    
+    end
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
   end
@@ -798,7 +798,10 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
     @.. gprev = dt*0.5*(du₂ - f2ⱼ₋₁) + dt*(0.5 - μs₁)*(du₁ - f1ⱼ₋₁)
-    nlsolver.cache.linsolve(vec(tmp),get_W(nlsolver),vec(gprev),false)
+
+    linsolve = nlsolver.cache.linsolve
+    linres = dolinsolve(integrator, linsolve; b = _vec(gprev), u = _vec(tmp))
+
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end

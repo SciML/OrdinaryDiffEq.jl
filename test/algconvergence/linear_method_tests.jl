@@ -6,6 +6,8 @@ using LinearAlgebra, Random
 A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
 u0 = ones(2)
 prob = ODEProblem(A,u0,(0.0,1.0))
+solve(prob, LinearExponential(krylov=:off))
+
 sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
 sol2 = solve(prob, LinearExponential(krylov=:simple))(1.0)
 sol3 = solve(prob, LinearExponential(krylov=:adaptive))(1.0)
