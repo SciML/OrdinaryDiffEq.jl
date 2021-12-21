@@ -78,7 +78,7 @@ probap = ODEProblem(lorenz_static,u0ap,tspan)
 
 sol = solve(prob,dt=1e-2,Heun())
 solap = solve(probap,dt=1e-2,Heun())
-@test sol(30) == solap(30)
+@test sol(30) ≈ solap(30) atol=1e-12
 
 sol = solve(prob,dt=1e-2,Tsit5())
 solap = solve(probap,dt=1e-2,Tsit5())
