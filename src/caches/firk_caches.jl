@@ -93,7 +93,7 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
                    #Pr = Diagonal(_vec(weight)))
 
   rtol = reltol isa Number ? reltol : similar(reltol)
-  atol = abstol isa Number ? abstol : similar(abstol)
+  atol = reltol isa Number ? reltol : similar(reltol)
 
   RadauIIA3Cache(u, uprev,
                  z1, z2, w1, w2,
