@@ -197,7 +197,7 @@ function build_grad_config(alg,f::F1,tf::F2,du1,t) where {F1,F2}
         grad_config = similar(du1,typeof(dualt))
         fill!(grad_config,false)
       else
-        grad_config = Dual{T,eltype(du1),1}.(du1, (ForwardDiff.Partials((one(eltype(du1)),)),)) .* false
+        grad_config = ArrayInterface.restructure(du1,Dual{T,eltype(du1),1}.(du1, (ForwardDiff.Partials((one(eltype(du1)),)),)) .* false)
       end
     else
       grad_config = FiniteDiff.GradientCache(du1,t,alg_difftype(alg))
