@@ -264,6 +264,7 @@ end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
+  cache.linsolve = linres.cache
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache, repeat_step=false)
@@ -551,6 +552,7 @@ end
                          integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
+  cache.linsolve = linres.cache
 end
 
 ################################################################################
@@ -731,6 +733,7 @@ end
                          integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
+  cache.linsolve = linres.cache
 end
 
 ################################################################################
@@ -1030,6 +1033,7 @@ end
     @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
   end
+  cache.linsolve = linres.cache
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache{<:Array}, repeat_step=false)
@@ -1229,6 +1233,7 @@ end
       integrator.k[2][i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i]
     end
   end
+  cache.linsolve = linres.cache
 end
 
 ###############################################################################
@@ -1594,6 +1599,7 @@ end
     @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
     =#
   end
+  cache.linsolve = linres.cache
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache{<:Array}, repeat_step=false)
@@ -1874,6 +1880,7 @@ end
     @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
     =#
   end
+  cache.linsolve = linres.cache
 end
 
 @RosenbrockW6S4OS(:init)

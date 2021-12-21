@@ -282,7 +282,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         @.. linsolve_tmps[1] = dt_temp*k_tmps[1]
 
         linsolve = cache.linsolve[1]
-        if !repeat_step
+        if !repeat_step && j == 1
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
         linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k_tmps[1]))
