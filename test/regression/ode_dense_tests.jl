@@ -432,7 +432,7 @@ regression_test(Rodas4(), 8.5e-6, 2e-5, test_diff1 = true, nth_der = 1, dertol =
 regression_test(Rodas42(), 3e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # Rodas4P
-regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
 
 # Rodas4P2
 regression_test(Rodas4P2(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
