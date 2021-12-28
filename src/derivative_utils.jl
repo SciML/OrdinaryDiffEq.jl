@@ -204,7 +204,7 @@ It supports all of `AbstractDiffEqLinearOperator`'s interface.
 mutable struct WOperator{IIP,T,
   MType,
   GType,
-  JType <: DiffEqBase.AbstractDiffEqLinearOperator,
+  JType,
   F,
   C,
   } <: DiffEqBase.AbstractDiffEqLinearOperator{T}
@@ -267,6 +267,7 @@ function WOperator{IIP}(f, u, gamma; transform=false) where IIP
 end
 
 SciMLBase.isinplace(::WOperator{IIP}, i) where IIP = IIP
+Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
@@ -680,7 +681,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
   elseif IIP && f.jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
                                     alg.linsolve !== nothing &&
                                     !LinearSolve.needs_concrete_A(alg.linsolve)
-    J = SparseDiffTools.JacVec(f, u, autodiff = _unwrap_val(alg.autodiff))
+    J = SparseDiffTools.JacVec(UJacobianWrapper(f,t,p), u, autodiff = alg_autodiff(alg))
     W = WOperator{IIP}(f.mass_matrix, dt, J, u)
   elseif islin || (!IIP && DiffEqBase.has_jac(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
