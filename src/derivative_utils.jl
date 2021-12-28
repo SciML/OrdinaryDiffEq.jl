@@ -271,6 +271,12 @@ Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
+
+function DiffEqBase.update_coefficients!(J::SparseDiffTools.JacVec,u,p,t)
+  J.f.t = t
+  J.f.p = p
+end
+
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where IIP
   if !IIP
     # Allocating
