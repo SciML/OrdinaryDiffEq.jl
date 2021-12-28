@@ -249,7 +249,6 @@ mutable struct WOperator{IIP,T,
   end
 end
 function WOperator{IIP}(f, u, gamma; transform=false) where IIP
-  @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
   if isa(f, Union{SplitFunction, DynamicalODEFunction})
     error("WOperator does not support $(typeof(f)) yet")
   end
@@ -260,7 +259,8 @@ function WOperator{IIP}(f, u, gamma; transform=false) where IIP
   end
   # Convert jacobian, if needed
   J = deepcopy(f.jac_prototype)
-  if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+  if J isa DiffEqBase.AbstractDiffEqLinearOperator
+    @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
     J = DiffEqArrayOperator(J; update_func=f.jac)
   end
   return WOperator{IIP}(mass_matrix, gamma, J, u; transform=transform)
@@ -677,6 +677,10 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
   elseif IIP && f.jac_prototype !== nothing
     J = similar(f.jac_prototype)
     W = similar(J)
+  elseif IIP && jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
+                                    !LinearSolve.needs_concrete_A(alg.linsolve)
+    J = SparseDiffTools.JacVec(f, u, autodiff = _unwrap_val(alg.autodiff))
+    W = WOperator{IIP}(f.mass_matrix, dt, J, u)
   elseif islin || (!IIP && DiffEqBase.has_jac(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
