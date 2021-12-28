@@ -678,6 +678,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
     J = similar(f.jac_prototype)
     W = similar(J)
   elseif IIP && f.jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
+                                    alg.linsolve !== nothing &&
                                     !LinearSolve.needs_concrete_A(alg.linsolve)
     J = SparseDiffTools.JacVec(f, u, autodiff = _unwrap_val(alg.autodiff))
     W = WOperator{IIP}(f.mass_matrix, dt, J, u)
