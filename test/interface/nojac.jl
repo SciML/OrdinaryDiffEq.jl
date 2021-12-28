@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, LinearSolve, BenchmarkTools
+using OrdinaryDiffEq, LinearSolve, BenchmarkTools, Test
 
 const N = 32
 const xyd_brusselator = range(0,stop=1,length=N)
@@ -34,6 +34,9 @@ u0 = init_brusselator_2d(xyd_brusselator)
 prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop,
                                      u0,(0.,5.0),p)
 
+init(prob_ode_brusselator_2d,TRBDF2(),save_everystep=false)
+init(prob_ode_brusselator_2d,TRBDF2(linsolve=IterativeSolversJL_GMRES()),save_everystep=false)
+
 nojac = @allocated init(prob_ode_brusselator_2d,TRBDF2(linsolve=IterativeSolversJL_GMRES()),save_everystep=false)
 jac = @allocated init(prob_ode_brusselator_2d,TRBDF2(),save_everystep=false)
-@test jac/nojac > 200
+@test jac/nojac > 100
