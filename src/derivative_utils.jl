@@ -687,7 +687,8 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
   elseif IIP && f.jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
                                     alg.linsolve !== nothing &&
                                     !LinearSolve.needs_concrete_A(alg.linsolve)
-    J = SparseDiffTools.JacVec(UJacobianWrapper(f,t,p), u, autodiff = alg_autodiff(alg))
+    _f = islin ? (isode ? f.f : f.f1.f) : f 
+    J = SparseDiffTools.JacVec(UJacobianWrapper(_f,t,p), u, autodiff = alg_autodiff(alg))
     W = WOperator{IIP}(f.mass_matrix, dt, J, u)
   elseif islin || (!IIP && DiffEqBase.has_jac(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
