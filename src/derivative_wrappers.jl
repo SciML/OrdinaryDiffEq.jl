@@ -122,7 +122,7 @@ end
 function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where {transform,F1,F2}
   if (!DiffEqBase.has_jac(f) && alg.linsolve === nothing) ||
      ((!transform && !DiffEqBase.has_Wfact(f)) || (transform && !DiffEqBase.has_Wfact_t(f))) &&
-     !(f.jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
+     !(f.jac_prototype === nothing && !DiffEqBase.has_jac(f) && hasfield(typeof(alg),:linsolve) &&
                                       alg.linsolve !== nothing &&
                                       !LinearSolve.needs_concrete_A(alg.linsolve))
 
