@@ -39,4 +39,4 @@ init(prob_ode_brusselator_2d,TRBDF2(linsolve=IterativeSolversJL_GMRES()),save_ev
 
 nojac = @allocated init(prob_ode_brusselator_2d,TRBDF2(linsolve=IterativeSolversJL_GMRES()),save_everystep=false)
 jac = @allocated init(prob_ode_brusselator_2d,TRBDF2(),save_everystep=false)
-@test jac/nojac > 100
+@test jac/nojac > 50
