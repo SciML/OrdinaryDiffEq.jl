@@ -1,7 +1,7 @@
 @testset "Rosenbrock Tests" begin
 ## Breakout these since no other test of their adaptivity
 
-using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra
+using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
                               prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
@@ -29,10 +29,10 @@ sol = solve(prob,Rosenbrock23())
 
 prob = prob_ode_bigfloat2Dlinear
 
-sim = test_convergence(dts,prob,Rosenbrock23(linsolve=LinSolveFactorize(qr!)))
+sim = test_convergence(dts,prob,Rosenbrock23(linsolve=QRFactorization()))
 @test sim.𝒪est[:final] ≈ 2 atol=testTol
 
-sol = solve(prob,Rosenbrock23(linsolve=LinSolveFactorize(qr!)))
+sol = solve(prob,Rosenbrock23(linsolve=QRFactorization()))
 @test length(sol) < 20
 
 ### Rosenbrock32()

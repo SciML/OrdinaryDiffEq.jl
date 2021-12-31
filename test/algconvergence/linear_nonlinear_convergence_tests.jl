@@ -40,7 +40,7 @@ end
   dts = 1 ./2 .^(14:-1:10)
   Alg = KenCarp3(linsolve=LinearSolve.IterativeSolversJL_GMRES(abstol=1e-16,reltol=1e-16))
   sim  = test_convergence(dts,prob,Alg)
-  @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
+  @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol=0.2
 
   dts = 1 ./2 .^(8:-1:4)
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
