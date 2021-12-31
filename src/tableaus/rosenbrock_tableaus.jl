@@ -456,6 +456,20 @@ struct Rodas5Tableau{T,T2}
   c3::T2
   c4::T2
   c5::T2
+  h21::T
+  h22::T
+  h23::T
+  h24::T
+  h25::T
+  h26::T
+  h27::T
+  h31::T
+  h32::T
+  h33::T
+  h34::T
+  h35::T
+  h36::T
+  h37::T
 end
 
 function Rodas5Tableau(T, T2)
@@ -513,6 +527,21 @@ function Rodas5Tableau(T, T2)
   d4 = convert(T, 0.3449828624725343   )
   d5 = convert(T,-0.377417564392089818 )
 
+  h21= convert(T,31.040278745555575)
+  h22= convert(T,-6.925207756233034) 
+  h23= convert(T,41.54985263353498) 
+  h24= convert(T,-4.19983367949553) 
+  h25= convert(T,-20.0116097917112) 
+  h26= convert(T,-0.975683545855504) 
+  h27= convert(T,-1.0348884896058437) 
+  h31= convert(T,-1.3755295424732132) 
+#  h32= convert(T,-1.1999290450148692e-12)
+  h32= convert(T,0.0)
+  h33= convert(T,15.641155546064695) 
+  h34= convert(T,23.321973579898177) 
+  h35= convert(T,7.39545827189598)
+  h36= convert(T,-4.317455229088304) 
+  h37= convert(T,-3.409024912892793) 
   #=
   a71 = -14.09640773051259
   a72 = 6.925207756232704
@@ -542,7 +571,8 @@ function Rodas5Tableau(T, T2)
                       C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,
                       C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,
                       C81,C82,C83,C84,C85,C86,C87,
-                      gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5)
+                      gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5,
+                      h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37)
 end
 
 @RosenbrockW6S4OS(:tableau)

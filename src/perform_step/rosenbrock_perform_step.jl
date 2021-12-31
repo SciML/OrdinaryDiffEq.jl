@@ -1391,13 +1391,9 @@ end
   end
 
   if integrator.opts.calck
-    #=
-    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    integrator.k[1] =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
-    integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
-    =#
-    integrator.k[1] = du1
-    integrator.k[2] = du
+    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
+    integrator.k[1] =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
+    integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
   end
 
   integrator.fsallast = du
@@ -1593,11 +1589,9 @@ end
   end
 
   if integrator.opts.calck
-    #=
-    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
-    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
-    =#
+    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
+    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
+    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
   end
   cache.linsolve = linres.cache
 end
@@ -1874,11 +1868,9 @@ end
   end
 
   if integrator.opts.calck
-    #=
-    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
-    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
-    =#
+    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
+    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
+    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
   end
   cache.linsolve = linres.cache
 end
