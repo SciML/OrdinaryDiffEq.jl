@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, LinearSolve, BenchmarkTools, Test
+using OrdinaryDiffEq, LinearSolve, Test
 
 const N = 32
 const xyd_brusselator = range(0,stop=1,length=N)
