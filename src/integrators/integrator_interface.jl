@@ -150,9 +150,12 @@ function resize_J_W!(cache, integrator, i)
     if !islin
       if isa(cache.J, DiffEqBase.AbstractDiffEqLinearOperator)
         resize!(cache.J,i)
-      else
+      elseif f.jac_prototype !== nothing
         J = similar(f.jac_prototype, i, i)
         J = DiffEqArrayOperator(J; update_func=f.jac)
+      elseif cache.J isa SparseDiffTools.JacVec
+        resize!(cache.J.cache1,i)
+        resize!(cache.J.cache2,i)
       end
       cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(
                           f.mass_matrix, integrator.dt, cache.J, integrator.u;
