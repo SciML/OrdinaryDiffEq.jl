@@ -78,17 +78,41 @@ macro threaded(option, ex)
   end
 end
 
-function dolinsolve(integrator, linsolve; A = nothing, u = nothing, b = nothing,
-                             Pl = nothing, Pr = nothing,
-                             reltol = integrator === nothing ? nothing : integrator.opts.reltol)
+function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
+                    du = nothing, u = nothing, p = nothing, t = nothing, solverdata = nothing,
+                    reltol = integrator === nothing ? nothing : integrator.opts.reltol)
+
   A !== nothing && (linsolve = LinearSolve.set_A(linsolve,A))
   b !== nothing && (linsolve = LinearSolve.set_b(linsolve,b))
-  u !== nothing && (linsolve = LinearSolve.set_u(linsolve,u))
-  (Pl !== nothing || Pr !== nothing) && (linsolve = LinearSolve.set_prec(Pl,Pr))
+  u !== nothing && (linsolve = LinearSolve.set_u(linsolve,linu))
+
+  Plprev = linsolve.Pl isa ComposePreconditioner ? linsolve.Pl.outer : linsolve.Pl
+  Prprev = linsolve.Pr isa ComposePreconditioner ? linsolve.Pr.outer : linsolve.Pr
+
+  _Pl,_Pr = integrator.alg.precs(linsolve.A,du,u,p,t,A !== nothing,Plprev,Prprev,solverdata)
+  if _Pl !== nothing || _Pr !== nothing
+    Pl, Pr = wrapprecs(_Pl,_Pr,weight)
+    linsolve = LinearSolve.set_prec(Pl,Pr)
+  end
 
   linres = if reltol === nothing
     solve(linsolve;reltol)
   else
     solve(linsolve;reltol)
   end
+end
+
+function wrapprecs(_Pl,_Pr,weight)
+  if _Pl !== nothing
+    Pl = LinearSolve.ComposePreconditioner(LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),_Pl)
+  else
+    Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+  end
+
+  if _Pr !== nothing
+    Pr = LinearSolve.ComposePreconditioner(Diagonal(_vec(weight)),_Pr)
+  else
+    Pr = Diagonal(_vec(weight))
+  end
+  Pl, Pr
 end
