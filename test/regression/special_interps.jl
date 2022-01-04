@@ -16,7 +16,7 @@ proboop = ODEProblem(foop,[1.0;1.0],(0.0,10.0),p)
 
 SPECIAL_INTERPS = [Tsit5(),DP5(),SSPRK22(),OwrenZen3(),OwrenZen4(),OwrenZen5(),
                    BS5(),Vern6(),Vern7(),Vern8(),Vern9(),DP8(),Rosenbrock23(),
-                   Rodas4()]
+                   Rodas4(),Rodas5()]
 
 y1 = zeros(2); y2 = zeros(2)
 for alg in SPECIAL_INTERPS

@@ -32,7 +32,9 @@ for inplace in [false,true], alg in algs
     global cur_itr
     prob = ODEProblem{inplace}(test_ode, [0.], tspan, [1.])
     sol = solve(prob, alg(); callback=cb,dt=0.0013)
+    println(sol.destats);
     pass = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
+    println(alg," ",pass," ",sol(9.0)[1]," ",test_solution(9.0))
     cur_itr += 1
     passed[cur_itr] = pass
 end
