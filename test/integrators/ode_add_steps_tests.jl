@@ -34,7 +34,7 @@ for inplace in [false,true], alg in algs
     sol = solve(prob, alg(); callback=cb,dt=0.0013)
     pass = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
     x = maximum(sol(t)[1] - test_solution(t) for t in testtimes)
-    @show x, x > 0.05
+    @show x, x > 0.05, pass
     cur_itr += 1
     passed[cur_itr] = pass
 end
