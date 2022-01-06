@@ -660,7 +660,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     dtC85 = C85/dt
     dtC86 = C86/dt
     dtC87 = C87/dt
-  
+
     dtd1 = dt*d1
     dtd2 = dt*d2
     dtd3 = dt*d3
@@ -668,6 +668,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     dtd5 = dt*d5
     dtgamma = dt*gamma
 
+    f( fsalfirst,  uprev, p, t)
     @.. linsolve_tmp = @muladd fsalfirst + dtgamma*dT
 
     ### Jacobian does not need to be re-evaluated after an event
@@ -967,7 +968,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache{<:Array
     vecu = _vec(linres.u)
     veck6 = _vec(k6)
     @inbounds @simd ivdep for i in eachindex(u)
-      veck5[i] = -vecu[i]
+      veck6[i] = -vecu[i]
       tmp[i] = tmp[i] + k6[i]
     end
     f( du,  tmp, p, t+dt)
