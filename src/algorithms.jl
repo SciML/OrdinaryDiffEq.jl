@@ -3088,8 +3088,8 @@ ImplicitEuler(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}
                           extrapolant=:constant,
                           controller=:PI) =
                           ImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
-                          nlsolve,extrapolant,controller)
+                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
+                          nlsolve,precs,extrapolant,controller)
 """
 ImplicitMidpoint: SDIRK Method
   A second order A-stable symplectic and symmetric implicit solver.
