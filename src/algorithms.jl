@@ -3017,7 +3017,7 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 RadauIIA3: Fully-Implicit Runge-Kutta Method
   An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA3{CS,AD,F,P,FDT,ST,CJ,TOl,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+struct RadauIIA3{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   precs::P
   extrapolant::Symbol
@@ -3052,7 +3052,7 @@ RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), 
 RadauIIA5: Fully-Implicit Runge-Kutta Method
    An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA5{CS,AD,F,P,FDT,ST,CJ,TOl,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+struct RadauIIA5{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   precs::P
   smooth_est::Bool
