@@ -25,6 +25,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Regression_I'
     timeout_in_minutes: 240
@@ -40,6 +41,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Regression_I'
     timeout_in_minutes: 240
@@ -55,6 +57,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Regression_II'
     timeout_in_minutes: 240
@@ -70,6 +73,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Regression_II'
     timeout_in_minutes: 240
@@ -85,6 +89,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Multithreading'
     timeout_in_minutes: 240
@@ -100,6 +105,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Multithreading'
     timeout_in_minutes: 240
@@ -115,6 +121,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Integrators_II'
     timeout_in_minutes: 240
@@ -130,6 +137,7 @@ steps:
           julia_args: "--threads=auto"
     agents:
       queue: "juliaecosystem"
+      os: "linux"
     env:
       GROUP: 'Integrators_II'
     timeout_in_minutes: 240
