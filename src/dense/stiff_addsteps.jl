@@ -46,7 +46,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     jacobian2W!(W, mass_matrix, γ, J, false)
 
     linsolve = cache.linsolve
-    cache.reltol = integrator.opts.reltol
+
     linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp))
 
     vecu = _vec(linres.u)
@@ -102,7 +102,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Arra
     jacobian2W!(W, mass_matrix, γ, J, false)
 
     linsolve = cache.linsolve
-    cache.reltol = integrator.opts.reltol
+
     linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp))
 
     @inbounds @simd ivdep for i in eachindex(u)
@@ -261,7 +261,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
     linsolve = cache.linsolve
-    cache.reltol = integrator.opts.reltol
+
     linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck1 = _vec(k1)
@@ -382,7 +382,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
     linsolve = cache.linsolve
-    cache.reltol = integrator.opts.reltol
+
     linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp))
     @inbounds @simd ivdep for i in eachindex(u)
       k1[i] = -linres.u[i]
@@ -660,7 +660,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
     linsolve = cache.linsolve
-    cache.reltol = integrator.opts.reltol
+
     linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck1 = _vec(k1)
@@ -827,7 +827,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache{<:Array
     jacobian2W!(W, mass_matrix, dtgamma, J, true)
 
     linsolve = cache.linsolve
-    cache.reltol = integrator.opts.reltol
+
     linres = dolinsolve(cache, linsolve; A = W, b = _vec(linsolve_tmp))
 
     @inbounds @simd ivdep for i in eachindex(u)

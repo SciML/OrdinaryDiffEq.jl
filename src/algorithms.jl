@@ -203,7 +203,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(
 
   # Initialize algorithm
   ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), typeof(threading)}(linsolve,precs,n_min,n_init,n_max,sequence,threading)
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(threading)}(linsolve,precs,n_min,n_init,n_max,sequence,threading)
 end
 """
 ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
@@ -296,7 +296,7 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{tru
 
   # Initialize algorithm
   ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), typeof(threading)}(
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(threading)}(
       linsolve,precs,n_min,n_init,n_max,sequence,threading)
 end
 
@@ -341,7 +341,7 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val
   # Initialize algorithm
   ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
       typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-      typeof(threading)}(linsolve,precs,n_min,n_init,n_max,
+      _unwrap_val(concrete_jac),typeof(threading)}(linsolve,precs,n_min,n_init,n_max,
       sequence,threading,sequence_factor)
 end
 
