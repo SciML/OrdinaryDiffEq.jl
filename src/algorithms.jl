@@ -3377,9 +3377,10 @@ SFSDIRK7(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
                       linsolve,nlsolve,precs,extrapolant)
 
 struct SFSDIRK8{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-linsolve::F
-nlsolve::F2
-extrapolant::Symbol
+  linsolve::F
+  nlsolve::F2
+  precs::P
+  extrapolant::Symbol
 end
 
 SFSDIRK8(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
