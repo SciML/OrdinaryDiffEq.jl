@@ -82,8 +82,9 @@ ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
    Extrapolation of implicit Euler method with Romberg sequence.
    Similar to Hairer's SEULEX.
 """
-struct ImplicitEulerExtrapolation{CS,AD,F,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+struct ImplicitEulerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_max::Int
   n_min::Int
   n_init::Int
@@ -111,8 +112,8 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
         :$(sequence) --> :bulirsch"
       sequence = :bulirsch
     end
-    ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
-      linsolve,n_max,n_min,n_init,threading,sequence)
+    ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
+      linsolve,precs,n_max,n_min,n_init,threading,sequence)
 end
 """
 ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
@@ -165,8 +166,9 @@ end
 ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
    Midpoint extrapolation using Barycentric coordinates
 """
-struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+struct ImplicitDeuflhardExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
@@ -201,7 +203,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(
 
   # Initialize algorithm
   ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), diff_type, _unwrap_val(standardtag), typeof(threading)}(linsolve,n_min,n_init,n_max,sequence,threading)
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), typeof(threading)}(linsolve,precs,n_min,n_init,n_max,sequence,threading)
 end
 """
 ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
@@ -255,8 +257,9 @@ end
 ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
   Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
 """
-struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+struct ImplicitHairerWannerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
@@ -293,12 +296,13 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{tru
 
   # Initialize algorithm
   ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), diff_type, _unwrap_val(standardtag), typeof(threading)}(
-      linsolve,n_min,n_init,n_max,sequence,threading)
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), typeof(threading)}(
+      linsolve,precs,n_min,n_init,n_max,sequence,threading)
 end
 
-struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
@@ -336,8 +340,8 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val
 
   # Initialize algorithm
   ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), diff_type, _unwrap_val(standardtag),
-      typeof(threading)}(linsolve,n_min,n_init,n_max,
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+      typeof(threading)}(linsolve,precs,n_min,n_init,n_max,
       sequence,threading,sequence_factor)
 end
 
@@ -3013,8 +3017,9 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 RadauIIA3: Fully-Implicit Runge-Kutta Method
   An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA3{CS,AD,F,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+struct RadauIIA3{CS,AD,F,P,FDT,ST,CJ,TOl,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   extrapolant::Symbol
   κ::Tol
   maxiters::Int
@@ -3028,9 +3033,9 @@ RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), 
                                 extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                                 controller=:Predictive,κ=nothing,maxiters=10) =
                                 RadauIIA3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                                diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
+                                typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                                  linsolve,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                                  linsolve,precs,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 """
 @article{hairer1999stiff,
@@ -3047,8 +3052,9 @@ RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), 
 RadauIIA5: Fully-Implicit Runge-Kutta Method
    An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA5{CS,AD,F,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+struct RadauIIA5{CS,AD,F,P,FDT,ST,CJ,TOl,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   κ::Tol
@@ -3063,9 +3069,9 @@ RadauIIA5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), 
                           extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                           controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
                           RadauIIA5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
+                          typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                           typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                            linsolve,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                            linsolve,precs,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 ################################################################################
 
