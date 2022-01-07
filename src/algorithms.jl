@@ -3641,8 +3641,11 @@ for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1
     struct $Alg{CS,AD,F,P,FDT,ST} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST}
       linsolve::F
       precs::P
+      concrete_jac::Bool
     end
-    $Alg(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag)}(linsolve,precs)
+    $Alg(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
+                              concrete_jac = linsolve === nothing || LinearSolve.needs_concrete_A(linsolve)
+                              ) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag)}(linsolve,precs,concrete_jac)
   end
 end
 

@@ -44,7 +44,7 @@ end
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
   linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = fsalfirst, u = u, p = p, t = t, solverdata = (;γ = γ))
+                      du = fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;γ = γ))
   vecu = _vec(linres.u)
   veck₁ = _vec(k₁)
 
@@ -118,8 +118,10 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
   linsolve = cache.linsolve
-  Pl,Pr = alg.precs(W,du,u,p,t,newW,solverdata)
-  linres = dolinsolve(integrator, linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp))
+
+  Pl,Pr = integrator.alg.precs(W,fsalfirst,u,p,t,new_W,linsolve.Pl,linsolve.Pr,(;gamma = γ))
+  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
+                      du = fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;γ = γ))
 
   @inbounds @simd ivdep for i in eachindex(u)
     k₁[i] = -linres.u[i]

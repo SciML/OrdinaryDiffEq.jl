@@ -75,10 +75,11 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
   uf = UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
 
+
   linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                  Pr = Diagonal(_vec(weight)))
+                  Pl = Pl, Pr = Pr)
 
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
@@ -110,7 +111,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   linsolve_tmp = zero(rate_prototype)
   linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
 
-  Pl,Pr = wrapprecs(integrator.alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
+  Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
   linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
                   Pl = Pl, Pr = Pr)
   grad_config = build_grad_config(alg,f,tf,du1,t)

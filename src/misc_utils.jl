@@ -79,20 +79,22 @@ macro threaded(option, ex)
 end
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-                    du = nothing, u = nothing, p = nothing, t = nothing, solverdata = nothing,
+                    du = nothing, u = nothing, p = nothing, t = nothing,
+                    weight = nothing, solverdata = nothing,
                     reltol = integrator === nothing ? nothing : integrator.opts.reltol)
 
   A !== nothing && (linsolve = LinearSolve.set_A(linsolve,A))
   b !== nothing && (linsolve = LinearSolve.set_b(linsolve,b))
-  u !== nothing && (linsolve = LinearSolve.set_u(linsolve,linu))
+  linu !== nothing && (linsolve = LinearSolve.set_u(linsolve,linu))
 
-  Plprev = linsolve.Pl isa ComposePreconditioner ? linsolve.Pl.outer : linsolve.Pl
-  Prprev = linsolve.Pr isa ComposePreconditioner ? linsolve.Pr.outer : linsolve.Pr
+  Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer : linsolve.Pl
+  Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer : linsolve.Pr
 
   _Pl,_Pr = integrator.alg.precs(linsolve.A,du,u,p,t,A !== nothing,Plprev,Prprev,solverdata)
-  if _Pl !== nothing || _Pr !== nothing
-    Pl, Pr = wrapprecs(_Pl,_Pr,weight)
-    linsolve = LinearSolve.set_prec(Pl,Pr)
+  if (_Pl !== nothing || _Pr !== nothing)
+    _weight = weight === nothing ? (linsolve.Pr isa Diagonal ? linsolve.Pr.diag : linsolve.Pr.inner.diag) : weight
+    Pl, Pr = wrapprecs(_Pl,_Pr,_weight)
+    linsolve = LinearSolve.set_prec(linsolve,Pl,Pr)
   end
 
   linres = if reltol === nothing
