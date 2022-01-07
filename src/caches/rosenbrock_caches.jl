@@ -3,7 +3,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-@cache mutable struct Rosenbrock23Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock23Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -27,9 +27,11 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
   linsolve::F
   jac_config::JCType
   grad_config::GCType
+  reltol::RTolType
+  alg::A
 end
 
-@cache mutable struct Rosenbrock32Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock32Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -53,6 +55,8 @@ end
   linsolve::F
   jac_config::JCType
   grad_config::GCType
+  reltol::RTolType
+  alg::A
 end
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -86,7 +90,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
 
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config,reltol,alg)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -116,7 +120,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
                   Pl = Pl, Pr = Pr)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config,reltol,alg)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstantCache
@@ -182,7 +186,7 @@ struct Rosenbrock33ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConst
   linsolve::F
 end
 
-@cache mutable struct Rosenbrock33Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock33Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -207,6 +211,8 @@ end
   linsolve::F
   jac_config::JCType
   grad_config::GCType
+  reltol::RTolType
+  alg::A
 end
 
 function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -236,7 +242,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock33Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config,reltol,alg)
 end
 
 function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -351,7 +357,7 @@ struct Rodas4ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCac
   autodiff::Bool
 end
 
-@cache mutable struct Rodas4Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rodas4Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -380,6 +386,8 @@ end
   linsolve::F
   jac_config::JCType
   grad_config::GCType
+  reltol::RTolType
+  alg::A
 end
 
 function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -415,7 +423,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config,reltol,alg)
 end
 
 function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -460,7 +468,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config,reltol,alg)
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -505,7 +513,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config,reltol,alg)
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -550,7 +558,7 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config,reltol,alg)
 end
 
 function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -575,7 +583,7 @@ struct Rosenbrock5ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConsta
   linsolve::F
 end
 
-@cache mutable struct Rosenbrock5Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock5Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -606,6 +614,8 @@ end
   linsolve::F
   jac_config::JCType
   grad_config::GCType
+  reltol::RTolType
+  alg::A
 end
 
 function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -643,7 +653,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,k7,k8,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config,reltol,alg)
 end
 
 function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
