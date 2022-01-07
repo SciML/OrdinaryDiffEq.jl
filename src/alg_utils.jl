@@ -199,15 +199,20 @@ alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
 
-alg_difftype(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST},
-                        DAEAlgorithm{CS,AD,FDT,ST}}) where {CS,AD,FDT,ST} = FDT
+alg_difftype(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+                        DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = FDT
 
-standardtag(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST},
-                        DAEAlgorithm{CS,AD,FDT,ST}}) where {CS,AD,FDT,ST} = ST
+standardtag(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+                        DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = ST
+
+concrete_jac(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+                        DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = CJ
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
