@@ -3345,11 +3345,13 @@ SFSDIRK4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
                       SFSDIRK4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
                       linsolve,nlsolve,precs,extrapolant)
 
-                      struct SFSDIRK5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-                        linsolve::F
-                        nlsolve::F2
-                                              extrapolant::Symbol
-                      end
+struct SFSDIRK5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
+  linsolve::F
+  nlsolve::F2
+  precs::P
+  extrapolant::Symbol
+end
+
 SFSDIRK5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
                       linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
@@ -3863,8 +3865,8 @@ DImplicitEuler(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), co
                           extrapolant=:constant,
                           controller=:Standard) =
                           DImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
-                          nlsolve,extrapolant,controller)
+                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
+                          nlsolve,precs,extrapolant,controller)
 
 
 struct DABDF2{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
@@ -3879,8 +3881,8 @@ DABDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), con
                           extrapolant=:constant,
                           controller=:Standard) =
                           DABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
-                          nlsolve,extrapolant,controller)
+                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
+                          nlsolve,precs,extrapolant,controller)
 
 struct DFBDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
   max_order::Val{MO}
