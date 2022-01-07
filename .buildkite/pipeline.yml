@@ -24,6 +24,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Regression_I'
@@ -39,6 +40,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Regression_I'
@@ -54,6 +56,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Regression_II'
@@ -69,6 +72,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Regression_II'
@@ -84,6 +88,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Multithreading'
@@ -99,6 +104,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Multithreading'
@@ -114,6 +120,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Integrators_II'
@@ -129,6 +136,7 @@ steps:
           coverage: false
           julia_args: "--threads=auto"
     agents:
+      os: "linux"
       queue: "juliaecosystem"
     env:
       GROUP: 'Integrators_II'
