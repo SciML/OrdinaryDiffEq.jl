@@ -718,6 +718,22 @@ alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
 
+function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
+  iscomp = typeof(alg) <: CompositeAlgorithm
+  if !iscomp
+    return alg
+  elseif typeof(alg.choice_function) <: AutoSwitchCache
+    num = is_stiff ? 2 : 1
+    if num == 1
+      return alg.algs[1]
+    else
+      return alg.algs[2]
+    end
+  else
+    error("this dispatch does not support this algorithm right now")
+  end
+end
+
 function unwrap_alg(integrator, is_stiff)
   alg = integrator.alg
   iscomp = typeof(alg) <: CompositeAlgorithm
