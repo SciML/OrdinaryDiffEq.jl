@@ -681,12 +681,15 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator{IIP}(f, u, dt)
     J = W.J
-  elseif IIP && f.jac_prototype !== nothing
+  elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing
     J = similar(f.jac_prototype)
     W = similar(J)
-  elseif IIP && f.jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
-                                    alg.linsolve !== nothing &&
-                                    !LinearSolve.needs_concrete_A(alg.linsolve)
+  elseif (IIP && f.jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
+                                        concrete_jac(alg) === nothing &&
+                                        alg.linsolve !== nothing &&
+                                        !LinearSolve.needs_concrete_A(alg.linsolve)) ||
+                                        (concrete_jac(alg) !== nothing && !concrete_jac(alg))
+
     _f = islin ? (isode ? f.f : f.f1.f) : f
     J = SparseDiffTools.JacVec(UJacobianWrapper(_f,t,p), u, autodiff = alg_autodiff(alg))
     W = WOperator{IIP}(f.mass_matrix, dt, J, u)

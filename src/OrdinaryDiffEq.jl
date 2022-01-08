@@ -76,6 +76,8 @@ using DocStringExtensions
 
   struct OrdinaryDiffEqTag end
 
+  DEFAULT_PRECS(W,du,u,p,t,newW,Plprev,Prprev,solverdata) = nothing,nothing
+
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")

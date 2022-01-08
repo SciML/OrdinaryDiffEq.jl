@@ -2,27 +2,27 @@
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
-abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST} <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST} end
-abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST} end
+abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
+abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
 
-abstract type OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST} <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST} end
-abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST} end
+abstract type OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
+abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST,CJ} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
 const NewtonAlgorithm = Union{OrdinaryDiffEqNewtonAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm}
 const RosenbrockAlgorithm = Union{OrdinaryDiffEqRosenbrockAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm}
 
-abstract type OrdinaryDiffEqExponentialAlgorithm{FDT,ST} <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT,ST} <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true}} end
+abstract type OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ} <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing} end
 const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST} end
+abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
 
 # DAE Specific Algorithms
-abstract type DAEAlgorithm{CS,AD,FDT,ST} <: DiffEqBase.AbstractDAEAlgorithm end
+abstract type DAEAlgorithm{CS,AD,FDT,ST,CJ} <: DiffEqBase.AbstractDAEAlgorithm end
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
@@ -32,11 +32,13 @@ function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
   T(; DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
 end
 
-function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST},
-                        DAEAlgorithm{CS,AD,FDT,ST}}; kwargs...) where {CS, AD, FDT, ST}
+function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        DAEAlgorithm{CS,AD,FDT,ST,CJ}}; kwargs...) where {CS, AD, FDT, ST, CJ}
   T = SciMLBase.remaker_of(thing)
-  T(; chunk_size=Val{CS}(),autodiff=Val{AD}(),standardtag=Val{ST}(),SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
+  T(; chunk_size=Val{CS}(),autodiff=Val{AD}(),standardtag=Val{ST}(),
+      concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
+      SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
 end
 
 ###############################################################################
@@ -80,8 +82,9 @@ ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
    Extrapolation of implicit Euler method with Romberg sequence.
    Similar to Hairer's SEULEX.
 """
-struct ImplicitEulerExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST}
+struct ImplicitEulerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_max::Int
   n_min::Int
   n_init::Int
@@ -89,8 +92,8 @@ struct ImplicitEulerExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImplicitEx
   sequence::Symbol # Name of the subdividing sequence
 end
 
-function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),
-    diff_type=Val{:forward},linsolve=nothing,
+function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
+    diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
     max_order=12,min_order=3,init_order=5,threading=true,sequence = :bulirsch)
 
     n_min = max(3,min_order)
@@ -109,8 +112,8 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
         :$(sequence) --> :bulirsch"
       sequence = :bulirsch
     end
-    ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type,_unwrap_val(standardtag),typeof(threading)}(
-      linsolve,n_max,n_min,n_init,threading,sequence)
+    ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
+      linsolve,precs,n_max,n_min,n_init,threading,sequence)
 end
 """
 ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
@@ -163,16 +166,17 @@ end
 ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
    Midpoint extrapolation using Barycentric coordinates
 """
-struct ImplicitDeuflhardExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST}
+struct ImplicitDeuflhardExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
-function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),
-  linsolve=nothing,diff_type=Val{:forward},
+function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,
+  linsolve=nothing,precs = DEFAULT_PRECS,diff_type=Val{:forward},
   min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
@@ -199,7 +203,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(
 
   # Initialize algorithm
   ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), diff_type, _unwrap_val(standardtag), typeof(threading)}(linsolve,n_min,n_init,n_max,sequence,threading)
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(threading)}(linsolve,precs,n_min,n_init,n_max,sequence,threading)
 end
 """
 ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
@@ -253,8 +257,9 @@ end
 ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
   Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
 """
-struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST}
+struct ImplicitHairerWannerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
@@ -262,8 +267,8 @@ struct ImplicitHairerWannerExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImp
   threading::TO
 end
 
-function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),
-  linsolve=nothing,diff_type=Val{:forward},
+function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,
+  linsolve=nothing,precs = DEFAULT_PRECS,diff_type=Val{:forward},
   min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -291,12 +296,13 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{tru
 
   # Initialize algorithm
   ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), diff_type, _unwrap_val(standardtag), typeof(threading)}(
-      linsolve,n_min,n_init,n_max,sequence,threading)
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(threading)}(
+      linsolve,precs,n_min,n_init,n_max,sequence,threading)
 end
 
-struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST}
+struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
@@ -305,8 +311,8 @@ struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,FDT,ST,TO} <: OrdinaryDiffE
   sequence_factor::Int
 end
 
-function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),
-  linsolve=nothing,diff_type=Val{:forward},
+function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,
+  linsolve=nothing,precs = DEFAULT_PRECS,diff_type=Val{:forward},
   min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
@@ -334,8 +340,8 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val
 
   # Initialize algorithm
   ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), diff_type, _unwrap_val(standardtag),
-      typeof(threading)}(linsolve,n_min,n_init,n_max,
+      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+      _unwrap_val(concrete_jac),typeof(threading)}(linsolve,precs,n_min,n_init,n_max,
       sequence,threading,sequence_factor)
 end
 
@@ -2656,28 +2662,30 @@ struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
 # IMEX Multistep methods
 
-struct CNAB2{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct CNAB2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
 
-CNAB2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+CNAB2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CNAB2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      CNAB2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
-struct CNLF2{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct CNLF2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
-CNLF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+CNLF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CNLF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      CNLF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
 """
 QNDF1: Multistep Method
@@ -2686,21 +2694,22 @@ QNDF1: Multistep Method
 
 See also `QNDF`.
 """
-struct QNDF1{CS,AD,F,F2,FDT,ST,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct QNDF1{CS,AD,F,F2,P,FDT,ST,CJ,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   kappa::κType
   controller::Symbol
 end
 
-QNDF1(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                 linsolve=nothing,nlsolve=NLNewton(),
+QNDF1(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                                   extrapolant=:linear,kappa = -0.1850,
                  controller = :Standard) =
-                 QNDF1{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+                 QNDF1{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                  typeof(kappa)}(
-                 linsolve,nlsolve,extrapolant,kappa,controller)
+                 linsolve,nlsolve,precs,extrapolant,kappa,controller)
 
 """
 QBDF1: Multistep Method
@@ -2715,21 +2724,22 @@ QNDF2: Multistep Method
 
 See also `QNDF`.
 """
-struct QNDF2{CS,AD,F,F2,FDT,ST,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct QNDF2{CS,AD,F,F2,P,FDT,ST,CJ,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   kappa::κType
   controller::Symbol
 end
 
-QNDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                 linsolve=nothing,nlsolve=NLNewton(),
+QNDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                  extrapolant=:linear,kappa = -1//9,
                  controller = :Standard) =
-                 QNDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+                 QNDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                  typeof(kappa)}(
-                 linsolve,nlsolve,extrapolant,kappa,controller)
+                 linsolve,nlsolve,precs,extrapolant,kappa,controller)
 
 """
 QBDF2: Multistep Method
@@ -2754,10 +2764,11 @@ QNDF: Multistep Method
   publisher={SIAM}
 }
 """
-struct QNDF{MO,CS,AD,F,F2,FDT,ST,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct QNDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   max_order::Val{MO}
   linsolve::F
   nlsolve::F2
+  precs::P
     κ::K
   tol::T
   extrapolant::Symbol
@@ -2765,13 +2776,13 @@ struct QNDF{MO,CS,AD,F,F2,FDT,ST,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgo
   controller::Symbol
 end
 
-QNDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                linsolve=nothing,nlsolve=NLNewton(),κ=nothing,tol=nothing,
+QNDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,kappa=promote(-0.1850,-1//9,-0.0823,-0.0415,0),
                 controller = :Standard) where {MO} =
-                QNDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+                QNDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                 typeof(κ),typeof(tol),typeof(kappa)}(
-                max_order,linsolve,nlsolve,κ,tol,extrapolant,kappa,controller)
+                max_order,linsolve,nlsolve,precs,κ,tol,extrapolant,kappa,controller)
 
 """
 QBDF: Multistep Method
@@ -2793,52 +2804,54 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
   publisher={Walter de Gruyter GmbH \\& Co. KG}
 }
 """
-struct FBDF{MO,CS,AD,F,F2,FDT,ST,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct FBDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   max_order::Val{MO}
   linsolve::F
   nlsolve::F2
+  precs::P
     κ::K
   tol::T
   extrapolant::Symbol
   controller::Symbol
 end
 
-FBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                linsolve=nothing,nlsolve=NLNewton(),κ=nothing,tol=nothing,
+FBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,controller = :Standard) where {MO} =
-                FBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+                FBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                 typeof(κ),typeof(tol)}(
-                max_order,linsolve,nlsolve,κ,tol,extrapolant,controller)
+                max_order,linsolve,nlsolve,precs,κ,tol,extrapolant,controller)
 
 """
 Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
 Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
 Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
 """
-struct SBDF{CS,AD,F,F2,FDT,ST,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct SBDF{CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
     κ::K
   tol::T
   extrapolant::Symbol
   order::Int
 end
 
-SBDF(order;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-     linsolve=nothing,nlsolve=NLNewton(),κ=nothing,tol=nothing,
+SBDF(order;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+     linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear) =
-     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
      typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,κ,tol,extrapolant,order)
+     linsolve,nlsolve,precs,κ,tol,extrapolant,order)
 
 # All keyword form needed for remake
-SBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-     linsolve=nothing,nlsolve=NLNewton(),κ=nothing,tol=nothing,
+SBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+     linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear,
      order) =
-     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
      typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,κ,tol,extrapolant,order)
+     linsolve,nlsolve,precs,κ,tol,extrapolant,order)
 
  """
  Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
@@ -2944,9 +2957,10 @@ struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 SERK2(;controller=:PI,eigen_est=nothing) = SERK2(controller,eigen_est)
 
-struct IRKC{CS,AD,F,F2,FDT,ST,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct IRKC{CS,AD,F,F2,P,FDT,ST,CJ,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   κ::K
   tol::T
   extrapolant::Symbol
@@ -2954,11 +2968,11 @@ struct IRKC{CS,AD,F,F2,FDT,ST,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS
   eigen_est::E
 end
 
-IRKC(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                 linsolve=nothing,nlsolve=NLNewton(),κ=nothing,tol=nothing,
+IRKC(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                  extrapolant=:linear,controller = :Standard,eigen_est=nothing) =
-  IRKC{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),typeof(κ),typeof(tol),typeof(eigen_est)}(
-                 linsolve,nlsolve,κ,tol,extrapolant,controller,eigen_est)
+  IRKC{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(κ),typeof(tol),typeof(eigen_est)}(
+                 linsolve,nlsolve,precs,κ,tol,extrapolant,controller,eigen_est)
 
 ################################################################################
 
@@ -2975,7 +2989,7 @@ end
 
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true}}
+struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing}
   krylov::Symbol
   m::Int
   iop::Int
@@ -3003,8 +3017,9 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 RadauIIA3: Fully-Implicit Runge-Kutta Method
   An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA3{CS,AD,F,FDT,ST,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct RadauIIA3{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   extrapolant::Symbol
   κ::Tol
   maxiters::Int
@@ -3013,14 +3028,14 @@ struct RadauIIA3{CS,AD,F,FDT,ST,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   controller::Symbol
 end
 
-RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                                linsolve=nothing,
+RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                                linsolve=nothing,precs = DEFAULT_PRECS,
                                 extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                                 controller=:Predictive,κ=nothing,maxiters=10) =
                                 RadauIIA3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                                diff_type,_unwrap_val(standardtag),
+                                typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                                 typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                                  linsolve,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                                  linsolve,precs,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 """
 @article{hairer1999stiff,
@@ -3037,8 +3052,9 @@ RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),d
 RadauIIA5: Fully-Implicit Runge-Kutta Method
    An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA5{CS,AD,F,FDT,ST,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct RadauIIA5{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   κ::Tol
@@ -3048,14 +3064,14 @@ struct RadauIIA5{CS,AD,F,FDT,ST,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   controller::Symbol
 end
 
-RadauIIA5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                          linsolve=nothing,
+RadauIIA5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                          linsolve=nothing,precs = DEFAULT_PRECS,
                           extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
                           controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
                           RadauIIA5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          diff_type,_unwrap_val(standardtag),
+                          typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                           typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                            linsolve,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+                            linsolve,precs,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
 
 ################################################################################
 
@@ -3065,36 +3081,38 @@ ImplicitEuler: SDIRK Method
   A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
   Strong-stability preserving (SSP).
 """
-struct ImplicitEuler{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct ImplicitEuler{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   controller::Symbol
 end
 
-ImplicitEuler(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                          linsolve=nothing,nlsolve=NLNewton(),
+ImplicitEuler(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                          linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:PI) =
                           ImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(linsolve,
-                          nlsolve,extrapolant,controller)
+                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
+                          nlsolve,precs,extrapolant,controller)
 """
 ImplicitMidpoint: SDIRK Method
   A second order A-stable symplectic and symmetric implicit solver.
   Good for highly stiff equations which need symplectic integration.
 """
-struct ImplicitMidpoint{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct ImplicitMidpoint{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
 
-ImplicitMidpoint(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+ImplicitMidpoint(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      ImplicitMidpoint{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      ImplicitMidpoint{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
 """
 Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
@@ -3105,19 +3123,20 @@ Trapezoid: SDIRK Method
   "Almost symplectic" without numerical dampening.
    Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
 """
-struct Trapezoid{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct Trapezoid{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   controller::Symbol
 end
 
-Trapezoid(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+Trapezoid(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                                             extrapolant=:linear,
                       controller = :PI) =
-                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant,controller)
+                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant,controller)
 
 """
 @article{hosea1996analysis,
@@ -3135,20 +3154,21 @@ TRBDF2: SDIRK Method
   A second order A-B-L-S-stable one-step ESDIRK method.
   Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
 """
-struct TRBDF2{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct TRBDF2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
 
-TRBDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                 linsolve=nothing,nlsolve=NLNewton(),
+TRBDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                  smooth_est=true,extrapolant=:linear,
                  controller = :PI) =
-TRBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-      linsolve,nlsolve,smooth_est,extrapolant,controller)
+TRBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+      linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 @article{hindmarsh2005sundials,
@@ -3165,50 +3185,53 @@ TRBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nls
 SDIRK2: SDIRK Method
    An A-B-L stable 2nd order SDIRK method
 """
-struct SDIRK2{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct SDIRK2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
 
-SDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+SDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- SDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ SDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
-struct SDIRK22{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct SDIRK22{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   controller::Symbol
 end
 
-SDIRK22(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+SDIRK22(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                                             extrapolant=:linear,
                       controller = :PI) =
-                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant,controller)
+                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant,controller)
 
 
-struct SSPSDIRK2{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST} # Not adaptive
+struct SSPSDIRK2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ} # Not adaptive
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
 
-SSPSDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+SSPSDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:constant,
                    controller = :PI) =
- SSPSDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ SSPSDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 @article{kvaerno2004singly,
@@ -3225,19 +3248,20 @@ SSPSDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),d
 Kvaerno3: SDIRK Method
   An A-L stable stiffly-accurate 3rd order ESDIRK method
 """
-struct Kvaerno3{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct Kvaerno3{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+Kvaerno3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ Kvaerno3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 @book{kennedy2001additive,
@@ -3250,30 +3274,32 @@ Kvaerno3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),di
 KenCarp3: SDIRK Method
   An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting
 """
-struct KenCarp3{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct KenCarp3{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+KenCarp3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ KenCarp3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
-struct CFNLIRK3{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct CFNLIRK3{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
-CFNLIRK3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+CFNLIRK3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      CFNLIRK3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      CFNLIRK3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
 """
 @article{hindmarsh2005sundials,
@@ -3290,79 +3316,86 @@ CFNLIRK3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),di
 Cash4: SDIRK Method
   An A-L stable 4th order SDIRK method
 """
-struct Cash4{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct Cash4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   embedding::Int
   controller::Symbol
 end
-Cash4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+Cash4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI,embedding=3) =
- Cash4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,embedding,controller)
+ Cash4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,embedding,controller)
 
 
-struct SFSDIRK4{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct SFSDIRK4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
-SFSDIRK4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+SFSDIRK4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      SFSDIRK4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
-                      struct SFSDIRK5{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
-                        linsolve::F
-                        nlsolve::F2
-                                              extrapolant::Symbol
-                      end
-SFSDIRK5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      SFSDIRK5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
-
-struct SFSDIRK6{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct SFSDIRK5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
 
-SFSDIRK6(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+SFSDIRK5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK6{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      SFSDIRK5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
-struct SFSDIRK7{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct SFSDIRK6{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
 
-SFSDIRK7(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+SFSDIRK6(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:linear) =
-                      SFSDIRK7{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      SFSDIRK6{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
-struct SFSDIRK8{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
-linsolve::F
-nlsolve::F2
-extrapolant::Symbol
+struct SFSDIRK7{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
+  linsolve::F
+  nlsolve::F2
+  precs::P
+  extrapolant::Symbol
 end
 
-SFSDIRK8(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                    linsolve=nothing,nlsolve=NLNewton(),
+SFSDIRK7(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
+                      extrapolant=:linear) =
+                      SFSDIRK7{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
+
+struct SFSDIRK8{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
+  linsolve::F
+  nlsolve::F2
+  precs::P
+  extrapolant::Symbol
+end
+
+SFSDIRK8(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                    linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                     extrapolant=:linear) =
-                    SFSDIRK8{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                    linsolve,nlsolve,extrapolant)
+                    SFSDIRK8{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                    linsolve,nlsolve,precs,extrapolant)
 
 """
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
@@ -3372,19 +3405,20 @@ E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
 Hairer4: SDIRK Method
   An A-L stable 4th order SDIRK method
 """
-struct Hairer4{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct Hairer4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-Hairer4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+Hairer4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Hairer4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ Hairer4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
@@ -3394,19 +3428,20 @@ E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
 Hairer42: SDIRK Method
   An A-L stable 4th order SDIRK method
 """
-struct Hairer42{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct Hairer42{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-Hairer42(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+Hairer42(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Hairer42{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ Hairer42{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 @article{kvaerno2004singly,
@@ -3423,19 +3458,20 @@ Hairer42(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),di
 Kvaerno4: SDIRK Method
   An A-L stable stiffly-accurate 4th order ESDIRK metho
 """
-struct Kvaerno4{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct Kvaerno4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+Kvaerno4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ Kvaerno4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 @article{kvaerno2004singly,
@@ -3452,19 +3488,20 @@ Kvaerno4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),di
 Kvaerno5: SDIRK Method
   An A-L stable stiffly-accurate 5th order ESDIRK method
 """
-struct Kvaerno5{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct Kvaerno5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-Kvaerno5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+Kvaerno5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- Kvaerno5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ Kvaerno5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 @book{kennedy2001additive,
@@ -3477,19 +3514,20 @@ Kvaerno5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),di
 KenCarp4: SDIRK Method
   An A-L stable stiffly-accurate 4th order ESDIRK method with splitting
 """
-struct KenCarp4{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct KenCarp4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+KenCarp4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ KenCarp4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 """
 @article{kennedy2019higher,
   title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -3504,19 +3542,20 @@ KenCarp4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),di
 KenCarp47: SDIRK Method
   An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting
 """
-struct KenCarp47{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct KenCarp47{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp47(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+KenCarp47(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp47{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ KenCarp47{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 """
 @book{kennedy2001additive,
@@ -3529,19 +3568,20 @@ KenCarp47(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),d
 KenCarp5: SDIRK Method
   An A-L stable stiffly-accurate 5th order ESDIRK method with splitting
 """
-struct KenCarp5{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct KenCarp5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+KenCarp5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ KenCarp5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 """
 @article{kennedy2019higher,
   title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -3556,31 +3596,33 @@ KenCarp5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),di
 KenCarp58: SDIRK Method
   An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting
 """
-struct KenCarp58{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct KenCarp58{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-KenCarp58(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+KenCarp58(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,
                    controller = :PI) =
- KenCarp58{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-        linsolve,nlsolve,smooth_est,extrapolant,controller)
+ KenCarp58{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
-struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct ESDIRK54I8L2SA{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   controller::Symbol
 end
-ESDIRK54I8L2SA(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                   linsolve=nothing,nlsolve=NLNewton(),
+ESDIRK54I8L2SA(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                    extrapolant=:linear,controller = :PI) =
- ESDIRK54I8L2SA{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(linsolve,nlsolve,extrapolant,controller)
+ ESDIRK54I8L2SA{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,nlsolve,precs,extrapolant,controller)
 
 ################################################################################
 
@@ -3638,29 +3680,37 @@ _unwrap_val(B) = B
 
 for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5]
   @eval begin
-    struct $Alg{CS,AD,F,FDT,ST} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST}
+    struct $Alg{CS,AD,F,P,FDT,ST,CJ} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
       linsolve::F
+      precs::P
     end
-    $Alg(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},linsolve=nothing) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type,_unwrap_val(standardtag)}(linsolve)
+    $Alg(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
+                              ) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,precs)
   end
 end
 
-struct GeneralRosenbrock{CS,AD,F,ST,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,Val{:forward},ST}
+struct GeneralRosenbrock{CS,AD,F,ST,CJ,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,Val{:forward},ST,CJ}
   tableau::TabType
   factorization::F
 end
 
-GeneralRosenbrock(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),
+GeneralRosenbrock(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
                     factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
-                    GeneralRosenbrock{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(factorization),_unwrap_val(standardtag),typeof(tableau)}(tableau,factorization)
+                    GeneralRosenbrock{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(factorization),_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(tableau)}(tableau,factorization)
 """
 RosenbrockW6S4OS: Rosenbrock-W Method
   A 4th order L-stable Rosenbrock-W method (fixed step only).
 """
-struct RosenbrockW6S4OS{CS,AD,F,FDT,ST} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST}
+struct RosenbrockW6S4OS{CS,AD,F,P,FDT,ST,CJ} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
+  precs::P
 end
-RosenbrockW6S4OS(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),diff_type=Val{:central},linsolve=nothing) = RosenbrockW6S4OS{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),diff_type,_unwrap_val(standardtag)}(linsolve)
+RosenbrockW6S4OS(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),
+                  concrete_jac = nothing,diff_type=Val{:central},linsolve=nothing,
+                  precs = DEFAULT_PRECS) = RosenbrockW6S4OS{_unwrap_val(chunk_size),
+                  _unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,
+                  _unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,precs)
+
 ######################################
 
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
@@ -3669,46 +3719,46 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
     Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
   """
-  @eval struct $Alg{FDT,ST} <: OrdinaryDiffEqExponentialAlgorithm{FDT,ST}
+  @eval struct $Alg{FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ}
     krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
   end
-  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, standardtag = Val{true}(), chunksize=0,
-            diff_type = Val{:forward}) = $Alg{diff_type,_unwrap_val(standardtag)}(krylov, m, iop, _unwrap_val(autodiff),
+  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing, chunksize=0,
+            diff_type = Val{:forward}) = $Alg{diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(krylov, m, iop, _unwrap_val(autodiff),
             chunksize)
 end
 const ETD1 = NorsettEuler # alias
 for Alg in [:Exprb32, :Exprb43]
-  @eval struct $Alg{FDT,ST} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT,ST}
+  @eval struct $Alg{FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT,ST,CJ}
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
   end
-  @eval $Alg(;m=30, iop=0, autodiff=true, standardtag = Val{true}(), chunksize=0,
-            diff_type = Val{:forward}) = $Alg{diff_type,_unwrap_val(standardtag)}(m, iop, _unwrap_val(autodiff), chunksize)
+  @eval $Alg(;m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing, chunksize=0,
+            diff_type = Val{:forward}) = $Alg{diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(m, iop, _unwrap_val(autodiff), chunksize)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
-  @eval struct $Alg{FDT,ST} <: OrdinaryDiffEqExponentialAlgorithm{FDT,ST}
+  @eval struct $Alg{FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ}
     adaptive_krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
   end
-  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, standardtag = Val{true}(),
+  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
               chunksize=0, diff_type = Val{:forward}) =
-              $Alg{diff_type,_unwrap_val(standardtag)}(adaptive_krylov, m, iop, _unwrap_val(autodiff), chunksize)
+              $Alg{diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(adaptive_krylov, m, iop, _unwrap_val(autodiff), chunksize)
 end
-struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true}} end
+struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing} end
 """
 ETD2: Exponential Runge-Kutta Method
   Second order Exponential Time Differencing method (in development).
 """
-struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true}} end
+struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing} end
 
 #########################################
 
@@ -3720,22 +3770,23 @@ an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Compute
 ABDF2: Multistep Method
   An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
 """
-struct ABDF2{CS,AD,F,F2,FDT,ST,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST}
+struct ABDF2{CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
-    κ::K
+  precs::P
+  κ::K
   tol::T
   smooth_est::Bool
   extrapolant::Symbol
   controller::Symbol
 end
-ABDF2(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),diff_type=Val{:forward},
-      κ=nothing,tol=nothing,linsolve=nothing,nlsolve=NLNewton(),
+ABDF2(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+      κ=nothing,tol=nothing,linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
       smooth_est=true,extrapolant=:linear,
       controller=:Standard) =
-ABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+ABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
       typeof(κ),typeof(tol)}(
-      linsolve,nlsolve,κ,tol,smooth_est,extrapolant,controller)
+      linsolve,nlsolve,precs,κ,tol,smooth_est,extrapolant,controller)
 
 #########################################
 
@@ -3750,33 +3801,35 @@ MEBDF2: Multistep Method
   The second order Modified Extended BDF method, which has improved stability properties over the standard BDF.
   Fixed timestep only.
 """
-struct MEBDF2{CS,AD,F,F2,FDT,ST} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct MEBDF2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
-MEBDF2(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+MEBDF2(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:constant) =
-                      MEBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-                      linsolve,nlsolve,extrapolant)
+                      MEBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+                      linsolve,nlsolve,precs,extrapolant)
 
 #################################################
 """
 PDIRK44: Parallel Diagonally Implicit Runge-Kutta Method
   A 2 processor 4th order diagonally non-adaptive implicit method.
 """
-struct PDIRK44{CS,AD,F,F2,FDT,ST,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST}
+struct PDIRK44{CS,AD,F,F2,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   threading::TO
 end
-PDIRK44(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),diff_type=Val{:forward},
-                      linsolve=nothing,nlsolve=NLNewton(),
+PDIRK44(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                       extrapolant=:constant,threading=true) =
-PDIRK44{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),typeof(threading)}(
-                      linsolve,nlsolve,extrapolant,threading)
+PDIRK44{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
+                      linsolve,nlsolve,precs,extrapolant,threading)
 ### Algorithm Groups
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
@@ -3787,59 +3840,63 @@ const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
                               KenCarp3,KenCarp4,KenCarp47,KenCarp5,KenCarp58,CFNLIRK3}
 
 #=
-struct DBDF{CS,AD,F,F2,FDT,ST} <: DAEAlgorithm{CS,AD,FDT,ST}
+struct DBDF{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
 end
 
-DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-     linsolve=nothing,nlsolve=NLNewton(),extrapolant=:linear) =
-     DBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(
-     linsolve,nlsolve,extrapolant)
+DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+     linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),extrapolant=:linear) =
+     DBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
+     linsolve,nlsolve,precs,extrapolant)
 =#
 
-struct DImplicitEuler{CS,AD,F,F2,FDT,ST} <: DAEAlgorithm{CS,AD,FDT,ST}
+struct DImplicitEuler{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   controller::Symbol
 end
-DImplicitEuler(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),diff_type=Val{:forward},
-                          linsolve=nothing,nlsolve=NLNewton(),
+DImplicitEuler(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                          linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:Standard) =
                           DImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(linsolve,
-                          nlsolve,extrapolant,controller)
+                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
+                          nlsolve,precs,extrapolant,controller)
 
 
-struct DABDF2{CS,AD,F,F2,FDT,ST} <: DAEAlgorithm{CS,AD,FDT,ST}
+struct DABDF2{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   nlsolve::F2
+  precs::P
   extrapolant::Symbol
   controller::Symbol
 end
-DABDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                          linsolve=nothing,nlsolve=NLNewton(),
+DABDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                          linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
                           extrapolant=:constant,
                           controller=:Standard) =
                           DABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),diff_type,_unwrap_val(standardtag)}(linsolve,
-                          nlsolve,extrapolant,controller)
+                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
+                          nlsolve,precs,extrapolant,controller)
 
-struct DFBDF{MO,CS,AD,F,F2,FDT,ST,K,T} <: DAEAlgorithm{CS,AD,FDT,ST}
+struct DFBDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
   max_order::Val{MO}
   linsolve::F
   nlsolve::F2
+  precs::P
   κ::K
   tol::T
   extrapolant::Symbol
   controller::Symbol
 end
-DFBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(),diff_type=Val{:forward},
-                linsolve=nothing,nlsolve=NLNewton(),κ=nothing,tol=nothing,
+DFBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
+                linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,controller = :Standard) where {MO} =
-                DFBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),diff_type,_unwrap_val(standardtag),
+                DFBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
                 typeof(κ),typeof(tol)}(
-                max_order,linsolve,nlsolve,κ,tol,extrapolant,controller)
+                max_order,linsolve,nlsolve,precs,κ,tol,extrapolant,controller)

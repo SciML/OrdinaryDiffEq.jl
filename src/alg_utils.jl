@@ -199,15 +199,20 @@ alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
 
-alg_difftype(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST},
-                        DAEAlgorithm{CS,AD,FDT,ST}}) where {CS,AD,FDT,ST} = FDT
+alg_difftype(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+                        DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = FDT
 
-standardtag(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST},
-                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST},
-                        DAEAlgorithm{CS,AD,FDT,ST}}) where {CS,AD,FDT,ST} = ST
+standardtag(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+                        DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = ST
+
+concrete_jac(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+                        OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+                        DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = CJ
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
@@ -712,6 +717,22 @@ alg_stability_size(alg::Vern9) = 4.4762
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
+
+function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
+  iscomp = typeof(alg) <: CompositeAlgorithm
+  if !iscomp
+    return alg
+  elseif typeof(alg.choice_function) <: AutoSwitchCache
+    num = is_stiff ? 2 : 1
+    if num == 1
+      return alg.algs[1]
+    else
+      return alg.algs[2]
+    end
+  else
+    error("this dispatch does not support this algorithm right now")
+  end
+end
 
 function unwrap_alg(integrator, is_stiff)
   alg = integrator.alg

@@ -285,7 +285,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         if !repeat_step && j == 1
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k_tmps[1]))
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k_tmps[1]))
         cache.linsolve[1] = linres.cache
 
         integrator.destats.nsolve += 1
@@ -330,7 +330,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
               if !repeat_step && j == 1
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -412,7 +412,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
           if !repeat_step && j == 1
             linsolve = LinearSolve.set_A(linsolve,W[1])
           end
-          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k_tmps[1]))
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k_tmps[1]))
           cache.linsolve[1] = linres.cache
 
           integrator.destats.nsolve += 1
@@ -1060,7 +1060,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       if !repeat_step
         linsolve = LinearSolve.set_A(linsolve,W[1])
       end
-      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
       cache.linsolve[1] = linres.cache
 
       integrator.destats.nsolve += 1
@@ -1076,7 +1076,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         if !repeat_step && j == 1
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
         cache.linsolve[1] = linres.cache
 
         integrator.destats.nsolve += 1
@@ -1119,7 +1119,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
             cache.linsolve[Threads.threadid()] = linres.cache
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -1133,7 +1133,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               if !repeat_step && j == 1
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -1171,7 +1171,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
             cache.linsolve[Threads.threadid()] = linres.cache
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -1185,7 +1185,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
               if !repeat_step && j == 1
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -1260,7 +1260,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         @.. linsolve_tmps[1] = dt_int*fsalfirst
 
         linsolve = cache.linsolve[1]
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
         cache.linsolve[1] = linres.cache
 
         integrator.destats.nsolve += 1
@@ -1272,7 +1272,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
           @.. linsolve_tmps[1] = dt_int * k - (u_temp1 - u_temp2)
 
           linsolve = cache.linsolve[1]
-          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
           cache.linsolve[1] = linres.cache
 
           integrator.destats.nsolve += 1
@@ -2169,7 +2169,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       if !repeat_step
         linsolve = LinearSolve.set_A(linsolve,W[1])
       end
-      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
       cache.linsolve[1] = linres.cache
 
       integrator.destats.nsolve += 1
@@ -2185,7 +2185,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         if !repeat_step && j == 1
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
         cache.linsolve[1] = linres.cache
 
         integrator.destats.nsolve += 1
@@ -2233,7 +2233,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
             cache.linsolve[Threads.threadid()] = linres.cache
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2247,7 +2247,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               if !repeat_step && j == 1
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2289,7 +2289,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
             cache.linsolve[Threads.threadid()] = linres.cache
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2303,7 +2303,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               if !repeat_step && j == 1
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2389,7 +2389,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
         cache.linsolve[1] = linres.cache
 
         integrator.destats.nsolve += 1
@@ -2404,7 +2404,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
           if !repeat_step && j == 1
             linsolve = LinearSolve.set_A(linsolve,W[1])
           end
-          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
           cache.linsolve[1] = linres.cache
 
           integrator.destats.nsolve += 1
@@ -2739,7 +2739,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       if !repeat_step
         linsolve = LinearSolve.set_A(linsolve,W[1])
       end
-      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
       cache.linsolve[1] = linres.cache
 
       integrator.destats.nsolve += 1
@@ -2755,7 +2755,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         if !repeat_step && j == 1
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
         cache.linsolve[1] = linres.cache
 
         integrator.destats.nsolve += 1
@@ -2803,7 +2803,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
             cache.linsolve[Threads.threadid()] = linres.cache
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2817,7 +2817,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               if !repeat_step && j == 1
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2859,7 +2859,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             if !repeat_step
               linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
             end
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
             cache.linsolve[Threads.threadid()] = linres.cache
 
             @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2873,7 +2873,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               if !repeat_step && j == 1
                 linsolve = LinearSolve.set_A(linsolve,W[Threads.threadid()])
               end
-              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), u = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2961,7 +2961,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         if !repeat_step
           linsolve = LinearSolve.set_A(linsolve,W[1])
         end
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
         cache.linsolve[1] = linres.cache
 
         integrator.destats.nsolve += 1
@@ -2973,7 +2973,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
           @.. linsolve_tmps[1] = dt_int*k
 
           linsolve = cache.linsolve[1]
-          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), u = _vec(k))
+          linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]), linu = _vec(k))
           cache.linsolve[1] = linres.cache
 
           integrator.destats.nsolve += 1
