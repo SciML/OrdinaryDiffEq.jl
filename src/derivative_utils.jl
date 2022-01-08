@@ -273,6 +273,7 @@ set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
 
 function DiffEqBase.update_coefficients!(J::SparseDiffTools.JacVec,u,p,t)
+  copyto!(J.x,u)
   J.f.t = t
   J.f.p = p
 end
@@ -691,7 +692,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
                                         (concrete_jac(alg) !== nothing && !concrete_jac(alg))
 
     _f = islin ? (isode ? f.f : f.f1.f) : f
-    J = SparseDiffTools.JacVec(UJacobianWrapper(_f,t,p), u, autodiff = alg_autodiff(alg))
+    J = SparseDiffTools.JacVec(UJacobianWrapper(_f,t,p), uprev, autodiff = alg_autodiff(alg))
     W = WOperator{IIP}(f.mass_matrix, dt, J, u)
   elseif islin || (!IIP && DiffEqBase.has_jac(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
