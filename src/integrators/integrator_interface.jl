@@ -71,7 +71,9 @@ end
   if typeof(integrator.cache) <: FunctionMapCache
     out .= integrator.cache.tmp
   else
-    return if isdefined(integrator, :fsallast)
+    return if isdefined(integrator, :fsallast) &&
+      !(typeof(integrator.alg) <: Union{Rosenbrock23,Rosenbrock32,Rodas4,Rodas4P,Rodas4P2,Rodas5})
+      # Special stiff interpolations do not store the right value in fsallast
       out .= integrator.fsallast
     else
       integrator(out, integrator.t, Val{1})
