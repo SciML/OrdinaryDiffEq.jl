@@ -90,7 +90,9 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
   Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer : linsolve.Pl
   Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer : linsolve.Pr
 
-  _Pl,_Pr = integrator.alg.precs(linsolve.A,du,u,p,t,A !== nothing,Plprev,Prprev,solverdata)
+  _alg = unwrap_alg(integrator.alg, true)
+
+  _Pl,_Pr = _alg.precs(linsolve.A,du,u,p,t,A !== nothing,Plprev,Prprev,solverdata)
   if (_Pl !== nothing || _Pr !== nothing)
     _weight = weight === nothing ? (linsolve.Pr isa Diagonal ? linsolve.Pr.diag : linsolve.Pr.inner.diag) : weight
     Pl, Pr = wrapprecs(_Pl,_Pr,_weight)
