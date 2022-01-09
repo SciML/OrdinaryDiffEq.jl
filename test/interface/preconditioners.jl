@@ -10,7 +10,9 @@ const xyd_brusselator = range(0,stop=1,length=N)
 brusselator_f(x, y, t) = (((x-0.3)^2 + (y-0.6)^2) <= 0.1^2) * (t >= 1.1) * 5.
 limit(a, N) = a == N+1 ? 1 : a == 0 ? N : a
 
+const iter = Ref(0)
 function brusselator_2d_loop(du, u, p, t)
+  global iter[] += 1
   A, B, alpha, dx = p
   alpha = alpha/dx^2
   @inbounds for I in CartesianIndices((N, N))
@@ -74,56 +76,81 @@ function algebraicmultigrid2(W,du,u,p,t,newW,Plprev,Prprev,solverdata)
   Pl,nothing
 end
 
-sol1 =  solve(prob_ode_brusselator_2d,KenCarp47(linsolve=KrylovJL_GMRES()),save_everystep=false);
+iter[] = 0
+sol1 = solve(prob_ode_brusselator_2d,KenCarp47(linsolve=KrylovJL_GMRES()),save_everystep=false);
+iter1 = iter[]; iter[] = 0
 sol2 = solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+iter2 = iter[]; iter[] = 0
 sol3 = solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+iter3 = iter[]; iter[] = 0
 sol4 = solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+iter4 = iter[]; iter[] = 0
 
-@test sol2.destats.nf < sol1.destats.nf
-@test sol3.destats.nf < sol1.destats.nf
-@test sol4.destats.nf < sol1.destats.nf
+@test iter2 < iter1
+@test iter3 < iter1
+@test iter4 < iter1
 
 sol1 = solve(prob_ode_brusselator_2d,Rosenbrock23(linsolve=KrylovJL_GMRES()),save_everystep=false);
+iter1 = iter[]; iter[] = 0
 sol2 = solve(prob_ode_brusselator_2d_sparse,Rosenbrock23(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+iter2 = iter[]; iter[] = 0
 sol3 = solve(prob_ode_brusselator_2d_sparse,Rosenbrock23(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+iter3 = iter[]; iter[] = 0
 sol4 = solve(prob_ode_brusselator_2d_sparse,Rosenbrock23(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+iter4 = iter[]; iter[] = 0
 
-@test sol2.destats.nf < sol1.destats.nf
-@test sol3.destats.nf < sol1.destats.nf
-@test sol4.destats.nf < sol1.destats.nf
+@test iter2 < iter1
+@test iter3 < iter1
+@test iter4 < iter1
 
 sol1 = solve(prob_ode_brusselator_2d,Rodas4(linsolve=KrylovJL_GMRES()),save_everystep=false);
+iter1 = iter[]; iter[] = 0
 sol2 = solve(prob_ode_brusselator_2d_sparse,Rodas4(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+iter2 = iter[]; iter[] = 0
 sol3 = solve(prob_ode_brusselator_2d_sparse,Rodas4(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+iter3 = iter[]; iter[] = 0
 sol4 = solve(prob_ode_brusselator_2d_sparse,Rodas4(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+iter4 = iter[]; iter[] = 0
 
-@test sol2.destats.nf < sol1.destats.nf
-@test sol3.destats.nf < sol1.destats.nf
-@test sol4.destats.nf < sol1.destats.nf
+@test iter2 < iter1
+@test iter3 < iter1
+@test iter4 < iter1
 
 sol1 = solve(prob_ode_brusselator_2d,Rodas5(linsolve=KrylovJL_GMRES()),save_everystep=false);
+iter1 = iter[]; iter[] = 0
 sol2 = solve(prob_ode_brusselator_2d_sparse,Rodas5(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+iter2 = iter[]; iter[] = 0
 sol3 = solve(prob_ode_brusselator_2d_sparse,Rodas5(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+iter3 = iter[]; iter[] = 0
 sol4 = solve(prob_ode_brusselator_2d_sparse,Rodas5(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+iter4 = iter[]; iter[] = 0
 
-@test sol2.destats.nf < sol1.destats.nf
-@test sol3.destats.nf < sol1.destats.nf
-@test sol4.destats.nf < sol1.destats.nf
+@test iter2 < iter1
+@test iter3 < iter1
+@test iter4 < iter1
 
 sol1 = solve(prob_ode_brusselator_2d,TRBDF2(linsolve=KrylovJL_GMRES()),save_everystep=false);
+iter1 = iter[]; iter[] = 0
 sol2 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+iter2 = iter[]; iter[] = 0
 sol3 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+iter3 = iter[]; iter[] = 0
 sol4 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+iter4 = iter[]; iter[] = 0
 
-@test sol2.destats.nf < sol1.destats.nf
-@test sol3.destats.nf < sol1.destats.nf
-@test sol4.destats.nf < sol1.destats.nf
+@test iter2 < iter1
+@test iter3 < iter1
+@test iter4 < iter1
 
 sol1 = solve(prob_ode_brusselator_2d,TRBDF2(linsolve=IterativeSolversJL_GMRES()),save_everystep=false);
+iter1 = iter[]; iter[] = 0
 sol2 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=IterativeSolversJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+iter2 = iter[]; iter[] = 0
 sol3 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=IterativeSolversJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+iter3 = iter[]; iter[] = 0
 sol4 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=IterativeSolversJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+iter4 = iter[]; iter[] = 0
 
-@test sol2.destats.nf < sol1.destats.nf
-@test sol3.destats.nf < sol1.destats.nf
-@test sol4.destats.nf < sol1.destats.nf
+@test iter2 < iter1
+@test iter3 < iter1
+@test iter4 < iter1
