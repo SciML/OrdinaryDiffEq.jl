@@ -207,15 +207,16 @@ mutable struct WOperator{IIP,T,
   JType,
   F,
   C,
-  } <: DiffEqBase.AbstractDiffEqLinearOperator{T}
+  JV} <: DiffEqBase.AbstractDiffEqLinearOperator{T}
   mass_matrix::MType
   gamma::GType
   J::JType
   transform::Bool          # true => W = mm/gamma - J; false => W = mm - gamma*J
   _func_cache::F           # cache used in `mul!`
   _concrete_form::C        # non-lazy form (matrix/number) of the operator
+  jacvec::JV
 
-  function WOperator{IIP}(mass_matrix, gamma, J, u; transform=false) where IIP
+  function WOperator{IIP}(mass_matrix, gamma, J, u, jacvec = nothing; transform=false) where IIP
     # TODO: there is definitely a missing interface.
     # Tentative interface: `has_concrete` and `concertize(A)`
     if J isa Union{Number,DiffEqScalar}
@@ -245,7 +246,8 @@ mutable struct WOperator{IIP,T,
     JType = typeof(J)
     F = typeof(_func_cache)
     C = typeof(_concrete_form)
-    return new{IIP,T,MType,GType,JType,F,C}(mass_matrix,gamma,J,transform,_func_cache,_concrete_form)
+    JV = typeof(jacvec)
+    return new{IIP,T,MType,GType,JType,F,C,JV}(mass_matrix,gamma,J,transform,_func_cache,_concrete_form,jacvec)
   end
 end
 function WOperator{IIP}(f, u, gamma; transform=false) where IIP
@@ -270,7 +272,12 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where IIP = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); update_coefficients!(W.mass_matrix,u,p,t); W)
+function DiffEqBase.update_coefficients!(W::WOperator,u,p,t)
+  update_coefficients!(W.J,u,p,t)
+  update_coefficients!(W.mass_matrix,u,p,t)
+  W.jacvec !== nothing && update_coefficients!(W.jacvec,u,p,t)
+  W
+end
 
 function DiffEqBase.update_coefficients!(J::SparseDiffTools.JacVec,u,p,t)
   copyto!(J.x,u)
@@ -287,28 +294,9 @@ function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where IIP
       W._concrete_form = -W.mass_matrix + W.gamma * convert(AbstractMatrix,W.J)
     end
   else
-    # Non-allocating
-    _W = W._concrete_form
-    J = convert(AbstractMatrix,W.J)
-    if W.transform
-      if _W isa Diagonal # axpby doesn't specialize on Diagonal matrix
-        @inbounds for i in axes(W._concrete_form, 1)
-          _W[i, i] = J[i, i] - inv(W.gamma) * W.mass_matrix[i, i]
-        end
-      else
-        copyto!(_W, W.mass_matrix)
-        axpby!(one(W.gamma), J, -inv(W.gamma), _W)
-      end
-    else
-      if _W isa Diagonal # axpby doesn't specialize on Diagonal matrix
-        @inbounds for i in axes(W._concrete_form, 1)
-          _W[i, i] = W.gamma*J[i, i] - W.mass_matrix[i, i]
-        end
-      else
-        copyto!(_W, W.mass_matrix)
-        axpby!(W.gamma, J, -one(W.gamma), W._concrete_form)
-      end
-    end
+    # Non-allocating already updated
+    #_W = W._concrete_form
+    #jacobian2W!(_W, W.mass_matrix, W.gamma, W.J, W.transform)
   end
   return W._concrete_form
 end
@@ -368,7 +356,11 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
       lmul!(-1/W.gamma, Y)
     end
     # Compute J * B and add
-    mul!(_vec(W._func_cache), W.J, _vec(B))
+    if W.jacvec !== nothing
+      mul!(_vec(W._func_cache), W.jacvec, _vec(B))
+    else
+      mul!(_vec(W._func_cache), W.J, _vec(B))
+    end
     _vec(Y) .+= _vec(W._func_cache)
   else
     # Compute mass_matrix * B
@@ -380,7 +372,11 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
       mul!(_vec(Y), W.mass_matrix, _vec(B))
     end
     # Compute J * B
-    mul!(_vec(W._func_cache), W.J, _vec(B))
+    if W.jacvec !== nothing
+      mul!(_vec(W._func_cache), W.jacvec, _vec(B))
+    else
+      mul!(_vec(W._func_cache), W.J, _vec(B))
+    end
     # Add result
     axpby!(W.gamma, _vec(W._func_cache), -one(W.gamma), _vec(Y))
   end
@@ -563,10 +559,15 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   if W isa WOperator
     isnewton(nlsolver) || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     W.transform = W_transform; set_gamma!(W, dtgamma)
+    if W.J !== nothing
+      islin, isode = islinearfunction(integrator)
+      islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(W.J, integrator, lcache)) )
+      new_W && !isdae && jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)
+    end
   else # concrete W using jacobian from `calc_J!`
     islin, isode = islinearfunction(integrator)
     islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, lcache)) )
-    !isdae && update_coefficients!(mass_matrix,uprev,p,t)
+    update_coefficients!(W,uprev,p,t)
     new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton(nlsolver)
@@ -682,18 +683,39 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
   if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
     W = WOperator{IIP}(f, u, dt)
     J = W.J
-  elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing
+  elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
+        (alg.linsolve === nothing || alg.linsolve !== nothing &&
+         LinearSolve.needs_concrete_A(alg.linsolve))
+
+    # If factorization, then just use the jac_prototype
     J = similar(f.jac_prototype)
     W = similar(J)
-  elseif (IIP && f.jac_prototype === nothing && !DiffEqBase.has_jac(f) &&
-                                        concrete_jac(alg) === nothing &&
-                                        alg.linsolve !== nothing &&
-                                        !LinearSolve.needs_concrete_A(alg.linsolve)) ||
-                                        (concrete_jac(alg) !== nothing && !concrete_jac(alg))
+  elseif (IIP && (concrete_jac(alg) === nothing || !concrete_jac(alg)) &&
+                                    alg.linsolve !== nothing &&
+                                    !LinearSolve.needs_concrete_A(alg.linsolve))
+    # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
+    # Jacobian is a bad idea and create a fully matrix-free solver. This can
+    # be overriden with concrete_jac.
 
     _f = islin ? (isode ? f.f : f.f1.f) : f
-    J = SparseDiffTools.JacVec(UJacobianWrapper(_f,t,p), uprev, autodiff = alg_autodiff(alg))
-    W = WOperator{IIP}(f.mass_matrix, dt, J, u)
+    jacvec = SparseDiffTools.JacVec(UJacobianWrapper(_f,t,p), copy(u), autodiff = alg_autodiff(alg))
+    J = jacvec
+    W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+
+  elseif alg.linsolve !== nothing && !LinearSolve.needs_concrete_A(alg.linsolve) ||
+         concrete_jac(alg) !== nothing && !concrete_jac(alg)
+    # The linear solver does not need a concrete Jacobian, but the user has
+    # asked for one. This will happen when the Jacobian is used in the preconditioner
+    # Thus setup JacVec and a concrete J, using sparsity when possible
+    _f = islin ? (isode ? f.f : f.f1.f) : f
+    J = if f.jac_prototype === nothing
+      ArrayInterface.zeromatrix(u)
+    else
+      deepcopy(f.jac_prototype)
+    end
+    jacvec = SparseDiffTools.JacVec(UJacobianWrapper(_f,t,p), copy(u), autodiff = alg_autodiff(alg))
+    W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
+
   elseif islin || (!IIP && DiffEqBase.has_jac(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
