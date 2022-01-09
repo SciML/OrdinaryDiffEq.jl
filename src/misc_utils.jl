@@ -106,7 +106,8 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
   end
 
   # TODO: this ignores the add of the `f` count for add_steps!
-  if integrator isa SciMLBase.DEIntegrator && !LinearSolve.needs_concrete_A(_alg.linsolve) &&
+  if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
+      !LinearSolve.needs_concrete_A(_alg.linsolve) &&
       linsolve.A isa WOperator && linsolve.A.J isa SparseDiffTools.JacVec
 
     if alg_autodiff(_alg)
