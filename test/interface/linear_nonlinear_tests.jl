@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, Random, LinearAlgebra
+using OrdinaryDiffEq, Test, Random, LinearAlgebra, LinearSolve
 Random.seed!(123)
 
 A = 0.01*rand(3, 3)
