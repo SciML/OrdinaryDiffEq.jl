@@ -173,10 +173,7 @@ end
     reltol = eps(eltype(dz))
   end
 
-  if iter == 1 && new_W
-    linsolve = LinearSolve.set_A(linsolve,W)
-  end
-  linres = dolinsolve(integrator, linsolve; b = _vec(b), linu = _vec(dz), reltol = reltol)
+  linres = dolinsolve(integrator, linsolve; A = iter == 1 && new_W ? W : nothing, b = _vec(b), linu = _vec(dz), reltol = reltol)
   cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)
@@ -285,10 +282,7 @@ end
     reltol = eps(eltype(dz))
   end
 
-  if iter == 1 && new_W
-    linsolve = LinearSolve.set_A(linsolve,W)
-  end
-  linres = dolinsolve(integrator, linsolve; b = _vec(b), linu = _vec(dz), reltol = reltol)
+  linres = dolinsolve(integrator, linsolve; A = iter == 1 && new_W ? W : nothing, b = _vec(b), linu = _vec(dz), reltol = reltol)
   cache.linsolve = linres.cache
 
   if DiffEqBase.has_destats(integrator)
