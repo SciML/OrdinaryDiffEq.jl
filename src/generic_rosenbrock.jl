@@ -399,7 +399,13 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
         end
         push!(iterexprs,quote
 
-            linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
+            if $(i==1)
+                # Must be a part of the first linsolve for preconditioner step
+                linres = dolinsolve(integrator, linsolve; A = !repeat_step ? W : nothing, b = _vec(linsolve_tmp))
+            else
+                linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
+            end
+
             linsolve = linres.cache
             vecu = _vec(linres.u)
             vecki = _vec($ki)
@@ -471,9 +477,6 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
             linsolve = cache.linsolve
-            if !repeat_step
-                linsolve = LinearSolve.set_A(linsolve,W)
-            end
 
             $(iterexprs...)
 
