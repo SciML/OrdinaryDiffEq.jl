@@ -2258,7 +2258,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
               @.. linsolve_tmps[Threads.threadid()] = dt_int_temp*k_tmps[Threads.threadid()] - (u_temp3[Threads.threadid()] - u_temp4[Threads.threadid()])
 
               linsolve = cache.linsolve[Threads.threadid()]
-              linres = dolinsolve(integrator, linsolve; A = !repeat_step ? W[Threads.threadid()] : nothing, b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; A = (!repeat_step && j == 1) ? W[Threads.threadid()] : nothing, b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
@@ -2804,7 +2804,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
               @.. linsolve_tmps[Threads.threadid()] = dt_int_temp*k_tmps[Threads.threadid()]
 
               linsolve = cache.linsolve[Threads.threadid()]
-              linres = dolinsolve(integrator, linsolve; A = !repeat_step ? W[Threads.threadid()] : nothing, b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
+              linres = dolinsolve(integrator, linsolve; A = (!repeat_step && j == 1) ? W[Threads.threadid()] : nothing, b = _vec(linsolve_tmps[Threads.threadid()]), linu = _vec(k_tmps[Threads.threadid()]))
               cache.linsolve[Threads.threadid()] = linres.cache
 
               @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]

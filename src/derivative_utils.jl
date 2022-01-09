@@ -405,6 +405,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2,Bool}
   repeat_step && return false, false
   islin, _ = islinearfunction(integrator)
   islin && return false, false # no further JW eval when it's linear
+  !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
   alg isa DAEAlgorithm && return true, true
   isnewton(nlsolver) || return true, true
   isfirstcall(nlsolver) && return true, true

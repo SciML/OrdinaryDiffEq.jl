@@ -1,21 +1,5 @@
 using OrdinaryDiffEq: WOperator, set_gamma!, calc_W, calc_W!
-using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
-
-@testset "WOperator" begin
-  Random.seed!(123)
-  y = zeros(2); b = rand(2)
-  mm = rand(2, 2)
-  for _J in [rand(2, 2), Diagonal(rand(2))]
-    _Ws = [-mm + 2.0 * _J, -mm/2.0 + _J]
-    for inplace in (true, false), (_W, W_transform) in zip(_Ws, [false, true])
-      W = WOperator{inplace}(mm, 1.0, DiffEqArrayOperator(_J), b, transform=W_transform)
-      set_gamma!(W, 2.0)
-      @test convert(AbstractMatrix,W) ≈ _W
-      @test W * b ≈ _W * b
-      mul!(y, W, b); @test y ≈ _W * b
-    end
-  end
-end
+using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
 
 @testset "calc_W and calc_W!" begin
   A = [-1.0 0.0; 0.0 -0.5]; mm = [2.0 0.0; 0.0 1.0]
@@ -38,6 +22,14 @@ end
                     jac_prototype=DiffEqArrayOperator(A))
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
   calc_W!(integrator.cache.nlsolver.cache.W, integrator, integrator.cache.nlsolver, integrator.cache, dtgamma, false)
+
+  # Did not update because it's an array operator
+  # We don't want to build Jacobians when we have operators!
+  @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) != concrete_W
+  ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0); @test tmp != concrete_W \ u0
+
+  # But jacobian2W! will update the cache
+  OrdinaryDiffEq.jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm, dtgamma, integrator.cache.nlsolver.cache.W.J.A, false)
   @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
   ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0); @test tmp == concrete_W \ u0
 end
@@ -61,7 +53,7 @@ end
     @test sol1(1.0) ≈ sol2(1.0)
 
     sol1_ip = solve(ODEProblem(fun1_ip,u0,tspan), Alg(); adaptive=false, dt=0.01)
-    sol2_ip = solve(ODEProblem(fun2_ip,u0,tspan), Alg(linsolve=LinSolveFactorize(lu)); adaptive=false, dt=0.01)
+    sol2_ip = solve(ODEProblem(fun2_ip,u0,tspan), Alg(); adaptive=false, dt=0.01)
     @test sol1_ip(1.0) ≈ sol2_ip(1.0) atol=1e-5
   end
 end
