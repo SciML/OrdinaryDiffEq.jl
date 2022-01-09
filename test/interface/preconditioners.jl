@@ -74,14 +74,56 @@ function algebraicmultigrid2(W,du,u,p,t,newW,Plprev,Prprev,solverdata)
   Pl,nothing
 end
 
-@time solve(prob_ode_brusselator_2d,KenCarp47(linsolve=KrylovJL_GMRES()),save_everystep=false);
-# 0.715011 seconds (172.53 k allocations: 30.978 MiB)
+sol1 =  solve(prob_ode_brusselator_2d,KenCarp47(linsolve=KrylovJL_GMRES()),save_everystep=false);
+sol2 = solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+sol3 = solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+sol4 = solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
 
-@time solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
-# 0.178704 seconds (61.76 k allocations: 61.385 MiB)
+@test sol2.destats.nf < sol1.destats.nf
+@test sol3.destats.nf < sol1.destats.nf
+@test sol4.destats.nf < sol1.destats.nf
 
-@time solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
-# 0.378352 seconds (61.18 k allocations: 160.815 MiB, 4.92% gc time)
+sol1 = solve(prob_ode_brusselator_2d,Rosenbrock23(linsolve=KrylovJL_GMRES()),save_everystep=false);
+sol2 = solve(prob_ode_brusselator_2d_sparse,Rosenbrock23(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+sol3 = solve(prob_ode_brusselator_2d_sparse,Rosenbrock23(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+sol4 = solve(prob_ode_brusselator_2d_sparse,Rosenbrock23(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
 
-@time solve(prob_ode_brusselator_2d_sparse,KenCarp47(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
-# 0.285271 seconds (65.71 k allocations: 170.192 MiB, 2.49% gc time)
+@test sol2.destats.nf < sol1.destats.nf
+@test sol3.destats.nf < sol1.destats.nf
+@test sol4.destats.nf < sol1.destats.nf
+
+sol1 = solve(prob_ode_brusselator_2d,Rodas4(linsolve=KrylovJL_GMRES()),save_everystep=false);
+sol2 = solve(prob_ode_brusselator_2d_sparse,Rodas4(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+sol3 = solve(prob_ode_brusselator_2d_sparse,Rodas4(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+sol4 = solve(prob_ode_brusselator_2d_sparse,Rodas4(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+
+@test sol2.destats.nf < sol1.destats.nf
+@test sol3.destats.nf < sol1.destats.nf
+@test sol4.destats.nf < sol1.destats.nf
+
+sol1 = solve(prob_ode_brusselator_2d,Rodas5(linsolve=KrylovJL_GMRES()),save_everystep=false);
+sol2 = solve(prob_ode_brusselator_2d_sparse,Rodas5(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+sol3 = solve(prob_ode_brusselator_2d_sparse,Rodas5(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+sol4 = solve(prob_ode_brusselator_2d_sparse,Rodas5(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+
+@test sol2.destats.nf < sol1.destats.nf
+@test sol3.destats.nf < sol1.destats.nf
+@test sol4.destats.nf < sol1.destats.nf
+
+sol1 = solve(prob_ode_brusselator_2d,TRBDF2(linsolve=KrylovJL_GMRES()),save_everystep=false);
+sol2 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=KrylovJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+sol3 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+sol4 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=KrylovJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+
+@test sol2.destats.nf < sol1.destats.nf
+@test sol3.destats.nf < sol1.destats.nf
+@test sol4.destats.nf < sol1.destats.nf
+
+sol1 = solve(prob_ode_brusselator_2d,TRBDF2(linsolve=IterativeSolversJL_GMRES()),save_everystep=false);
+sol2 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=IterativeSolversJL_GMRES(),precs=incompletelu,concrete_jac=true),save_everystep=false);
+sol3 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=IterativeSolversJL_GMRES(),precs=algebraicmultigrid,concrete_jac=true),save_everystep=false);
+sol4 = solve(prob_ode_brusselator_2d_sparse,TRBDF2(linsolve=IterativeSolversJL_GMRES(),precs=algebraicmultigrid2,concrete_jac=true),save_everystep=false);
+
+@test sol2.destats.nf < sol1.destats.nf
+@test sol3.destats.nf < sol1.destats.nf
+@test sol4.destats.nf < sol1.destats.nf
