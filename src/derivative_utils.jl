@@ -559,7 +559,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   if W isa WOperator
     isnewton(nlsolver) || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     W.transform = W_transform; set_gamma!(W, dtgamma)
-    if W.J !== nothing
+    if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec)
       islin, isode = islinearfunction(integrator)
       islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(W.J, integrator, lcache)) )
       new_W && !isdae && jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)

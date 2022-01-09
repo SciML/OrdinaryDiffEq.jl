@@ -104,6 +104,13 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
   else
     solve(linsolve;reltol)
   end
+
+  # TODO: this ignores the add of the `f` count for add_steps!
+  if integrator isa SciMLBase.DEIntegrator
+    integrator.destats.nf += linres.iters
+  end
+
+  return linres
 end
 
 function wrapprecs(_Pl,_Pr,weight)
