@@ -583,8 +583,12 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   return new_W
 end
 
-@noinline function calc_W(integrator, cache, dtgamma, repeat_step, W_transform=false)
+@noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
+
+  # Handle Rosenbrock has no nlsolver so passes cache directly
+  cache = nlsolver isa OrdinaryDiffEqCache ? nlsolver : nlsolver.cache
+
   isdae = integrator.alg isa DAEAlgorithm
   if !isdae
     mass_matrix = integrator.f.mass_matrix
@@ -604,10 +608,10 @@ end
       W = W_transform ? J - mass_matrix*inv(dtgamma) :
                              dtgamma*J - mass_matrix
     else
-      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator) && (!isnewton(nlsolver) || nlsolver.cache.W.J isa DiffEqBase.AbstractDiffEqLinearOperator)
         J = DiffEqArrayOperator(J)
       end
-      W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
+      W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec; transform=W_transform)
     end
     integrator.destats.nw += 1
   else
@@ -666,7 +670,7 @@ function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repea
       lcache.uf.tmp = @. nlsolver.tmp
       lcache.uf.uprev = @. integrator.uprev
     end
-    nlsolver.cache.W = calc_W(integrator, nlsolver.cache, dtgamma, repeat_step, true)
+    nlsolver.cache.W = calc_W(integrator, nlsolver, dtgamma, repeat_step, true)
     #TODO: jacobian reuse for oop
     new_jac && (nlsolver.cache.J_t = integrator.t)
     set_new_W!(nlsolver, new_W)
