@@ -104,6 +104,20 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
   else
     solve(linsolve;reltol)
   end
+
+  # TODO: this ignores the add of the `f` count for add_steps!
+  if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
+      !LinearSolve.needs_concrete_A(_alg.linsolve) &&
+      linsolve.A isa WOperator && linsolve.A.J isa SparseDiffTools.JacVec
+
+    if alg_autodiff(_alg)
+      integrator.destats.nf += linres.iters
+    else
+      integrator.destats.nf += 2*linres.iters
+    end
+  end
+
+  return linres
 end
 
 function wrapprecs(_Pl,_Pr,weight)

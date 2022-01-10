@@ -158,9 +158,16 @@ function resize_J_W!(cache, integrator, i)
       elseif cache.J isa SparseDiffTools.JacVec
         resize!(cache.J.cache1,i)
         resize!(cache.J.cache2,i)
+        resize!(cache.J.x,i)
+      end
+      if cache.W.jacvec !== nothing
+        resize!(cache.W.jacvec.cache1,i)
+        resize!(cache.W.jacvec.cache2,i)
+        resize!(cache.W.jacvec.x,i)
       end
       cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(
-                          f.mass_matrix, integrator.dt, cache.J, integrator.u;
+                          f.mass_matrix, integrator.dt, cache.J, integrator.u,
+                          cache.W.jacvec;
                           transform = cache.W.transform)
       cache.J = cache.W.J
     end
