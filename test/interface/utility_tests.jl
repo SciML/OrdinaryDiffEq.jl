@@ -12,7 +12,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
                     mass_matrix=mm,
                     jac=(u,p,t) -> A)
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
-  W = calc_W(integrator, integrator.cache.nlsolver.cache, dtgamma, false)
+  W = calc_W(integrator, integrator.cache.nlsolver, dtgamma, false)
   @test convert(AbstractMatrix, W) == concrete_W
   @test W \ u0 ≈ concrete_W \ u0
 
