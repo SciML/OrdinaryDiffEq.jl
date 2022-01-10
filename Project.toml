@@ -31,7 +31,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
 Adapt = "1.1, 2.0, 3.0"
-ArrayInterface = "2.7, 3.0"
+ArrayInterface = "2.7, 3.0, 4"
 DataStructures = "0.18"
 DiffEqBase = "6.75"
 DocStringExtensions = "0.8"
