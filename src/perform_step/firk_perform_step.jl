@@ -266,7 +266,13 @@ end
     needfactor = iter==1
 
     linsolve = cache.linsolve
-    linres = dolinsolve(integrator, linsolve; A = needfactor ? W1 : nothing, b = _vec(cubuff), linu = _vec(dw12))
+
+    if needfactor
+      linres = dolinsolve(integrator, linsolve; A = W1, b = _vec(cubuff), linu = _vec(dw12))
+    else
+      linres = dolinsolve(integrator, linsolve; A = nothing, b = _vec(cubuff), linu = _vec(dw12))
+    end
+
     cache.linsolve = linres.cache
 
     integrator.destats.nsolve += 1
@@ -597,13 +603,25 @@ end
     needfactor = iter==1 && new_W
 
     linsolve1 = cache.linsolve1
-    linres1 = dolinsolve(integrator, linsolve1; A = needfactor ? W1 : nothing, b = _vec(ubuff), linu = _vec(dw1))
+
+    if needfactor
+      linres1 = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff), linu = _vec(dw1))
+    else
+      linres1 = dolinsolve(integrator, linsolve1; A = nothing, b = _vec(ubuff), linu = _vec(dw1))
+    end
+
     cache.linsolve1 = linres1.cache
 
     @.. cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
 
     linsolve2 = cache.linsolve2
-    linres2 = dolinsolve(integrator, linsolve2; A = needfactor ? W2 : nothing, b = _vec(cubuff), linu = _vec(dw23))
+
+    if needfactor
+      linres2 = dolinsolve(integrator, linsolve2; A = W2, b = _vec(cubuff), linu = _vec(dw23))
+    else
+      linres2 = dolinsolve(integrator, linsolve2; A = nothing, b = _vec(cubuff), linu = _vec(dw23))
+    end
+
     cache.linsolve2 = linres2.cache
 
     integrator.destats.nsolve += 2
