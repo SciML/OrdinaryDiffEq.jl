@@ -96,6 +96,10 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
     diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
     max_order=12,min_order=3,init_order=5,threading=true,sequence = :bulirsch)
 
+    linsolve = (linsolve === nothing && (
+                threading == true || threading === PolyesterThreads)) ?
+                RFLUFactorization(;thread = Val(false)) : linsolve
+
     n_min = max(3,min_order)
     n_init = max(n_min + 1,init_order)
     n_max = max(n_init + 1, max_order)
@@ -182,6 +186,10 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(
   n_min = max(1,min_order)
   n_init = max(n_min,init_order)
   n_max = max(n_init,max_order)
+
+  linsolve = (linsolve === nothing && (
+              threading == true || threading === PolyesterThreads)) ?
+              RFLUFactorization(;thread = Val(false)) : linsolve
 
   # Warn user if orders have been changed
   if (min_order, init_order, max_order) != (n_min,n_init,n_max)
@@ -276,6 +284,10 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{tru
   n_init = max(n_min + 1, init_order)
   n_max = max(n_init + 1, max_order)
 
+  linsolve = (linsolve === nothing && (
+              threading == true || threading === PolyesterThreads)) ?
+              RFLUFactorization(;thread = Val(false)) : linsolve
+
   # Warn user if orders have been changed
   if (min_order, init_order, max_order) != (n_min,n_init,n_max)
     @warn "The range of extrapolation orders and/or the initial order given to the
@@ -319,6 +331,10 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val
   n_min = max(3, min_order)
   n_init = max(n_min + 1, init_order)
   n_max = max(n_init + 1, max_order)
+
+  linsolve = (linsolve === nothing && (
+              threading == true || threading === PolyesterThreads)) ?
+              RFLUFactorization(;thread = Val(false)) : linsolve
 
   # Warn user if orders have been changed
   if (min_order, init_order, max_order) != (n_min,n_init,n_max)
