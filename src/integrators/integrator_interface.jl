@@ -60,6 +60,8 @@ function set_proposed_dt!(integrator::ODEIntegrator,integrator2::ODEIntegrator)
 end
 
 @inline function DiffEqBase.get_du(integrator::ODEIntegrator)
+  integrator.cache isa FunctionMapCache || integrator.cache isa FunctionMapConstantCache &&
+                          error("Derivatives are not defined for this stepper.")
   return if isdefined(integrator, :fsallast)
     integrator.fsallast
   else
@@ -68,6 +70,8 @@ end
 end
 
 @inline function DiffEqBase.get_du!(out,integrator::ODEIntegrator)
+  integrator.cache isa FunctionMapCache || integrator.cache isa FunctionMapConstantCache &&
+                          error("Derivatives are not defined for this stepper.")
   if typeof(integrator.cache) <: FunctionMapCache
     out .= integrator.cache.tmp
   else
