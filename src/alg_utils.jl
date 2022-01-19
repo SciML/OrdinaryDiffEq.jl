@@ -161,7 +161,15 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
                         OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
                         DAEAlgorithm{0,AD,FDT}},u0::AbstractArray{T},p,prob) where {AD,FDT,T}
     alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
-    isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}())
+
+    if alg.linsolve === nothing
+      linsolve = LinearSolve.defaultalg(prob.f.jac_prototype,u0)
+    else
+      linsolve = alg.linsolve
+    end
+
+    isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}(),linsolve=linsolve)
+
     # If chunksize is zero, pick chunksize right at the start of solve and
     # then do function barrier to infer the full solve
     x = if prob.f.colorvec === nothing
@@ -173,10 +181,10 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     L = ArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
       cs = ForwardDiff.pickchunksize(x)
-      remake(alg,chunk_size=cs)
+      remake(alg,chunk_size=cs,linsolve=linsolve)
     else # statically sized
       cs = pick_static_chunksize(Val{L}())
-      remake(alg,chunk_size=cs)
+      remake(alg,chunk_size=cs,linsolve=linsolve)
     end
 end
 
