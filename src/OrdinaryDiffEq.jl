@@ -15,7 +15,7 @@ using DocStringExtensions
 
   using LoopVectorization
 
-  using LinearSolve
+  using LinearSolve, NonlinearSolve
 
   # Interfaces
   import DiffEqBase: solve!, step!, initialize!, isadaptive
