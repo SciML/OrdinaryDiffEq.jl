@@ -43,8 +43,14 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  end
+
   vecu = _vec(linres.u)
   veck₁ = _vec(k₁)
 
@@ -219,8 +225,14 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  end
+
   vecu = _vec(linres.u)
   veck₁ = _vec(k₁)
 
@@ -504,8 +516,14 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  end
+
   vecu = _vec(linres.u)
   veck1 = _vec(k1)
 
@@ -675,8 +693,14 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  end
+
   vecu = _vec(linres.u)
   veck1 = _vec(k1)
 
@@ -938,8 +962,14 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  end
+
   vecu = _vec(linres.u)
   veck1 = _vec(k1)
 
@@ -1086,8 +1116,13 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  end
 
   @inbounds @simd ivdep for i in eachindex(u)
     k1[i] = -linres.u[i]
@@ -1465,8 +1500,14 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  end
+
   vecu = _vec(linres.u)
   veck1 = _vec(k1)
 
@@ -1662,8 +1703,14 @@ end
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+  end
+
   vecu = _vec(linres.u)
   veck1 = _vec(k1)
 
