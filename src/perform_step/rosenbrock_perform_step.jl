@@ -119,8 +119,13 @@ end
                        integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
   linsolve = cache.linsolve
 
-  linres = dolinsolve(integrator, cache.linsolve; A = repeat_step ? nothing : W, b = _vec(linsolve_tmp),
-                      du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  if repeat_step
+    linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  else
+    linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+  end
 
   @inbounds @simd ivdep for i in eachindex(u)
     k₁[i] = -linres.u[i]
