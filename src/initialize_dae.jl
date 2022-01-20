@@ -196,7 +196,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     end
 
     nlprob = NonlinearProblem(nlequation_oop,u0)
-    nlsol = solve(nlprob,NewtonRaphson())
+    nlsol = solve(nlprob,NewtonRaphson(autodiff=false))
     integrator.u = nlsol.u
   end
   integrator.uprev = integrator.u
@@ -256,7 +256,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
   integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
   nlprob = NonlinearProblem(nlequation,u0)
-  sol = solve(nlprob,NewtonRaphson())
+  sol = solve(nlprob,NewtonRaphson(autodiff=false))
   integrator.u = sol.u
   integrator.uprev = integrator.u
   if alg_extrapolates(integrator.alg)
@@ -344,7 +344,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     u = u0
   end
 
-  alg_u = u[algebraic_vars]
+  alg_u = @view u[algebraic_vars]
 
   nlequation = @closure (x,_) -> begin
     alg_u .= x
@@ -353,7 +353,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
   end
 
   nlprob = NonlinearProblem(nlequation,u0[algebraic_vars])
-  sol = solve(nlprob,NewtonRaphson())
+  sol = solve(nlprob,NewtonRaphson(autodiff=false))
+
   alg_u .= sol.u
 
   if u0 isa Number
@@ -433,7 +434,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
   end
 
   nlprob = NonlinearProblem(nlequation,ifelse.(differential_vars,du,u))
-  sol = solve(nlprob,NewtonRaphson())
+  sol = solve(nlprob,NewtonRaphson(autodiff=false))
 
   du = ifelse.(differential_vars,sol.u,du)
   u  = ifelse.(differential_vars,u,sol.u)
