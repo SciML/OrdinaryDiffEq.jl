@@ -333,7 +333,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 
   du = f(u0,p,t)
-  resid = @view _vec(du)[algebraic_eqs]
+  resid = _vec(du)[algebraic_eqs]
 
   integrator.opts.internalnorm(resid,t) <= alg.abstol && return
 
@@ -344,12 +344,12 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     u = u0
   end
 
-  alg_u = @view u[algebraic_vars]
+  alg_u = u[algebraic_vars]
 
   nlequation = @closure (x,_) -> begin
     alg_u .= x
     du = f(u,p,t)
-    out .= @view du[algebraic_eqs]
+    du[algebraic_eqs]
   end
 
   nlprob = NonlinearProblem(nlequation,u0[algebraic_vars])
