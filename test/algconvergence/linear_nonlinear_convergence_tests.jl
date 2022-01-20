@@ -38,8 +38,8 @@ end
   end
 
   dts = 1 ./2 .^(14:-1:10)
-  Alg = KenCarp3(linsolve=LinearSolve.IterativeSolversJL_GMRES(),reltol=1e-16)
-  sim  = test_convergence(dts,prob,Alg)
+  Alg = KenCarp3(linsolve=LinearSolve.KrylovJL_GMRES())
+  sim  = test_convergence(dts,prob,Alg,reltol=1e-16)
   @test sim.𝒪est[:l2] ≈ alg_order(Alg) atol=0.2
 
   dts = 1 ./2 .^(8:-1:4)
