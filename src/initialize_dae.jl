@@ -172,7 +172,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
   update_coefficients!(M,u0,p,t)
   du = f(u0,p,t)
-  resid = @view _vec(du)[algebraic_eqs]
+  resid = _vec(du)[algebraic_eqs]
 
   integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
