@@ -788,7 +788,7 @@ end
 function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtprev,order,D,nlsolver,γₖ,dd,atmp,atmpm1,atmpp1,utilde,utildem1,utildep1,ϕ,u₀ = cache
-  
+
   if integrator.u_modified
     dtprev = one(dt)
     order = 1
@@ -1009,10 +1009,10 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     u₀ = u
   end
   markfirststage!(nlsolver)
-  
+
   nlsolver.z = u₀
   mass_matrix = f.mass_matrix
-  
+
   equi_ts = zeros(k-1)
   for i in 1:k-1
     equi_ts[i] = t - dt*i
@@ -1080,7 +1080,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
     atmp = calculate_residuals(_vec(lte), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
 
-    terk = estimate_terk(integrator, cache, k+1, max_order, u)
+    terk = estimate_terk(integrator, cache, k+1, Val(max_order), u)
     fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k,Val(max_order))
     terk = @.. fd_weights[1,k+1] * u
     if u isa Number
@@ -1098,14 +1098,14 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order}, repeat_s
 
     atmp = calculate_residuals(_vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
-    
+
     if k > 1
-      terkm1 = estimate_terk(integrator,cache,k,max_order,u)
+      terkm1 = estimate_terk(integrator,cache,k,Val(max_order),u)
       atmp = calculate_residuals(_vec(terkm1), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      terkm2 = estimate_terk(integrator,cache,k-1,max_order,u)
+      terkm2 = estimate_terk(integrator,cache,k-1,Val(max_order),u)
       atmp = calculate_residuals(_vec(terkm2), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm2 = integrator.opts.internalnorm(atmp,t)
     end
@@ -1207,17 +1207,17 @@ function perform_step!(integrator, cache::FBDFCache{max_order}, repeat_step=fals
     ts_tmp[1] = t+dt
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    estimate_terk!(integrator, cache, k+1, max_order)
+    estimate_terk!(integrator, cache, k+1, Val(max_order))
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
 
     if k > 1
-      estimate_terk!(integrator, cache, k, max_order)
+      estimate_terk!(integrator, cache, k, Val(max_order))
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      estimate_terk!(integrator, cache, k-1, max_order)
+      estimate_terk!(integrator, cache, k-1, Val(max_order))
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm2 = integrator.opts.internalnorm(atmp,t)
     end
