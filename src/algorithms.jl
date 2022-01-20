@@ -37,10 +37,11 @@ function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{
                         DAEAlgorithm{CS,AD,FDT,ST,CJ}};
                         linsolve, kwargs...) where {CS, AD, FDT, ST, CJ}
   T = SciMLBase.remaker_of(thing)
-  T(; chunk_size=Val{CS}(),autodiff=Val{AD}(),standardtag=Val{ST}(),
+  T(; SciMLBase.struct_as_namedtuple(thing)...,
+      chunk_size=Val{CS}(),autodiff=Val{AD}(),standardtag=Val{ST}(),
       concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
-      linsolve,
-      SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
+      linsolve = linsolve,
+      kwargs...)
 end
 
 ###############################################################################

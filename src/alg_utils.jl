@@ -170,18 +170,19 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
 
     isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}(),linsolve=linsolve)
 
-    # If chunksize is zero, pick chunksize right at the start of solve and
-    # then do function barrier to infer the full solve
-    x = if prob.f.colorvec === nothing
-      length(u0)
-    else
-      maximum(prob.f.colorvec)
-    end
-
     L = ArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
+
+      # If chunksize is zero, pick chunksize right at the start of solve and
+      # then do function barrier to infer the full solve
+      x = if prob.f.colorvec === nothing
+        length(u0)
+      else
+        maximum(prob.f.colorvec)
+      end
+      
       cs = ForwardDiff.pickchunksize(x)
-      remake(alg,chunk_size=cs,linsolve=linsolve)
+      remake(alg,chunk_size=Val{cs}(),linsolve=linsolve)
     else # statically sized
       cs = pick_static_chunksize(Val{L}())
       remake(alg,chunk_size=cs,linsolve=linsolve)
