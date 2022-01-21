@@ -250,7 +250,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     f((u-u0)/dt,u,p,t)
   end
 
-  nlequation = @closure (u,_) -> nlequation_oop(u)
+  nlequation = (u,_) -> nlequation_oop(u)
 
   resid = f(integrator.du,u0,p,t)
   integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
