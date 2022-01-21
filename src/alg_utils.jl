@@ -163,7 +163,8 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
 
     if alg.linsolve === nothing
-      if prob.f.f isa SciMLBase.AbstractDiffEqOperator
+      if prob.f isa ODEFunction && prob.f.f isa SciMLBase.AbstractDiffEqOperator ||
+         prob.f isa SplitFunction && prob.f.f1 isa SciMLBase.AbstractDiffEqOperator
         linsolve = LinearSolve.defaultalg(prob.f.f,u0)
       else
         linsolve = LinearSolve.defaultalg(prob.f.jac_prototype,u0)
@@ -196,7 +197,7 @@ end
 @generated function pick_static_chunksize(::Val{chunksize}) where chunksize
   x = ForwardDiff.pickchunksize(chunksize)
   :(Val{$x}())
-end
+end|
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm,u0,p,prob)
   algs = map(alg -> DiffEqBase.prepare_alg(alg, u0, p, prob), alg.algs)
