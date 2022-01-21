@@ -76,7 +76,7 @@ struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   init_order::Int
   threading::TO
 end
-AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
+AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=false) = AitkenNeville(max_order,min_order,init_order,threading)
 """
 ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
    Extrapolation of implicit Euler method with Romberg sequence.
