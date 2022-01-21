@@ -567,7 +567,7 @@ function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
   nothing
 end
 
-function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEqMutableCache, max_order)
+function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEqMutableCache, ::Val{max_order}) where {max_order}
   @unpack t,dt,u,cache,uprev = integrator
   @unpack atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history = cache
   k = cache.order
@@ -601,7 +601,7 @@ function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEq
   return k, terk
 end
 
-function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEqConstantCache, max_order)
+function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEqConstantCache, ::Val{max_order}) where max_order
   @unpack t,dt,u,cache,uprev = integrator
   @unpack ts_tmp,terkm2, terkm1, terk, terkp1,u_history = cache
   k = cache.order
@@ -645,7 +645,7 @@ end
 function stepsize_controller!(integrator, alg::Union{FBDF{max_order},DFBDF{max_order}}) where max_order
   @unpack cache = integrator
   cache.prev_order = cache.order
-  k, terk = choose_order!(alg, integrator, cache, max_order)
+  k, terk = choose_order!(alg, integrator, cache, Val(max_order))
   if k != cache.order
     integrator.cache.nconsteps = 0
     cache.order = k

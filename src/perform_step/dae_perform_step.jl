@@ -300,17 +300,17 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
 
 
-    terk = estimate_terk(integrator, cache, k+1, max_order, u)
+    terk = estimate_terk(integrator, cache, k+1, Val(max_order), u)
     atmp = calculate_residuals(_vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
-    
+
     if k > 1
-      terkm1 = estimate_terk(integrator, cache, k, max_order, u)
+      terkm1 = estimate_terk(integrator, cache, k, Val(max_order), u)
       atmp = calculate_residuals(_vec(terkm1), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      terkm2 = estimate_terk(integrator, cache, k-1, max_order, u)
+      terkm2 = estimate_terk(integrator, cache, k-1, Val(max_order), u)
       atmp = calculate_residuals(_vec(terkm2), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm2 = integrator.opts.internalnorm(atmp,t)
     end
@@ -349,7 +349,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
     @.. u₀ = u
   end
   markfirststage!(nlsolver)
-  
+
   for i in 1:k-1
     equi_ts[i] = t - dt*i
   end
@@ -398,17 +398,17 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
     ts_tmp[1] = t+dt
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
-    estimate_terk!(integrator, cache, k+1, max_order)
+    estimate_terk!(integrator, cache, k+1, Val(max_order))
     calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
     cache.terk = integrator.opts.internalnorm(atmp,t)
-    
+
     if k > 1
-      estimate_terk!(integrator, cache, k, max_order)
+      estimate_terk!(integrator, cache, k, Val(max_order))
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm1 = integrator.opts.internalnorm(atmp,t)
     end
     if k > 2
-      estimate_terk!(integrator, cache, k-1, max_order)
+      estimate_terk!(integrator, cache, k-1, Val(max_order))
       calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       cache.terkm2 = integrator.opts.internalnorm(atmp,t)
     end

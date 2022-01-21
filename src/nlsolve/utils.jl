@@ -151,14 +151,10 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
     # TODO: check if the solver is iterative
     weight = zero(u)
 
-    if islinear(f)
+    if islinear(f) || SciMLBase.has_jac(f)
       du1 = rate_prototype
       uf = nothing
       jac_config = nothing
-      linprob = LinearProblem(W,_vec(k); u0=_vec(dz))
-      Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
-      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                        Pl = Pl, Pr = Pr)
     else
       du1 = zero(rate_prototype)
       if isdae
@@ -167,11 +163,11 @@ function build_nlsolver(alg,nlalg::Union{NLFunctional,NLAnderson,NLNewton},u,upr
         uf = build_uf(alg,nf,t,p,Val(true))
       end
       jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,ztmp,dz)
-      linprob = LinearProblem(W,_vec(k); u0=_vec(dz))
-      Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
-      linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                        Pl = Pl, Pr = Pr)
     end
+    linprob = LinearProblem(W,_vec(k); u0=_vec(dz))
+    Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
+    linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                    Pl = Pl, Pr = Pr)
 
     tType = typeof(t)
     invγdt = inv(oneunit(t) * one(uTolType))
