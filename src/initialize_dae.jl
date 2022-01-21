@@ -172,7 +172,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
   update_coefficients!(M,u0,p,t)
   du = f(u0,p,t)
-  resid = @view _vec(du)[algebraic_eqs]
+  resid = _vec(du)[algebraic_eqs]
 
   integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
@@ -190,14 +190,14 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
     @.. integrator.u = integrator.uprev + z
   else
-    nlequation_oop = @closure u -> begin
+    nlequation_oop = @closure (u,_) -> begin
       update_coefficients!(M,u,p,t)
       M * (u-u0)/dt - f(u,p,t)
     end
 
-    nlequation! = @closure (out,u) -> out .= nlequation_oop(u)
-
-    integrator.u = nlsolve(nlequation!, u0).zero
+    nlprob = NonlinearProblem(nlequation_oop,u0)
+    nlsol = solve(nlprob,NewtonRaphson(autodiff=false))
+    integrator.u = nlsol.u
   end
   integrator.uprev = integrator.u
   if alg_extrapolates(integrator.alg)
@@ -250,12 +250,14 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     f((u-u0)/dt,u,p,t)
   end
 
-  nlequation! = @closure (out,u) -> out .= nlequation_oop(u)
+  nlequation = @closure (u,_) -> nlequation_oop(u)
 
   resid = f(integrator.du,u0,p,t)
   integrator.opts.internalnorm(resid,t) <= integrator.opts.abstol && return
 
-  integrator.u = nlsolve(nlequation!, u0).zero
+  nlprob = NonlinearProblem(nlequation,u0)
+  sol = solve(nlprob,NewtonRaphson(autodiff=false))
+  integrator.u = sol.u
   integrator.uprev = integrator.u
   if alg_extrapolates(integrator.alg)
     integrator.uprev2 = integrator.uprev
@@ -331,7 +333,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
 
   du = f(u0,p,t)
-  resid = @view _vec(du)[algebraic_eqs]
+  resid = _vec(du)[algebraic_eqs]
 
   integrator.opts.internalnorm(resid,t) <= alg.abstol && return
 
@@ -344,13 +346,16 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
   alg_u = @view u[algebraic_vars]
 
-  nlequation = @closure (out,x) -> begin
+  nlequation = @closure (x,_) -> begin
     alg_u .= x
     du = f(u,p,t)
-    out .= @view du[algebraic_eqs]
+    du[algebraic_eqs]
   end
-  r = nlsolve(nlequation, u0[algebraic_vars])
-  alg_u .= r.zero
+
+  nlprob = NonlinearProblem(nlequation,u0[algebraic_vars])
+  sol = solve(nlprob,NewtonRaphson(autodiff=false))
+
+  alg_u .= sol.u
 
   if u0 isa Number
     # This doesn't fix static arrays!
@@ -422,16 +427,17 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     du = integrator.du
   end
 
-  nlequation = @closure (out,x) -> begin
-    @. du = ifelse(differential_vars,x,du)
-    @. u  = ifelse(differential_vars,u,x)
-    out .= f(du, u, p, t)
+  nlequation = @closure (x,_) -> begin
+    du = ifelse.(differential_vars,x,du)
+    u  = ifelse.(differential_vars,u,x)
+    f(du, u, p, t)
   end
 
-  r = nlsolve(nlequation, ifelse.(differential_vars,du,u))
+  nlprob = NonlinearProblem(nlequation,ifelse.(differential_vars,du,u))
+  sol = solve(nlprob,NewtonRaphson(autodiff=false))
 
-  @. du = ifelse(differential_vars,r.zero,du)
-  @. u  = ifelse(differential_vars,u,r.zero)
+  du = ifelse.(differential_vars,sol.u,du)
+  u  = ifelse.(differential_vars,u,sol.u)
 
   if integrator.u isa Number && integrator.du isa Number
     # This doesn't fix static arrays!
