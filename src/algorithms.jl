@@ -104,6 +104,15 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
     n_init = max(n_min + 1,init_order)
     n_max = max(n_init + 1, max_order)
 
+    # Warn user if orders have been changed
+    if (min_order, init_order, max_order) != (n_min,n_init,n_max)
+      @warn "The range of extrapolation orders and/or the initial order given to the
+        `ImplicitEulerExtrapolation` algorithm are not valid and have been changed:
+        Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
+        Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
+        Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
+    end
+
     # Warn user if sequence has been changed:
     if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
       @warn "The `sequence` given to the `ImplicitEulerExtrapolation` algorithm
