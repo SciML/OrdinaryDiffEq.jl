@@ -167,8 +167,8 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
          (prob.f isa SplitFunction && prob.f.f1 isa SciMLBase.AbstractDiffEqOperator)
 
         linsolve = LinearSolve.defaultalg(prob.f.f,u0)
-      elseif prob.f.mass_matrix === nothing || (prob.f.mass_matrix !== nothing &&
-                              typeof(prob.f.mass_matrix) == prob.f.jac_prototype)
+      elseif (!@isdefined(prob.f, :mass_matrix)) || (prob.f.mass_matrix === nothing || (prob.f.mass_matrix !== nothing &&
+                              typeof(prob.f.mass_matrix) == prob.f.jac_prototype))
         linsolve = LinearSolve.defaultalg(prob.f.jac_prototype,u0)
       else
         # If mm is a sparse matrix and A is a DiffEqArrayOperator, then let linear
