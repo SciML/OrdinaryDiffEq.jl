@@ -163,7 +163,11 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
 
     if alg.linsolve === nothing
-      linsolve = LinearSolve.defaultalg(prob.f.jac_prototype,u0)
+      if prob.f.f isa SciMLBase.AbstractDiffEqOperator
+        linsolve = LinearSolve.defaultalg(prob.f.f,u0)
+      else
+        linsolve = LinearSolve.defaultalg(prob.f.jac_prototype,u0)
+      end
     else
       linsolve = alg.linsolve
     end
@@ -180,7 +184,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
       else
         maximum(prob.f.colorvec)
       end
-      
+
       cs = ForwardDiff.pickchunksize(x)
       remake(alg,chunk_size=Val{cs}(),linsolve=linsolve)
     else # statically sized
