@@ -94,7 +94,7 @@ end
 
 function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
     diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
-    max_order=12,min_order=3,init_order=5,threading=true,sequence = :bulirsch)
+    max_order=12,min_order=3,init_order=5,threading=false,sequence = :harmonic)
 
     linsolve = (linsolve === nothing && (
                 threading == true || threading === PolyesterThreads)) ?
@@ -103,18 +103,14 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
     n_min = max(3,min_order)
     n_init = max(n_min + 1,init_order)
     n_max = max(n_init + 1, max_order)
-    if threading
-      @warn "Threading in `ImplicitEulerExtrapolation` is currently disabled. Thus `threading` has been changed from `true` to `false`."
-      threading = false
-    end
 
     # Warn user if sequence has been changed:
     if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
       @warn "The `sequence` given to the `ImplicitEulerExtrapolation` algorithm
           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
           Thus it has been changed
-        :$(sequence) --> :bulirsch"
-      sequence = :bulirsch
+        :$(sequence) --> :harmonic"
+      sequence = :harmonic
     end
     ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
       linsolve,precs,n_max,n_min,n_init,threading,sequence)
