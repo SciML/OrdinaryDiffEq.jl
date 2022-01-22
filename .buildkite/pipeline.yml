@@ -143,3 +143,67 @@ steps:
     timeout_in_minutes: 240
     # Don't run Buildkite if the commit message includes the text [skip tests]
     if: build.message !~ /\[skip tests\]/
+
+  - label: "InterfaceIV"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'InterfaceIV'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "InterfaceIV LTS"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1.6"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'InterfaceIV'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "InterfaceV"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'InterfaceV'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+
+  - label: "InterfaceV LTS"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1.6"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+          julia_args: "--threads=auto"
+    agents:
+      os: "linux"
+      queue: "juliaecosystem"
+    env:
+      GROUP: 'InterfaceV'
+    timeout_in_minutes: 240
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
