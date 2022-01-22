@@ -76,7 +76,7 @@ struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   init_order::Int
   threading::TO
 end
-AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
+AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=false) = AitkenNeville(max_order,min_order,init_order,threading)
 """
 ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
    Extrapolation of implicit Euler method with Romberg sequence.
@@ -94,7 +94,7 @@ end
 
 function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
     diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
-    max_order=12,min_order=3,init_order=5,threading=true,sequence = :bulirsch)
+    max_order=12,min_order=3,init_order=5,threading=false,sequence = :harmonic)
 
     linsolve = (linsolve === nothing && (
                 threading == true || threading === PolyesterThreads)) ?
@@ -103,9 +103,14 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
     n_min = max(3,min_order)
     n_init = max(n_min + 1,init_order)
     n_max = max(n_init + 1, max_order)
-    if threading
-      @warn "Threading in `ImplicitEulerExtrapolation` is currently disabled. Thus `threading` has been changed from `true` to `false`."
-      threading = false
+
+    # Warn user if orders have been changed
+    if (min_order, init_order, max_order) != (n_min,n_init,n_max)
+      @warn "The range of extrapolation orders and/or the initial order given to the
+        `ImplicitEulerExtrapolation` algorithm are not valid and have been changed:
+        Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
+        Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
+        Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
     end
 
     # Warn user if sequence has been changed:
@@ -113,8 +118,8 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
       @warn "The `sequence` given to the `ImplicitEulerExtrapolation` algorithm
           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
           Thus it has been changed
-        :$(sequence) --> :bulirsch"
-      sequence = :bulirsch
+        :$(sequence) --> :harmonic"
+      sequence = :harmonic
     end
     ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
       linsolve,precs,n_max,n_min,n_init,threading,sequence)
