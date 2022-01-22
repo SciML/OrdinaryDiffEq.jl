@@ -123,7 +123,8 @@ function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{
   haslinsolve = hasfield(typeof(alg),:linsolve)
 
   if !DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && !DiffEqBase.has_Wfact_t(f) &&
-    ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve && LinearSolve.needs_concrete_A(alg.linsolve)))) ||
+    ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
+    (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
       (concrete_jac(alg) !== nothing && concrete_jac(alg)))
     jac_prototype = f.jac_prototype
     sparsity,colorvec = sparsity_colorvec(f,u)
