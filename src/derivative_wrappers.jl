@@ -122,14 +122,10 @@ end
 function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where {transform,F1,F2}
   haslinsolve = hasfield(typeof(alg),:linsolve)
 
-  if (!DiffEqBase.has_jac(f) && haslinsolve && alg.linsolve === nothing) ||
-     (((!transform && !DiffEqBase.has_Wfact(f)) || (transform && !DiffEqBase.has_Wfact_t(f))) &&
-     !(f.jac_prototype === nothing && !DiffEqBase.has_jac(f) && haslinsolve &&
-                concrete_jac(alg) === nothing && alg.linsolve !== nothing &&
-                            !LinearSolve.needs_concrete_A(alg.linsolve)) &&
-     !(f.jac_prototype !== nothing && !(f.jac_prototype isa AbstractMatrix))) ||
-     (concrete_jac(alg) !== nothing && concrete_jac(alg))
-
+  if !DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && !DiffEqBase.has_Wfact_t(f) &&
+    ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
+    (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
+      (concrete_jac(alg) !== nothing && concrete_jac(alg)))
     jac_prototype = f.jac_prototype
     sparsity,colorvec = sparsity_colorvec(f,u)
     if alg_autodiff(alg)
@@ -140,7 +136,6 @@ function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{
       else
         typeof(ForwardDiff.Tag(uf,eltype(u)))
       end
-
       jac_config = ForwardColorJacCache(uf,uprev,_chunksize;colorvec=colorvec,sparsity=sparsity,tag=T)
     else
       if alg_difftype(alg) !== Val{:complex}
