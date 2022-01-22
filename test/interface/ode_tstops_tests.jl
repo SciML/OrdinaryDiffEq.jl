@@ -63,3 +63,12 @@ end
     sol = solve(prob, Tsit5(), saveat=saveat, tstops=tstop, callback=callback)
     @test sol.t[end] == 1.5574
 end
+
+@testset "Tstops Type Conversion" begin
+  called = Ref(false)
+  tval = rand()
+  ff(du,u,p,t) = du .= 0
+  cb = DiscreteCallback((u,t,integrator)->t == Float32(tval),integrator->(called[]=true))
+  prob = ODEProblem(ff,[0.0],(0f0,1f0))
+  sol = solve(prob,Tsit5(),tstops = [tval], callback=cb)
+end
