@@ -525,16 +525,16 @@ end
   tdir_tf = tdir * tf
 
   if isempty(d_discontinuities) && isempty(tstops) # TODO: Specialize more
-    push!(tstops_internal, tdir_tf)
+    push!(tstops_internal, convert(T,tdir_tf))
   else
     for t in tstops
       tdir_t = tdir * t
-      tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+      tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, convert(T,tdir_t))
     end
 
     for t in d_discontinuities
       tdir_t = tdir * t
-      tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+      tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, convert(T,tdir_t))
     end
 
     push!(tstops_internal, tdir_tf)
@@ -555,12 +555,12 @@ function initialize_saveat(::Type{T}, saveat, tspan) where T
   if typeof(saveat) <: Number
     directional_saveat = tdir * abs(saveat)
     for t in (t0 + directional_saveat):directional_saveat:tf
-      push!(saveat_internal, tdir * t)
+      push!(saveat_internal, convert(T,tdir * t))
     end
   elseif !isempty(saveat)
     for t in saveat
       tdir_t = tdir * t
-      tdir_t0 < tdir_t ≤ tdir_tf && push!(saveat_internal, tdir_t)
+      tdir_t0 < tdir_t ≤ tdir_tf && push!(saveat_internal, convert(T,tdir_t))
     end
   end
 
@@ -576,7 +576,7 @@ function initialize_d_discontinuities(::Type{T}, d_discontinuities, tspan) where
   tdir = sign(tf - t0)
 
   for t in d_discontinuities
-    push!(d_discontinuities_internal, tdir * t)
+    push!(d_discontinuities_internal, convert(T,tdir * t))
   end
 
   return d_discontinuities_internal
