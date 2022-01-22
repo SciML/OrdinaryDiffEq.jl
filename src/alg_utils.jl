@@ -161,22 +161,43 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
                         OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
                         DAEAlgorithm{0,AD,FDT}},u0::AbstractArray{T},p,prob) where {AD,FDT,T}
     alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
-    isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}())
-    # If chunksize is zero, pick chunksize right at the start of solve and
-    # then do function barrier to infer the full solve
-    x = if prob.f.colorvec === nothing
-      length(u0)
+
+    if alg.linsolve === nothing
+      if (prob.f isa ODEFunction && prob.f.f isa SciMLBase.AbstractDiffEqOperator) ||
+         (prob.f isa SplitFunction && prob.f.f1 isa SciMLBase.AbstractDiffEqOperator)
+
+        linsolve = LinearSolve.defaultalg(prob.f.f,u0)
+      elseif prob isa ODEProblem && (prob.f.mass_matrix === nothing ||
+            (prob.f.mass_matrix !== nothing &&
+                              !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractDiffEqOperator)))
+        linsolve = LinearSolve.defaultalg(prob.f.jac_prototype,u0)
+      else
+        # If mm is a sparse matrix and A is a DiffEqArrayOperator, then let linear
+        # solver choose things later
+        linsolve = nothing
+      end
     else
-      maximum(prob.f.colorvec)
+      linsolve = alg.linsolve
     end
+
+    isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}(),linsolve=linsolve)
 
     L = ArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
+
+      # If chunksize is zero, pick chunksize right at the start of solve and
+      # then do function barrier to infer the full solve
+      x = if prob.f.colorvec === nothing
+        length(u0)
+      else
+        maximum(prob.f.colorvec)
+      end
+
       cs = ForwardDiff.pickchunksize(x)
-      remake(alg,chunk_size=cs)
+      remake(alg,chunk_size=Val{cs}(),linsolve=linsolve)
     else # statically sized
       cs = pick_static_chunksize(Val{L}())
-      remake(alg,chunk_size=cs)
+      remake(alg,chunk_size=cs,linsolve=linsolve)
     end
 end
 
