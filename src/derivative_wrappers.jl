@@ -122,10 +122,12 @@ end
 function DiffEqBase.build_jac_config(alg,f::F1,uf::F2,du1,uprev,u,tmp,du2,::Val{transform}=Val(true)) where {transform,F1,F2}
   haslinsolve = hasfield(typeof(alg),:linsolve)
 
-  if !DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && !DiffEqBase.has_Wfact_t(f) &&
-    ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve &&
+  if !DiffEqBase.has_jac(f) && # No Jacobian if has analytical solution
+    (transform || !DiffEqBase.has_Wfact(f)) && # No Jacobian if has_Wfact and Wfact is the one that's used
+    (!transform || !DiffEqBase.has_Wfact_t(f)) && # No Jacobian has_Wfact and Wfact_t is the one that's used
+    ((concrete_jac(alg) === nothing && (!haslinsolve || (haslinsolve && # No Jacobian if linsolve doesn't want it
     (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
-      (concrete_jac(alg) !== nothing && concrete_jac(alg)))
+      (concrete_jac(alg) !== nothing && concrete_jac(alg))) # Jacobian if explicitly asked for
     jac_prototype = f.jac_prototype
     sparsity,colorvec = sparsity_colorvec(f,u)
     if alg_autodiff(alg)
