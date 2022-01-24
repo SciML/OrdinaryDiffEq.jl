@@ -593,10 +593,6 @@ function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEq
       terkm2 = integrator.opts.internalnorm(atmp,t)
       k -= 1
     end
-    if !(terkm1 > terk > terkp1) && k == 2
-      k -= 1
-      terk = terkm1
-    end
   end
   return k, terk
 end
@@ -621,7 +617,6 @@ function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEq
         for i in 2:k-2
           terk_tmp += fd_weights[i,k-2] * u_history[i-1]
         end
-        #@show fd_weights,u_history,u,terk
         terk_tmp *= abs(dt^(k-2))
       else
         vc = _vec(terk_tmp)
@@ -633,10 +628,6 @@ function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEq
       atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       terkm2 = integrator.opts.internalnorm(atmp,t)
       k -= 1
-    end
-    if !(terkm1 > terk > terkp1) && k == 2
-      k -= 1
-      terk = terkm1
     end
   end
   return k, terk
@@ -844,7 +835,6 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHair
   # Compute new order based on available quantities
   win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perfom_step! of the last step
   tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
-  #@show size(dt_new)
   fill!(dt_new, zero(eltype(dt_new)))
   @.. Q = integrator.dt/Q
   copyto!(dt_new,win_min_old,Q,win_min_old,(max(n_curr, n_old) + 1) - win_min_old + 1)
