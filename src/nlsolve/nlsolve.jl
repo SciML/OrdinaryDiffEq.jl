@@ -1,3 +1,5 @@
+@inline eps_around_one(θ::T) where T = 100sqrt(eps(one(θ)))
+
 """
     nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
@@ -41,6 +43,21 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
+
+      # When one Newton iteration basically does nothing, it's likely that we
+      # are at the percision limit of floating point number. Thus, we just call
+      # it convergence/divergence according to `ndz` directly.
+      if abs(θ - one(θ)) <= eps_around_one(θ)
+        if ndz <= one(ndz)
+          nlsolver.status = Convergence
+          nlsolver.nfails = 0
+          break
+        else
+          nlsolver.status = Divergence
+          nlsolver.nfails += 1
+          break
+        end
+      end
 
       # divergence
       if θ > 2
