@@ -84,6 +84,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_II" || GROUP == "Int
   @time @safetestset "Differentiation Direction Tests" begin include("integrators/diffdir_tests.jl") end
   @time @safetestset "Resize Tests" begin include("integrators/resize_tests.jl") end
   @time @safetestset "DAE Initialization Tests" begin include("integrators/dae_initialization_tests.jl") end
+  @time @safetestset "DAE Event Tests" begin include("integrators/dae_event.jl") end
   @time @safetestset "Cache Tests" begin include("integrators/ode_cache_tests.jl") end
   @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
 end

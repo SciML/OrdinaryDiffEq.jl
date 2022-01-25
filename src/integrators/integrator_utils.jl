@@ -381,12 +381,17 @@ end
 function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
   integrator.destats.nf += 1
-  if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache ||
-     (typeof(integrator.cache) <: CompositeCache &&
-      typeof(integrator.cache.caches[1]) <: OrdinaryDiffEqMutableCache)
-    integrator.f(integrator.fsalfirst,integrator.u,integrator.p,integrator.t)
+
+  if integrator.sol.prob isa DAEProblem
+    DiffEqBase.initialize_dae!(integrator)
   else
-    integrator.fsalfirst = integrator.f(integrator.u,integrator.p,integrator.t)
+    if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache ||
+       (typeof(integrator.cache) <: CompositeCache &&
+        typeof(integrator.cache.caches[1]) <: OrdinaryDiffEqMutableCache)
+      integrator.f(integrator.fsalfirst,integrator.u,integrator.p,integrator.t)
+    else
+      integrator.fsalfirst = integrator.f(integrator.u,integrator.p,integrator.t)
+    end
   end
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false
