@@ -382,7 +382,7 @@ function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
   integrator.destats.nf += 1
 
-  if integrator.isdae
+  if integrator.sol.prob isa DAEProblem
     DiffEqBase.initialize_dae!(integrator)
   else
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache ||
