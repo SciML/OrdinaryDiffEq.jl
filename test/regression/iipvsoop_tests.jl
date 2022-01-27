@@ -127,8 +127,8 @@ end
   sol_ip = solve(prob_ip, alg, dt=0.0125)
   sol_scalar = solve(prob_scalar, alg, dt=0.0125)
 
-  @test_broken sol_ip(ts, idxs=1) ≈ sol_scalar(ts)
-  @test_broken sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
+  @test sol_ip(ts, idxs=1) ≈ sol_scalar(ts)
+  @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
 end
 
 rkc_algs = [RKC(),ROCK2(),ROCK4(),SERK2()]

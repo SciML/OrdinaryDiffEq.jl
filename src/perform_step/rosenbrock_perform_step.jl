@@ -986,8 +986,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck2 = _vec(k2)
-  @.. veck2 = -vecu
+  @.. k2 = -linres.u
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -1003,8 +1002,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck3 = _vec(k3)
-  @.. veck3 = -vecu
+  @.. k3 = -linres.u
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -1020,8 +1018,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck4 = _vec(k4)
-  @.. veck4 = -vecu
+  @.. k4 = -linres.u
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -1037,8 +1034,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck5 = _vec(k5)
-  @.. veck5 = -vecu
+  @.. k5 = -linres.u
   integrator.destats.nsolve += 1
 
   u .+= k5
@@ -1054,8 +1050,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck6 = _vec(k6)
-  @.. veck6 = -vecu
+  @.. k6 = -linres.u
   integrator.destats.nsolve += 1
 
   u .+= k6
