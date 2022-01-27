@@ -409,7 +409,7 @@ function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
 end
 
 function initialize!(integrator, cache::Union{Rosenbrock33Cache,
-                                              Rosenbrock34Cache
+                                              Rosenbrock34Cache,
                                               Rosenbrock4Cache})
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
