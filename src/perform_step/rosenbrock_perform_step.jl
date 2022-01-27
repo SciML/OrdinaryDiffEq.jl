@@ -45,10 +45,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   vecu = _vec(linres.u)
@@ -127,10 +127,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   @inbounds @simd ivdep for i in eachindex(u)
@@ -227,10 +227,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   vecu = _vec(linres.u)
@@ -395,9 +395,7 @@ end
 end
 
 function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
-                                              Rosenbrock34ConstantCache,
-                                              Rosenbrock4ConstantCache,
-                                              Rosenbrock5ConstantCache})
+                                              Rosenbrock34ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -410,9 +408,7 @@ function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
 end
 
 function initialize!(integrator, cache::Union{Rosenbrock33Cache,
-                                              Rosenbrock34Cache,
-                                              Rosenbrock4Cache,
-                                              Rosenbrock5Cache})
+                                              Rosenbrock34Cache})
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -518,10 +514,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -695,10 +691,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -709,7 +705,7 @@ end
 
   #=
   a21 == 0 and c2 == 0
-  so du = cache.fsalfirst!
+  so du = nothing!
   @.. u = uprev + a21*k1
 
   f(du, u, p, t+c2*dt)
@@ -788,7 +784,7 @@ end
 
 #### Rodas4 type method
 
-function initialize!(integrator, cache::Rodas4ConstantCache)
+function initialize!(integrator, cache::Union{Rodas4ConstantCache,Rosenbrock5ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   # Avoid undefined entries if k is an array of arrays
@@ -916,7 +912,7 @@ end
 end
 
 
-function initialize!(integrator, cache::Rodas4Cache)
+function initialize!(integrator, cache::Union{Rodas4Cache,Rosenbrock5Cache})
   integrator.kshortsize = 2
   @unpack dense1,dense2 = cache
   resize!(integrator.k, integrator.kshortsize)
@@ -964,10 +960,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -1118,10 +1114,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1429,8 +1425,6 @@ end
   k8 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k8
-  du = f(u, p, t+dt)
-  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     atmp = calculate_residuals(k8, uprev, u, integrator.opts.abstol,
@@ -1444,13 +1438,12 @@ end
     integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
   end
 
-  integrator.fsallast = du
   integrator.u = u
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
+  @unpack du,du1,du2,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Assignments
@@ -1502,10 +1495,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -1634,8 +1627,6 @@ end
   integrator.destats.nsolve += 1
 
   u .+= k8
-  f( fsallast,  u, p, t+dt)
-  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, k8, uprev, u, integrator.opts.abstol,
@@ -1653,7 +1644,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache{<:Array}, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
+  @unpack du,du1,du2,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Assignments
@@ -1705,10 +1696,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -1920,8 +1911,6 @@ end
   @inbounds @simd ivdep for i in eachindex(u)
     u[i] += k8[i]
   end
-  f( fsallast,  u, p, t+dt)
-  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, k8, uprev, u, integrator.opts.abstol,
