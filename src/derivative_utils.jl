@@ -34,7 +34,6 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
       end
     end
 
-    f(fsalfirst, uprev, p, t)
     integrator.destats.nf += 1
     @.. linsolve_tmp = fsalfirst + dtd1*dT
   end
