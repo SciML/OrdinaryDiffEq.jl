@@ -1,5 +1,5 @@
 function initialize!(integrator, cache::Union{Rosenbrock23Cache,
-                                              Rosenbrock32Cache,})
+                                              Rosenbrock32Cache})
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -37,6 +37,10 @@ end
   γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
+
+  if repeat_step
+    f(integrator.fsalfirst,uprev,p,t)
+  end
 
   new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
@@ -118,6 +122,10 @@ end
   γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
+
+  if repeat_step
+    f(integrator.fsalfirst,uprev,p,t)
+  end
 
   new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
@@ -220,6 +228,10 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  if repeat_step
+    f(integrator.fsalfirst,uprev,p,t)
+  end
+
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -297,6 +309,10 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  if repeat_step
+    integrator.fsalfirst = f(uprev,p,t)
+  end
+
   mass_matrix = integrator.f.mass_matrix
 
   # Time derivative
@@ -349,12 +365,14 @@ end
 
   mass_matrix = integrator.f.mass_matrix
 
+  if repeat_step
+    integrator.fsalfirst = f(uprev,p,t)
+  end
+
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, γ, repeat_step)
-
-  #f₀ = f(uprev, p, t)
 
   k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
