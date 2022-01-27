@@ -395,7 +395,8 @@ end
 end
 
 function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
-                                              Rosenbrock34ConstantCache})
+                                              Rosenbrock34ConstantCache,
+                                              Rosenbrock4ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -408,7 +409,8 @@ function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
 end
 
 function initialize!(integrator, cache::Union{Rosenbrock33Cache,
-                                              Rosenbrock34Cache})
+                                              Rosenbrock34Cache
+                                              Rosenbrock4Cache})
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -953,6 +955,7 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -966,10 +969,7 @@ end
                         du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
-  vecu = _vec(linres.u)
-  veck1 = _vec(k1)
-
-  @.. veck1 = -vecu
+  @.. k1 = -linres.u
 
   integrator.destats.nsolve += 1
 
@@ -1107,6 +1107,7 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -1488,6 +1489,7 @@ end
   dtd5 = dt*d5
   dtgamma = dt*gamma
 
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -1689,6 +1691,7 @@ end
   dtd5 = dt*d5
   dtgamma = dt*gamma
 
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
