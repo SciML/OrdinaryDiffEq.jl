@@ -40,6 +40,7 @@ end
 
   if repeat_step
     f(integrator.fsalfirst,uprev,p,t)
+    integrator.destats.nf += 1
   end
 
   new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -49,10 +50,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   vecu = _vec(linres.u)
@@ -125,6 +126,7 @@ end
 
   if repeat_step
     f(integrator.fsalfirst,uprev,p,t)
+    integrator.destats.nf += 1
   end
 
   new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -135,10 +137,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   @inbounds @simd ivdep for i in eachindex(u)
@@ -230,6 +232,7 @@ end
 
   if repeat_step
     f(integrator.fsalfirst,uprev,p,t)
+    integrator.destats.nf += 1
   end
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -239,10 +242,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   vecu = _vec(linres.u)
@@ -311,6 +314,7 @@ end
 
   if repeat_step
     integrator.fsalfirst = f(uprev,p,t)
+    integrator.destats.nf += 1
   end
 
   mass_matrix = integrator.f.mass_matrix
@@ -367,6 +371,7 @@ end
 
   if repeat_step
     integrator.fsalfirst = f(uprev,p,t)
+    integrator.destats.nf += 1
   end
 
   # Time derivative
@@ -534,10 +539,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -711,10 +716,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -725,7 +730,7 @@ end
 
   #=
   a21 == 0 and c2 == 0
-  so du = nothing!
+  so du = integrator.fsalfirst!
   @.. u = uprev + a21*k1
 
   f(du, u, p, t+c2*dt)
@@ -974,6 +979,8 @@ end
   dtgamma = dt*gamma
 
   f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
+
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -981,10 +988,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   @.. k1 = -linres.u
@@ -1121,6 +1128,8 @@ end
   dtgamma = dt*gamma
 
   f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
+
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -1128,10 +1137,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   @inbounds @simd ivdep for i in eachindex(u)
@@ -1503,6 +1512,8 @@ end
   dtgamma = dt*gamma
 
   f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
+
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -1510,10 +1521,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -1705,6 +1716,8 @@ end
   dtgamma = dt*gamma
 
   f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
+
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -1712,10 +1725,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = nothing, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
