@@ -34,8 +34,6 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
       end
     end
 
-    f(fsalfirst, uprev, p, t)
-    integrator.destats.nf += 1
     @.. linsolve_tmp = fsalfirst + dtd1*dT
   end
 end
@@ -58,8 +56,6 @@ function calc_tderivative!(integrator::ODEIntegrator{algType,IIP,<:Array}, cache
       end
     end
 
-    f(fsalfirst, uprev, p, t)
-    integrator.destats.nf += 1
     @inbounds @simd ivdep for i in eachindex(uprev)
       linsolve_tmp[i] = fsalfirst[i] + dtd1*dT[i]
     end

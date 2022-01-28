@@ -6,6 +6,7 @@ isfsal(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
+isfsal(alg::Rodas5) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false

@@ -1,5 +1,5 @@
 function initialize!(integrator, cache::Union{Rosenbrock23Cache,
-                                              Rosenbrock32Cache,})
+                                              Rosenbrock32Cache})
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -38,6 +38,11 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  if repeat_step
+    f(integrator.fsalfirst,uprev,p,t)
+    integrator.destats.nf += 1
+  end
+
   new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -45,10 +50,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   vecu = _vec(linres.u)
@@ -119,6 +124,11 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  if repeat_step
+    f(integrator.fsalfirst,uprev,p,t)
+    integrator.destats.nf += 1
+  end
+
   new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -127,10 +137,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   @inbounds @simd ivdep for i in eachindex(u)
@@ -220,6 +230,11 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  if repeat_step
+    f(integrator.fsalfirst,uprev,p,t)
+    integrator.destats.nf += 1
+  end
+
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -227,10 +242,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = γ))
   end
 
   vecu = _vec(linres.u)
@@ -297,6 +312,11 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  if repeat_step
+    integrator.fsalfirst = f(uprev,p,t)
+    integrator.destats.nf += 1
+  end
+
   mass_matrix = integrator.f.mass_matrix
 
   # Time derivative
@@ -349,12 +369,15 @@ end
 
   mass_matrix = integrator.f.mass_matrix
 
+  if repeat_step
+    integrator.fsalfirst = f(uprev,p,t)
+    integrator.destats.nf += 1
+  end
+
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, γ, repeat_step)
-
-  #f₀ = f(uprev, p, t)
 
   k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
@@ -396,8 +419,7 @@ end
 
 function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
                                               Rosenbrock34ConstantCache,
-                                              Rosenbrock4ConstantCache,
-                                              Rosenbrock5ConstantCache})
+                                              Rosenbrock4ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -411,8 +433,7 @@ end
 
 function initialize!(integrator, cache::Union{Rosenbrock33Cache,
                                               Rosenbrock34Cache,
-                                              Rosenbrock4Cache,
-                                              Rosenbrock5Cache})
+                                              Rosenbrock4Cache})
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -518,10 +539,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -695,10 +716,10 @@ end
 
   if repeat_step
     linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   else
     linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-                        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
+                        du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
   vecu = _vec(linres.u)
@@ -709,7 +730,7 @@ end
 
   #=
   a21 == 0 and c2 == 0
-  so du = cache.fsalfirst!
+  so du = integrator.fsalfirst!
   @.. u = uprev + a21*k1
 
   f(du, u, p, t+c2*dt)
@@ -788,7 +809,7 @@ end
 
 #### Rodas4 type method
 
-function initialize!(integrator, cache::Rodas4ConstantCache)
+function initialize!(integrator, cache::Union{Rodas4ConstantCache,Rosenbrock5ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   # Avoid undefined entries if k is an array of arrays
@@ -916,7 +937,7 @@ end
 end
 
 
-function initialize!(integrator, cache::Rodas4Cache)
+function initialize!(integrator, cache::Union{Rodas4Cache,Rosenbrock5Cache})
   integrator.kshortsize = 2
   @unpack dense1,dense2 = cache
   resize!(integrator.k, integrator.kshortsize)
@@ -957,6 +978,9 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
+
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
@@ -970,10 +994,7 @@ end
                         du = cache.fsalfirst, u = u, p = p, t = t, weight = weight, solverdata = (;gamma = dtgamma))
   end
 
-  vecu = _vec(linres.u)
-  veck1 = _vec(k1)
-
-  @.. veck1 = -vecu
+  @.. k1 = -linres.u
 
   integrator.destats.nsolve += 1
 
@@ -990,8 +1011,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck2 = _vec(k2)
-  @.. veck2 = -vecu
+  @.. k2 = -linres.u
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -1007,8 +1027,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck3 = _vec(k3)
-  @.. veck3 = -vecu
+  @.. k3 = -linres.u
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -1024,8 +1043,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck4 = _vec(k4)
-  @.. veck4 = -vecu
+  @.. k4 = -linres.u
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -1041,8 +1059,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck5 = _vec(k5)
-  @.. veck5 = -vecu
+  @.. k5 = -linres.u
   integrator.destats.nsolve += 1
 
   u .+= k5
@@ -1058,8 +1075,7 @@ end
   end
 
   linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-  veck6 = _vec(k6)
-  @.. veck6 = -vecu
+  @.. k6 = -linres.u
   integrator.destats.nsolve += 1
 
   u .+= k6
@@ -1110,6 +1126,9 @@ end
   dtd3 = dt*d3
   dtd4 = dt*d4
   dtgamma = dt*gamma
+
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1429,8 +1448,6 @@ end
   k8 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k8
-  du = f(u, p, t+dt)
-  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     atmp = calculate_residuals(k8, uprev, u, integrator.opts.abstol,
@@ -1444,13 +1461,12 @@ end
     integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
   end
 
-  integrator.fsallast = du
   integrator.u = u
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
+  @unpack du,du1,du2,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Assignments
@@ -1494,6 +1510,9 @@ end
   dtd4 = dt*d4
   dtd5 = dt*d5
   dtgamma = dt*gamma
+
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1634,8 +1653,6 @@ end
   integrator.destats.nsolve += 1
 
   u .+= k8
-  f( fsallast,  u, p, t+dt)
-  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, k8, uprev, u, integrator.opts.abstol,
@@ -1653,7 +1670,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache{<:Array}, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
+  @unpack du,du1,du2,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp,weight = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Assignments
@@ -1697,6 +1714,9 @@ end
   dtd4 = dt*d4
   dtd5 = dt*d5
   dtgamma = dt*gamma
+
+  f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+  integrator.destats.nf += 1
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1920,8 +1940,6 @@ end
   @inbounds @simd ivdep for i in eachindex(u)
     u[i] += k8[i]
   end
-  f( fsallast,  u, p, t+dt)
-  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, k8, uprev, u, integrator.opts.abstol,
