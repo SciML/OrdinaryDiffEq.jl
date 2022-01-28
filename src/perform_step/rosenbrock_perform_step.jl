@@ -1949,8 +1949,10 @@ end
 
   if integrator.opts.calck
     @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
-    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
-    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
+    @inbounds @simd ivdep for i in eachindex(u)
+      integrator.k[1][i] = h21*k1[i] + h22*k2[i] + h23*k3[i] + h24*k4[i] + h25*k5[i] + h26*k6[i] + h27*k7[i]
+      integrator.k[2][i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i] + h36*k6[i] + h37*k7[i]
+    end
   end
   cache.linsolve = linres.cache
 end
