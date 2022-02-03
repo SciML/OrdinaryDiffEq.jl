@@ -2917,7 +2917,7 @@ When applied to a `SplitODEProblem` of the form
 ```
 u'(t) = f1(u) + f2(u)
 ```
-A classical additive Runge-Kutta method `IMEXEuler(ark=true)` in the sense of
+A classical additive Runge-Kutta method in the sense of
 [Araújo, Murua, Sanz-Serna (1997)](https://doi.org/10.1137/S0036142995292128)
 consisting of the implicit and the explicit Euler method given by
 ```
