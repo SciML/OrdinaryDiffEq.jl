@@ -278,7 +278,7 @@ using DocStringExtensions
 
   export VCABM
 
-  export IMEXEuler, CNAB2, CNLF2
+  export IMEXEuler, IMEXEulerARK, CNAB2, CNLF2
 
   export AN5, JVODE, JVODE_Adams, JVODE_BDF
 

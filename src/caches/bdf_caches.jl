@@ -52,6 +52,7 @@ end
 
 @cache mutable struct SBDFConstantCache{rateType,N,uType} <: OrdinaryDiffEqConstantCache
   cnt::Int
+  ark::Bool
   k2::rateType
   nlsolver::N
   uprev2::uType
@@ -66,6 +67,7 @@ end
 
 @cache mutable struct SBDFCache{uType,rateType,N} <: OrdinaryDiffEqMutableCache
   cnt::Int
+  ark::Bool
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -90,7 +92,7 @@ function alg_cache(alg::SBDF,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBot
 
   uprev2 = u; uprev3 = u; uprev4 = u
 
-  SBDFConstantCache(1,k2,nlsolver,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
+  SBDFConstantCache(1,alg.ark,k2,nlsolver,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
 function alg_cache(alg::SBDF,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
@@ -110,7 +112,7 @@ function alg_cache(alg::SBDF,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBot
   uprev3 = order >= 3 ? zero(u) : uprev2
   uprev4 = order == 4 ? zero(u) : uprev2
 
-  SBDFCache(1,u,uprev,fsalfirst,nlsolver,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
+  SBDFCache(1,alg.ark,u,uprev,fsalfirst,nlsolver,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
 # QNDF1

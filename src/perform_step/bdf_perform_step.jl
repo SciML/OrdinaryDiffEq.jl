@@ -191,6 +191,11 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
   integrator.iter == 1 && !integrator.u_modified && ( cnt = cache.cnt = 1 )
   nlsolver.γ = γ = inv(γₖ[cnt])
+  if cache.ark
+    # Additive Runge-Kutta Method
+    f2(du₂, uprev + dt*du₁, p, t)
+    integrator.destats.nf2 += 1
+  end
   if cnt == 1
     tmp = uprev + dt*du₂
   elseif cnt == 2
@@ -257,6 +262,11 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   integrator.iter == 1 && !integrator.u_modified && ( cnt = cache.cnt = 1 )
   nlsolver.γ = γ = inv(γₖ[cnt])
   # Explicit part
+  if cache.ark
+    # Additive Runge-Kutta Method
+    f2(du₂, uprev + dt*du₁, p, t)
+    integrator.destats.nf2 += 1
+  end
   if cnt == 1
     @.. tmp = uprev + dt*du₂
   elseif cnt == 2
