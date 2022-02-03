@@ -2855,27 +2855,28 @@ struct SBDF{CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,F
   linsolve::F
   nlsolve::F2
   precs::P
-    κ::K
+  κ::K
   tol::T
   extrapolant::Symbol
   order::Int
+  ark::Bool
 end
 
 SBDF(order;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-     extrapolant=:linear) =
+     extrapolant=:linear,ark=false) =
      SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
      typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,precs,κ,tol,extrapolant,order)
+     linsolve,nlsolve,precs,κ,tol,extrapolant,order,ark)
 
 # All keyword form needed for remake
 SBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear,
-     order) =
+     order,ark=false) =
      SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
      typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,precs,κ,tol,extrapolant,order)
+     linsolve,nlsolve,precs,κ,tol,extrapolant,order,ark)
 
 """
     IMEXEuler(;kwargs...)
@@ -2888,29 +2889,45 @@ The one-step version of the IMEX multistep methods of
   Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
   doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
 
-See also `SBDF`.
+When applied to a `SplitODEProblem` of the form
+```
+u'(t) = f1(u) + f2(u)
+```
+The default `IMEXEuler()` method uses an update of the form
+```
+unew = uold + dt * (f1(unew) + f2(uold))
+```
 
-!!! note "Different variants of IMEX Euler methods"
-    When applied to a `SplitODEProblem` of the form
-    ```
-    u'(t) = f1(u) + f2(u)
-    ```
-    this `IMEXEuler()` method uses an update of the form
-    ```
-    unew = uold + dt * (f1(unew) + f2(uold))
-    ```
-    where `f1` is treated implicitly and `f2` is treated explicitly.
-    A classical additive Runge-Kutta method in the sense of
-    [Araújo, Murua, Sanz-Serna (1997)](https://doi.org/10.1137/S0036142995292128)
-    consisting of the implicit and the explicit Euler method is different in
-    general and given by
-    ```
-    y1   = uold + dt * f1(y1)
-    unew = uold + dt * (f1(y1) + f2(y1))
-    ```
-    instead.
+See also `SBDF`, `IMEXEulerARK`.
 """
 IMEXEuler(;kwargs...) = SBDF(1;kwargs...)
+
+"""
+    IMEXEulerARK(;kwargs...)
+
+The one-step version of the IMEX multistep methods of
+
+- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+  Society for Industrial and Applied Mathematics.
+  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+
+When applied to a `SplitODEProblem` of the form
+```
+u'(t) = f1(u) + f2(u)
+```
+A classical additive Runge-Kutta method in the sense of
+[Araújo, Murua, Sanz-Serna (1997)](https://doi.org/10.1137/S0036142995292128)
+consisting of the implicit and the explicit Euler method given by
+```
+y1   = uold + dt * f1(y1)
+unew = uold + dt * (f1(unew) + f2(y1))
+```
+
+See also `SBDF`, `IMEXEuler`.
+"""
+IMEXEulerARK(;kwargs...) = SBDF(1;ark=true,kwargs...)
 
 """
     SBDF2(;kwargs...)

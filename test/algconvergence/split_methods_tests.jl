@@ -87,6 +87,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
+# IMEXEulerARK
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,IMEXEulerARK())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
 # CNAB2
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNAB2())
@@ -160,6 +165,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
+# IMEXEulerARK
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,IMEXEulerARK())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
 # CNAB2
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNAB2())
@@ -231,6 +241,11 @@ sim = test_convergence(dts,prob,KenCarp58())
 # IMEXEuler
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
+# IMEXEulerARK
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,IMEXEulerARK())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # CNAB2
@@ -307,6 +322,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
+# IMEXEulerARK
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,IMEXEulerARK())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
 # CNAB2
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNAB2())
@@ -380,6 +400,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
+# IMEXEulerARK
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,IMEXEulerARK())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
 # CNAB2
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNAB2())
@@ -451,6 +476,11 @@ sim = test_convergence(dts,prob,KenCarp58())
 # IMEXEuler
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
+# IMEXEulerARK
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,IMEXEulerARK())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # CNAB2
