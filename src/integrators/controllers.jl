@@ -257,11 +257,23 @@ end
   controller.err[1] = inv(DiffEqBase.value(integrator.EEst))
   err1, err2, err3 = controller.err
 
-  iszero(err1) && return qmax
+  if iszero(DiffEqBase.value(integrator.EEst))
+    # If the error estimate is zero, we can increase the step size as much as
+    # desired. This additional check fixes problems of the code below when the
+    # error estimates become zero
+    # -> err1, err2, err3 become Inf
+    # -> err1^positive_number * err2^negative_number becomes NaN
+    # -> dt becomes NaN
+    dt_factor = qmax
+  else
+    k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
+    dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
+    if isnan(dt_factor)
+      @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k controller.err[1] controller.err[2] controller.err[3]
+    end
+    dt_factor = controller.limiter(dt_factor)
+  end
 
-  k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
-  dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
-  dt_factor = controller.limiter(dt_factor)
   # Note: No additional limiting of the form
   #   dt_factor = max(qmin, min(qmax, dt_factor))
   # is necessary since the `limiter` should take care of that. The default limiter

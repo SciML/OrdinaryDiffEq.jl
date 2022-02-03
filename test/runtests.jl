@@ -38,6 +38,7 @@ if GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
   @time @safetestset "Composite Interpolation Tests" begin include("interface/composite_interpolation.jl") end
   @time @safetestset "Export tests" begin include("interface/export_tests.jl") end
   @time @safetestset "Type Handling Tests" begin include("interface/type_handling.jl") end
+  @time @safetestset "Controller Tests" begin include("interface/controllers.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
