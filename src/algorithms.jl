@@ -2877,31 +2877,83 @@ SBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
      typeof(κ),typeof(tol)}(
      linsolve,nlsolve,precs,κ,tol,extrapolant,order)
 
- """
- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
- Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
- Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
- """
+"""
+    IMEXEuler(;kwargs...)
+
+The one-step version of the IMEX multistep methods of
+
+- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+  Society for Industrial and Applied Mathematics.
+  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+
+See also `SBDF`.
+
+!!! note "Different variants of IMEX Euler methods"
+    When applied to a `SplitODEProblem` of the form
+    ```
+    u'(t) = f1(u) + f2(u)
+    ```
+    this `IMEXEuler()` method uses an update of the form
+    ```
+    unew = uold + dt * (f1(unew) + f2(uold))
+    ```
+    where `f1` is treated implicitly and `f2` is treated explicitly.
+    A classical additive Runge-Kutta method in the sense of
+    [Araújo, Murua, Sanz-Serna (1997)](https://doi.org/10.1137/S0036142995292128)
+    consisting of the implicit and the explicit Euler method is different in
+    general and given by
+    ```
+    y1   = uold + dt * f1(y1)
+    unew = uold + dt * (f1(y1) + f2(y1))
+    ```
+    instead.
+"""
 IMEXEuler(;kwargs...) = SBDF(1;kwargs...)
 
 """
-Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
-Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
-Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+    SBDF2(;kwargs...)
+
+The two-step version of the IMEX multistep methods of
+
+- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+  Society for Industrial and Applied Mathematics.
+  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+
+See also `SBDF`.
 """
 SBDF2(;kwargs...) = SBDF(2;kwargs...)
 
 """
-Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
-Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
-Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+    SBDF3(;kwargs...)
+
+The three-step version of the IMEX multistep methods of
+
+- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+  Society for Industrial and Applied Mathematics.
+  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+
+See also `SBDF`.
 """
 SBDF3(;kwargs...) = SBDF(3;kwargs...)
 
 """
-Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
-Dependent Partial Differential Equations. 1995 Society for Industrial and Applied Mathematics
-Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
+    SBDF4(;kwargs...)
+
+The four-step version of the IMEX multistep methods of
+
+- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+  Society for Industrial and Applied Mathematics.
+  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+
+See also `SBDF`.
 """
 SBDF4(;kwargs...) = SBDF(4;kwargs...)
 
