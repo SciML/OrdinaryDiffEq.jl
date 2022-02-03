@@ -2859,24 +2859,24 @@ struct SBDF{CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,F
   tol::T
   extrapolant::Symbol
   order::Int
-  arkmode::Bool
+  ark::Bool
 end
 
 SBDF(order;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-     extrapolant=:linear,arkmode=false) =
+     extrapolant=:linear,ark=false) =
      SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
      typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,precs,κ,tol,extrapolant,order,arkmode)
+     linsolve,nlsolve,precs,κ,tol,extrapolant,order,ark)
 
 # All keyword form needed for remake
 SBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear,
-     order,arkmode=false) =
+     order,ark=false) =
      SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
      typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,precs,κ,tol,extrapolant,order,arkmode)
+     linsolve,nlsolve,precs,κ,tol,extrapolant,order,ark)
 
 """
     IMEXEuler(;kwargs...)
