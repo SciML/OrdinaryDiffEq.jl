@@ -322,14 +322,14 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEuler())
 @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
-# CNAB2
-dts = 1 .//2 .^(8:-1:4)
-sim = test_convergence(dts,prob,CNAB2())
-@test sim.𝒪est[:l∞] ≈ 2 atol=testTol
-
 # IMEXEulerARK
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,IMEXEulerARK())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
+# CNAB2
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB2())
 @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
 # CNLF2

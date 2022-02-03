@@ -193,7 +193,7 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   nlsolver.γ = γ = inv(γₖ[cnt])
   if cache.ark
     # Additive Runge-Kutta Method
-    f2(du₂, uprev + dt*du₁, p, t)
+    du₂ = f2(uprev + dt*du₁, p, t)
     integrator.destats.nf2 += 1
   end
   if cnt == 1
