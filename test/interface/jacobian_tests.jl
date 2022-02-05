@@ -86,3 +86,43 @@ prob = ODEProblem(rober,[1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4,false))
 sol = solve(prob, TRBDF2())
 @test sol.u[end]==sol1.u[end]
 @test length(sol.t)==length(sol1.t)
+
+
+### DAE Jacobians
+
+
+function f(out,du,u,p,t)
+    out[1] = - 0.04u[1]              + 1e4*u[2]*u[3] - du[1]
+    out[2] = + 0.04u[1] - 3e7*u[2]^2 - 1e4*u[2]*u[3] - du[2]
+    out[3] = u[1] + u[2] + u[3] - 1.0
+end
+
+used = Ref(false)
+function jac(J, du, u, p, gamma, t)
+    used[] = true
+    J[1,1] = -0.04 - gamma
+    J[1,2] = 1e4*u[3]
+    J[1,3] = 1e4*u[2]
+    J[2,1] = 0.04
+    J[2,2] = -6e7*u[2] - 1e4*u[3] - gamma
+    J[2,3] = -1e4*u[2]
+    J[3,1] = 1.0
+    J[3,2] = 1.0
+    J[3,3] = 1.0
+end
+
+u₀ = [1.0, 0, 0]
+du₀ = [-0.04, 0.04, 0.0]
+tspan = (0.0,100000.0)
+
+differential_vars = [true,true,false]
+prob = DAEProblem(DAEFunction(f; jac),du₀,u₀,tspan,differential_vars=differential_vars)
+prob2 = DAEProblem(f,du₀,u₀,tspan,differential_vars=differential_vars)
+
+used[] = false
+sol = solve(prob, DABDF2())
+@test used[]
+used[] = false
+sol2 = solve(prob2, DABDF2())
+@test !used[]
+@test iszero(maximum(Array(sol)-Array(sol2)))

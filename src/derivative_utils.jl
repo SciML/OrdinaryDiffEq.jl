@@ -121,25 +121,26 @@ function calc_J(integrator, cache)
 end
 
 """
-    calc_J!(J, integrator, cache) -> J
+    calc_J!(J, integrator, cache, dtgamma) -> J
 
 Update the Jacobian object `J`.
 
 If `integrator.f` has a custom Jacobian update function, then it will be called. Otherwise,
 either automatic or finite differencing will be used depending on the `cache`.
 """
-function calc_J!(J, integrator, cache)
+function calc_J!(J, integrator, cache, dtgamma)
   @unpack t,uprev,f,p,alg = integrator
 
   if alg isa DAEAlgorithm
     if DiffEqBase.has_jac(f)
       duprev = integrator.duprev
-      uf = cache.uf
-      f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+      α = cache.nlsolver.α
+      invγdt = inv(dtgamma)
+      f.jac(J, duprev, uprev, p, α * invγdt, t)
     else
-      @unpack du1, uf, jac_config = cache
+      @unpack du1, uf, jac_config = cache.nlsolver.cache
       # using `dz` as temporary array
-      x = cache.dz
+      x = cache.nlsolver.cache.dz
       fill!(x, zero(eltype(x)))
       jacobian!(J, uf, x, du1, integrator, jac_config)
     end
@@ -515,8 +516,8 @@ end
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  lcache = nlsolver === nothing ? cache : nlsolver.cache
-  @unpack J = lcache
+  lcache = nlsolver === nothing ? cache : nlsolver
+  @unpack J = lcache.cache
   isdae = integrator.alg isa DAEAlgorithm
   alg = unwrap_alg(integrator, true)
   if !isdae
@@ -544,11 +545,11 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
 
   if new_jac && isnewton(lcache)
-    lcache.J_t = t
-    if isdae
-      lcache.uf.α = nlsolver.α
-      lcache.uf.invγdt = inv(dtgamma)
-      lcache.uf.tmp = nlsolver.tmp
+    lcache.cache.J_t = t
+    if isdae && !DiffEqBase.has_jac(f)
+      lcache.cache.uf.α = nlsolver.α
+      lcache.cache.uf.invγdt = inv(dtgamma)
+      lcache.cache.uf.tmp = nlsolver.tmp
     end
   end
 
@@ -558,12 +559,12 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
     W.transform = W_transform; set_gamma!(W, dtgamma)
     if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec) && !(W.J isa SciMLBase.AbstractDiffEqLinearOperator)
       islin, isode = islinearfunction(integrator)
-      islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(W.J, integrator, lcache)) )
+      islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(W.J, integrator, cache, dtgamma)) )
       new_W && !isdae && jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)
     end
   else # concrete W using jacobian from `calc_J!`
     islin, isode = islinearfunction(integrator)
-    islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, lcache)) )
+    islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, cache, dtgamma)) )
     update_coefficients!(W,uprev,p,t)
     new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
