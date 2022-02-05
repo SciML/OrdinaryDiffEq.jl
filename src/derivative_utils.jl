@@ -148,7 +148,11 @@ function calc_J!(J, integrator, cache, dtgamma)
     if DiffEqBase.has_jac(f)
       f.jac(J, uprev, p, t)
     else
-      @unpack du1, uf, jac_config = cache
+      if hasfield(typeof(cache),:nlsolver)
+        @unpack du1, uf, jac_config = cache.nlsolver.cache
+      else
+        @unpack du1, uf, jac_config = cache
+      end
 
       uf.f = nlsolve_f(f, alg)
       uf.t = t
@@ -517,7 +521,13 @@ end
 function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
   lcache = nlsolver === nothing ? cache : nlsolver
-  @unpack J = lcache.cache
+
+  if nlsolver === nothing
+    @unpack J = cache
+  else
+    @unpack J = lcache.cache
+  end
+
   isdae = integrator.alg isa DAEAlgorithm
   alg = unwrap_alg(integrator, true)
   if !isdae
