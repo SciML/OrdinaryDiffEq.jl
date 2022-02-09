@@ -122,7 +122,7 @@ end
   ##### Step 2
 
   # TODO: Add extrapolation for guess
-  @.. z₂ = z₁
+  copyto!(z₂,z₁)
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
@@ -337,7 +337,7 @@ end
   ##### Step 2
 
   # TODO: Add extrapolation for guess
-  @.. z₂ = z₁
+  copyto!(z₂,z₁)
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
@@ -566,7 +566,7 @@ end
   ##### Step 2
 
   # TODO: Add extrapolation for guess
-  @.. z₂ = z₁
+  copyto!(z₂,z₁)
   nlsolver.z = z₂
 
   @.. tmp = uprev
@@ -830,7 +830,7 @@ end
   ##### Step 2
 
   # TODO: Add extrapolation choice
-  nlsolver.z = z₂ = zero(u)
+  nlsolver.z = z₂ = z₁
 
   tmp = uprev + γ*z₁
 
@@ -1002,7 +1002,7 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(eltype(u))
+  copyto!(z₂,z₁)
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
@@ -1149,7 +1149,7 @@ end
   ##### Step 2
 
   # TODO: Add extrapolation choice
-  nlsolver.z = z₂ = zero(u)
+  nlsolver.z = z₂ = z₁
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = γ
@@ -1245,7 +1245,7 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(eltype(u))
+  copyto!(z₂,z₁)
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
@@ -1367,7 +1367,7 @@ end
   ##### Step 2
 
   # TODO: Add extrapolation choice
-  nlsolver.z = z₂ = zero(u)
+  nlsolver.z = z₂ = z₁
 
   tmp = uprev + γ*z₁
 
@@ -1578,7 +1578,7 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(eltype(u))
+  copyto!(z₂,z₁)
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
@@ -2150,10 +2150,6 @@ end
   end
 
   ##### Step 2
-
-  # TODO: Add extrapolation choice
-
-    ##### Step 2
 
   # TODO: Add extrapolation choice
 
