@@ -443,8 +443,14 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
   else
     if MT <: UniformScaling
       idxs = diagind(W)
-      @.. W = dtgamma*J
       λ = -mass_matrix.λ
+      if W isa AbstractSparseMatrix
+        Wn = nonzeros(W)
+        Jn = nonzeros(J)
+        @.. Wn = dtgamma*Jn
+      else
+        @.. W = dtgamma*J
+      end
       @.. @view(W[idxs]) = @view(W[idxs]) + λ
     else
       @.. W = muladd(dtgamma, J, -mass_matrix)
