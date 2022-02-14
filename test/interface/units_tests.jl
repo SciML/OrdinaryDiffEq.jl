@@ -78,7 +78,7 @@ end
     u0 = [1.0u"m", 0.0u"kg*m/s"] # initial values (position, momentum)
     tspan = (0.0u"s", 10.0u"s")
     prob = ODEProblem(f_harmonic!, u0, tspan, p)
-    @test_broken solve(prob, Tsit5()).retcode == :Success
+    @test solve(prob, Tsit5()).retcode === :Success
 end
 
 @testset "Unitful time with unitless state" begin
@@ -89,7 +89,7 @@ end
   prob2 = ODEProblem((u,t,p)->(-0.2u"1/s"*u[1]),u0,tspan)
   prob3 = ODEProblem((u,t,p)->[-0.2u"1/s"*u[1]],[u0],tspan)
   for prob in [prob1, prob2, prob3]
-    solve(prob, Tsit5()).retcode === :Success
+    @test solve(prob, Tsit5()).retcode === :Success
   end
 end
 
