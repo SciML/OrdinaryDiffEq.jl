@@ -442,10 +442,20 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
     end
   else
     if MT <: UniformScaling
-      idxs = diagind(W)
-      @.. W = dtgamma*J
       λ = -mass_matrix.λ
-      @.. @view(W[idxs]) = @view(W[idxs]) + λ
+      if W isa AbstractSparseMatrix && !(W isa SparseMatrixCSC)
+        # This is specifically to catch the GPU sparse matrix cases
+        # Which do not support diagonal indexing
+        # https://github.com/JuliaGPU/CUDA.jl/issues/1395
+        Wn = nonzeros(W)
+        Jn = nonzeros(J)
+        @.. Wn = dtgamma*Jn
+        W .= W + λ*I
+      else
+        idxs = diagind(W)
+        @.. W = dtgamma*J
+        @.. @view(W[idxs]) = @view(W[idxs]) + λ
+      end
     else
       @.. W = muladd(dtgamma, J, -mass_matrix)
     end
