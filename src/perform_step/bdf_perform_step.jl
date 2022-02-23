@@ -702,6 +702,8 @@ function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_ste
   if integrator.u_modified
     dtprev = one(dt)
     order = 1
+    cache.nconsteps = 0
+    cache.consfailcnt = 0
     fill!(D,zero(eltype(D)))
     fill!(cache.prevD,zero(eltype(D)))
   end
@@ -759,7 +761,13 @@ function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_ste
 
   if integrator.opts.adaptive
     @unpack abstol, reltol, internalnorm = integrator.opts
-    atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
+    if cache.consfailcnt > 1 && mass_matrix !== I
+      # if we get repeated failure and mass_matrix !== I it's likely that
+      # there's a discontinuity on the algebraic equations
+      atmp = calculate_residuals(mass_matrix * dd, uprev, u, abstol, reltol, internalnorm, t)
+    else
+      atmp = calculate_residuals(dd, uprev, u, abstol, reltol, internalnorm, t)
+    end
     integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
     if k > 1
       @views atmpm1 = calculate_residuals(D[:, k], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -802,6 +810,8 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   if integrator.u_modified
     dtprev = one(dt)
     order = 1
+    cache.nconsteps = 0
+    cache.consfailcnt = 0
     fill!(D,zero(eltype(D)))
     fill!(cache.prevD,zero(eltype(D)))
   end
@@ -814,7 +824,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   end
   if dt != dtprev || cache.prevorder != k
     ρ = dt/dtprev
-    integrator.cache.nconsteps = 0
+    cache.nconsteps = 0
     @unpack RU, U, Dtmp = cache
     R = calc_R(ρ, k, Val(max_order))
     copyto!(RU, R * U)
@@ -863,7 +873,13 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   update_D!(D, dd, k)
   if integrator.opts.adaptive
     @unpack abstol, reltol, internalnorm = integrator.opts
-    calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
+    if cache.consfailcnt > 1 && mass_matrix !== I
+      # if we get repeated failure and mass_matrix !== I it's likely that
+      # there's a discontinuity on the algebraic equations
+      calculate_residuals!(atmp, mul!(nlsolver.tmp, mass_matrix, dd), uprev, u, abstol, reltol, internalnorm, t)
+    else
+      calculate_residuals!(atmp, dd, uprev, u, abstol, reltol, internalnorm, t)
+    end
     integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
     if k > 1
       @views calculate_residuals!(atmpm1, D[:, k], _vec(uprev), _vec(u), abstol, reltol, internalnorm, t)
