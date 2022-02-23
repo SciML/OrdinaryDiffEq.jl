@@ -443,7 +443,10 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
   else
     if MT <: UniformScaling
       λ = -mass_matrix.λ
-      if W isa AbstractSparseMatrix
+      if W isa AbstractSparseMatrix && !(W isa SparseMatrixCSC)
+        # This is specifically to catch the GPU sparse matrix cases
+        # Which do not support diagonal indexing
+        # https://github.com/JuliaGPU/CUDA.jl/issues/1395
         Wn = nonzeros(W)
         Jn = nonzeros(J)
         @.. Wn = dtgamma*Jn
