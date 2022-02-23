@@ -196,17 +196,18 @@ end
 
 function reinitFBDF!(integrator, cache)
   # This function is used for initialize weights and arrays that store past history information. It will be used in the first-time step advancing and event handling.
-  @unpack weights, consfailcnt, nconsteps, ts, u_history, u_corrector,iters_from_event, order = cache
+  @unpack weights, consfailcnt, ts, u_history, u_corrector, iters_from_event, order = cache
   @unpack t,dt,uprev = integrator
 
   if integrator.u_modified
-    cache.order = 1
-    cache.consfailcnt = cache.nconsteps = 0
+    order = cache.order = 1
+    consfailcnt = cache.consfailcnt = cache.nconsteps = 0
+    iters_from_event = cache.iters_from_event = 0
+
     fill!(weights,zero(eltype(weights)))
     fill!(ts,zero(eltype(ts)))
     fill!(u_history,zero(eltype(u_history)))
     fill!(u_corrector,zero(eltype(u_corrector)))
-    cache.iters_from_event = 0
   end
 
   vuprev = _vec(uprev)
@@ -214,7 +215,7 @@ function reinitFBDF!(integrator, cache)
     weights[1] = 1/dt
     ts[1] = t
     @.. u_history[:,1] = vuprev
-  elseif iters_from_event == 1
+  elseif iters_from_event == 1 && t != ts[1]
     ts[2] = ts[1]
     ts[1] = t
     @.. u_history[:,2] = u_history[:,1]
