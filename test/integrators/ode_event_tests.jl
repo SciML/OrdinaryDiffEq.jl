@@ -398,3 +398,10 @@ cb2 = DiscreteCallback(savecond2,saveaffect2!,save_positions = (false,false))
 cb = CallbackSet(cb1,cb2)
 sol = solve(prob,Tsit5(),callback = cb,tstops = [2.5])
 @test !any(diff(sol.t) .== 0)
+
+# DifferentialEquations 848
+prob = ODEProblem((x,p,t)->-1.01*x, ones(2), (0.0, 1.0))
+integrator = init(prob, Tsit5(), save_everystep = false)
+set_u!(integrator, 2*ones(2))
+step!(integrator, 1e-5, true)
+@test all(u -> u>1.5, integrator.u)
