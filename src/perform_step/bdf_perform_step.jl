@@ -761,7 +761,7 @@ function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_ste
 
   if integrator.opts.adaptive
     @unpack abstol, reltol, internalnorm = integrator.opts
-    if cache.consfailcnt >= 1 && mass_matrix !== I
+    if cache.consfailcnt > 1 && mass_matrix !== I
       # if we get repeated failure and mass_matrix !== I it's likely that
       # there's a discontinuity on the algebraic equations
       atmp = calculate_residuals(mass_matrix * dd, uprev, u, abstol, reltol, internalnorm, t)
@@ -873,7 +873,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   update_D!(D, dd, k)
   if integrator.opts.adaptive
     @unpack abstol, reltol, internalnorm = integrator.opts
-    if cache.consfailcnt >= 1 && mass_matrix !== I
+    if cache.consfailcnt > 1 && mass_matrix !== I
       # if we get repeated failure and mass_matrix !== I it's likely that
       # there's a discontinuity on the algebraic equations
       calculate_residuals!(atmp, mul!(nlsolver.tmp, mass_matrix, dd), uprev, u, abstol, reltol, internalnorm, t)
