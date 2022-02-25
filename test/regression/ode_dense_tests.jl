@@ -417,6 +417,7 @@ regression_test(Vern8(lazy=false), 3e-8, 5e-8; test_diff1 = true, nth_der = 1, d
 regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der = 4, dertol = 5e-2)
 regression_test(Vern9(lazy=false), 1e-9, 2e-9; test_diff1 = true, nth_der = 4, dertol = 5e-2)
 
+
 println("Rosenbrocks")
 
 # Rosenbrock23
@@ -438,7 +439,10 @@ regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 
 regression_test(Rodas4P2(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
 
 # Rodas5
-regression_test(Rodas5(), 5e-5, 9e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+regression_test(Rodas5(), 2e-6, 3e-6, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+
+# Rodas5P
+regression_test(Rodas5P(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)

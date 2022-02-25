@@ -588,6 +588,7 @@ end
   uprev::uType
   dense1::rateType
   dense2::rateType
+  dense3::rateType
   du::rateType
   du1::rateType
   du2::rateType
@@ -621,6 +622,7 @@ end
 function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   dense1 = zero(rate_prototype)
   dense2 = zero(rate_prototype)
+  dense3 = zero(rate_prototype)
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
@@ -650,7 +652,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
                   Pl = Pl, Pr = Pr)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
+  Rosenbrock5Cache(u,uprev,dense1,dense2,dense3,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,k7,k8,
                     fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config,reltol,alg)
@@ -663,6 +665,54 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
   linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
   Rosenbrock5ConstantCache(tf,uf,Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+end
+
+function alg_cache(alg::Rodas5P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+  dense1 = zero(rate_prototype)
+  dense2 = zero(rate_prototype)
+  dense3 = zero(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+  k7 = zero(rate_prototype)
+  k8 = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
+  dT = zero(rate_prototype)
+  J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+  tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
+  weight = similar(u, uEltypeNoUnits)
+  tab = Rodas5PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+
+  tf = TimeGradientWrapper(f,uprev,p)
+  uf = UJacobianWrapper(f,t,p)
+  linsolve_tmp = zero(rate_prototype)
+  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
+  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+                  Pl = Pl, Pr = Pr)
+  grad_config = build_grad_config(alg,f,tf,du1,t)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  Rosenbrock5Cache(u,uprev,dense1,dense2,dense3,du,du1,du2,k1,k2,k3,k4,
+                    k5,k6,k7,k8,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
+                    linsolve,jac_config,grad_config,reltol,alg)
+end
+
+function alg_cache(alg::Rodas5P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+  tf = TimeDerivativeWrapper(f,u,p)
+  uf = UDerivativeWrapper(f,t,p)
+  J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
+  linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
+  linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
+  Rosenbrock5ConstantCache(tf,uf,Rodas5PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
 
 ################################################################################

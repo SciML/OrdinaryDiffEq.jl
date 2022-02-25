@@ -3702,7 +3702,7 @@ University of Geneva, Switzerland.
 _unwrap_val(::Val{B}) where {B} = B
 _unwrap_val(B) = B
 
-for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5]
+for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5, :Rodas5P]
   @eval begin
     struct $Alg{CS,AD,F,P,FDT,ST,CJ} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
       linsolve::F
