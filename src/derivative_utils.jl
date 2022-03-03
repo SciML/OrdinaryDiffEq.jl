@@ -634,17 +634,13 @@ end
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
-  calc_tderivative!(integrator, cache, dtd1, repeat_step)
   nlsolver = nothing
   # we need to skip calculating `W` when a step is repeated
   new_W = false
   if !repeat_step
-#      println("a) Cache:",cache.linsolve_tmp)
-      help = cache.linsolve_tmp[:]
       new_W = calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, W_transform)
-      cache.linsolve_tmp[:] = help
-#      println("b) Cache:",cache.linsolve_tmp)
   end
+  calc_tderivative!(integrator, cache, dtd1, repeat_step)
   return new_W
 end
 
