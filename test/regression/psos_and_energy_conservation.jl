@@ -83,7 +83,7 @@ end
 # Energy
 const E = Hhh(u0)
 
-function ghh(resid, u)
+function ghh(resid, u, p)
     resid[1] = Hhh(u[1],u[2],u[3],u[4]) - E
     resid[2:4] .= 0
 end
