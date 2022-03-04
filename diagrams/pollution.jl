@@ -216,6 +216,7 @@ DIAGRAMS["POLLU-HighTol-Group1"] = plot(wp)
 # group 2
 setups = [Dict(:alg=>Rodas4()),
           Dict(:alg=>Rodas5()),
+          Dict(:alg=>Rodas5P()),
           Dict(:alg=>KenCarp4()),
           Dict(:alg=>RadauIIA5()),
           Dict(:alg=>CVODE_BDF()),

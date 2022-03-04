@@ -396,7 +396,7 @@ prob = prob_ode_linear
 dts = (1/2) .^ (6:-1:3)
 sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
 @test sim.𝒪est[:final] ≈ 5 atol=testTol
-@test sim.𝒪est[:L2] ≈ 4 atol=testTol
+@test sim.𝒪est[:L2] ≈ 5 atol=testTol
 
 sol = solve(prob,Rodas5())
 @test length(sol) < 20
@@ -405,7 +405,28 @@ prob = prob_ode_2Dlinear
 
 sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
 @test sim.𝒪est[:final] ≈ 5 atol=testTol
-@test sim.𝒪est[:L2] ≈ 4 atol=testTol
+@test sim.𝒪est[:L2] ≈ 5 atol=testTol
+
+sol = solve(prob,Rodas5())
+@test length(sol) < 20
+
+println("Rodas5P")
+
+prob = prob_ode_linear
+
+dts = (1/2) .^ (6:-1:3)
+sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
+@test sim.𝒪est[:final] ≈ 5 atol=testTol
+@test sim.𝒪est[:L2] ≈ 5 atol=testTol
+
+sol = solve(prob,Rodas5())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
+@test sim.𝒪est[:final] ≈ 5 atol=testTol
+@test sim.𝒪est[:L2] ≈ 5 atol=testTol
 
 sol = solve(prob,Rodas5())
 @test length(sol) < 20

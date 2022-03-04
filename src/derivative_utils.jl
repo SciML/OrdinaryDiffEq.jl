@@ -610,7 +610,7 @@ end
     W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform=W_transform)
   elseif DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
-    if typeof(J) <: StaticArray && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+    if typeof(J) <: StaticArray && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas4P,Rodas4P2,Rodas5,Rodas5P}
       W = W_transform ? J - mass_matrix*inv(dtgamma) :
                              dtgamma*J - mass_matrix
     else
@@ -631,7 +631,7 @@ end
       len = ArrayInterface.known_length(typeof(W_full))
       W = if W_full isa Number
         W_full
-      elseif len !== nothing && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+      elseif len !== nothing && typeof(integrator.alg) <: Union{Rosenbrock23,Rodas4,Rodas4P,Rodas4P2,Rodas5,Rodas5P}
         StaticWOperator(W_full)
       else
         DiffEqBase.default_factorize(W_full)
@@ -644,13 +644,13 @@ end
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
-  calc_tderivative!(integrator, cache, dtd1, repeat_step)
   nlsolver = nothing
   # we need to skip calculating `W` when a step is repeated
   new_W = false
   if !repeat_step
       new_W = calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step, W_transform)
   end
+  calc_tderivative!(integrator, cache, dtd1, repeat_step)
   return new_W
 end
 
@@ -746,7 +746,7 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
       similar(J)
     else
       len = ArrayInterface.known_length(typeof(J))
-      if len !== nothing && typeof(alg) <: Union{Rosenbrock23,Rodas4,Rodas5}
+      if len !== nothing && typeof(alg) <: Union{Rosenbrock23,Rodas4,Rodas4P,Rodas4P2,Rodas5,Rodas5P}
         StaticWOperator(J,false)
       else
         ArrayInterface.lu_instance(J)

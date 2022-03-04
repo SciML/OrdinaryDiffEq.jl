@@ -7,6 +7,7 @@ isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,f
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas5) = false
+isfsal(alg::Rodas5P) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
@@ -490,6 +491,7 @@ alg_order(alg::Rodas42) = 4
 alg_order(alg::Rodas4P) = 4
 alg_order(alg::Rodas4P2) = 4
 alg_order(alg::Rodas5) = 5
+alg_order(alg::Rodas5P) = 5
 
 alg_order(alg::AB3) = 3
 alg_order(alg::AB4) = 4

@@ -594,11 +594,20 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5ConstantCache
 
     k7 = W\linsolve_tmp
 
-    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
-    k₁ =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
-    k₂ =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
+    u = u + k7
+    du = f(u, p, t+dt)
+
+    linsolve_tmp =  du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
+
+    k8 = W\linsolve_tmp
+
+    @unpack h21,h22,h23,h24,h25,h26,h27,h28,h31,h32,h33,h34,h35,h36,h37,h38,h41,h42,h43,h44,h45,h46,h47,h48 = cache.tab
+    k₁ =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7 + h28*k8
+    k₂ =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7 + h38*k8
+    k₃ =  h41*k1 + h42*k2 + h43*k3 + h44*k4 + h45*k5 + h46*k6 + h47*k7 + h48*k8
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
+    copyat_or_push!(k,2,k₃)
   end
   nothing
 end
@@ -756,12 +765,31 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     vecu = _vec(linres.u)
     veck7 = _vec(k7)
     @.. veck7 = -vecu
-    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
-    @.. k8 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
-    copyat_or_push!(k,1,copy(k8))
+    @.. tmp = uprev + a71*k1 + a72*k2 + a73*k3 + a74*k4 + a75*k5 + a76*k6 + k7
+    f( du,  tmp, p, t+dt)
 
-    @.. k8 = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
-    copyat_or_push!(k,2,copy(k8))
+    if mass_matrix === I
+      @.. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
+    else
+      @.. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
+      mul!(du2,mass_matrix,du1)
+      @.. linsolve_tmp = du + du2
+    end
+
+    linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
+    vecu = _vec(linres.u)
+    veck8 = _vec(k8)
+    @.. veck8 = -vecu
+
+    @unpack h21,h22,h23,h24,h25,h26,h27,h28,h31,h32,h33,h34,h35,h36,h37,h38,h41,h42,h43,h44,h45,h46,h47,h48 = cache.tab
+    @.. tmp = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7 + h28*k8
+    copyat_or_push!(k,1,copy(tmp))
+
+    @.. tmp = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7 + h38*k8
+    copyat_or_push!(k,2,copy(tmp))
+
+    @.. tmp = h41*k1 + h42*k2 + h43*k3 + h44*k4 + h45*k5 + h46*k6 + h47*k7 + h48*k8
+    copyat_or_push!(k,3,copy(tmp))
 
   end
   nothing
@@ -961,19 +989,46 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache{<:Array
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     @inbounds @simd ivdep for i in eachindex(u)
       k7[i] = -linres.u[i]
+      tmp[i] = tmp[i] + k7[i]
     end
 
-    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
+    f( du,  tmp, p, t+dt)
+
+    if mass_matrix === I
+      @inbounds @simd ivdep for i in eachindex(u)
+        linsolve_tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
+      end
+    else
+      @inbounds @simd ivdep for i in eachindex(u)
+        du1[i] = dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i]
+      end
+      mul!(du2,mass_matrix,du1)
+      @inbounds @simd ivdep for i in eachindex(u)
+        linsolve_tmp[i] = du[i] + du2[i]
+      end
+    end
+
+    linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
+    @inbounds @simd ivdep for i in eachindex(u)
+      k8[i] = -linres.u[i]
+    end
+
+    @unpack h21,h22,h23,h24,h25,h26,h27,h28,h31,h32,h33,h34,h35,h36,h37,h38,h41,h42,h43,h44,h45,h46,h47,h48 = cache.tab
 
     @inbounds @simd ivdep for i in eachindex(u)
-      k8[i] = h21*k1[i] + h22*k2[i] + h23*k3[i] + h24*k4[i] + h25*k5[i] + h26*k6[i] + h27*k7[i]
+      tmp[i] = h21*k1[i] + h22*k2[i] + h23*k3[i] + h24*k4[i] + h25*k5[i] + h26*k6[i] + h27*k7[i] + h28*k8[i]
     end
-    copyat_or_push!(k,1,copy(k8))
+    copyat_or_push!(k,1,copy(tmp))
 
     @inbounds @simd ivdep for i in eachindex(u)
-      k8[i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i] + h36*k6[i] + h37*k7[i]
+      tmp[i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i] + h36*k6[i] + h37*k7[i] + h38*k8[i]
     end
-    copyat_or_push!(k,2,copy(k8))
+    copyat_or_push!(k,2,copy(tmp))
+
+    @inbounds @simd ivdep for i in eachindex(u)
+      tmp[i] = h41*k1[i] + h42*k2[i] + h43*k3[i] + h44*k4[i] + h45*k5[i] + h46*k6[i] + h47*k7[i] + h48*k8[i]
+    end
+    copyat_or_push!(k,3,copy(tmp))
 
   end
   nothing

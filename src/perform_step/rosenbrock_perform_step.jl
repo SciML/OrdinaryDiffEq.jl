@@ -809,7 +809,7 @@ end
 
 #### Rodas4 type method
 
-function initialize!(integrator, cache::Union{Rodas4ConstantCache,Rosenbrock5ConstantCache})
+function initialize!(integrator, cache::Rodas4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   # Avoid undefined entries if k is an array of arrays
@@ -937,7 +937,7 @@ end
 end
 
 
-function initialize!(integrator, cache::Union{Rodas4Cache,Rosenbrock5Cache})
+function initialize!(integrator, cache::Rodas4Cache)
   integrator.kshortsize = 2
   @unpack dense1,dense2 = cache
   resize!(integrator.k, integrator.kshortsize)
@@ -1307,6 +1307,15 @@ end
 
 ### Rodas5 Method
 
+function initialize!(integrator, cache::Rosenbrock5ConstantCache)
+  integrator.kshortsize = 3
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  # Avoid undefined entries if k is an array of arrays
+  integrator.k[1] = zero(integrator.u)
+  integrator.k[2] = zero(integrator.u)
+  integrator.k[3] = zero(integrator.u)
+end
+
 @muladd function perform_step!(integrator, cache::Rosenbrock5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tf,uf = cache
@@ -1456,12 +1465,22 @@ end
   end
 
   if integrator.opts.calck
-    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
-    integrator.k[1] =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
-    integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
+    @unpack h21,h22,h23,h24,h25,h26,h27,h28,h31,h32,h33,h34,h35,h36,h37,h38,h41,h42,h43,h44,h45,h46,h47,h48 = cache.tab
+    integrator.k[1] =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7 + h28*k8
+    integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7 + h38*k8
+    integrator.k[3] =  h41*k1 + h42*k2 + h43*k3 + h44*k4 + h45*k5 + h46*k6 + h47*k7 + h48*k8
   end
 
   integrator.u = u
+end
+
+function initialize!(integrator, cache::Rosenbrock5Cache)
+  integrator.kshortsize = 3
+  @unpack dense1,dense2,dense3 = cache
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = dense1
+  integrator.k[2] = dense2
+  integrator.k[3] = dense3
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step=false)
@@ -1661,9 +1680,10 @@ end
   end
 
   if integrator.opts.calck
-    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
-    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7
-    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7
+    @unpack h21,h22,h23,h24,h25,h26,h27,h28,h31,h32,h33,h34,h35,h36,h37,h38,h41,h42,h43,h44,h45,h46,h47,h48 = cache.tab
+    @.. integrator.k[1] =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7 + h28*k8
+    @.. integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7 + h38*k8
+    @.. integrator.k[3] =  h41*k1 + h42*k2 + h43*k3 + h44*k4 + h45*k5 + h46*k6 + h47*k7 + h48*k8
   end
   cache.linsolve = linres.cache
 end
@@ -1948,10 +1968,11 @@ end
   end
 
   if integrator.opts.calck
-    @unpack h21,h22,h23,h24,h25,h26,h27,h31,h32,h33,h34,h35,h36,h37 = cache.tab
+    @unpack h21,h22,h23,h24,h25,h26,h27,h28,h31,h32,h33,h34,h35,h36,h37,h38,h41,h42,h43,h44,h45,h46,h47,h48 = cache.tab
     @inbounds @simd ivdep for i in eachindex(u)
-      integrator.k[1][i] = h21*k1[i] + h22*k2[i] + h23*k3[i] + h24*k4[i] + h25*k5[i] + h26*k6[i] + h27*k7[i]
-      integrator.k[2][i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i] + h36*k6[i] + h37*k7[i]
+      integrator.k[1][i] = h21*k1[i] + h22*k2[i] + h23*k3[i] + h24*k4[i] + h25*k5[i] + h26*k6[i] + h27*k7[i] + h28*k8[i]
+      integrator.k[2][i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i] + h36*k6[i] + h37*k7[i] + h38*k8[i]
+      integrator.k[3][i] = h41*k1[i] + h42*k2[i] + h43*k3[i] + h44*k4[i] + h45*k5[i] + h46*k6[i] + h47*k7[i] + h48*k8[i]
     end
   end
   cache.linsolve = linres.cache
