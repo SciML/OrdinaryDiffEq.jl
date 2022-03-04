@@ -16,6 +16,8 @@ function loopheader!(integrator)
         step_reject_controller!(integrator,integrator.alg)
       end
     end
+  elseif integrator.u_modified # && integrator.iter == 0
+    update_uprev!(integrator)
   end
 
   integrator.iter += 1
@@ -280,11 +282,7 @@ function handle_callback_modifiers!(integrator::ODEIntegrator)
   integrator.reeval_fsal = true
 end
 
-function apply_step!(integrator)
-
-  integrator.accept_step = false # yay we got here, don't need this no more
-
-  #Update uprev
+function update_uprev!(integrator)
   if alg_extrapolates(integrator.alg)
     if isinplace(integrator.sol.prob)
       recursivecopy!(integrator.uprev2,integrator.uprev)
@@ -303,6 +301,13 @@ function apply_step!(integrator)
       integrator.duprev = integrator.du
     end
   end
+  nothing
+end
+
+function apply_step!(integrator)
+  integrator.accept_step = false # yay we got here, don't need this no more
+
+  update_uprev!(integrator)
 
   #Update dt if adaptive or if fixed and the dt is allowed to change
   if integrator.opts.adaptive || integrator.dtchangeable
