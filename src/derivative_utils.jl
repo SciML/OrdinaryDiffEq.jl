@@ -130,16 +130,36 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             jacobian!(J, uf, x, du1, integrator, jac_config)
         end
     else
-        if DiffEqBase.has_jac(f)
-            f.jac(J, uprev, p, t)
-        else
-            @unpack du1, uf, jac_config = cache
+      @unpack du1, uf, jac_config = cache
 
-            uf.f = nlsolve_f(f, alg)
-            uf.t = t
-            if !(p isa DiffEqBase.NullParameters)
-                uf.p = p
-            end
+      if isfsal(integrator.alg)
+        du1 .= integrator.fsalfirst
+      end
+      # Otherwise du1 is assumed to be correct
+      # i.e. Rosenbrock differntiation corrects it.
+
+      # using `dz` as temporary array
+      x = cache.dz
+      fill!(x, zero(eltype(x)))
+      jacobian!(J, uf, x, du1, integrator, jac_config)
+    end
+  else
+    if DiffEqBase.has_jac(f)
+      f.jac(J, uprev, p, t)
+    else
+      @unpack du1, uf, jac_config = cache
+
+      if isfsal(integrator.alg)
+        du1 .= integrator.fsalfirst
+      end
+      # Otherwise du1 is assumed to be correct
+      # i.e. Rosenbrock differntiation corrects it.
+
+      uf.f = nlsolve_f(f, alg)
+      uf.t = t
+      if !(p isa DiffEqBase.NullParameters)
+        uf.p = p
+      end
 
             jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end

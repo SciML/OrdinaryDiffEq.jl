@@ -24,10 +24,6 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
         end
         always_new || update_W!(nlsolver, integrator, cache, γW, repeat_step)
     end
-
-    # This is for numerical differentiation cache correctness
-    # Requires Newton methods are FSAL
-    nlsolver.cache.du1 .= integrator.fsalfirst
     update_W!(nlsolver, integrator, cache, γW, repeat_step)
   end
 
