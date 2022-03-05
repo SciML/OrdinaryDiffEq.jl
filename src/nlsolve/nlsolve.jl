@@ -25,6 +25,12 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
         always_new || update_W!(nlsolver, integrator, cache, γW, repeat_step)
     end
 
+    # This is for numerical differentiation cache correctness
+    # Requires Newton methods are FSAL
+    nlsolver.cache.du1 .= integrator.fsalfirst
+    update_W!(nlsolver, integrator, cache, γW, repeat_step)
+  end
+
     @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
     initialize!(nlsolver, integrator)
