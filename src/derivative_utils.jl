@@ -133,7 +133,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
       @unpack du1, uf, jac_config = cache
 
       if isfsal(integrator.alg)
-        du1 .= integrator.fsalfirst
+        copyto!(du1, integrator.fsalfirst)
       end
       # Otherwise du1 is assumed to be correct
       # i.e. Rosenbrock differntiation corrects it.
@@ -150,7 +150,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
       @unpack du1, uf, jac_config = cache
 
       if isfsal(integrator.alg)
-        du1 .= integrator.fsalfirst
+        copyto!(du1,integrator.fsalfirst)
       end
       # Otherwise du1 is assumed to be correct
       # i.e. Rosenbrock differntiation corrects it.
