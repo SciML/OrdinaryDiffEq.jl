@@ -69,7 +69,7 @@ end
   if mass_matrix === I
     copyto!(tmp,k₁)
   else
-    mul!(_vec(tmp),mass_matrix,k₁)
+    mul!(_vec(tmp),mass_matrix,_vec(k₁))
   end
 
   @.. linsolve_tmp = f₁ - tmp
@@ -92,7 +92,7 @@ end
       @.. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
     else
       @.. du2 = c₃₂*k₂ + 2k₁
-      mul!(du1,mass_matrix,du2)
+      mul!(_vec(du1),mass_matrix,_vec(du2))
       @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
     end
 
@@ -158,7 +158,7 @@ end
   if mass_matrix === I
     copyto!(tmp,k₁)
   else
-    mul!(_vec(tmp),mass_matrix,k₁)
+    mul!(_vec(tmp),mass_matrix,_vec(k₁))
   end
 
   @inbounds @simd ivdep for i in eachindex(u)
@@ -192,7 +192,7 @@ end
       @inbounds @simd ivdep for i in eachindex(u)
         du2[i] = c₃₂*k₂[i] + 2k₁[i]
       end
-      mul!(du1,mass_matrix,du2)
+      mul!(_vec(du1),mass_matrix,_vec(du2))
 
       @inbounds @simd ivdep for i in eachindex(u)
         linsolve_tmp[i] = fsallast[i] - du1[i] + c₃₂*f₁[i] + 2fsalfirst[i] + dt*dT[i]
@@ -261,7 +261,7 @@ end
   if mass_matrix === I
     tmp .= k₁
   else
-    mul!(tmp,mass_matrix,k₁)
+    mul!(_vec(tmp),mass_matrix,_vec(k₁))
   end
 
   @.. linsolve_tmp = f₁ - tmp
@@ -282,7 +282,7 @@ end
     @.. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
   else
     @.. du2 = c₃₂*k₂ + 2k₁
-    mul!(du1,mass_matrix,du2)
+    mul!(_vec(du1),mass_matrix,_vec(du2))
     @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
@@ -559,7 +559,7 @@ end
     @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
-    mul!(du2,mass_matrix,du1)
+    mul!(_vec(du2),mass_matrix,_vec(du1))
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
@@ -579,7 +579,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     @.. du1 = dtC31*k1 + dtC32*k2
-    mul!(du2,mass_matrix,du1)
+    mul!(_vec(du2),mass_matrix,_vec(du1))
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
@@ -740,7 +740,7 @@ end
     @.. linsolve_tmp = fsalfirst + dtd2*dT + dtC21*k1
   else
     @.. du1 = dtC21*k1
-    mul!(du2,mass_matrix,du1)
+    mul!(_vec(du2),mass_matrix,_vec(du1))
     @.. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
@@ -757,7 +757,7 @@ end
     @.. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     @.. du1 = dtC31*k1 + dtC32*k2
-    mul!(du2,mass_matrix,du1)
+    mul!(_vec(du2),mass_matrix,_vec(du1))
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
@@ -770,7 +770,7 @@ end
     @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
   else
     @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-    mul!(du2,mass_matrix,du1)
+    mul!(_vec(du2),mass_matrix,_vec(du1))
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
