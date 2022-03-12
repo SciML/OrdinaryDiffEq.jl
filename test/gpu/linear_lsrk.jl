@@ -37,7 +37,7 @@ end
 problem = ODEProblem((du, u, p, t) -> (du .= -u), cu([1f0]), 20)
 stiffalg = Rosenbrock23()
 for alg in (AutoDP5, AutoTsit5, AutoVern6, AutoVern7, AutoVern8, AutoVern9)
-    @printf("%-9s: ", alg)
+    @show alg
     try
         solve(problem, alg(stiffalg))
         println("Success")
