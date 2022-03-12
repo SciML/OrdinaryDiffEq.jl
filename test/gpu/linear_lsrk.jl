@@ -32,3 +32,16 @@ for alg in algs
 
 	@test sol[end] ≈ Array(sol2[end])
 end
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1614
+problem = ODEProblem((du, u, p, t) -> (du .= -u), cu([1f0]), 20)
+stiffalg = Rosenbrock23()
+for alg in (AutoDP5, AutoTsit5, AutoVern6, AutoVern7, AutoVern8, AutoVern9)
+    @show alg
+    try
+        solve(problem, alg(stiffalg))
+        println("Success")
+    catch e
+        println("ERROR: ", replace(sprint(showerror, e), r"\n.*" => ""))
+    end
+end

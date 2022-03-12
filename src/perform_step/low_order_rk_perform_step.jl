@@ -817,10 +817,10 @@ end
     g7 = u
     # Hairer II, page 22
     ϱu, ϱd = zero(eltype(k7))^2, zero(eltype(g7))^2
-    @inbounds for i in eachindex(k7)
-      ϱu += (k7[i] - k6[i])^2
-      ϱd += (g7[i] - g6[i])^2
-    end
+    @. g6 = (g7 - g6)^2
+    ϱd = sum(g6)
+    @. tmp = (k7 - k6)^2
+    ϱu = sum(tmp)	
     integrator.eigen_est = sqrt(ϱu/ϱd)*oneunit(t)
   end
   if integrator.opts.adaptive
