@@ -817,7 +817,7 @@ end
     g7 = u
     # Hairer II, page 22
     ϱu, ϱd = zero(eltype(k7))^2, zero(eltype(g7))^2
-    @. g6 = (g7 - g6)^2
+    @. g6 = g7 - g6
     ϱd = integrator.opts.internalnorm(g6,t)
     @. tmp = (k7 - k6)^2
     ϱu = integrator.opts.internalnorm(tmp,t)
