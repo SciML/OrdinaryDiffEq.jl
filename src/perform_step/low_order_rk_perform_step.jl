@@ -817,11 +817,11 @@ end
     g7 = u
     # Hairer II, page 22
     ϱu, ϱd = zero(eltype(k7))^2, zero(eltype(g7))^2
-    @. g6 = (g7 - g6)^2
-    ϱd = sum(g6)
-    @. tmp = (k7 - k6)^2
-    ϱu = sum(tmp)	
-    integrator.eigen_est = sqrt(ϱu/ϱd)*oneunit(t)
+    @. g6 = g7 - g6
+    ϱd = integrator.opts.internalnorm(g6,t)
+    @. tmp = k7 - k6
+    ϱu = integrator.opts.internalnorm(tmp,t)
+    integrator.eigen_est = (ϱu/ϱd)*oneunit(t)
   end
   if integrator.opts.adaptive
     @.. utilde = dt*(btilde1*k1 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
