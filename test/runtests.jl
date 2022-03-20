@@ -154,8 +154,8 @@ if !is_APPVEYOR && GROUP == "GPU"
     import OrdinaryDiffEq
     include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl"))
   end
-  @time @safetestset "Linear LSRK GPU" begin include("gpu/linear_lsrk.jl") end
   @time @safetestset "Autoswitch GPU" begin include("gpu/autoswitch.jl") end
+  @time @safetestset "Linear LSRK GPU" begin include("gpu/linear_lsrk.jl") end
   @time @safetestset "Reaction-Diffusion Stiff Solver GPU" begin include("gpu/reaction_diffusion_stiff.jl") end
 end
 
