@@ -10,17 +10,19 @@ function initialize!(integrator,cache::AitkenNevilleCache)
   integrator.destats.nf += 1
 
   cache.step_no = 1
-  cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
+  alg = unwrap_alg(integrator, false)
+  cache.cur_order = max(alg.init_order, alg.min_order)
 end
 
 function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack u_tmps, k_tmps = cache
 
   max_order = min(size(T, 1), cur_order + 1)
 
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 1:max_order
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
@@ -40,7 +42,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       # Balance workload of threads by computing T[1,1] with T[max_order,1] on
       # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
       # first column of T matrix
-      @threaded integrator.alg.threading for i in 1:2
+      @threaded alg.threading for i in 1:2
         startIndex = (i == 1) ? 1 : max_order
         endIndex = (i == 1) ? max_order - 1 : max_order
         for index in startIndex:endIndex
@@ -88,7 +90,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
 
           integrator.opts.controller.beta1 = 1/(i+1)
           integrator.EEst = EEst
-          dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
+          dtpropose = step_accept_controller!(integrator,alg,stepsize_controller!(integrator,alg))
           integrator.EEst = e
           integrator.opts.controller.beta1 = beta1
           integrator.qold = qold
@@ -123,16 +125,18 @@ function initialize!(integrator,cache::AitkenNevilleConstantCache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.step_no = 1
-  cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
+  alg = unwrap_alg(integrator, false)
+  cache.cur_order = max(alg.init_order, alg.min_order)
 end
 
 function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack dtpropose, T, cur_order, work, A = cache
 
   max_order = min(size(T, 1), cur_order + 1)
 
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 1:max_order
       dt_temp = dt/(2^(i-1)) # Romberg sequence
 
@@ -153,7 +157,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       # Balance workload of threads by computing T[1,1] with T[max_order,1] on
       # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
       # first column of T matrix
-      @threaded integrator.alg.threading for i in 1:2
+      @threaded alg.threading for i in 1:2
         startIndex = (i == 1) ? 1 : max_order
         endIndex = (i == 1) ? max_order - 1 : max_order
 
@@ -202,7 +206,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
 
           integrator.opts.controller.beta1 = 1/(i+1)
           integrator.EEst = EEst
-          dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
+          dtpropose = step_accept_controller!(integrator,alg,stepsize_controller!(integrator,alg))
           integrator.EEst = e
           integrator.opts.controller.beta1 = beta1
           integrator.qold = qold
@@ -243,11 +247,13 @@ function initialize!(integrator,cache::ImplicitEulerExtrapolationCache)
   integrator.destats.nf += 1
 
   cache.step_no = 1
-  #cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
+  #alg = unwrap_alg(integrator, true)
+  #cache.cur_order = max(alg.init_order, alg.min_order)
 end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack T,utilde,atmp,dtpropose,n_curr,A,stage_number,diff1,diff2 = cache
   @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps, u_tmps2 = cache
@@ -256,9 +262,9 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -269,7 +275,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     n_curr = win_min # Start with smallest order in the order window
   end
 
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     for index in 1:n_curr + 1
       dt_temp = dt/sequence[index]
@@ -318,7 +324,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     let n_curr=n_curr, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
         integrator=integrator, cache=cache, repeat_step = repeat_step,
         k_tmps=k_tmps, u_tmps=u_tmps, u_tmps2=u_tmps2,diff1=diff1,diff2=diff2
-      @threaded integrator.alg.threading for i in 1:2
+      @threaded alg.threading for i in 1:2
         startIndex = (i == 1) ? 1 : n_curr + 1
         endIndex = (i == 1) ? n_curr : n_curr + 1
         for index in startIndex:endIndex
@@ -390,16 +396,16 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-    elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
+    elseif (n_curr < alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -444,7 +450,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
 
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -475,14 +481,15 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
   @unpack sequence,stage_number = cache
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -494,7 +501,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
   end
 
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for index in 1:n_curr + 1
       dt_temp = dt/sequence[index]
       W = dt_temp*J - integrator.f.mass_matrix
@@ -528,7 +535,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
     J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
     let n_curr=n_curr, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
       uprev=uprev, T=T
-      @threaded integrator.alg.threading for i in 1:2
+      @threaded alg.threading for i in 1:2
         startIndex = (i==1) ? 1 : n_curr + 1
         endIndex = (i==1) ? n_curr : n_curr + 1
         for index in startIndex:endIndex
@@ -589,16 +596,16 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
+      elseif (n_curr < alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(sequence[n_curr+2:win_max+1] .// sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Always compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -632,7 +639,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         utilde = T[n_curr + 1, n_curr]
         res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -666,6 +673,7 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
 
@@ -676,15 +684,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
-  @unpack sequence_factor = integrator.alg
+  @unpack sequence_factor = alg
 
   fill!(cache.Q, zero(eltype(cache.Q)))
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
 
   if integrator.opts.adaptive
     # Set up the order window
-    win_min = max(integrator.alg.n_min, n_curr - 1)
-    win_max = min(integrator.alg.n_max, n_curr + 1)
+    win_min = max(alg.n_min, n_curr - 1)
+    win_max = min(alg.n_max, n_curr + 1)
 
     # Set up the current extrapolation order
     cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -693,7 +701,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   end
 
   #Compute the internal discretisations
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -708,7 +716,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -716,7 +724,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index = startIndex : endIndex
@@ -736,7 +744,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr - i)
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -756,7 +764,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         end
       end
     end
-    nevals = cache.stage_number[n_curr - integrator.alg.n_min + 1] - 1
+    nevals = cache.stage_number[n_curr - alg.n_min + 1] - 1
     integrator.destats.nf += nevals
   end
 
@@ -764,7 +772,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
-    for i = integrator.alg.n_min:n_curr
+    for i = alg.n_min:n_curr
 
       #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
       #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
@@ -783,7 +791,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
@@ -791,7 +799,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
+      elseif integrator.EEst <= tol^(stage_number[n_curr - alg.n_min + 1] / stage_number[win_max - alg.n_min + 1] - 1)
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -827,7 +835,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
 
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -863,6 +871,7 @@ end
 function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantCache, repeat_step=false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -871,20 +880,20 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
-  @unpack sequence_factor = integrator.alg
+  @unpack sequence_factor = alg
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
   u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
-  T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+  T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   # Start computation
   if integrator.opts.adaptive
     # Set up the order window
-    win_min = max(integrator.alg.n_min, n_curr - 1)
-    win_max = min(integrator.alg.n_max, n_curr + 1)
+    win_min = max(alg.n_min, n_curr - 1)
+    win_max = min(alg.n_max, n_curr + 1)
 
     # Set up the current extrapolation order
     cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -892,7 +901,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   end
 
   # Compute the internal discretisations
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i = 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -906,7 +915,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -914,7 +923,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
           integrator=integrator,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index = startIndex : endIndex
@@ -933,7 +942,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
     else
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
               p=p, t=t, T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr - i)
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -952,20 +961,20 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
         end
       end
     end
-    nevals = cache.stage_number[n_curr - integrator.alg.n_min + 1] - 1
+    nevals = cache.stage_number[n_curr - alg.n_min + 1] - 1
     integrator.destats.nf += nevals
   end
 
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
-    for i = integrator.alg.n_min:n_curr
+    for i = alg.n_min:n_curr
       u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
       utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
       res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
@@ -973,7 +982,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
+      elseif integrator.EEst <= tol^(stage_number[n_curr - alg.n_min + 1] / stage_number[win_max - alg.n_min + 1] - 1)
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -996,7 +1005,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
         utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
         res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -1028,6 +1037,7 @@ end
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k, diff1, diff2  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
 
@@ -1045,8 +1055,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
   if integrator.opts.adaptive
     # Set up the order window
-    win_min = max(integrator.alg.n_min, n_curr - 1)
-    win_max = min(integrator.alg.n_max, n_curr + 1)
+    win_min = max(alg.n_min, n_curr - 1)
+    win_max = min(alg.n_max, n_curr + 1)
 
     # Set up the current extrapolation order
     cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -1056,7 +1066,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1110,7 +1120,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -1118,7 +1128,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1176,7 +1186,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = 4 * subdividing_sequence[index+1]
@@ -1239,7 +1249,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
-    for i = integrator.alg.n_min:n_curr
+    for i = alg.n_min:n_curr
 
       #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
       #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
@@ -1258,7 +1268,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
@@ -1267,7 +1277,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
+      elseif integrator.EEst <= tol^(stage_number[n_curr - alg.n_min + 1] / stage_number[win_max - alg.n_min + 1] - 1)
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -1321,7 +1331,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
 
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -1357,6 +1367,7 @@ end
 function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantCache, repeat_step=false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -1369,14 +1380,14 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
   u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-  T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+  T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   # Start computation
   if integrator.opts.adaptive
     # Set up the order window
-    win_min = max(integrator.alg.n_min, n_curr - 1)
-    win_max = min(integrator.alg.n_max, n_curr + 1)
+    win_min = max(alg.n_min, n_curr - 1)
+    win_max = min(alg.n_max, n_curr + 1)
 
     # Set up the current extrapolation order
     cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -1385,7 +1396,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
 
   # Compute the internal discretisations
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1411,7 +1422,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -1419,7 +1430,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp2=u_temp2,
           u_temp2=u_temp2,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1453,7 +1464,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
         integrator=integrator,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int = 4 * subdividing_sequence[index+1]
@@ -1492,13 +1503,13 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
-    for i = integrator.alg.n_min:n_curr
+    for i = alg.n_min:n_curr
       u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
       utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
       res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
@@ -1507,7 +1518,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif integrator.EEst <= tol^(stage_number[n_curr - integrator.alg.n_min + 1] / stage_number[win_max - integrator.alg.n_min + 1] - 1)
+      elseif integrator.EEst <= tol^(stage_number[n_curr - alg.n_min + 1] / stage_number[win_max - alg.n_min + 1] - 1)
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -1532,7 +1543,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
         utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
         res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -1565,6 +1576,7 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
   # Coefficients for obtaining u
@@ -1573,15 +1585,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
-  @unpack sequence_factor = integrator.alg
+  @unpack sequence_factor = alg
 
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -1593,7 +1605,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   end
 
   #Compute the internal discretisations
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1608,7 +1620,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -1616,7 +1628,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -1637,7 +1649,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -1679,16 +1691,16 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-    elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
+    elseif (n_curr < alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -1724,7 +1736,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
 
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -1760,6 +1772,7 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -1767,19 +1780,19 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
-  @unpack sequence_factor = integrator.alg
+  @unpack sequence_factor = alg
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
   u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-  T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+  T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -1791,7 +1804,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   end
 
   #Compute the internal discretisations
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
      j_int = sequence_factor * subdividing_sequence[i+1]
      dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1805,7 +1818,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
      end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -1813,7 +1826,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
           integrator=integrator, T=T, p=p, t=t
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index in startIndex:endIndex
@@ -1832,7 +1845,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     else
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
           integrator=integrator, T=T, p=p, t=t
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -1859,16 +1872,16 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
       res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
+      elseif (n_curr < alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Always compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -1891,7 +1904,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
         utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
         res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -1924,6 +1937,7 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -1935,14 +1949,14 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
   u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-  T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+  T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -1955,7 +1969,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
 
   #Compute the internal discretisations
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1985,7 +1999,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -1993,7 +2007,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp2=u_temp2,
           u_temp2=u_temp2,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2031,7 +2045,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
         integrator=integrator,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int = 4 * subdividing_sequence[index+1]
@@ -2079,16 +2093,16 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
       res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
+      elseif (n_curr < alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Always compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -2116,7 +2130,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
         res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -2148,6 +2162,7 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
   # Coefficients for obtaining u
@@ -2163,9 +2178,9 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -2178,7 +2193,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -2235,7 +2250,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -2243,7 +2258,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2304,7 +2319,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = 4 * subdividing_sequence[index+1]
@@ -2388,11 +2403,11 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       EEst1 = one(integrator.EEst)
       for i in n_curr + 2: win_max + 1
@@ -2402,7 +2417,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= EEst1
+      elseif (n_curr < alg.n_min + 1) || integrator.EEst <= EEst1
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -2469,7 +2484,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -2505,6 +2520,7 @@ end
 function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationConstantCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -2512,19 +2528,19 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
-  @unpack sequence_factor = integrator.alg
+  @unpack sequence_factor = alg
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
   u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-  T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+  T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -2537,7 +2553,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
   #Compute the internal discretisations
   J = calc_J(integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -2567,7 +2583,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -2575,7 +2591,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp2=u_temp2,
           u_temp2=u_temp2,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2613,7 +2629,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
         integrator=integrator,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int = sequence_factor * subdividing_sequence[index+1]
@@ -2661,16 +2677,16 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-      elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
+      elseif (n_curr < alg.n_min + 1) || integrator.EEst <= typeof(integrator.EEst)(prod(subdividing_sequence[n_curr+2:win_max+1] .// subdividing_sequence[1]^2))
         # Reject current approximation order but pass convergence monitor
         # Always compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -2698,7 +2714,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
         res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
@@ -2730,6 +2746,7 @@ end
 function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
   # Coefficients for obtaining u
@@ -2738,7 +2755,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
-  @unpack sequence_factor = integrator.alg
+  @unpack sequence_factor = alg
 
   @unpack J,W,uf,tf,linsolve_tmps,jac_config = cache
 
@@ -2746,9 +2763,9 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
   if integrator.opts.adaptive
     # Set up the order window
-    # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min + 1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
+    if !(alg.n_min + 1 <= n_curr <= alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -2761,7 +2778,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
   #Compute the internal discretisations
   calc_J!(J,integrator,cache) # Store the calculated jac as it won't change in internal discretisation
-  if !isthreaded(integrator.alg.threading)
+  if !isthreaded(alg.threading)
     for i in 0:n_curr
       j_int = sequence_factor * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -2818,7 +2835,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       end
     end
   else
-    if integrator.alg.sequence == :romberg
+    if alg.sequence == :romberg
       # Compute solution by using maximum two threads for romberg sequence
       # One thread will fill T matrix till second last element and another thread will
       # fill last element of T matrix.
@@ -2826,7 +2843,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i = 1 : 2
+        @threaded alg.threading for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
 
@@ -2888,7 +2905,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        @threaded integrator.alg.threading for i in 0:(n_curr ÷ 2)
+        @threaded alg.threading for i in 0:(n_curr ÷ 2)
           indices = i != n_curr - i ? (i, n_curr - i) : (n_curr-i) #Avoid duplicate entry in tuple
           for index in indices
             j_int_temp = sequence_factor * subdividing_sequence[index+1]
@@ -2973,11 +2990,11 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
-      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+      stepsize_controller_internal!(integrator, alg) # Update cache.Q
     end
 
     # Check if an approximation of some order in the order window can be accepted
-    # Make sure a stepsize scaling factor of order (integrator.alg.n_min + 1) is provided for the step_*_controller!
+    # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
     while n_curr <= win_max
       EEst1 = one(integrator.EEst)
       for i in n_curr + 2: win_max + 1
@@ -2989,7 +3006,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
       if accept_step_controller(integrator, integrator.opts.controller)
         # Accept current approximation u of order n_curr
         break
-    elseif (n_curr < integrator.alg.n_min + 1) || integrator.EEst <= EEst1
+    elseif (n_curr < alg.n_min + 1) || integrator.EEst <= EEst1
         # Reject current approximation order but pass convergence monitor
         # Compute approximation of order (n_curr + 1)
         n_curr = n_curr + 1
@@ -3051,7 +3068,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-        stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
+        stepsize_controller_internal!(integrator, alg) # Update cache.Q
       else
           # Reject the current approximation and not pass convergence monitor
           break
