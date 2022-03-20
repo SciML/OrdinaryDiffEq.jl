@@ -185,7 +185,8 @@ function initialize!(integrator, cache::SBDFConstantCache)
 end
 
 function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack uprev2,uprev3,uprev4,du₁,du₂,k₁,k₂,k₃,nlsolver = cache
   @unpack f1, f2 = integrator.f
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
@@ -254,7 +255,8 @@ function initialize!(integrator, cache::SBDFCache)
 end
 
 function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂,nlsolver = cache
   @unpack tmp,z = nlsolver
   @unpack f1, f2 = integrator.f
