@@ -372,7 +372,6 @@ end
   end
   @.. integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
-  integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
