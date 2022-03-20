@@ -71,7 +71,8 @@ end
 function initialize!(integrator, cache::PDIRK44Cache) end
 
 @muladd function perform_step!(integrator, cache::PDIRK44Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack nlsolver,k1,k2,tab = cache
   @unpack γs,cs,α1,α2,b1,b2,b3,b4 = tab
   if isthreaded(alg.threading)

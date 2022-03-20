@@ -12,6 +12,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack A,c,α,αEEst,stages = cache
   @unpack kk = cache
 
@@ -53,7 +54,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  if !isfsal(integrator.alg.tableau)
+  if !isfsal(alg.tableau)
     integrator.fsallast = f(u, p, t+dt)
     integrator.destats.nf += 1
   end
@@ -76,6 +77,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack A,c,α,αEEst,stages = cache.tab
   @unpack kk,utilde,tmp,atmp = cache
 
@@ -100,7 +102,7 @@ end
   integrator.destats.nf += 1
 
   #Accumulate
-  if !isfsal(integrator.alg.tableau)
+  if !isfsal(alg.tableau)
     @.. utilde = α[1]*kk[1]
     for i = 2:stages
       @.. utilde = utilde + α[i]*kk[i]
@@ -120,7 +122,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  if !isfsal(integrator.alg.tableau)
+  if !isfsal(alg.tableau)
     f(integrator.fsallast,u,p,t+dt)
     integrator.destats.nf += 1
   end

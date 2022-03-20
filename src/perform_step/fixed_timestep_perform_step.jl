@@ -5,9 +5,10 @@ end
 
 function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=false)
   @unpack uprev,dt,t,f,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT &&
      !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&  integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT)
-    if FunctionMap_scale_by_time(integrator.alg)
+    if FunctionMap_scale_by_time(alg)
       tmp = f(uprev, p, t + dt)
       integrator.destats.nf += 1
       @muladd integrator.u = @.. uprev + dt * tmp
@@ -25,10 +26,11 @@ end
 
 function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
   @unpack u,uprev,dt,t,f,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack tmp = cache
   if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
      !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&  integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
-    if FunctionMap_scale_by_time(integrator.alg)
+    if FunctionMap_scale_by_time(alg)
       f(tmp, uprev, p, t+dt)
       @muladd @.. u = uprev + dt*tmp
     else
@@ -449,7 +451,8 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache
   ## Note that c1 and b2 were 0.
-  w = integrator.alg.w
+  alg = unwrap_alg(integrator, false)
+  w = alg.w
   v = w*dt
   ## Formula by Z.A. Anastassi, see the Anas5 caches in tableaus/low_order_rk_tableaus.jl for the full citation.
   a65 = (-8000//1071)*(-a43*(v^5) + 6*tan(v)*(v^4) + 24*(v^3) - 72*tan(v)*(v^2) - 144*v + 144*tan(v))/((v^5)*(a43*tan(v)*v + 12 - 10*a43))
@@ -487,7 +490,8 @@ end
   uidx = eachindex(integrator.uprev)
   @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache.tab
-  w = integrator.alg.w
+  alg = unwrap_alg(integrator, false)
+  w = alg.w
   v = w*dt
   ## Formula by Z.A. Anastassi, see the Anas5 caches in tableaus/low_order_rk_tableaus.jl for the full citation.
   a65 = (-8000//1071)*(-a43*(v^5) + 6*tan(v)*(v^4) + 24*(v^3) - 72*tan(v)*(v^2) - 144*v + 144*tan(v))/((v^5)*(a43*tan(v)*v + 12 - 10*a43))

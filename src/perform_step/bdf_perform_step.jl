@@ -185,7 +185,8 @@ function initialize!(integrator, cache::SBDFConstantCache)
 end
 
 function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack uprev2,uprev3,uprev4,du₁,du₂,k₁,k₂,k₃,nlsolver = cache
   @unpack f1, f2 = integrator.f
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
@@ -254,7 +255,8 @@ function initialize!(integrator, cache::SBDFCache)
 end
 
 function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
+  alg = unwrap_alg(integrator, true)
   @unpack uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂,nlsolver = cache
   @unpack tmp,z = nlsolver
   @unpack f1, f2 = integrator.f
@@ -698,6 +700,7 @@ end
 function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtprev,order,D,U,nlsolver,γₖ = cache
+  alg = unwrap_alg(integrator, true)
 
   if integrator.u_modified
     dtprev = one(dt)
@@ -709,7 +712,7 @@ function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_ste
   end
 
   k = order
-  κlist = integrator.alg.kappa
+  κlist = alg.kappa
   κ = κlist[k]
   if cache.consfailcnt > 0
     copyto!(D, cache.prevD)
@@ -806,6 +809,7 @@ end
 function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtprev,order,D,nlsolver,γₖ,dd,atmp,atmpm1,atmpp1,utilde,utildem1,utildep1,ϕ,u₀ = cache
+  alg = unwrap_alg(integrator, true)
 
   if integrator.u_modified
     dtprev = one(dt)
@@ -817,7 +821,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   end
 
   k = order
-  κlist = integrator.alg.kappa
+  κlist = alg.kappa
   κ = κlist[k]
   if cache.consfailcnt > 0
     copyto!(D, cache.prevD)

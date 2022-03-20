@@ -15,7 +15,6 @@ end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  alg = unwrap_alg(integrator, true)
   @unpack nlsolver = cache
 
   nlsolver.z = zero(u)
@@ -59,7 +58,6 @@ end
   @unpack t,dt,uprev,du,u,f,p = integrator
   @unpack atmp,nlsolver = cache
   @unpack tmp = nlsolver
-  alg = unwrap_alg(integrator, true)
 
   @. nlsolver.z = false
   @. nlsolver.tmp = false
@@ -104,7 +102,6 @@ end
 @muladd function perform_step!(integrator, cache::DABDF2ConstantCache, repeat_step=false)
   @unpack t,f,p = integrator
   @unpack dtₙ₋₁,nlsolver = cache
-  alg = unwrap_alg(integrator, true)
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
   if integrator.iter == 1 && !integrator.u_modified
@@ -171,7 +168,6 @@ end
   @unpack t,dt,du,f,p = integrator
   @unpack atmp,dtₙ₋₁,nlsolver = cache
   @unpack z,tmp = nlsolver
-  alg = unwrap_alg(integrator, true)
   uₙ,uₙ₋₁,uₙ₋₂,dtₙ = integrator.u,integrator.uprev,integrator.uprev2,integrator.dt
 
   if integrator.iter == 1 && !integrator.u_modified

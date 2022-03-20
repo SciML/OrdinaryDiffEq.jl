@@ -10,14 +10,15 @@ function initialize!(integrator, cache::MagnusMidpointCache)
 end
 
 function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
   update_coefficients!(L,u,p,t+dt/2)
 
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
@@ -39,7 +40,8 @@ function initialize!(integrator, cache::LieRK4Cache)
 end
 
 function perform_step!(integrator, cache::LieRK4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -67,7 +69,7 @@ function perform_step!(integrator, cache::LieRK4Cache, repeat_step=false)
 
   y1_2 = exp((3*k1 + 2*k2 + 2*k3 -k4)/12)*uprev
 
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv((1/12), (-k1 + 2*k2 + 2*k3 + 3*k4), y1_2; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp((1/12)*(-k1 + 2*k2 + 2*k3 + 3*k4)) * y1_2
@@ -89,7 +91,8 @@ function initialize!(integrator, cache::RKMK4Cache)
 end
 
 function perform_step!(integrator, cache::RKMK4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -106,7 +109,7 @@ function perform_step!(integrator, cache::RKMK4Cache, repeat_step=false)
   update_coefficients!(L,exp(k3)*uprev,p,t)
   D = Matrix(deepcopy(L))
   k4 = dt*D
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(1/6, (k1 + 2*k2 + 2*k3 + k4 - (k1*k4 - k4*k1)/2), uprev; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp((1/6)*(k1 + 2*k2 + 2*k3 + k4 - (k1*k4 - k4*k1)/2)) * uprev
@@ -128,7 +131,8 @@ function initialize!(integrator, cache::RKMK2Cache)
 end
 
 function perform_step!(integrator, cache::RKMK2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -139,7 +143,7 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step=false)
   update_coefficients!(L,exp(k1)*uprev,p,t)
   B = Matrix(deepcopy(L))
   k2 = dt*B
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(1/2, (k1+k2), uprev; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp((1/2)*(k1+k2)) * uprev
@@ -161,7 +165,7 @@ function initialize!(integrator, cache::CG3Cache)
 end
 
 function perform_step!(integrator, cache::CG3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -192,7 +196,7 @@ function initialize!(integrator, cache::CG2Cache)
 end
 
 function perform_step!(integrator, cache::CG2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -221,7 +225,7 @@ function initialize!(integrator, cache::MagnusAdapt4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
   @unpack W,k,tmp, utilde, atmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -286,7 +290,8 @@ function initialize!(integrator, cache::MagnusNC8Cache)
 end
 
 function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -331,7 +336,7 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step=false)
   Ω1 = dt*B0
   Ω2 = (dt^2)*(Q1 + Q2)
   Ω3_4_5_6 = (dt^3)*(Q3 + Q4) + (dt^4)*(Q5 + Q6) + (dt^5)*Q7
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(1.0,Ω1 + Ω2 + Ω3_4_5_6, uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
@@ -352,7 +357,8 @@ function initialize!(integrator, cache::MagnusGL4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -363,7 +369,7 @@ function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step=false)
 
   Ω = (dt/2)*(A1 + A2) - (dt^2)*(sqrt(3)/12)*(A1*A2 - A2*A1)
 
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(1.0, Ω , uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp(Ω) * uprev
@@ -384,7 +390,8 @@ function initialize!(integrator, cache::MagnusGL8Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -423,7 +430,7 @@ function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step=false)
   Ω1 = dt*B0
   Ω2 = (dt^2)*(Q1 + Q2)
   Ω3_4_5_6 = (dt^3)*(Q3 + Q4) + (dt^4)*(Q5 + Q6) + (dt^5)*Q7
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(1.0,Ω1 + Ω2 + Ω3_4_5_6, uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
@@ -444,7 +451,8 @@ function initialize!(integrator, cache::MagnusNC6Cache)
 end
 
 function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L0 = deepcopy(integrator.f.f)
@@ -468,7 +476,7 @@ function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step=false)
   Ω1 = dt*B0
   Ω2 = (dt*dt)*(B1*(3*B0/2 - 6*B2) - (3*B0/2 - 6*B2)*B1)
   Ω3_4 = (dt*dt)*(B0*(B0*(dt*B2/2-Ω2/60)-(dt*B2/2-Ω2/60)*B0) - (B0*(dt*B2/2-Ω2/60)-(dt*B2/2-Ω2/60)*B0)*B0) + (3*dt/5)*(B1*Ω2 - Ω2*B1)
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(1.0,Ω1 + Ω2 + Ω3_4, uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
@@ -489,7 +497,8 @@ function initialize!(integrator, cache::MagnusGL6Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -507,7 +516,7 @@ function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step=false)
   Ω1 = dt*B0
   Ω2 = (dt*dt)*(B1*(3*B0/2 - 6*B2) - (3*B0/2 - 6*B2)*B1)
   Ω3_4 = (dt*dt)*(B0*(B0*(dt*B2/2-Ω2/60)-(dt*B2/2-Ω2/60)*B0) - (B0*(dt*B2/2-Ω2/60)-(dt*B2/2-Ω2/60)*B0)*B0) + (3*dt/5)*(B1*Ω2 - Ω2*B1)
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(1.0,Ω1 + Ω2 + Ω3_4, uprev; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
@@ -528,7 +537,8 @@ function initialize!(integrator, cache::MagnusGauss4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -537,7 +547,7 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step=false)
   A = Matrix(L1)
   update_coefficients!(L2,uprev,p,t+dt*(1/2-sqrt(3)/6))
   B = Matrix(L2)
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(dt,(A+B) ./ 2 + (dt*sqrt(3)) .* (B*A-A*B) ./ 12, u; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     u .= exp((dt/2) .* (A+B)+((dt^2)*(sqrt(3)/12)) .* (B*A-A*B)) * uprev
@@ -558,14 +568,15 @@ function initialize!(integrator, cache::LieEulerCache)
 end
 
 function perform_step!(integrator, cache::LieEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
   update_coefficients!(L,u,p,t)
 
-  if integrator.alg.krylov
+  if alg.krylov
     u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   else
     A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
@@ -588,14 +599,15 @@ function initialize!(integrator, cache::MagnusLeapfrogCache)
 end
 
 function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step=false, alg_extrapolates=true, iter=1)
-  @unpack t,dt,uprev,uprev2,u,p,alg,iter = integrator
+  @unpack t,dt,uprev,uprev2,u,p,iter = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
     # println("iter   : $iter")
   if iter==1
     L = integrator.f.f
     update_coefficients!(L,u,p,t+dt/2)
-    if integrator.alg.krylov
+    if alg.krylov
       u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     else
       A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
@@ -608,7 +620,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step=false
   else
     L = integrator.f.f
     update_coefficients!(L,u,p,t)
-    if integrator.alg.krylov
+    if alg.krylov
       u .= expv(2*dt, L, uprev2; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     else
       A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
@@ -635,7 +647,7 @@ end
 
 function perform_step!(integrator, cache::LinearExponentialConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  alg = unwrap_alg(integrator, true)
+  alg = unwrap_alg(integrator, nothing)
   A = f.f # assume f to be an ODEFunction wrapped around a linear operator
 
   if alg.krylov == :off
@@ -672,7 +684,7 @@ end
 function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp, KsCache = cache
-  alg = unwrap_alg(integrator, true)
+  alg = unwrap_alg(integrator, nothing)
   A = f.f # assume f to be an ODEFunction wrapped around a linear operator
 
   if alg.krylov == :off
@@ -712,7 +724,6 @@ end
 
 function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  alg = unwrap_alg(integrator, true)
 
   if f isa SplitFunction
     A = f.f1.f
@@ -744,7 +755,7 @@ function initialize!(integrator, cache::CayleyEulerCache)
 end
 
 function perform_step!(integrator, cache::CayleyEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,f,alg = integrator
+  @unpack t,dt,uprev,u,p,f = integrator
   @unpack k,V,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 

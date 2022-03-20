@@ -404,6 +404,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Symplectic45ConstantCache,repeat_step=false)
   @unpack t,dt,f,p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack a1,a2,a3,a4,a5,b1,b2,b3,b4,b5 = cache
   duprev, uprev, _, kuprev  = load_symp_state(integrator)
 
@@ -442,7 +443,7 @@ end
   u = u + dt*b5*ku
 
   kdu = f.f1(du,u,p,tnew)
-  if typeof(integrator.alg) <: McAte42
+  if typeof(alg) <: McAte42
     du = du + dt*a5*kdu
     kdu = f.f1(du,u,p,tnew)
     integrator.destats.nf += 1
@@ -456,6 +457,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Symplectic45Cache,repeat_step=false)
   @unpack t,dt,f,p = integrator
+  alg = unwrap_alg(integrator, false)
   @unpack a1,a2,a3,a4,a5,b1,b2,b3,b4,b5 = cache.tab
   duprev, uprev, _, kuprev  = load_symp_state(integrator)
   du, u, kdu, ku = alloc_symp_state(integrator)
@@ -495,7 +497,7 @@ end
   @.. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  if typeof(integrator.alg) <: McAte42
+  if typeof(alg) <: McAte42
     @.. du = du + dt*a5*kdu
     f.f1(kdu,du,u,p,tnew)
     integrator.destats.nf += 1
