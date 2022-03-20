@@ -747,6 +747,9 @@ function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
   if !iscomp
     return alg
   elseif typeof(alg.choice_function) <: AutoSwitchCache
+    if is_stiff === nothing
+      throwautoswitch(alg)
+    end
     num = is_stiff ? 2 : 1
     if num == 1
       return alg.algs[1]
@@ -764,6 +767,9 @@ function unwrap_alg(integrator, is_stiff)
   if !iscomp
     return alg
   elseif typeof(alg.choice_function) <: AutoSwitchCache
+    if is_stiff === nothing
+      throwautoswitch(alg)
+    end
     num = is_stiff ? 2 : 1
     if num == 1
       return alg.algs[1]
@@ -779,6 +785,10 @@ function unwrap_alg(integrator, is_stiff)
       return alg.algs[integrator.cache.current]
     end
   end
+end
+
+function throwautoswitch(alg)
+  throw(ArgumentError("one of $(alg.algs) is not compatible with stiffness-based autoswitching"))
 end
 
 # Whether `uprev` is used in the algorithm directly.

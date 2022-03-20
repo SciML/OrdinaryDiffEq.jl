@@ -10,7 +10,8 @@ function initialize!(integrator, cache::MagnusMidpointCache)
 end
 
 function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -39,7 +40,8 @@ function initialize!(integrator, cache::LieRK4Cache)
 end
 
 function perform_step!(integrator, cache::LieRK4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -89,7 +91,8 @@ function initialize!(integrator, cache::RKMK4Cache)
 end
 
 function perform_step!(integrator, cache::RKMK4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -128,7 +131,8 @@ function initialize!(integrator, cache::RKMK2Cache)
 end
 
 function perform_step!(integrator, cache::RKMK2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -286,7 +290,8 @@ function initialize!(integrator, cache::MagnusNC8Cache)
 end
 
 function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -352,7 +357,8 @@ function initialize!(integrator, cache::MagnusGL4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -384,7 +390,8 @@ function initialize!(integrator, cache::MagnusGL8Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -444,7 +451,8 @@ function initialize!(integrator, cache::MagnusNC6Cache)
 end
 
 function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L0 = deepcopy(integrator.f.f)
@@ -489,7 +497,8 @@ function initialize!(integrator, cache::MagnusGL6Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -528,7 +537,8 @@ function initialize!(integrator, cache::MagnusGauss4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
@@ -558,7 +568,8 @@ function initialize!(integrator, cache::LieEulerCache)
 end
 
 function perform_step!(integrator, cache::LieEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p,alg = integrator
+  @unpack t,dt,uprev,u,p = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
 
@@ -588,7 +599,8 @@ function initialize!(integrator, cache::MagnusLeapfrogCache)
 end
 
 function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step=false, alg_extrapolates=true, iter=1)
-  @unpack t,dt,uprev,uprev2,u,p,alg,iter = integrator
+  @unpack t,dt,uprev,uprev2,u,p,iter = integrator
+  alg = unwrap_alg(integrator, nothing)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
     # println("iter   : $iter")
@@ -635,7 +647,7 @@ end
 
 function perform_step!(integrator, cache::LinearExponentialConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  alg = unwrap_alg(integrator, true)
+  alg = unwrap_alg(integrator, nothing)
   A = f.f # assume f to be an ODEFunction wrapped around a linear operator
 
   if alg.krylov == :off
@@ -672,7 +684,7 @@ end
 function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp, KsCache = cache
-  alg = unwrap_alg(integrator, true)
+  alg = unwrap_alg(integrator, nothing)
   A = f.f # assume f to be an ODEFunction wrapped around a linear operator
 
   if alg.krylov == :off
