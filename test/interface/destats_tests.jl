@@ -76,3 +76,13 @@ sol = solve(prob, Rodas5(;autodiff=false, diff_type=Val{:central}))
 x[] = 0
 sol = solve(prob, Rodas5(;autodiff=false, diff_type=Val{:complex}))
 @test x[] == sol.destats.nf
+
+function g(du, u,p,t)
+  x[] += 1
+  @. du = 5*u
+end
+probip = ODEProblem(g,u0,tspan)
+
+x[] = 0
+sol = solve(probip, ROCK4())
+@test x[] == sol.destats.nf
