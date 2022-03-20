@@ -698,6 +698,7 @@ end
 function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtprev,order,D,U,nlsolver,γₖ = cache
+  alg = unwrap_alg(integrator, true)
 
   if integrator.u_modified
     dtprev = one(dt)
@@ -709,7 +710,7 @@ function perform_step!(integrator,cache::QNDFConstantCache{max_order},repeat_ste
   end
 
   k = order
-  κlist = integrator.alg.kappa
+  κlist = alg.kappa
   κ = κlist[k]
   if cache.consfailcnt > 0
     copyto!(D, cache.prevD)
@@ -806,6 +807,7 @@ end
 function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=false) where max_order
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtprev,order,D,nlsolver,γₖ,dd,atmp,atmpm1,atmpp1,utilde,utildem1,utildep1,ϕ,u₀ = cache
+  alg = unwrap_alg(integrator, true)
 
   if integrator.u_modified
     dtprev = one(dt)
@@ -817,7 +819,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order}, repeat_step=fals
   end
 
   k = order
-  κlist = integrator.alg.kappa
+  κlist = alg.kappa
   κ = κlist[k]
   if cache.consfailcnt > 0
     copyto!(D, cache.prevD)
