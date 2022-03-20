@@ -3,8 +3,9 @@ function initialize!(integrator, cache::ROCK2ConstantCache)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
-  cache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 200) ? 200 : integrator.alg.max_stages
-  cache.min_stage = (integrator.alg.min_stages > cache.max_stage) ? cache.max_stage : integrator.alg.min_stages
+  alg = unwrap_alg(integrator, true)
+  cache.max_stage = (alg.max_stages < 1 || alg.max_stages > 200) ? 200 : alg.max_stages
+  cache.min_stage = (alg.min_stages > cache.max_stage) ? cache.max_stage : alg.min_stages
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
@@ -72,8 +73,9 @@ function initialize!(integrator, cache::ROCK2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
   integrator.fsallast = cache.k
-  cache.constantcache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 200) ? 200 : integrator.alg.max_stages
-  cache.constantcache.min_stage = (integrator.alg.min_stages > cache.constantcache.max_stage) ? cache.constantcache.max_stage : integrator.alg.min_stages
+  alg = unwrap_alg(integrator, true)
+  cache.constantcache.max_stage = (alg.max_stages < 1 || alg.max_stages > 200) ? 200 : alg.max_stages
+  cache.constantcache.min_stage = (alg.min_stages > cache.constantcache.max_stage) ? cache.constantcache.max_stage : alg.min_stages
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -155,8 +157,9 @@ function initialize!(integrator, cache::ROCK4ConstantCache)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
-  cache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 152) ? 152 : integrator.alg.max_stages
-  cache.min_stage = (integrator.alg.min_stages > cache.max_stage) ? cache.max_stage : integrator.alg.min_stages
+  alg = unwrap_alg(integrator, true)
+  cache.max_stage = (alg.max_stages < 1 || alg.max_stages > 152) ? 152 : alg.max_stages
+  cache.min_stage = (alg.min_stages > cache.max_stage) ? cache.max_stage : alg.min_stages
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
@@ -264,8 +267,9 @@ function initialize!(integrator, cache::ROCK4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  cache.constantcache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 152) ? 152 : integrator.alg.max_stages
-  cache.constantcache.min_stage = (integrator.alg.min_stages > cache.constantcache.max_stage) ? cache.constantcache.max_stage : integrator.alg.min_stages
+  alg = unwrap_alg(integrator, true)
+  cache.constantcache.max_stage = (alg.max_stages < 1 || alg.max_stages > 152) ? 152 : alg.max_stages
+  cache.constantcache.min_stage = (alg.min_stages > cache.constantcache.max_stage) ? cache.constantcache.max_stage : alg.min_stages
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -565,7 +569,7 @@ function initialize!(integrator, cache::IRKCConstantCache)
 end
 
 function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg,fsalfirst = integrator
+  @unpack t,dt,uprev,u,f,p,fsalfirst = integrator
   @unpack minm,du₁,du₂,nlsolver = cache
   @unpack f1, f2 = integrator.f
   alg = unwrap_alg(integrator, true)
@@ -693,7 +697,7 @@ function initialize!(integrator, cache::IRKCCache)
 end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack gprev,gprev2,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,du₁,du₂,atmp,nlsolver = cache
   @unpack tmp,z = nlsolver
   @unpack minm = cache.constantcache
