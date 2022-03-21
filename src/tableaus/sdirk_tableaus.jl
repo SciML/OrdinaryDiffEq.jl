@@ -1167,6 +1167,10 @@ struct CFNLIRK3Tableau{T,T2}
     a41::T
     a42::T
     a43::T
+    α31::T
+    α32::T
+    α41::T
+    α42::T
     c2::T2
     c3::T2
     ea21::T
@@ -1191,6 +1195,12 @@ function CFNLIRK3Tableau(T,T2)
   a43 = convert(T,-0.64436317068447276)
   c3 = (1+γ)/2
   c2 = γ
+  θ = c3/c2
+  α31 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ/2)
+  α32 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ/2)
+  θ = 1/c2
+  α41 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ/2)
+  α42 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ/2)
 
   # Explicit Tableau
   ea21 = convert(T,γ)
@@ -1203,7 +1213,7 @@ function CFNLIRK3Tableau(T,T2)
   eb2 = convert(T,1.20849664917601276)
   eb3 = convert(T,-0.64436317068447276)
   eb4 = convert(T,γ)
-  CFNLIRK3Tableau(γ,a31,a32,a41,a42,a43,c2,c3,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4)
+  CFNLIRK3Tableau(γ,a31,a32,a41,a42,a43,α31,α32,α41,α42,c2,c3,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4)
 end
 
 #=
