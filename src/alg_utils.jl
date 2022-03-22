@@ -199,7 +199,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
         linsolve = alg.linsolve
     end
 
-    isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}(), linsolve=linsolve)
+    ((isbitstype(T) && sizeof(T) > 24) || typeof(prob.f.f) === DiffEqBase.NORECOMPILE_FUNCTION) && return remake(alg, chunk_size=Val{1}(),linsolve=linsolve)
 
     L = ArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
