@@ -38,13 +38,13 @@ end
 function _initialize_dae!(integrator, prob::ODEProblem,
              alg::DefaultInit, x::Val{true})
   _initialize_dae!(integrator, prob,
-          BrownFullBasicInit(), x)
+          BrownFullBasicInit(integrator.opts.abstol), x)
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
              alg::DefaultInit, x::Val{false})
   _initialize_dae!(integrator, prob,
-          BrownFullBasicInit(), x)
+          BrownFullBasicInit(integrator.opts.abstol), x)
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
@@ -54,7 +54,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
             ShampineCollocationInit(), x)
   else
     _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(), x)
+            BrownFullBasicInit(integrator.opts.abstol), x)
   end
 end
 
@@ -65,7 +65,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
             ShampineCollocationInit(), x)
   else
     _initialize_dae!(integrator, prob,
-            BrownFullBasicInit(), x)
+            BrownFullBasicInit(integrator.opts.abstol ), x)
   end
 end
 
@@ -280,7 +280,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit,
   M = integrator.f.mass_matrix
   update_coefficients!(M,u,p,t)
   algebraic_vars = [all(iszero,x) for x in eachcol(M)]
-  algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
+  algebraic_eqs = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
   tmp = get_tmp_cache(integrator)[1]
 
