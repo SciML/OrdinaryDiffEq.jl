@@ -245,6 +245,7 @@ using DocStringExtensions
       solve(lorenzprob,Vern9())
       solve(lorenzprob,Rosenbrock23())(5.0)
       solve(lorenzprob,Rosenbrock23(autodiff=false))(5.0)
+      solve(lorenzprob,Rosenbrock23(chunk_size = 1))(5.0)
       solve(lorenzprob,TRBDF2())
       solve(lorenzprob,Rodas4(autodiff=false))
       solve(lorenzprob,KenCarp4(autodiff=false))
