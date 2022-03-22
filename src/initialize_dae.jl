@@ -310,7 +310,11 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit,
     return nothing
   end
 
-  r = nlsolve(nlequation, u[algebraic_vars], autodiff=isad ? :forward : :central, method=:newton)
+  r = nlsolve(nlequation,
+              u[algebraic_vars],
+              autodiff=isad ? :forward : :central,
+              method=:newton,
+              ftol = alg.abstol)
   alg_u .= r.zero
 
   recursivecopy!(integrator.uprev,integrator.u)
@@ -394,7 +398,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     f(out, du, u, p, t)
   end
 
-  r = nlsolve(nlequation, ifelse.(differential_vars,du,u))
+  r = nlsolve(nlequation, ifelse.(differential_vars,du,u), ftol = alg.abstol)
 
   @. du = ifelse(differential_vars,r.zero,du)
   @. u  = ifelse(differential_vars,u,r.zero)
