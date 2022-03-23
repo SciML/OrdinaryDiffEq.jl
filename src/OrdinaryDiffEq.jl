@@ -20,6 +20,9 @@ using DocStringExtensions
   # Interfaces
   import DiffEqBase: solve!, step!, initialize!, isadaptive
 
+  # Dae init
+  using DiffEqBase: NoInit
+
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
@@ -49,7 +52,7 @@ using DocStringExtensions
                      terminate!,get_du, get_dt,get_proposed_dt,set_proposed_dt!,
                      u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
                      set_abstol!, postamble!, last_step_failed,
-                     isautodifferentiable
+                     isautodifferentiable,
 
   using DiffEqBase: check_error!, @def, _vec, _reshape
 

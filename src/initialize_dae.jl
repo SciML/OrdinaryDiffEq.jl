@@ -71,19 +71,19 @@ end
 ## NoInit
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-             alg::NoInit, x::Val{true})
+             alg::DiffEqBase.NoInit, x::Val{true})
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-             alg::NoInit, x::Val{false})
+             alg::DiffEqBase.NoInit, x::Val{false})
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-             alg::NoInit, x::Val{false})
+             alg::DiffEqBase.NoInit, x::Val{false})
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-             alg::NoInit, x::Val{true})
+             alg::DiffEqBase.NoInit, x::Val{true})
 end
 
 ## ShampineCollocationInit
