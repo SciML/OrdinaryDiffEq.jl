@@ -320,6 +320,11 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{tru
       linsolve,precs,n_min,n_init,n_max,sequence,threading)
 end
 
+"""
+ImplicitEulerBarycentricExtrapolation: Parallelized Implicit Extrapolation Method
+  Euler extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
+"""
+
 struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
   precs::P
