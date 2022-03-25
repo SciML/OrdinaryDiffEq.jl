@@ -20,9 +20,6 @@ using DocStringExtensions
   # Interfaces
   import DiffEqBase: solve!, step!, initialize!, isadaptive
 
-  # Dae init
-  using DiffEqBase: NoInit
-
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
