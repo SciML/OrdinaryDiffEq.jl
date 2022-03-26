@@ -55,6 +55,8 @@ using DocStringExtensions
 
   using DiffEqBase: @.., True, False
 
+  using SciMLBase: NoInit
+
   using DiffEqBase: AbstractNLSolverAlgorithm, AbstractNLSolverCache, NLStatus
   using DiffEqBase: nlsolve_f, qrdelete!, qradd!, build_jac_config, resize_jac_config!
   using DiffEqBase: Convergence, Divergence
