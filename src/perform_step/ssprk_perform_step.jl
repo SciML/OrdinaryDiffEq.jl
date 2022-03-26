@@ -39,11 +39,11 @@ end
 
   # u1 -> stored as u
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + dt*fsalfirst
+  @.. broadcast=false thread=thread u = uprev + dt*fsalfirst
   stage_limiter!(u, integrator, p, t+dt)
   f( k,  u, p, t+dt)
   # u
-  @.. thread=thread u = (uprev + u + dt*k) / 2
+  @.. broadcast=false thread=thread u = (uprev + u + dt*k) / 2
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 2
@@ -66,16 +66,16 @@ end
 
   δ = fsalfirst
   # u1 -> stored as u
-  @.. u = uprev + dt*β10*δ
+  @.. broadcast=false u = uprev + dt*β10*δ
   f(k, u, p, t+c1*dt)
   # u2
-  @.. tmp = α20*uprev + α21*u + dt*β21*k
+  @.. broadcast=false tmp = α20*uprev + α21*u + dt*β21*k
   f(k, tmp, p, t+c2*dt)
   # u3
-  @.. tmp = α30*uprev + α32*tmp + dt*β30*δ + dt*β32*k
+  @.. broadcast=false tmp = α30*uprev + α32*tmp + dt*β30*δ + dt*β32*k
   f(k, tmp, p, t+c3*dt)
   # u
-  @.. u = α40*uprev + α43*tmp + dt*β40*δ + dt*β43*k
+  @.. broadcast=false u = α40*uprev + α43*tmp + dt*β40*δ + dt*β43*k
   f(k, u, p, t+dt)
 end
 
@@ -369,15 +369,15 @@ end
 
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + dt*fsalfirst
+  @.. broadcast=false thread=thread u = uprev + dt*fsalfirst
   stage_limiter!(u, integrator, p, t+dt)
   f( k,  u, p, t+dt)
   # u2
-  @.. thread=thread u = (3*uprev + u + dt*k) / 4
+  @.. broadcast=false thread=thread u = (3*uprev + u + dt*k) / 4
   stage_limiter!(u, integrator, p, t+dt/2)
   f(k,u,p,t+dt/2)
   # u
-  @.. thread=thread u = (uprev + 2*u + 2*dt*k) / 3
+  @.. broadcast=false thread=thread u = (uprev + 2*u + 2*dt*k) / 3
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 3
@@ -436,23 +436,23 @@ end
 
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread tmp = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread tmp = uprev + β10 * dt * fsalfirst
   stage_limiter!(tmp, integrator, p, t+c1*dt)
   f( k,  tmp, p, t+c1*dt)
   # u2 -> stored as u
-  @.. thread=thread u = tmp + β21 * dt * k
+  @.. broadcast=false thread=thread u = tmp + β21 * dt * k
   stage_limiter!(u, integrator, p, t+c2*dt)
   f( k,  u, p, t+c2*dt)
   # u3
-  @.. thread=thread tmp = α30 * uprev + α32 * u + β32 * dt * k
+  @.. broadcast=false thread=thread tmp = α30 * uprev + α32 * u + β32 * dt * k
   stage_limiter!(tmp, integrator, p, t+c3*dt)
   f( k,  tmp, p, t+c3*dt)
   # u4
-  @.. thread=thread tmp = α40 * uprev + α43 * tmp + β43 * dt * k
+  @.. broadcast=false thread=thread tmp = α40 * uprev + α43 * tmp + β43 * dt * k
   stage_limiter!(tmp, integrator, p, t+c4*dt)
   f( k,  tmp, p, t+c4*dt)
   # u
-  @.. thread=thread u = α52 * u + α54 * tmp + β54 * dt * k
+  @.. broadcast=false thread=thread u = α52 * u + α54 * tmp + β54 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 5
@@ -512,23 +512,23 @@ end
   #stores in u for all intermediate stages
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread u = uprev + β10 * dt * fsalfirst
   stage_limiter!(u, integrator, p, t+c1*dt)
   f( k,  u, p, t+c1*dt)
   # u2
-  @.. thread=thread u = u + β21 * dt * k
+  @.. broadcast=false thread=thread u = u + β21 * dt * k
   stage_limiter!(u, integrator, p, t+c2*dt)
   f( k,  u, p, t+c2*dt)
   # u3
-  @.. thread=thread u = u + β32 * dt * k
+  @.. broadcast=false thread=thread u = u + β32 * dt * k
   stage_limiter!(u, integrator, p, t+c3*dt)
   f( k,  u, p, t+c3*dt)
   # u4
-  @.. thread=thread u = α40 * uprev + α43 * u + β43 * dt * k
+  @.. broadcast=false thread=thread u = α40 * uprev + α43 * u + β43 * dt * k
   stage_limiter!(u, integrator, p, t+c4*dt)
   f( k,  u, p, t+c4*dt)
   # u
-  @.. thread=thread u = u + β54 * dt * k
+  @.. broadcast=false thread=thread u = u + β54 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 5
@@ -587,23 +587,23 @@ end
 
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread u = uprev + β10 * dt * fsalfirst
   stage_limiter!(u, integrator, p, t+c1*dt)
   f( k,  u, p, t+c1*dt)
   # u2 -> stored as u
-  @.. thread=thread u = u + β21 * dt * k
+  @.. broadcast=false thread=thread u = u + β21 * dt * k
   stage_limiter!(u, integrator, p, t+c2*dt)
   f( k,  u, p, t+c2*dt)
   # u3
-  @.. thread=thread u = α30 * uprev + α32 * u + β32 * dt * k
+  @.. broadcast=false thread=thread u = α30 * uprev + α32 * u + β32 * dt * k
   stage_limiter!(u, integrator, p, t+c3*dt)
   f( k,  u, p, t+c3*dt)
   # u4
-  @.. thread=thread u = u + β43 * dt * k
+  @.. broadcast=false thread=thread u = u + β43 * dt * k
   stage_limiter!(u, integrator, p, t+c4*dt)
   f( k,  u, p, t+c4*dt)
   # u
-  @.. thread=thread u = α50* uprev + α54 * u+ β54 * dt * k
+  @.. broadcast=false thread=thread u = α50* uprev + α54 * u+ β54 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 5
@@ -660,23 +660,23 @@ end
   #stores in u for all intermediate stages
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread tmp = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread tmp = uprev + β10 * dt * fsalfirst
   stage_limiter!(tmp, integrator, p, t+c1*dt)
   f( k,  tmp, p, t+c1*dt)
   # u2
-  @.. thread=thread u = tmp + β21 * dt * k
+  @.. broadcast=false thread=thread u = tmp + β21 * dt * k
   stage_limiter!(u, integrator, p, t+c2*dt)
   f( k,  u, p, t+c2*dt)
   # u3
-  @.. thread=thread u = α30 * uprev + α32 * u + β32 * dt * k
+  @.. broadcast=false thread=thread u = α30 * uprev + α32 * u + β32 * dt * k
   stage_limiter!(u, integrator, p, t+c3*dt)
   f( k,  u, p, t+c3*dt)
   # u4
-  @.. thread=thread u = α40 * uprev + α41 * tmp + α43 * u + β43 * dt * k
+  @.. broadcast=false thread=thread u = α40 * uprev + α41 * tmp + α43 * u + β43 * dt * k
   stage_limiter!(u, integrator, p, t+c4*dt)
   f( k,  u, p, t+c4*dt)
   # u
-  @.. thread=thread u = u + β54 * dt * k
+  @.. broadcast=false thread=thread u = u + β54 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 5
@@ -739,27 +739,27 @@ end
 
   # u1 -> stored as u
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread u = uprev + β10 * dt * fsalfirst
   stage_limiter!(u, integrator, p, t+c1*dt)
   f( k,  u, p, t+c1*dt)
   # u2
-  @.. thread=thread u₂ = u + β21 * dt * k
+  @.. broadcast=false thread=thread u₂ = u + β21 * dt * k
   stage_limiter!(u₂, integrator, p, t+c2*dt)
   f(k,u₂,p,t+c2*dt)
   # u3
-  @.. thread=thread tmp = u₂ + β32 * dt * k
+  @.. broadcast=false thread=thread tmp = u₂ + β32 * dt * k
   stage_limiter!(tmp, integrator, p, t+c3*dt)
   f( k,  tmp, p, t+c3*dt)
   # u4
-  @.. thread=thread tmp = α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
+  @.. broadcast=false thread=thread tmp = α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
   stage_limiter!(tmp, integrator, p, t+c4*dt)
   f( k,  tmp, p, t+c4*dt)
   # u5
-  @.. thread=thread tmp = tmp + β54 * dt * k
+  @.. broadcast=false thread=thread tmp = tmp + β54 * dt * k
   stage_limiter!(tmp, integrator, p, t+c5*dt)
   f( k,  tmp, p, t+c5*dt)
   # u
-  @.. thread=thread u = α62 * u₂ + α65 * tmp + β65 * dt * k
+  @.. broadcast=false thread=thread u = α62 * u₂ + α65 * tmp + β65 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 6
@@ -824,31 +824,31 @@ end
 
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u₁ = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread u₁ = uprev + β10 * dt * fsalfirst
   stage_limiter!(u₁, integrator, p, t+c1*dt)
   f(k,u₁,p,t+c1*dt)
   # u2
-  @.. thread=thread tmp = u₁ + β21 * dt * k
+  @.. broadcast=false thread=thread tmp = u₁ + β21 * dt * k
   stage_limiter!(tmp, integrator, p, t+c2*dt)
   f( k,  tmp, p, t+c2*dt)
   # u3 -> stored as u
-  @.. thread=thread u = tmp + β32 * dt * k
+  @.. broadcast=false thread=thread u = tmp + β32 * dt * k
   stage_limiter!(u, integrator, p, t+c3*dt)
   f( k,  u, p, t+c3*dt)
   # u4
-  @.. thread=thread tmp = α40 * uprev + α43 * u + β43 * dt * k
+  @.. broadcast=false thread=thread tmp = α40 * uprev + α43 * u + β43 * dt * k
   stage_limiter!(tmp, integrator, p, t+c4*dt)
   f( k,  tmp, p, t+c4*dt)
   # u5
-  @.. thread=thread tmp = α50 * uprev + α51 * u₁ + α54 * tmp + β54 * dt * k
+  @.. broadcast=false thread=thread tmp = α50 * uprev + α51 * u₁ + α54 * tmp + β54 * dt * k
   stage_limiter!(tmp, integrator, p, t+c5*dt)
   f( k,  tmp, p, t+c5*dt)
   # u6
-  @.. thread=thread tmp = tmp + β65 * dt * k
+  @.. broadcast=false thread=thread tmp = tmp + β65 * dt * k
   stage_limiter!(tmp, integrator, p, t+c6*dt)
   f( k,  tmp, p, t+c6*dt)
   # u
-  @.. thread=thread u = α73 * u + α76 * tmp + β76 * dt * k
+  @.. broadcast=false thread=thread u = α73 * u + α76 * tmp + β76 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 7
@@ -916,35 +916,35 @@ end
 
   # u1 -> save as u
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread u = uprev + β10 * dt * fsalfirst
   stage_limiter!(u, integrator, p, t+c1*dt)
   f( k,  u, p, t+c1*dt)
   # u2
-  @.. thread=thread u₂ = u + β21 * dt * k
+  @.. broadcast=false thread=thread u₂ = u + β21 * dt * k
   stage_limiter!(u₂, integrator, p, t+c2*dt)
   f(k,u₂,p,t+c2*dt)
   # u3
-  @.. thread=thread u₃ = u₂ + β32 * dt * k
+  @.. broadcast=false thread=thread u₃ = u₂ + β32 * dt * k
   stage_limiter!(u₃, integrator, p, t+c3*dt)
   f(k,u₃,p,t+c3*dt)
   # u4
-  @.. thread=thread tmp = u₃ + β43 * dt * k
+  @.. broadcast=false thread=thread tmp = u₃ + β43 * dt * k
   stage_limiter!(tmp, integrator, p, t+c4*dt)
   f( k,  tmp, p, t+c4*dt)
   # u5
-  @.. thread=thread tmp = α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
+  @.. broadcast=false thread=thread tmp = α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
   stage_limiter!(tmp, integrator, p, t+c5*dt)
   f( k,  tmp, p, t+c5*dt)
   # u6
-  @.. thread=thread tmp = α61 * u + α65 * tmp + β65 * dt * k
+  @.. broadcast=false thread=thread tmp = α61 * u + α65 * tmp + β65 * dt * k
   stage_limiter!(tmp, integrator, p, t+c6*dt)
   f( k,  tmp, p, t+c6*dt)
   # u7
-  @.. thread=thread tmp = α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
+  @.. broadcast=false thread=thread tmp = α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
   stage_limiter!(tmp, integrator, p, t+c7*dt)
   f( k,  tmp, p, t+c7*dt)
   # u
-  @.. thread=thread u = tmp + β87 * dt * k
+  @.. broadcast=false thread=thread u = tmp + β87 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 8
@@ -1011,29 +1011,29 @@ end
 
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + dt_2*fsalfirst
+  @.. broadcast=false thread=thread u = uprev + dt_2*fsalfirst
   stage_limiter!(u, integrator, p, t+dt_2)
   f( k,  u, p, t+dt_2)
   # u2
-  @.. thread=thread u = u + dt_2*k
+  @.. broadcast=false thread=thread u = u + dt_2*k
   stage_limiter!(u, integrator, p, t+dt)
   f( k,  u, p, t+dt)
   #
-  @.. thread=thread u = u + dt_2*k
+  @.. broadcast=false thread=thread u = u + dt_2*k
   stage_limiter!(u, integrator, p, t+dt+dt_2)
   if integrator.opts.adaptive
-    @.. utilde = one_third_u * uprev + two_thirds_u * u # corresponds to bhat = (1/3, 1/3, 1/3, 0)
+    @.. broadcast=false utilde = one_third_u * uprev + two_thirds_u * u # corresponds to bhat = (1/3, 1/3, 1/3, 0)
   end
   # u3
-  @.. thread=thread u = two_thirds_u * uprev + one_third_u * u
+  @.. broadcast=false thread=thread u = two_thirds_u * uprev + one_third_u * u
   f( k,  u, p, t+dt_2)
   #
-  @.. thread=thread u = u + dt_2*k # corresponds to b = (1/6, 1/6, 1/6, 1/2)
+  @.. broadcast=false thread=thread u = u + dt_2*k # corresponds to b = (1/6, 1/6, 1/6, 1/2)
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
 
   if integrator.opts.adaptive
-    @.. thread=thread utilde = half_u * (utilde - u) # corresponds to bhat = (1/4, 1/4, 1/4, 1/4)
+    @.. broadcast=false thread=thread utilde = half_u * (utilde - u) # corresponds to bhat = (1/4, 1/4, 1/4, 1/4)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -1099,29 +1099,29 @@ end
 
   # u1
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + dt_2*fsalfirst
+  @.. broadcast=false thread=thread u = uprev + dt_2*fsalfirst
   stage_limiter!(u, integrator, p, t+dt_2)
   f( k,  u, p, t+dt_2)
   # u2
-  @.. thread=thread u = u + dt_2*k
+  @.. broadcast=false thread=thread u = u + dt_2*k
   stage_limiter!(u, integrator, p, t+dt)
   f( k,  u, p, t+dt)
   #
-  @.. thread=thread u = u + dt_2*k
+  @.. broadcast=false thread=thread u = u + dt_2*k
   stage_limiter!(u, integrator, p, t+dt+dt_2)
   if integrator.opts.adaptive
-    @.. utilde = (uprev + 2*u) / 3
+    @.. broadcast=false utilde = (uprev + 2*u) / 3
   end
   # u3
-  @.. thread=thread u = (2*uprev + u) / 3
+  @.. broadcast=false thread=thread u = (2*uprev + u) / 3
   f( k,  u, p, t+dt_2)
   #
-  @.. thread=thread u = u + dt_2*k
+  @.. broadcast=false thread=thread u = u + dt_2*k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
 
   if integrator.opts.adaptive
-    @.. thread=thread utilde = utilde - u
+    @.. broadcast=false thread=thread utilde = utilde - u
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -1230,11 +1230,11 @@ end
   @unpack k,fsalfirst,u_1,u_2,stage_limiter!,step_limiter! = cache
 
   if cache.step < 3
-    @.. u = uprev + dt*fsalfirst
+    @.. broadcast=false u = uprev + dt*fsalfirst
     stage_limiter!(u, integrator, p, t+dt)
     f(k,u, p, t+dt)
     integrator.destats.nf += 1
-    @.. u = (uprev + u + dt*k) / 2
+    @.. broadcast=false u = (uprev + u + dt*k) / 2
     stage_limiter!(u, integrator, p, t+dt)
     step_limiter!(u, integrator, p, t+dt)
 
@@ -1245,7 +1245,7 @@ end
     end
   else
     Ω = 2
-    @.. u = ((Ω*Ω - 1)/(Ω*Ω))*(uprev + (Ω/(Ω-1))*dt*fsalfirst) + (1/(Ω*Ω))*cache.u_2
+    @.. broadcast=false u = ((Ω*Ω - 1)/(Ω*Ω))*(uprev + (Ω/(Ω-1))*dt*fsalfirst) + (1/(Ω*Ω))*cache.u_2
     cache.u_2 .= u_1
     cache.u_1 .= uprev
     stage_limiter!(u, integrator, p, t+dt)
@@ -1327,11 +1327,11 @@ end
   @unpack k,fsalfirst,u_1,u_2,u_3,stage_limiter!,step_limiter!,k1,k2,k3 = cache
 
   if cache.step < 4
-    @.. u = uprev + dt*fsalfirst
+    @.. broadcast=false u = uprev + dt*fsalfirst
     stage_limiter!(u, integrator, p, t+dt)
     f(k,u, p, t+dt)
     integrator.destats.nf += 1
-    @.. u = (uprev + u + dt*k) / 2
+    @.. broadcast=false u = (uprev + u + dt*k) / 2
     stage_limiter!(u, integrator, p, t+dt)
     step_limiter!(u, integrator, p, t+dt)
     if cache.step == 1
@@ -1351,7 +1351,7 @@ end
     end
   # u
   else
-    @.. u = (16/27)*(uprev + 3*dt*fsalfirst) + (11/27)*(u_3 + (12/11)*dt*k3)
+    @.. broadcast=false u = (16/27)*(uprev + 3*dt*fsalfirst) + (11/27)*(u_3 + (12/11)*dt*k3)
     stage_limiter!(u, integrator, p, t+dt)
     step_limiter!(u, integrator, p, t+dt)
     cache.k3 .= k2
@@ -1448,54 +1448,54 @@ end
 
   # u1
   f(fsalfirst,  uprev, p, t)
-  @.. thread=thread u = uprev + dt_6*fsalfirst
+  @.. broadcast=false thread=thread u = uprev + dt_6*fsalfirst
   stage_limiter!(u, integrator, p, t+dt_6)
   f( k,  u, p, t+dt_6)
   # u2
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   stage_limiter!(u, integrator, p, t+dt_3)
   f( k,  u, p, t+dt_3)
   # u3
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   stage_limiter!(u, integrator, p, t+dt_2)
   f( k,  u, p, t+dt_2)
   # u4
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   stage_limiter!(u, integrator, p, t+2*dt_3)
   f( k,  u, p, t+2*dt_3)
   # u5
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   stage_limiter!(u, integrator, p, t+5*dt_6)
   f( k,  u, p, t+5*dt_6)
   integrator.destats.nf += 6
   # u6
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   if integrator.opts.adaptive
     stage_limiter!(u, integrator, p, t+dt)
     f( k,  u, p, t+dt)
     integrator.destats.nf += 1
-    @.. thread=thread utilde = (uprev + 6*u + 6*dt*k) / 7
+    @.. broadcast=false thread=thread utilde = (uprev + 6*u + 6*dt*k) / 7
   end
   # u6*
-  @.. thread=thread u = (3*uprev + dt_2*integrator.fsalfirst + 2*u) / 5
+  @.. broadcast=false thread=thread u = (3*uprev + dt_2*integrator.fsalfirst + 2*u) / 5
   stage_limiter!(u, integrator, p, t+dt_6)
   f( k,  u, p, t+dt_2)
   # u7*
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   stage_limiter!(u, integrator, p, t+2*dt_3)
   f( k,  u, p, t+2*dt_3)
   # u8*
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   stage_limiter!(u, integrator, p, t+5*dt_6)
   f( k,  u, p, t+5*dt_6)
   # u9*
-  @.. thread=thread u = u + dt_6*k
+  @.. broadcast=false thread=thread u = u + dt_6*k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 3
 
   if integrator.opts.adaptive
-    @.. thread=thread utilde = utilde - u
+    @.. broadcast=false thread=thread utilde = utilde - u
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -1554,23 +1554,23 @@ end
 
   # u₁
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread u₂ = uprev + β10 * dt * fsalfirst
+  @.. broadcast=false thread=thread u₂ = uprev + β10 * dt * fsalfirst
   stage_limiter!(u₂, integrator, p, t+c1*dt)
   f(k,u₂,p,t+c1*dt)
   # u₂
-  @.. thread=thread u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
+  @.. broadcast=false thread=thread u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
   stage_limiter!(u₂, integrator, p, t+c2*dt)
   f(k,u₂,p,t+c2*dt)
   # u₃
-  @.. thread=thread u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
+  @.. broadcast=false thread=thread u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
   stage_limiter!(u₃, integrator, p, t+c3*dt)
   f(k₃,u₃,p,t+c3*dt)
   # u₄ -> stored as tmp
-  @.. thread=thread tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
+  @.. broadcast=false thread=thread tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
   stage_limiter!(tmp, integrator, p, t+c4*dt)
   f( k,  tmp, p, t+c4*dt)
   # u
-  @.. thread=thread u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
+  @.. broadcast=false thread=thread u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 5
@@ -1637,34 +1637,34 @@ end
   dt_2 = dt/2
 
   f( fsalfirst,  uprev, p, t)
-  @.. thread=thread tmp = uprev + dt_6 * fsalfirst
+  @.. broadcast=false thread=thread tmp = uprev + dt_6 * fsalfirst
   stage_limiter!(tmp, integrator, p, t+dt_6)
   f( k,  tmp, p, t+dt_6)
-  @.. tmp = tmp + dt_6 * k
+  @.. broadcast=false tmp = tmp + dt_6 * k
   stage_limiter!(tmp, integrator, p, t+dt_3)
   f( k,  tmp, p, t+dt_3)
-  @.. thread=thread tmp = tmp + dt_6 * k
+  @.. broadcast=false thread=thread tmp = tmp + dt_6 * k
   stage_limiter!(tmp, integrator, p, t+dt_2)
   f( k,  tmp, p, t+dt_2)
-  @.. thread=thread u = tmp + dt_6 * k
+  @.. broadcast=false thread=thread u = tmp + dt_6 * k
   stage_limiter!(u, integrator, p, t+2*dt_3)
   f(k₄,u,p,t+2*dt_3)
-  @.. thread=thread tmp = (3*uprev + 2*u + 2*dt_6 * k₄) / 5
+  @.. broadcast=false thread=thread tmp = (3*uprev + 2*u + 2*dt_6 * k₄) / 5
   stage_limiter!(tmp, integrator, p, t+dt_3)
   f( k,  tmp, p, t+dt_3)
-  @.. thread=thread tmp = tmp + dt_6 * k
+  @.. broadcast=false thread=thread tmp = tmp + dt_6 * k
   stage_limiter!(tmp, integrator, p, t+dt_2)
   f( k,  tmp, p, t+dt_2)
-  @.. thread=thread tmp = tmp + dt_6 * k
+  @.. broadcast=false thread=thread tmp = tmp + dt_6 * k
   stage_limiter!(tmp, integrator, p, t+2*dt_3)
   f( k,  tmp, p, t+2*dt_3)
-  @.. thread=thread tmp = tmp + dt_6 * k
+  @.. broadcast=false thread=thread tmp = tmp + dt_6 * k
   stage_limiter!(tmp, integrator, p, t+5*dt_6)
   f( k,  tmp, p, t+5*dt_6)
-  @.. thread=thread tmp = tmp + dt_6 * k
+  @.. broadcast=false thread=thread tmp = tmp + dt_6 * k
   stage_limiter!(tmp, integrator, p, t+dt)
   f( k,  tmp, p, t+dt)
-  @.. thread=thread u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
+  @.. broadcast=false thread=thread u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
   stage_limiter!(u, integrator, p, t+dt)
   step_limiter!(u, integrator, p, t+dt)
   integrator.destats.nf += 10

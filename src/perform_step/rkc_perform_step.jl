@@ -100,19 +100,19 @@ end
   tᵢ₋₁ = t + dt*recf[ccache.start]
   tᵢ₋₂ = t + dt*recf[ccache.start]
   tᵢ₋₃ = t
-  @.. uᵢ₋₂ = uprev
-  @.. uᵢ₋₁ = uprev + (dt*recf[ccache.start])*fsalfirst
-  ccache.mdeg < 2 && ( @.. u = uᵢ₋₁ )
+  @.. broadcast=false uᵢ₋₂ = uprev
+  @.. broadcast=false uᵢ₋₁ = uprev + (dt*recf[ccache.start])*fsalfirst
+  ccache.mdeg < 2 && ( @.. broadcast=false u = uᵢ₋₁ )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ccache.mdeg
     μ, κ = recf[ccache.start + (i - 2)*2 + 1], recf[ccache.start + (i - 2)*2 + 2]
     ν = -1 - κ
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
-    @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
+    @.. broadcast=false u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
     if i < ccache.mdeg
-      @.. uᵢ₋₂ = uᵢ₋₁
-      @.. uᵢ₋₁ = u
+      @.. broadcast=false uᵢ₋₂ = uᵢ₋₁
+      @.. broadcast=false uᵢ₋₁ = u
     end
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
@@ -122,11 +122,11 @@ end
   δt₂ = dt*fp2[ccache.deg_index]
   f(k, u, p, tᵢ₋₁)
   integrator.destats.nf += 1
-  @.. uᵢ₋₁ = u + δt₁*k
+  @.. broadcast=false uᵢ₋₁ = u + δt₁*k
   if integrator.opts.adaptive
-    @.. tmp = - δt₂*k
+    @.. broadcast=false tmp = - δt₂*k
   else
-    @.. u = -δt₂*k
+    @.. broadcast=false u = -δt₂*k
   end
   c = DiffEqBase.value(sign(δt₁))*integrator.opts.internalnorm(δt₁,t)
   tᵢ₋₁ += c
@@ -134,10 +134,10 @@ end
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
-    @.. tmp += δt₂*k
-    @.. u = uᵢ₋₁ + δt₁*k + tmp
+    @.. broadcast=false tmp += δt₂*k
+    @.. broadcast=false u = uᵢ₋₁ + δt₁*k + tmp
   else
-    @.. u += uᵢ₋₁ + (δt₁ + δt₂)*k
+    @.. broadcast=false u += uᵢ₋₁ + (δt₁ + δt₂)*k
   end
 
   # error estimate
@@ -294,19 +294,19 @@ end
   tᵢ₋₁ = t + dt*recf[ccache.start]
   tᵢ₋₂ = t + dt*recf[ccache.start]
   tᵢ₋₃ = t
-  @.. uᵢ₋₂ = uprev
-  @.. uᵢ₋₁ = uprev + (dt*recf[ccache.start])*fsalfirst
-  ccache.mdeg < 2 && ( @.. u = uᵢ₋₁ )
+  @.. broadcast=false uᵢ₋₂ = uprev
+  @.. broadcast=false uᵢ₋₁ = uprev + (dt*recf[ccache.start])*fsalfirst
+  ccache.mdeg < 2 && ( @.. broadcast=false u = uᵢ₋₁ )
   # for the second to the ccache.mdeg th stages
   for i in 2:ccache.mdeg
     μ, κ = recf[ccache.start + (i - 2)*2 + 1], recf[ccache.start + (i - 2)*2 + 2]
     ν = -1 - κ
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     tᵢ₋₁ = (dt*μ) - ν*tᵢ₋₂ - κ*tᵢ₋₃
-    @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
+    @.. broadcast=false u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
     if i < ccache.mdeg
-      @.. uᵢ₋₂ = uᵢ₋₁
-      @.. uᵢ₋₁ = u
+      @.. broadcast=false uᵢ₋₂ = uᵢ₋₁
+      @.. broadcast=false uᵢ₋₁ = u
     end
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
@@ -329,11 +329,11 @@ end
 
   f(k, u, p, tᵢ₋₁)
   integrator.destats.nf += 1
-  @.. uᵢ₋₂ = u + a₃₁*k
-  @.. uᵢ₋₃ = u + a₄₁*k
-  @.. uᵢ₋₁ = u + a₂₁*k
-  @.. u    += B₁*k
-  integrator.opts.adaptive && (@.. tmp = B̂₁*k)
+  @.. broadcast=false uᵢ₋₂ = u + a₃₁*k
+  @.. broadcast=false uᵢ₋₃ = u + a₄₁*k
+  @.. broadcast=false uᵢ₋₁ = u + a₂₁*k
+  @.. broadcast=false u    += B₁*k
+  integrator.opts.adaptive && (@.. broadcast=false tmp = B̂₁*k)
 
   # Stage-2
   c₂ = a₂₁
@@ -341,10 +341,10 @@ end
   tᵢ₋₂ = tᵢ₋₁ + _c₂
   f(k, uᵢ₋₁, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  @.. uᵢ₋₂ += a₃₂*k
-  @.. uᵢ₋₃ += a₄₂*k
-  @.. u    += B₂*k
-  integrator.opts.adaptive && (@.. tmp += B̂₂*k)
+  @.. broadcast=false uᵢ₋₂ += a₃₂*k
+  @.. broadcast=false uᵢ₋₃ += a₄₂*k
+  @.. broadcast=false u    += B₂*k
+  integrator.opts.adaptive && (@.. broadcast=false tmp += B̂₂*k)
 
   # Stage-3
   c₃ = a₃₁ + a₃₂
@@ -352,9 +352,9 @@ end
   tᵢ₋₂ = tᵢ₋₁ + _c₃
   f(k, uᵢ₋₂, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  @.. uᵢ₋₃ += a₄₃*k
-  @.. u    += B₃*k
-  integrator.opts.adaptive && (@.. tmp += B̂₃*k)
+  @.. broadcast=false uᵢ₋₃ += a₄₃*k
+  @.. broadcast=false u    += B₃*k
+  integrator.opts.adaptive && (@.. broadcast=false tmp += B̂₃*k)
 
   #Stage-4
   c₄ = a₄₁ + a₄₂ + a₄₃
@@ -362,7 +362,7 @@ end
   tᵢ₋₂ = tᵢ₋₁ + _c₄
   f(k, uᵢ₋₃, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  @.. u    += B₄*k
+  @.. broadcast=false u    += B₄*k
   integrator.opts.adaptive && (tmp += B̂₄*k)
 
   f(k, u, p, t + dt)
@@ -374,7 +374,7 @@ end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
-  @.. integrator.fsallast = k
+  @.. broadcast=false integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -496,9 +496,9 @@ end
   b2    = b1
 
   # stage-1
-  @.. gprev2 = uprev
+  @.. broadcast=false gprev2 = uprev
   μs     = w1*b1
-  @.. gprev  = uprev + dt*μs*fsalfirst
+  @.. broadcast=false gprev  = uprev + dt*μs*fsalfirst
   th2  = zero(eltype(u))
   th1  = μs
   z1   = w0
@@ -520,7 +520,7 @@ end
     μs  = μ*w1/w0
     f(k, gprev, p, t + dt*th1)
     integrator.destats.nf += 1
-    @.. u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(k - νs*fsalfirst)
+    @.. broadcast=false u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(k - νs*fsalfirst)
     th  = μ*th1 + ν*th2 + μs*(1 - νs)
     if (iter < mdeg)
       gprev2 = gprev
@@ -539,7 +539,7 @@ end
   end
   # error estimate
   if integrator.opts.adaptive
-    @.. tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
+    @.. broadcast=false tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -692,7 +692,7 @@ function initialize!(integrator, cache::IRKCCache)
   f2(cache.du₂, uprev, p, t)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
-  @.. integrator.fsalfirst = cache.du₁ + cache.du₂
+  @.. broadcast=false integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
@@ -721,26 +721,26 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
 
   #stage-1
   f1ⱼ₋₂  = du₁
-  @.. gprev2 = uprev
+  @.. broadcast=false gprev2 = uprev
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
 
   # initial guess
   # if alg.extrapolant == :linear
-  #   @.. z = dt*du₁
+  #   @.. broadcast=false z = dt*du₁
   # else # :constant
-  #   @.. z = zero(eltype(u))
+  #   @.. broadcast=false z = zero(eltype(u))
   # end
-  @.. nlsolver.z = dt*du₁
+  @.. broadcast=false nlsolver.z = dt*du₁
 
-  @.. nlsolver.tmp = uprev + dt*μs₁*du₂
+  @.. broadcast=false nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
   markfirststage!(nlsolver)
   z = nlsolve!(nlsolver, integrator, cache, false)
   # ignoring newton method's convergence failure
   # nlsolvefail(nlsolver) && return
-  @.. gprev = nlsolver.tmp + μs₁*nlsolver.z
+  @.. broadcast=false gprev = nlsolver.tmp + μs₁*nlsolver.z
 
   Cⱼ₋₂   = zero(eltype(u))
   Cⱼ₋₁   = μs
@@ -767,17 +767,17 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     integrator.destats.nf += 1
     integrator.destats.nf2 += 1
-    @.. nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
-    @.. nlsolver.z   = dt*f1ⱼ₋₁
+    @.. broadcast=false nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
+    @.. broadcast=false nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
 
     z = nlsolve!(nlsolver, integrator, cache, false)
     # nlsolvefail(nlsolver) && return
-    @.. u = nlsolver.tmp + μs₁*nlsolver.z
+    @.. broadcast=false u = nlsolver.tmp + μs₁*nlsolver.z
     if (iter < mdeg)
-      @.. f1ⱼ₋₂  = f1ⱼ₋₁
-      @.. gprev2 = gprev
-      @.. gprev  = u
+      @.. broadcast=false f1ⱼ₋₂  = f1ⱼ₋₁
+      @.. broadcast=false gprev2 = gprev
+      @.. broadcast=false gprev  = u
       Cⱼ₋₂   = Cⱼ₋₁
       Cⱼ₋₁   = Cⱼ
       Bⱼ₋₂   = Bⱼ₋₁
@@ -791,8 +791,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     end
   end
 
-  @.. f1ⱼ₋₁ = du₁
-  @.. f2ⱼ₋₁ = du₂
+  @.. broadcast=false f1ⱼ₋₁ = du₁
+  @.. broadcast=false f2ⱼ₋₁ = du₂
   f1(du₁, u, p, t+dt)
   f2(du₂, u, p, t+dt)
   integrator.destats.nf += 1
@@ -800,7 +800,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
-    @.. gprev = dt*0.5*(du₂ - f2ⱼ₋₁) + dt*(0.5 - μs₁)*(du₁ - f1ⱼ₋₁)
+    @.. broadcast=false gprev = dt*0.5*(du₂ - f2ⱼ₋₁) + dt*(0.5 - μs₁)*(du₁ - f1ⱼ₋₁)
 
     linsolve = nlsolver.cache.linsolve
     linres = dolinsolve(integrator, linsolve; b = _vec(gprev), linu = _vec(tmp))
@@ -809,7 +809,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @.. integrator.fsallast = du₁ + du₂
+  @.. broadcast=false integrator.fsallast = du₁ + du₂
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -921,50 +921,50 @@ end
   internal_deg = ccache.internal_deg
   α = 2.0/(mdeg^2)
 
-  @.. u = zero(uprev)
-  @.. tmp = zero(uprev)
+  @.. broadcast=false u = zero(uprev)
+  @.. broadcast=false tmp = zero(uprev)
   for i in 1:4
     hᵢ = dt/i
     tᵢ = t
-    @.. Sᵢ = zero(u)
-    @.. uᵢ₋₁ = uprev
-    @.. uᵢ₋₂ = zero(u)
+    @.. broadcast=false Sᵢ = zero(u)
+    @.. broadcast=false uᵢ₋₁ = uprev
+    @.. broadcast=false uᵢ₋₂ = zero(u)
     for j in 1:i
       r  = tᵢ
-      @.. Sᵢ = (cache.constantcache.Bᵢ[start])*uᵢ₋₁
+      @.. broadcast=false Sᵢ = (cache.constantcache.Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
         f(k, uᵢ₋₁, p, r)
         integrator.destats.nf += 1
 
         if st%internal_deg == 1
-          @.. uᵢ = uᵢ₋₁ + α*hᵢ*k
+          @.. broadcast=false uᵢ = uᵢ₋₁ + α*hᵢ*k
         else
-          @.. uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
+          @.. broadcast=false uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
         end
         q = convert(Int, floor(st/internal_deg))
         r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        @.. Sᵢ = Sᵢ + (cache.constantcache.Bᵢ[start+st])*uᵢ
+        @.. broadcast=false Sᵢ = Sᵢ + (cache.constantcache.Bᵢ[start+st])*uᵢ
         if st < mdeg
-          @.. uᵢ₋₂ = uᵢ₋₁
-          @.. uᵢ₋₁ = uᵢ
+          @.. broadcast=false uᵢ₋₂ = uᵢ₋₁
+          @.. broadcast=false uᵢ₋₁ = uᵢ
         end
       end
 
       if j < i
         tᵢ = tᵢ + hᵢ
-        @.. uᵢ₋₁ = Sᵢ
+        @.. broadcast=false uᵢ₋₁ = Sᵢ
       end
     end
 
-    @.. u = u + Cᵤ[i]*Sᵢ
-    integrator.opts.adaptive && (@.. tmp = tmp + Cₑ[i]*Sᵢ)
+    @.. broadcast=false u = u + Cᵤ[i]*Sᵢ
+    integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + Cₑ[i]*Sᵢ)
   end
 
-  @.. u = u/6
+  @.. broadcast=false u = u/6
 
 
   if integrator.opts.adaptive
-    @.. tmp = tmp/6
+    @.. broadcast=false tmp = tmp/6
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -1080,50 +1080,50 @@ end
   internal_deg = ccache.internal_deg
   α = 100.0/(49.0*mdeg^2)
 
-  @.. u = zero(uprev)
-  @.. tmp = zero(uprev)
+  @.. broadcast=false u = zero(uprev)
+  @.. broadcast=false tmp = zero(uprev)
   for i in 1:5
     hᵢ = dt/i
     tᵢ = t
-    @.. Sᵢ = zero(u)
-    @.. uᵢ₋₁ = uprev
-    @.. uᵢ₋₂ = zero(u)
+    @.. broadcast=false Sᵢ = zero(u)
+    @.. broadcast=false uᵢ₋₁ = uprev
+    @.. broadcast=false uᵢ₋₂ = zero(u)
     for j in 1:i
       r  = tᵢ
-      @.. Sᵢ = (Bᵢ[start])*uᵢ₋₁
+      @.. broadcast=false Sᵢ = (Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
         f(k, uᵢ₋₁, p, r)
         integrator.destats.nf += 1
 
         if st%internal_deg == 1
-          @.. uᵢ = uᵢ₋₁ + α*hᵢ*k
+          @.. broadcast=false uᵢ = uᵢ₋₁ + α*hᵢ*k
         else
-          @.. uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
+          @.. broadcast=false uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
         end
         q = convert(Int, floor(st/internal_deg))
         r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        @.. Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
+        @.. broadcast=false Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
         if st < mdeg
-          @.. uᵢ₋₂ = uᵢ₋₁
-          @.. uᵢ₋₁ = uᵢ
+          @.. broadcast=false uᵢ₋₂ = uᵢ₋₁
+          @.. broadcast=false uᵢ₋₁ = uᵢ
         end
       end
 
       if j < i
         tᵢ = tᵢ + hᵢ
-        @.. uᵢ₋₁ = Sᵢ
+        @.. broadcast=false uᵢ₋₁ = Sᵢ
       end
     end
 
-    @.. u = u + Cᵤ[i]*Sᵢ
-    integrator.opts.adaptive && (@.. tmp = tmp + Cₑ[i]*Sᵢ)
+    @.. broadcast=false u = u + Cᵤ[i]*Sᵢ
+    integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + Cₑ[i]*Sᵢ)
   end
 
-  @.. u = u/24
+  @.. broadcast=false u = u/24
 
 
   if integrator.opts.adaptive
-    @.. tmp = tmp/24
+    @.. broadcast=false tmp = tmp/24
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -1223,34 +1223,34 @@ end
   internal_deg = ccache.internal_deg
   α = 1.0/(0.4*mdeg^2)
 
-  @.. uᵢ₋₁ = uprev
-  @.. uᵢ₋₂ = uprev
-  @.. Sᵢ   = Bᵢ[start]*uprev
+  @.. broadcast=false uᵢ₋₁ = uprev
+  @.. broadcast=false uᵢ₋₂ = uprev
+  @.. broadcast=false Sᵢ   = Bᵢ[start]*uprev
   for i in 1:10
     f(k, uᵢ₋₁, p, t+(1+(i-1)*internal_deg^2)*α*dt)
     integrator.destats.nf += 1
-    @.. u    = uᵢ₋₁ + α*dt*k
-    @.. Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*u
-    @.. uᵢ₋₂ = uᵢ₋₁
-    @.. uᵢ₋₁ = u
+    @.. broadcast=false u    = uᵢ₋₁ + α*dt*k
+    @.. broadcast=false Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*u
+    @.. broadcast=false uᵢ₋₂ = uᵢ₋₁
+    @.. broadcast=false uᵢ₋₁ = u
     for j in 2:internal_deg
       f(k, uᵢ₋₂, p, t+(j^2+(i-1)*internal_deg^2)*α*dt)
       integrator.destats.nf += 1
-      @.. u = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*dt*k
-      @.. Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*internal_deg]*u
+      @.. broadcast=false u = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*dt*k
+      @.. broadcast=false Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*internal_deg]*u
       if j < mdeg
-        @.. uᵢ₋₂ = uᵢ₋₁
-        @.. uᵢ₋₁ = u
+        @.. broadcast=false uᵢ₋₂ = uᵢ₋₁
+        @.. broadcast=false uᵢ₋₁ = u
       end
     end
   end
-  @.. u = Sᵢ
+  @.. broadcast=false u = Sᵢ
   f(k, u, p, t+dt)
   integrator.destats.nf += 1
 
 
   if integrator.opts.adaptive
-    @.. tmp = u - uprev - dt*k
+    @.. broadcast=false tmp = u - uprev - dt*k
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end

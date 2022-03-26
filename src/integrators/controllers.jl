@@ -595,12 +595,12 @@ function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEq
       terk = terkm1
       terkm1 = terkm2
       fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
-      terk_tmp = @.. fd_weights[k-2,1] * u
+      terk_tmp = @.. broadcast=false fd_weights[k-2,1] * u
       vc = _vec(terk_tmp)
       for i in 2:k-2
-        @.. @views vc += fd_weights[i,k-2] * u_history[:,i-1]
+        @.. broadcast=false @views vc += fd_weights[i,k-2] * u_history[:,i-1]
       end
-      @.. terk_tmp *= abs(dt^(k-2))
+      @.. broadcast=false terk_tmp *= abs(dt^(k-2))
       calculate_residuals!(atmp,_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       terkm2 = integrator.opts.internalnorm(atmp,t)
       k -= 1
@@ -624,7 +624,7 @@ function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEq
       terk = terkm1
       terkm1 = terkm2
       fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-2,Val(max_order))
-      terk_tmp = @.. fd_weights[k-2,1] * u
+      terk_tmp = @.. broadcast=false fd_weights[k-2,1] * u
       if typeof(u) <: Number
         for i in 2:k-2
           terk_tmp += fd_weights[i,k-2] * u_history[i-1]
@@ -633,9 +633,9 @@ function choose_order!(alg::Union{FBDF,DFBDF}, integrator, cache::OrdinaryDiffEq
       else
         vc = _vec(terk_tmp)
         for i in 2:k-2
-          @.. @views vc += fd_weights[i,k-2] * u_history[:,i-1]
+          @.. broadcast=false @views vc += fd_weights[i,k-2] * u_history[:,i-1]
         end
-        @.. terk_tmp *= abs(dt^(k-2))
+        @.. broadcast=false terk_tmp *= abs(dt^(k-2))
       end
       atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u), integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       terkm2 = integrator.opts.internalnorm(atmp,t)
@@ -848,9 +848,9 @@ function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHair
   win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perfom_step! of the last step
   tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
   fill!(dt_new, zero(eltype(dt_new)))
-  @.. Q = integrator.dt/Q
+  @.. broadcast=false Q = integrator.dt/Q
   copyto!(dt_new,win_min_old,Q,win_min_old,(max(n_curr, n_old) + 1) - win_min_old + 1)
-  @.. Q = integrator.dt/Q
+  @.. broadcast=false Q = integrator.dt/Q
   dtmin = timedepentdtmin(integrator)
   fill!(work,zero(eltype(work))) # work[n] is the work for order (n-1)
   for i in tmp

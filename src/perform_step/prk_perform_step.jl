@@ -62,31 +62,31 @@ end
 
   f( k1, uprev, p, t)
 
-  @.. u = uprev + dt*α21*k1
+  @.. broadcast=false u = uprev + dt*α21*k1
   f( k2, u, p, t + c2*dt)
 
-  @.. u = uprev + dt*(α31*k1 + α32*k2)
+  @.. broadcast=false u = uprev + dt*(α31*k1 + α32*k2)
   f( k3, u, p, t + c3*dt)
 
-  @.. u = uprev + dt*(α41*k1 + α42*k2 + α43*k3)
+  @.. broadcast=false u = uprev + dt*(α41*k1 + α42*k2 + α43*k3)
   f( k4, u, p, t + c4*dt)
 
   if !isthreaded(alg.threading)
-    @.. u = uprev + dt*(α5_6[1,1]*k1 + α5_6[1,2]*k2 + α5_6[1,3]*k3 + α5_6[1,4]*k4)
+    @.. broadcast=false u = uprev + dt*(α5_6[1,1]*k1 + α5_6[1,2]*k2 + α5_6[1,3]*k3 + α5_6[1,4]*k4)
     f( k5_6[1], u, p, t + c5_6[1]*dt)
 
-    @.. u = uprev + dt*(α5_6[2,1]*k1 + α5_6[2,2]*k2 + α5_6[2,3]*k3 + α5_6[2,4]*k4)
+    @.. broadcast=false u = uprev + dt*(α5_6[2,1]*k1 + α5_6[2,2]*k2 + α5_6[2,3]*k3 + α5_6[2,4]*k4)
     f( k5_6[2], u, p, t + c5_6[2]*dt)
   else
     tmps = (u, tmp)
     let
       @threaded alg.threading for i in [1,2]
-        @.. tmps[i] = uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4)
+        @.. broadcast=false tmps[i] = uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4)
         f( k5_6[i], tmps[i], p, t + c5_6[i]*dt)
       end
     end
   end
 
-  @.. u = uprev + dt*(β1*k1 + β3*k3 + β5*k5_6[1] + β6*k5_6[2])
+  @.. broadcast=false u = uprev + dt*(β1*k1 + β3*k3 + β5*k5_6[1] + β6*k5_6[2])
   f( k,  u, p, t+dt)
 end

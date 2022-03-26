@@ -19,8 +19,8 @@ function ϕ_and_ϕstar!(cache, du, k)
       β[i] = β[i-1] * ξ/ξ0
       ξ += dts[i]
       if typeof(cache) <: OrdinaryDiffEqMutableCache
-        @.. ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
-        @.. ϕstar_n[i] = β[i] * ϕ_n[i]
+        @.. broadcast=false ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+        @.. broadcast=false ϕstar_n[i] = β[i] * ϕ_n[i]
       else
         ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
         ϕstar_n[i] = β[i] * ϕ_n[i]
@@ -47,8 +47,8 @@ function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache,VCABMCache}, du, k)
       β[i] = β[i-1] * ξ/ξ0
       ξ += dts[i]
       if typeof(cache) <: OrdinaryDiffEqMutableCache
-        @.. ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
-        @.. ϕstar_n[i] = β[i] * ϕ_n[i]
+        @.. broadcast=false ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+        @.. broadcast=false ϕstar_n[i] = β[i] * ϕ_n[i]
       else
         ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
         ϕstar_n[i] = β[i] * ϕ_n[i]
@@ -64,8 +64,8 @@ function expand_ϕ_and_ϕstar!(cache, i)
   ξ0 += dts[i]
   β[i] = β[i-1] * ξ/ξ0
   if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @.. ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
-    @.. ϕstar_n[i] = β[i] * ϕ_n[i]
+    @.. broadcast=false ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+    @.. broadcast=false ϕstar_n[i] = β[i] * ϕ_n[i]
   else
     ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
     ϕstar_n[i] = β[i] * ϕ_n[i]
@@ -78,7 +78,7 @@ function ϕ_np1!(cache, du_np1, k)
     for i = 1:k
       if i != 1
         if typeof(cache) <: OrdinaryDiffEqMutableCache
-          @.. ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
+          @.. broadcast=false ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
         else
           ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
         end

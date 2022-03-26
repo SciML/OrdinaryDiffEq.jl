@@ -20,7 +20,7 @@
         sk[i] = abstol+internalnorm(u0[i],t)*reltol
       end
     else
-      @.. sk = abstol+internalnorm(u0,t)*reltol
+      @.. broadcast=false sk = abstol+internalnorm(u0,t)*reltol
     end
   else
     if u0 isa Array && abstol isa Number && reltol isa Number
@@ -29,7 +29,7 @@
         sk[i] = abstol+internalnorm(u0[i],t)*reltol
       end
     else
-      sk = @.. abstol+internalnorm(u0,t)*reltol
+      sk = @.. broadcast=false abstol+internalnorm(u0,t)*reltol
     end
   end
 
@@ -58,7 +58,7 @@
       tmp[i] = u0[i]/sk[i]
     end
   else
-    tmp = @.. u0/sk
+    tmp = @.. broadcast=false u0/sk
   end
 
   d₀ = internalnorm(tmp,t)
@@ -109,7 +109,7 @@
       tmp[i] = f₀[i]/sk[i]*oneunit_tType
     end
   else
-    @.. tmp = f₀/sk*oneunit_tType
+    @.. broadcast=false tmp = f₀/sk*oneunit_tType
   end
 
   d₁ = internalnorm(tmp,t)
@@ -145,7 +145,7 @@
       u₁[i] = u0[i] + dt₀_tdir*f₀[i]
     end
   else
-    @.. u₁ = u0 + dt₀_tdir*f₀
+    @.. broadcast=false u₁ = u0 + dt₀_tdir*f₀
   end
   f₁ = zero(f₀)
   f(f₁,u₁,p,t+dt₀_tdir)
@@ -165,7 +165,7 @@
       tmp[i] = (f₁[i]-f₀[i])/sk[i]*oneunit_tType
     end
   else
-    @.. tmp = (f₁-f₀)/sk*oneunit_tType
+    @.. broadcast=false tmp = (f₁-f₀)/sk*oneunit_tType
   end
 
   d₂ = internalnorm(tmp,t)/dt₀*oneunit_tType
@@ -195,7 +195,7 @@ end
       return tdir*max(smalldt, dtmin)
   end
 
-  sk = @.. abstol + internalnorm(u0,t) * reltol
+  sk = @.. broadcast=false abstol + internalnorm(u0,t) * reltol
   d₀ = internalnorm(u0 ./ sk,t)
 
   f₀ = f(u0,p,t)
@@ -213,7 +213,7 @@ end
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
 
-  u₁ = @.. u0 + dt₀_tdir * f₀
+  u₁ = @.. broadcast=false u0 + dt₀_tdir * f₀
   f₁ = f(u₁,p,t+dt₀_tdir)
 
   # Constant zone before callback

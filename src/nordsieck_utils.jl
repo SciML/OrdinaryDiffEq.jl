@@ -22,7 +22,7 @@ function nordsieck_finalize!(integrator, cache::T) where T
     if isconst
       cache.z[end] = cache.Δ
     else
-      @.. cache.z[end] = cache.Δ
+      @.. broadcast=false cache.z[end] = cache.Δ
     end
     cache.prev_𝒟 = cache.c_𝒟
   end
@@ -59,7 +59,7 @@ function nordsieck_prepare_next!(integrator, cache::T) where T
   if isconst
     cache.Δ = cache.c_LTE * cache.Δ
   else
-    @.. cache.Δ = cache.c_LTE * cache.Δ
+    @.. broadcast=false cache.Δ = cache.c_LTE * cache.Δ
   end
   return nothing
 end
@@ -169,7 +169,7 @@ function perform_predict!(cache::T, rewind=false) where T
         end
       else
         for i in 1:order, j in order:-1:i
-          @.. z[j] = z[j] + z[j+1]
+          @.. broadcast=false z[j] = z[j] + z[j+1]
         end
       end # endif const cache
     else
@@ -179,7 +179,7 @@ function perform_predict!(cache::T, rewind=false) where T
         end
       else
         for i in 1:order, j in order:-1:i
-          @.. z[j] = z[j] - z[j+1]
+          @.. broadcast=false z[j] = z[j] - z[j+1]
         end
       end # endif const cache
     end # endif !rewind
@@ -198,7 +198,7 @@ function update_nordsieck_vector!(cache::T) where T
       end
     else
       for i in 1:order+1
-        @.. z[i] = muladd(l[i], Δ, z[i])
+        @.. broadcast=false z[i] = muladd(l[i], Δ, z[i])
       end
     end # endif not const cache
   end # end @inbounds
@@ -232,10 +232,10 @@ function nlsolve_functional!(integrator, cache::T) where T
       integrator.u = ratetmp + z[1]
       cache.Δ = ratetmp - cache.Δ
     else
-      @.. integrator.u = -z[2]
-      @.. ratetmp = inv(l[2])*muladd(dt, ratetmp, integrator.u)
-      @.. integrator.u = ratetmp + z[1]
-      @.. cache.Δ = ratetmp - cache.Δ
+      @.. broadcast=false integrator.u = -z[2]
+      @.. broadcast=false ratetmp = inv(l[2])*muladd(dt, ratetmp, integrator.u)
+      @.. broadcast=false integrator.u = ratetmp + z[1]
+      @.. broadcast=false cache.Δ = ratetmp - cache.Δ
     end
     # @show norm(dt*ratetmp - ( z[2] + (integrator.u - z[1])*l[2] ))
     # @show norm(cache.Δ - (integrator.u - z[1]))
@@ -332,7 +332,7 @@ function nordsieck_adjust_order!(cache::T, dorder) where T
         if isconstcache
           cache.z[j] = muladd.(-cache.l[j], cache.z[order+1], cache.z[j])
         else
-          @.. cache.z[j] = muladd(-cache.l[j], cache.z[order+1], cache.z[j])
+          @.. broadcast=false cache.z[j] = muladd(-cache.l[j], cache.z[order+1], cache.z[j])
         end
       end # for j
     end # else
@@ -374,7 +374,7 @@ function chooseη!(integrator, cache::T) where T
       if isconst
         z[end] = Δ
       else
-        @.. z[end] = Δ
+        @.. broadcast=false z[end] = Δ
       end
     end #endif BDF
   end # endif η == ηq
@@ -408,7 +408,7 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
       atmp = muladd.(-cquot, z[end], cache.Δ)
       atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     else
-      @.. ratetmp = muladd(-cquot, z[end], cache.Δ)
+      @.. broadcast=false ratetmp = muladd(-cquot, z[end], cache.Δ)
       calculate_residuals!(atmp, ratetmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     end
     dup = integrator.opts.internalnorm(atmp,t) * c_LTE₊₁

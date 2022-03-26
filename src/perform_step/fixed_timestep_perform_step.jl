@@ -11,7 +11,7 @@ function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=fa
     if FunctionMap_scale_by_time(alg)
       tmp = f(uprev, p, t + dt)
       integrator.destats.nf += 1
-      @muladd integrator.u = @.. uprev + dt * tmp
+      @muladd integrator.u = @.. broadcast=false uprev + dt * tmp
     else
       integrator.u = f(uprev, p, t + dt)
       integrator.destats.nf += 1
@@ -32,7 +32,7 @@ function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
      !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&  integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
     if FunctionMap_scale_by_time(alg)
       f(tmp, uprev, p, t+dt)
-      @muladd @.. u = uprev + dt*tmp
+      @muladd @.. broadcast=false u = uprev + dt*tmp
     else
       f(u,uprev,p,t+dt)
     end
@@ -57,7 +57,7 @@ end
 
 function perform_step!(integrator,cache::EulerConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @muladd u = @.. uprev + dt*integrator.fsalfirst
+  @muladd u = @.. broadcast=false uprev + dt*integrator.fsalfirst
   k = f(u, p, t+dt) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
   integrator.fsallast = k
@@ -80,7 +80,7 @@ end
 
 function perform_step!(integrator,cache::EulerCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @muladd @.. u = uprev + dt*integrator.fsalfirst
+  @muladd @.. broadcast=false u = uprev + dt*integrator.fsalfirst
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
@@ -110,21 +110,21 @@ end
       a₃ = 2 * a₂
   end
 
-  tmp = @.. uprev + a₁ * fsalfirst
+  tmp = @.. broadcast=false uprev + a₁ * fsalfirst
   k2 = f(tmp, p, t + a₁)
   integrator.destats.nf += 1
 
   if typeof(cache) <: HeunConstantCache
-      u = @.. uprev + a₂ * (fsalfirst + k2)
+      u = @.. broadcast=false uprev + a₂ * (fsalfirst + k2)
   else
-      u = @.. uprev + a₂ * fsalfirst + a₃ * k2
+      u = @.. broadcast=false uprev + a₂ * fsalfirst + a₃ * k2
   end
 
   if integrator.opts.adaptive
       if typeof(cache) <: HeunConstantCache
-          tmp = @.. a₂ * (k2 - fsalfirst)
+          tmp = @.. broadcast=false a₂ * (k2 - fsalfirst)
       else
-          tmp = @.. a₃ * (k2 - fsalfirst)
+          tmp = @.. broadcast=false a₃ * (k2 - fsalfirst)
       end
 
       atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -164,21 +164,21 @@ end
       a₃ = 2 * a₂
   end
 
-  @.. tmp = uprev + a₁ * fsalfirst
+  @.. broadcast=false tmp = uprev + a₁ * fsalfirst
   f(k, tmp, p, t + a₁)
   integrator.destats.nf += 1
 
   if typeof(cache) <: HeunCache
-      @.. u = uprev + a₂ * (fsalfirst + k)
+      @.. broadcast=false u = uprev + a₂ * (fsalfirst + k)
   else
-      @.. u = uprev + a₂ * fsalfirst + a₃ * k
+      @.. broadcast=false u = uprev + a₂ * fsalfirst + a₃ * k
   end
 
   if integrator.opts.adaptive
       if typeof(cache) <: HeunCache
-          @.. tmp = a₂ * (k - fsalfirst)
+          @.. broadcast=false tmp = a₂ * (k - fsalfirst)
       else
-          @.. tmp = a₃ * (k - fsalfirst)
+          @.. broadcast=false tmp = a₃ * (k - fsalfirst)
       end
 
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
@@ -204,14 +204,14 @@ end
 @muladd function perform_step!(integrator,cache::MidpointConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   halfdt = dt/2
-  tmp = @.. uprev + halfdt * integrator.fsalfirst
+  tmp = @.. broadcast=false uprev + halfdt * integrator.fsalfirst
   k = f(tmp, p, t+halfdt)
   integrator.destats.nf += 1
-  u = @.. uprev + dt * k
+  u = @.. broadcast=false uprev + dt * k
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.destats.nf += 1
   if integrator.opts.adaptive
-      utilde = @.. dt * (integrator.fsalfirst - k)
+      utilde = @.. broadcast=false dt * (integrator.fsalfirst - k)
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                                  integrator.opts.reltol,integrator.opts.internalnorm,t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -237,12 +237,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,k,fsalfirst,atmp = cache
   halfdt = dt/2
-  @.. tmp = uprev + halfdt*fsalfirst
+  @.. broadcast=false tmp = uprev + halfdt*fsalfirst
   f(k, tmp, p, t+halfdt)
   integrator.destats.nf += 1
-  @.. u = uprev + dt*k
+  @.. broadcast=false u = uprev + dt*k
   if integrator.opts.adaptive
-      @.. tmp = dt*(fsalfirst - k)
+      @.. broadcast=false tmp = dt*(fsalfirst - k)
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                            integrator.opts.reltol,integrator.opts.internalnorm,t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -315,13 +315,13 @@ end
   k₁ = fsalfirst
   halfdt = dt/2
   ttmp = t+halfdt
-  @.. tmp = uprev + halfdt*k₁
+  @.. broadcast=false tmp = uprev + halfdt*k₁
   f(k₂,tmp,p,ttmp)
-  @.. tmp = uprev + halfdt*k₂
+  @.. broadcast=false tmp = uprev + halfdt*k₂
   f(k₃,tmp,p,ttmp)
-  @.. tmp = uprev + dt*k₃
+  @.. broadcast=false tmp = uprev + dt*k₃
   f(k₄,tmp,p,t+dt)
-  @.. u = uprev + (dt/6)*(2*(k₂ + k₃) + (k₁ + k₄))
+  @.. broadcast=false u = uprev + (dt/6)*(2*(k₂ + k₃) + (k₁ + k₄))
   f(k, u, p, t+dt)
   integrator.destats.nf += 4
   if integrator.opts.adaptive
@@ -329,17 +329,17 @@ end
       k₅ = k; _p = k₂; pprime = k₃ # Alias some cache arrays
       σ₁ = 1/2 - sqrt(3)/6
       σ₂ = 1/2 + sqrt(3)/6
-      @.. tmp = (1-σ₁)*uprev+σ₁*u+σ₁*(σ₁-1)*((1-2σ₁)*(u-uprev)+(σ₁-1)*dt*k₁ + σ₁*dt*k₅)
-      @.. pprime = k₁ + σ₁*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev + σ₁*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
+      @.. broadcast=false tmp = (1-σ₁)*uprev+σ₁*u+σ₁*(σ₁-1)*((1-2σ₁)*(u-uprev)+(σ₁-1)*dt*k₁ + σ₁*dt*k₅)
+      @.. broadcast=false pprime = k₁ + σ₁*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev + σ₁*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
       f(_p,tmp,p,t+σ₁*dt)
-      @.. tmp = dt*(_p - pprime)
+      @.. broadcast=false tmp = dt*(_p - pprime)
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                            integrator.opts.reltol,integrator.opts.internalnorm,t)
       e1 = integrator.opts.internalnorm(atmp,t)
-      @.. tmp = (1-σ₂)*uprev+σ₂*u+σ₂*(σ₂-1)*((1-2σ₂)*(u-uprev)+(σ₂-1)*dt*k₁ + σ₂*dt*k₅)
-      @.. pprime = k₁ + σ₂*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev + σ₂*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
+      @.. broadcast=false tmp = (1-σ₂)*uprev+σ₂*u+σ₂*(σ₂-1)*((1-2σ₂)*(u-uprev)+(σ₂-1)*dt*k₁ + σ₂*dt*k₅)
+      @.. broadcast=false pprime = k₁ + σ₂*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev + σ₂*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
       f(_p,tmp,p,t+σ₂*dt)
-      @.. tmp = dt*(_p - pprime)
+      @.. broadcast=false tmp = dt*(_p - pprime)
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                            integrator.opts.reltol,integrator.opts.internalnorm,t)
       e2 = integrator.opts.internalnorm(atmp,t)
@@ -405,28 +405,28 @@ end
   @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β5,β6,c2,c3,c4,c5,c6 = cache.tab
 
   # u1
-  @.. tmp = dt*fsalfirst
-  @.. u   = uprev + β1*tmp
+  @.. broadcast=false tmp = dt*fsalfirst
+  @.. broadcast=false u   = uprev + β1*tmp
   # u2
   f( k,  u, p, t+c2*dt)
-  @.. tmp = α2*tmp + dt*k
-  @.. u   = u + β2*tmp
+  @.. broadcast=false tmp = α2*tmp + dt*k
+  @.. broadcast=false u   = u + β2*tmp
   # u3
   f( k,  u, p, t+c3*dt)
-  @.. tmp = α3*tmp + dt*k
-  @.. u   = u + β3*tmp
+  @.. broadcast=false tmp = α3*tmp + dt*k
+  @.. broadcast=false u   = u + β3*tmp
   # u4
   f( k,  u, p, t+c4*dt)
-  @.. tmp = α4*tmp + dt*k
-  @.. u   = u + β4*tmp
+  @.. broadcast=false tmp = α4*tmp + dt*k
+  @.. broadcast=false u   = u + β4*tmp
   # u5 = u
   f( k,  u, p, t+c5*dt)
-  @.. tmp = α5*tmp + dt*k
-  @.. u   = u + β5*tmp
+  @.. broadcast=false tmp = α5*tmp + dt*k
+  @.. broadcast=false u   = u + β5*tmp
 
   f( k,  u, p, t+c6*dt)
-  @.. tmp = α6*tmp + dt*k
-  @.. u   = u + β6*tmp
+  @.. broadcast=false tmp = α6*tmp + dt*k
+  @.. broadcast=false u   = u + β6*tmp
 
   f( k,  u, p, t+dt)
   integrator.destats.nf += 6

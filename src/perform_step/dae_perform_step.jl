@@ -64,8 +64,8 @@ end
   nlsolver.γ = 1
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  @.. u = uprev + z
-  @.. du = z * inv(dt)
+  @.. broadcast=false u = uprev + z
+  @.. broadcast=false du = z * inv(dt)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -80,7 +80,7 @@ end
     c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
     r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    @.. tmp = r*integrator.opts.internalnorm((u - uprev)/dt1 - (uprev - uprev2)/dt2,t)
+    @.. broadcast=false tmp = r*integrator.opts.internalnorm((u - uprev)/dt1 - (uprev - uprev2)/dt2,t)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   else
@@ -107,7 +107,7 @@ end
   if integrator.iter == 1 && !integrator.u_modified
     cache.dtₙ₋₁ = dtₙ
     perform_step!(integrator, cache.eulercache, repeat_step)
-    integrator.fsalfirst = @.. (integrator.u - integrator.uprev) / dtₙ
+    integrator.fsalfirst = @.. broadcast=false (integrator.u - integrator.uprev) / dtₙ
     cache.fsalfirstprev = integrator.fsalfirst
     return
   end
@@ -126,7 +126,7 @@ end
   nlsolvefail(nlsolver) && return
 
   uₙ = uₙ₋₁ + z
-  integrator.fsallast = @.. z/dtₙ
+  integrator.fsallast = @.. broadcast=false z/dtₙ
 
   if integrator.opts.adaptive
     tmp = integrator.fsallast - (1+dtₙ/dtₙ₋₁)*integrator.fsalfirst + (dtₙ/dtₙ₋₁)*cache.fsalfirstprev
@@ -173,7 +173,7 @@ end
   if integrator.iter == 1 && !integrator.u_modified
     cache.dtₙ₋₁ = dtₙ
     perform_step!(integrator, cache.eulercache, repeat_step)
-    @.. integrator.fsalfirst = (uₙ - uₙ₋₁) / dt
+    @.. broadcast=false integrator.fsalfirst = (uₙ - uₙ₋₁) / dt
     cache.fsalfirstprev .= integrator.fsalfirst
     return
   end
@@ -184,21 +184,21 @@ end
 
   nlsolver.γ = (1+ρ)/(1+2ρ)
   nlsolver.α = 1//1
-  @.. nlsolver.tmp = -c1 * uₙ₋₁ + c1 * uₙ₋₂
+  @.. broadcast=false nlsolver.tmp = -c1 * uₙ₋₁ + c1 * uₙ₋₂
   nlsolver.z .= zero(eltype(z))
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
 
-  @.. uₙ = uₙ₋₁ + z
-  @.. du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
+  @.. broadcast=false uₙ = uₙ₋₁ + z
+  @.. broadcast=false du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
 
-  @.. integrator.fsallast = du
+  @.. broadcast=false integrator.fsallast = du
   integrator.destats.nf += 1
   if integrator.opts.adaptive
     btilde0 = (dtₙ₋₁+dtₙ)*1//6
     btilde1 = 1+ρ
     btilde2 = ρ
-    @.. tmp = btilde0*(integrator.fsallast - btilde1*integrator.fsalfirst + btilde2*cache.fsalfirstprev)
+    @.. broadcast=false tmp = btilde0*(integrator.fsallast - btilde1*integrator.fsalfirst + btilde2*cache.fsalfirstprev)
     calculate_residuals!(atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -206,7 +206,7 @@ end
   ################################### Finalize
 
   if integrator.EEst < one(integrator.EEst)
-    @.. cache.fsalfirstprev = integrator.fsalfirst
+    @.. broadcast=false cache.fsalfirstprev = integrator.fsalfirst
     cache.dtₙ₋₁ = dtₙ
   end
   return
@@ -252,12 +252,12 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order}, repeat_
     end
   else
     for i in 1:k-1
-      @.. @views u_corrector[:,i] = $calc_Lagrange_interp(k,weights,equi_ts[i],ts,u_history,u_corrector[:,i])
+      @.. broadcast=false @views u_corrector[:,i] = $calc_Lagrange_interp(k,weights,equi_ts[i],ts,u_history,u_corrector[:,i])
     end
     tmp = uprev * bdf_coeffs[k,2]
     vc = _vec(tmp)
     for i in 1:k-1
-      @.. @views vc += u_corrector[:,i] * bdf_coeffs[k,i+2]
+      @.. broadcast=false @views vc += u_corrector[:,i] * bdf_coeffs[k,i+2]
     end
   end
 
@@ -338,11 +338,11 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
 
   reinitFBDF!(integrator, cache)
   k = order
-  @.. u₀ = zero(u)
+  @.. broadcast=false u₀ = zero(u)
   if cache.iters_from_event >= 1
     calc_Lagrange_interp!(k,weights,t+dt,ts,u_history,u₀)
   else
-    @.. u₀ = u
+    @.. broadcast=false u₀ = u
   end
   markfirststage!(nlsolver)
 
@@ -355,19 +355,19 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
     @views calc_Lagrange_interp!(k,weights,equi_ts[i],ts,u_history,u_corrector[:,i])
   end
 
-  @.. tmp = uprev * bdf_coeffs[k,2]
+  @.. broadcast=false tmp = uprev * bdf_coeffs[k,2]
   vc = _vec(tmp)
   for i in 1:k-1
-    @.. @views vc += u_corrector[:,i] * bdf_coeffs[k,i+2]
+    @.. broadcast=false @views vc += u_corrector[:,i] * bdf_coeffs[k,i+2]
   end
 
-  @.. nlsolver.tmp = tmp + u₀
-  @.. nlsolver.z = zero(eltype(nlsolver.z))
+  @.. broadcast=false nlsolver.tmp = tmp + u₀
+  @.. broadcast=false nlsolver.z = zero(eltype(nlsolver.z))
   nlsolver.γ = bdf_coeffs[k,1]
   nlsolver.α = 1//1
   z = nlsolve!(nlsolver, integrator, cache, repeat_step)
   nlsolvefail(nlsolver) && return
-  @.. u = z + u₀
+  @.. broadcast=false u = z + u₀
 
   for j in 2:k
     r[j] = (1-j)
@@ -376,16 +376,16 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
     end
   end
 
-  @.. terkp1_tmp = z
+  @.. broadcast=false terkp1_tmp = z
   for j in 1:k+1
-    @.. terkp1_tmp *= j*dt/(t+dt-ts[j])
+    @.. broadcast=false terkp1_tmp *= j*dt/(t+dt-ts[j])
   end
 
   lte = -1/(1+k)
   for j in 2:k
     lte -= (bdf_coeffs[k,j]//bdf_coeffs[k,1])*r[j]
   end
-  @.. terk_tmp = lte * terkp1_tmp
+  @.. broadcast=false terk_tmp = lte * terkp1_tmp
   if integrator.opts.adaptive
     @unpack abstol, reltol, internalnorm = integrator.opts
     for i in 1:k+1
@@ -415,5 +415,5 @@ function perform_step!(integrator, cache::DFBDFCache{max_order}, repeat_step=fal
       cache.terkp1 = zero(cache.terkp1)
     end
   end
-  @.. integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt) #TODO Lorenz plot seems not smooth
+  @.. broadcast=false integrator.fsallast = integrator.du = (nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt) #TODO Lorenz plot seems not smooth
 end

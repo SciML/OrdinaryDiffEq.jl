@@ -52,18 +52,18 @@ end
   # u1
   f(k, u, p, t)
   integrator.destats.nf += 1
-  @.. thread=thread tmp = dt*k
-  @.. thread=thread u   = u + B1*tmp
+  @.. broadcast=false thread=thread tmp = dt*k
+  @.. broadcast=false thread=thread u   = u + B1*tmp
   # other stages
   for i in eachindex(A2end)
     if williamson_condition
       f(ArrayFuse(tmp, u, (A2end[i], dt, B2end[i])), u, p, t+c2end[i]*dt)
     else
-      @.. thread=thread tmp = A2end[i]*tmp
+      @.. broadcast=false thread=thread tmp = A2end[i]*tmp
       stage_limiter!(u, integrator, p, t+c2end[i]*dt)
       f(k, u, p, t+c2end[i]*dt)
-      @.. thread=thread tmp = tmp + dt * k
-      @.. thread=thread u   = u + B2end[i]*tmp
+      @.. broadcast=false thread=thread tmp = tmp + dt * k
+      @.. broadcast=false thread=thread u   = u + B2end[i]*tmp
     end
     integrator.destats.nf += 1
   end
@@ -121,15 +121,15 @@ end
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
-  @.. k = integrator.fsalfirst
-  @.. u = u + B1*dt*k
+  @.. broadcast=false k = integrator.fsalfirst
+  @.. broadcast=false u = u + B1*dt*k
 
   # other stages
   for i in eachindex(A2end)
-    @.. tmp = u + A2end[i]*dt*k
+    @.. broadcast=false tmp = u + A2end[i]*dt*k
     f(k, tmp, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
-    @.. u   = u + B2end[i]*dt*k
+    @.. broadcast=false u   = u + B2end[i]*dt*k
   end
 
   f(k, u, p, t+dt)
@@ -189,15 +189,15 @@ end
   @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end = cache.tab
 
   # u1
-  @.. tmp = u
-  @.. u   = tmp + β1*dt*integrator.fsalfirst
+  @.. broadcast=false tmp = u
+  @.. broadcast=false u   = tmp + β1*dt*integrator.fsalfirst
 
   # other stages
   for i in eachindex(γ12end)
     f(k, u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
-    @.. tmp = tmp + δ2end[i]*u
-    @.. u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    @.. broadcast=false tmp = tmp + δ2end[i]*u
+    @.. broadcast=false u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
   end
 
   f(k, u, p, t+dt)
@@ -268,10 +268,10 @@ end
   # u1
   f(integrator.fsalfirst, uprev, p, t)
   integrator.destats.nf += 1
-  @.. thread=thread tmp = uprev
-  @.. thread=thread u   = tmp + β1*dt*integrator.fsalfirst
+  @.. broadcast=false thread=thread tmp = uprev
+  @.. broadcast=false thread=thread u   = tmp + β1*dt*integrator.fsalfirst
   if integrator.opts.adaptive
-    @.. thread=thread utilde = bhat1*dt*integrator.fsalfirst
+    @.. broadcast=false thread=thread utilde = bhat1*dt*integrator.fsalfirst
   end
 
   # other stages
@@ -279,10 +279,10 @@ end
     stage_limiter!(u, integrator, p, t+c2end[i]*dt)
     f(k, u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
-    @.. thread=thread tmp = tmp + δ2end[i]*u
-    @.. thread=thread u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    @.. broadcast=false thread=thread tmp = tmp + δ2end[i]*u
+    @.. broadcast=false thread=thread u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
     if integrator.opts.adaptive
-      @.. thread=thread utilde = utilde + bhat2end[i]*dt*k
+      @.. broadcast=false thread=thread utilde = utilde + bhat2end[i]*dt*k
     end
   end
 
@@ -365,10 +365,10 @@ end
   @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal = cache.tab
 
   # u1
-  @.. thread=thread tmp = uprev
-  @.. thread=thread u   = tmp + β1*dt*integrator.fsalfirst
+  @.. broadcast=false thread=thread tmp = uprev
+  @.. broadcast=false thread=thread u   = tmp + β1*dt*integrator.fsalfirst
   if integrator.opts.adaptive
-    @.. thread=thread utilde = bhat1*dt*integrator.fsalfirst
+    @.. broadcast=false thread=thread utilde = bhat1*dt*integrator.fsalfirst
   end
 
   # other stages
@@ -376,10 +376,10 @@ end
     stage_limiter!(u, integrator, p, t+c2end[i]*dt)
     f(k, u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
-    @.. thread=thread tmp = tmp + δ2end[i]*u
-    @.. thread=thread u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
+    @.. broadcast=false thread=thread tmp = tmp + δ2end[i]*u
+    @.. broadcast=false thread=thread u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
     if integrator.opts.adaptive
-      @.. thread=thread utilde = utilde + bhat2end[i]*dt*k
+      @.. broadcast=false thread=thread utilde = utilde + bhat2end[i]*dt*k
     end
   end
 
@@ -391,7 +391,7 @@ end
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
-    @.. thread=thread utilde = utilde + bhatfsal*dt*k
+    @.. broadcast=false thread=thread utilde = utilde + bhatfsal*dt*k
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t, thread)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -459,21 +459,21 @@ end
   @unpack k,gprev,tmp,atmp = cache
   @unpack Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
 
-  @.. k   = fsalfirst
-  integrator.opts.adaptive && (@.. tmp = zero(uprev))
+  @.. broadcast=false k   = fsalfirst
+  integrator.opts.adaptive && (@.. broadcast=false tmp = zero(uprev))
 
   #stages 1 to s-1
   for i in eachindex(Aᵢ)
-    integrator.opts.adaptive && (@.. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
-    @.. gprev = u + Aᵢ[i]*dt*k
-    @.. u     = u + Bᵢ[i]*dt*k
+    integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    @.. broadcast=false gprev = u + Aᵢ[i]*dt*k
+    @.. broadcast=false u     = u + Bᵢ[i]*dt*k
     f(k, gprev, p, t + Cᵢ[i]*dt)
     integrator.destats.nf += 1
   end
 
   #last stage
-  integrator.opts.adaptive && (@.. tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
-  @.. u   = u  + Bₗ*dt*k
+  integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  @.. broadcast=false u   = u  + Bₗ*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
@@ -553,27 +553,27 @@ end
   @unpack k,uᵢ₋₁,uᵢ₋₂,gprev,fᵢ₋₂,tmp,atmp = cache
   @unpack Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
 
-  @.. fᵢ₋₂  = zero(fsalfirst)
-  @.. k     = fsalfirst
-  integrator.opts.adaptive && (@.. tmp = zero(uprev))
-  @.. uᵢ₋₁  = uprev
-  @.. uᵢ₋₂  = uprev
+  @.. broadcast=false fᵢ₋₂  = zero(fsalfirst)
+  @.. broadcast=false k     = fsalfirst
+  integrator.opts.adaptive && (@.. broadcast=false tmp = zero(uprev))
+  @.. broadcast=false uᵢ₋₁  = uprev
+  @.. broadcast=false uᵢ₋₂  = uprev
 
   #stages 1 to s-1
   for i in eachindex(Aᵢ₁)
-    integrator.opts.adaptive && (@.. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
-    @.. gprev = uᵢ₋₂ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
-    @.. u     = u + Bᵢ[i]*dt*k
-    @.. fᵢ₋₂  = k
-    @.. uᵢ₋₂  = uᵢ₋₁
-    @.. uᵢ₋₁  = u
+    integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    @.. broadcast=false gprev = uᵢ₋₂ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
+    @.. broadcast=false u     = u + Bᵢ[i]*dt*k
+    @.. broadcast=false fᵢ₋₂  = k
+    @.. broadcast=false uᵢ₋₂  = uᵢ₋₁
+    @.. broadcast=false uᵢ₋₁  = u
     f(k, gprev, p, t + Cᵢ[i]*dt)
     integrator.destats.nf += 1
   end
 
   #last stage
-  integrator.opts.adaptive && (@.. tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
-  @.. u   = u  + Bₗ*dt*k
+  integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  @.. broadcast=false u   = u  + Bₗ*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
@@ -656,32 +656,32 @@ end
   @unpack k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,gprev,fᵢ₋₂,fᵢ₋₃,tmp,atmp = cache
   @unpack Aᵢ₁,Aᵢ₂,Aᵢ₃,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
 
-  @.. fᵢ₋₂  = zero(fsalfirst)
-  @.. fᵢ₋₃  = zero(fsalfirst)
-  @.. k     = fsalfirst
-  integrator.opts.adaptive && (@.. tmp = zero(uprev))
-  @.. uᵢ₋₁  = uprev
-  @.. uᵢ₋₂  = uprev
-  @.. uᵢ₋₃  = uprev
+  @.. broadcast=false fᵢ₋₂  = zero(fsalfirst)
+  @.. broadcast=false fᵢ₋₃  = zero(fsalfirst)
+  @.. broadcast=false k     = fsalfirst
+  integrator.opts.adaptive && (@.. broadcast=false tmp = zero(uprev))
+  @.. broadcast=false uᵢ₋₁  = uprev
+  @.. broadcast=false uᵢ₋₂  = uprev
+  @.. broadcast=false uᵢ₋₃  = uprev
 
 
   #stages 1 to s-1
   for i in eachindex(Aᵢ₁)
-    integrator.opts.adaptive && (@.. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
-    @.. gprev = uᵢ₋₃ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂+Aᵢ₃[i]*fᵢ₋₃)*dt
-    @.. u     = u + Bᵢ[i]*dt*k
-    @.. fᵢ₋₃  = fᵢ₋₂
-    @.. fᵢ₋₂  = k
-    @.. uᵢ₋₃  = uᵢ₋₂
-    @.. uᵢ₋₂  = uᵢ₋₁
-    @.. uᵢ₋₁  = u
+    integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    @.. broadcast=false gprev = uᵢ₋₃ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂+Aᵢ₃[i]*fᵢ₋₃)*dt
+    @.. broadcast=false u     = u + Bᵢ[i]*dt*k
+    @.. broadcast=false fᵢ₋₃  = fᵢ₋₂
+    @.. broadcast=false fᵢ₋₂  = k
+    @.. broadcast=false uᵢ₋₃  = uᵢ₋₂
+    @.. broadcast=false uᵢ₋₂  = uᵢ₋₁
+    @.. broadcast=false uᵢ₋₁  = u
     f(k, gprev, p, t + Cᵢ[i]*dt)
     integrator.destats.nf += 1
   end
 
   #last stage
-  integrator.opts.adaptive && (@.. tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
-  @.. u   = u  + Bₗ*dt*k
+  integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  @.. broadcast=false u   = u  + Bₗ*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
@@ -768,36 +768,36 @@ end
   @unpack k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,uᵢ₋₄,gprev,fᵢ₋₂,fᵢ₋₃,fᵢ₋₄,tmp,atmp = cache
   @unpack Aᵢ₁,Aᵢ₂,Aᵢ₃,Aᵢ₄,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
 
-  @.. fᵢ₋₂  = zero(fsalfirst)
-  @.. fᵢ₋₃  = zero(fsalfirst)
-  @.. fᵢ₋₄  = zero(fsalfirst)
-  @.. k     = fsalfirst
-  integrator.opts.adaptive && (@.. tmp = zero(uprev))
-  @.. uᵢ₋₁  = uprev
-  @.. uᵢ₋₂  = uprev
-  @.. uᵢ₋₃  = uprev
-  @.. uᵢ₋₄  = uprev
+  @.. broadcast=false fᵢ₋₂  = zero(fsalfirst)
+  @.. broadcast=false fᵢ₋₃  = zero(fsalfirst)
+  @.. broadcast=false fᵢ₋₄  = zero(fsalfirst)
+  @.. broadcast=false k     = fsalfirst
+  integrator.opts.adaptive && (@.. broadcast=false tmp = zero(uprev))
+  @.. broadcast=false uᵢ₋₁  = uprev
+  @.. broadcast=false uᵢ₋₂  = uprev
+  @.. broadcast=false uᵢ₋₃  = uprev
+  @.. broadcast=false uᵢ₋₄  = uprev
 
 
   #stages 1 to s-1
   for i in eachindex(Aᵢ₁)
-    integrator.opts.adaptive && (@.. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
-    @.. gprev = uᵢ₋₄ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂+Aᵢ₃[i]*fᵢ₋₃+Aᵢ₄[i]*fᵢ₋₄)*dt
-    @.. u     = u + Bᵢ[i]*dt*k
-    @.. fᵢ₋₄  = fᵢ₋₃
-    @.. fᵢ₋₃  = fᵢ₋₂
-    @.. fᵢ₋₂  = k
-    @.. uᵢ₋₄  = uᵢ₋₃
-    @.. uᵢ₋₃  = uᵢ₋₂
-    @.. uᵢ₋₂  = uᵢ₋₁
-    @.. uᵢ₋₁  = u
+    integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    @.. broadcast=false gprev = uᵢ₋₄ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂+Aᵢ₃[i]*fᵢ₋₃+Aᵢ₄[i]*fᵢ₋₄)*dt
+    @.. broadcast=false u     = u + Bᵢ[i]*dt*k
+    @.. broadcast=false fᵢ₋₄  = fᵢ₋₃
+    @.. broadcast=false fᵢ₋₃  = fᵢ₋₂
+    @.. broadcast=false fᵢ₋₂  = k
+    @.. broadcast=false uᵢ₋₄  = uᵢ₋₃
+    @.. broadcast=false uᵢ₋₃  = uᵢ₋₂
+    @.. broadcast=false uᵢ₋₂  = uᵢ₋₁
+    @.. broadcast=false uᵢ₋₁  = u
     f(k, gprev, p, t + Cᵢ[i]*dt)
     integrator.destats.nf += 1
   end
 
   #last stage
-  integrator.opts.adaptive && (@.. tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
-  @.. u   = u  + Bₗ*dt*k
+  integrator.opts.adaptive && (@.. broadcast=false tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  @.. broadcast=false u   = u  + Bₗ*dt*k
 
   #Error estimate
   if integrator.opts.adaptive

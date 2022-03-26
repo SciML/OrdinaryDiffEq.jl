@@ -131,7 +131,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod, olddt
     # TODO: failure handling
     nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
-    @.. integrator.u = integrator.uprev + z
+    @.. broadcast=false integrator.u = integrator.uprev + z
   else
     isad = alg_autodiff(integrator.alg)
     _tmp = isad ? PreallocationTools.dualcache(tmp, ForwardDiff.pickchunksize(length(tmp))) : tmp
@@ -188,7 +188,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod, olddt
     # TODO: failure handling
     nlsolvefail(nlsolver) && @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
-    @.. integrator.u = integrator.uprev + z
+    @.. broadcast=false integrator.u = integrator.uprev + z
   else
     nlequation_oop = @closure (u,_) -> begin
       update_coefficients!(M,u,p,t)

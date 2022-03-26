@@ -410,18 +410,18 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             vecu = _vec(linres.u)
             vecki = _vec($ki)
 
-            @.. vecki = -vecu
+            @.. broadcast=false vecki = -vecu
 
             integrator.destats.nsolve += 1
-            @.. u = +(uprev,$(aijkj...))
+            @.. broadcast=false u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
             if mass_matrix === I
-                @.. linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
+                @.. broadcast=false linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
             else
-                @.. du1 = +($(dtCijkj...))
+                @.. broadcast=false du1 = +($(dtCijkj...))
                 mul!(_vec(du2),mass_matrix,_vec(du1))
-                @.. linsolve_tmp = du + $dtdj*dT + du2
+                @.. broadcast=false linsolve_tmp = du + $dtdj*dT + du2
             end
         end)
     end
@@ -436,10 +436,10 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
         linsolve = linres.cache
         vecu = _vec(linres.u)
         vecklast = _vec($klast)
-        @.. vecklast = -vecu
+        @.. broadcast=false vecklast = -vecu
 
         integrator.destats.nsolve += 1
-        @.. u = +(uprev,$(biki...))
+        @.. broadcast=false u = +(uprev,$(biki...))
     end)
 
     adaptiveexpr=[]
@@ -448,7 +448,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
         push!(adaptiveexpr,quote
             utilde=du
             if integrator.opts.adaptive
-                @.. utilde = +($(btildeiki...))
+                @.. broadcast=false utilde = +($(btildeiki...))
                 calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                                     integrator.opts.reltol,integrator.opts.internalnorm,t)
                 integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -781,17 +781,17 @@ macro Rosenbrock4(part)
             cache.linsolve = linsolve
             vecu = _vec(linres.u)
             veck3 = _vec(k3)
-            @.. veck3 = -vecu
+            @.. broadcast=false veck3 = -vecu
 
             integrator.destats.nsolve += 1
-            #@.. u = uprev + a31*k1 + a32*k2 #a4j=a3j
+            #@.. broadcast=false u = uprev + a31*k1 + a32*k2 #a4j=a3j
             #f( du,  u, p, t+c3*dt) #reduced function call
             if mass_matrix === I
-                @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+                @.. broadcast=false linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
             else
-                @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+                @.. broadcast=false du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
                 mul!(du2,mass_matrix,du1)
-                @.. linsolve_tmp = du + dtd4*dT + du2
+                @.. broadcast=false linsolve_tmp = du + dtd4*dT + du2
             end
         end
         constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep,specialstepconst)

@@ -282,7 +282,7 @@ acceleration based on the current iterate `z` and the settings and history in th
   end
 
   # update history of differences of z₊
-  Δz₊s[history] = @.. z - z₊old
+  Δz₊s[history] = @.. broadcast=false z - z₊old
 
   # replace/add difference of residuals as right-most column to QR decomposition
   qradd!(Q, R, _vec(dz .- dzold), history)
@@ -312,7 +312,7 @@ acceleration based on the current iterate `z` and the settings and history in th
 
   # update next iterate
   for i in 1:history
-    z = @.. z - γs[i] * Δz₊s[i]
+    z = @.. broadcast=false z - γs[i] * Δz₊s[i]
   end
 
   z
@@ -348,15 +348,15 @@ by performing Anderson acceleration based on the settings and history in the `ca
   end
 
   # update history of differences of z₊
-  @.. Δz₊s[history] = z - z₊old
+  @.. broadcast=false Δz₊s[history] = z - z₊old
 
   # replace/add difference of residuals as right-most column to QR decomposition
-  @.. dzold = dz - dzold
+  @.. broadcast=false dzold = dz - dzold
   qradd!(Q, R, _vec(dzold), history)
 
   # update cached values
-  @.. dzold = dz
-  @.. z₊old = z
+  @.. broadcast=false dzold = dz
+  @.. broadcast=false z₊old = z
 
   # define current Q and R matrices
   Qcur, Rcur = view(Q, :, 1:history), UpperTriangular(view(R, 1:history, 1:history))
@@ -379,7 +379,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
 
   # update next iterate
   for i in 1:history
-    @.. z = z - γs[i] * Δz₊s[i]
+    @.. broadcast=false z = z - γs[i] * Δz₊s[i]
   end
 
   nothing
