@@ -10,7 +10,14 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
 
         xdual = Dual{T,eltype(df),1}(convert(eltype(df),x),ForwardDiff.Partials((one(eltype(df)),)))
         f(grad_config,xdual)
-        df .= first.(ForwardDiff.partials.(grad_config))
+
+        if df isa Array
+          for i in eachindex(df)
+            df[i] = first(ForwardDiff.partials(grad_config[i]))
+          end
+        else
+          df .= first.(ForwardDiff.partials.(grad_config))
+        end
         integrator.destats.nf += 1
     else
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
