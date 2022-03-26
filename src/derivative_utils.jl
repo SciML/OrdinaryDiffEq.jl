@@ -419,7 +419,7 @@ end
 @noinline _throwWMerror(W, mass_matrix) = throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
 @noinline _throwJMerror(J, mass_matrix) = throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 
-function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
+@noinline function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
   iijj = axes(W)
   @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -463,7 +463,7 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
   return nothing
 end
 
-function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_transform::Bool)::Nothing where MT
+@noinline function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
   iijj = axes(W)
   @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -523,7 +523,7 @@ function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_trans
   return W
 end
 
-function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache, dtgamma, repeat_step, W_transform=false)
+@noinline function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
   lcache = nlsolver === nothing ? cache : nlsolver.cache
   @unpack J = lcache
