@@ -424,7 +424,7 @@ end
     @.. tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
-      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), linu = _vec(est))
 
       integrator.destats.nsolve += 1
     else
@@ -492,7 +492,7 @@ end
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
 
-      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), linu = _vec(est))
 
       integrator.destats.nsolve += 1
     else
@@ -600,7 +600,7 @@ end
     @.. tmp = z₁/2 - z₂/2
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
-      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), linu = _vec(est))
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -1032,7 +1032,7 @@ end
     @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
-      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), linu = _vec(est))
       integrator.destats.nsolve += 1
     else
       est = tmp
@@ -2023,7 +2023,7 @@ end
     @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est && isnewton(nlsolver) # From Shampine
       est = nlsolver.cache.dz
-      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), u = _vec(est))
+      linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp), linu = _vec(est))
 
       integrator.destats.nsolve += 1
     else
