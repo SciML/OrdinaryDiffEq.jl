@@ -1,5 +1,4 @@
 struct DefaultInit <: DiffEqBase.DAEInitializationAlgorithm end
-struct NoInit <: DiffEqBase.DAEInitializationAlgorithm end
 
 struct ShampineCollocationInit{T} <: DiffEqBase.DAEInitializationAlgorithm
   initdt::T
