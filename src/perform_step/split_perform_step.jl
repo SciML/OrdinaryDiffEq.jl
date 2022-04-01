@@ -15,7 +15,7 @@ end
 
 @muladd function perform_step!(integrator,cache::SplitEulerConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  u = @.. uprev + dt*integrator.fsalfirst
+  u = @.. broadcast=false uprev + dt*integrator.fsalfirst
   integrator.fsallast = f.f1(u,p,t+dt) + f.f2(u,p,t+dt)  # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
@@ -41,7 +41,7 @@ end
 
 @muladd function perform_step!(integrator,cache::SplitEulerCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @.. u = uprev + dt*integrator.fsalfirst
+  @.. broadcast=false u = uprev + dt*integrator.fsalfirst
   f.f1(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
   f.f2(cache.tmp,u,p,t+dt) # For the interpolation, needs k at the updated point
   integrator.destats.nf2 += 1

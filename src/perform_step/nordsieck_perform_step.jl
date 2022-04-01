@@ -111,18 +111,18 @@ end
     perform_step!(integrator, tsit5cache, repeat_step)
     copyto!(tmp, integrator.u)
     cache.order = 4
-    @.. z[1] = integrator.uprev
-    @.. z[2] = integrator.k[1]*dt
+    @.. broadcast=false z[1] = integrator.uprev
+    @.. broadcast=false z[2] = integrator.k[1]*dt
     ode_interpolant!(z[3],t,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{2})
     ode_interpolant!(z[4],t,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{3})
     ode_interpolant!(z[5],t,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{4})
-    @.. z[3] = z[3]*dt^2/2
-    @.. z[4] = z[4]*dt^3/6
-    @.. z[5] = z[5]*dt^4/24
+    @.. broadcast=false z[3] = z[3]*dt^2/2
+    @.. broadcast=false z[4] = z[4]*dt^3/6
+    @.. broadcast=false z[5] = z[5]*dt^4/24
     fill!(z[6], 0)
     fill!(dts, dt)
     perform_predict!(cache)
-    @.. cache.Δ = integrator.u - integrator.uprev
+    @.. broadcast=false cache.Δ = integrator.u - integrator.uprev
     update_nordsieck_vector!(cache)
     if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
       cache.order = 1
@@ -136,7 +136,7 @@ end
     dts[1] = dt
     # Rescale
     dt != dts[2] && nordsieck_rescale!(cache)
-    @.. integrator.k[1] = z[2]/dt
+    @.. broadcast=false integrator.k[1] = z[2]/dt
     # Perform 5th order Adams method in Nordsieck form
     perform_predict!(cache)
     calc_coeff!(cache)
@@ -167,7 +167,7 @@ end
 
     ################################### Finalize
 
-    @.. integrator.k[2] = cache.z[2]/dt
+    @.. broadcast=false integrator.k[2] = cache.z[2]/dt
   end
   return nothing
 end
@@ -258,10 +258,10 @@ end
   # handle callbacks, rewind back to order one.
   if integrator.u_modified || integrator.iter == 1
     cache.order = 1
-    @.. z[1] = integrator.uprev
+    @.. broadcast=false z[1] = integrator.uprev
     f(z[2], uprev, p, t)
     integrator.destats.nf += 1
-    @.. z[2] = z[2]*dt
+    @.. broadcast=false z[2] = z[2]*dt
     dts[1] = dt
   end
   # Reset time
@@ -272,7 +272,7 @@ end
   dts[1] = dt
   # Rescale
   dt != dts[2] && nordsieck_adjust!(integrator, cache)
-  @.. integrator.k[1] = z[2]/dt
+  @.. broadcast=false integrator.k[1] = z[2]/dt
 
   perform_predict!(cache)
   calc_coeff!(cache)
@@ -302,6 +302,6 @@ end
 
   nordsieck_finalize!(integrator, cache)
   nordsieck_prepare_next!(integrator, cache)
-  @.. integrator.k[2] = cache.z[2]/dt
+  @.. broadcast=false integrator.k[2] = cache.z[2]/dt
   return nothing
 end

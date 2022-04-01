@@ -73,8 +73,8 @@ end
   previter = nlsolver.iter - 1
   if previter == aa_start
     # update cached values for next step of Anderson acceleration
-    @.. cache.dzold = cache.dz
-    @.. cache.z₊old = nlsolver.z
+    @.. broadcast=false cache.dzold = cache.dz
+    @.. broadcast=false cache.z₊old = nlsolver.z
   elseif previter > aa_start
     # actually perform Anderson acceleration
     anderson!(nlsolver.z, cache)
@@ -99,11 +99,11 @@ end
 
   γdt = γ*dt
   if isdae
-    ustep = @.. uprev + z
+    ustep = @.. broadcast=false uprev + z
     invγdt = inv(γdt)
-    dustep = @.. (tmp + α * z) * invγdt
+    dustep = @.. broadcast=false (tmp + α * z) * invγdt
     dz = f(dustep, ustep, p, t)
-    ztmp = @.. z + dz
+    ztmp = @.. broadcast=false z + dz
   else
     mass_matrix = integrator.f.mass_matrix
     if nlsolver.method === COEFFICIENT_MULTISTEP
@@ -117,7 +117,7 @@ end
         ztmp = dz .+ z
       end
     else
-      ustep = @.. tmp + γ*z
+      ustep = @.. broadcast=false tmp + γ*z
       if mass_matrix === I
         ztmp = dt .* f(ustep, p, tstep)
         dz = ztmp .- z
@@ -157,36 +157,36 @@ end
 
   γdt = γ*dt
   if isdae
-    @.. ustep = uprev + z
-    @.. ztmp = (tmp + α * z) * inv(γdt)
+    @.. broadcast=false ustep = uprev + z
+    @.. broadcast=false ztmp = (tmp + α * z) * inv(γdt)
     f(k, ztmp, ustep, p, tstep)
-    @.. dz = k
-    @.. ztmp = z + dz
+    @.. broadcast=false dz = k
+    @.. broadcast=false ztmp = z + dz
   else
     mass_matrix = integrator.f.mass_matrix
     if nlsolver.method === COEFFICIENT_MULTISTEP
       ustep = z
       f(k, ustep, p, tstep)
       if mass_matrix === I
-        @.. ztmp = (tmp + k) * (γdt / α)
-        @.. dz = ztmp - z
+        @.. broadcast=false ztmp = (tmp + k) * (γdt / α)
+        @.. broadcast=false dz = ztmp - z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
-        @.. dz = (tmp + k) * γdt - α * ztmp
-        @.. ztmp = dz + z
+        @.. broadcast=false dz = (tmp + k) * γdt - α * ztmp
+        @.. broadcast=false ztmp = dz + z
       end
     else
-      @.. ustep = tmp + γ*z
+      @.. broadcast=false ustep = tmp + γ*z
       f(k, ustep, p, tstep)
       if mass_matrix === I
-        @.. ztmp = dt * k
-        @.. dz = ztmp - z
+        @.. broadcast=false ztmp = dt * k
+        @.. broadcast=false dz = ztmp - z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
-        @.. dz = dt * k - ztmp
-        @.. ztmp = z + dz
+        @.. broadcast=false dz = dt * k - ztmp
+        @.. broadcast=false ztmp = z + dz
       end
     end
   end

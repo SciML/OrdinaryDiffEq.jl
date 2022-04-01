@@ -97,7 +97,7 @@ initial_η(nlsolver::NLSolver, integrator) =
 
 function apply_step!(nlsolver::NLSolver{algType,iip}, integrator) where {algType,iip}
   if iip
-    @.. nlsolver.z = nlsolver.ztmp
+    @.. broadcast=false nlsolver.z = nlsolver.ztmp
   else
     nlsolver.z = nlsolver.ztmp
   end

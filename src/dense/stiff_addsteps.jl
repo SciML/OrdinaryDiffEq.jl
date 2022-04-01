@@ -39,7 +39,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     dto2 = dt/2
     dto6 = dt/6
 
-    @.. linsolve_tmp = @muladd fsalfirst + γ*dT
+    @.. broadcast=false linsolve_tmp = @muladd fsalfirst + γ*dT
 
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
@@ -52,9 +52,9 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
 
-    @.. veck₁ = -vecu
+    @.. broadcast=false veck₁ = -vecu
 
-    @.. tmp = uprev + dto2*k₁
+    @.. broadcast=false tmp = uprev + dto2*k₁
     f(f₁,tmp,p,t+dto2)
 
     if mass_matrix === I
@@ -63,15 +63,15 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
       mul!(tmp,mass_matrix,k₁)
     end
 
-    @.. linsolve_tmp = f₁ - tmp
+    @.. broadcast=false linsolve_tmp = f₁ - tmp
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
 
-    @.. veck2 = -vecu
+    @.. broadcast=false veck2 = -vecu
 
-    @.. k₂ += k₁
+    @.. broadcast=false k₂ += k₁
 
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
@@ -254,7 +254,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     dtd4 = dt*d4
     dtgamma = dt*gamma
 
-    @.. linsolve_tmp = @muladd fsalfirst + dtgamma*dT
+    @.. broadcast=false linsolve_tmp = @muladd fsalfirst + dtgamma*dT
 
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
@@ -266,72 +266,72 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     vecu = _vec(linres.u)
     veck1 = _vec(k1)
 
-    @.. veck1 = -vecu
-    @.. tmp = uprev + a21*k1
+    @.. broadcast=false veck1 = -vecu
+    @.. broadcast=false tmp = uprev + a21*k1
     f( du,  tmp, p, t+c2*dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
+      @.. broadcast=false linsolve_tmp = du + dtd2*dT + dtC21*k1
     else
-      @.. du1 = dtC21*k1
+      @.. broadcast=false du1 = dtC21*k1
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + dtd2*dT + du2
+      @.. broadcast=false linsolve_tmp = du + dtd2*dT + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck2 = _vec(k2)
-    @.. veck2 = -vecu
-    @.. tmp = uprev + a31*k1 + a32*k2
+    @.. broadcast=false veck2 = -vecu
+    @.. broadcast=false tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+      @.. broadcast=false linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
     else
-      @.. du1 = dtC31*k1 + dtC32*k2
+      @.. broadcast=false du1 = dtC31*k1 + dtC32*k2
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + dtd3*dT + du2
+      @.. broadcast=false linsolve_tmp = du + dtd3*dT + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck3 = _vec(k3)
-    @.. veck3 = -vecu
-    @.. tmp = uprev + a41*k1 + a42*k2 + a43*k3
+    @.. broadcast=false veck3 = -vecu
+    @.. broadcast=false tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+      @.. broadcast=false linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
     else
-      @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+      @.. broadcast=false du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + dtd4*dT + du2
+      @.. broadcast=false linsolve_tmp = du + dtd4*dT + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck4 = _vec(k4)
-    @.. veck4 = -vecu
-    @.. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+    @.. broadcast=false veck4 = -vecu
+    @.. broadcast=false tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+      @.. broadcast=false linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
     else
-      @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
+      @.. broadcast=false du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + du2
+      @.. broadcast=false linsolve_tmp = du + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck5 = _vec(k5)
-    @.. veck5 = -vecu
+    @.. broadcast=false veck5 = -vecu
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    @.. k6 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    @.. broadcast=false k6 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     copyat_or_push!(k,1,copy(k6))
 
-    @.. k6 = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    @.. broadcast=false k6 = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
     copyat_or_push!(k,2,copy(k6))
 
   end
@@ -662,7 +662,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     dtgamma = dt*gamma
 
     f( fsalfirst,  uprev, p, t)
-    @.. linsolve_tmp = @muladd fsalfirst + dtgamma*dT
+    @.. broadcast=false linsolve_tmp = @muladd fsalfirst + dtgamma*dT
 
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
@@ -674,121 +674,121 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     vecu = _vec(linres.u)
     veck1 = _vec(k1)
 
-    @.. veck1 = -vecu
-    @.. tmp = uprev + a21*k1
+    @.. broadcast=false veck1 = -vecu
+    @.. broadcast=false tmp = uprev + a21*k1
     f( du,  tmp, p, t+c2*dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
+      @.. broadcast=false linsolve_tmp = du + dtd2*dT + dtC21*k1
     else
-      @.. du1 = dtC21*k1
+      @.. broadcast=false du1 = dtC21*k1
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + dtd2*dT + du2
+      @.. broadcast=false linsolve_tmp = du + dtd2*dT + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck2 = _vec(k2)
-    @.. veck2 = -vecu
-    @.. tmp = uprev + a31*k1 + a32*k2
+    @.. broadcast=false veck2 = -vecu
+    @.. broadcast=false tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+      @.. broadcast=false linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
     else
-      @.. du1 = dtC31*k1 + dtC32*k2
+      @.. broadcast=false du1 = dtC31*k1 + dtC32*k2
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + dtd3*dT + du2
+      @.. broadcast=false linsolve_tmp = du + dtd3*dT + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck3 = _vec(k3)
-    @.. veck3 = -vecu
-    @.. tmp = uprev + a41*k1 + a42*k2 + a43*k3
+    @.. broadcast=false veck3 = -vecu
+    @.. broadcast=false tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+      @.. broadcast=false linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
     else
-      @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+      @.. broadcast=false du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + dtd4*dT + du2
+      @.. broadcast=false linsolve_tmp = du + dtd4*dT + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck4 = _vec(k4)
-    @.. veck4 = -vecu
-    @.. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+    @.. broadcast=false veck4 = -vecu
+    @.. broadcast=false tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+c5*dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+      @.. broadcast=false linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
     else
-      @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
+      @.. broadcast=false du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + dtd5*dT + du2
+      @.. broadcast=false linsolve_tmp = du + dtd5*dT + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck5 = _vec(k5)
-    @.. veck5 = -vecu
-    @.. tmp = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
+    @.. broadcast=false veck5 = -vecu
+    @.. broadcast=false tmp = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
     f( du,  tmp, p, t+dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + (dtC62*k2 + dtC64*k4 + dtC61*k1 + dtC63*k3 + dtC65*k5)
+      @.. broadcast=false linsolve_tmp = du + (dtC62*k2 + dtC64*k4 + dtC61*k1 + dtC63*k3 + dtC65*k5)
     else
-      @.. du1 = dtC62*k2 + dtC64*k4 + dtC61*k1 + dtC63*k3 + dtC65*k5
+      @.. broadcast=false du1 = dtC62*k2 + dtC64*k4 + dtC61*k1 + dtC63*k3 + dtC65*k5
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + du2
+      @.. broadcast=false linsolve_tmp = du + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck6 = _vec(k6)
-    @.. veck6 = -vecu
-    @.. tmp = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5 + k6
+    @.. broadcast=false veck6 = -vecu
+    @.. broadcast=false tmp = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5 + k6
     f( du,  tmp, p, t+dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
+      @.. broadcast=false linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
     else
-      @.. du1 = dtC72*k2 + dtC74*k4 + dtC71*k1 + dtC73*k3 + dtC75*k5 + dtC76*k6
+      @.. broadcast=false du1 = dtC72*k2 + dtC74*k4 + dtC71*k1 + dtC73*k3 + dtC75*k5 + dtC76*k6
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + du2
+      @.. broadcast=false linsolve_tmp = du + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck7 = _vec(k7)
-    @.. veck7 = -vecu
-    @.. tmp = uprev + a71*k1 + a72*k2 + a73*k3 + a74*k4 + a75*k5 + a76*k6 + k7
+    @.. broadcast=false veck7 = -vecu
+    @.. broadcast=false tmp = uprev + a71*k1 + a72*k2 + a73*k3 + a74*k4 + a75*k5 + a76*k6 + k7
     f( du,  tmp, p, t+dt)
 
     if mass_matrix === I
-      @.. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
+      @.. broadcast=false linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
     else
-      @.. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
+      @.. broadcast=false du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
       mul!(du2,mass_matrix,du1)
-      @.. linsolve_tmp = du + du2
+      @.. broadcast=false linsolve_tmp = du + du2
     end
 
     linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp), reltol = cache.reltol)
     vecu = _vec(linres.u)
     veck8 = _vec(k8)
-    @.. veck8 = -vecu
+    @.. broadcast=false veck8 = -vecu
 
     @unpack h21,h22,h23,h24,h25,h26,h27,h28,h31,h32,h33,h34,h35,h36,h37,h38,h41,h42,h43,h44,h45,h46,h47,h48 = cache.tab
-    @.. tmp = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7 + h28*k8
+    @.. broadcast=false tmp = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5 + h26*k6 + h27*k7 + h28*k8
     copyat_or_push!(k,1,copy(tmp))
 
-    @.. tmp = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7 + h38*k8
+    @.. broadcast=false tmp = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5 + h36*k6 + h37*k7 + h38*k8
     copyat_or_push!(k,2,copy(tmp))
 
-    @.. tmp = h41*k1 + h42*k2 + h43*k3 + h44*k4 + h45*k5 + h46*k6 + h47*k7 + h48*k8
+    @.. broadcast=false tmp = h41*k1 + h42*k2 + h43*k3 + h44*k4 + h45*k5 + h46*k6 + h47*k7 + h48*k8
     copyat_or_push!(k,3,copy(tmp))
 
   end

@@ -56,28 +56,28 @@ end
   k1 = fsalfirst
   f(k1, uprev, p, t)
   a = dt*a21
-  @.. tmp = uprev+a*k1
+  @.. broadcast=false tmp = uprev+a*k1
   f(k2, tmp, p, t + c1*dt)
-  @.. tmp = uprev+dt*(a31*k1+a32*k2)
+  @.. broadcast=false tmp = uprev+dt*(a31*k1+a32*k2)
   f(k3, tmp, p, t + c2*dt)
-  @.. tmp = uprev+dt*(a41*k1+a43*k3)
+  @.. broadcast=false tmp = uprev+dt*(a41*k1+a43*k3)
   f(k4, tmp, p, t + c3*dt)
-  @.. tmp = uprev+dt*(a51*k1+a53*k3+a54*k4)
+  @.. broadcast=false tmp = uprev+dt*(a51*k1+a53*k3+a54*k4)
   f(k5, tmp, p, t + c4*dt)
-  @.. tmp = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
+  @.. broadcast=false tmp = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
   f(k6, tmp, p, t + c5*dt)
-  @.. tmp = uprev+dt*(a71*k1+a73*k3+a74*k4+a75*k5+a76*k6)
+  @.. broadcast=false tmp = uprev+dt*(a71*k1+a73*k3+a74*k4+a75*k5+a76*k6)
   f(k7, tmp, p, t + c6*dt)
-  @.. tmp = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
+  @.. broadcast=false tmp = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
   f(k8, tmp, p, t + c7*dt)
-  @.. tmp = uprev+dt*(a91*k1+a93*k3+a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
+  @.. broadcast=false tmp = uprev+dt*(a91*k1+a93*k3+a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
   f(k9, tmp, p, t+dt)
-  @.. tmp = uprev+dt*(a101*k1+a103*k3+a104*k4+a105*k5+a106*k6+a107*k7+a108*k8)
+  @.. broadcast=false tmp = uprev+dt*(a101*k1+a103*k3+a104*k4+a105*k5+a106*k6+a107*k7+a108*k8)
   f(k10, tmp, p, t+dt)
-  @.. u = uprev + dt*(b1*k1+b4*k4+b5*k5+b6*k6+b7*k7+b8*k8+b9*k9)
+  @.. broadcast=false u = uprev + dt*(b1*k1+b4*k4+b5*k5+b6*k6+b7*k7+b8*k8+b9*k9)
   integrator.destats.nf += 10
   if integrator.opts.adaptive
-    @.. utilde = dt*(btilde1*k1+btilde4*k4+btilde5*k5+btilde6*k6+btilde7*k7+btilde8*k8+btilde9*k9+btilde10*k10)
+    @.. broadcast=false utilde = dt*(btilde1*k1+btilde4*k4+btilde5*k5+btilde6*k6+btilde7*k7+btilde8*k8+btilde9*k9+btilde10*k10)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -233,36 +233,36 @@ end
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7,kupdate,utilde,tmp,atmp = cache
   f(k1, uprev, p, t)
   a = dt*a0201
-  @.. tmp = uprev+a*k1
+  @.. broadcast=false tmp = uprev+a*k1
   f(k2, tmp, p, t + c2*dt)
-  @.. tmp = uprev+dt*(a0301*k1+a0302*k2)
+  @.. broadcast=false tmp = uprev+dt*(a0301*k1+a0302*k2)
   f(k3, tmp, p, t + c3*dt)
-  @.. tmp = uprev+dt*(a0401*k1+a0403*k3)
+  @.. broadcast=false tmp = uprev+dt*(a0401*k1+a0403*k3)
   f(k4, tmp, p, t + c4*dt)
-  @.. tmp = uprev+dt*(a0501*k1+a0503*k3+a0504*k4)
+  @.. broadcast=false tmp = uprev+dt*(a0501*k1+a0503*k3+a0504*k4)
   f(k5, tmp, p, t + c5*dt)
-  @.. tmp = uprev+dt*(a0601*k1+a0604*k4+a0605*k5)
+  @.. broadcast=false tmp = uprev+dt*(a0601*k1+a0604*k4+a0605*k5)
   f(k6, tmp, p, t + c6*dt)
-  @.. tmp = uprev+dt*(a0701*k1+a0704*k4+a0705*k5+a0706*k6)
+  @.. broadcast=false tmp = uprev+dt*(a0701*k1+a0704*k4+a0705*k5+a0706*k6)
   f(k7, tmp, p, t + c7*dt)
-  @.. tmp = uprev+dt*(a0801*k1+a0804*k4+a0805*k5+a0806*k6+a0807*k7)
+  @.. broadcast=false tmp = uprev+dt*(a0801*k1+a0804*k4+a0805*k5+a0806*k6+a0807*k7)
   f(k8, tmp, p, t + c8*dt)
-  @.. tmp = uprev+dt*(a0901*k1+a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8)
+  @.. broadcast=false tmp = uprev+dt*(a0901*k1+a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8)
   f(k9, tmp, p, t + c9*dt)
-  @.. tmp = uprev+dt*(a1001*k1+a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9)
+  @.. broadcast=false tmp = uprev+dt*(a1001*k1+a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9)
   f(k10, tmp, p, t + c10*dt)
-  @.. tmp = uprev+dt*(a1101*k1+a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10)
+  @.. broadcast=false tmp = uprev+dt*(a1101*k1+a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10)
   f(k11, tmp, p, t + c11*dt)
-  @.. tmp = uprev+dt*(a1201*k1+a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11)
+  @.. broadcast=false tmp = uprev+dt*(a1201*k1+a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11)
   f(k12, tmp, p, t+dt)
-  @.. kupdate = b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12
-  @.. u = uprev + dt*kupdate
+  @.. broadcast=false kupdate = b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12
+  @.. broadcast=false u = uprev + dt*kupdate
   integrator.destats.nf += 12
   if integrator.opts.adaptive
-    @.. utilde = dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)
+    @.. broadcast=false utilde = dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     err5 = integrator.opts.internalnorm(atmp,t) # Order 5
-    @.. utilde= dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12)
+    @.. broadcast=false utilde= dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     err3 = integrator.opts.internalnorm(atmp,t) # Order 3
     err52 = err5*err5
@@ -277,20 +277,20 @@ end
   if integrator.opts.calck
     @unpack c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = cache.tab
     @unpack d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716 = cache.tab
-    @.. tmp = uprev+dt*(a1401*k1+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13)
+    @.. broadcast=false tmp = uprev+dt*(a1401*k1+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13)
     f(k14, tmp, p, t + c14*dt)
-    @.. tmp = uprev+dt*(a1501*k1+a1506*k6+a1507*k7+a1508*k8+a1511*k11+a1512*k12+a1513*k13+a1514*k14)
+    @.. broadcast=false tmp = uprev+dt*(a1501*k1+a1506*k6+a1507*k7+a1508*k8+a1511*k11+a1512*k12+a1513*k13+a1514*k14)
     f(k15, tmp, p, t + c15*dt)
-    @.. tmp = uprev+dt*(a1601*k1+a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1613*k13+a1614*k14+a1615*k15)
+    @.. broadcast=false tmp = uprev+dt*(a1601*k1+a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1613*k13+a1614*k14+a1615*k15)
     f(k16, tmp, p, t + c16*dt)
     integrator.destats.nf += 3
-    @.. udiff= kupdate
-    @.. bspl = k1 - udiff
-    @.. integrator.k[3] = udiff - k13 - bspl
-    @.. integrator.k[4] = d401*k1+d406*k6+d407*k7+d408*k8+d409*k9+d410*k10+d411*k11+d412*k12+d413*k13+d414*k14+d415*k15+d416*k16
-    @.. integrator.k[5] = d501*k1+d506*k6+d507*k7+d508*k8+d509*k9+d510*k10+d511*k11+d512*k12+d513*k13+d514*k14+d515*k15+d516*k16
-    @.. integrator.k[6] = d601*k1+d606*k6+d607*k7+d608*k8+d609*k9+d610*k10+d611*k11+d612*k12+d613*k13+d614*k14+d615*k15+d616*k16
-    @.. integrator.k[7] = d701*k1+d706*k6+d707*k7+d708*k8+d709*k9+d710*k10+d711*k11+d712*k12+d713*k13+d714*k14+d715*k15+d716*k16
+    @.. broadcast=false udiff= kupdate
+    @.. broadcast=false bspl = k1 - udiff
+    @.. broadcast=false integrator.k[3] = udiff - k13 - bspl
+    @.. broadcast=false integrator.k[4] = d401*k1+d406*k6+d407*k7+d408*k8+d409*k9+d410*k10+d411*k11+d412*k12+d413*k13+d414*k14+d415*k15+d416*k16
+    @.. broadcast=false integrator.k[5] = d501*k1+d506*k6+d507*k7+d508*k8+d509*k9+d510*k10+d511*k11+d512*k12+d513*k13+d514*k14+d515*k15+d516*k16
+    @.. broadcast=false integrator.k[6] = d601*k1+d606*k6+d607*k7+d608*k8+d609*k9+d610*k10+d611*k11+d612*k12+d613*k13+d614*k14+d615*k15+d616*k16
+    @.. broadcast=false integrator.k[7] = d701*k1+d706*k6+d707*k7+d708*k8+d709*k9+d710*k10+d711*k11+d712*k12+d713*k13+d714*k14+d715*k15+d716*k16
   end
 end
 
@@ -418,21 +418,21 @@ end
   @unpack c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,btilde1,btilde6,btilde7,btilde8,btilde9,btilde10,btilde11,btilde12,btilde13 = cache
   k1 = integrator.fsalfirst
   a = dt*a0201
-  k2 = f(t + c1*dt, @.. uprev+a*k1)
-  k3 = f(t + c2*dt, @.. uprev+dt*(a0301*k1+a0302*k2))
-  k4 = f(t + c3*dt, @.. uprev+dt*(a0401*k1       +a0403*k3))
-  k5 = f(t + c4*dt, @.. uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
-  k6 = f(t + c5*dt, @.. uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
-  k7 = f(t + c6*dt, @.. uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-  k8 = f(t + c7*dt, @.. uprev+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
-  k9 = f(t + c8*dt, @.. uprev+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
-  k10 =f(t + c9*dt, @.. uprev+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-  k11= f(t + c10*dt, @.. uprev+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-  k12= f(t+dt, @.. uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-  k13= f(t+dt, @.. uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
-  u = @.. uprev + dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
+  k2 = f(t + c1*dt, @.. broadcast=false uprev+a*k1)
+  k3 = f(t + c2*dt, @.. broadcast=false uprev+dt*(a0301*k1+a0302*k2))
+  k4 = f(t + c3*dt, @.. broadcast=false uprev+dt*(a0401*k1       +a0403*k3))
+  k5 = f(t + c4*dt, @.. broadcast=false uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
+  k6 = f(t + c5*dt, @.. broadcast=false uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
+  k7 = f(t + c6*dt, @.. broadcast=false uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
+  k8 = f(t + c7*dt, @.. broadcast=false uprev+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
+  k9 = f(t + c8*dt, @.. broadcast=false uprev+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
+  k10 =f(t + c9*dt, @.. broadcast=false uprev+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
+  k11= f(t + c10*dt, @.. broadcast=false uprev+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
+  k12= f(t+dt, @.. broadcast=false uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
+  k13= f(t+dt, @.. broadcast=false uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
+  u = @.. broadcast=false uprev + dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
   if integrator.opts.adaptive
-    utilde = @.. dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
+    utilde = @.. broadcast=false dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -493,34 +493,34 @@ end
   k1 = cache.fsalfirst
   f(k1, uprev, p, t)
   a = dt*a0201
-  @.. tmp = uprev+a*k1
+  @.. broadcast=false tmp = uprev+a*k1
   f(k2, tmp, p, t + c1*dt)
-  @.. tmp = uprev+dt*(a0301*k1+a0302*k2)
+  @.. broadcast=false tmp = uprev+dt*(a0301*k1+a0302*k2)
   f(k3, tmp, p, t + c2*dt)
-  @.. tmp = uprev+dt*(a0401*k1+a0403*k3)
+  @.. broadcast=false tmp = uprev+dt*(a0401*k1+a0403*k3)
   f(k4, tmp, p, t + c3*dt)
-  @.. tmp = uprev+dt*(a0501*k1+a0503*k3+a0504*k4)
+  @.. broadcast=false tmp = uprev+dt*(a0501*k1+a0503*k3+a0504*k4)
   f(k5, tmp, p, t + c4*dt)
-  @.. tmp = uprev+dt*(a0601*k1+a0604*k4+a0605*k5)
+  @.. broadcast=false tmp = uprev+dt*(a0601*k1+a0604*k4+a0605*k5)
   f(k6, tmp, p, t + c5*dt)
-  @.. tmp = uprev+dt*(a0701*k1+a0704*k4+a0705*k5+a0706*k6)
+  @.. broadcast=false tmp = uprev+dt*(a0701*k1+a0704*k4+a0705*k5+a0706*k6)
   f(k7, tmp, p, t + c6*dt)
-  @.. tmp = uprev+dt*(a0801*k1+a0804*k4+a0805*k5+a0806*k6+a0807*k7)
+  @.. broadcast=false tmp = uprev+dt*(a0801*k1+a0804*k4+a0805*k5+a0806*k6+a0807*k7)
   f(k8, tmp, p, t + c7*dt)
-  @.. tmp = uprev+dt*(a0901*k1+a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8)
+  @.. broadcast=false tmp = uprev+dt*(a0901*k1+a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8)
   f(k9, tmp, p, t + c8*dt)
-  @.. tmp = uprev+dt*(a1001*k1+a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9)
+  @.. broadcast=false tmp = uprev+dt*(a1001*k1+a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9)
   f(k10, tmp, p, t + c9*dt)
-  @.. tmp = uprev+dt*(a1101*k1+a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10)
+  @.. broadcast=false tmp = uprev+dt*(a1101*k1+a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10)
   f(k11, tmp, p, t + c10*dt)
-  @.. tmp = uprev+dt*(a1201*k1+a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11)
+  @.. broadcast=false tmp = uprev+dt*(a1201*k1+a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11)
   f(k12, tmp, p, t+dt)
-  @.. tmp = uprev+dt*(a1301*k1+a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10)
+  @.. broadcast=false tmp = uprev+dt*(a1301*k1+a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10)
   f(k13, tmp, p, t+dt)
-  @.. u = uprev + dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
+  @.. broadcast=false u = uprev + dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
   integrator.destats.nf += 13
   if integrator.opts.adaptive
-    @.. utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
+    @.. broadcast=false utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -739,34 +739,34 @@ end
 
   k1 = cache.fsalfirst
   f(k1, uprev, p, t) 
-  @.. tmp = uprev+dt*α0201*k1
+  @.. broadcast=false tmp = uprev+dt*α0201*k1
   f(k2, tmp, p, t + c2*dt)
-  @.. tmp = uprev+dt*(α0301*k1+α0302*k2)
+  @.. broadcast=false tmp = uprev+dt*(α0301*k1+α0302*k2)
   f(k3, tmp, p, t + c3*dt)
-  @.. tmp = uprev+dt*(α0401*k1+α0403*k3)
+  @.. broadcast=false tmp = uprev+dt*(α0401*k1+α0403*k3)
   f(k4, tmp, p, t + c4*dt)
-  @.. tmp = uprev+dt*(α0501*k1+α0503*k3+α0504*k4)
+  @.. broadcast=false tmp = uprev+dt*(α0501*k1+α0503*k3+α0504*k4)
   f(k5, tmp, p, t + c5*dt)
-  @.. tmp = uprev+dt*(α0601*k1+α0604*k4+α0605*k5)
+  @.. broadcast=false tmp = uprev+dt*(α0601*k1+α0604*k4+α0605*k5)
   f(k6, tmp, p, t + c6*dt)
-  @.. tmp = uprev+dt*(α0701*k1+α0704*k4+α0705*k5+α0706*k6)
+  @.. broadcast=false tmp = uprev+dt*(α0701*k1+α0704*k4+α0705*k5+α0706*k6)
   f(k7, tmp, p, t + c7*dt)
-  @.. tmp = uprev+dt*(α0801*k1+α0804*k4+α0805*k5+α0806*k6+α0807*k7)
+  @.. broadcast=false tmp = uprev+dt*(α0801*k1+α0804*k4+α0805*k5+α0806*k6+α0807*k7)
   f(k8, tmp, p, t + c8*dt)
-  @.. tmp = uprev+dt*(α0901*k1+α0904*k4+α0905*k5+α0906*k6+α0907*k7+α0908*k8)
+  @.. broadcast=false tmp = uprev+dt*(α0901*k1+α0904*k4+α0905*k5+α0906*k6+α0907*k7+α0908*k8)
   f(k9, tmp, p, t + c9*dt)
-  @.. tmp = uprev+dt*(α1001*k1+α1004*k4+α1005*k5+α1006*k6+α1007*k7+α1008*k8+α1009*k9)
+  @.. broadcast=false tmp = uprev+dt*(α1001*k1+α1004*k4+α1005*k5+α1006*k6+α1007*k7+α1008*k8+α1009*k9)
   f(k10, tmp, p, t + c10*dt)
-  @.. tmp = uprev+dt*(α1101*k1+α1104*k4+α1105*k5+α1106*k6+α1107*k7+α1108*k8+α1109*k9+α1110*k10)
+  @.. broadcast=false tmp = uprev+dt*(α1101*k1+α1104*k4+α1105*k5+α1106*k6+α1107*k7+α1108*k8+α1109*k9+α1110*k10)
   f(k11, tmp, p, t + c11*dt)
-  @.. tmp = uprev+dt*(α1201*k1+α1204*k4+α1205*k5+α1206*k6+α1207*k7+α1208*k8+α1209*k9+α1210*k10+α1211*k11)
+  @.. broadcast=false tmp = uprev+dt*(α1201*k1+α1204*k4+α1205*k5+α1206*k6+α1207*k7+α1208*k8+α1209*k9+α1210*k10+α1211*k11)
   f(k12, tmp, p, t+c12*dt)
-  @.. tmp = uprev+dt*(α1301*k1+α1304*k4+α1305*k5+α1306*k6+α1307*k7+α1308*k8+α1309*k9+α1310*k10+α1311*k11)
+  @.. broadcast=false tmp = uprev+dt*(α1301*k1+α1304*k4+α1305*k5+α1306*k6+α1307*k7+α1308*k8+α1309*k9+α1310*k10+α1311*k11)
   f(k13, tmp, p, t+c13*dt)
-  @.. u = uprev + dt*(β1*k1+β6*k6+β7*k7+β8*k8+β9*k9+β10*k10+β11*k11+β12*k12+β13*k13)
+  @.. broadcast=false u = uprev + dt*(β1*k1+β6*k6+β7*k7+β8*k8+β9*k9+β10*k10+β11*k11+β12*k12+β13*k13)
   integrator.destats.nf += 13
   if integrator.opts.adaptive
-    @.. utilde = dt*(β1tilde*k1 + β6tilde*k6 + β7tilde*k7 + β8tilde*k8 + β9tilde*k9 + β10tilde*k10 + β11tilde*k11 + β12tilde*k12)
+    @.. broadcast=false utilde = dt*(β1tilde*k1 + β6tilde*k6 + β7tilde*k7 + β8tilde*k8 + β9tilde*k9 + β10tilde*k10 + β11tilde*k11 + β12tilde*k12)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end

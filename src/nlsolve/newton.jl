@@ -58,9 +58,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   if isdae
     # not all predictors are uprev, for other forms of predictors, defined in u₀
     if isdefined(integrator.cache, :u₀)
-      ustep = @.. integrator.cache.u₀ + z
+      ustep = @.. broadcast=false integrator.cache.u₀ + z
     else
-      ustep = @.. uprev + z
+      ustep = @.. broadcast=false uprev + z
     end
     dustep = @. (tmp + α * z) * invγdt
     ztmp = f(dustep, ustep, p, t)
@@ -127,12 +127,12 @@ end
   end
 
   if isdae
-    @.. ztmp = (tmp + α * z) * invγdt
+    @.. broadcast=false ztmp = (tmp + α * z) * invγdt
     # not all predictors are uprev, for other forms of predictors, defined in u₀
     if isdefined(integrator.cache, :u₀)
-      @.. ustep = integrator.cache.u₀ + z
+      @.. broadcast=false ustep = integrator.cache.u₀ + z
     else
-      @.. ustep = uprev + z
+      @.. broadcast=false ustep = uprev + z
     end
     f(k, ztmp, ustep, p, tstep)
     b = _vec(k)
@@ -142,21 +142,21 @@ end
       ustep = z
       f(k, z, p, tstep)
       if mass_matrix === I
-        @.. ztmp = tmp + k - (α * invγdt) * z
+        @.. broadcast=false ztmp = tmp + k - (α * invγdt) * z
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
-        @.. ztmp = tmp + k - (α * invγdt) * ztmp
+        @.. broadcast=false ztmp = tmp + k - (α * invγdt) * ztmp
       end
     else
-      @.. ustep = tmp + γ * z
+      @.. broadcast=false ustep = tmp + γ * z
       f(k, ustep, p, tstep)
       if mass_matrix === I
-        @.. ztmp = (dt * k - z) * invγdt
+        @.. broadcast=false ztmp = (dt * k - z) * invγdt
       else
         update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
-        @.. ztmp = (dt * k - ztmp) * invγdt
+        @.. broadcast=false ztmp = (dt * k - ztmp) * invγdt
       end
     end
     b = _vec(ztmp)
@@ -206,7 +206,7 @@ end
   end
 
   # compute next iterate
-  @.. ztmp = z - dz
+  @.. broadcast=false ztmp = z - dz
 
   ndz
 end
@@ -230,7 +230,7 @@ end
       @inbounds @simd ivdep for i in eachindex(z)
         ustep[i] = integrator.cache.u₀[i] + z[i]
       end
-      #@.. ustep = integrator.cache.u₀ + z
+      #@.. broadcast=false ustep = integrator.cache.u₀ + z
     else
       @inbounds @simd ivdep for i in eachindex(z)
         ustep[i] = uprev[i] + z[i]

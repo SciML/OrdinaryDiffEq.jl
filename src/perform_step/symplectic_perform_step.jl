@@ -53,7 +53,7 @@ function initialize!(integrator,cache::SymplecticEulerCache)
   kdu,ku = integrator.fsallast.x
   integrator.f.f1(kdu,duprev,uprev,integrator.p,integrator.t)
   integrator.f.f2(kuprev,duprev,uprev,integrator.p,integrator.t)
-  @muladd @.. du = duprev + integrator.dt*kdu
+  @muladd @.. broadcast=false du = duprev + integrator.dt*kdu
   integrator.f.f2(ku,du,uprev,integrator.p,integrator.t)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 2
@@ -65,13 +65,13 @@ end
   du,u = integrator.u.x
   kuprev = integrator.fsalfirst.x[2]
   kdu,ku = integrator.fsallast.x
-  @.. u = uprev + dt*kuprev
+  @.. broadcast=false u = uprev + dt*kuprev
   # Now actually compute the step
   # Do it at the end for interpolations!
   integrator.destats.nf2 += 1
   integrator.destats.nf += 1
   f.f1(kdu,duprev,u,p,t)
-  @.. du = duprev + dt*kdu
+  @.. broadcast=false du = duprev + dt*kdu
   f.f2(ku,du,u,p,t)
 end
 
@@ -192,11 +192,11 @@ end
   ku = integrator.fsallast.x[1]
   dtsq = dt^2
   half = cache.half
-  @.. u = uprev + dt*duprev + dtsq*(half*ku)
+  @.. broadcast=false u = uprev + dt*duprev + dtsq*(half*ku)
   f.f1(kdu,duprev,u,p,t+dt)
   integrator.destats.nf += 2
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
-  @.. du = duprev + dt*(half*ku + half*kdu)
+  @.. broadcast=false du = duprev + dt*(half*ku + half*kdu)
 
   store_symp_state!(integrator, cache, kdu, du)
 end
@@ -233,17 +233,17 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
   f.f1(kdu,du,u,p,tnew)
   f.f2(ku,du,u,p,tnew)
 
@@ -292,25 +292,25 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
   f.f1(kdu,du,u,p,tnew)
   f.f2(ku,du,u,p,tnew)
 
@@ -367,33 +367,33 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
   f.f1(kdu,du,u,p,tnew)
   f.f2(ku,du,u,p,tnew)
 
@@ -463,42 +463,42 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b5*ku
+  @.. broadcast=false u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
   if typeof(alg) <: McAte42
-    @.. du = du + dt*a5*kdu
+    @.. broadcast=false du = du + dt*a5*kdu
     f.f1(kdu,du,u,p,tnew)
     integrator.destats.nf += 1
   end
@@ -572,48 +572,48 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b5*ku
+  @.. broadcast=false u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a5*kdu
+  @.. broadcast=false du = du + dt*a5*kdu
 
   tnew = tnew + t+a5*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b6*ku
+  @.. broadcast=false u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a6*kdu
+  @.. broadcast=false du = du + dt*a6*kdu
   f.f1(kdu,du,u,p,tnew)
   f.f2(ku,du,u,p,tnew)
 
@@ -683,7 +683,7 @@ end
   u = u + dt*b8*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @.. du = du + dt*a8*kdu
+  # @.. broadcast=false du = du + dt*a8*kdu
   ku = f.f2(du,u,p,tnew)
 
   integrator.destats.nf += 8
@@ -698,62 +698,62 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b5*ku
+  @.. broadcast=false u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a5*kdu
+  @.. broadcast=false du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b6*ku
+  @.. broadcast=false u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a6*kdu
+  @.. broadcast=false du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b7*ku
+  @.. broadcast=false u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a7*kdu
+  @.. broadcast=false du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b8*ku
+  @.. broadcast=false u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @.. du = du + dt*a8*kdu
+  # @.. broadcast=false du = du + dt*a8*kdu
   f.f2(ku,du,u,p,tnew)
 
   integrator.destats.nf += 8
@@ -836,7 +836,7 @@ end
   u = u + dt*b10*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @.. du = du + dt*a10*kdu
+  # @.. broadcast=false du = du + dt*a10*kdu
   ku = f.f2(du,u,p,tnew)
 
   integrator.destats.nf += 10
@@ -851,76 +851,76 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b5*ku
+  @.. broadcast=false u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a5*kdu
+  @.. broadcast=false du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b6*ku
+  @.. broadcast=false u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a6*kdu
+  @.. broadcast=false du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b7*ku
+  @.. broadcast=false u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a7*kdu
+  @.. broadcast=false du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b8*ku
+  @.. broadcast=false u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a8*kdu
+  @.. broadcast=false du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b9*ku
+  @.. broadcast=false u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a9*kdu
+  @.. broadcast=false du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b10*ku
+  @.. broadcast=false u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @.. du = du + dt*a10*kdu
+  # @.. broadcast=false du = du + dt*a10*kdu
   f.f2(ku,du,u,p,tnew)
 
   integrator.destats.nf += 10
@@ -1046,7 +1046,7 @@ end
   u = u + dt*b16*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @.. du = du + dt*a16*kdu
+  # @.. broadcast=false du = du + dt*a16*kdu
   ku = f.f2(du,u,p,tnew)
 
   integrator.destats.nf += 16
@@ -1062,118 +1062,118 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b5*ku
+  @.. broadcast=false u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a5*kdu
+  @.. broadcast=false du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b6*ku
+  @.. broadcast=false u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a6*kdu
+  @.. broadcast=false du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b7*ku
+  @.. broadcast=false u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a7*kdu
+  @.. broadcast=false du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b8*ku
+  @.. broadcast=false u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a8*kdu
+  @.. broadcast=false du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b9*ku
+  @.. broadcast=false u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a9*kdu
+  @.. broadcast=false du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b10*ku
+  @.. broadcast=false u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a10*kdu
+  @.. broadcast=false du = du + dt*a10*kdu
 
   tnew = tnew + a10*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b11*ku
+  @.. broadcast=false u = u + dt*b11*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a11*kdu
+  @.. broadcast=false du = du + dt*a11*kdu
 
   tnew = tnew + a11*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b12*ku
+  @.. broadcast=false u = u + dt*b12*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a12*kdu
+  @.. broadcast=false du = du + dt*a12*kdu
 
   tnew = tnew + a12*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b13*ku
+  @.. broadcast=false u = u + dt*b13*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a13*kdu
+  @.. broadcast=false du = du + dt*a13*kdu
 
   tnew = tnew + a13*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b14*ku
+  @.. broadcast=false u = u + dt*b14*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a14*kdu
+  @.. broadcast=false du = du + dt*a14*kdu
 
   tnew = tnew + a14*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b15*ku
+  @.. broadcast=false u = u + dt*b15*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a15*kdu
+  @.. broadcast=false du = du + dt*a15*kdu
 
   tnew = tnew + a15*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b16*ku
+  @.. broadcast=false u = u + dt*b16*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @.. du = du + dt*a16*kdu
+  # @.. broadcast=false du = du + dt*a16*kdu
   f.f2(ku,du,u,p,tnew)
 
   integrator.destats.nf += 16
@@ -1313,7 +1313,7 @@ end
   u = u + dt*b18*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @.. du = du + dt*a18*kdu
+  # @.. broadcast=false du = du + dt*a18*kdu
   ku = f.f2(du,u,p,tnew)
 
   integrator.destats.nf += 18
@@ -1329,132 +1329,132 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b5*ku
+  @.. broadcast=false u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a5*kdu
+  @.. broadcast=false du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b6*ku
+  @.. broadcast=false u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a6*kdu
+  @.. broadcast=false du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b7*ku
+  @.. broadcast=false u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a7*kdu
+  @.. broadcast=false du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b8*ku
+  @.. broadcast=false u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a8*kdu
+  @.. broadcast=false du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b9*ku
+  @.. broadcast=false u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a9*kdu
+  @.. broadcast=false du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b10*ku
+  @.. broadcast=false u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a10*kdu
+  @.. broadcast=false du = du + dt*a10*kdu
 
   tnew = tnew + a10*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b11*ku
+  @.. broadcast=false u = u + dt*b11*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a11*kdu
+  @.. broadcast=false du = du + dt*a11*kdu
 
   tnew = tnew + a11*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b12*ku
+  @.. broadcast=false u = u + dt*b12*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a12*kdu
+  @.. broadcast=false du = du + dt*a12*kdu
 
   tnew = tnew + a12*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b13*ku
+  @.. broadcast=false u = u + dt*b13*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a13*kdu
+  @.. broadcast=false du = du + dt*a13*kdu
 
   tnew = tnew + a13*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b14*ku
+  @.. broadcast=false u = u + dt*b14*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a14*kdu
+  @.. broadcast=false du = du + dt*a14*kdu
 
   tnew = tnew + a14*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b15*ku
+  @.. broadcast=false u = u + dt*b15*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a15*kdu
+  @.. broadcast=false du = du + dt*a15*kdu
 
   tnew = tnew + a15*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b16*ku
+  @.. broadcast=false u = u + dt*b16*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a16*kdu
+  @.. broadcast=false du = du + dt*a16*kdu
 
   tnew = tnew + a16*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b17*ku
+  @.. broadcast=false u = u + dt*b17*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a17*kdu
+  @.. broadcast=false du = du + dt*a17*kdu
 
   tnew = tnew + a17*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b18*ku
+  @.. broadcast=false u = u + dt*b18*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @.. du = du + dt*a18*kdu
+  # @.. broadcast=false du = du + dt*a18*kdu
   f.f2(ku,du,u,p,tnew)
 
   integrator.destats.nf += 18
@@ -1724,7 +1724,7 @@ end
   u = u + dt*b36*ku
 
   kdu = f.f1(du,u,p,tnew)
-  # @.. du = du + dt*a30*kdu
+  # @.. broadcast=false du = du + dt*a30*kdu
   ku = f.f2(du,u,p,tnew)
 
   integrator.destats.nf += 36
@@ -1744,258 +1744,258 @@ end
   du, u, kdu, ku = alloc_symp_state(integrator)
 
   # update position
-  @.. u = uprev + dt*b1*kuprev
+  @.. broadcast=false u = uprev + dt*b1*kuprev
   # update velocity
   f.f1(kdu,duprev,u,p,integrator.t)
-  @.. du = duprev + dt*a1*kdu
+  @.. broadcast=false du = duprev + dt*a1*kdu
   # update position & velocity
   tnew = t+a1*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b2*ku
+  @.. broadcast=false u = u + dt*b2*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a2*kdu
+  @.. broadcast=false du = du + dt*a2*kdu
 
   # update position & velocity
   tnew = tnew + a2*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b3*ku
+  @.. broadcast=false u = u + dt*b3*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a3*kdu
+  @.. broadcast=false du = du + dt*a3*kdu
 
   # update position & velocity
   tnew = tnew + a3*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b4*ku
+  @.. broadcast=false u = u + dt*b4*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a4*kdu
+  @.. broadcast=false du = du + dt*a4*kdu
 
   # update position & velocity
   tnew = tnew + a4*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b5*ku
+  @.. broadcast=false u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a5*kdu
+  @.. broadcast=false du = du + dt*a5*kdu
 
   tnew = tnew + a5*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b6*ku
+  @.. broadcast=false u = u + dt*b6*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a6*kdu
+  @.. broadcast=false du = du + dt*a6*kdu
 
   tnew = tnew + a6*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b7*ku
+  @.. broadcast=false u = u + dt*b7*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a7*kdu
+  @.. broadcast=false du = du + dt*a7*kdu
 
   tnew = tnew + a7*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b8*ku
+  @.. broadcast=false u = u + dt*b8*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a8*kdu
+  @.. broadcast=false du = du + dt*a8*kdu
 
   tnew = tnew + a8*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b9*ku
+  @.. broadcast=false u = u + dt*b9*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a9*kdu
+  @.. broadcast=false du = du + dt*a9*kdu
 
   tnew = tnew + a9*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b10*ku
+  @.. broadcast=false u = u + dt*b10*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a10*kdu
+  @.. broadcast=false du = du + dt*a10*kdu
 
   tnew = tnew + a10*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b11*ku
+  @.. broadcast=false u = u + dt*b11*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a11*kdu
+  @.. broadcast=false du = du + dt*a11*kdu
 
   tnew = tnew + a11*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b12*ku
+  @.. broadcast=false u = u + dt*b12*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a12*kdu
+  @.. broadcast=false du = du + dt*a12*kdu
 
   tnew = tnew + a12*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b13*ku
+  @.. broadcast=false u = u + dt*b13*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a13*kdu
+  @.. broadcast=false du = du + dt*a13*kdu
 
   tnew = tnew + a13*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b14*ku
+  @.. broadcast=false u = u + dt*b14*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a14*kdu
+  @.. broadcast=false du = du + dt*a14*kdu
 
   tnew = tnew + a14*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b15*ku
+  @.. broadcast=false u = u + dt*b15*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a15*kdu
+  @.. broadcast=false du = du + dt*a15*kdu
 
   tnew = tnew + a15*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b16*ku
+  @.. broadcast=false u = u + dt*b16*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a16*kdu
+  @.. broadcast=false du = du + dt*a16*kdu
 
   tnew = tnew + a16*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b17*ku
+  @.. broadcast=false u = u + dt*b17*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a17*kdu
+  @.. broadcast=false du = du + dt*a17*kdu
 
   tnew = tnew + a17*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b18*ku
+  @.. broadcast=false u = u + dt*b18*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a18*kdu
+  @.. broadcast=false du = du + dt*a18*kdu
 
   tnew = tnew + a18*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b19*ku
+  @.. broadcast=false u = u + dt*b19*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a19*kdu
+  @.. broadcast=false du = du + dt*a19*kdu
 
   tnew = tnew + a19*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b20*ku
+  @.. broadcast=false u = u + dt*b20*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a20*kdu
+  @.. broadcast=false du = du + dt*a20*kdu
 
   tnew = tnew + a20*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b21*ku
+  @.. broadcast=false u = u + dt*b21*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a21*kdu
+  @.. broadcast=false du = du + dt*a21*kdu
 
   tnew = tnew + a21*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b22*ku
+  @.. broadcast=false u = u + dt*b22*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a22*kdu
+  @.. broadcast=false du = du + dt*a22*kdu
 
   tnew = tnew + a22*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b23*ku
+  @.. broadcast=false u = u + dt*b23*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a23*kdu
+  @.. broadcast=false du = du + dt*a23*kdu
 
   tnew = tnew + a23*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b24*ku
+  @.. broadcast=false u = u + dt*b24*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a24*kdu
+  @.. broadcast=false du = du + dt*a24*kdu
 
   tnew = tnew + a24*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b25*ku
+  @.. broadcast=false u = u + dt*b25*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a25*kdu
+  @.. broadcast=false du = du + dt*a25*kdu
 
   tnew = tnew + a25*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b26*ku
+  @.. broadcast=false u = u + dt*b26*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a26*kdu
+  @.. broadcast=false du = du + dt*a26*kdu
 
   tnew = tnew + a26*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b27*ku
+  @.. broadcast=false u = u + dt*b27*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a27*kdu
+  @.. broadcast=false du = du + dt*a27*kdu
 
   tnew = tnew + a27*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b28*ku
+  @.. broadcast=false u = u + dt*b28*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a28*kdu
+  @.. broadcast=false du = du + dt*a28*kdu
 
   tnew = tnew + a28*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b29*ku
+  @.. broadcast=false u = u + dt*b29*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a29*kdu
+  @.. broadcast=false du = du + dt*a29*kdu
 
   tnew = tnew + a29*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b30*ku
+  @.. broadcast=false u = u + dt*b30*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a30*kdu
+  @.. broadcast=false du = du + dt*a30*kdu
 
   tnew = tnew + a30*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b31*ku
+  @.. broadcast=false u = u + dt*b31*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a31*kdu
+  @.. broadcast=false du = du + dt*a31*kdu
 
   tnew = tnew + a31*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b32*ku
+  @.. broadcast=false u = u + dt*b32*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a32*kdu
+  @.. broadcast=false du = du + dt*a32*kdu
 
   tnew = tnew + a32*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b33*ku
+  @.. broadcast=false u = u + dt*b33*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a33*kdu
+  @.. broadcast=false du = du + dt*a33*kdu
 
   tnew = tnew + a33*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b34*ku
+  @.. broadcast=false u = u + dt*b34*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a34*kdu
+  @.. broadcast=false du = du + dt*a34*kdu
 
   tnew = tnew + a34*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b35*ku
+  @.. broadcast=false u = u + dt*b35*ku
 
   f.f1(kdu,du,u,p,tnew)
-  @.. du = du + dt*a35*kdu
+  @.. broadcast=false du = du + dt*a35*kdu
 
   tnew = tnew + a35*dt
   f.f2(ku,du,u,p,tnew)
-  @.. u = u + dt*b36*ku
+  @.. broadcast=false u = u + dt*b36*ku
 
   f.f1(kdu,du,u,p,tnew)
-  # @.. du = du + dt*a30*kdu
+  # @.. broadcast=false du = du + dt*a30*kdu
   f.f2(ku,du,u,p,tnew)
 
   integrator.destats.nf += 36

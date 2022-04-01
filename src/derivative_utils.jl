@@ -34,7 +34,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
       end
     end
 
-    @.. linsolve_tmp = fsalfirst + dtd1*dT
+    @.. broadcast=false linsolve_tmp = fsalfirst + dtd1*dT
   end
 end
 
@@ -346,7 +346,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
       a = -W.mass_matrix.λ / W.gamma
-      @.. Y = a * B
+      @.. broadcast=false Y = a * B
     else
       mul!(_vec(Y), W.mass_matrix, _vec(B))
       lmul!(-1/W.gamma, Y)
@@ -363,7 +363,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     if isa(W.mass_matrix, UniformScaling)
       vY = _vec(Y)
       vB = _vec(B)
-      @.. vY = W.mass_matrix.λ * vB
+      @.. broadcast=false vY = W.mass_matrix.λ * vB
     else
       mul!(_vec(Y), W.mass_matrix, _vec(B))
     end
@@ -435,10 +435,10 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
               W[i,i] = muladd(λ, invdtgamma, J[i,i])
           end
       else
-          @.. @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
+          @.. broadcast=false @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
       end
     else
-      @.. W = muladd(-mass_matrix, invdtgamma, J)
+      @.. broadcast=false W = muladd(-mass_matrix, invdtgamma, J)
     end
   else
     if MT <: UniformScaling
@@ -449,15 +449,15 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
         # https://github.com/JuliaGPU/CUDA.jl/issues/1395
         Wn = nonzeros(W)
         Jn = nonzeros(J)
-        @.. Wn = dtgamma*Jn
+        @.. broadcast=false Wn = dtgamma*Jn
         W .= W + λ*I
       else
         idxs = diagind(W)
-        @.. W = dtgamma*J
-        @.. @view(W[idxs]) = @view(W[idxs]) + λ
+        @.. broadcast=false W = dtgamma*J
+        @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
       end
     else
-      @.. W = muladd(dtgamma, J, -mass_matrix)
+      @.. broadcast=false W = muladd(dtgamma, J, -mass_matrix)
     end
   end
   return nothing

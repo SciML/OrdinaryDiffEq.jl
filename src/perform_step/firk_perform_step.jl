@@ -78,8 +78,8 @@ function initialize!(integrator, cache::RadauIIA5Cache)
       cache.rtol = reltol^(2/3) / 10
       cache.atol = cache.rtol * (abstol / reltol)
     else
-      @.. cache.rtol = reltol^(2/3) / 10
-      @.. cache.atol = cache.rtol * (abstol / reltol)
+      @.. broadcast=false cache.rtol = reltol^(2/3) / 10
+      @.. broadcast=false cache.atol = cache.rtol * (abstol / reltol)
     end
   end
   nothing
@@ -344,8 +344,8 @@ end
   mass_matrix = integrator.f.mass_matrix
 
   # precalculations
-  rtol = @.. reltol^(2/3) / 10
-  atol = @.. rtol * (abstol / reltol)
+  rtol = @.. broadcast=false reltol^(2/3) / 10
+  atol = @.. broadcast=false rtol * (abstol / reltol)
   c1m1 = c1-1
   c2m1 = c2-1
   c1mc2= c1-c2
@@ -373,12 +373,12 @@ end
     c3′ = dt/cache.dtprev
     c1′ = c1*c3′
     c2′ = c2*c3′
-    z1  = @.. c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
-    z2  = @.. c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
-    z3  = @.. c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
-    w1  = @.. TI11 * z1 + TI12 * z2 + TI13 * z3
-    w2  = @.. TI21 * z1 + TI22 * z2 + TI23 * z3
-    w3  = @.. TI31 * z1 + TI32 * z2 + TI33 * z3
+    z1  = @.. broadcast=false c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
+    z2  = @.. broadcast=false c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
+    z3  = @.. broadcast=false c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
+    w1  = @.. broadcast=false TI11 * z1 + TI12 * z2 + TI13 * z3
+    w2  = @.. broadcast=false TI21 * z1 + TI22 * z2 + TI23 * z3
+    w3  = @.. broadcast=false TI31 * z1 + TI32 * z2 + TI33 * z3
   end
 
   # Newton iteration
@@ -396,25 +396,25 @@ end
     ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
     integrator.destats.nf += 3
 
-    fw1 = @.. TI11 * ff1 + TI12 * ff2 + TI13 * ff3
-    fw2 = @.. TI21 * ff1 + TI22 * ff2 + TI23 * ff3
-    fw3 = @.. TI31 * ff1 + TI32 * ff2 + TI33 * ff3
+    fw1 = @.. broadcast=false TI11 * ff1 + TI12 * ff2 + TI13 * ff3
+    fw2 = @.. broadcast=false TI21 * ff1 + TI22 * ff2 + TI23 * ff3
+    fw3 = @.. broadcast=false TI31 * ff1 + TI32 * ff2 + TI33 * ff3
 
     if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
-      Mw1 = @.. mass_matrix.λ * w1
-      Mw2 = @.. mass_matrix.λ * w2
-      Mw3 = @.. mass_matrix.λ * w3
+      Mw1 = @.. broadcast=false mass_matrix.λ * w1
+      Mw2 = @.. broadcast=false mass_matrix.λ * w2
+      Mw3 = @.. broadcast=false mass_matrix.λ * w3
     else
       Mw1 = mass_matrix*w1
       Mw2 = mass_matrix*w2
       Mw3 = mass_matrix*w3
     end
 
-    rhs1 = @.. fw1 - γdt*Mw1
-    rhs2 = @.. fw2 - αdt*Mw2 + βdt*Mw3
-    rhs3 = @.. fw3 - βdt*Mw2 - αdt*Mw3
+    rhs1 = @.. broadcast=false fw1 - γdt*Mw1
+    rhs2 = @.. broadcast=false fw2 - αdt*Mw2 + βdt*Mw3
+    rhs3 = @.. broadcast=false fw3 - βdt*Mw2 - αdt*Mw3
     dw1 = LU1 \ rhs1
-    dw23 = LU2 \ (@.. rhs2 + rhs3*im)
+    dw23 = LU2 \ (@.. broadcast=false rhs2 + rhs3*im)
     integrator.destats.nsolve += 2
     dw2 = real(dw23)
     dw3 = imag(dw23)
@@ -436,14 +436,14 @@ end
       end
     end
 
-    w1 = @.. w1 - dw1
-    w2 = @.. w2 - dw2
-    w3 = @.. w3 - dw3
+    w1 = @.. broadcast=false w1 - dw1
+    w2 = @.. broadcast=false w2 - dw2
+    w3 = @.. broadcast=false w3 - dw3
 
     # transform `w` to `z`
-    z1 = @.. T11 * w1 + T12 * w2 + T13 * w3
-    z2 = @.. T21 * w1 + T22 * w2 + T23 * w3
-    z3 = @.. T31 * w1 +       w2           # T32 = 1, T33 = 0
+    z1 = @.. broadcast=false T11 * w1 + T12 * w2 + T13 * w3
+    z2 = @.. broadcast=false T21 * w1 + T22 * w2 + T23 * w3
+    z3 = @.. broadcast=false T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
@@ -462,13 +462,13 @@ end
   cache.ηold = η
   cache.iter = iter
 
-  u = @.. uprev + z3
+  u = @.. broadcast=false uprev + z3
 
   if adaptive
     e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
-    tmp = @.. e1dt*z1 + e2dt*z2 + e3dt*z3
+    tmp = @.. broadcast=false e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (tmp = mass_matrix*tmp)
-    utilde = @.. integrator.fsalfirst + tmp
+    utilde = @.. broadcast=false integrator.fsalfirst + tmp
     alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
@@ -478,7 +478,7 @@ end
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
       integrator.destats.nf += 1
-      utilde = @.. f0 + tmp
+      utilde = @.. broadcast=false f0 + tmp
       alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
       atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
@@ -488,10 +488,10 @@ end
   if integrator.EEst <= oneunit(integrator.EEst)
     cache.dtprev = dt
     if alg.extrapolant != :constant
-      cache.cont1  = @.. (z2 - z3)/c2m1
-      tmp          = @.. (z1 - z2)/c1mc2
-      cache.cont2  = @.. (tmp - cache.cont1) / c1m1
-      cache.cont3  = @.. cache.cont2 - (tmp - z1/c1)/c2
+      cache.cont1  = @.. broadcast=false (z2 - z3)/c2m1
+      tmp          = @.. broadcast=false (z1 - z2)/c1mc2
+      cache.cont2  = @.. broadcast=false (tmp - cache.cont1) / c1m1
+      cache.cont3  = @.. broadcast=false cache.cont2 - (tmp - z1/c1)/c2
     end
   end
 
@@ -536,25 +536,25 @@ end
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
     cache.dtprev = one(cache.dtprev)
     uzero = zero(eltype(u))
-    @.. z1 = uzero
-    @.. z2 = uzero
-    @.. z3 = uzero
-    @.. w1 = uzero
-    @.. w2 = uzero
-    @.. w3 = uzero
-    @.. cache.cont1 = uzero
-    @.. cache.cont2 = uzero
-    @.. cache.cont3 = uzero
+    @.. broadcast=false z1 = uzero
+    @.. broadcast=false z2 = uzero
+    @.. broadcast=false z3 = uzero
+    @.. broadcast=false w1 = uzero
+    @.. broadcast=false w2 = uzero
+    @.. broadcast=false w3 = uzero
+    @.. broadcast=false cache.cont1 = uzero
+    @.. broadcast=false cache.cont2 = uzero
+    @.. broadcast=false cache.cont3 = uzero
   else
     c3′ = dt/cache.dtprev
     c1′ = c1*c3′
     c2′ = c2*c3′
-    @.. z1  = c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
-    @.. z2  = c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
-    @.. z3  = c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
-    @.. w1  = TI11 * z1 + TI12 * z2 + TI13 * z3
-    @.. w2  = TI21 * z1 + TI22 * z2 + TI23 * z3
-    @.. w3  = TI31 * z1 + TI32 * z2 + TI33 * z3
+    @.. broadcast=false z1  = c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
+    @.. broadcast=false z2  = c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
+    @.. broadcast=false z3  = c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
+    @.. broadcast=false w1  = TI11 * z1 + TI12 * z2 + TI13 * z3
+    @.. broadcast=false w2  = TI21 * z1 + TI22 * z2 + TI23 * z3
+    @.. broadcast=false w3  = TI31 * z1 + TI32 * z2 + TI33 * z3
   end
 
   # Newton iteration
@@ -567,17 +567,17 @@ end
     integrator.destats.nnonliniter += 1
 
     # evaluate function
-    @.. tmp = uprev + z1
+    @.. broadcast=false tmp = uprev + z1
     f(fsallast, tmp, p, t+c1*dt)
-    @.. tmp = uprev + z2
+    @.. broadcast=false tmp = uprev + z2
     f(k2, tmp, p, t+c2*dt)
-    @.. tmp = uprev + z3
+    @.. broadcast=false tmp = uprev + z3
     f(k3, tmp, p, t+   dt) # c3 = 1
     integrator.destats.nf += 3
 
-    @.. fw1 = TI11 * fsallast + TI12 * k2 + TI13 * k3
-    @.. fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
-    @.. fw3 = TI31 * fsallast + TI32 * k2 + TI33 * k3
+    @.. broadcast=false fw1 = TI11 * fsallast + TI12 * k2 + TI13 * k3
+    @.. broadcast=false fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
+    @.. broadcast=false fw3 = TI31 * fsallast + TI32 * k2 + TI33 * k3
 
     if mass_matrix === I
       Mw1 = w1
@@ -599,7 +599,7 @@ end
       Mw3 = z3
     end
 
-    @.. ubuff = fw1 - γdt*Mw1
+    @.. broadcast=false ubuff = fw1 - γdt*Mw1
     needfactor = iter==1 && new_W
 
     linsolve1 = cache.linsolve1
@@ -612,7 +612,7 @@ end
 
     cache.linsolve1 = linres1.cache
 
-    @.. cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
+    @.. broadcast=false cubuff = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
 
     linsolve2 = cache.linsolve2
 
@@ -626,8 +626,8 @@ end
 
     integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
-    @.. dw2 = real(dw23)
-    @.. dw3 = imag(dw23)
+    @.. broadcast=false dw2 = real(dw23)
+    @.. broadcast=false dw3 = imag(dw23)
 
     # compute norm of residuals
     iter > 1 && (ndwprev = ndw)
@@ -649,14 +649,14 @@ end
       end
     end
 
-    @.. w1 = w1 - dw1
-    @.. w2 = w2 - dw2
-    @.. w3 = w3 - dw3
+    @.. broadcast=false w1 = w1 - dw1
+    @.. broadcast=false w2 = w2 - dw2
+    @.. broadcast=false w3 = w3 - dw3
 
     # transform `w` to `z`
-    @.. z1 = T11 * w1 + T12 * w2 + T13 * w3
-    @.. z2 = T21 * w1 + T22 * w2 + T23 * w3
-    @.. z3 = T31 * w1 +       w2           # T32 = 1, T33 = 0
+    @.. broadcast=false z1 = T11 * w1 + T12 * w2 + T13 * w3
+    @.. broadcast=false z2 = T21 * w1 + T22 * w2 + T23 * w3
+    @.. broadcast=false z3 = T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
@@ -675,14 +675,14 @@ end
   cache.ηold = η
   cache.iter = iter
 
-  @.. u = uprev + z3
+  @.. broadcast=false u = uprev + z3
 
   if adaptive
     utilde = w2
     e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
-    @.. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
+    @.. broadcast=false tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
-    @.. ubuff = integrator.fsalfirst + tmp
+    @.. broadcast=false ubuff = integrator.fsalfirst + tmp
 
     if alg.smooth_est
       linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff), linu = _vec(utilde))
@@ -696,10 +696,10 @@ end
     integrator.EEst = internalnorm(atmp, t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
-      @.. utilde = uprev + utilde
+      @.. broadcast=false utilde = uprev + utilde
       f(fsallast, utilde, p, t)
       integrator.destats.nf += 1
-      @.. ubuff = fsallast + tmp
+      @.. broadcast=false ubuff = fsallast + tmp
 
       if alg.smooth_est
         linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff), linu = _vec(utilde))
@@ -715,10 +715,10 @@ end
   if integrator.EEst <= oneunit(integrator.EEst)
     cache.dtprev = dt
     if alg.extrapolant != :constant
-      @.. cache.cont1  = (z2 - z3)/c2m1
-      @.. tmp          = (z1 - z2)/c1mc2
-      @.. cache.cont2  = (tmp - cache.cont1) / c1m1
-      @.. cache.cont3  = cache.cont2 - (tmp - z1/c1)/c2
+      @.. broadcast=false cache.cont1  = (z2 - z3)/c2m1
+      @.. broadcast=false tmp          = (z1 - z2)/c1mc2
+      @.. broadcast=false cache.cont2  = (tmp - cache.cont1) / c1m1
+      @.. broadcast=false cache.cont3  = cache.cont2 - (tmp - z1/c1)/c2
     end
   end
 

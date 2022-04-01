@@ -96,21 +96,21 @@ end
   ttmp = t+halfdt
 
   ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
-  @.. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
+  @.. broadcast=false ku = uprev + halfdt*duprev + eighth_dtsq*k₁
   ## y'₁ = y'₀ + h∑bᵢk'ᵢ
-  @.. kdu = duprev + halfdt*k₁
+  @.. broadcast=false kdu = duprev + halfdt*k₁
 
   f.f1(k₂,kdu,ku,p,ttmp)
-  @.. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
-  @.. kdu = duprev + halfdt*k₂
+  @.. broadcast=false ku = uprev + halfdt*duprev + eighth_dtsq*k₁
+  @.. broadcast=false kdu = duprev + halfdt*k₂
 
   f.f1(k₃,kdu,ku,p,ttmp)
-  @.. ku = uprev + dt*duprev + half_dtsq*k₃
-  @.. kdu = duprev + dt*k₃
+  @.. broadcast=false ku = uprev + dt*duprev + half_dtsq*k₃
+  @.. broadcast=false kdu = duprev + dt*k₃
 
   f.f1(k₄,kdu,ku,p,t+dt)
-  @.. u = uprev + (dtsq/6)*(k₁ + k₂ + k₃) + dt*duprev
-  @.. du = duprev + (dt/6)*(k₁ + k₄ + 2*(k₂ + k₃))
+  @.. broadcast=false u = uprev + (dtsq/6)*(k₁ + k₂ + k₃) + dt*duprev
+  @.. broadcast=false du = duprev + (dt/6)*(k₁ + k₄ + 2*(k₂ + k₃))
 
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
@@ -160,14 +160,14 @@ end
   ttmp = t+halfdt
 
   ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
-  @.. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
+  @.. broadcast=false ku = uprev + halfdt*duprev + eighth_dtsq*k₁
 
   f.f1(k₂,duprev,ku,p,ttmp)
-  @.. ku = uprev + dt*duprev + half_dtsq*k₂
+  @.. broadcast=false ku = uprev + dt*duprev + half_dtsq*k₂
 
   f.f1(k₃,duprev,ku,p,t+dt)
-  @.. u = uprev + (dtsq/6)*(k₁ + 2*k₂) + dt*duprev
-  @.. du = duprev + (dt/6)*(k₁ + k₃ + 4*k₂)
+  @.. broadcast=false u = uprev + (dtsq/6)*(k₁ + 2*k₂) + dt*duprev
+  @.. broadcast=false du = duprev + (dt/6)*(k₁ + k₃ + 4*k₂)
 
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
@@ -222,12 +222,12 @@ end
     perform_step!(integrator,integrator.cache.onestep_cache)
     copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
-    @.. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
+    @.. broadcast=false kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
     integrator.destats.nf += 2
   else
-    @.. kdu = uprev2 + dt*(c1*duprev2 + dt*a21*k1cache.x[1])
-    @.. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[2])
+    @.. broadcast=false kdu = uprev2 + dt*(c1*duprev2 + dt*a21*k1cache.x[1])
+    @.. broadcast=false ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[2])
 
     f.f1(k₂.x[2], duprev, ku, p, t+c1*dt)
     @tight_loop_macros for i in uidx
@@ -260,18 +260,18 @@ end
     perform_step!(integrator,integrator.cache.onestep_cache)
     copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
-    @.. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[1])
+    @.. broadcast=false kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[1])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
-    @.. kdu= uprev + dt*(c2*duprev + dt*a32*k1cache.x[2])
+    @.. broadcast=false kdu= uprev + dt*(c2*duprev + dt*a32*k1cache.x[2])
     f.f1(k₃.x[1],duprev,kdu,p,t+c1*dt)
     integrator.destats.nf += 3
   else
-    @.. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
-    @.. kdu = uprev2+ dt*(c1*duprev2 + dt*a21*k1cache.x[2])
+    @.. broadcast=false ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
+    @.. broadcast=false kdu = uprev2+ dt*(c1*duprev2 + dt*a21*k1cache.x[2])
 
     f.f1(k₂.x[2], duprev, ku, p, t+c1*dt)
-    @.. ku  = uprev  + dt*(c2*duprev  + dt*a32*k₂.x[2])
-    @.. kdu = uprev2 + dt*(c2*duprev2 + dt*a32*k₂.x[1])
+    @.. broadcast=false ku  = uprev  + dt*(c2*duprev  + dt*a32*k₂.x[2])
+    @.. broadcast=false kdu = uprev2 + dt*(c2*duprev2 + dt*a32*k₂.x[1])
 
     f.f1(k₃.x[2], duprev, ku, p, t+c2*dt)
     @tight_loop_macros for i in uidx
@@ -325,24 +325,24 @@ end
   kdu,ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   k₁ = integrator.fsalfirst.x[1]
 
-  @.. ku = uprev + dt*(c1*duprev + dt*a21*k₁)
+  @.. broadcast=false ku = uprev + dt*(c1*duprev + dt*a21*k₁)
 
   f.f1(k₂,du,ku,p,t+c1*dt)
-  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k₁ + a32*k₂))
+  @.. broadcast=false ku = uprev + dt*(c2*duprev + dt*(a31*k₁ + a32*k₂))
 
   f.f1(k₃,du,ku,p,t+c2*dt)
   #@tight_loop_macros for i in uidx
   #  @inbounds ku[i] = uprev[i] + dt*(duprev[i] + dt*(a41*k₁[i] + a42*k₂[i] + a43*k₃[i]))
   #end
-  @.. ku = uprev + dt*(duprev + dt*(a41*k₁ + a42*k₂ + a43*k₃))
+  @.. broadcast=false ku = uprev + dt*(duprev + dt*(a41*k₁ + a42*k₂ + a43*k₃))
 
   f.f1(k₄,duprev,ku,p,t+dt)
   #@tight_loop_macros for i in uidx
   #  @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bbar1*k₁[i] + bbar2*k₂[i] + bbar3*k₃[i]))
   #  @inbounds du[i] = duprev[i] + dt*(b1*k₁[i] + b2*k₂[i] + b3*k₃[i] + b4*k₄[i])
   #end
-  @.. u  = uprev + dt*(duprev + dt*(bbar1*k₁ + bbar2*k₂ + bbar3*k₃))
-  @.. du = duprev + dt*(b1*k₁ + b2*k₂ + b3*k₃ + b4*k₄)
+  @.. broadcast=false u  = uprev + dt*(duprev + dt*(bbar1*k₁ + bbar2*k₂ + bbar3*k₃))
+  @.. broadcast=false du = duprev + dt*(b1*k₁ + b2*k₂ + b3*k₃ + b4*k₄)
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
   integrator.destats.nf += 4
@@ -446,24 +446,24 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. broadcast=false ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,du,ku,p,t+dt*c1)
-  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. broadcast=false ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,du,ku,p,t+dt*c2)
-  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. broadcast=false ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,du,ku,p,t+dt*c3)
-  @.. ku = uprev + dt*(c4*duprev + dt*(a51*k1 + a52*k2 + a53*k3 + a54*k4))
+  @.. broadcast=false ku = uprev + dt*(c4*duprev + dt*(a51*k1 + a52*k2 + a53*k3 + a54*k4))
 
   f.f1(k5,du,ku,p,t+dt*c4)
-  @.. ku = uprev + dt*(c5*duprev + dt*(a61*k1 + a63*k3 + a64*k4 + a65*k5)) # no a62
+  @.. broadcast=false ku = uprev + dt*(c5*duprev + dt*(a61*k1 + a63*k3 + a64*k4 + a65*k5)) # no a62
 
   f.f1(k6,du,ku,p,t+dt*c5)
 
-  @.. u  = uprev  + dt*(duprev + dt*(b1 *k1 + b3 *k3 + b4 *k4 + b5 *k5)) # b1 -- b5, no b2
-  @.. du = duprev + dt*(bp1*k1 + bp3*k3 + bp4*k4 + bp5*k5 + bp6*k6) # bp1 -- bp6, no bp2
+  @.. broadcast=false u  = uprev  + dt*(duprev + dt*(b1 *k1 + b3 *k3 + b4 *k4 + b5 *k5)) # b1 -- b5, no b2
+  @.. broadcast=false du = duprev + dt*(bp1*k1 + bp3*k3 + bp4*k4 + bp5*k5 + bp6*k6) # bp1 -- bp6, no bp2
 
   #=
   @tight_loop_macros for i in uidx
@@ -479,8 +479,8 @@ end
   if integrator.opts.adaptive
     duhat, uhat = utilde.x
     dtsq = dt^2
-    @.. uhat  = dtsq*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5)
-    @.. duhat = dt*(bptilde1*k1 + bptilde3*k3 + bptilde4*k4 + bptilde5*k5 + bptilde6*k6)
+    @.. broadcast=false uhat  = dtsq*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5)
+    @.. broadcast=false duhat = dt*(bptilde1*k1 + bptilde3*k3 + bptilde4*k4 + bptilde5*k5 + bptilde6*k6)
     calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -546,13 +546,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. broadcast=false ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. broadcast=false ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. broadcast=false ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -684,13 +684,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. broadcast=false ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. broadcast=false ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. broadcast=false ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -824,13 +824,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. broadcast=false ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. broadcast=false ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. broadcast=false ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -896,13 +896,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. broadcast=false ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. broadcast=false ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. broadcast=false ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx

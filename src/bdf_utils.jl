@@ -26,7 +26,7 @@ function backward_diff!(cache::OrdinaryDiffEqMutableCache, D, D2, k, flag=true)
   flag && copyto!(D[1], D2[1,1])
   for i = 2:k
     for j = 1:(k-i+1)
-      @.. D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
+      @.. broadcast=false D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
     end
     flag && copyto!(D[i], D2[i,1])
   end
@@ -82,10 +82,10 @@ end
 
 function update_D!(D, dd, k)
   dd = _vec(dd)
-  @views @.. D[:,k+2] = dd - D[:,k+1]
-  @views @.. D[:,k+1] = dd
+  @views @.. broadcast=false D[:,k+2] = dd - D[:,k+1]
+  @views @.. broadcast=false D[:,k+1] = dd
   for i in k:-1:1
-    @views @.. D[:,i] = D[:,i] + D[:,i+1]
+    @views @.. broadcast=false D[:,i] = D[:,i] + D[:,i+1]
   end
   return nothing
 end
@@ -132,14 +132,14 @@ function calc_Lagrange_interp(k,weights,t,ts,u_history,u)
   vc = _vec(u)
   if t in ts
     i = searchsortedfirst(ts,t,rev=true)
-    @.. @views vc = u_history[:,i]
+    @.. broadcast=false @views vc = u_history[:,i]
     return u
   else
     for i in 1:k+1
-      @.. @views vc += weights[i]/(t-ts[i])*u_history[:,i]
+      @.. broadcast=false @views vc += weights[i]/(t-ts[i])*u_history[:,i]
     end
     for i in 1:k+1
-      @.. u *= t-ts[i]
+      @.. broadcast=false u *= t-ts[i]
     end
   end
   u
@@ -150,15 +150,15 @@ function calc_Lagrange_interp!(k,weights,t,ts,u_history,u)
   # ts is short enough that linear search will be faster
   i = findfirst(isequal(t), ts)
   if i !== nothing
-    @.. @views vc = u_history[:,i]
+    @.. broadcast=false @views vc = u_history[:,i]
   else
     for i in 1:k+1
       wdt = weights[i]/(t-ts[i])
-      @.. @views vc = muladd(wdt, u_history[:,i], vc)
+      @.. broadcast=false @views vc = muladd(wdt, u_history[:,i], vc)
     end
     for i in 1:k+1
       dt = t-ts[i]
-      @.. u *= dt
+      @.. broadcast=false u *= dt
     end
   end
 end
@@ -214,19 +214,19 @@ function reinitFBDF!(integrator, cache)
   @views if iters_from_event == 0
     weights[1] = 1/dt
     ts[1] = t
-    @.. u_history[:,1] = vuprev
+    @.. broadcast=false u_history[:,1] = vuprev
   elseif iters_from_event == 1 && t != ts[1]
     ts[2] = ts[1]
     ts[1] = t
-    @.. u_history[:,2] = u_history[:,1]
-    @.. u_history[:,1] = vuprev
+    @.. broadcast=false u_history[:,2] = u_history[:,1]
+    @.. broadcast=false u_history[:,1] = vuprev
   elseif consfailcnt == 0
     for i in order+2:-1:2
       ts[i] = ts[i-1]
-      @.. u_history[:,i] = u_history[:,i-1]
+      @.. broadcast=false u_history[:,i] = u_history[:,i-1]
     end
     ts[1] = t
-    @.. u_history[:,1] = vuprev
+    @.. broadcast=false u_history[:,1] = vuprev
   end
   if iters_from_event >= 1
     compute_weights!(ts,order,weights)
@@ -238,19 +238,19 @@ function estimate_terk!(integrator, cache, k, ::Val{max_order}) where max_order
   @unpack ts_tmp, terk_tmp, u_history = cache
   @unpack t, dt, u = integrator
   fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
-  @.. terk_tmp = fd_weights[1,k] * u
+  @.. broadcast=false terk_tmp = fd_weights[1,k] * u
   vc = _vec(terk_tmp)
   for i in 2:k
-    @.. @views vc += fd_weights[i,k] * u_history[:,i-1]
+    @.. broadcast=false @views vc += fd_weights[i,k] * u_history[:,i-1]
   end
-  @.. terk_tmp *= abs(dt^(k-1))
+  @.. broadcast=false terk_tmp *= abs(dt^(k-1))
 end
 
 function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where max_order
   @unpack ts_tmp, u_history = cache
   @unpack t, dt = integrator
   fd_weights = calc_finite_difference_weights(ts_tmp,t+dt,k-1,Val(max_order))
-  terk = @.. fd_weights[1,k] * u
+  terk = @.. broadcast=false fd_weights[1,k] * u
     #@show terk,fd_weights[1,k+1]
   if u isa Number
     for i in 2:k
@@ -261,7 +261,7 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where max_orde
     vc = _vec(terk)
     for i in 2:k
       #@show vc
-      @.. @views vc += fd_weights[i,k] * u_history[:,i-1]
+      @.. broadcast=false @views vc += fd_weights[i,k] * u_history[:,i-1]
       #@show vc ,fd_weights[i,k] * u_history[:,i-1]
     end
     terk *= abs(dt^(k-1))
