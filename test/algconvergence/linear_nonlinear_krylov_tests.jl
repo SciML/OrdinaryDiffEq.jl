@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqOperators, Random, LinearAlgebra, SparseArrays
+using OrdinaryDiffEq, Test, Random, LinearAlgebra, SparseArrays
 let N = 20
 Random.seed!(0); u0 = normalize(randn(N))
 dd = -2 * ones(N); du = ones(N-1)
@@ -114,17 +114,6 @@ end
   prob = ODEProblem(exp_fun, u0, (0.0,1.0))
   sol = solve(prob, LawsonEuler(krylov=true, m=N); dt=0.1)
   @test sol(1.0) ≈ exp_fun.analytic(u0,nothing,1.0)
-  # Matrix-free Jacobian
-  # Need to implement the missing interface for DerivativeOperator first
-  @test_broken begin
-    L = DerivativeOperator{Float64}(2,2,1.0,N,:Dirichlet0,:Dirichlet0)
-    exp_fun2 = ODEFunction(L;
-                      jac_prototype=L,
-                      analytic=(u,p,t) -> exp(t*full(L)) * u)
-    prob = ODEProblem(exp_fun2, u0, (0.0,1.0))
-    sol = solve(prob, LawsonEuler(krylov=true, m=N); dt=0.1)
-    @test sol(1.0) ≈ exp_fun2.analytic(u0,nothing,1.0)
-  end
 end
 
 @testset "ExpRK with default jacobian" begin
