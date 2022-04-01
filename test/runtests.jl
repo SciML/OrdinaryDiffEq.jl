@@ -71,7 +71,6 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators_I" || GROUP == "Inte
   @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
-  @time @safetestset "Autodiff Events Tests" begin include("integrators/autodiff_events.jl") end
   @time @safetestset "Discrete Callback Dual Tests" begin include("integrators/discrete_callback_dual_test.jl") end
   @time @safetestset "Iterator Tests" begin include("integrators/iterator_tests.jl") end
   @time @safetestset "Integrator Interface Tests" begin include("integrators/integrator_interface_tests.jl") end
@@ -136,6 +135,7 @@ end
 if !is_APPVEYOR && GROUP == "Downstream"
   activate_downstream_env()
   @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
+  @time @safetestset "Autodiff Events Tests" begin include("integrators/autodiff_events.jl") end
 end
 
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
