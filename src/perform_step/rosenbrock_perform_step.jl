@@ -103,7 +103,16 @@ end
 
     integrator.destats.nsolve += 1
 
-    @.. broadcast=false tmp = dto6*(k₁ - 2*k₂ + k₃)
+    
+    if mass_matrix === I
+      @.. broadcast = false tmp = dto6 * (k₁ - 2 * k₂ + k₃)
+    else
+      veck₁ = _vec(k₁)
+      veck₂ = _vec(k₂)
+      veck₃ = _vec(k₃)
+      vectmp = _vec(tmp)
+      @.. broadcast = false vectmp = ifelse(cache.algebraic_vars, dto6 * (veck₁ - 2 * veck₂ + veck₃))
+    end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -181,37 +190,47 @@ end
   end
 
   if integrator.opts.adaptive
-    f( fsallast,  u, p, t+dt)
+    f(fsallast, u, p, t + dt)
     integrator.destats.nf += 1
-
+  
     if mass_matrix === I
       @inbounds @simd ivdep for i in eachindex(u)
-        linsolve_tmp[i] = fsallast[i] - c₃₂*(k₂[i]-f₁[i]) - 2(k₁[i]-fsalfirst[i]) + dt*dT[i]
+        linsolve_tmp[i] = fsallast[i] - c₃₂ * (k₂[i] - f₁[i]) - 2(k₁[i] - fsalfirst[i]) + dt * dT[i]
       end
     else
       @inbounds @simd ivdep for i in eachindex(u)
-        du2[i] = c₃₂*k₂[i] + 2k₁[i]
+        du2[i] = c₃₂ * k₂[i] + 2k₁[i]
       end
-      mul!(_vec(du1),mass_matrix,_vec(du2))
-
+      mul!(_vec(du1), mass_matrix, _vec(du2))
+  
       @inbounds @simd ivdep for i in eachindex(u)
-        linsolve_tmp[i] = fsallast[i] - du1[i] + c₃₂*f₁[i] + 2fsalfirst[i] + dt*dT[i]
+        linsolve_tmp[i] = fsallast[i] - du1[i] + c₃₂ * f₁[i] + 2fsalfirst[i] + dt * dT[i]
       end
     end
-
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-
+  
+  
+    linres = dolinsolve(integrator, linres.cache; b=_vec(linsolve_tmp))
+  
     @inbounds @simd ivdep for i in eachindex(u)
       k₃[i] = -linres.u[i]
     end
     integrator.destats.nsolve += 1
-
-    @inbounds @simd ivdep for i in eachindex(u)
-      tmp[i] = dto6*(k₁[i] - 2*k₂[i] + k₃[i])
+  
+    if mass_matrix === I
+      @inbounds @simd ivdep for i in eachindex(u)
+        tmp[i] = dto6 * (k₁[i] - 2 * k₂[i] + k₃[i])
+      end
+    else
+      veck₁ = _vec(k₁)
+      veck₂ = _vec(k₂)
+      veck₃ = _vec(k₃)
+      vectmp = _vec(tmp)
+      @inbounds @simd ivdep for i in 1:length(vectmp)
+        vectmp[i] = ifelse(cache.algebraic_vars[i], false, dto6 * (veck₁[i] - 2 * veck₂[i] + veck₃[i]))
+      end
     end
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp, t)
   end
   cache.linsolve = linres.cache
 end
