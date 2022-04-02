@@ -94,6 +94,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_I" || GROUP == "Regre
   @time @safetestset "Special Interp Tests" begin include("regression/special_interps.jl") end
   @time @safetestset "Inplace Tests" begin include("regression/ode_inplace_tests.jl") end
   @time @safetestset "Adaptive Tests" begin include("regression/ode_adaptive_tests.jl") end
+  @time @safetestset "Hard DAE Tests" begin include("regression/hard_dae.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II" || GROUP == "Regression")
