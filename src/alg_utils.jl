@@ -167,8 +167,8 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     if alg.linsolve === nothing
       if (prob.f isa ODEFunction && prob.f.f isa SciMLBase.AbstractDiffEqOperator)
         linsolve = LinearSolve.defaultalg(prob.f.f,u0)
-      elseif (prob.f isa SplitFunction && prob.f.f1 isa SciMLBase.AbstractDiffEqOperator)
-        linsolve = LinearSolve.defaultalg(prob.f.f1,u0)
+      elseif (prob.f isa SplitFunction && prob.f.f1.f isa SciMLBase.AbstractDiffEqOperator)
+        linsolve = LinearSolve.defaultalg(prob.f.f1.f,u0)
       elseif prob isa ODEProblem && (prob.f.mass_matrix === nothing ||
             (prob.f.mass_matrix !== nothing &&
                               !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractDiffEqOperator)))
