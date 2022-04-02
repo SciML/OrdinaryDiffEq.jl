@@ -236,5 +236,5 @@ for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
     sol = solve(prob, solver(), saveat=0.1, callback=cb, tstops=[1.0], reltol=1e-12, abstol=1e-16)
     @test sol.retcode == :Success
     @test sol.t[end] == 20.0
-    @test maximum(sol - refsol) < 2e-12
+    @test maximum(sol - refsol) < 5e-12
 end
