@@ -424,12 +424,6 @@ MSRK6 : 5th order Explicit RK method.
 struct MSRK5 <: OrdinaryDiffEqAlgorithm end
 
 """
-MSRK6 : 6th order Explicit RK method.
-  - Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Table 4.
-"""
-struct MSRK6 <: OrdinaryDiffEqAlgorithm end
-
-"""
 Anas5: Explicit Runge-Kutta Method
   4th order Runge-Kutta method designed for periodic problems.
   Requires a periodicity estimate which when accurate the method becomes 5th order (and is otherwise 4th order with less error for better estimates).
