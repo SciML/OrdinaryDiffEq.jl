@@ -49,6 +49,9 @@ testTol = 0.2
   sim3 = test_convergence(dts,prob,RKM())
   @test sim3.𝒪est[:l∞] ≈ 4 atol=0.2
 
+  sim4 = test_convergence(dts,prob,MSRK6())
+  @test sim3.𝒪est[:l∞] ≈ 6 atol=testTol
+
   sim4 = test_convergence(dts,prob,BS3())
   @test sim4.𝒪est[:l2] ≈ 3 atol=testTol
 
