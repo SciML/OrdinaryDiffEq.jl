@@ -416,6 +416,13 @@ RK4: Explicit Runge-Kutta Method
 """
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RKM <: OrdinaryDiffEqAlgorithm end
+
+"""
+MSRK5 : 5th order Explicit RK method.
+  - Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Fig 3.
+"""
+struct MSRK5 <: OrdinaryDiffEqAlgorithm end
+
 """
 Anas5: Explicit Runge-Kutta Method
   4th order Runge-Kutta method designed for periodic problems.
