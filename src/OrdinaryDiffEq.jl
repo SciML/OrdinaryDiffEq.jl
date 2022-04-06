@@ -1,4 +1,4 @@
-﻿"""
+"""
 $(DocStringExtensions.README)
 """
 module OrdinaryDiffEq
