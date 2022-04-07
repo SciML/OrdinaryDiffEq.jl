@@ -1,4 +1,5 @@
-using Test, OrdinaryDiffEq
+using Test
+using OrdinaryDiffEq
 using LinearAlgebra, LinearSolve
 
 import OrdinaryDiffEq.dolinsolve
@@ -15,6 +16,7 @@ f1 = M1 |> DiffEqArrayOperator
 f2 = M2 |> DiffEqArrayOperator
 prob = SplitODEProblem(f1,f2,u0,tspan)
 
+#=
 for algname in (
                 :SBDF2,
                 :SBDF3,
@@ -36,6 +38,7 @@ for algname in (
 
     end
 end
+=#
 
 #####
 # deep dive
@@ -91,5 +94,20 @@ linres0 = dolinsolve(ig0, lc0; A = W0, b = b, linu = ones(n), reltol = 1e-8)
 linres1 = dolinsolve(ig1, lc1; A = W1, b = b, linu = ones(n), reltol = 1e-8)
 
 @test_broken linres0 == linres1
+
+###
+# custom linsolve function
+###
+
+function linsolve(A,b,u,p,newA,Pl,Pr,solverdata;kwargs...)
+    # avoid preconditioner monkeybusiness
+    prob = LinearProblem(A,b;u0=u)
+    solve(prob, nothing)
+    return u
+end
+
+alg = KenCarp47(linsolve=LinearSolveFunction(linsolve))
+
+@test solve(prob, alg).retcode == :Success
 
 nothing
