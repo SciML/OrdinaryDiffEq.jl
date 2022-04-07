@@ -418,7 +418,7 @@ struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RKM <: OrdinaryDiffEqAlgorithm end
 
 """
-MSRK6 : 5th order Explicit RK method.
+MSRK5 : 5th order Explicit RK method.
   - Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 3.
 """
 struct MSRK5 <: OrdinaryDiffEqAlgorithm end
