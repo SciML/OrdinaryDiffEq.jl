@@ -39,20 +39,36 @@ end
 alg0 = KenCarp47()                                # passing case
 alg1 = KenCarp47(linsolve=GenericFactorization()) # failing case
 
+## objects
 ig0 = SciMLBase.init(prob, alg0; dt=dt)
 ig1 = SciMLBase.init(prob, alg1; dt=dt)
 
-lincache0 = ig0.cache.nlsolver.cache.linsolve
-lincache1 = ig1.cache.nlsolver.cache.linsolve
+nl0 = ig0.cache.nlsolver
+nl1 = ig1.cache.nlsolver
 
-# check operators
-W0 = lincache0.A
-W1 = lincache1.A
+lc0 = nl0.cache.linsolve
+lc1 = nl1.cache.linsolve
 
-for field in W0 |> typeof |> fieldnames
-    isequal = getfield(W0, field) == getfield(W1, field)
-    println("field $field is $isequal")
-end
+W0 = lc0.A
+W1 = lc1.A
+
+##
+OrdinaryDiffEq.loopheader!(ig0)
+OrdinaryDiffEq.loopheader!(ig1)
+
+OrdinaryDiffEq.perform_step!(ig0,ig0.cache)
+OrdinaryDiffEq.perform_step!(ig1,ig1.cache)
+
+@show OrdinaryDiffEq.nlsolvefail(nl0) # false
+@show OrdinaryDiffEq.nlsolvefail(nl1) # true
+
+#=
+
+## check operators
+#for field in W0 |> typeof |> fieldnames
+#    isequal = getfield(W0, field) == getfield(W1, field)
+#    println("field $field is $isequal")
+#end
 
 @show W0._concrete_form == W1._concrete_form # true
 @show W0._func_cache    == W1._func_cache    # true
@@ -64,21 +80,23 @@ b = ones(n)
 @show W0 \ b == W1 \ b                             # true
 
 # check solve
-lincache0.b .= 1.0
-lincache1.b .= 1.0
+lc0.b .= 1.0
+lc1.b .= 1.0
 
-solve(lincache0)
-solve(lincache1)
+solve(lc0)
+solve(lc1)
 
-@show lincache0.u == lincache1.u # false
+@show lc0.u == lc1.u # false
 
-@show lincache0.u'
-@show lincache1.u'
+@show lc0.u'
+@show lc1.u'
 
 #import OrdinaryDiffEq.dolinsolve
-#linres0 = dolinsolve(ig0, lincache0; A = W0, b = b, linu = ones(n), reltol = 1e-8)
-#linres1 = dolinsolve(ig1, lincache1; A = W1, b = b, linu = ones(n), reltol = 1e-8)
+#linres0 = dolinsolve(ig0, lc0; A = W0, b = b, linu = ones(n), reltol = 1e-8)
+#linres1 = dolinsolve(ig1, lc1; A = W1, b = b, linu = ones(n), reltol = 1e-8)
 #
 #@show linres0 == linres1
+
+=#
 
 nothing
