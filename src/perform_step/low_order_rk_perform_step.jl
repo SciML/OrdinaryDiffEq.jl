@@ -1308,3 +1308,30 @@ function initialize!(integrator, cache::MSRK5Cache)
   f(integrator.fsalfirst,uprev,p,t)
   integrator.destats.nf += 1
 end
+
+function perform_step!(integrator, cache::MSRK5Cache, repeat_step=false)
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,tmp = cache
+  @unpack a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,b1,b4,b5,b6,b7,b8,c2,c3,c4,c5,c6,c7,c8 = cache.tab
+  @unpack u,uprev,t,dt,f,p = integrator
+
+  @.. broadcast=false tmp = uprev + dt*(a21*k1)
+  f(k2,tmp,p,t+c2*dt)
+  @.. broadcast=false tmp = uprev + dt*(a31*k1 + a32*k2)
+  f(k3,tmp,p,t+c3*dt)
+  @.. broadcast=false tmp = uprev + dt*(a41*k1 + a43*k3)
+  f(k4,tmp,p,t+c4*dt)
+  @.. broadcast=false tmp = uprev + dt*(a51*k1 + a53*k3 + a54*k4)
+  f(k5,tmp,p,t+c5*dt)
+  @.. broadcast=false tmp = uprev + dt*(a61*k1 + a63*k3 + a64*k4 + a65*k5)
+  f(k6,tmp,p,t+c6*dt)
+  @.. broadcast=false tmp = uprev + dt*(a71*k1 + a73*k3 + a74*k4 + a75*k5 + a76*k6)
+  f(k7,tmp,p,t+c7*dt)
+  @.. broadcast=false tmp = uprev + dt*(a81*k1 + a83*k3 + a84*k4 + a85*k5 + a86*k6 + a87*k7)
+  f(k8,tmp,p,t+c8*dt)
+  @.. broadcast=false u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8)
+  f(k9,u,p,t+dt)
+  integrator.destats.nf += 8
+  integrator.fsallast = k9
+
+  return nothing
+end
