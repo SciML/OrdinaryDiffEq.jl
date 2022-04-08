@@ -18,7 +18,6 @@ end
 
 if GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
   #@time @safetestset "Linear Solver Tests" begin include("interface/linear_solver_test.jl") end
-  #@time @safetestset "Linear Solver Split ODE Tests" begin include("interface/linear_solver_split_ode_test.jl") end
   @time @safetestset "Discrete Algorithm Tests" begin include("interface/discrete_algorithm_test.jl") end
   @time @safetestset "Tstops Tests" begin include("interface/ode_tstops_tests.jl") end
   @time @safetestset "Backwards Tests" begin include("interface/ode_backwards_test.jl") end
