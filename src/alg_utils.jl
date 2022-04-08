@@ -169,6 +169,12 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
         linsolve = LinearSolve.defaultalg(prob.f.f,u0)
       elseif (prob.f isa SplitFunction && prob.f.f1.f isa SciMLBase.AbstractDiffEqOperator)
         linsolve = LinearSolve.defaultalg(prob.f.f1.f,u0)
+        if (linsolve === nothing) | (linsolve isa LinearSolve.AbstractFactorization)
+          @warn "Split ODE problem do not work with factorization linear solvers.
+            Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643.
+            Defaulting to linsolve=KrylovJL()"
+          linsolve = KrylovJL()
+        end
       elseif prob isa ODEProblem && (prob.f.mass_matrix === nothing ||
             (prob.f.mass_matrix !== nothing &&
                               !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractDiffEqOperator)))
@@ -180,13 +186,6 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
       end
     else
       linsolve = alg.linsolve
-    end
-
-    if (prob.f isa SplitFunction) & ((linsolve === nothing) | (linsolve isa LinearSolve.AbstractFactorization))
-      @warn "Split ODE problem do not work with factorization linear solvers.
-        Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643.
-        Defaulting to linsolve=KrylovJL()"
-      linsolve = KrylovJL()
     end
 
     isbitstype(T) && sizeof(T) > 24 && return remake(alg, chunk_size=Val{1}(),linsolve=linsolve)

@@ -23,17 +23,14 @@ for algname in (
                )
     @testset "$algname" begin
 
-    # prepare_alg() sets alg.linsovle=GenericFactorization()
     alg0 = @eval $algname()
     alg1 = @eval $algname(linsolve=GenericFactorization())
-    alg2 = DiffEqBase.prepare_alg(alg0, prob.u0, prob.p, prob)
 
     kwargs = (dt=dt,)
 
-    @test_broken              solve(prob, alg0; kwargs...).retcode == :Success
-    @test        DiffEqBase.__solve(prob, alg0; kwargs...).retcode == :Success
+    @test_warn "linsolve" solve(prob, alg0; kwargs...)
+    @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == :Success
     @test_broken DiffEqBase.__solve(prob, alg1; kwargs...).retcode == :Success
-    @test_broken DiffEqBase.__solve(prob, alg2; kwargs...).retcode == :Success
 
     end
 end
