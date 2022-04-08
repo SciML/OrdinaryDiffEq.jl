@@ -16,7 +16,6 @@ f1 = M1 |> DiffEqArrayOperator
 f2 = M2 |> DiffEqArrayOperator
 prob = SplitODEProblem(f1,f2,u0,tspan)
 
-#=
 for algname in (
                 :SBDF2,
                 :SBDF3,
@@ -38,7 +37,6 @@ for algname in (
 
     end
 end
-=#
 
 #####
 # deep dive
