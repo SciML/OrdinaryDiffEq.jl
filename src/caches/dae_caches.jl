@@ -30,7 +30,7 @@ function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,::Type{
   k₂ = zero(rate_prototype)
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(true))
 
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
 
   DImplicitEulerCache(u,uprev,uprev2,atmp,k₁,k₂,nlsolver)
 end
@@ -75,7 +75,7 @@ function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,::Type{uEltypeN
   fsalfirst = zero(rate_prototype)
 
   fsalfirstprev = zero(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
 
   k₁ = zero(rate_prototype)
   k₂ = zero(rate_prototype)

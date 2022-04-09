@@ -37,7 +37,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   fsalfirst = zero(rate_prototype)
 
   fsalfirstprev = zero(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
 
   eulercache = ImplicitEulerCache(u,uprev,uprev2,fsalfirst,atmp,nlsolver)
 
@@ -173,7 +173,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
 
   U!(1,U)
 
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   utilde = zero(u)
   uprev2 = zero(u)
   dtₙ₋₁ = zero(dt)
@@ -244,7 +244,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
 
   U!(2,U)
 
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   utilde = zero(u)
   uprev2 = zero(u)
   uprev3 = zero(u)
@@ -384,7 +384,7 @@ function alg_cache(alg::MEBDF2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); tmp2 = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
 
   MEBDF2Cache(u,uprev,uprev2,fsalfirst,z₁,z₂,tmp2,atmp,nlsolver)
 end

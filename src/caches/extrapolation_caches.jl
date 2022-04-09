@@ -51,7 +51,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,::Type{uEltypeNoUnits},::
   end
   work = zero(dt)
   A = one(Int)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   step_no = zero(Int)
   AitkenNevilleCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps)
 end
@@ -196,7 +196,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uElty
     end
   end
   A = one(Int)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   step_no = zero(Int)
 
   du1 = zero(rate_prototype)
@@ -207,7 +207,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uElty
     J = nothing # is J = W.J better?
   else
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
-    W_el = similar(J)
+    W_el = zero(J)
   end
 
   W = Array{typeof(W_el),1}(undef, Threads.nthreads())
@@ -715,7 +715,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,::Type{u
     J = nothing # is J = W.J better?
   else
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
-    W_el = similar(J)
+    W_el = zero(J)
   end
 
   W = Array{typeof(W_el),1}(undef, Threads.nthreads())
@@ -1009,7 +1009,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,::Typ
     J = nothing # is J = W.J better?
   else
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
-    W_el = similar(J)
+    W_el = zero(J)
   end
 
   W = Array{typeof(W_el),1}(undef, Threads.nthreads())
@@ -1186,7 +1186,7 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation,u,rate_prototype,:
     J = nothing # is J = W.J better?
   else
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
-    W_el = similar(J)
+    W_el = zero(J)
   end
 
   W = Array{typeof(W_el),1}(undef, Threads.nthreads())

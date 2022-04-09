@@ -49,12 +49,14 @@ end
 end
 
 function alg_cache(alg::Heun,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  HeunCache(u,uprev,zero(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
+  atmp = similar(u, uEltypeNoUnits); fill!(atmp,false)
+  HeunCache(u,uprev,zero(u),atmp,zero(rate_prototype),
             zero(rate_prototype))
 end
 
 function alg_cache(alg::Ralston,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  RalstonCache(u,uprev,zero(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
+  atmp = similar(u, uEltypeNoUnits); fill!(atmp,false)
+  RalstonCache(u,uprev,zero(u),atmp,zero(rate_prototype),
                zero(rate_prototype))
 end
 
@@ -78,7 +80,7 @@ end
 struct MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  tmp = zero(u); atmp = similar(u, uEltypeNoUnits)
+  tmp = zero(u); atmp = similar(u, uEltypeNoUnits); fill!(atmp,false)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   MidpointCache(u,uprev,k,tmp,atmp,fsalfirst)
@@ -106,7 +108,7 @@ function alg_cache(alg::RK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k₃ = zero(rate_prototype)
   k₄ = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = zero(u); atmp = similar(u, uEltypeNoUnits)
+  tmp = zero(u); atmp = similar(u, uEltypeNoUnits); fill!(atmp,false)
   RK4Cache(u,uprev,k₁,k₂,k₃,k₄,k,tmp,atmp)
 end
 
@@ -135,7 +137,7 @@ function alg_cache(alg::BS3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k3 = zero(rate_prototype)
   k4 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   BS3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
@@ -163,7 +165,7 @@ function alg_cache(alg::OwrenZen3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   k3 = zero(rate_prototype)
   k4 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   OwrenZen3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab)
 end
@@ -194,7 +196,7 @@ function alg_cache(alg::OwrenZen4,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   k5 = zero(rate_prototype)
   k6 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   OwrenZen4Cache(u,uprev,k1,k2,k3,k4,k5,k6,utilde,tmp,atmp,tab)
 end
@@ -229,7 +231,7 @@ function alg_cache(alg::OwrenZen5,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   k7 = zero(rate_prototype)
   k8 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   OwrenZen5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
 end
@@ -264,7 +266,7 @@ function alg_cache(alg::BS5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k7 = zero(rate_prototype)
   k8 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   BS5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
 end
@@ -360,7 +362,7 @@ function alg_cache(alg::Tsit5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k6 = zero(rate_prototype)
   k7 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
@@ -404,7 +406,7 @@ function alg_cache(alg::DP5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
 
   if eltype(u) != uEltypeNoUnits || calck
     update = zero(rate_prototype)
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   else
     update = k7
     atmp = k3
@@ -443,7 +445,7 @@ function alg_cache(alg::Anas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k6 = zero(rate_prototype)
   k7 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   Anas5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
 end
@@ -864,7 +866,7 @@ function alg_cache(alg::FRK65,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k8 = zero(rate_prototype)
   k9 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
   tmp = zero(u)
   FRK65Cache(u, uprev, utilde, k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, atmp, tab)
 end
