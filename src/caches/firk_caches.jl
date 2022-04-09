@@ -70,8 +70,8 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
 
   z1 = zero(u); z2 = zero(u);
   w1 = zero(u); w2 = zero(u);
-  dw12 = similar(u, Complex{eltype(u)}); fill!(dw12,false)
-  cubuff = similar(u, Complex{eltype(u)}); fill!(cubuff,false)
+  dw12 = similar(u, Complex{eltype(u)}); recursivefill!(dw12,false)
+  cubuff = similar(u, Complex{eltype(u)}); recursivefill!(cubuff,false)
   cont1 = zero(u); cont2 = zero(u);
 
   fsalfirst = zero(rate_prototype)
@@ -79,12 +79,12 @@ function alg_cache(alg::RadauIIA3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   fw1 = zero(rate_prototype); fw2 = zero(rate_prototype);
 
   J, W1 = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
-  W1 = similar(J, Complex{eltype(W1)}); fill!(W1,false)
+  W1 = similar(J, Complex{eltype(W1)}); recursivefill!(W1,false)
 
   du1 = zero(rate_prototype)
 
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
   linprob = LinearProblem(W1,_vec(cubuff); u0=_vec(dw12))
@@ -186,8 +186,8 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   z1 = zero(u); z2 = zero(u); z3 = zero(u)
   w1 = zero(u); w2 = zero(u); w3 = zero(u)
   dw1 = zero(u); ubuff = zero(u)
-  dw23 = similar(u, Complex{eltype(u)}); fill!(dw23,false);
-  cubuff = similar(u, Complex{eltype(u)}); fill!(cubuff,false);
+  dw23 = similar(u, Complex{eltype(u)}); recursivefill!(dw23,false);
+  cubuff = similar(u, Complex{eltype(u)}); recursivefill!(cubuff,false);
   cont1 = zero(u); cont2 = zero(u); cont3 = zero(u)
 
   fsalfirst = zero(rate_prototype)
@@ -200,7 +200,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   du1 = zero(rate_prototype)
 
   tmp = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
   linprob = LinearProblem(W1,_vec(ubuff); u0=_vec(dw1))

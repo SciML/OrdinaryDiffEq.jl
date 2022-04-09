@@ -64,11 +64,11 @@ function alg_cache(alg::AN5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k5 = zero(rate_prototype)
   k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false); tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false); tmp = zero(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab,trivial_limiter!,trivial_limiter!,False())
   #################################################
   N = 5
-  Δ = similar(atmp); fill!(Δ,false)
+  Δ = similar(atmp); recursivefill!(Δ,false)
   l = fill(zero(tTypeNoUnits),N+1); m = zero(l)
   c_LTE = c_conv = zero(tTypeNoUnits)
   dts = fill(zero(dt), 6)
@@ -189,13 +189,13 @@ function alg_cache(alg::JVODE,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false); tmp = zero(u)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false); tmp = zero(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab,trivial_limiter!,trivial_limiter!,False())
   #################################################
   fsalfirst = zero(rate_prototype)
   N = 12
   z = [zero(rate_prototype) for i in 1:N+1]
-  Δ = similar(u,uEltypeNoUnits); fill!(Δ,false)
+  Δ = similar(u,uEltypeNoUnits); recursivefill!(Δ,false)
   l = fill(zero(tTypeNoUnits), N+1); m = zero(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
   dts = fill(zero(dt),N+1)

@@ -15,7 +15,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,::Type{uEltypeNoUnits},::
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   ImplicitEulerCache(u,uprev,uprev2,fsalfirst,atmp,nlsolver)
 end
@@ -92,7 +92,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,::Type{uEltypeNoUnits},::Type
 
   uprev3 = zero(u)
   tprev2 = t
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   TrapezoidCache(u,uprev,uprev2,fsalfirst,atmp,uprev3,tprev2,nlsolver)
 end
@@ -128,7 +128,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(true))
   fsalfirst = zero(rate_prototype)
 
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false); zprev = zero(u); zᵧ = zero(u)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false); zprev = zero(u); zᵧ = zero(u)
 
   TRBDF2Cache(u,uprev,fsalfirst,zprev,zᵧ,atmp,nlsolver,tab)
 end
@@ -161,7 +161,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SDIRK2Cache(u,uprev,fsalfirst,z₁,z₂,atmp,nlsolver)
 end
@@ -205,7 +205,7 @@ function alg_cache(alg::SDIRK22,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
 
   uprev3 = zero(u)
   tprev2 = t
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SDIRK22(u,uprev,uprev2,fsalfirst,atmp,uprev3,tprev2,nlsolver,tab)
 end
@@ -237,7 +237,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SSPSDIRK2Cache(u,uprev,fsalfirst,z₁,z₂,nlsolver)
 end
@@ -276,7 +276,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   Kvaerno3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,atmp,nlsolver,tab)
 end
@@ -316,7 +316,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   Cash4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
@@ -356,7 +356,7 @@ function alg_cache(alg::SFSDIRK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SFSDIRK4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
@@ -397,7 +397,7 @@ function alg_cache(alg::SFSDIRK5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u); z₆ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SFSDIRK5Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver,tab)
 end
@@ -438,7 +438,7 @@ function alg_cache(alg::SFSDIRK6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u); z₆ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SFSDIRK6Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver,tab)
 end
@@ -480,7 +480,7 @@ function alg_cache(alg::SFSDIRK7,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u);z₆ = zero(u); z₇ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SFSDIRK7Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,atmp,nlsolver,tab)
 end
@@ -523,7 +523,7 @@ function alg_cache(alg::SFSDIRK8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u);z₅ = zero(u);z₆ = zero(u);z₇ = zero(u); z₈ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   SFSDIRK8Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver,tab)
 end
@@ -571,7 +571,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,::Type{uEltypeN
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   Hairer4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
@@ -595,7 +595,7 @@ function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,::Type{uEltypeNoUnits},:
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
   z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   ESDIRK54I8L2SACache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver,tab)
 end

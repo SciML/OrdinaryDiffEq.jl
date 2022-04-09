@@ -773,7 +773,7 @@ function alg_cache(alg::SSPRK43,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
     fsalfirst = k
   end
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tab = SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK43Cache(u,uprev,k,fsalfirst,utilde,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
@@ -805,7 +805,7 @@ function alg_cache(alg::SSPRK432,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
     fsalfirst = k
   end
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   SSPRK432Cache(u,uprev,k,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
@@ -934,7 +934,7 @@ function alg_cache(alg::SSPRK932,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
     fsalfirst = k
   end
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   SSPRK932Cache(u,uprev,k,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 

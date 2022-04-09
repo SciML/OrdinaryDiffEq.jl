@@ -157,7 +157,7 @@ function alg_cache(alg::DPRKN6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   k6 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   DPRKN6Cache(u,uprev,k1,k2,k3,k4,k5,k6,k,utilde,tmp,atmp,tab)
 end
@@ -197,7 +197,7 @@ function alg_cache(alg::DPRKN8,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   k9 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   DPRKN8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k,utilde,tmp,atmp,tab)
 end
@@ -253,7 +253,7 @@ function alg_cache(alg::DPRKN12,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   k17 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   DPRKN12Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k,utilde,tmp,atmp,tab)
 end
@@ -283,7 +283,7 @@ function alg_cache(alg::ERKN4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k4 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   ERKN4Cache(u,uprev,k1,k2,k3,k4,k,utilde,tmp,atmp,tab)
 end
@@ -313,7 +313,7 @@ function alg_cache(alg::ERKN5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k4 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   ERKN5Cache(u,uprev,k1,k2,k3,k4,k,utilde,tmp,atmp,tab)
 end

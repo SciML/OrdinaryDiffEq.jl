@@ -165,7 +165,7 @@ function alg_cache(alg::MagnusAdapt4,u,rate_prototype,::Type{uEltypeNoUnits},::T
   W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   MagnusAdapt4Cache(u,uprev,uprev2,zero(u),fsalfirst,W,k,utilde,atmp)
 end

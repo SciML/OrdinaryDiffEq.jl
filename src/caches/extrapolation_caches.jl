@@ -51,7 +51,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,::Type{uEltypeNoUnits},::
   end
   work = zero(dt)
   A = one(Int)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   step_no = zero(Int)
   AitkenNevilleCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps)
 end
@@ -196,7 +196,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,::Type{uElty
     end
   end
   A = one(Int)
-  atmp = similar(u,uEltypeNoUnits); fill!(atmp,false)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   step_no = zero(Int)
 
   du1 = zero(rate_prototype)
