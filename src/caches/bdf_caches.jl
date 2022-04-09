@@ -37,7 +37,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   fsalfirst = zero(rate_prototype)
 
   fsalfirstprev = zero(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   eulercache = ImplicitEulerCache(u,uprev,uprev2,fsalfirst,atmp,nlsolver)
 
@@ -173,7 +173,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
 
   U!(1,U)
 
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   utilde = zero(u)
   uprev2 = zero(u)
   dtₙ₋₁ = zero(dt)
@@ -244,7 +244,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
 
   U!(2,U)
 
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   utilde = zero(u)
   uprev2 = zero(u)
   uprev3 = zero(u)
@@ -276,9 +276,9 @@ function alg_cache(alg::QNDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,Val(false))
   dtprev = one(dt)
   D = Matrix{uEltypeNoUnits}(undef, length(u), max_order+2)
-  fill!(D, zero(uEltypeNoUnits))
+  recursivefill!(D, zero(uEltypeNoUnits))
   prevD = similar(D)
-  fill!(prevD, zero(uEltypeNoUnits))
+  recursivefill!(prevD, zero(uEltypeNoUnits))
   EEst1 = tTypeNoUnits(1)
   EEst2 = tTypeNoUnits(1)
 
@@ -338,9 +338,9 @@ function alg_cache(alg::QNDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   u₀ = zero(u)
   dtprev = one(dt)
   D = similar(u, uEltypeNoUnits, length(u), max_order + 2)
-  fill!(D, zero(uEltypeNoUnits))
+  recursivefill!(D, zero(uEltypeNoUnits))
   Dtmp = similar(D)
-  fill!(Dtmp, zero(uEltypeNoUnits))
+  recursivefill!(Dtmp, zero(uEltypeNoUnits))
   prevD = zero(similar(D))
   atmp = zero(similar(u, uEltypeNoUnits))
   atmpm1 = zero(similar(u, uEltypeNoUnits))
@@ -384,7 +384,7 @@ function alg_cache(alg::MEBDF2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); tmp2 = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   MEBDF2Cache(u,uprev,uprev2,fsalfirst,z₁,z₂,tmp2,atmp,nlsolver)
 end
@@ -438,8 +438,8 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   order = 1
   prev_order = 1
   u_corrector = similar(u_history)
-  fill!(u_corrector,zero(eltype(u)))
-  fill!(u_history,zero(eltype(u_history)))
+  recursivefill!(u_corrector,zero(eltype(u)))
+  recursivefill!(u_history,zero(eltype(u_history)))
   terkm2 = tTypeNoUnits(1)
   terkm1= tTypeNoUnits(1)
   terk= tTypeNoUnits(1)
@@ -499,9 +499,9 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   order = 1
   prev_order = 1
   u_corrector = similar(u_history)
-  fill!(ts,zero(t))
-  fill!(u_corrector,zero(eltype(u)))
-  fill!(u_history,zero(eltype(u_history)))
+  recursivefill!(ts,zero(t))
+  recursivefill!(u_corrector,zero(eltype(u)))
+  recursivefill!(u_history,zero(eltype(u_history)))
   terkm2 = tTypeNoUnits(1)
   terkm1= tTypeNoUnits(1)
   terk= tTypeNoUnits(1)
@@ -510,14 +510,14 @@ function alg_cache(alg::FBDF{MO},u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   terkp1_tmp = similar(u)
   r = Vector{typeof(t)}(undef,max_order+2)
   weights = Vector{typeof(t)}(undef,max_order+2)
-  fill!(r,zero(t))
-  fill!(weights,zero(t))
+  recursivefill!(r,zero(t))
+  recursivefill!(weights,zero(t))
   weights[1] = 1
   nconsteps = 0
   consfailcnt = 0
   t_old = zero(t)
   atmp = similar(u, uEltypeNoUnits)
-  fill!(atmp,zero(uEltypeNoUnits))
+  recursivefill!(atmp,zero(uEltypeNoUnits))
   u₀ = similar(u)
   equi_ts = similar(ts)
   tmp = similar(u)

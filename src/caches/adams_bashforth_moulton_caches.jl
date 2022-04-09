@@ -319,7 +319,7 @@ function alg_cache(alg::VCAB3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   bk3 = zero(rate_prototype)
   bk4 = zero(rate_prototype)
   butilde = zero(u)
-  batmp = similar(u,uEltypeNoUnits)
+  batmp = similar(u,uEltypeNoUnits); recursivefill!(batmp,false)
   btmp = zero(u)
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab,trivial_limiter!,trivial_limiter!,False())
   fsalfirst = zero(rate_prototype)
@@ -337,7 +337,7 @@ function alg_cache(alg::VCAB3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   end
   β = fill(zero(t),3)
   order = 3
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   utilde = zero(u)
   VCAB3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
@@ -400,7 +400,7 @@ function alg_cache(alg::VCAB4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits); recursivefill!(ratmp,false);
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -417,7 +417,7 @@ function alg_cache(alg::VCAB4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   end
   β = fill(zero(t),4)
   order = 4
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   utilde = zero(u)
   VCAB4Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,1)
@@ -482,7 +482,7 @@ function alg_cache(alg::VCAB5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits); recursivefill!(ratmp,false);
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -499,7 +499,7 @@ function alg_cache(alg::VCAB5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   end
   β = fill(zero(t),5)
   order = 5
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   utilde = zero(u)
   VCAB5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,1)
@@ -569,7 +569,7 @@ function alg_cache(alg::VCABM3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   bk3 = zero(rate_prototype)
   bk4 = zero(rate_prototype)
   butilde = zero(u)
-  batmp = similar(u,uEltypeNoUnits)
+  batmp = similar(u,uEltypeNoUnits); recursivefill!(batmp,false)
   btmp = zero(u)
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab,trivial_limiter!,trivial_limiter!,False())
   fsalfirst = zero(rate_prototype)
@@ -591,7 +591,7 @@ function alg_cache(alg::VCABM3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   end
   β = fill(zero(t),3)
   order = 3
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   utilde = zero(u)
   VCABM3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
@@ -659,7 +659,7 @@ function alg_cache(alg::VCABM4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits); recursivefill!(ratmp,false)
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -680,7 +680,7 @@ function alg_cache(alg::VCABM4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   end
   β = fill(zero(t),4)
   order = 4
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   utilde = zero(u)
   VCABM4Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
@@ -748,7 +748,7 @@ function alg_cache(alg::VCABM5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   rk3 = zero(rate_prototype)
   rk4 = zero(rate_prototype)
   rk  = zero(rate_prototype)
-  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits)
+  rtmp = zero(u); ratmp = similar(u, uEltypeNoUnits); recursivefill!(ratmp,false)
   rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
   fsalfirst = zero(rate_prototype)
   k4 = zero(rate_prototype)
@@ -769,7 +769,7 @@ function alg_cache(alg::VCABM5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   end
   β = fill(zero(t),5)
   order = 5
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   utilde = zero(u)
   VCABM5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
@@ -864,7 +864,7 @@ function alg_cache(alg::VCABM,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   β = fill(zero(t), 13)
   order = 1
   max_order = 12
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   ξ = zero(dt)
   ξ0 = zero(dt)
@@ -872,10 +872,10 @@ function alg_cache(alg::VCABM,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   utildem2 = zero(u)
   utildem1 = zero(u)
   utildep1 = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
-  atmpm1 = similar(u,uEltypeNoUnits)
-  atmpm2 = similar(u,uEltypeNoUnits)
-  atmpp1 = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  atmpm1 = similar(u,uEltypeNoUnits); recursivefill!(atmpm1,false)
+  atmpm2 = similar(u,uEltypeNoUnits); recursivefill!(atmpm2,false)
+  atmpp1 = similar(u,uEltypeNoUnits); recursivefill!(atmpp1,false)
   VCABMCache(u,uprev,fsalfirst,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,atmp,tmp,ξ,ξ0,utilde,utildem1,utildem2,utildep1,atmpm1,atmpm2,atmpp1,1)
 end
 
