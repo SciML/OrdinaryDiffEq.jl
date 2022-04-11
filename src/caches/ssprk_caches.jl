@@ -13,7 +13,7 @@ struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
 function alg_cache(alg::SSPRK22,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -38,7 +38,7 @@ struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
 function alg_cache(alg::SSPRK33,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -159,7 +159,7 @@ function alg_cache(alg::SSPRK53,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tmp = zero(u)
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -360,7 +360,7 @@ end
 function alg_cache(alg::SSPRK53_2N1,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -421,7 +421,7 @@ end
 function alg_cache(alg::SSPRK53_2N2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -485,7 +485,7 @@ function alg_cache(alg::SSPRK53_H,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   tmp = zero(u)
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -557,7 +557,7 @@ function alg_cache(alg::SSPRK63,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   u₂ = zero(u)
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -636,7 +636,7 @@ function alg_cache(alg::SSPRK73,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   u₁ = zero(u)
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -723,7 +723,7 @@ function alg_cache(alg::SSPRK83,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   u₃ = zero(u)
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -768,12 +768,12 @@ end
 function alg_cache(alg::SSPRK43,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tab = SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
   SSPRK43Cache(u,uprev,k,fsalfirst,utilde,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
@@ -800,12 +800,12 @@ struct SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
 function alg_cache(alg::SSPRK432,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   SSPRK432Cache(u,uprev,k,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
@@ -929,12 +929,12 @@ struct SSPRK932ConstantCache <: OrdinaryDiffEqConstantCache end
 function alg_cache(alg::SSPRK932,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   SSPRK932Cache(u,uprev,k,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
 
@@ -1008,7 +1008,7 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   tmp = zero(u)
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end
@@ -1040,7 +1040,7 @@ function alg_cache(alg::SSPRK104,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   tmp = zero(u)
   k = zero(rate_prototype)
   if calck
-    fsalfirst = similar(k)
+    fsalfirst = zero(k)
   else
     fsalfirst = k
   end

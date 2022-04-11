@@ -3,7 +3,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-@cache mutable struct Rosenbrock23Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock23Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A,AV} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -29,9 +29,10 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
   grad_config::GCType
   reltol::RTolType
   alg::A
+  algebraic_vars::AV
 end
 
-@cache mutable struct Rosenbrock32Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock32Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType,RTolType,A,AV} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -57,9 +58,10 @@ end
   grad_config::GCType
   reltol::RTolType
   alg::A
+  algebraic_vars::AV
 end
 
-function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k₁ = zero(rate_prototype)
   k₂ = zero(rate_prototype)
   k₃ = zero(rate_prototype)
@@ -70,30 +72,31 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,::Type{uEltypeNoUnits},::T
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+  J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rosenbrock23Tableau(constvalue(uBottomEltypeNoUnits))
-  tf = TimeGradientWrapper(f,uprev,p)
-  uf = UJacobianWrapper(f,t,p)
+  tf = TimeGradientWrapper(f, uprev, p)
+  uf = UJacobianWrapper(f, t, p)
   linsolve_tmp = zero(rate_prototype)
 
 
-  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
-  Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
-  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = Pl, Pr = Pr)
+  linprob = LinearProblem(W, _vec(linsolve_tmp); u0=_vec(tmp))
+  Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing, nothing)..., weight)
+  linsolve = init(linprob, alg.linsolve, alias_A=true, alias_b=true,
+    Pl=Pl, Pr=Pr)
 
-  grad_config = build_grad_config(alg,f,tf,du1,t)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
+  grad_config = build_grad_config(alg, f, tf, du1, t)
+  jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2, Val(false))
+  algebraic_vars = f.mass_matrix === I ? nothing : [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,
-                    linsolve,jac_config,grad_config,reltol,alg)
+  Rosenbrock23Cache(u, uprev, k₁, k₂, k₃, du1, du2, f₁,
+    fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
+    linsolve, jac_config, grad_config, reltol, alg, algebraic_vars)
 end
 
-function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k₁ = zero(rate_prototype)
   k₂ = zero(rate_prototype)
   k₃ = zero(rate_prototype)
@@ -104,23 +107,25 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,::Type{uEltypeNoUnits},::T
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+  J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rosenbrock32Tableau(constvalue(uBottomEltypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,p)
-  uf = UJacobianWrapper(f,t,p)
+  tf = TimeGradientWrapper(f, uprev, p)
+  uf = UJacobianWrapper(f, t, p)
   linsolve_tmp = zero(rate_prototype)
-  linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
+  linprob = LinearProblem(W, _vec(linsolve_tmp); u0=_vec(tmp))
 
-  Pl,Pr = wrapprecs(alg.precs(W,nothing,u,p,t,nothing,nothing,nothing,nothing)...,weight)
-  linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
-                  Pl = Pl, Pr = Pr)
-  grad_config = build_grad_config(alg,f,tf,du1,t)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2,Val(false))
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,weight,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config,reltol,alg)
+  Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing, nothing)..., weight)
+  linsolve = init(linprob, alg.linsolve, alias_A=true, alias_b=true,
+    Pl=Pl, Pr=Pr)
+  grad_config = build_grad_config(alg, f, tf, du1, t)
+  jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2, Val(false))
+  algebraic_vars = f.mass_matrix === I ? nothing : [all(iszero, x) for x in eachcol(f.mass_matrix)]
+
+  Rosenbrock32Cache(u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config, grad_config, reltol, alg, algebraic_vars)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstantCache
@@ -228,8 +233,8 @@ function alg_cache(alg::ROS3P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   tf = TimeGradientWrapper(f,uprev,p)
   uf = UJacobianWrapper(f,t,p)
@@ -294,8 +299,8 @@ function alg_cache(alg::Rodas3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rodas3Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -407,8 +412,8 @@ function alg_cache(alg::Rodas4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rodas4Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -452,8 +457,8 @@ function alg_cache(alg::Rodas42,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rodas42Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -497,8 +502,8 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -542,8 +547,8 @@ function alg_cache(alg::Rodas4P2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rodas4P2Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -639,8 +644,8 @@ function alg_cache(alg::Rodas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)
@@ -687,8 +692,8 @@ function alg_cache(alg::Rodas5P,u,rate_prototype,::Type{uEltypeNoUnits},::Type{u
   dT = zero(rate_prototype)
   J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
   tmp = zero(rate_prototype)
-  atmp = similar(u, uEltypeNoUnits)
-  weight = similar(u, uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
+  weight = similar(u,uEltypeNoUnits); recursivefill!(weight,false)
   tab = Rodas5PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = TimeGradientWrapper(f,uprev,p)

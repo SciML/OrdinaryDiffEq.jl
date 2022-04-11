@@ -49,12 +49,14 @@ end
 end
 
 function alg_cache(alg::Heun,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  HeunCache(u,uprev,zero(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
+  atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp,false)
+  HeunCache(u,uprev,zero(u),atmp,zero(rate_prototype),
             zero(rate_prototype))
 end
 
 function alg_cache(alg::Ralston,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  RalstonCache(u,uprev,zero(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
+  atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp,false)
+  RalstonCache(u,uprev,zero(u),atmp,zero(rate_prototype),
                zero(rate_prototype))
 end
 
@@ -78,7 +80,7 @@ end
 struct MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  tmp = zero(u); atmp = similar(u, uEltypeNoUnits)
+  tmp = zero(u); atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp,false)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   MidpointCache(u,uprev,k,tmp,atmp,fsalfirst)
@@ -106,7 +108,7 @@ function alg_cache(alg::RK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k₃ = zero(rate_prototype)
   k₄ = zero(rate_prototype)
   k  = zero(rate_prototype)
-  tmp = zero(u); atmp = similar(u, uEltypeNoUnits)
+  tmp = zero(u); atmp = similar(u, uEltypeNoUnits); recursivefill!(atmp,false)
   RK4Cache(u,uprev,k₁,k₂,k₃,k₄,k,tmp,atmp)
 end
 
@@ -135,7 +137,7 @@ function alg_cache(alg::BS3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k3 = zero(rate_prototype)
   k4 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   BS3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
@@ -163,7 +165,7 @@ function alg_cache(alg::OwrenZen3,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   k3 = zero(rate_prototype)
   k4 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   OwrenZen3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab)
 end
@@ -194,7 +196,7 @@ function alg_cache(alg::OwrenZen4,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   k5 = zero(rate_prototype)
   k6 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   OwrenZen4Cache(u,uprev,k1,k2,k3,k4,k5,k6,utilde,tmp,atmp,tab)
 end
@@ -229,7 +231,7 @@ function alg_cache(alg::OwrenZen5,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   k7 = zero(rate_prototype)
   k8 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   OwrenZen5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
 end
@@ -264,7 +266,7 @@ function alg_cache(alg::BS5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   k7 = zero(rate_prototype)
   k8 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   BS5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
 end
@@ -360,7 +362,7 @@ function alg_cache(alg::Tsit5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k6 = zero(rate_prototype)
   k7 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
 end
@@ -404,7 +406,7 @@ function alg_cache(alg::DP5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
 
   if eltype(u) != uEltypeNoUnits || calck
     update = zero(rate_prototype)
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   else
     update = k7
     atmp = k3
@@ -443,7 +445,7 @@ function alg_cache(alg::Anas5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k6 = zero(rate_prototype)
   k7 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   Anas5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
 end
@@ -864,7 +866,7 @@ function alg_cache(alg::FRK65,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBo
   k8 = zero(rate_prototype)
   k9 = zero(rate_prototype)
   utilde = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   tmp = zero(u)
   FRK65Cache(u, uprev, utilde, k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, atmp, tab)
 end
@@ -952,4 +954,129 @@ function alg_cache(alg::RKM,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBott
   tmp = zero(u)
   fsalfirst = zero(rate_prototype)
   RKMCache(u, uprev, k, k1, k2, k3, k4, k5, k6, tmp, fsalfirst, tab)
+end
+
+
+struct MSRK5ConstantCache{T,T1} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a43::T
+  a51::T
+  a53::T
+  a54::T
+  a61::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  a81::T
+  a83::T
+  a84::T
+  a85::T
+  a86::T
+  a87::T
+
+  b1::T # == a_{9i} ∀ i=1:8
+  b4::T
+  b5::T
+  b6::T
+  b7::T
+  b8::T
+
+  c2::T1
+  c3::T1
+  c4::T1
+  c5::T1
+  c6::T1
+  c7::T1
+  c8::T1
+
+end
+
+# Use rational numbers for testing. Define another function that defines the tab using floats.
+function MSRK5ConstantCache(T::Type, T1::Type)
+  a21 = T(4//45)
+  a31 = T(1//30)
+  a32 = T(1//10)
+  a41 = T(1//20)
+  a43 = T(3//20)
+  a51 = T(1//2)
+  a53 = T(-15//8)
+  a54 = T(15//8)
+  a61 = T(-11//135)
+  a63 = T(23//45)
+  a64 = T(-2//27)
+  a65 = T(8//45)
+  a71 = T(5//108)
+  a73 = T(35//72)
+  a74 = T(-59//216)
+  a75 = T(-25//27)
+  a76 = T(3//2)
+  a81 = T(31//128)
+  a83 = T(-7563//4480)
+  a84 = T(233//112)
+  a85 = T(3461//2240)
+  a86 = T(-765//448)
+  a87 = T(153//320)
+  b1 = T(29//456)
+  b4 = T(11//38)
+  b5 = T(2//27)
+  b6 = T(11//40)
+  b7 = T(4//19)
+  b8 = T(224//2565)
+  c2 = T1(4//45)
+  c3 = T1(2//15)
+  c4 = T1(1//5)
+  c5 = T1(1//2)
+  c6 = T1(8//15)
+  c7 = T1(5//6)
+  c8 = T1(19//20)
+
+  MSRK5ConstantCache(a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,b1,b4,b5,b6,b7,b8,c2,c3,c4,c5,c6,c7,c8)
+end
+
+@cache struct MSRK5Cache{uType, rateType, TabType} <: OrdinaryDiffEqCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  fsalfirst::uType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  k8::rateType
+  k9::rateType
+  k::rateType
+  tab::TabType
+end
+
+function alg_cache(alg::MSRK5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+  return MSRK5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+
+function alg_cache(alg::MSRK5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+  k7 = zero(rate_prototype)
+  k8 = zero(rate_prototype)
+  k9 = zero(rate_prototype)
+  k = zero(rate_prototype)
+  tmp = zero(u)
+  fsalfirst = zero(u)
+  tab = MSRK5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  MSRK5Cache(u,uprev,tmp,fsalfirst,k1,k2,k3,k4,k5,k6,k7,k8,k9,k,tab)
 end

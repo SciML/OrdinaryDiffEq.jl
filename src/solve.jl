@@ -464,7 +464,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
   end
 
   handle_dt!(integrator)
-
   integrator
 end
 
