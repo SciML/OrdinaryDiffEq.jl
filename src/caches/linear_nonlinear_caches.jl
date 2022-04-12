@@ -313,7 +313,7 @@ end
 # EPIRK method caches
 function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
   n = length(u_prototype); T = eltype(u_prototype)
-  u = similar(u_prototype)                      # stores the current state
+  u = zero(u_prototype)                         # stores the current state
   W = Matrix{T}(undef, n, p+1)                  # stores the w vectors
   P = Matrix{T}(undef, n, p+2)                  # stores output from phiv!
   Ks = KrylovSubspace{T}(n, maxiter)            # stores output from arnoldi!

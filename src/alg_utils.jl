@@ -31,6 +31,7 @@ isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
+
 isfsal(alg::RDPK3Sp35) = false
 isfsal(alg::RDPK3Sp49) = false
 isfsal(alg::RDPK3Sp510) = false
@@ -414,6 +415,7 @@ alg_order(alg::SSPRK104) = 4
 alg_order(alg::RK4) = 4
 alg_order(alg::RKM) = 4
 alg_order(alg::ExplicitRK) = alg.tableau.order
+alg_order(alg::MSRK5) = 5
 
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5

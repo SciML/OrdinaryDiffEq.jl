@@ -7,7 +7,8 @@ makedocs(
     doctest=false,
     modules=[OrdinaryDiffEq],
 
-    format=Documenter.HTML(assets=["assets/favicon.ico"],
+    format=Documenter.HTML(analytics = "UA-90474609-3",
+                           assets=["assets/favicon.ico"],
                            canonical="https://ordinarydiffeq.sciml.ai/stable/"),
 
     pages=[

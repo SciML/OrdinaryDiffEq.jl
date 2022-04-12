@@ -46,7 +46,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   end
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   KenCarp3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver,tab)
 end
@@ -93,7 +93,7 @@ function alg_cache(alg::CFNLIRK3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   k3 = zero(u); k4 = zero(u)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   CFNLIRK3Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver,tab)
 end
@@ -133,7 +133,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   fsalfirst = zero(rate_prototype)
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   Kvaerno4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,atmp,nlsolver,tab)
 end
@@ -192,7 +192,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)
   z₆ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   KenCarp4Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,atmp,nlsolver,tab)
 end
@@ -236,7 +236,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)
   z₆ = zero(u); z₇ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   Kvaerno5Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,atmp,nlsolver,tab)
 end
@@ -301,7 +301,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
 
   z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
   z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = nlsolver.z
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   KenCarp5Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
                 k1,k2,k3,k4,k5,k6,k7,k8,atmp,nlsolver,tab)
@@ -365,7 +365,7 @@ end
 
 z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
 z₅ = zero(u); z₆ = zero(u); z₇ = nlsolver.z
-atmp = similar(u,uEltypeNoUnits)
+atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
 KenCarp47Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,
 k1,k2,k3,k4,k5,k6,k7,atmp,nlsolver,tab)
@@ -431,7 +431,7 @@ end
 
 z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
 z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = nlsolver.z
-atmp = similar(u,uEltypeNoUnits)
+atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
 KenCarp58Cache(u,uprev,fsalfirst,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
 k1,k2,k3,k4,k5,k6,k7,k8,atmp,nlsolver,tab)
