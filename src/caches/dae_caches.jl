@@ -30,7 +30,7 @@ function alg_cache(alg::DImplicitEuler,du,u,res_prototype,rate_prototype,::Type{
   k₂ = zero(rate_prototype)
   nlsolver = build_nlsolver(alg,u,uprev,p,t,dt,f,res_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,γ,c,α,Val(true))
 
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   DImplicitEulerCache(u,uprev,uprev2,atmp,k₁,k₂,nlsolver)
 end
@@ -75,7 +75,7 @@ function alg_cache(alg::DABDF2,du,u,res_prototype,rate_prototype,::Type{uEltypeN
   fsalfirst = zero(rate_prototype)
 
   fsalfirstprev = zero(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
 
   k₁ = zero(rate_prototype)
   k₂ = zero(rate_prototype)
@@ -128,8 +128,8 @@ function alg_cache(alg::DFBDF{MO},du,u,res_prototype,rate_prototype,uEltypeNoUni
   order = 1
   prev_order = 1
   u_corrector = similar(u_history)
-  fill!(u_corrector,zero(eltype(u)))
-  fill!(u_history,zero(eltype(u_history)))
+  recursivefill!(u_corrector,zero(eltype(u)))
+  recursivefill!(u_history,zero(eltype(u_history)))
   terkm2 = tTypeNoUnits(1)
   terkm1= tTypeNoUnits(1)
   terk= tTypeNoUnits(1)
@@ -196,9 +196,9 @@ function alg_cache(alg::DFBDF{MO},du,u,res_prototype,rate_prototype,uEltypeNoUni
   order = 1
   prev_order = 1
   u_corrector = similar(u_history)
-  fill!(ts,zero(t))
-  fill!(u_corrector,zero(eltype(u)))
-  fill!(u_history,zero(eltype(u_history)))
+  recursivefill!(ts,zero(t))
+  recursivefill!(u_corrector,zero(eltype(u)))
+  recursivefill!(u_history,zero(eltype(u_history)))
   terkm2 = tTypeNoUnits(1)
   terkm1= tTypeNoUnits(1)
   terk= tTypeNoUnits(1)
@@ -207,14 +207,14 @@ function alg_cache(alg::DFBDF{MO},du,u,res_prototype,rate_prototype,uEltypeNoUni
   terkp1_tmp = similar(u)
   r = Vector{typeof(t)}(undef,max_order+2)
   weights = Vector{typeof(t)}(undef,max_order+2)
-  fill!(r,zero(t))
-  fill!(weights,zero(t))
+  recursivefill!(r,zero(t))
+  recursivefill!(weights,zero(t))
   weights[1] = 1
   nconsteps = 0
   consfailcnt = 0
   t_old = zero(t)
   atmp = similar(u, uEltypeNoUnits)
-  fill!(atmp,zero(uEltypeNoUnits))
+  recursivefill!(atmp,zero(uEltypeNoUnits))
   u₀ = similar(u)
   equi_ts = similar(ts)
   tmp = similar(u)

@@ -1529,7 +1529,7 @@ function alg_cache(alg::RDPK3Sp35,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   if eltype(u) === uEltypeNoUnits
     atmp = utilde # alias the vectors to save memory
   else
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   end
   tab = RDPK3Sp35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
@@ -1645,7 +1645,7 @@ function alg_cache(alg::RDPK3Sp49,u,rate_prototype,::Type{uEltypeNoUnits},::Type
   if eltype(u) === uEltypeNoUnits
     atmp = utilde # alias the vectors to save memory
   else
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   end
   tab = RDPK3Sp49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
@@ -1769,7 +1769,7 @@ function alg_cache(alg::RDPK3Sp510,u,rate_prototype,::Type{uEltypeNoUnits},::Typ
   if eltype(u) === uEltypeNoUnits
     atmp = utilde # alias the vectors to save memory
   else
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   end
   tab = RDPK3Sp510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
@@ -1889,7 +1889,7 @@ function alg_cache(alg::RDPK3SpFSAL35,u,rate_prototype,::Type{uEltypeNoUnits},::
   if eltype(u) === uEltypeNoUnits
     atmp = utilde # alias the vectors to save memory
   else
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   end
   tab = RDPK3SpFSAL35ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
@@ -2006,7 +2006,7 @@ function alg_cache(alg::RDPK3SpFSAL49,u,rate_prototype,::Type{uEltypeNoUnits},::
   if eltype(u) === uEltypeNoUnits
     atmp = utilde # alias the vectors to save memory
   else
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   end
   tab = RDPK3SpFSAL49ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
@@ -2131,7 +2131,7 @@ function alg_cache(alg::RDPK3SpFSAL510,u,rate_prototype,::Type{uEltypeNoUnits},:
   if eltype(u) === uEltypeNoUnits
     atmp = utilde # alias the vectors to save memory
   else
-    atmp = similar(u,uEltypeNoUnits)
+    atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   end
   tab = RDPK3SpFSAL510ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SpFSALCache(u,uprev,fsalfirst,k,utilde,tmp,atmp,tab,alg.stage_limiter!,alg.step_limiter!,alg.thread)
@@ -2195,7 +2195,7 @@ end
 function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   gprev    = zero(u)
   if calck
@@ -2246,7 +2246,7 @@ end
 function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   gprev    = zero(u)
   if calck
@@ -2313,7 +2313,7 @@ end
 function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   gprev    = zero(u)
   if calck
@@ -2380,7 +2380,7 @@ end
 function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   gprev    = zero(u)
   if calck
@@ -2447,7 +2447,7 @@ end
 function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   gprev    = zero(u)
   if calck
@@ -2531,7 +2531,7 @@ end
 function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -2591,7 +2591,7 @@ end
 function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -2651,7 +2651,7 @@ end
 function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -2726,7 +2726,7 @@ end
 function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -2801,7 +2801,7 @@ end
 function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -2876,7 +2876,7 @@ end
 function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -2971,7 +2971,7 @@ end
 function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -3039,7 +3039,7 @@ end
 function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -3113,7 +3113,7 @@ end
 function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -3199,7 +3199,7 @@ end
 function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
@@ -3319,7 +3319,7 @@ end
 function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
 
   tmp  = zero(u)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits); recursivefill!(atmp,false)
   k    = zero(rate_prototype)
   uᵢ₋₁ = zero(u)
   uᵢ₋₂ = zero(u)
