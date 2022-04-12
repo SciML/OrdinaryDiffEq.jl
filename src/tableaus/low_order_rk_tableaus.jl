@@ -1477,3 +1477,88 @@ function Anas5ConstantCache(T, T2)
     b6 = convert(T,-1//24)
     Anas5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6)
 end
+
+
+struct MSRK5ConstantCache{T,T1} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a43::T
+  a51::T
+  a53::T
+  a54::T
+  a61::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  a81::T
+  a83::T
+  a84::T
+  a85::T
+  a86::T
+  a87::T
+
+  b1::T # == a_{9i} ∀ i=1:8
+  b4::T
+  b5::T
+  b6::T
+  b7::T
+  b8::T
+
+  c2::T1
+  c3::T1
+  c4::T1
+  c5::T1
+  c6::T1
+  c7::T1
+  c8::T1
+
+end
+
+# Use rational numbers for testing. Define another function that defines the tab using floats.
+function MSRK5ConstantCache(T::Type, T1::Type)
+  a21 = T(4//45)
+  a31 = T(1//30)
+  a32 = T(1//10)
+  a41 = T(1//20)
+  a43 = T(3//20)
+  a51 = T(1//2)
+  a53 = T(-15//8)
+  a54 = T(15//8)
+  a61 = T(-11//135)
+  a63 = T(23//45)
+  a64 = T(-2//27)
+  a65 = T(8//45)
+  a71 = T(5//108)
+  a73 = T(35//72)
+  a74 = T(-59//216)
+  a75 = T(-25//27)
+  a76 = T(3//2)
+  a81 = T(31//128)
+  a83 = T(-7563//4480)
+  a84 = T(233//112)
+  a85 = T(3461//2240)
+  a86 = T(-765//448)
+  a87 = T(153//320)
+  b1 = T(29//456)
+  b4 = T(11//38)
+  b5 = T(2//27)
+  b6 = T(11//40)
+  b7 = T(4//19)
+  b8 = T(224//2565)
+  c2 = T1(4//45)
+  c3 = T1(2//15)
+  c4 = T1(1//5)
+  c5 = T1(1//2)
+  c6 = T1(8//15)
+  c7 = T1(5//6)
+  c8 = T1(19//20)
+
+  MSRK5ConstantCache(a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,b1,b4,b5,b6,b7,b8,c2,c3,c4,c5,c6,c7,c8)
+end

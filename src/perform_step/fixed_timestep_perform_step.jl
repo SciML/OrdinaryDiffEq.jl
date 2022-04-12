@@ -105,9 +105,9 @@ end
       a₁ = dt
       a₂ = dt / 2
   else # Ralston
-      a₁ = 3 * dt / 4
-      a₂ = dt / 3
-      a₃ = 2 * a₂
+      a₁ = 2 * dt / 3
+      a₂ = dt / 4
+      a₃ = 3 * a₂
   end
 
   tmp = @.. broadcast=false uprev + a₁ * fsalfirst
@@ -159,9 +159,9 @@ end
       a₁ = dt
       a₂ = dt / 2
   else # Ralston
-      a₁ = 3 * dt / 4
-      a₂ = dt / 3
-      a₃ = 2 * a₂
+    a₁ = 2 * dt / 3
+    a₂ = dt / 4
+    a₃ = 3 * a₂
   end
 
   @.. broadcast=false tmp = uprev + a₁ * fsalfirst
