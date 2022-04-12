@@ -28,7 +28,9 @@ for algname in (
 
     kwargs = (dt=dt,)
 
-    @test_warn "linsolve" solve(prob, alg0; kwargs...)
+    # expected error message
+    msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
+    @test_logs (:warn, msg) solve(prob, alg0; kwargs...)
     @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == :Success
     @test_broken DiffEqBase.__solve(prob, alg1; kwargs...).retcode == :Success
 
