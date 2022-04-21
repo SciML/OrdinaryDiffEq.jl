@@ -1763,11 +1763,48 @@ function Base.show(io::IO, alg::SSPRK432)
                    ", thread = ", alg.thread, ")")
 end
 
+"""
+    SSPRKMSVS43(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!)
+
+A third-order, four-step explicit strong stability preserving (SSP) linear multistep method.
+This method does not come with an error estimator and requires a fixed time step
+size.
+
+Like all SSP methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+## References
+- Shu, Chi-Wang.
+  "Total-variation-diminishing time discretizations."
+  SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
+  [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
+"""
 struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
 SSPRKMSVS43(stage_limiter! = trivial_limiter!) = SSPRKMSVS43(stage_limiter!, trivial_limiter!)
+
+"""
+    SSPRKMSVS32(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+                  step_limiter! = OrdinaryDiffEq.trivial_limiter!)
+
+A second-order, three-step explicit strong stability preserving (SSP) linear multistep method.
+This method does not come with an error estimator and requires a fixed time step
+size.
+
+Like all SSP methods, this method takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+## References
+- Shu, Chi-Wang.
+  "Total-variation-diminishing time discretizations."
+  SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
+  [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
+"""
 struct SSPRKMSVS32{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
