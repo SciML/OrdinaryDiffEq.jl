@@ -1159,11 +1159,11 @@ end
     k = f(u, p, t+dt)
     integrator.destats.nf += 2
     u = (uprev + u + dt*k) / 2
-      if cache.step == 1
-        u_2 = uprev
-      else
-        u_1 = uprev
-      end
+    if cache.step == 1
+      u_2 = uprev
+    else
+      u_1 = uprev
+    end
     if integrator.opts.adaptive
       v_n = dt/dts[2]*0.5
       cache.dtf[2] = dtf[1]
@@ -1176,7 +1176,6 @@ end
       cache.dts[2] = dt
       dt = 0.9*dtf[1]
       μ = min(dtf[1],dtf[2])
-
     end
   else
     if integrator.opts.adaptive
@@ -1276,21 +1275,21 @@ end
     u = uprev + dt*integrator.fsalfirst
     k = f(u, p, t+dt)
     u = (uprev + u + dt*k) / 2
-      if cache.step == 1
-        u_3 = uprev
-        cache.k3 = f(u_3,p,t+dt)
-        integrator.destats.nf += 1
-      end
-      if cache.step == 2
-        u_2 = uprev
-        cache.k2 = f(u_2,p,t+dt)
-        integrator.destats.nf += 1
-      end
-      if cache.step == 3
-        u_1 = uprev
-        cache.k1 = f(u_1,p,t+dt)
-        integrator.destats.nf += 1
-      end
+    if cache.step == 1
+      u_3 = uprev
+      cache.k3 = f(u_3,p,t+dt)
+      integrator.destats.nf += 1
+    end
+    if cache.step == 2
+      u_2 = uprev
+      cache.k2 = f(u_2,p,t+dt)
+      integrator.destats.nf += 1
+    end
+    if cache.step == 3
+      u_1 = uprev
+      cache.k1 = f(u_1,p,t+dt)
+      integrator.destats.nf += 1
+    end
   # u
   else
     u = (16/27)*(uprev + 3*dt*integrator.fsalfirst) + (11/27)*(u_3 + (12/11)*dt*k3)
