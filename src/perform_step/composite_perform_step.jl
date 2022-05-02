@@ -33,26 +33,48 @@ end
 
 =#
 
+function _initialize!(integrator, caches::Tuple{A,B}, current) where {A,B}
+  if current == 1
+    initialize!(integrator, @inbounds(caches[1]))
+  else
+    initialize!(integrator, @inbounds(caches[2]))
+  end
+end
+function _initialize!(integrator, caches::Tuple{A,B,C,Vararg}, current) where {A,B,C}
+  if current == 1
+    initialize!(integrator, @inbounds(caches[1]))
+  elseif current == 2
+    initialize!(integrator, @inbounds(caches[2]))
+  else
+    initialize!(integrator, @inbounds(caches[current]))
+  end
+end
+
 function initialize!(integrator, cache::CompositeCache)
   cache.current = cache.choice_function(integrator)
-  if cache.current == 1
-    initialize!(integrator, @inbounds(cache.caches[1]))
-  elseif cache.current == 2
-    initialize!(integrator, @inbounds(cache.caches[2]))
-  else
-    initialize!(integrator, @inbounds(cache.caches[cache.current]))
-  end
+  _initialize!(integrator, cache.caches, cache.current)
   resize!(integrator.k, integrator.kshortsize)
 end
 
-function perform_step!(integrator, cache::CompositeCache, repeat_step=false)
-  if cache.current == 1
-    perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
-  elseif cache.current == 2
-    perform_step!(integrator, @inbounds(cache.caches[2]), repeat_step)
+function _perform_step!(integrator, caches::Tuple{A,B}, current, repeat_step) where {A,B}
+  if current == 1
+    perform_step!(integrator, @inbounds(caches[1]), repeat_step)
   else
-    perform_step!(integrator, @inbounds(cache.caches[cache.current]), repeat_step)
+    perform_step!(integrator, @inbounds(caches[2]), repeat_step)
   end
+end
+function _perform_step!(integrator, caches::Tuple{A,B,C,Vararg}, current, repeat_step) where {A,B,C}
+  if current == 1
+    perform_step!(integrator, @inbounds(caches[1]), repeat_step)
+  elseif current == 2
+    perform_step!(integrator, @inbounds(caches[2]), repeat_step)
+  else
+    perform_step!(integrator, @inbounds(caches[current]), repeat_step)
+  end
+end
+
+function perform_step!(integrator, cache::CompositeCache, repeat_step=false)
+  _perform_step!(integrator, cache.caches, cache.current, repeat_step)
 end
 
 choose_algorithm!(integrator,cache::OrdinaryDiffEqCache) = nothing
