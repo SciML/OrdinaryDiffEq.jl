@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "5.71.0"
+version = "5.71.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -42,7 +42,7 @@ LoopVectorization = "0.12"
 MacroTools = "0.5"
 MuladdMacro = "0.2.1"
 NLsolve = "4.3"
-Polyester = "0.3, 0.4, 0.5"
+Polyester = "0.3, 0.4, 0.5, 0.6"
 PreallocationTools = "0.2"
 RecursiveArrayTools = "2"
 Reexport = "0.2, 1.0"
