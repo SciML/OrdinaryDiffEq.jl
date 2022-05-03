@@ -8,6 +8,7 @@ steps:
     agents:
       queue: "juliagpu"
       cuda: "*"
+      arch: "amd64"
     env:
       GROUP: 'GPU'
       JULIA_PKG_SERVER: "" # it often struggles with our large artifacts
@@ -26,6 +27,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Regression_I'
     timeout_in_minutes: 240
@@ -42,6 +44,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Regression_I'
     timeout_in_minutes: 240
@@ -58,6 +61,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Regression_II'
     timeout_in_minutes: 240
@@ -74,6 +78,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Regression_II'
     timeout_in_minutes: 240
@@ -90,6 +95,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Multithreading'
     timeout_in_minutes: 240
@@ -106,6 +112,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Multithreading'
     timeout_in_minutes: 240
@@ -122,6 +129,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Integrators_II'
     timeout_in_minutes: 240
@@ -138,6 +146,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'Integrators_II'
     timeout_in_minutes: 240
@@ -154,6 +163,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'InterfaceIV'
     timeout_in_minutes: 240
@@ -170,6 +180,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'InterfaceIV'
     timeout_in_minutes: 240
@@ -186,6 +197,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'InterfaceV'
     timeout_in_minutes: 240
@@ -202,6 +214,7 @@ steps:
     agents:
       os: "linux"
       queue: "juliaecosystem"
+      arch: "amd64"
     env:
       GROUP: 'InterfaceV'
     timeout_in_minutes: 240
