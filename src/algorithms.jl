@@ -3854,11 +3854,12 @@ RosenbrockW6S4OS(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),
 
 ######################################
 
-for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
+for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4, :ETD2RK4]
 
   """
   Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
     Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
+  ETD2RK4 from Krogstad, 2005
   """
   @eval struct $Alg{FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ}
     krylov::Bool

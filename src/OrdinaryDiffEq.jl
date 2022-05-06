@@ -261,7 +261,7 @@ using DocStringExtensions
          RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3
 
   export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A, EPIRK4s3B,
-         EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43
+         EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43, ETD2RK4
 
   export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
          McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
