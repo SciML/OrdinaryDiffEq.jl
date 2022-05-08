@@ -58,6 +58,12 @@ function expRK_operators(::HochOst4, dt, A)
   B5 = 4P[3] - 8P[4]
   return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
+function expRK_operators(::ETD2RK4, dt, A)
+  P = phi(dt * A, 2)
+  Phalf = phi(dt/2 * A, 2)
+
+  return P,Phalf
+end
 
 # Unified constructor for constant caches
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),

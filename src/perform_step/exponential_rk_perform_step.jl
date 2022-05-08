@@ -658,15 +658,13 @@ function perform_step!(integrator, cache::ETD2RK4ConstantCache, repeat_step=fals
   halfdt = dt/2
 
   if integrator.iter == 1
-    print("Using Krogstad's ETD2RK4 algorithm!\n")
     # Initialize the first step using Euler method (not sure of a better way to do it)
     u = uprev .+ dt.*f(uprev,p,t)
   else
     if alg.krylov
       kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
-      # Krylov on F1 (first column)
-      Nn = _compute_nl(f,uprev,p,t,A) # uprev??
-      Nnprev = _compute_nl(f,uprev2,p,t,A) # uprev2??
+      Nn = _compute_nl(f,uprev,p,t,A)
+      Nnprev = _compute_nl(f,uprev2,p,t,A)
       PhiFbar = phiv_timestep([halfdt,dt],A,[uprev Nn (Nn.-Nnprev)./dt])
       Na = _compute_nl(f,PhiFbar[:,1],p,t+halfdt,A)
       c = PhiFbar[:,1] .+ (halfdt).*(Na .- (3/2).*Nn .+ (1/2).*Nnprev)
@@ -686,23 +684,24 @@ function perform_step!(integrator, cache::ETD2RK4ConstantCache, repeat_step=fals
 
     else
 
-      #The non-krylov part not implemented yet
-      error("non-krylov not yet implemented for ETD2RK4")
+      P, Phalf = cache.ops
 
-      A21, A41, A43, B1, B2, B4 = cache.ops
-      # stage 1 (fsaled)
-      # stage 2
-      U2 = uprev + dt * (A21 * F1)
-      F2 = f.f2(U2, p, t + halfdt) + Au
-      # stage 3
-      U3 = uprev + dt * (A21 * F2) # A32 = A21
-      F3 = f.f2(U3, p, t + halfdt) + Au
-      # stage 4
-      U4 = uprev + dt * (A41 * F1 + A43 * F3)
-      F4 = f.f2(U4, p, t + dt) + Au
+      Nn = _compute_nl(f,uprev,p,t,A)
+      Nnprev = _compute_nl(f,uprev2,p,t,A)
+      a = (Phalf[1]*uprev) .+ (halfdt .* Phalf[2] * Nn) .+ (halfdt/2 .* Phalf[3] * (Nn .- Nnprev))
+      b = (P[1]*uprev) .+ (dt .* P[2] * Nn) .+ (dt .* P[3] * (Nn .- Nnprev))
+      Na = _compute_nl(f,a,p,t+halfdt,A)
+      c = a .+ (halfdt).*(Na .- (3/2).*Nn .+ (1/2).*Nnprev)
+      Nc = _compute_nl(f,c,p,t+halfdt,A)
+      d = b .+ dt .* Phalf[1] * (Nc .- (3/2).*Nn .+ (1/2).*Nnprev)
+      Nd = _compute_nl(f,d,p,t+dt,A)
+
       integrator.destats.nf2 += 3
+
       # update u
-      u = uprev + dt * (B1 * F1 + B2 * (F2 + F3) + B4 * F4) # B3 = B2
+
+      u = b .+ (dt/3) .* Phalf[1] * (Na .+ Nc .- 3 .*Nn .+ Nnprev) .+ (dt/6).*(Nd .- 2 .*Nn .+ Nnprev)
+
     end
   end
   # Update integrator state
@@ -712,8 +711,6 @@ function perform_step!(integrator, cache::ETD2RK4ConstantCache, repeat_step=fals
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
-
-
 
 
 #############################################
