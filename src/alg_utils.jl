@@ -51,6 +51,8 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
+isfsal(alg::ETD2RK4) = false
+
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])::Bool
 all_fsal(alg, cache) = isfsal(alg)
@@ -301,6 +303,7 @@ alg_order(alg::CayleyEuler) = 2
 alg_order(alg::ETDRK2) = 2
 alg_order(alg::ETDRK3) = 3
 alg_order(alg::ETDRK4) = 4
+alg_order(alg::ETD2RK4) = 4
 alg_order(alg::HochOst4) = 4
 alg_order(alg::Exp4) = 4
 alg_order(alg::EPIRK4s3A) = 4
