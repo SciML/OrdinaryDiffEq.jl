@@ -60,7 +60,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     if mass_matrix === I
       tmp .= k₁
     else
-      mul!(tmp,mass_matrix,k₁)
+      mul!(_vec(tmp),mass_matrix,_vec(k₁))
     end
 
     @.. broadcast=false linsolve_tmp = f₁ - tmp
@@ -82,9 +82,10 @@ end
 
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache{<:Array},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
-    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,weight = cache
+    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,weight = cache
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
+    tmp = du1 # avoid aliasing tmp and linsolve_tmp because of ivdep linsolve_tmp[i] = f₁[i] - tmp[i]
 
     # Assignments
     sizeu  = size(u)
@@ -229,7 +230,6 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     sizeu  = size(u)
     uidx = eachindex(uprev)
     mass_matrix = f.mass_matrix
-    atmp = du # does not work with units - additional unitless array required!
 
     # Precalculations
     dtC21 = C21/dt
@@ -348,7 +348,6 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache{<:Array},alw
     sizeu  = size(u)
     uidx = eachindex(uprev)
     mass_matrix = f.mass_matrix
-    atmp = du # does not work with units - additional unitless array required!
 
     # Precalculations
     dtC21 = C21/dt
@@ -622,7 +621,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     sizeu  = size(u)
     uidx = eachindex(uprev)
     mass_matrix = f.mass_matrix
-    atmp = du # does not work with units - additional unitless array required!
+    tmp = k8 # integrator.tmp === linsolve_tmp, aliasing fails due to linsolve mutation
 
     # Precalculations
     dtC21 = C21/dt
@@ -661,7 +660,6 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache,always_
     dtd5 = dt*d5
     dtgamma = dt*gamma
 
-    f( fsalfirst,  uprev, p, t)
     @.. broadcast=false linsolve_tmp = @muladd fsalfirst + dtgamma*dT
 
     ### Jacobian does not need to be re-evaluated after an event
@@ -798,14 +796,14 @@ end
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache{<:Array},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
 
-    @unpack du,du1,du2,tmp,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,fsalfirst = cache
+    @unpack du,du1,du2,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,fsalfirst = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
     # Assignments
     sizeu  = size(u)
     uidx = eachindex(uprev)
     mass_matrix = f.mass_matrix
-    atmp = du # does not work with units - additional unitless array required!
+    tmp = k8 # integrator.tmp === linsolve_tmp, aliasing fails due to linsolve mutation
 
     # Precalculations
     dtC21 = C21/dt
@@ -844,8 +842,6 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rosenbrock5Cache{<:Array
     dtd5 = dt*d5
     dtgamma = dt*gamma
 
-#!!!!!
-    f( fsalfirst,  uprev, p, t)
     @inbounds @simd ivdep for i in eachindex(u)
       linsolve_tmp[i] = @muladd fsalfirst[i] + dtgamma*dT[i]
     end

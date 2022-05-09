@@ -26,6 +26,11 @@ DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
                                           _change_t_via_interpolation!(integrator,t,modify_save_endpoint)
 
 function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator)
+
+  if integrator.isdae
+    DiffEqBase.initialize_dae!(integrator)
+  end
+
   if integrator.opts.calck
     resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
     alg = unwrap_alg(integrator, false)
@@ -35,10 +40,6 @@ function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegra
     else
       DiffEqBase.addsteps!(integrator,integrator.f,true,false)
     end
-  end
-
-  if integrator.isdae
-    DiffEqBase.initialize_dae!(integrator)
   end
 
   integrator.u_modified = false
