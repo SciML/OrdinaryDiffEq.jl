@@ -316,32 +316,6 @@ function alg_cache(alg::HochOst4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{
   HochOst4Cache(u,uprev,tmp,dz,rtmp,rtmp2,Au,F2,F3,F4,F5,du1,jac_config,uf,J,ops,KsCache)
 end
 
-@cache struct ETD2RK4Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
-  u::uType
-  uprev::uType
-  tmp::uType
-  dz::uType
-  rtmp::rateType
-  Au::rateType
-  F2::rateType
-  F3::rateType
-  F4::rateType
-  du1::rateType
-  jac_config::JCType
-  uf::FType
-  J::JType
-  ops::opType
-  KsCache::KsType
-end
-
-function alg_cache(alg::ETDRK4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  tmp, dz = (zero(u) for i = 1:2)                             # uType caches
-  rtmp, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i = 1:6) # rateType caches
-  plist = (1,1,3,3,3,3)
-  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
-  ETDRK4Cache(u,uprev,tmp,dz,rtmp,Au,F2,F3,F4,du1,jac_config,uf,J,ops,KsCache)
-end
-
 
 ####################################
 # EPIRK method caches

@@ -658,8 +658,29 @@ function perform_step!(integrator, cache::ETD2RK4ConstantCache, repeat_step=fals
   halfdt = dt/2
 
   if integrator.iter == 1
-    # Initialize the first step using Euler method (not sure of a better way to do it)
-    u = uprev .+ dt.*f(uprev,p,t)
+    # Initialize the first step using Dorm-Prince-5 (also 4th-order)
+    aij = [
+        0 0 0 0 0 0 0;
+        1/5 0 0 0 0 0 0;
+        3/40 9/40 0 0 0 0 0;
+        44/45 −56/15 32/9 0 0 0 0;
+        19372/6561 −25360/2187 64448/6561 −212/729 0 0 0;
+        9017/3168 −355/33 46732/5247 49/176 −5103/18656 0 0;
+        35/384 0 500/1113 125/192 −2187/6784 11/84 0;
+    ]
+    k = zeros(length(uprev),7)
+    u_temp = similar(uprev)
+
+    k[:,1] = f(uprev,p,t)
+
+    for j = 2:7
+          u_temp = uprev .+ dt.*(k*aij[j,:])
+          #kview = @view k[:,j]
+          k[:,j] = f(u_temp,p,t)
+    end
+
+    u = u_temp
+
   else
     if alg.krylov
       kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
