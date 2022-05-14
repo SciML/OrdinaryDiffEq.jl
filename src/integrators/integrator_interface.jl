@@ -262,7 +262,8 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   d_discontinuities = integrator.opts.d_discontinuities_cache,
   reset_dt = (integrator.dtcache == zero(integrator.dt)) && integrator.opts.adaptive,
   reinit_callbacks = true, initialize_save = true,
-  reinit_cache = true)
+  reinit_cache = true,
+  reinit_retcode = true)
 
   if isinplace(integrator.sol.prob)
     recursivecopy!(integrator.u,u0)
@@ -340,6 +341,10 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
 
   if reinit_cache
     initialize!(integrator,integrator.cache)
+  end
+
+  if reinit_retcode
+    integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, :Default)
   end
 end
 
