@@ -20,13 +20,11 @@ zmin_cond(x,t,integrator) =  x[1]-zmin
 zmax_cond(x,t,integrator) =  zmax-x[1]
 
 function zmin_affect_neg!(integrator)
-    @show "trigger2",integrator.t
     integrator.u[1] = zmin
     integrator.u[2] = 0.0
 end
 
 function zmax_affect_neg!(integrator)
-    @show "trigger",integrator.t
     integrator.u[1] = zmax
     integrator.u[2] = 0.0
 end
