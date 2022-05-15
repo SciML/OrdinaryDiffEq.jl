@@ -19,14 +19,9 @@ end
 
 ArrayFuse(visible::AT, hidden::AT, p) where {AT} = ArrayFuse{AT, eltype(visible), typeof(p)}(visible, hidden, p)
 
-@inline function Base.copyto!(af::OrdinaryDiffEq.ArrayFuse{AT, T, P}, src::Base.Broadcast.Broadcasted) where {AT, T, P}
-	@. af.visible = af.p[1] * af.visible + af.p[2] * src
-	@. af.hidden = af.hidden + af.p[3] * af.visible
-end
-
-@inline function Base.copyto!(af::OrdinaryDiffEq.ArrayFuse{AT, T, P}, src::Base.Broadcast.Broadcasted{F1, Axes, F, Args}) where {AT, T, P, F1<:Base.Broadcast.AbstractArrayStyle{0}, Axes, F, Args<:Tuple}
-	@. af.visible = af.p[1] * af.visible + af.p[2] * src
-	@. af.hidden = af.hidden + af.p[3] * af.visible
+@inline function Base.materialize!(af::ArrayFuse, src::Broadcast.Broadcasted)
+    @. af.visible = af.p[1] * af.visible + af.p[2] * src
+    @. af.hidden = af.hidden + af.p[3] * af.visible
 end
 
 # not recommended but good to have
