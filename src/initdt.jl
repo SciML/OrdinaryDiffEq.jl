@@ -118,7 +118,7 @@
   # because it also checks if partials are NaN
   # https://discourse.julialang.org/t/incorporating-forcing-functions-in-the-ode-model/70133/26
   if integrator.opts.verbose && isnan(d₁)
-    @warn("First function call produced NaNs. Exiting.")
+    @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
     return tdir*dtmin
   end
 
@@ -199,8 +199,8 @@ end
   d₀ = internalnorm(u0 ./ sk,t)
 
   f₀ = f(u0,p,t)
-  if integrator.opts.verbose && any(x->any(isnan, x), f₀)
-    @warn("First function call produced NaNs. Exiting.")
+  if integrator.opts.verbose && any(x -> any(isnan, x), f₀)
+    @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
