@@ -506,7 +506,7 @@ function handle_dt!(integrator)
     end
     if isnan(integrator.dt)
       if integrator.opts.verbose
-        @warn("Automatic dt set the starting dt as NaN, causing instability.")
+        @warn("Automatic dt set the starting dt as NaN, causing instability. Exiting.")
       end
     end
   elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) && integrator.tdir < 0
