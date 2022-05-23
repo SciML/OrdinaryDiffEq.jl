@@ -78,6 +78,8 @@ using DocStringExtensions
 
   struct OrdinaryDiffEqTag end
 
+  import ArrayInterfaceStaticArrays, ArrayInterfaceGPUArrays
+
   DEFAULT_PRECS(W,du,u,p,t,newW,Plprev,Prprev,solverdata) = nothing,nothing
 
   include("misc_utils.jl")
