@@ -1,4 +1,4 @@
-isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
+isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm,FunctionMap}) = true
 
 DiffEqBase.isdiscrete(alg::FunctionMap) = true
 
