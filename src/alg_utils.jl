@@ -1,6 +1,13 @@
-isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm,FunctionMap}) = true
+## SciMLBase Trait Definitions
 
-DiffEqBase.isdiscrete(alg::FunctionMap) = true
+SciMLBase.isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm,FunctionMap}) = true
+SciMLBase.allows_arbitrary_number_types(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm,FunctionMap}) = true
+SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm,FunctionMap}) = true
+SciMLBase.isdiscrete(alg::FunctionMap) = true
+
+# isadaptive is defined below.
+
+## OrdinaryDiffEq Internal Traits
 
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
