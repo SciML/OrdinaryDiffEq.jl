@@ -47,7 +47,9 @@ using DocStringExtensions
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
                      resize_non_user_cache!,deleteat_non_user_cache!,addat_non_user_cache!,
                      terminate!,get_du, get_dt,get_proposed_dt,set_proposed_dt!,
-                     u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
+                     u_modified!,savevalues!,
+                     add_tstop!,has_tstop,first_tstop,pop_tstop!,
+                     add_saveat!,set_reltol!,
                      set_abstol!, postamble!, last_step_failed,
                      isautodifferentiable
 

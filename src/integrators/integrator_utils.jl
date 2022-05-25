@@ -413,11 +413,6 @@ end
 
 (integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},::Type{deriv}=Val{0};idxs=nothing) where {deriv} = current_interpolant!(val,t,integrator,idxs,deriv)
 
-# Interface used by DelayDiffEq
-has_tstop(integrator) = !isempty(integrator.opts.tstops)
-first_tstop(integrator) = first(integrator.opts.tstops)
-pop_tstop!(integrator) = pop!(integrator.opts.tstops)
-
 has_discontinuity(integrator) = !isempty(integrator.opts.d_discontinuities)
 first_discontinuity(integrator) = first(integrator.opts.d_discontinuities)
 pop_discontinuity!(integrator) = pop!(integrator.opts.d_discontinuities)

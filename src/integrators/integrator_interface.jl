@@ -111,10 +111,14 @@ end
 full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
 full_cache(integrator::CompositeCache) = Iterators.flatten(full_cache(c) for c in integrator.caches)
 
-function add_tstop!(integrator::ODEIntegrator,t)
+function DiffEqBase.add_tstop!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < zero(integrator.t) && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
   push!(integrator.opts.tstops, integrator.tdir * t)
 end
+
+DiffEqBase.has_tstop(integrator::ODEIntegrator) = !isempty(integrator.opts.tstops)
+DiffEqBase.first_tstop(integrator::ODEIntegrator) = first(integrator.opts.tstops)
+DiffEqBase.pop_tstop!(integrator::ODEIntegrator) = pop!(integrator.opts.tstops)
 
 function DiffEqBase.add_saveat!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < zero(integrator.t) && error("Tried to add a saveat that is behind the current time. This is strictly forbidden")
