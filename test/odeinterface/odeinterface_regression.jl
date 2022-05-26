@@ -74,7 +74,7 @@ sol2 =solve(probnum,dop853())
 @test sol1.t ≈ sol2.t
 
 # Should be identical
-sol1 =solve(probbig,DP8(),dt=1/2^6)
-sol2 =solve(probbig,dop853(),dt=1/2^6)
+sol1 =solve(prob,DP8(),dt=1/2^6)
+sol2 =solve(prob,dop853(),dt=1/2^6)
 
 @test sol1.t ≈ sol2.t
