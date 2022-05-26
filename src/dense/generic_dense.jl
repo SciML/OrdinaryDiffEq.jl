@@ -35,25 +35,27 @@ end
 end
 
 @inline function _ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
-  if !(typeof(integrator.cache) <: CompositeCache)
+  cache = integrator.cache
+  if !(typeof(cache) <: CompositeCache)
     DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
-                  integrator.dt,f,integrator.p,integrator.cache,
+                  integrator.dt,f,integrator.p,cache,
                   always_calc_begin,allow_calc_end,force_calc_end)
   else
-    if integrator.cache.current == 1
+    cache_current = cache.current
+    if cache_current == 1
       DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                     integrator.dt,f,integrator.p,
-                    @inbounds(integrator.cache.caches[1]),
+                    @inbounds(cache.caches[1]),
                     always_calc_begin,allow_calc_end,force_calc_end)
-    elseif integrator.cache.current == 2
+    elseif cache_current == 2
       DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                     integrator.dt,f,integrator.p,
-                    @inbounds(integrator.cache.caches[2]),
+                    @inbounds(cache.caches[2]),
                     always_calc_begin,allow_calc_end,force_calc_end)
     else
       DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                     integrator.dt,f,integrator.p,
-                    @inbounds(integrator.cache.caches[integrator.cache.current]),
+                    @inbounds(cache.caches[cache_current]),
                     always_calc_begin,allow_calc_end,force_calc_end)
     end
   end
