@@ -299,8 +299,8 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit,
     _tmp, _du_tmp = tmp, similar(tmp)
   end
   nlequation = @closure (out, x) -> begin
-    uu = isad ? DiffEqBase.get_tmp(_tmp, x) : _tmp
-    du_tmp = isad ? DiffEqBase.get_tmp(_du_tmp, x) : _du_tmp
+    uu = isad ? PreallocationTools.get_tmp(_tmp, x) : _tmp
+    du_tmp = isad ? PreallocationTools.get_tmp(_du_tmp, x) : _du_tmp
     copyto!(uu, integrator.u)
     alg_uu = @view uu[algebraic_vars]
     alg_uu .= x
