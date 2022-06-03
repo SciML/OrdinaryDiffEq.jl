@@ -78,8 +78,8 @@ is_autodiff(m::DAEResidualJacobianWrapper{AD}) where AD = AD
 
 function (m::DAEResidualJacobianWrapper)(out,x)
   if is_autodiff(m)
-    tmp_du = DiffEqBase.get_tmp(m.tmp_du, x)
-    tmp_u = DiffEqBase.get_tmp(m.tmp_u, x)
+    tmp_du = PreallocationTools.get_tmp(m.tmp_du, x)
+    tmp_u = PreallocationTools.get_tmp(m.tmp_u, x)
   else
     tmp_du = m.tmp_du
     tmp_u = m.tmp_u
