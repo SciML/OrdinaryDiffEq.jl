@@ -37,9 +37,6 @@ function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
       f(u,uprev,p,t+dt)
     end
     integrator.destats.nf += 1
-    if typeof(u) <: DEDataArray # Needs to get the fields, since updated uprev
-      DiffEqBase.copy_fields!(u,uprev)
-    end
   end
 end
 
