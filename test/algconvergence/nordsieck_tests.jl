@@ -22,7 +22,7 @@ probArr = [prob_ode_linear,
     prob = probArr[i]
     sol = solve(prob, AN5(), reltol=1e-6)
     @test length(sol.t) < 11
-    exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
+    exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
     @test exact ≈ sol[end] atol=1e-5
   end
 end
@@ -32,7 +32,7 @@ end
     prob = probArr[i]
     sol = solve(prob, sol, reltol=1e-4, abstol=1e-7)
     @test length(sol.t) < 22
-    exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
+    exact = prob.f.analytic(prob.u0, prob.p, prob.tspan[end])
     @test norm(exact - sol[end], Inf) < 3e-3
   end
 end
