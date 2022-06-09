@@ -55,7 +55,7 @@ using DocStringExtensions
 
   using DiffEqBase: check_error!, @def, _vec, _reshape
 
-  using DiffEqBase: @.., True, False
+  using FastBroadcast: @.., True, False
 
   using SciMLBase: NoInit
 
