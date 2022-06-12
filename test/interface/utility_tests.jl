@@ -51,6 +51,7 @@ end
     u0 = [1.0, 1.0]
     tspan = (0.0, 1.0)
 
+<<<<<<< HEAD
     _f = (u, p, t) -> t * (A * u)
     _f_ip = (du, u, p, t) -> lmul!(t, mul!(du, A, u))
     fun1 = ODEFunction(_f; mass_matrix = mm)
@@ -58,6 +59,14 @@ end
     fun1_ip = ODEFunction(_f_ip; mass_matrix = mm)
     jac_prototype = MatrixOperator(similar(A); update_func = (J, u, p, t) -> (J .= t .* A; J))
     fun2_ip = ODEFunction(_f_ip; mass_matrix = mm, jac_prototype = jac_prototype)
+=======
+  _f = (u,p,t) -> t*(A*u); _f_ip = (du,u,p,t) -> lmul!(t,mul!(du,A,u))
+  fun1 = ODEFunction(_f; mass_matrix=mm)
+  fun2 = ODEFunction(_f; mass_matrix=mm, jac=(u,p,t) -> t*A)
+  fun1_ip = ODEFunction(_f_ip; mass_matrix=mm)
+  fun2_ip = ODEFunction(_f_ip; mass_matrix=mm,
+  jac_prototype=MatrixOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
+>>>>>>> e44131ce (Change to SciMLOperators)
 
     for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
         println(Alg)

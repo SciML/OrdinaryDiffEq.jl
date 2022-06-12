@@ -168,10 +168,17 @@ end
         b = _vec(ztmp)
     end
 
+<<<<<<< HEAD
     # update W
     if W isa AbstractSciMLOperator
         update_coefficients!(W, ustep, p, tstep)
     end
+=======
+  # update W
+  if W isa DiffEqBase.AbstractSciMLLinearOperator
+    update_coefficients!(W, ustep, p, tstep)
+  end
+>>>>>>> e44131ce (Change to SciMLOperators)
 
     if integrator.opts.adaptive
         reltol = integrator.opts.reltol
@@ -341,7 +348,84 @@ end
         ztmp[i] = z[i] - dz[i]
     end
 
+<<<<<<< HEAD
     ndz
+=======
+        @inbounds @simd ivdep for i in eachindex(z)
+          ztmp[i] = tmp[i] + k[i] - (α * invγdt) * ztmp[i]
+        end
+      end
+    else
+
+      @inbounds @simd ivdep for i in eachindex(z)
+        ustep[i] = tmp[i] + γ * z[i]
+      end
+      f(k, ustep, p, tstep)
+      if mass_matrix === I
+        @inbounds @simd ivdep for i in eachindex(z)
+          ztmp[i] = (dt * k[i] - z[i]) * invγdt
+        end
+      else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
+        @inbounds @simd ivdep for i in eachindex(z)
+          ztmp[i] = (dt * k[i] - ztmp[i]) * invγdt
+        end
+      end
+    end
+    b = _vec(ztmp)
+  end
+
+  # update W
+  if W isa DiffEqBase.AbstractSciMLLinearOperator
+    update_coefficients!(W, ustep, p, tstep)
+  end
+
+  if integrator.opts.adaptive
+    reltol = integrator.opts.reltol
+  else
+    reltol = eps(eltype(dz))
+  end
+
+  if iter == 1 && new_W
+    linres = dolinsolve(integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz), reltol = reltol)
+  else
+    linres = dolinsolve(integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz), reltol = reltol)
+  end
+
+  cache.linsolve = linres.cache
+
+  if DiffEqBase.has_destats(integrator)
+    integrator.destats.nsolve += 1
+  end
+
+  # relaxed Newton
+  # Diagonally Implicit Runge-Kutta Methods for Ordinary Differential
+  # Equations. A Review, by Christopher A. Kennedy and Mark H. Carpenter
+  # page 54.
+  if isdae
+    γdt = α * invγdt
+  else
+    γdt = γ * dt
+  end
+
+  !(W_γdt ≈ γdt) && (rmul!(dz, 2/(1 + γdt / W_γdt)))
+
+  calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
+  ndz = opts.internalnorm(atmp, t)
+  # NDF and BDF are special because the truncation error is directly
+  # propertional to the total displacement.
+  if integrator.alg isa QNDF
+    ndz *= error_constant(integrator, alg_order(integrator.alg))
+  end
+
+  # compute next iterate
+  @inbounds @simd ivdep for i in eachindex(z)
+    ztmp[i] = z[i] - dz[i]
+  end
+
+  ndz
+>>>>>>> e44131ce (Change to SciMLOperators)
 end
 
 ## resize!
