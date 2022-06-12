@@ -1,9 +1,9 @@
 using OrdinaryDiffEq, Test, DiffEqDevTools
 using LinearAlgebra, Random
-
+using SciMLOperators
 
 # Linear exponential solvers
-A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
+A = MatrixOperator([2.0 -1.0; -1.0 2.0])
 u0 = ones(2)
 prob = ODEProblem(A,u0,(0.0,1.0))
 solve(prob, LinearExponential(krylov=:off))
@@ -26,7 +26,7 @@ function update_func(A,u,p,t)
     A[1,2] = -1
     A[2,2] = 0
 end
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (10, 50.))
 sol1  = solve(prob,OrdinaryDiffEq.Vern9(),dt=1/4)
 sol2  = solve(prob,OrdinaryDiffEq.RKMK2(),dt=1/4)
@@ -35,7 +35,7 @@ test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,RKMK2(),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0, 30.))
 sol1  = solve(prob,OrdinaryDiffEq.Vern9(),dt=1/4)
 sol2  = solve(prob,OrdinaryDiffEq.RKMK4(),dt=1/4)
@@ -44,7 +44,7 @@ test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,RKMK4(),test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol=0.22
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0, 30.))
 sol1  = solve(prob,OrdinaryDiffEq.Vern9(),dt=1/4)
 sol2  = solve(prob,OrdinaryDiffEq.LieRK4(),dt=1/4)
@@ -53,7 +53,7 @@ test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,LieRK4(),test_setup)
 @test sim.𝒪est[:l2] ≈ 5 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0, 30.))
 sol1  = solve(prob,OrdinaryDiffEq.Vern9(),dt=1/4)
 sol2  = solve(prob,OrdinaryDiffEq.CG2(),dt=1/4)
@@ -62,7 +62,7 @@ test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
 sim = analyticless_test_convergence(dts,prob,CG2(),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0, 20.))
 sol1  = solve(prob,OrdinaryDiffEq.Vern6(),dt=1/8)
 sol2  = solve(prob,OrdinaryDiffEq.CG3(),dt=1/8)
@@ -77,7 +77,7 @@ function update_func(A,u,p,t)
     A[1,2] = -2*(1 - cos(u[2]) - u[2]*sin(u[2]))
     A[2,2] = 0
 end
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (30, 150.))
 dts = 1 ./2 .^(7:-1:1)
 test_setup = Dict(:alg=>Tsit5(),:reltol=>1e-14,:abstol=>1e-14)
@@ -90,7 +90,7 @@ function update_func(A,u,p,t)
     A[1,2] = -sin(t)
     A[2,2] = cos(t)
 end
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0.0, 5.))
 dts = 1 ./2 .^(10:-1:1)
 sol  = solve(prob,OrdinaryDiffEq.MagnusMidpoint(),dt=1/4)
@@ -102,7 +102,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusMidpoint(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusMidpoint(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0.0, 5.))
 dts = 1 ./2 .^(10:-1:1)
 sol  = solve(prob,OrdinaryDiffEq.MagnusLeapfrog(),dt=1/4)
@@ -114,7 +114,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusLeapfrog(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusLeapfrog(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 2 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0.5, 5.))
 dts = 1 ./2 .^(10:-1:1)
 sol  = solve(prob,OrdinaryDiffEq.LieEuler(),dt=1/4)
@@ -126,7 +126,7 @@ sim = analyticless_test_convergence(dts,prob,LieEuler(),test_setup)
 sim = analyticless_test_convergence(dts,prob,LieEuler(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 1 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (1.0, 6.))
 dts = 1 ./2 .^(10:-1:1)
 sol  = solve(prob,MagnusGauss4(),dt=1/4)
@@ -138,7 +138,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusGauss4(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusGauss4(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (1.0, 6.))
 dts = 1 ./2 .^(4:-1:1)
 test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
@@ -147,7 +147,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusNC6(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusNC6(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 6 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (1.0, 6.))
 sol = solve(prob,MagnusGL6(),dt=1/10)
 dts = 1 ./2 .^(4:-1:1)
@@ -157,7 +157,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusGL6(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusGL6(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 6 atol=0.3
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0.0, 100.))
 dts = 1.775 .^(5:-1:0)
 test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
@@ -166,7 +166,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusGL8(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusGL8(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 8 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0.0, 100.))
 dts = 1.773 .^(5:-1:0)
 test_setup = Dict(:alg=>Vern9(),:reltol=>1e-14,:abstol=>1e-14)
@@ -175,7 +175,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusNC8(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusNC8(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 8 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (1.0, 6.))
 dts = 1 ./2 .^(7:-1:1)
 test_setup = Dict(:alg=>Vern6(),:reltol=>1e-14,:abstol=>1e-14)
@@ -184,7 +184,7 @@ sim = analyticless_test_convergence(dts,prob,MagnusGL4(),test_setup)
 sim = analyticless_test_convergence(dts,prob,MagnusGL4(krylov=true),test_setup)
 @test sim.𝒪est[:l2] ≈ 4 atol=0.2
 
-A = DiffEqArrayOperator(ones(2,2),update_func=update_func)
+A = MatrixOperator(ones(2,2),update_func=update_func)
 prob = ODEProblem(A, ones(2), (0, 20.))
 sol1  = solve(prob,OrdinaryDiffEq.Vern6(),dt=1/8)
 sol2  = solve(prob,OrdinaryDiffEq.CG3(),dt=1/8)
@@ -220,7 +220,7 @@ function update_func(A, u, p, t)
 end
 
 η = diagm([1.,2,3,4,5])
-A = DiffEqArrayOperator(Matrix{eltype(η)}(I(size(η,1))), update_func=update_func)
+A = MatrixOperator(Matrix{eltype(η)}(I(size(η,1))), update_func=update_func)
 dts = 1 ./2 .^(10:-1:2)
 tspan = (0., 20.)
 

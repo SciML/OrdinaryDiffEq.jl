@@ -1,5 +1,6 @@
 using OrdinaryDiffEq: WOperator, set_gamma!, calc_W, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
+using SciMLOperators
 
 @testset "calc_W and calc_W!" begin
   A = [-1.0 0.0; 0.0 -0.5]; mm = [2.0 0.0; 0.0 1.0]
@@ -19,7 +20,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
   # In-place
   fun = ODEFunction((du,u,p,t) -> mul!(du,A,u);
                     mass_matrix=mm,
-                    jac_prototype=DiffEqArrayOperator(A))
+                    jac_prototype=MatrixOperator(A))
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
   calc_W!(integrator.cache.nlsolver.cache.W, integrator, integrator.cache.nlsolver, integrator.cache, dtgamma, false)
 
@@ -44,7 +45,7 @@ end
   fun2 = ODEFunction(_f; mass_matrix=mm, jac=(u,p,t) -> t*A)
   fun1_ip = ODEFunction(_f_ip; mass_matrix=mm)
   fun2_ip = ODEFunction(_f_ip; mass_matrix=mm,
-  jac_prototype=DiffEqArrayOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
+  jac_prototype=MatrixOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
 
   for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
     println(Alg)
