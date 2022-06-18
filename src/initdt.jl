@@ -223,7 +223,7 @@ end
   end
 
   # Divide by t for the correct units
-  if !(SciMLBase.typeof(u0/t) <: SciMLBase.typeof(f₀))
+  if !(SciMLBase.typeof(u0/t) === SciMLBase.typeof(f₀))
     throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
   end
 
