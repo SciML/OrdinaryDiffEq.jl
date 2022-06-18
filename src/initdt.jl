@@ -193,7 +193,7 @@ end
 
 function Base.showerror(io::IO, e::TypeNotConstantError)
   println(io, TYPE_NOT_CONSTANT_MESSAGE)
-  print(io,"typeof(u) = ")
+  print(io,"typeof(u/t) = ")
   println(io,e.u0)
   print(io,"typeof(du) = ")
   println(io,e.f₀)
@@ -223,8 +223,9 @@ end
   end
 
   # Divide by t for the correct units
-  if !(SciMLBase.typeof(u0/t) === SciMLBase.typeof(f₀))
-    throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
+  timeadjusted = u0/t
+  if !(SciMLBase.typeof(timeadjusted) === SciMLBase.typeof(f₀))
+    throw(TypeNotConstantError(typeof(timeadjusted),typeof(f₀)))
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
