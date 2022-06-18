@@ -223,7 +223,7 @@ end
   end
 
   # Divide by t for the correct units
-  timeadjusted = u0/t
+  timeadjusted = u0./t
   if !(SciMLBase.typeof(timeadjusted) === SciMLBase.typeof(f₀))
     throw(TypeNotConstantError(typeof(timeadjusted),typeof(f₀)))
   end
