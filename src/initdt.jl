@@ -187,8 +187,8 @@ Detected non-constant types in an out-of-place ODE solve, i.e. for
 """
 
 struct TypeNotConstantError <: Exception 
-  u0
-  f₀
+  u0::Type
+  f₀::Type
 end
 
 function Base.showerror(io::IO, e::TypeNotConstantError)
@@ -224,7 +224,7 @@ end
 
   # Divide by t for the correct units
   if !(SciMLBase.typeof(u0/t) <: SciMLBase.typeof(f₀))
-    throw(TypeNotConstantError(u0,f₀))
+    throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
