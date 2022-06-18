@@ -221,7 +221,9 @@ end
   if integrator.opts.verbose && any(x -> any(isnan, x), f₀)
     @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
   end
-  if !(SciMLBase.parameterless_type(u0) <: SciMLBase.parameterless_type(f₀)) || !(eltype(u0) <: eltype(f₀))
+
+  # Divide by t for the correct units
+  if !(SciMLBase.typeof(u0/t) <: SciMLBase.typeof(f₀))
     throw(TypeNotConstantError(u0,f₀))
   end
 
