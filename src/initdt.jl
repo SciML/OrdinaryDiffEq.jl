@@ -183,7 +183,10 @@ end
 const TYPE_NOT_CONSTANT_MESSAGE = 
 """
 Detected non-constant types in an out-of-place ODE solve, i.e. for
-`du = f(u,p,t)` we see `typeof(du) !== typeof(u)`.
+`du = f(u,p,t)` we see `typeof(du) !== typeof(u)`. This is not
+supported by OrdinaryDiffEq.jl's solvers. Please either make `f`
+type-constant (i.e. typeof(du) === typeof(u)) or use the mutating
+in-place form `f(du,u,p,t)` (which is type-constant by construction).
 """
 
 struct TypeNotConstantError <: Exception 
@@ -222,10 +225,11 @@ end
     @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
   end
 
-  # Divide by t for the correct units and use value to remove AD tagging
-  timeadjusted = DiffEqBase.value.(u0)./DiffEqBase.value(t)
-  if !(SciMLBase.typeof(timeadjusted) === SciMLBase.typeof(DiffEqBase.value.(f₀)))
-    throw(TypeNotConstantError(typeof(timeadjusted),typeof(f₀)))
+  # Ignore changes due to units
+  uBottomEltype = recursive_bottom_eltype(u)
+  uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
+  if (uBottomEltype !== uBottomEltypeNoUnits) && !(typeof(u0) === typeof(f₀))
+    throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
