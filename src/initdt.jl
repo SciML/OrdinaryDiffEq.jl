@@ -226,8 +226,8 @@ end
   end
 
   # Ignore changes due to units
-  uBottomEltype = recursive_bottom_eltype(u)
-  uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
+  uBottomEltype = recursive_bottom_eltype(u0)
+  uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u0)
   if (uBottomEltype !== uBottomEltypeNoUnits) && !(typeof(u0) === typeof(f₀))
     throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
   end
