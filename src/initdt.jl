@@ -224,7 +224,7 @@ end
 
   # Divide by t for the correct units and use value to remove AD tagging
   timeadjusted = DiffEqBase.value.(u0)./DiffEqBase.value(t)
-  if !(SciMLBase.typeof(timeadjusted) === SciMLBase.typeof(f₀))
+  if !(SciMLBase.typeof(timeadjusted) === SciMLBase.typeof(DiffEqBase.value.(f₀)))
     throw(TypeNotConstantError(typeof(timeadjusted),typeof(f₀)))
   end
 
