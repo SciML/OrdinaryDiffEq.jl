@@ -222,8 +222,8 @@ end
     @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
   end
 
-  # Divide by t for the correct units
-  timeadjusted = u0./t
+  # Divide by t for the correct units and use value to remove AD tagging
+  timeadjusted = DiffEqBase.value.(u0)./DiffEqBase.value(t)
   if !(SciMLBase.typeof(timeadjusted) === SciMLBase.typeof(f₀))
     throw(TypeNotConstantError(typeof(timeadjusted),typeof(f₀)))
   end
