@@ -183,9 +183,9 @@ end
 const TYPE_NOT_CONSTANT_MESSAGE = 
 """
 Detected non-constant types in an out-of-place ODE solve, i.e. for
-`du = f(u,p,t)` we see `typeof(du) !== typeof(u)`. This is not
+`du = f(u,p,t)` we see `typeof(du) !== typeof(u/t)`. This is not
 supported by OrdinaryDiffEq.jl's solvers. Please either make `f`
-type-constant (i.e. typeof(du) === typeof(u)) or use the mutating
+type-constant (i.e. typeof(du) === typeof(u/t)) or use the mutating
 in-place form `f(du,u,p,t)` (which is type-constant by construction).
 
 Note that one common case for this is when computing with GPUs, using
@@ -232,7 +232,7 @@ end
 
   unitfixed = u0/oneunit(t)
   if typeof(unitfixed) !== typeof(f₀)
-    throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
+    throw(TypeNotConstantError(typeof(unitfixed),typeof(f₀)))
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
