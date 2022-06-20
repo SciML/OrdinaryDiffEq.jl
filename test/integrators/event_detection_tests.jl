@@ -122,7 +122,7 @@ solve(prob, Tsit5())
 solve(prob, RadauIIA3())
 solve(prob, RadauIIA5())
 
-du(u, p, t) = [1]
+du(u, p, t) = [1.0]
 
 prob = ODEProblem(du, [0], (0.0, 1.0), callback=callback)
 

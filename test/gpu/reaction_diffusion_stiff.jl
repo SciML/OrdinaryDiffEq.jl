@@ -83,7 +83,7 @@ function gf(du,u,p,t)
   @. dC = α₃ - β₃*C + r₁*A*B - r₂*C
 end
 
-prob2 = ODEProblem(gf,gu0,(0.0,100.0))
+prob2 = ODEProblem(gf,gu0,(0f0,100f0))
 CUDA.allowscalar(false)
 sol = solve(prob2,BS3(),save_everystep=false,save_start=false)
 sol = solve(prob2,ROCK2(),save_everystep=false,save_start=false)

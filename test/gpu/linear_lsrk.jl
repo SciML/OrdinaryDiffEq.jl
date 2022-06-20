@@ -10,8 +10,8 @@ gu0 = CuArray(Float32.(u0))
 function f(du,u,p,t)
   @. du = u
 end
-prob = ODEProblem(f,u0,(0.0,10.0))
-prob2 = ODEProblem(f,gu0,(0.0,10.0))
+prob = ODEProblem(f,u0,(0f0,10f0))
+prob2 = ODEProblem(f,gu0,(0f0,10f0))
 
 algs = [ORK256(), CarpenterKennedy2N54(),SHLDDRK64(),DGLDDRK73_C()]
 

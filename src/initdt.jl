@@ -180,6 +180,33 @@
   return tdir*max(dtmin, min(100dt₀,dt₁,dtmax_tdir))
 end
 
+const TYPE_NOT_CONSTANT_MESSAGE = 
+"""
+Detected non-constant types in an out-of-place ODE solve, i.e. for
+`du = f(u,p,t)` we see `typeof(du) !== typeof(u)`. This is not
+supported by OrdinaryDiffEq.jl's solvers. Please either make `f`
+type-constant (i.e. typeof(du) === typeof(u)) or use the mutating
+in-place form `f(du,u,p,t)` (which is type-constant by construction).
+
+Note that one common case for this is when computing with GPUs, using
+`Float32` for `u0` and `Float64` for `tspan`. To correct this, ensure
+that the element type of `tspan` matches the preferred compute type,
+for example `ODEProblem(f,0f0,(0f0,1f0))` for `Float32`-based time.
+"""
+
+struct TypeNotConstantError <: Exception 
+  u0::Type
+  f₀::Type
+end
+
+function Base.showerror(io::IO, e::TypeNotConstantError)
+  println(io, TYPE_NOT_CONSTANT_MESSAGE)
+  print(io,"typeof(u/t) = ")
+  println(io,e.u0)
+  print(io,"typeof(du) = ")
+  println(io,e.f₀)
+end
+
 @muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractODEProblem{uType,tType,false},integrator) where {uType,tType}
   _tType = eltype(tType)
   f = prob.f
@@ -201,6 +228,11 @@ end
   f₀ = f(u0,p,t)
   if integrator.opts.verbose && any(x -> any(isnan, x), f₀)
     @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
+  end
+
+  unitfixed = u0/oneunit(t)
+  if typeof(unitfixed) !== typeof(f₀)
+    throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
