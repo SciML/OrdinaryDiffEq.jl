@@ -187,6 +187,11 @@ Detected non-constant types in an out-of-place ODE solve, i.e. for
 supported by OrdinaryDiffEq.jl's solvers. Please either make `f`
 type-constant (i.e. typeof(du) === typeof(u)) or use the mutating
 in-place form `f(du,u,p,t)` (which is type-constant by construction).
+
+Note that one common case for this is when computing with GPUs, using
+`Float32` for `u0` and `Float64` for `tspan`. To correct this, ensure
+that the element type of `tspan` matches the preferred compute type,
+for example `ODEProblem(f,0f0,(0f0,1f0))` for `Float32`-based time.
 """
 
 struct TypeNotConstantError <: Exception 
@@ -225,10 +230,8 @@ end
     @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
   end
 
-  # Ignore changes due to units
-  uBottomEltype = recursive_bottom_eltype(u0)
-  uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u0)
-  if (uBottomEltype !== uBottomEltypeNoUnits) && !(typeof(u0) === typeof(f₀))
+  unitfixed = u0/oneunit(t)
+  if typeof(unitfixed) !== typeof(f₀)
     throw(TypeNotConstantError(typeof(u0),typeof(f₀)))
   end
 
