@@ -37,7 +37,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 [compat]
 Adapt = "1.1, 2.0, 3.0"
 ArrayInterface = "6"
-ArrayInterfaceGPUArrays = "0.1"
+ArrayInterfaceGPUArrays = "0.1, 0.2"
 ArrayInterfaceStaticArrays = "0.1"
 DataStructures = "0.18"
 DiffEqBase = "6.81.3"
