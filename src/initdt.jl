@@ -230,8 +230,7 @@ end
     @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
   end
 
-  unitfixed = u0/oneunit(t)
-  if typeof(unitfixed) !== typeof(f₀)
+  if Base.promote_op(/, typeof(u0), typeof(oneunit(t))) !== typeof(f₀)
     throw(TypeNotConstantError(typeof(unitfixed),typeof(f₀)))
   end
 
