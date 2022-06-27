@@ -231,7 +231,7 @@ end
   end
 
   if Base.promote_op(/, typeof(u0), typeof(oneunit(t))) !== typeof(f₀)
-    throw(TypeNotConstantError(typeof(unitfixed),typeof(f₀)))
+    throw(TypeNotConstantError(Base.promote_op(/, typeof(u0), typeof(oneunit(t))),typeof(f₀)))
   end
 
   d₁ = internalnorm(f₀ ./ sk .* oneunit_tType,t)
