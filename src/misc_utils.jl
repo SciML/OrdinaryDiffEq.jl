@@ -69,7 +69,7 @@ macro threaded(option, ex)
   quote
     opt = $(esc(option))
     if (opt === BaseThreads()) || ((opt isa Bool) && opt)
-      $(esc(:(Threads.@threads $ex)))
+      $(esc(:(Threads.@threads :static $ex)))
     elseif opt === PolyesterThreads()
       $(esc(:(Polyester.@batch $ex)))
     else
