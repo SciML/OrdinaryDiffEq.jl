@@ -293,7 +293,7 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{tru
   n_max = max(n_init + 1, max_order)
 
   linsolve = (linsolve === nothing && (
-              threading == true || threading === PolyesterThreads)) ?
+              threading == true || threading === PolyesterThreads())) ?
               RFLUFactorization(;thread = Val(false)) : linsolve
 
   # Warn user if orders have been changed
