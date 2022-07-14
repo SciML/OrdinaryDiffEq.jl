@@ -90,7 +90,7 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
   Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer : linsolve.Pl
   Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer : linsolve.Pr
 
-  _alg = unwrap_alg(integrator.alg, true)
+  _alg = unwrap_alg(integrator, true)
 
   _Pl,_Pr = _alg.precs(linsolve.A,du,u,p,t,A !== nothing,Plprev,Prprev,solverdata)
   if (_Pl !== nothing || _Pr !== nothing)

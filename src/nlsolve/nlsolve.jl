@@ -10,6 +10,8 @@ dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_step=false)
+  always_new = is_always_new(nlsolver)
+  check_div′ = check_div(nlsolver)
   @label REDO
   if isnewton(nlsolver)
     cache === nothing && throw(ArgumentError("cache is not passed to `nlsolve!` when using NLNewton"))
@@ -18,17 +20,18 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
     else
       γW = nlsolver.γ * integrator.dt / nlsolver.α
     end
-    update_W!(nlsolver, integrator, cache, γW, repeat_step)
+    always_new || update_W!(nlsolver, integrator, cache, γW, repeat_step)
   end
 
   @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
 
   initialize!(nlsolver, integrator)
-  nlsolver.status = Divergence
+  nlsolver.status = check_div′ ? Divergence : Convergence
   η = get_new_W!(nlsolver) ? initial_η(nlsolver, integrator) : nlsolver.ηold
 
   local ndz
   for iter in 1:maxiters
+    always_new && update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true))
     nlsolver.iter = iter
 
     # compute next step and calculate norm of residuals
@@ -52,7 +55,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
           nlsolver.status = Convergence
           nlsolver.nfails = 0
           break
-        else
+        elseif check_div′
           nlsolver.status = Divergence
           nlsolver.nfails += 1
           break
@@ -60,7 +63,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
       end
 
       # divergence
-      if θ > 2
+      if check_div′ && θ > 2
         nlsolver.status = Divergence
         nlsolver.nfails += 1
         break
@@ -81,7 +84,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
   if isnewton(nlsolver) && nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator)
     nlsolver.status = TryAgain
     nlsolver.nfails += 1
-    @goto REDO
+    always_new || @goto REDO
   end
 
   nlsolver.ηold = η

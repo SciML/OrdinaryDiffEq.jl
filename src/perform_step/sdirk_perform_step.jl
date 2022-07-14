@@ -99,7 +99,6 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack atmp,nlsolver = cache
   @unpack z,tmp = nlsolver
-  mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   markfirststage!(nlsolver)
 
