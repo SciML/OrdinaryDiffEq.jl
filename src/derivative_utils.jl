@@ -523,7 +523,7 @@ function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_trans
   return W
 end
 
-function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache, dtgamma, repeat_step, W_transform=false, newJW = nothing)
+function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
   lcache = nlsolver === nothing ? cache : nlsolver.cache
   @unpack J = lcache
@@ -551,11 +551,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   end
 
   # check if we need to update J or W
-  if newJW === nothing
-    new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
-  else
-    new_jac, new_W = newJW
-  end
+  new_jac, new_W = do_newJW(integrator, alg, nlsolver, repeat_step)
 
   if new_jac && isnewton(lcache)
     lcache.J_t = t
@@ -659,12 +655,12 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
 end
 
 # update W matrix (only used in Newton method)
-update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing) =
-  update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
+update_W!(integrator, cache, dtgamma, repeat_step) =
+  update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step)
 
-function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, newJW = nothing)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step)
   if isnewton(nlsolver)
-    calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true, newJW)
+    calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true)
   end
   nothing
 end
