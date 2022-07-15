@@ -238,3 +238,41 @@ for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
     @test sol.t[end] == 20.0
     @test maximum(sol - refsol) < 1e-11
 end
+
+function hardstop!(du, u, p, t)
+    pm, pg = p
+    y, f_wall, dy = u
+    du[1] = dy
+    du[2] = ifelse(y <= 0, y, f_wall)
+    du[3] = (-ifelse(t < 2, -pg*pm, pg*pm) - f_wall) / (-pm)
+end
+
+fun = ODEFunction(hardstop!, mass_matrix = Diagonal([1, 0, 1]))
+prob = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
+@test solve(prob, ImplicitEuler(), dt=1/2^10, adaptive=false).retcode === :ConvergenceFailure
+
+condition2 = (u,t,integrator) -> t == 2
+affect2! = integrator -> integrator.u[1] = 1e-6
+cb = DiscreteCallback(condition2, affect2!)
+
+@isdefined(N_FAILS) || const N_FAILS = Ref(0)
+function choice_function(integrator)
+    integrator.do_error_check = false
+    if integrator.force_stepfail
+        N_FAILS[] += 1
+    else
+        N_FAILS[] = 0
+    end
+
+    (N_FAILS[] > 3) + 1
+end
+simple_implicit_euler = ImplicitEuler(nlsolve = NLNewton(check_div = false, always_new = true))
+alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice_function)
+
+for alg in [simple_implicit_euler, alg_switch]
+    sol = solve(prob, alg, callback = cb, dt=1/2^10, adaptive=false)
+    @test sol.retcode === :Success
+    @test sol(0, idxs=1) == 5
+    @test sol(2, idxs=1) == 0
+    @test sol(4, idxs=1) > 10
+end
