@@ -27,6 +27,8 @@ using DocStringExtensions
 
   using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper, UDerivativeWrapper
 
+  using DiffEqBase: DEIntegrator
+
   import RecursiveArrayTools: chain, recursivecopy!
 
   using UnPack, ForwardDiff, RecursiveArrayTools,

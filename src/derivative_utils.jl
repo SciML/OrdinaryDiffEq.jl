@@ -662,14 +662,14 @@ end
 update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing) =
   update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
 
-function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, newJW = nothing)
+function update_W!(nlsolver::AbstractNLSolver, integrator::DEIntegrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, newJW = nothing)
   if isnewton(nlsolver)
     calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true, newJW)
   end
   nothing
 end
 
-function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repeat_step)
+function update_W!(nlsolver::AbstractNLSolver, integrator::DEIntegrator, cache, dtgamma, repeat_step, newJW = nothing)
   if isnewton(nlsolver)
     isdae = integrator.alg isa DAEAlgorithm
     new_jac, new_W = true, true
