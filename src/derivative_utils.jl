@@ -659,17 +659,17 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
 end
 
 # update W matrix (only used in Newton method)
-update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing) =
+update_W!(integrator, cache, dtgamma, repeat_step::Bool, newJW = nothing) =
   update_W!(cache.nlsolver, integrator, cache, dtgamma, repeat_step, newJW)
 
-function update_W!(nlsolver::AbstractNLSolver, integrator::DEIntegrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, newJW = nothing)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step::Bool, newJW = nothing)
   if isnewton(nlsolver)
     calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true, newJW)
   end
   nothing
 end
 
-function update_W!(nlsolver::AbstractNLSolver, integrator::DEIntegrator, cache, dtgamma, repeat_step, newJW = nothing)
+function update_W!(nlsolver::AbstractNLSolver, integrator, cache, dtgamma, repeat_step::Bool, newJW = nothing)
   if isnewton(nlsolver)
     isdae = integrator.alg isa DAEAlgorithm
     new_jac, new_W = true, true
