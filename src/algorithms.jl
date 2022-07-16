@@ -100,7 +100,7 @@ function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standard
     max_order=12,min_order=3,init_order=5,threading=false,sequence = :harmonic)
 
     linsolve = (linsolve === nothing && (
-                threading == true || threading === PolyesterThreads)) ?
+                threading == true || threading isa PolyesterThreads)) ?
                 RFLUFactorization(;thread = Val(false)) : linsolve
 
     n_min = max(3,min_order)
@@ -196,7 +196,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(
   n_max = max(n_init,max_order)
 
   linsolve = (linsolve === nothing && (
-              threading == true || threading === PolyesterThreads)) ?
+              threading == true || threading isa PolyesterThreads)) ?
               RFLUFactorization(;thread = Val(false)) : linsolve
 
   # Warn user if orders have been changed
@@ -293,7 +293,7 @@ function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{tru
   n_max = max(n_init + 1, max_order)
 
   linsolve = (linsolve === nothing && (
-              threading == true || threading === PolyesterThreads)) ?
+              threading == true || threading isa PolyesterThreads)) ?
               RFLUFactorization(;thread = Val(false)) : linsolve
 
   # Warn user if orders have been changed
@@ -345,7 +345,7 @@ function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val
   n_max = max(n_init + 1, max_order)
 
   linsolve = (linsolve === nothing && (
-              threading == true || threading === PolyesterThreads)) ?
+              threading == true || threading isa PolyesterThreads)) ?
               RFLUFactorization(;thread = Val(false)) : linsolve
 
   # Warn user if orders have been changed
