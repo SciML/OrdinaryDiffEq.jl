@@ -447,13 +447,34 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
         # This is specifically to catch the GPU sparse matrix cases
         # Which do not support diagonal indexing
         # https://github.com/JuliaGPU/CUDA.jl/issues/1395
+
         Wn = nonzeros(W)
         Jn = nonzeros(J)
         @.. broadcast=false Wn = dtgamma*Jn
         W .= W + λ*I
-      else
+      elseif W isa SparseMatrixCSC
+        #=
+        using LinearAlgebra, SparseArrays, FastBroadcast
+        J = sparse(Diagonal(ones(4)))
+        W = sparse(Diagonal(ones(4)));
+        J[4,4] = 0
+        gamma = 1.0
+        W .= gamma .* J
+
+        4×4 SparseMatrixCSC{Float64, Int64} with 3 stored entries:
+        1.0   ⋅    ⋅    ⋅
+        ⋅   1.0   ⋅    ⋅
+        ⋅    ⋅   1.0   ⋅
+        ⋅    ⋅    ⋅    ⋅
+        wtf? Just work around it I guess
+        =#
+
+        @.. broadcast=false W.nzval = dtgamma*J.nzval
         idxs = diagind(W)
+        @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
+      else
         @.. broadcast=false W = dtgamma*J
+        idxs = diagind(W)
         @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
       end
     else
@@ -585,6 +606,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
       set_W_γdt!(nlsolver, dtgamma)
     end
   end
+
   new_W && (integrator.destats.nw += 1)
   return new_W
 end
