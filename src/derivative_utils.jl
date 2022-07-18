@@ -226,7 +226,7 @@ mutable struct WOperator{IIP,T,
       AJ = J isa DiffEqArrayOperator ? convert(AbstractMatrix, J) : J
       if AJ isa AbstractMatrix
         mm = mass_matrix isa DiffEqArrayOperator ? convert(AbstractMatrix, mass_matrix) : mass_matrix
-        if AJ isa AbstractSparseMatrixCSC
+        if AJ isa AbstractSparseMatrix
             # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
             # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
             # Then `one` is required since gamma is zero
