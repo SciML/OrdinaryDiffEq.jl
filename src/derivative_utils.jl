@@ -227,21 +227,34 @@ mutable struct WOperator{IIP,T,
       if AJ isa AbstractMatrix
         mm = mass_matrix isa DiffEqArrayOperator ? convert(AbstractMatrix, mass_matrix) : mass_matrix
         if AJ isa AbstractSparseMatrix
-            # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
-            # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
-            # Then `one` is required since gamma is zero
-            # Otherwise this will not pick up the union sparsity pattern
-            # But instead drop the runtime zeros (i.e. all values) of the AJ pattern!
 
-            AJn = nonzeros(AJ)
-            x = rand()
-            @assert all(!isequal(x),AJn)
+            # If gamma is zero, then it's just an initialization and we want to make sure
+            # we get the right sparsity pattern. If gamma is not zero, then it's a case where
+            # a new W is created (as part of an out-of-place solve) and thus the actual
+            # values actually matter!
+            if gamma == 0
+                # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+                # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
+                # Then `one` is required since gamma is zero
+                # Otherwise this will not pick up the union sparsity pattern
+                # But instead drop the runtime zeros (i.e. all values) of the AJ pattern!
+                AJn = nonzeros(AJ)
+                x = rand()
+                @assert all(!isequal(x),AJn)
 
-            fill!(AJn,rand())
-            if transform
-                _concrete_form = -mm / one(gamma) + AJ
+                fill!(AJn,rand())
+                if transform
+                    _concrete_form = -mm / one(gamma) + AJ
+                else
+                    _concrete_form = -mm + one(gamma) * AJ
+                end
+                fill!(_concrete_form,false) # safety measure, throw singular error if not filled
             else
-                _concrete_form = -mm + one(gamma) * AJ
+                if transform
+                    _concrete_form = -mm / gamma + AJ
+                else
+                    _concrete_form = -mm + gamma * AJ
+                end
             end
         else
             if transform
