@@ -226,11 +226,47 @@ mutable struct WOperator{IIP,T,
       AJ = J isa DiffEqArrayOperator ? convert(AbstractMatrix, J) : J
       if AJ isa AbstractMatrix
         mm = mass_matrix isa DiffEqArrayOperator ? convert(AbstractMatrix, mass_matrix) : mass_matrix
-        if transform
-          _concrete_form = -mm / gamma + AJ
+        if AJ isa AbstractSparseMatrix
+
+            # If gamma is zero, then it's just an initialization and we want to make sure
+            # we get the right sparsity pattern. If gamma is not zero, then it's a case where
+            # a new W is created (as part of an out-of-place solve) and thus the actual
+            # values actually matter!
+            #
+            # Constant operators never refactorize so always use the correct values there
+            # as well
+            if gamma == 0 && !(J isa DiffEqArrayOperator && SciMLBase.isconstant(J))
+                # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+                # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
+                # Then `one` is required since gamma is zero
+                # Otherwise this will not pick up the union sparsity pattern
+                # But instead drop the runtime zeros (i.e. all values) of the AJ pattern!
+                AJn = nonzeros(AJ)
+                x = rand()
+                @assert all(!isequal(x),AJn)
+
+                fill!(AJn,rand())
+                if transform
+                    _concrete_form = -mm / one(gamma) + AJ
+                else
+                    _concrete_form = -mm + one(gamma) * AJ
+                end
+                fill!(_concrete_form,false) # safety measure, throw singular error if not filled
+            else
+                if transform
+                    _concrete_form = -mm / gamma + AJ
+                else
+                    _concrete_form = -mm + gamma * AJ
+                end
+            end
         else
-          _concrete_form = -mm + gamma * AJ
+            if transform
+                _concrete_form = -mm / gamma + AJ
+            else
+                _concrete_form = -mm + gamma * AJ
+            end
         end
+
       else
         _concrete_form = nothing
       end
@@ -447,13 +483,48 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
         # This is specifically to catch the GPU sparse matrix cases
         # Which do not support diagonal indexing
         # https://github.com/JuliaGPU/CUDA.jl/issues/1395
+
         Wn = nonzeros(W)
         Jn = nonzeros(J)
+
+        # I would hope to check this generically, but `CuSparseMatrixCSC` has `colPtr`
+        # and `rowVal` while SparseMatrixCSC is colptr and rowval, and there is no
+        # standard for checking sparsity patterns in general. So for now, write it for
+        # the convention of CUDA.jl and handle the case of some other convention when
+        # it comes up.
+
+        @assert J.colPtr == W.colPtr
+        @assert J.rowVal == W.rowVal
+
         @.. broadcast=false Wn = dtgamma*Jn
         W .= W + λ*I
-      else
+      elseif W isa SparseMatrixCSC
+        #=
+        using LinearAlgebra, SparseArrays, FastBroadcast
+        J = sparse(Diagonal(ones(4)))
+        W = sparse(Diagonal(ones(4)));
+        J[4,4] = 0
+        gamma = 1.0
+        W .= gamma .* J
+
+        4×4 SparseMatrixCSC{Float64, Int64} with 3 stored entries:
+        1.0   ⋅    ⋅   ⋅
+        ⋅   1.0   ⋅    ⋅
+        ⋅    ⋅   1.0   ⋅
+        ⋅    ⋅    ⋅     ⋅
+
+        Thus broadcast cannot be used.
+
+        Instead, check the sparsity pattern is correct and directly broadcast the nzval
+        =#
+        @assert J.colptr == W.colptr
+        @assert J.rowval == W.rowval
+        @.. broadcast=false W.nzval = dtgamma*J.nzval
         idxs = diagind(W)
+        @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
+      else # Anything not a sparse matrix
         @.. broadcast=false W = dtgamma*J
+        idxs = diagind(W)
         @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
       end
     else
@@ -462,6 +533,7 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
   end
   return nothing
 end
+
 
 function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
@@ -585,6 +657,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
       set_W_γdt!(nlsolver, dtgamma)
     end
   end
+
   new_W && (integrator.destats.nw += 1)
   return new_W
 end
