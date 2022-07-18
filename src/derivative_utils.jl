@@ -235,7 +235,7 @@ mutable struct WOperator{IIP,T,
 
             AJn = nonzeros(AJ)
             x = rand()
-            @assert all(!isequal(x),AJ.nzval)
+            @assert all(!isequal(x),AJn)
 
             fill!(AJn,rand())
             if transform
@@ -470,6 +470,16 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
 
         Wn = nonzeros(W)
         Jn = nonzeros(J)
+
+        # I would hope to check this generically, but `CuSparseMatrixCSC` has `colPtr`
+        # and `rowVal` while SparseMatrixCSC is colptr and rowval, and there is no
+        # standard for checking sparsity patterns in general. So for now, write it for
+        # the convention of CUDA.jl and handle the case of some other convention when
+        # it comes up.
+
+        @assert J.colPtr == W.colPtr
+        @assert J.rowVal == W.rowVal
+
         @.. broadcast=false Wn = dtgamma*Jn
         W .= W + λ*I
       elseif W isa SparseMatrixCSC
@@ -494,10 +504,6 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
         @assert J.colptr == W.colptr
         @assert J.rowval == W.rowval
         @.. broadcast=false W.nzval = dtgamma*J.nzval
-        idxs = diagind(W)
-        @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
-      else
-        @.. broadcast=false W = dtgamma*J
         idxs = diagind(W)
         @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
       end
