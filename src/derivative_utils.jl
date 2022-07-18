@@ -232,7 +232,10 @@ mutable struct WOperator{IIP,T,
             # we get the right sparsity pattern. If gamma is not zero, then it's a case where
             # a new W is created (as part of an out-of-place solve) and thus the actual
             # values actually matter!
-            if gamma == 0
+            #
+            # Constant operators never refactorize so always use the correct values there
+            # as well
+            if gamma == 0 && !(J isa DiffEqArrayOperator && SciMLBase.isconstant(J))
                 # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
                 # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
                 # Then `one` is required since gamma is zero
