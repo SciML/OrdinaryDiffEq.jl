@@ -522,6 +522,10 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
         @.. broadcast=false W.nzval = dtgamma*J.nzval
         idxs = diagind(W)
         @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
+      else # Anything not a sparse matrix
+        @.. broadcast=false W = dtgamma*J
+        idxs = diagind(W)
+        @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
       end
     else
       @.. broadcast=false W = muladd(dtgamma, J, -mass_matrix)
