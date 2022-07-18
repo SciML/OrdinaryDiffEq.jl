@@ -261,9 +261,9 @@ mutable struct WOperator{IIP,T,
             end
         else
             if transform
-                _concrete_form = -mm / one(gamma) + AJ
+                _concrete_form = -mm / gamma + AJ
             else
-                _concrete_form = -mm + one(gamma) * AJ
+                _concrete_form = -mm + gamma * AJ
             end
         end
 
