@@ -30,7 +30,7 @@ odef = ODEFunction(foop; jac=jac, jac_prototype=jac(u0, p, 0.0), paramjac=paramj
 
 function g_helper(p; alg=Rosenbrock23(linsolve=LUFactorization()))
     prob = ODEProblem(odef, u0, tspan, p)
-    soln = Array(solve(prob, alg; u0=prob.u0, p=prob.p, abstol=1e-4, reltol=1e-4))[:, end]
+    soln = Array(solve(prob, alg; u0=prob.u0, p=prob.p, abstol=1e-5, reltol=1e-5))[:, end]
     return soln
 end
 function g(p; kwargs...)
