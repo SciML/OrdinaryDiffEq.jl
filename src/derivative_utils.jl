@@ -226,11 +226,31 @@ mutable struct WOperator{IIP,T,
       AJ = J isa DiffEqArrayOperator ? convert(AbstractMatrix, J) : J
       if AJ isa AbstractMatrix
         mm = mass_matrix isa DiffEqArrayOperator ? convert(AbstractMatrix, mass_matrix) : mass_matrix
-        if transform
-          _concrete_form = -mm / gamma + AJ
+        if AJ isa AbstractSparseMatrixCSC
+            # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
+            # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
+            # Then `one` is required since gamma is zero
+            # Otherwise this will not pick up the union sparsity pattern
+            # But instead drop the runtime zeros (i.e. all values) of the AJ pattern!
+
+            AJn = nonzeros(AJ)
+            x = rand()
+            @assert all(!isequal(x),AJ.nzval)
+
+            fill!(AJn,rand())
+            if transform
+                _concrete_form = -mm / one(gamma) + AJ
+            else
+                _concrete_form = -mm + one(gamma) * AJ
+            end
         else
-          _concrete_form = -mm + gamma * AJ
+            if transform
+                _concrete_form = -mm / one(gamma) + AJ
+            else
+                _concrete_form = -mm + one(gamma) * AJ
+            end
         end
+
       else
         _concrete_form = nothing
       end
@@ -462,13 +482,17 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
         W .= gamma .* J
 
         4×4 SparseMatrixCSC{Float64, Int64} with 3 stored entries:
-        1.0   ⋅    ⋅    ⋅
+        1.0   ⋅    ⋅   ⋅
         ⋅   1.0   ⋅    ⋅
         ⋅    ⋅   1.0   ⋅
-        ⋅    ⋅    ⋅    ⋅
-        wtf? Just work around it I guess
-        =#
+        ⋅    ⋅    ⋅     ⋅
 
+        Thus broadcast cannot be used.
+
+        Instead, check the sparsity pattern is correct and directly broadcast the nzval
+        =#
+        @assert J.colptr == W.colptr
+        @assert J.rowval == W.rowval
         @.. broadcast=false W.nzval = dtgamma*J.nzval
         idxs = diagind(W)
         @.. broadcast=false @view(W[idxs]) = @view(W[idxs]) + λ
@@ -483,6 +507,7 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
   end
   return nothing
 end
+
 
 function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
