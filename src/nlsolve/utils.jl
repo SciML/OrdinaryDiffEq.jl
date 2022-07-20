@@ -11,6 +11,11 @@ isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 
+is_always_new(nlsolver::AbstractNLSolver) = is_always_new(nlsolver.alg)
+is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
+check_div(nlsolver::AbstractNLSolver) = check_div(nlsolver.alg)
+check_div(alg) = isdefined(alg, :check_div) ? alg.check_div : true
+
 isJcurrent(nlsolver::AbstractNLSolver, integrator) = integrator.t == nlsolver.cache.J_t
 isfirstcall(nlsolver::AbstractNLSolver) = nlsolver.cache.firstcall
 isfirststage(nlsolver::AbstractNLSolver) = nlsolver.cache.firststage
