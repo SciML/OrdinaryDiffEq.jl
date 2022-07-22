@@ -263,7 +263,7 @@ end
     # -> err1, err2, err3 become Inf
     # -> err1^positive_number * err2^negative_number becomes NaN
     # -> dt becomes NaN
-    EEst = inv(eps(typeof(EEst)))
+    EEst = eps(typeof(EEst))
   end
 
   controller.err[1] = inv(EEst)
