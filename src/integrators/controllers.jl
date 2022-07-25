@@ -526,7 +526,15 @@ function step_accept_controller!(integrator,alg::QNDF{max_order},q) where max_or
   return integrator.dt/q
 end
 
-function step_reject_controller!(integrator,alg::QNDF)
+function step_reject_controller!(integrator, ::QNDF)
+  bdf_step_reject_controller!(integrator, integrator.cache.EEst1)
+end
+
+function step_reject_controller!(integrator, ::Union{FBDF,DFBDF})
+  bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
+end
+
+function bdf_step_reject_controller!(integrator, EEst1)
   k = integrator.cache.order
   h = integrator.dt
   integrator.cache.consfailcnt += 1
@@ -547,17 +555,21 @@ function step_reject_controller!(integrator,alg::QNDF)
   kₙ = k
   if k > 1
     expo = 1/k
-    zₖ₋₁ = 1.3 * ((integrator.cache.EEst1)^expo)
+    zₖ₋₁ = 1.3 * (EEst1^expo)
     Fₖ₋₁ = inv(zₖ₋₁)
     if zₖ₋₁ <= 10
       hₖ₋₁ = Fₖ₋₁ * h
     elseif zₖ₋₁ > 10
       hₖ₋₁ = 0.1 * h
     end
-    if hₖ₋₁ > hₖ
+    if integrator.cache.consfailcnt > 2 || hₖ₋₁ > hₖ
       hₙ = min(h,hₖ₋₁)
       kₙ = k-1
     end
+  end
+  # Restart BDf (clear history) when we failed repeatedly
+  if kₙ == 1 && integrator.cache.consfailcnt > 3
+    u_modified!(integrator, true)
   end
   integrator.dt = hₙ
   integrator.cache.order = kₙ
@@ -670,18 +682,6 @@ function step_accept_controller!(integrator,alg::Union{FBDF{max_order},DFBDF{max
   integrator.cache.nconsteps += 1
   integrator.cache.iters_from_event += 1
   return integrator.dt/q
-end
-
-function step_reject_controller!(integrator,alg::Union{FBDF,DFBDF})
-  integrator.cache.consfailcnt += 1
-  integrator.cache.nconsteps = 0
-  dt = integrator.dt
-  if integrator.cache.consfailcnt == 1
-    dt *= 0.5
-  else
-    dt *= 0.25
-  end
-  integrator.dt = dt
 end
 
 # Extrapolation methods

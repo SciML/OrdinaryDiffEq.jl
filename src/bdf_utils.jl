@@ -268,4 +268,3 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where max_orde
   end
   return terk
 end
-
