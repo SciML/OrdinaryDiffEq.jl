@@ -254,25 +254,27 @@ end
 @inline function stepsize_controller!(integrator, controller::PIDController, alg)
   @unpack qmax = integrator.opts
   beta1, beta2, beta3 = controller.beta
-  controller.err[1] = inv(DiffEqBase.value(integrator.EEst))
-  err1, err2, err3 = controller.err
 
-  if iszero(DiffEqBase.value(integrator.EEst))
+  EEst = DiffEqBase.value(integrator.EEst)
+  if iszero(EEst)
     # If the error estimate is zero, we can increase the step size as much as
     # desired. This additional check fixes problems of the code below when the
     # error estimates become zero
     # -> err1, err2, err3 become Inf
     # -> err1^positive_number * err2^negative_number becomes NaN
     # -> dt becomes NaN
-    dt_factor = qmax
-  else
-    k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
-    dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
-    if isnan(dt_factor)
-      @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k controller.err[1] controller.err[2] controller.err[3]
-    end
-    dt_factor = controller.limiter(dt_factor)
+    EEst = eps(typeof(EEst))
   end
+
+  controller.err[1] = inv(EEst)
+  err1, err2, err3 = controller.err
+
+  k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
+  dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
+  if isnan(dt_factor)
+    @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k controller.err[1] controller.err[2] controller.err[3]
+  end
+  dt_factor = controller.limiter(dt_factor)
 
   # Note: No additional limiting of the form
   #   dt_factor = max(qmin, min(qmax, dt_factor))
