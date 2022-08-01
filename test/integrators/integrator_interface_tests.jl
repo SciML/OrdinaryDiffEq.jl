@@ -1,5 +1,6 @@
 using DiffEqBase: set_t!, set_u!, set_ut!
 using OrdinaryDiffEq
+using ModelingToolkit
 
 println("First")
 # set_X!(integrator, integrator.X) should not change the result.
@@ -98,4 +99,25 @@ end
   sol    = solve(prob,RK4(), dt = 0.1,adaptive = true, callback=cb)
   @test diff(sol.t)[1] == 0.1
   @test diff(sol.t)[4] == 0.5
+end
+
+@testset "Symbolic set_u!" begin
+  @parameters t
+  @variables u(t)
+  D = Differential(t)
+  eqs = [D(u) ~ u]
+
+  @named sys = ODESystem(eqs)
+
+  tspan = (0.0, 5.0)
+
+  prob1 = ODEProblem(sys, [u => 1.0], tspan)
+  prob2 = ODEProblem(sys, [u => 2.0], tspan)
+
+  integrator1 = init(prob1, Tsit5(); save_everystep=false)
+  integrator2 = init(prob2, Tsit5(); save_everystep=false)
+
+  set_u!(integrator1, u, 2.0)
+
+  @test integrator1.u ≈ integrator2.u
 end

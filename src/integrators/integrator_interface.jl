@@ -385,4 +385,23 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
   u_modified!(integrator, true)
 end
 
+function DiffEqBase.set_u!(integrator::ODEIntegrator, sym, val)
+  if integrator.opts.save_everystep
+    error("Integrator state cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
+
+  if !SciMLBase.issymbollike(sym)
+    error("sym must be a symbol")
+  end
+  i = SciMLBase.sym_to_index(sym, integrator)
+
+  if isnothing(i)
+    error("sym is not a state variable")
+  end
+
+  integrator.u[i] = val
+  u_modified!(integrator, true)
+end
+
 DiffEqBase.has_destats(i::ODEIntegrator) = true
