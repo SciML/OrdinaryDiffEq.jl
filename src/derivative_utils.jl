@@ -319,17 +319,18 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-function DiffEqBase.update_coefficients!(W::WOperator, u, p, t)
-    update_coefficients!(W.J, u, p, t)
-    update_coefficients!(W.mass_matrix, u, p, t)
-    W.jacvec !== nothing && update_coefficients!(W.jacvec, u, p, t)
-    W
+
+function SciMLOperators.update_coefficients!(W::WOperator,u,p,t)
+  SciMLOperators.update_coefficients!(W.J,u,p,t)
+  SciMLOperators.update_coefficients!(W.mass_matrix,u,p,t)
+  W.jacvec !== nothing && SciMLOperators.update_coefficients!(W.jacvec,u,p,t)
+  W
 end
 
-function DiffEqBase.update_coefficients!(J::SparseDiffTools.JacVec, u, p, t)
-    copyto!(J.x, u)
-    J.f.t = t
-    J.f.p = p
+function SciMLOperators.update_coefficients!(J::SparseDiffTools.JacVec,u,p,t)
+  copyto!(J.x,u)
+  J.f.t = t
+  J.f.p = p
 end
 
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where {IIP}
