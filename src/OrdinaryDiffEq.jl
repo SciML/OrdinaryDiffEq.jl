@@ -23,7 +23,8 @@ using DocStringExtensions
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-  import SciMLOperators: MatrixOperator, DEFAULT_UPDATE_FUNC
+  using SciMLOperators
+  using SciMLOperators: AbstractSciMLOperator
 
   using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper, UDerivativeWrapper
 
