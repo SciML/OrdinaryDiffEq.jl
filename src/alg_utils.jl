@@ -186,7 +186,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
                 @warn msg
                 linsolve = KrylovJL()
             end
-        elseif prob isa ODEProblem && (prob.f.mass_matrix === nothing ||
+        elseif (prob isa ODEProblem || prob isa DDEProblem) && (prob.f.mass_matrix === nothing ||
                                        (prob.f.mass_matrix !== nothing &&
                                         !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractDiffEqOperator)))
             linsolve = LinearSolve.defaultalg(prob.f.jac_prototype, u0)
