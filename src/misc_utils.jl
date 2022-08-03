@@ -88,12 +88,11 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     b !== nothing && (linsolve = LinearSolve.set_b(linsolve, b))
     linu !== nothing && (linsolve = LinearSolve.set_u(linsolve, linu))
 
-    Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer :
-             linsolve.Pl
-    Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer :
-             linsolve.Pr
-
     _alg = unwrap_alg(integrator, true)
+
+    # TODO (vedant) - fix preconditioners shennanigans
+    Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer : linsolve.Pl
+    Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer : linsolve.Pr
 
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
                           solverdata)
