@@ -223,17 +223,18 @@ end
 function resize_J_W!(cache, integrator, i)
     (isdefined(cache, :J) && isdefined(cache, :W)) || return
 
+    # TODO (vedant): need resize! or similar for SciMLOperators
     @unpack f = integrator
 
     if cache.W isa WOperator
         nf = nlsolve_f(f, integrator.alg)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
-            if isa(cache.J, DiffEqBase.AbstractDiffEqLinearOperator)
+            if isa(cache.J, AbstractSciMLOperator)
                 resize!(cache.J, i)
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
-                J = DiffEqArrayOperator(J; update_func = f.jac)
+                J = MatrixOperator(J; update_func = f.jac)
             elseif cache.J isa SparseDiffTools.JacVec
                 resize!(cache.J.cache1, i)
                 resize!(cache.J.cache2, i)

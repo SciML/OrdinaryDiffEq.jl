@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, Test, Random, LinearAlgebra, LinearSolve
+using SciMLOperators
+
 Random.seed!(123)
 
 A = 0.01 * rand(3, 3)

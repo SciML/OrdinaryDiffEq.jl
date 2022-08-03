@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, Test, Random, LinearAlgebra, SparseArrays
+using SciMLOperators
+
 let N = 20
     Random.seed!(0)
     u0 = normalize(randn(N))
@@ -16,7 +18,7 @@ let N = 20
     end
     # f = ODEFunction(_f; jac=_jac)
     # f_ip = ODEFunction(_f_ip; jac=_jac_ip, jac_prototype=zeros(N,N))
-    jac_prototype = DiffEqArrayOperator(zeros(N, N); update_func = _jac_ip)
+    jac_prototype = MatrixOperator(zeros(N, N); update_func = _jac_ip)
     f = ODEFunction(_f; jac_prototype = jac_prototype)
     f_ip = ODEFunction(_f_ip; jac_prototype = jac_prototype)
     prob = ODEProblem(f, u0, (0.0, 1.0))
