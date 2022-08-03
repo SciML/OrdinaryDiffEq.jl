@@ -196,7 +196,7 @@ W = \\frac{1}{\\gamma}MM - J
 
 where `MM` is the mass matrix (a regular `AbstractMatrix` or a `UniformScaling`),
 `γ` is a real number proportional to the time step, and `J` is the Jacobian
-operator (must be a `AbstractSciMLLinearOperator`). A `WOperator` can also be
+operator (must be a `AbstractSciMLOperator`). A `WOperator` can also be
 constructed using a `*DEFunction` directly as
 
     WOperator(f,gamma[;transform=false])
@@ -206,7 +206,7 @@ to be a diffeq operator --- it will automatically be converted to one.
 
 `WOperator` supports lazy `*` and `mul!` operations, the latter utilizing an
 internal cache (can be specified in the constructor; default to regular `Vector`).
-It supports all of `AbstractSciMLLinearOperator`'s interface.
+It supports all of `AbstractSciMLOperator`'s interface.
 """
 mutable struct WOperator{IIP, T,
                          MType,
