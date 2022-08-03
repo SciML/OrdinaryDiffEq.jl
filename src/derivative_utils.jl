@@ -268,14 +268,14 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where IIP = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-function DiffEqBase.update_coefficients!(W::WOperator,u,p,t)
-  update_coefficients!(W.J,u,p,t)
-  update_coefficients!(W.mass_matrix,u,p,t)
-  W.jacvec !== nothing && update_coefficients!(W.jacvec,u,p,t)
+function SciMLOperators.update_coefficients!(W::WOperator,u,p,t)
+  SciMLOperators.update_coefficients!(W.J,u,p,t)
+  SciMLOperators.update_coefficients!(W.mass_matrix,u,p,t)
+  W.jacvec !== nothing && SciMLOperators.update_coefficients!(W.jacvec,u,p,t)
   W
 end
 
-function DiffEqBase.update_coefficients!(J::SparseDiffTools.JacVec,u,p,t)
+function SciMLOperators.update_coefficients!(J::SparseDiffTools.JacVec,u,p,t)
   copyto!(J.x,u)
   J.f.t = t
   J.f.p = p
@@ -564,7 +564,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
 
   # calculate W
   if W isa WOperator
-    isnewton(nlsolver) || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
+    isnewton(nlsolver) || update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     W.transform = W_transform; set_gamma!(W, dtgamma)
     if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec) && !(W.J isa AbstractSciMLOperator)
       islin, isode = islinearfunction(integrator)
@@ -574,7 +574,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   else # concrete W using jacobian from `calc_J!`
     islin, isode = islinearfunction(integrator)
     islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(J, integrator, lcache)) )
-    update_coefficients!(W,uprev,p,t)
+    SciMLOperators.update_coefficients!(W,uprev,p,t)
     new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton(nlsolver)
@@ -603,7 +603,7 @@ end
   # calculate W
   is_compos = integrator.alg isa CompositeAlgorithm
   islin, isode = islinearfunction(integrator)
-  !isdae && update_coefficients!(mass_matrix,uprev,p,t)
+  !isdae && SciMLOperators.update_coefficients!(mass_matrix,uprev,p,t)
 
   if islin
     J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
@@ -638,7 +638,7 @@ end
       end
     end
   end
-  (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = DiffEqBase.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
+  (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) && (W = SciMLOperators.update_coefficients!(W,uprev,p,t)) # we will call `update_coefficients!` in NLNewton
   is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) : integrator.opts.internalnorm(J, t))
   return W
 end

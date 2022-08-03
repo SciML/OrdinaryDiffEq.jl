@@ -16,7 +16,7 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step=false
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
-  update_coefficients!(L,u,p,t+dt/2)
+  SciMLOperators.update_coefficients!(L,u,p,t+dt/2)
 
   if alg.krylov
     u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
@@ -48,22 +48,22 @@ function perform_step!(integrator, cache::LieRK4Cache, repeat_step=false)
   L = integrator.f.f
 
   Y1 = uprev
-  update_coefficients!(L,Y1,p,t)
+  SciMLOperators.update_coefficients!(L,Y1,p,t)
   A = Matrix(deepcopy(L))
   k1 = dt*A
 
   Y2 = exp(k1/2)*uprev
-  update_coefficients!(L,Y2,p,t)
+  SciMLOperators.update_coefficients!(L,Y2,p,t)
   B = Matrix(deepcopy(L))
   k2 = dt*B
 
   Y3 = exp(k2/2)*uprev
-  update_coefficients!(L,Y3,p,t)
+  SciMLOperators.update_coefficients!(L,Y3,p,t)
   C = Matrix(deepcopy(L))
   k3 = dt*C
 
   Y4 = exp(k3 - k1/2)*Y2
-  update_coefficients!(L,Y4,p,t)
+  SciMLOperators.update_coefficients!(L,Y4,p,t)
   D = Matrix(deepcopy(L))
   k4 = dt*D
 
@@ -97,16 +97,16 @@ function perform_step!(integrator, cache::RKMK4Cache, repeat_step=false)
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
-  update_coefficients!(L,uprev,p,t)
+  SciMLOperators.update_coefficients!(L,uprev,p,t)
   A = Matrix(deepcopy(L))
   k1 = dt*A
-  update_coefficients!(L,exp(k1/2)*uprev,p,t)
+  SciMLOperators.update_coefficients!(L,exp(k1/2)*uprev,p,t)
   B = Matrix(deepcopy(L))
   k2 = dt*B
-  update_coefficients!(L,exp(k1/2 - (k1*k2 - k2*k1)/8)*uprev,p,t)
+  SciMLOperators.update_coefficients!(L,exp(k1/2 - (k1*k2 - k2*k1)/8)*uprev,p,t)
   C = Matrix(deepcopy(L))
   k3 = dt*C
-  update_coefficients!(L,exp(k3)*uprev,p,t)
+  SciMLOperators.update_coefficients!(L,exp(k3)*uprev,p,t)
   D = Matrix(deepcopy(L))
   k4 = dt*D
   if alg.krylov
@@ -137,10 +137,10 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step=false)
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
-  update_coefficients!(L,uprev,p,t)
+  SciMLOperators.update_coefficients!(L,uprev,p,t)
   A = Matrix(deepcopy(L))
   k1 = dt*A
-  update_coefficients!(L,exp(k1)*uprev,p,t)
+  SciMLOperators.update_coefficients!(L,exp(k1)*uprev,p,t)
   B = Matrix(deepcopy(L))
   k2 = dt*B
   if alg.krylov
@@ -170,13 +170,13 @@ function perform_step!(integrator, cache::CG3Cache, repeat_step=false)
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
-  update_coefficients!(L,uprev,p,t)
+  SciMLOperators.update_coefficients!(L,uprev,p,t)
   A = Matrix(deepcopy(L))
   v2 = exp((3/4)*dt*A)*uprev
-  update_coefficients!(L,v2,p,t+(3*dt/4))
+  SciMLOperators.update_coefficients!(L,v2,p,t+(3*dt/4))
   B = Matrix(deepcopy(L))
   v3 = exp((119/216)*dt*B)*exp((17/108)*dt*A)*uprev
-  update_coefficients!(L,v3,p,t+(17*dt/24))
+  SciMLOperators.update_coefficients!(L,v3,p,t+(17*dt/24))
   C = Matrix(deepcopy(L))
   u .= (exp(dt*(24/17)*C)*exp(dt*(-2/3)*B)*exp(dt*(13/51)*A)) * uprev
 
@@ -201,10 +201,10 @@ function perform_step!(integrator, cache::CG2Cache, repeat_step=false)
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
-  update_coefficients!(L,uprev,p,t)
+  SciMLOperators.update_coefficients!(L,uprev,p,t)
   A = Matrix(deepcopy(L))
   k1 = dt*A
-  update_coefficients!(L,exp(k1)*uprev,p,t)
+  SciMLOperators.update_coefficients!(L,exp(k1)*uprev,p,t)
   B = Matrix(deepcopy(L))
   k2 = dt*B
   u .= (exp((1/2)*(k1))*(exp((1/2)*k2))) * uprev
@@ -230,37 +230,37 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step=false)
   mass_matrix = integrator.f.mass_matrix
 
   L = deepcopy(integrator.f.f)
-  update_coefficients!(L,uprev,p,t)
+  SciMLOperators.update_coefficients!(L,uprev,p,t)
   A0 = Matrix(L)
   k1 = dt*A0
   Q1 = k1
 
   y2 = (1/2)*Q1
-  update_coefficients!(L,exp(y2)*uprev,p,t + dt/2)
+  SciMLOperators.update_coefficients!(L,exp(y2)*uprev,p,t + dt/2)
   A1 = Matrix(L)
   k2 = dt * A1
   Q2 = k2 - k1
 
   y3 = (1/2)*Q1 + (1/4)*Q2
-  update_coefficients!(L,exp(y3)*uprev,p,t + dt/2)
+  SciMLOperators.update_coefficients!(L,exp(y3)*uprev,p,t + dt/2)
   A2 = Matrix(L)
   k3 = dt*A2
   Q3 = k3 - k2
 
   y4 = Q1 + Q2
-  update_coefficients!(L,exp(y4)*uprev,p,t + dt)
+  SciMLOperators.update_coefficients!(L,exp(y4)*uprev,p,t + dt)
   A3 = Matrix(L)
   k4 = dt*A3
   Q4 = k4 - 2*k2 +k1
 
   y5 = (1/2)*Q1 + (1/4)*Q2 + (1/3)*Q3 - (1/24)*Q4 - (1/48)*(Q1*Q2 - Q2*Q1)
-  update_coefficients!(L,exp(y5)*uprev,p,t + dt/2)
+  SciMLOperators.update_coefficients!(L,exp(y5)*uprev,p,t + dt/2)
   A4 = Matrix(L)
   k5 = dt*A4
   Q5 = k5 - k2
 
   y6 = Q1 + Q2 + (2/3)*Q3 + (1/6)*Q4 - (1/6)*(Q1*Q2 - Q2*Q1)
-  update_coefficients!(L,exp(y6)*uprev,p,t + dt)
+  SciMLOperators.update_coefficients!(L,exp(y6)*uprev,p,t + dt)
   A5 = Matrix(L)
   k6 = dt*A5
   Q6 = k6 - 2*k2 + k1
@@ -297,19 +297,19 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step=false)
 
   L1 = deepcopy(integrator.f.f)
 
-  update_coefficients!(L1,u,p,t)
+  SciMLOperators.update_coefficients!(L1,u,p,t)
   A0 = Matrix(L1)
-  update_coefficients!(L1,u,p,t+dt/6)
+  SciMLOperators.update_coefficients!(L1,u,p,t+dt/6)
   A1 = Matrix(L1)
-  update_coefficients!(L1,u,p,t+2*dt/6)
+  SciMLOperators.update_coefficients!(L1,u,p,t+2*dt/6)
   A2 = Matrix(L1)
-  update_coefficients!(L1,u,p,t+3*dt/6)
+  SciMLOperators.update_coefficients!(L1,u,p,t+3*dt/6)
   A3 = Matrix(L1)
-  update_coefficients!(L1,u,p,t+4*dt/6)
+  SciMLOperators.update_coefficients!(L1,u,p,t+4*dt/6)
   A4 = Matrix(L1)
-  update_coefficients!(L1,u,p,t+5*dt/6)
+  SciMLOperators.update_coefficients!(L1,u,p,t+5*dt/6)
   A5 = Matrix(L1)
-  update_coefficients!(L1,u,p,t+dt)
+  SciMLOperators.update_coefficients!(L1,u,p,t+dt)
   A6 = Matrix(L1)
 
   S1 = A0 + A6
@@ -362,9 +362,9 @@ function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step=false)
   @unpack W,k,tmp = cache
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
-  update_coefficients!(L1,uprev,p,t+dt*(1/2 - sqrt(3)/6))
+  SciMLOperators.update_coefficients!(L1,uprev,p,t+dt*(1/2 - sqrt(3)/6))
   A1 = Matrix(L1)
-  update_coefficients!(L1,uprev,p,t+dt*(1/2 + sqrt(3)/6))
+  SciMLOperators.update_coefficients!(L1,uprev,p,t+dt*(1/2 + sqrt(3)/6))
   A2 = Matrix(L1)
 
   Ω = (dt/2)*(A1 + A2) - (dt^2)*(sqrt(3)/12)*(A1*A2 - A2*A1)
@@ -400,13 +400,13 @@ function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step=false)
   L4 = deepcopy(integrator.f.f)
   v1 = (1/2)*sqrt((3+2*sqrt(6/5))/7)
   v2 = (1/2)*sqrt((3-2*sqrt(6/5))/7)
-  update_coefficients!(L1,uprev,p,t-dt*v1+dt/2)
+  SciMLOperators.update_coefficients!(L1,uprev,p,t-dt*v1+dt/2)
   A1 = Matrix(L1)
-  update_coefficients!(L4,uprev,p,t+dt*v1+dt/2)
+  SciMLOperators.update_coefficients!(L4,uprev,p,t+dt*v1+dt/2)
   A4 = Matrix(L4)
-  update_coefficients!(L2,uprev,p,t-dt*v2+dt/2)
+  SciMLOperators.update_coefficients!(L2,uprev,p,t-dt*v2+dt/2)
   A2 = Matrix(L2)
-  update_coefficients!(L3,uprev,p,t+dt*v2+dt/2)
+  SciMLOperators.update_coefficients!(L3,uprev,p,t+dt*v2+dt/2)
   A3 = Matrix(L3)
   w1 = (1/2) - (1/6)*sqrt(5/6)
   w2 = (1/2) + (1/6)*sqrt(5/6)
@@ -460,15 +460,15 @@ function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step=false)
   L2 = deepcopy(integrator.f.f)
   L3 = deepcopy(integrator.f.f)
   L4 = deepcopy(integrator.f.f)
-  update_coefficients!(L0,uprev,p,t)
+  SciMLOperators.update_coefficients!(L0,uprev,p,t)
   A0 = Matrix(L0)
-  update_coefficients!(L1,uprev,p,t+dt/4)
+  SciMLOperators.update_coefficients!(L1,uprev,p,t+dt/4)
   A1 = Matrix(L1)
-  update_coefficients!(L2,uprev,p,t+dt/2)
+  SciMLOperators.update_coefficients!(L2,uprev,p,t+dt/2)
   A2 = Matrix(L2)
-  update_coefficients!(L3,uprev,p,t+3*dt/4)
+  SciMLOperators.update_coefficients!(L3,uprev,p,t+3*dt/4)
   A3 = Matrix(L3)
-  update_coefficients!(L4,uprev,p,t+dt)
+  SciMLOperators.update_coefficients!(L4,uprev,p,t+dt)
   A4 = Matrix(L4)
   B0 = (1/90)*(7*(A0+A4)+32*(A1+A3)+12*(A2))
   B1 = (1/90)*((7/2)*(A4-A0) + 8*(A3-A1))
@@ -504,11 +504,11 @@ function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step=false)
   L1 = deepcopy(integrator.f.f)
   L2 = deepcopy(integrator.f.f)
   L3 = deepcopy(integrator.f.f)
-  update_coefficients!(L1,uprev,p,t-dt*(sqrt(3/20))+dt/2)
+  SciMLOperators.update_coefficients!(L1,uprev,p,t-dt*(sqrt(3/20))+dt/2)
   A1 = Matrix(L1)
-  update_coefficients!(L2,uprev,p,t+dt/2)
+  SciMLOperators.update_coefficients!(L2,uprev,p,t+dt/2)
   A2 = Matrix(L2)
-  update_coefficients!(L3,uprev,p,t+dt*(sqrt(3/20))+dt/2)
+  SciMLOperators.update_coefficients!(L3,uprev,p,t+dt*(sqrt(3/20))+dt/2)
   A3 = Matrix(L3)
   B0 = (1/18)*(5*(A1+A3)+8*A2)
   B1 = (sqrt(15)/36)*(A3-A1)
@@ -543,9 +543,9 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step=false)
   mass_matrix = integrator.f.mass_matrix
   L1 = deepcopy(integrator.f.f)
   L2 = deepcopy(integrator.f.f)
-  update_coefficients!(L1,uprev,p,t+dt*(1/2+sqrt(3)/6))
+  SciMLOperators.update_coefficients!(L1,uprev,p,t+dt*(1/2+sqrt(3)/6))
   A = Matrix(L1)
-  update_coefficients!(L2,uprev,p,t+dt*(1/2-sqrt(3)/6))
+  SciMLOperators.update_coefficients!(L2,uprev,p,t+dt*(1/2-sqrt(3)/6))
   B = Matrix(L2)
   if alg.krylov
     u .= expv(dt,(A+B) ./ 2 + (dt*sqrt(3)) .* (B*A-A*B) ./ 12, u; m=min(alg.m, size(L1,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
@@ -574,7 +574,7 @@ function perform_step!(integrator, cache::LieEulerCache, repeat_step=false)
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f.f
-  update_coefficients!(L,u,p,t)
+  SciMLOperators.update_coefficients!(L,u,p,t)
 
   if alg.krylov
     u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
@@ -606,7 +606,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step=false
     # println("iter   : $iter")
   if iter==1
     L = integrator.f.f
-    update_coefficients!(L,u,p,t+dt/2)
+    SciMLOperators.update_coefficients!(L,u,p,t+dt/2)
     if alg.krylov
       u .= expv(dt, L, u; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     else
@@ -619,7 +619,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step=false
     iter += 1
   else
     L = integrator.f.f
-    update_coefficients!(L,u,p,t)
+    SciMLOperators.update_coefficients!(L,u,p,t)
     if alg.krylov
       u .= expv(2*dt, L, uprev2; m=min(alg.m, size(L,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     else
@@ -731,7 +731,7 @@ function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step=
     A = f.f
   end
 
-  L = update_coefficients(A, uprev, p, t)
+  L = SciMLOperators.update_coefficients(A, uprev, p, t)
   V = cay(L*dt)
   u = V * uprev * transpose(V)
 
@@ -765,7 +765,7 @@ function perform_step!(integrator, cache::CayleyEulerCache, repeat_step=false)
     L = f.f
   end
 
-  update_coefficients!(L, uprev, p, t)
+  SciMLOperators.update_coefficients!(L, uprev, p, t)
 
   cay!(V, L*dt)
   mul!(tmp, uprev, transpose(V))
