@@ -25,7 +25,7 @@ import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG
                    ODE_DEFAULT_UNSTABLE_CHECK
 
 using SciMLOperators
-using SciMLOperators: AbstractSciMLOperator, DEFAULT_UPDATE_FUNC
+using SciMLOperators: AbstractSciMLOperator
 
 using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
