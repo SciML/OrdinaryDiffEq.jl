@@ -159,11 +159,11 @@ function resize_J_W!(cache, integrator, i)
     nf = nlsolve_f(f, integrator.alg)
     islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
     if !islin
-      if isa(cache.J, DiffEqBase.AbstractDiffEqLinearOperator)
+      if isa(cache.J, DiffEqBase.AbstractSciMLLinearOperator)
         resize!(cache.J,i)
       elseif f.jac_prototype !== nothing
         J = similar(f.jac_prototype, i, i)
-        J = DiffEqArrayOperator(J; update_func=f.jac)
+        J = MatrixOperator(J; update_func=f.jac)
       elseif cache.J isa SparseDiffTools.JacVec
         resize!(cache.J.cache1,i)
         resize!(cache.J.cache2,i)

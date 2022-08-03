@@ -1,11 +1,12 @@
 using OrdinaryDiffEq, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
 using OrdinaryDiffEq: alg_order
+using SciMLOperators
 
 @testset "Caching Out-of-place" begin
   println("Caching Out-of-place")
   μ = 1.01
   linnonlin_f2 = (u,p,t) -> μ * u
-  linnonlin_f1 = DiffEqScalar(μ)
+  linnonlin_f1 = ScalarOperator(μ)
   linnonlin_fun = SplitFunction(linnonlin_f1, linnonlin_f2; analytic=(u0,p,t)->u0.*exp.(2μ*t))
   prob = SplitODEProblem(linnonlin_fun,1/2,(0.0,1.0))
 
@@ -26,7 +27,7 @@ end
   μ = 1.01
   u0 = rand(2)
   A = [2.0 -1.0; -1.0 2.0]
-  linnonlin_f1 = DiffEqArrayOperator(A)
+  linnonlin_f1 = MatrixOperator(A)
   linnonlin_f2 = (du,u,p,t) -> du .= μ .* u
   linnonlin_fun_iip = SplitFunction(linnonlin_f1,linnonlin_f2;analytic=(u0,p,t)->exp((A+μ*I)*t)*u0)
   prob = SplitODEProblem(linnonlin_fun_iip,u0,(0.0,1.0))
@@ -80,7 +81,7 @@ end
   A = [-2.0 1.0; 1.0 -2.0]
   f = (du,u,p,t) -> (mul!(du, A, u); du .-= u.^3)
   jac_update = (J,u,p,t) -> (copyto!(J,A); J[1,1] -= 3u[1]^2; J[2,2] -= 3u[2]^2)
-  jac_prototype = DiffEqArrayOperator(zeros(2,2); update_func=jac_update)
+  jac_prototype = MatrixOperator(zeros(2,2); update_func=jac_update)
   fun = ODEFunction(f; jac_prototype=jac_prototype)
   Random.seed!(0); u0 = rand(2); tspan = (0.0, 1.0)
   prob = ODEProblem(fun, u0, tspan)
@@ -150,7 +151,7 @@ end
   A = [-2.0 1.0; 1.0 -2.0]
   f = (du,u,p,t) -> (mul!(du, A, u); du .-= u.^3)
   jac_update = (J,u,p,t) -> (copyto!(J,A); J[1,1] -= 3u[1]^2; J[2,2] -= 3u[2]^2)
-  jac_prototype = DiffEqArrayOperator(zeros(2,2); update_func=jac_update)
+  jac_prototype = MatrixOperator(zeros(2,2); update_func=jac_update)
   fun = ODEFunction(f; jac_prototype=jac_prototype)
   Random.seed!(0); u0 = rand(2); tspan = (0.0, 1.0)
   prob = ODEProblem(fun, u0, tspan)

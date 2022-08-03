@@ -185,7 +185,7 @@ W = \\frac{1}{\\gamma}MM - J
 
 where `MM` is the mass matrix (a regular `AbstractMatrix` or a `UniformScaling`),
 `γ` is a real number proportional to the time step, and `J` is the Jacobian
-operator (must be a `AbstractDiffEqLinearOperator`). A `WOperator` can also be
+operator (must be a `AbstractSciMLLinearOperator`). A `WOperator` can also be
 constructed using a `*DEFunction` directly as
 
     WOperator(f,gamma[;transform=false])
@@ -195,7 +195,7 @@ to be a diffeq operator --- it will automatically be converted to one.
 
 `WOperator` supports lazy `*` and `mul!` operations, the latter utilizing an
 internal cache (can be specified in the constructor; default to regular `Vector`).
-It supports all of `AbstractDiffEqLinearOperator`'s interface.
+It supports all of `AbstractSciMLLinearOperator`'s interface.
 """
 mutable struct WOperator{IIP,T,
   MType,
@@ -203,7 +203,7 @@ mutable struct WOperator{IIP,T,
   JType,
   F,
   C,
-  JV} <: DiffEqBase.AbstractDiffEqLinearOperator{T}
+  JV} <: DiffEqBase.AbstractSciMLLinearOperator{T}
   mass_matrix::MType
   gamma::GType
   J::JType
@@ -215,17 +215,17 @@ mutable struct WOperator{IIP,T,
   function WOperator{IIP}(mass_matrix, gamma, J, u, jacvec = nothing; transform=false) where IIP
     # TODO: there is definitely a missing interface.
     # Tentative interface: `has_concrete` and `concertize(A)`
-    if J isa Union{Number,DiffEqScalar}
+    if J isa Union{Number,ScalarOperator}
       if transform
-        _concrete_form = -mass_matrix / gamma + convert(Number,J)
+        _concrete_form = -mass_matrix / gamma + convert(Number, J)
       else
-        _concrete_form = -mass_matrix + gamma * convert(Number,J)
+        _concrete_form = -mass_matrix + gamma * convert(Number, J)
       end
       _func_cache = nothing
     else
-      AJ = J isa DiffEqArrayOperator ? convert(AbstractMatrix, J) : J
+      AJ = J isa MatrixOperator ? convert(AbstractMatrix, J) : J
       if AJ isa AbstractMatrix
-        mm = mass_matrix isa DiffEqArrayOperator ? convert(AbstractMatrix, mass_matrix) : mass_matrix
+        mm = mass_matrix isa MatrixOperator ? convert(AbstractMatrix, mass_matrix) : mass_matrix
         if AJ isa AbstractSparseMatrix
 
             # If gamma is zero, then it's just an initialization and we want to make sure
@@ -235,7 +235,7 @@ mutable struct WOperator{IIP,T,
             #
             # Constant operators never refactorize so always use the correct values there
             # as well
-            if gamma == 0 && !(J isa DiffEqArrayOperator && SciMLBase.isconstant(J))
+            if gamma == 0 && !(J isa MatrixOperator && SciMLBase.isconstant(J))
                 # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
                 # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
                 # Then `one` is required since gamma is zero
@@ -295,7 +295,7 @@ function WOperator{IIP}(f, u, gamma; transform=false) where IIP
   J = deepcopy(f.jac_prototype)
   if J isa AbstractMatrix
     @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
-    J = DiffEqArrayOperator(J; update_func=f.jac)
+    J = MatrixOperator(J; update_func=f.jac)
   end
   return WOperator{IIP}(mass_matrix, gamma, J, u; transform=transform)
 end
@@ -642,7 +642,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing,AbstractNLSolver}, cache
   if W isa WOperator
     isnewton(nlsolver) || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     W.transform = W_transform; set_gamma!(W, dtgamma)
-    if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec) && !(W.J isa SciMLBase.AbstractDiffEqLinearOperator)
+    if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec) && !(W.J isa SciMLBase.AbstractSciMLLinearOperator)
       islin, isode = islinearfunction(integrator)
       islin ? (J = isode ? f.f : f.f1.f) : ( new_jac && (calc_J!(W.J, integrator, lcache)) )
       new_W && !isdae && jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)
@@ -691,8 +691,8 @@ end
       W = W_transform ? J - mass_matrix*inv(dtgamma) :
                              dtgamma*J - mass_matrix
     else
-      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator) && (!isnewton(nlsolver) || nlsolver.cache.W.J isa DiffEqBase.AbstractDiffEqLinearOperator)
-        J = DiffEqArrayOperator(J)
+      if !isa(J, DiffEqBase.AbstractSciMLLinearOperator) && (!isnewton(nlsolver) || nlsolver.cache.W.J isa DiffEqBase.AbstractSciMLLinearOperator)
+        J = MatrixOperator(J)
       end
       W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec; transform=W_transform)
     end
@@ -768,7 +768,7 @@ end
 
 function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) where {IIP,uEltypeNoUnits,F}
   islin, isode = islinearfunction(f, alg)
-  if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
+  if f.jac_prototype isa DiffEqBase.AbstractSciMLLinearOperator
     W = WOperator{IIP}(f, u, dt)
     J = W.J
   elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
@@ -806,8 +806,8 @@ function build_J_W(alg,u,uprev,p,t,dt,f::F,::Type{uEltypeNoUnits},::Val{IIP}) wh
 
   elseif islin || (!IIP && DiffEqBase.has_jac(f))
     J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
-    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-      J = DiffEqArrayOperator(J)
+    if !isa(J, DiffEqBase.AbstractSciMLLinearOperator)
+      J = MatrixOperator(J)
     end
     W = WOperator{IIP}(f.mass_matrix, dt, J, u)
   else
