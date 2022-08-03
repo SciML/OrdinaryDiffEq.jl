@@ -173,9 +173,9 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
 
     if alg.linsolve === nothing
-      if (prob.f isa ODEFunction && prob.f.f isa SciMLBase.AbstractSciMLOperator)
+      if (prob.f isa ODEFunction && prob.f.f isa AbstractSciMLOperator)
         linsolve = LinearSolve.defaultalg(prob.f.f,u0)
-      elseif (prob.f isa SplitFunction && prob.f.f1.f isa SciMLBase.AbstractSciMLOperator)
+      elseif (prob.f isa SplitFunction && prob.f.f1.f isa AbstractSciMLOperator)
         linsolve = LinearSolve.defaultalg(prob.f.f1.f,u0)
         if (linsolve === nothing) | (linsolve isa LinearSolve.AbstractFactorization)
           msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
@@ -184,7 +184,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
         end
       elseif prob isa ODEProblem && (prob.f.mass_matrix === nothing ||
             (prob.f.mass_matrix !== nothing &&
-                              !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractSciMLOperator)))
+                              !(typeof(prob.f.jac_prototype) <: AbstractSciMLOperator)))
         linsolve = LinearSolve.defaultalg(prob.f.jac_prototype,u0)
       else
         # If mm is a sparse matrix and A is a MatrixOperator, then let linear
