@@ -171,7 +171,7 @@ end
         @.. broadcast=false ztmp = (tmp + k) * (γdt / α)
         @.. broadcast=false dz = ztmp - z
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. broadcast=false dz = (tmp + k) * γdt - α * ztmp
         @.. broadcast=false ztmp = dz + z
@@ -183,7 +183,7 @@ end
         @.. broadcast=false ztmp = dt * k
         @.. broadcast=false dz = ztmp - z
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. broadcast=false dz = dt * k - ztmp
         @.. broadcast=false ztmp = z + dz

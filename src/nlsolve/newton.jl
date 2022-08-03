@@ -72,7 +72,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
       if mass_matrix === I
         ztmp = tmp .+ f(z, p, tstep) .- (α * invγdt) .* z
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         ztmp = tmp .+ f(z, p, tstep) .- (mass_matrix * z) .* (α * invγdt)
       end
     else
@@ -80,7 +80,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
       if mass_matrix === I
         ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
       end
     end
@@ -91,8 +91,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   end
 
   # update W
-  if W isa DiffEqBase.AbstractSciMLLinearOperator
-    W = update_coefficients!(W, ustep, p, tstep)
+  if W isa AbstractSciMLOperator
+    W = SciMLOperators.update_coefficients!(W, ustep, p, tstep)
   end
 
   dz = _reshape(W \ _vec(ztmp), axes(ztmp))
@@ -144,7 +144,7 @@ end
       if mass_matrix === I
         @.. broadcast=false ztmp = tmp + k - (α * invγdt) * z
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. broadcast=false ztmp = tmp + k - (α * invγdt) * ztmp
       end
@@ -154,7 +154,7 @@ end
       if mass_matrix === I
         @.. broadcast=false ztmp = (dt * k - z) * invγdt
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
         @.. broadcast=false ztmp = (dt * k - ztmp) * invγdt
       end
@@ -163,8 +163,8 @@ end
   end
 
   # update W
-  if W isa DiffEqBase.AbstractSciMLLinearOperator
-    update_coefficients!(W, ustep, p, tstep)
+  if W isa AbstractSciMLOperator
+    SciMLOperators.update_coefficients!(W, ustep, p, tstep)
   end
 
   if integrator.opts.adaptive
@@ -248,7 +248,7 @@ end
           ztmp[i] = tmp[i] + k[i] - (α * invγdt) * z[i]
         end
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
 
         @inbounds @simd ivdep for i in eachindex(z)
@@ -266,7 +266,7 @@ end
           ztmp[i] = (dt * k[i] - z[i]) * invγdt
         end
       else
-        update_coefficients!(mass_matrix, ustep, p, tstep)
+        SciMLOperators.update_coefficients!(mass_matrix, ustep, p, tstep)
         mul!(_vec(ztmp), mass_matrix, _vec(z))
         @inbounds @simd ivdep for i in eachindex(z)
           ztmp[i] = (dt * k[i] - ztmp[i]) * invγdt
@@ -277,8 +277,8 @@ end
   end
 
   # update W
-  if W isa DiffEqBase.AbstractSciMLLinearOperator
-    update_coefficients!(W, ustep, p, tstep)
+  if W isa AbstractSciMLOperator
+    SciMLOperators.update_coefficients!(W, ustep, p, tstep)
   end
 
   if integrator.opts.adaptive
