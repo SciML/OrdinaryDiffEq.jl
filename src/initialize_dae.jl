@@ -112,7 +112,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
   algebraic_vars = [all(iszero,x) for x in eachcol(M)]
   algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-  update_coefficients!(M, u0, p, t)
+  SciMLOperators.update_coefficients!(M, u0, p, t)
   f(tmp, u0, p, t)
   tmp .= ArrayInterface.restructure(tmp,algebraic_eqs .* _vec(tmp))
 
@@ -135,7 +135,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     isad = alg_autodiff(integrator.alg)
     _tmp = isad ? PreallocationTools.dualcache(tmp, ForwardDiff.pickchunksize(length(tmp))) : tmp
     nlequation! = @closure (out,u) -> begin
-      update_coefficients!(M,u,p,t)
+      SciMLOperators.update_coefficients!(M,u,p,t)
       #M * (u-u0)/dt - f(u,p,t)
       tmp = isad ? PreallocationTools.get_tmp(_tmp, u) : _tmp
       @. tmp = (u - u0)/dt
@@ -169,7 +169,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
   algebraic_vars = [all(iszero,x) for x in eachcol(M)]
   algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
-  update_coefficients!(M,u0,p,t)
+  SciMLOperators.update_coefficients!(M,u0,p,t)
   du = f(u0,p,t)
   resid = _vec(du)[algebraic_eqs]
 
@@ -190,7 +190,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     @.. broadcast=false integrator.u = integrator.uprev + z
   else
     nlequation_oop = @closure (u,_) -> begin
-      update_coefficients!(M,u,p,t)
+      SciMLOperators.update_coefficients!(M,u,p,t)
       M * (u-u0)/dt - f(u,p,t)
     end
 
@@ -277,7 +277,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::BrownFullBasicInit,
   @unpack p, t, f = integrator
   u = integrator.u
   M = integrator.f.mass_matrix
-  update_coefficients!(M,u,p,t)
+  SciMLOperators.update_coefficients!(M,u,p,t)
   algebraic_vars = [all(iszero,x) for x in eachcol(M)]
   algebraic_eqs = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
@@ -330,7 +330,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
   u0 = integrator.u
   M = integrator.f.mass_matrix
-  update_coefficients!(M,u0,p,t)
+  SciMLOperators.update_coefficients!(M,u0,p,t)
   algebraic_vars = [all(iszero,x) for x in eachcol(M)]
   algebraic_eqs  = [all(iszero,x) for x in eachrow(M)]
   (iszero(algebraic_vars) || iszero(algebraic_eqs)) && return
