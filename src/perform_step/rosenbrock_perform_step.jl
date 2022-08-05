@@ -342,6 +342,11 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, γ, repeat_step)
+  if !LinearAlgebra.issuccess(W)
+    integrator.EEst = 2
+    return nothing
+  end
+
   k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
@@ -375,6 +380,7 @@ end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
   integrator.u = u
+  return nothing
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache, repeat_step=false)
@@ -397,6 +403,10 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, γ, repeat_step)
+  if !LinearAlgebra.issuccess(W)
+    integrator.EEst = 2
+    return nothing
+  end
 
   k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
@@ -434,6 +444,7 @@ end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
   integrator.u = u
+  return nothing
 end
 
 function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
@@ -486,6 +497,10 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+  if !LinearAlgebra.issuccess(W)
+    integrator.EEst = 2
+    return nothing
+  end
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -529,6 +544,7 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+  return nothing
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step=false)
@@ -650,6 +666,10 @@ end
   dT = ForwardDiff.derivative(tf, t)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+  if !LinearAlgebra.issuccess(W)
+    integrator.EEst = 2
+    return nothing
+  end
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -701,6 +721,7 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+  return nothing
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step=false)
