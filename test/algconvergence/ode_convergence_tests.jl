@@ -80,8 +80,9 @@ testTol = 0.2
   @test sim105.𝒪est[:l2] ≈ 4 atol=testTol
   sim106 = test_convergence(dts,prob,VCABM5())
   @test sim106.𝒪est[:l2] ≈ 5 atol=testTol
+  dts = 1 .//2 .^(6:-1:2)
   sim160 = test_convergence(dts,prob,Anas5(w=2))
-  @test sim160.𝒪est[:l2] ≈ 4 atol=2*testTol
+  @test sim160.𝒪est[:l2] ≈ 6 atol=2*testTol
 end
 
 @testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
