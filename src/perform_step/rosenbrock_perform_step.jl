@@ -871,6 +871,10 @@ end
   dT = ForwardDiff.derivative(tf, t)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+  if !LinearAlgebra.issuccess(W)
+    integrator.EEst = 2
+    return nothing
+  end
 
   du = f(uprev, p, t)
   integrator.destats.nf += 1
@@ -953,6 +957,7 @@ end
     integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
   end
   integrator.u = u
+  return nothing
 end
 
 
@@ -1383,6 +1388,10 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+  if !LinearAlgebra.issuccess(W)
+    integrator.EEst = 2
+    return nothing
+  end
 
   du1 = f(uprev, p, t)
   integrator.destats.nf += 1
@@ -1491,6 +1500,7 @@ end
   end
 
   integrator.u = u
+  return nothing
 end
 
 function initialize!(integrator, cache::Rosenbrock5Cache)
