@@ -342,7 +342,7 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, γ, repeat_step)
-  if !LinearAlgebra.issuccess(W)
+  if !issuccess_W(W)
     integrator.EEst = 2
     return nothing
   end
@@ -403,7 +403,7 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, γ, repeat_step)
-  if !LinearAlgebra.issuccess(W)
+  if !issuccess_W(W)
     integrator.EEst = 2
     return nothing
   end
@@ -497,7 +497,7 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-  if !LinearAlgebra.issuccess(W)
+  if !issuccess_W(W)
     integrator.EEst = 2
     return nothing
   end
@@ -666,7 +666,7 @@ end
   dT = ForwardDiff.derivative(tf, t)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-  if !LinearAlgebra.issuccess(W)
+  if !issuccess_W(W)
     integrator.EEst = 2
     return nothing
   end
@@ -892,7 +892,7 @@ end
   dT = ForwardDiff.derivative(tf, t)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-  if !LinearAlgebra.issuccess(W)
+  if !issuccess_W(W)
     integrator.EEst = 2
     return nothing
   end
@@ -1409,7 +1409,7 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-  if !LinearAlgebra.issuccess(W)
+  if !issuccess_W(W)
     integrator.EEst = 2
     return nothing
   end
