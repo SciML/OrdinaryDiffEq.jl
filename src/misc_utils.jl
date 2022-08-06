@@ -134,3 +134,7 @@ function wrapprecs(_Pl,_Pr,weight)
   end
   Pl, Pr
 end
+
+issuccess_W(W::LinearAlgebra.Factorization) = LinearAlgebra.issuccess(W)
+issuccess_W(W::Number) = !iszero(W)
+issuccess_W(::Any) = true

@@ -1,4 +1,4 @@
-using DiffEqSensitivity
+using SciMLSensitivity
 using OrdinaryDiffEq, Calculus, Test
 using Zygote
 

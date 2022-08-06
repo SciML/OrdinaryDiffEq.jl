@@ -69,3 +69,13 @@ differential_vars = [true,true,true]
 prob = DAEProblem{false}(lorenz,du0,u0,tspan,differential_vars=differential_vars)
 sol = solve(prob,DFBDF())
 @test length(sol.t) < 6600
+
+rr(x1, x2) = (x1 * (-2.1474936f0 * (x2 + x1)))
+possibly_singular(u, p, t) = [-rr(u...), rr(u...)]
+tspan = (1.6078221f0, 2f0)
+initial_condition = [2.1349438f6, -2.1349438f6]
+prob = ODEProblem(possibly_singular, initial_condition, tspan)
+for alg in [Rosenbrock23(), Rosenbrock32(), Rodas3(), Rodas4(), Rodas4P(), Rodas5(), Rodas5P()]
+  sol = solve(prob, alg)
+  @test sol.retcode == :Success
+end
