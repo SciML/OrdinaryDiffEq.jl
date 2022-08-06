@@ -304,7 +304,8 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
     resize!(integrator.sol.u,resize_start)
     resize!(integrator.sol.t,resize_start)
     resize!(integrator.sol.k,resize_start)
-    if integrator.opts.save_start
+
+    if integrator.opts.save_start || saveat[1] == tType(t0)
       copyat_or_push!(integrator.sol.t,1,t0)
       if integrator.opts.save_idxs === nothing
         copyat_or_push!(integrator.sol.u,1,u0)
