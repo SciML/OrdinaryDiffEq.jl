@@ -129,28 +129,30 @@ If `integrator.f` has a custom Jacobian update function, then it will be called.
 either automatic or finite differencing will be used depending on the `cache`.
 """
 function calc_J!(J, integrator, cache)
-  @unpack t,uprev,f,p,alg = integrator
+  @unpack dt,t,uprev,f,p,alg = integrator
 
+  tdt = t + dt
   if alg isa DAEAlgorithm
     if DiffEqBase.has_jac(f)
       duprev = integrator.duprev
       uf = cache.uf
-      f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
+      f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, tdt)
     else
       @unpack du1, uf, jac_config = cache
       # using `dz` as temporary array
       x = cache.dz
+      uf.t = tdt
       fill!(x, zero(eltype(x)))
       jacobian!(J, uf, x, du1, integrator, jac_config)
     end
   else
     if DiffEqBase.has_jac(f)
-      f.jac(J, uprev, p, t)
+      f.jac(J, uprev, p, tdt)
     else
       @unpack du1, uf, jac_config = cache
 
       uf.f = nlsolve_f(f, alg)
-      uf.t = t
+      uf.t = tdt
       if !(p isa DiffEqBase.NullParameters)
         uf.p = p
       end

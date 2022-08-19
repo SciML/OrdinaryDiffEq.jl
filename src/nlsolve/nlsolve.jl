@@ -31,7 +31,12 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache=nothing, repeat_
 
   local ndz
   for iter in 1:maxiters
-    always_new && update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true))
+    if always_new
+        @. nlsolver.cache.ustep = integrator.uprev + nlsolver.γ * nlsolver.z
+        integrator.uprev, nlsolver.cache.ustep = nlsolver.cache.ustep, integrator.uprev
+        update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true))
+        integrator.uprev, nlsolver.cache.ustep = nlsolver.cache.ustep, integrator.uprev
+    end
     nlsolver.iter = iter
 
     # compute next step and calculate norm of residuals
