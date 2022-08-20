@@ -66,7 +66,7 @@ using DocStringExtensions
   using DiffEqBase: Convergence, Divergence
   const TryAgain = DiffEqBase.SlowConvergence
 
-  import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, 
+  import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros,
                      islinear, timedepentdtmin, OrdinaryDiffEqTag
 
   import SparseDiffTools
@@ -188,13 +188,15 @@ using DocStringExtensions
   include("interp_func.jl")
   include("composite_algs.jl")
 
-  let
-    while true
+  import SnoopPrecompile
+
+  SnoopPrecompile.@precompile_all_calls begin
       function lorenz(du,u,p,t)
-        du[1] = 10.0(u[2]-u[1])
-        du[2] = u[1]*(28.0-u[3]) - u[2]
-        du[3] = u[1]*u[2] - (8/3)*u[3]
+          du[1] = 10.0(u[2]-u[1])
+          du[2] = u[1]*(28.0-u[3]) - u[2]
+          du[3] = u[1]*u[2] - (8/3)*u[3]
       end
+
       lorenzprob = ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
       solve(lorenzprob,BS3())
       solve(lorenzprob,Tsit5())
@@ -260,29 +262,6 @@ using DocStringExtensions
       solve(lorenzprob,AutoVern9(Rodas5(autodiff=false)))
       solve(lorenzprob,AutoVern9(KenCarp47(autodiff=false)))
       solve(lorenzprob,AutoVern7(Rodas5()))
-      lorenzprob = nothing
-      break
-    end
-    lorenzprob = ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
-    solve(lorenzprob,BS3())
-    solve(lorenzprob,Tsit5())
-    solve(lorenzprob,Vern7())
-    solve(lorenzprob,Vern9())
-    solve(lorenzprob,Rosenbrock23())(5.0)
-    solve(lorenzprob,TRBDF2())
-    solve(lorenzprob,Rodas4(autodiff=false))
-    solve(lorenzprob,KenCarp4(autodiff=false))
-    solve(lorenzprob,Rodas5())
-    solve(lorenzprob,QNDF())
-    solve(lorenzprob,QNDF(autodiff=false))
-    solve(lorenzprob,AutoTsit5(Rosenbrock23()))
-    solve(lorenzprob,AutoTsit5(Rosenbrock23(autodiff=false)))
-    solve(lorenzprob,AutoTsit5(TRBDF2(autodiff=false)))
-    solve(lorenzprob,AutoVern7(Rodas4(autodiff=false)))
-    solve(lorenzprob,AutoVern7(TRBDF2(autodiff=false)))
-    solve(lorenzprob,AutoVern9(Rodas5(autodiff=false)))
-    solve(lorenzprob,AutoVern9(KenCarp47(autodiff=false)))
-    solve(lorenzprob,AutoVern7(Rodas5()))
   end
 
   #General Functions
