@@ -1,10 +1,7 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, DiffEqProblemLibrary.ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEq, ODEProblemLibrary, DiffEqDevTools
 using Test, Random
 Random.seed!(100)
-
-# load problems
-ODEProblemLibrary.importodeproblems()
 
 ## Convergence Testing
 dts1 = 1 .//2 .^(9:-1:5)

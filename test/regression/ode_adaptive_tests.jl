@@ -1,4 +1,4 @@
-using OrdinaryDiffEq,DiffEqProblemLibrary, DiffEqDevTools, Test
+using OrdinaryDiffEq, DiffEqDevTools, Test
 
 import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
