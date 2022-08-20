@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, Test, Statistics
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
+import ODEProblemLibrary: prob_ode_2Dlinear
 prob = deepcopy(prob_ode_2Dlinear)
 prob2 = ODEProblem(prob.f,prob.u0,(1.0,0.0),1.01)
 

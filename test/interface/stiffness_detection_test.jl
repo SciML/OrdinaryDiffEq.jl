@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, Test
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: van
+import ODEProblemLibrary: van
 using ForwardDiff: Dual
 
 prob1 = ODEProblem(van,  [0,2.],(0.0,6),inv(0.003))

@@ -1,7 +1,6 @@
 using OrdinaryDiffEq,DiffEqProblemLibrary, DiffEqDevTools, Test
 
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
+import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 prob = prob_ode_2Dlinear
 sol =solve(prob,Rosenbrock32(),dt=1/2^4)

@@ -2,8 +2,7 @@
 ## Breakout these since no other test of their adaptivity
 
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
                               prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
 dts = (1/2) .^ (6:-1:3)

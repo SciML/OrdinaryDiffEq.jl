@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test, Random
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
+import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 Random.seed!(100)
 ## Convergence Testing

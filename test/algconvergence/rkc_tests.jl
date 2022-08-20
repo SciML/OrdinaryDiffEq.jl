@@ -1,7 +1,6 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, Random
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 using OrdinaryDiffEq: maxeig!
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 probArr = Vector{ODEProblem}(undef, 2)
 probArr[1] = prob_ode_linear
 probArr[2] = prob_ode_2Dlinear
