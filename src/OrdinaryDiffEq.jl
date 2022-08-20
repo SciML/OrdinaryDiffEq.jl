@@ -199,6 +199,10 @@ using DocStringExtensions
           du[3] = u[1]*u[2] - (8/3)*u[3]
       end
 
+      function lorenz_oop(u,p,t)
+          [10.0(u[2]-u[1]),u[1]*(28.0-u[3]) - u[2],u[1]*u[2] - (8/3)*u[3]]
+      end
+
       solver_list = [
         BS3(), Tsit5(), Vern7(), Vern9(),
 
@@ -260,6 +264,9 @@ using DocStringExtensions
         ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
         ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0))
         ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0),Float64[])
+        ODEProblem(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
+        ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
+        ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0),Float64[])
       ]
 
       for prob in prob_list, solver in solver_list
