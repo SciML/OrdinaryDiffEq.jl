@@ -199,7 +199,12 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
         linsolve = alg.linsolve
     end
 
-    ((isbitstype(T) && sizeof(T) > 24) || typeof(prob.f.f) === DiffEqBase.NORECOMPILE_FUNCTION) && return remake(alg, chunk_size=Val{1}(),linsolve=linsolve)
+    # If norecompile mode or very large bitsize, like a dual number u0 already, then
+    # don't use a large chunksize as it will either error or not be beneficial
+    if (isbitstype(T) && sizeof(T) > 24) || (prob.f isa ODEFunction && prob.f.f isa
+                                           FunctionWrappersWrappers.FunctionWrappersWrapper)
+        return remake(alg, chunk_size=Val{1}(), linsolve=linsolve)
+    end
 
     L = ArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
