@@ -62,6 +62,8 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
+isfsal(alg::ETD2RK4) = false
+
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])::Bool
 all_fsal(alg, cache) = isfsal(alg)
@@ -267,6 +269,7 @@ alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
 alg_extrapolates(alg::MagnusLeapfrog) = true
+alg_extrapolates(alg::ETD2RK4) = true
 
 alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("Order is not defined for this algorithm")
 get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}, cache) = alg_order(alg)
@@ -311,6 +314,7 @@ alg_order(alg::CayleyEuler) = 2
 alg_order(alg::ETDRK2) = 2
 alg_order(alg::ETDRK3) = 3
 alg_order(alg::ETDRK4) = 4
+alg_order(alg::ETD2RK4) = 4
 alg_order(alg::HochOst4) = 4
 alg_order(alg::Exp4) = 4
 alg_order(alg::EPIRK4s3A) = 4

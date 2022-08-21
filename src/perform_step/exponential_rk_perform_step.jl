@@ -646,6 +646,94 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::ETD2RK4ConstantCache, repeat_step=false)
+
+  #Draft code for new ETD2RK4 integrator
+  #Variable names follow those in Krogstad, 2005
+
+  @unpack t,dt,uprev,uprev2,f,p = integrator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator, cache) # get linear operator
+  alg = unwrap_alg(integrator, true)
+  #F1 = integrator.fsalfirst #not sure if FSAL, so ignore for now
+  halfdt = dt/2
+
+  if integrator.iter == 1
+    # Initialize the first step using Dorm-Prince-5 (also 4th-order)
+    aij = [
+        0 0 0 0 0 0 0;
+        1/5 0 0 0 0 0 0;
+        3/40 9/40 0 0 0 0 0;
+        44/45 −56/15 32/9 0 0 0 0;
+        19372/6561 −25360/2187 64448/6561 −212/729 0 0 0;
+        9017/3168 −355/33 46732/5247 49/176 −5103/18656 0 0;
+        35/384 0 500/1113 125/192 −2187/6784 11/84 0;
+    ]
+    k = zeros(length(uprev),7)
+    u_temp = similar(uprev)
+
+    k[:,1] = f(uprev,p,t)
+
+    for j = 2:7
+          u_temp = uprev .+ dt.*(k*aij[j,:])
+          #kview = @view k[:,j]
+          k[:,j] = f(u_temp,p,t)
+    end
+
+    u = u_temp
+
+  else
+    if alg.krylov
+      kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+      Nn = _compute_nl(f,uprev,p,t,A)
+      Nnprev = _compute_nl(f,uprev2,p,t,A)
+      PhiFbar = phiv_timestep([halfdt,dt],A,[uprev Nn (Nn.-Nnprev)./dt])
+      Na = _compute_nl(f,PhiFbar[:,1],p,t+halfdt,A)
+      c = PhiFbar[:,1] .+ (halfdt).*(Na .- (3/2).*Nn .+ (1/2).*Nnprev)
+      Nc = _compute_nl(f,c,p,t+halfdt,A)
+      d = PhiFbar[:,2] .+ dt.*expv(halfdt,A,(Nc .- (3/2).*Nn .+ (1/2).*Nnprev))
+      Nd = _compute_nl(f,d,p,t+dt,A)
+
+      if isa(f, SplitFunction)
+        integrator.destats.nf2 += 3
+      else
+        integrator.destats.nf += 3
+      end
+
+      # update u
+
+      u = PhiFbar[:,2] .+ (dt/3).*expv(halfdt,A,(Na .+ Nc .- 3 .*Nn .+ Nnprev)) .+ (dt/6).*(Nd .- 2 .*Nn .+ Nnprev)
+
+    else
+
+      P, Phalf = cache.ops
+
+      Nn = _compute_nl(f,uprev,p,t,A)
+      Nnprev = _compute_nl(f,uprev2,p,t,A)
+      a = (Phalf[1]*uprev) .+ (halfdt .* Phalf[2] * Nn) .+ (halfdt/2 .* Phalf[3] * (Nn .- Nnprev))
+      b = (P[1]*uprev) .+ (dt .* P[2] * Nn) .+ (dt .* P[3] * (Nn .- Nnprev))
+      Na = _compute_nl(f,a,p,t+halfdt,A)
+      c = a .+ (halfdt).*(Na .- (3/2).*Nn .+ (1/2).*Nnprev)
+      Nc = _compute_nl(f,c,p,t+halfdt,A)
+      d = b .+ dt .* Phalf[1] * (Nc .- (3/2).*Nn .+ (1/2).*Nnprev)
+      Nd = _compute_nl(f,d,p,t+dt,A)
+
+      integrator.destats.nf2 += 3
+
+      # update u
+
+      u = b .+ (dt/3) .* Phalf[1] * (Na .+ Nc .- 3 .*Nn .+ Nnprev) .+ (dt/6).*(Nd .- 2 .*Nn .+ Nnprev)
+
+    end
+  end
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+
 #############################################
 # EPIRK integrators
 function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)

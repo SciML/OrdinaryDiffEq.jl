@@ -50,6 +50,11 @@ end
 
     println(Alg) # prevent Travis hanging
   end
+  for Alg = ETD2RK4 #iip version not implemened yet
+    sol = solve(prob, Alg(krylov=true, m=20); dt=dt, reltol=tol)
+    sol_ref = solve(prob, Tsit5(); reltol=tol)
+    @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+  end  
 end
 
 @testset "EPIRK" begin
