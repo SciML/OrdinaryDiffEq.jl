@@ -1,8 +1,6 @@
 using DelayDiffEq, DDEProblemLibrary
 using Test
 
-DDEProblemLibrary.importddeproblems()
-
 @testset "Constant delays" begin
     prob = DDEProblemLibrary.prob_dde_constant_2delays_ip
     prob_scalar = DDEProblemLibrary.prob_dde_constant_2delays_scalar
