@@ -1,7 +1,6 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using ForwardDiff, Printf
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
                             prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 # use `PRINT_TESTS = true` to print the tests, including results
 const PRINT_TESTS = false

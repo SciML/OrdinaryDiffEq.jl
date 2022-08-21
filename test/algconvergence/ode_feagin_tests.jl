@@ -1,8 +1,7 @@
-using OrdinaryDiffEq, DiffEqBase, Test, DiffEqProblemLibrary, DiffEqDevTools,
+using OrdinaryDiffEq, DiffEqBase, Test, DiffEqDevTools,
       Random
 
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_bigfloatlinear,
+import ODEProblemLibrary: prob_ode_bigfloatlinear,
                                                prob_ode_bigfloat2Dlinear,
                                                prob_ode_2Dlinear
 

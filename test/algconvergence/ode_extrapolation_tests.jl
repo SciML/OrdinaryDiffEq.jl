@@ -2,7 +2,7 @@
 using  OrdinaryDiffEq, DiffEqDevTools, Test, Random
 
 # Define test problems
-# Note that the time span in DiffEqProblemLibrary.ODEProblemLibrary is given by
+# Note that the time span in ODEProblemLibrary is given by
 # Float64 numbers
 
 linear = (u,p,t) -> (p*u)

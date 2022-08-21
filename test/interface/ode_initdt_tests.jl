@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
+import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 prob = prob_ode_linear
 sol =solve(prob,Rosenbrock32())

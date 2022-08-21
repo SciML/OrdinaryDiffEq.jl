@@ -1,7 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary.ODEProblemLibrary
+using OrdinaryDiffEq, ODEProblemLibrary
 using Test
-
-ODEProblemLibrary.importodeproblems()
 
 @testset "init" begin
     prob = ODEProblemLibrary.prob_ode_linear

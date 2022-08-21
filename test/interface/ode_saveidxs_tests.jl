@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, Test
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear,
+import ODEProblemLibrary: prob_ode_linear,
        linear, f_2dlinear
 
 # scalar, not in-place

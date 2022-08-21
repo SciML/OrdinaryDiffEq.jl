@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear, prob_ode_linear, prob_ode_2Dlinear
+import ODEProblemLibrary: prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear, prob_ode_linear, prob_ode_2Dlinear
 
 probArr = [prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear]
 testTol = 0.25

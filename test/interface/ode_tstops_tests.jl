@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, Test, Random
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear
+import ODEProblemLibrary: prob_ode_linear
 Random.seed!(100)
 
 @testset "Tstops Tests on the Interval [0, 1]" begin

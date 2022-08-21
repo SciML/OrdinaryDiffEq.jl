@@ -1,7 +1,5 @@
-using DelayDiffEq, DiffEqProblemLibrary.DDEProblemLibrary
+using DelayDiffEq, DDEProblemLibrary
 using Test
-
-DDEProblemLibrary.importddeproblems()
 
 @testset "Constant delays" begin
     prob = DDEProblemLibrary.prob_dde_constant_2delays_ip

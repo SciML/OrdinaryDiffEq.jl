@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, Test, Statistics
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
+import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 @testset "Scalar Discrete Problem" begin
   prob = DiscreteProblem(0.5,(0.0,1.0))
