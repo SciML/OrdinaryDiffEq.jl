@@ -265,8 +265,8 @@ using DocStringExtensions
         ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0))
         ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0),Float64[])
         ODEProblem(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
-        ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
-        ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0),Float64[])
+        #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
+        #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0),Float64[])
       ]
 
       for prob in prob_list, solver in solver_list

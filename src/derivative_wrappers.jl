@@ -33,7 +33,8 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg)
       integrator.destats.nf += 1
-      d = ForwardDiff.derivative(f, x)
+      T = typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(),eltype(x)))
+      d = ForwardDiff.extract_derivative(T, f(ForwardDiff.Dual{T}(x, one(x))))
     else
       d = FiniteDiff.finite_difference_derivative(f, x, alg_difftype(alg), dir = diffdir(integrator))
       if alg_difftype(alg) === Val{:central} || alg_difftype(alg) === Val{:forward}
