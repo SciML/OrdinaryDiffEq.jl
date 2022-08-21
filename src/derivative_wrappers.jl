@@ -34,7 +34,8 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
     if alg_autodiff(alg)
       integrator.destats.nf += 1
       T = typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(),eltype(x)))
-      d = ForwardDiff.extract_derivative(T, f(ForwardDiff.Dual{T, eltype(x), 1}(x, ForwardDiff.Partials((one(x),)))))
+      dualval = f(ForwardDiff.Dual{T, eltype(x), 1}(x, ForwardDiff.Partials((one(x),))))
+      d = first.(ForwardDiff.partials.(dualval))
     else
       d = FiniteDiff.finite_difference_derivative(f, x, alg_difftype(alg), dir = diffdir(integrator))
       if alg_difftype(alg) === Val{:central} || alg_difftype(alg) === Val{:forward}
