@@ -23,8 +23,10 @@ lorenzprob2 = ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
 t3 = @elapsed sol = solve(lorenzprob2, Rosenbrock23())
 t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff=false))
 
-@test 5t1 < t3
-@test t2 < t4
+if VERSION >= v"1.8"
+    @test 5t1 < t3
+    @test t2 < t4
+end
 
 function f_oop(u, p, t)
     [0.2u[1], 0.4u[2]]
