@@ -83,6 +83,7 @@ using DocStringExtensions
 
   import ArrayInterfaceStaticArrays, ArrayInterfaceGPUArrays
   import FunctionWrappersWrappers
+  import Preferences
 
   DEFAULT_PRECS(W,du,u,p,t,newW,Plprev,Prprev,solverdata) = nothing,nothing
 
@@ -192,89 +193,117 @@ using DocStringExtensions
 
   import SnoopPrecompile
 
-  SnoopPrecompile.@precompile_all_calls begin
-      function lorenz(du,u,p,t)
-          du[1] = 10.0(u[2]-u[1])
-          du[2] = u[1]*(28.0-u[3]) - u[2]
-          du[3] = u[1]*u[2] - (8/3)*u[3]
-      end
-
-      function lorenz_oop(u,p,t)
-          [10.0(u[2]-u[1]),u[1]*(28.0-u[3]) - u[2],u[1]*u[2] - (8/3)*u[3]]
-      end
-
-      solver_list = [
-        BS3(), Tsit5(), Vern7(), Vern9(),
-
-        Rosenbrock23(), Rosenbrock23(autodiff=false),
-        Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
-
-        Rodas4(), Rodas4(autodiff=false),
-        #Rodas4(chunk_size = 1), Rodas4(chunk_size = Val{1}()),
-
-        Rodas5(), Rodas5(autodiff=false),
-        #Rodas5(chunk_size = 1), Rodas5(chunk_size = Val{1}()),
-
-        Rodas5P(), Rodas5P(autodiff=false),
-        Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
-
-        TRBDF2(), TRBDF2(autodiff=false),
-        #TRBDF2(chunk_size = 1), TRBDF2(chunk_size = Val{1}()),
-
-        KenCarp4(), KenCarp4(autodiff=false),
-        #KenCarp4(chunk_size = 1), KenCarp4(chunk_size = Val{1}()),
-
-        QNDF(), QNDF(autodiff=false),
-        #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
-
-        AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff=false)),
-        AutoTsit5(Rosenbrock23(chunk_size = 1)),
-        AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
-
-        AutoTsit5(TRBDF2()), AutoTsit5(TRBDF2(autodiff=false)),
-        #AutoTsit5(TRBDF2(chunk_size = 1)),
-        #AutoTsit5(TRBDF2(chunk_size = Val{1}())),
-
-        AutoVern9(KenCarp47()), AutoVern9(KenCarp47(autodiff=false)),
-        #AutoVern9(KenCarp47(chunk_size = 1)),
-        #AutoVern9(KenCarp47(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5()), AutoVern9(Rodas5(autodiff=false)),
-        AutoVern9(Rodas5(chunk_size = 1)),
-        AutoVern9(Rodas5(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5P()), AutoVern9(Rodas5P(autodiff=false)),
-        AutoVern9(Rodas5P(chunk_size = 1)),
-        AutoVern9(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(Rodas4()), AutoVern7(Rodas4(autodiff=false)),
-        #AutoVern7(Rodas4(chunk_size = 1)),
-        #AutoVern7(Rodas4(chunk_size = Val{1}())),
-
-        #AutoVern7(Rodas5P()), AutoVern7(Rodas5P(autodiff=false)),
-        #AutoVern7(Rodas5P(chunk_size = 1)),
-        #AutoVern7(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(TRBDF2()), AutoVern7(TRBDF2(autodiff=false)),
-        #AutoVern7(TRBDF2(chunk_size = 1)),
-        #AutoVern7(TRBDF2(chunk_size = Val{1}())),
-      ]
-
-      prob_list = [
-        ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
-        ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0))
-        ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0),Float64[])
-        ODEProblem(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
-        #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
-        #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0),Float64[])
-      ]
-
-      for prob in prob_list, solver in solver_list
-        solve(prob,solver)(5.0)
-      end
-
-      prob_list = nothing
+SnoopPrecompile.@precompile_all_calls begin
+  function lorenz(du, u, p, t)
+    du[1] = 10.0(u[2] - u[1])
+    du[2] = u[1] * (28.0 - u[3]) - u[2]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
   end
+
+  function lorenz_oop(u, p, t)
+    [10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
+  end
+  nonstiff_solver_options =
+    ["BS3" => BS3(), "Tsit5" => Tsit5(), "Vern7" => Vern7(), "Vern9" => Vern9()]
+  stiff_solver_options = [
+    ("Rosenbrock23", "true;true;true;true", Rosenbrock23),
+    ("Rodas4", "true;true;false;false", Rodas4),
+    ("Rodas5", "true;true;false;false", Rodas5),
+    ("Rodas5P", "true;true;true;true", Rodas5P),
+    ("TRBDF2", "true;true;false;false", TRBDF2),
+    ("KenCarp4", "true;true;false;false", KenCarp4),
+    ("QNDF", "true;true;false;false", QNDF),
+  ]
+  autoswitch_solver_options = [
+    ("AutoTsit5Rosenbrock23", "true;true;true;true", AutoTsit5, Rosenbrock23),
+    ("AutoTsit5TRBDF2", "true;true;false;false", AutoTsit5, Rosenbrock23),
+    ("AutoTsit5Rodas5P", "false;false;false;false", AutoTsit5, Rodas5P),
+    ("AutoVern9KenCarp47", "true;true;false;false", AutoVern9, KenCarp47),
+    ("AutoVern9Rodas5", "true;true;true;true", AutoVern9, Rodas5),
+    ("AutoVern9Rodas5P", "true;true;true;true", AutoVern9, Rodas5P),
+    ("AutoVern7Rodas4", "true;true;false;false", AutoVern7, Rodas4),
+    ("AutoVern7Rodas5P", "false;false;false;false", AutoVern7, Rodas5P),
+    ("AutoVern7TRBDF2", "true;true;false;false", AutoVern7, TRBDF2),
+  ]
+
+
+  solver_list = []
+  for (solvername, solver) in nonstiff_solver_options
+    if Preferences.@load_preference(solvername, "true") == "true"
+      push!(solver_list, solver)
+    end
+  end
+  for (solvername, default, solvertype) in stiff_solver_options
+    options = split(Preferences.@load_preference(solvername, default), ';')
+    options[1] == "true" && push!(solver_list, solvertype())
+    options[2] == "true" && push!(solver_list, solvertype(autodiff = false))
+    options[3] == "true" && push!(solver_list, solvertype(chunk_size = 1))
+    options[4] == "true" && push!(solver_list, solvertype(chunk_size = Val{1}()))
+  end
+  for (solvername, default, nonstifftype, stifftype) in autoswitch_solver_options
+    options = split(Preferences.@load_preference(solvername, default), ';')
+    options[1] == "true" && push!(solver_list, nonstifftype(stifftype()))
+    options[2] == "true" &&
+      push!(solver_list, nonstifftype(stifftype(autodiff = false)))
+    options[3] == "true" && push!(solver_list, nonstifftype(stifftype(chunk_size = 1)))
+    options[4] == "true" &&
+      push!(solver_list, nonstifftype(stifftype(chunk_size = Val{1}())))
+  end
+
+  eltypes = []
+  Preferences.@load_preference("Float64", "true") == "true" && push!(eltypes, Float64)
+  Preferences.@load_preference("Float32", "false") == "true" && push!(eltypes, Float64)
+  prob_list = []
+  inplace_problems =
+    split(Preferences.@load_preference("iip_problems", "true;true;true"), ';') .==
+    "true"
+  out_of_place_problems =
+    split(Preferences.@load_preference("oop_problems", "true;false;false"), ';') .==
+    "true"
+  for T in eltypes
+    if inplace_problems[1]
+      push!(prob_list, ODEProblem(lorenz, T[1.0; 0.0; 0.0], (zero(T), one(T))))
+    end
+    if inplace_problems[2]
+      push!(
+        prob_list,
+        ODEProblem{true,false}(lorenz, T[1.0; 0.0; 0.0], (zero(T), one(T))),
+      )
+    end
+    if inplace_problems[3]
+      push!(
+        prob_list,
+        ODEProblem{true,false}(lorenz, T[1.0; 0.0; 0.0], (zero(T), one(T)), T[]),
+      )
+    end
+    if out_of_place_problems[1]
+      push!(prob_list, ODEProblem(lorenz_oop, T[1.0; 0.0; 0.0], (zero(T), one(T))))
+    end
+    if out_of_place_problems[2]
+      push!(
+        prob_list,
+        ODEProblem{false,false}(lorenz_oop, T[1.0; 0.0; 0.0], (zero(T), one(T))),
+      )
+    end
+    if out_of_place_problems[3]
+      push!(
+        prob_list,
+        ODEProblem{false,false}(
+          lorenz_oop,
+          T[1.0; 0.0; 0.0],
+          (zero(T), one(T)),
+          T[],
+        ),
+      )
+    end
+  end
+
+  for prob in prob_list, solver in solver_list
+    solve(prob, solver)(5.0)
+  end
+
+  prob_list = nothing
+end
 
   #General Functions
   export solve, solve!, init, step!
