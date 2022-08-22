@@ -66,7 +66,8 @@ using DocStringExtensions
   using DiffEqBase: Convergence, Divergence
   const TryAgain = DiffEqBase.SlowConvergence
 
-  import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear, timedepentdtmin
+  import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros,
+                     islinear, timedepentdtmin, OrdinaryDiffEqTag
 
   import SparseDiffTools
   import SparseDiffTools: matrix_colors, forwarddiff_color_jacobian!,
@@ -80,9 +81,8 @@ using DocStringExtensions
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
                                                         K<:Union{Float64,Float32}}}
 
-  struct OrdinaryDiffEqTag end
-
   import ArrayInterfaceStaticArrays, ArrayInterfaceGPUArrays
+  import FunctionWrappersWrappers
 
   DEFAULT_PRECS(W,du,u,p,t,newW,Plprev,Prprev,solverdata) = nothing,nothing
 
@@ -193,31 +193,87 @@ using DocStringExtensions
   import SnoopPrecompile
 
   SnoopPrecompile.@precompile_all_calls begin
-    function lorenz(du,u,p,t)
-    du[1] = 10.0(u[2]-u[1])
-    du[2] = u[1]*(28.0-u[3]) - u[2]
-    du[3] = u[1]*u[2] - (8/3)*u[3]
-    end
-    lorenzprob = ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
-    solve(lorenzprob,BS3())
-    solve(lorenzprob,Tsit5())
-    solve(lorenzprob,Vern7())
-    solve(lorenzprob,Vern9())
-    solve(lorenzprob,Rosenbrock23())(5.0)
-    solve(lorenzprob,TRBDF2())
-    solve(lorenzprob,Rodas4(autodiff=false))
-    solve(lorenzprob,KenCarp4(autodiff=false))
-    solve(lorenzprob,Rodas5())
-    solve(lorenzprob,QNDF())
-    solve(lorenzprob,QNDF(autodiff=false))
-    solve(lorenzprob,AutoTsit5(Rosenbrock23()))
-    solve(lorenzprob,AutoTsit5(Rosenbrock23(autodiff=false)))
-    solve(lorenzprob,AutoTsit5(TRBDF2(autodiff=false)))
-    solve(lorenzprob,AutoVern7(Rodas4(autodiff=false)))
-    solve(lorenzprob,AutoVern7(TRBDF2(autodiff=false)))
-    solve(lorenzprob,AutoVern9(Rodas5(autodiff=false)))
-    solve(lorenzprob,AutoVern9(KenCarp47(autodiff=false)))
-    solve(lorenzprob,AutoVern7(Rodas5()))
+      function lorenz(du,u,p,t)
+          du[1] = 10.0(u[2]-u[1])
+          du[2] = u[1]*(28.0-u[3]) - u[2]
+          du[3] = u[1]*u[2] - (8/3)*u[3]
+      end
+
+      function lorenz_oop(u,p,t)
+          [10.0(u[2]-u[1]),u[1]*(28.0-u[3]) - u[2],u[1]*u[2] - (8/3)*u[3]]
+      end
+
+      solver_list = [
+        BS3(), Tsit5(), Vern7(), Vern9(),
+
+        Rosenbrock23(), Rosenbrock23(autodiff=false),
+        Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
+
+        Rodas4(), Rodas4(autodiff=false),
+        #Rodas4(chunk_size = 1), Rodas4(chunk_size = Val{1}()),
+
+        Rodas5(), Rodas5(autodiff=false),
+        #Rodas5(chunk_size = 1), Rodas5(chunk_size = Val{1}()),
+
+        Rodas5P(), Rodas5P(autodiff=false),
+        Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
+
+        TRBDF2(), TRBDF2(autodiff=false),
+        #TRBDF2(chunk_size = 1), TRBDF2(chunk_size = Val{1}()),
+
+        KenCarp4(), KenCarp4(autodiff=false),
+        #KenCarp4(chunk_size = 1), KenCarp4(chunk_size = Val{1}()),
+
+        QNDF(), QNDF(autodiff=false),
+        #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
+
+        AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff=false)),
+        AutoTsit5(Rosenbrock23(chunk_size = 1)),
+        AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
+
+        AutoTsit5(TRBDF2()), AutoTsit5(TRBDF2(autodiff=false)),
+        #AutoTsit5(TRBDF2(chunk_size = 1)),
+        #AutoTsit5(TRBDF2(chunk_size = Val{1}())),
+
+        AutoVern9(KenCarp47()), AutoVern9(KenCarp47(autodiff=false)),
+        #AutoVern9(KenCarp47(chunk_size = 1)),
+        #AutoVern9(KenCarp47(chunk_size = Val{1}())),
+
+        AutoVern9(Rodas5()), AutoVern9(Rodas5(autodiff=false)),
+        AutoVern9(Rodas5(chunk_size = 1)),
+        AutoVern9(Rodas5(chunk_size = Val{1}())),
+
+        AutoVern9(Rodas5P()), AutoVern9(Rodas5P(autodiff=false)),
+        AutoVern9(Rodas5P(chunk_size = 1)),
+        AutoVern9(Rodas5P(chunk_size = Val{1}())),
+
+        AutoVern7(Rodas4()), AutoVern7(Rodas4(autodiff=false)),
+        #AutoVern7(Rodas4(chunk_size = 1)),
+        #AutoVern7(Rodas4(chunk_size = Val{1}())),
+
+        #AutoVern7(Rodas5P()), AutoVern7(Rodas5P(autodiff=false)),
+        #AutoVern7(Rodas5P(chunk_size = 1)),
+        #AutoVern7(Rodas5P(chunk_size = Val{1}())),
+
+        AutoVern7(TRBDF2()), AutoVern7(TRBDF2(autodiff=false)),
+        #AutoVern7(TRBDF2(chunk_size = 1)),
+        #AutoVern7(TRBDF2(chunk_size = Val{1}())),
+      ]
+
+      prob_list = [
+        ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
+        ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0))
+        ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0),Float64[])
+        ODEProblem(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
+        #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
+        #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0),Float64[])
+      ]
+
+      for prob in prob_list, solver in solver_list
+        solve(prob,solver)(5.0)
+      end
+
+      prob_list = nothing
   end
 
   #General Functions
