@@ -356,9 +356,9 @@ function fix_dt_at_bounds!(integrator)
   end
   dtmin = timedepentdtmin(integrator)
   if integrator.tdir > 0
-    integrator.dt = max(integrator.dt,dtmin) #abs to fix complex sqrt issue at end
+    integrator.dt = max(integrator.dt,dtmin)
   else
-    integrator.dt = min(integrator.dt,dtmin) #abs to fix complex sqrt issue at end
+    integrator.dt = min(integrator.dt,dtmin)
   end
 end
 
