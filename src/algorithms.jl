@@ -14,7 +14,7 @@ const RosenbrockAlgorithm = Union{OrdinaryDiffEqRosenbrockAlgorithm,OrdinaryDiff
 
 abstract type OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing} end
+abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
 const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
