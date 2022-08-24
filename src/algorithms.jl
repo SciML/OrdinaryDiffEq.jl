@@ -3885,8 +3885,6 @@ for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EP
     adaptive_krylov::Bool
     m::Int
     iop::Int
-    autodiff::Bool
-    chunksize::Int
   end
   @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
               chunk_size=Val{0}(), diff_type = Val{:forward}) =
