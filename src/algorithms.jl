@@ -3130,7 +3130,7 @@ end
 
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing}
+struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing}
   krylov::Symbol
   m::Int
   iop::Int
