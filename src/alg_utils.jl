@@ -5,8 +5,8 @@ SciMLBase.allows_arbitrary_number_types(alg::Union{OrdinaryDiffEqAlgorithm,DAEAl
 SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm,FunctionMap}) = true
 SciMLBase.isdiscrete(alg::FunctionMap) = true
 SciMLBase.forwarddiffs_model(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-                                        DAEAlgorithm,OrdinaryDiffEqImplicitAlgorithm,
-                                        ExponentialAlgorithm}) = alg_autodiff(alg)
+    DAEAlgorithm,OrdinaryDiffEqImplicitAlgorithm,
+    ExponentialAlgorithm}) = alg_autodiff(alg)
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 
 # isadaptive is defined below.
@@ -173,10 +173,13 @@ get_chunksize_int(alg::ExponentialAlgorithm) = alg.chunksize
 
 function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
         OrdinaryDiffEqImplicitAlgorithm{0,AD,FDT},
-        DAEAlgorithm{0,AD,FDT}}, u0::AbstractArray{T}, p, prob) where {AD,FDT,T}
+        DAEAlgorithm{0,AD,FDT},OrdinaryDiffEqExponentialAlgorithm{0,AD,FDT}}, u0::AbstractArray{T},
+        p, prob) where {AD,FDT,T}
     alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
 
-    if alg.linsolve === nothing
+    if alg isa OrdinaryDiffEqExponentialAlgorithm
+        linsolve = nothing
+    elseif alg.linsolve === nothing
         if (prob.f isa ODEFunction && prob.f.f isa SciMLBase.AbstractDiffEqOperator)
             linsolve = LinearSolve.defaultalg(prob.f.f, u0)
         elseif (prob.f isa SplitFunction && prob.f.f1.f isa SciMLBase.AbstractDiffEqOperator)
@@ -187,8 +190,8 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
                 linsolve = KrylovJL()
             end
         elseif (prob isa ODEProblem || prob isa DDEProblem) && (prob.f.mass_matrix === nothing ||
-                                       (prob.f.mass_matrix !== nothing &&
-                                        !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractDiffEqOperator)))
+                                                                (prob.f.mass_matrix !== nothing &&
+                                                                 !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractDiffEqOperator)))
             linsolve = LinearSolve.defaultalg(prob.f.jac_prototype, u0)
         else
             # If mm is a sparse matrix and A is a DiffEqArrayOperator, then let linear
@@ -202,8 +205,12 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     # If norecompile mode or very large bitsize, like a dual number u0 already, then
     # don't use a large chunksize as it will either error or not be beneficial
     if (isbitstype(T) && sizeof(T) > 24) || (prob.f isa ODEFunction && prob.f.f isa
-                                           FunctionWrappersWrappers.FunctionWrappersWrapper)
-        return remake(alg, chunk_size=Val{1}(), linsolve=linsolve)
+                                                                       FunctionWrappersWrappers.FunctionWrappersWrapper)
+        if alg isa OrdinaryDiffEqExponentialAlgorithm
+            return remake(alg, chunk_size=Val{1}())
+        else
+            return remake(alg, chunk_size=Val{1}(), linsolve=linsolve)
+        end
     end
 
     L = ArrayInterface.known_length(typeof(u0))
@@ -218,10 +225,19 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
         end
 
         cs = ForwardDiff.pickchunksize(x)
-        remake(alg, chunk_size=Val{cs}(), linsolve=linsolve)
+
+        if alg isa OrdinaryDiffEqExponentialAlgorithm
+            return remake(alg, chunk_size=Val{cs}())
+        else
+            return remake(alg, chunk_size=Val{cs}(), linsolve=linsolve)
+        end
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
-        remake(alg, chunk_size=cs, linsolve=linsolve)
+        if alg isa OrdinaryDiffEqExponentialAlgorithm
+            return remake(alg, chunk_size=cs)
+        else
+            return remake(alg, chunk_size=cs, linsolve=linsolve)
+        end
     end
 end
 

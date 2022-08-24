@@ -28,6 +28,8 @@ if VERSION >= v"1.8"
     @test t2 < t4
 end
 
+solve(prob, EPIRK4s3A(), dt=1e-1)
+
 function f_oop(u, p, t)
     [0.2u[1], 0.4u[2]]
 end
