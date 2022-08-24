@@ -28,8 +28,8 @@ struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
 
 function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
-  T = DiffEqBase.remaker_of(thing)
-  T(; DiffEqBase.struct_as_namedtuple(thing)...,kwargs...)
+  T = SciMLBase.remaker_of(thing)
+  T(; SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
 end
 
 function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
