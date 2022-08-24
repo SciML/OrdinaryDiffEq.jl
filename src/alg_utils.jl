@@ -162,13 +162,19 @@ get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not hav
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
 get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
 get_chunksize(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
-get_chunksize(alg::ExponentialAlgorithm) = Val(alg.chunksize)
+function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS,AD},
+                             OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD}}) where {CS,AD}
+                             Val(CS)
+end
 
 get_chunksize_int(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize_int(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 get_chunksize_int(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 get_chunksize_int(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = CS
-get_chunksize_int(alg::ExponentialAlgorithm) = alg.chunksize
+function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS,AD},
+                             OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD}}) where {CS,AD}
+                             CS
+end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{0,AD,FDT},
@@ -255,24 +261,31 @@ alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have
 alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
 alg_autodiff(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = AD
 alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
-alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
+function alg_autodiff(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS,AD},
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD}}) where {CS,AD}
+    AD
+end
+
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
 
 alg_difftype(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
     OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
-    OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+    OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ},
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ},
     DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = FDT
 
 standardtag(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
     OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
-    OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+    OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ},
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ},
     DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = ST
 
 concrete_jac(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
     OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
-    OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ},
+    OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ},
+    OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ},
     DAEAlgorithm{CS,AD,FDT,ST,CJ}}) where {CS,AD,FDT,ST,CJ} = CJ
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
