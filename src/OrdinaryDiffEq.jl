@@ -207,7 +207,7 @@ using DocStringExtensions
         BS3(), Tsit5(), Vern7(), Vern9(),
 
         Rosenbrock23(), Rosenbrock23(autodiff=false),
-        Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
+        #Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
 
         Rodas4(), Rodas4(autodiff=false),
         #Rodas4(chunk_size = 1), Rodas4(chunk_size = Val{1}()),
@@ -216,7 +216,7 @@ using DocStringExtensions
         #Rodas5(chunk_size = 1), Rodas5(chunk_size = Val{1}()),
 
         Rodas5P(), Rodas5P(autodiff=false),
-        Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
+        #Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
 
         TRBDF2(), TRBDF2(autodiff=false),
         #TRBDF2(chunk_size = 1), TRBDF2(chunk_size = Val{1}()),
@@ -228,8 +228,8 @@ using DocStringExtensions
         #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
 
         AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff=false)),
-        AutoTsit5(Rosenbrock23(chunk_size = 1)),
-        AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
+        #AutoTsit5(Rosenbrock23(chunk_size = 1)),
+        #AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
 
         AutoTsit5(TRBDF2()), AutoTsit5(TRBDF2(autodiff=false)),
         #AutoTsit5(TRBDF2(chunk_size = 1)),
@@ -240,12 +240,12 @@ using DocStringExtensions
         #AutoVern9(KenCarp47(chunk_size = Val{1}())),
 
         AutoVern9(Rodas5()), AutoVern9(Rodas5(autodiff=false)),
-        AutoVern9(Rodas5(chunk_size = 1)),
-        AutoVern9(Rodas5(chunk_size = Val{1}())),
+        #AutoVern9(Rodas5(chunk_size = 1)),
+        #AutoVern9(Rodas5(chunk_size = Val{1}())),
 
         AutoVern9(Rodas5P()), AutoVern9(Rodas5P(autodiff=false)),
-        AutoVern9(Rodas5P(chunk_size = 1)),
-        AutoVern9(Rodas5P(chunk_size = Val{1}())),
+        #AutoVern9(Rodas5P(chunk_size = 1)),
+        #AutoVern9(Rodas5P(chunk_size = Val{1}())),
 
         AutoVern7(Rodas4()), AutoVern7(Rodas4(autodiff=false)),
         #AutoVern7(Rodas4(chunk_size = 1)),
@@ -261,10 +261,8 @@ using DocStringExtensions
       ]
 
       prob_list = [
-        ODEProblem(lorenz,[1.0;0.0;0.0],(0.0,1.0))
         ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0))
         ODEProblem{true,false}(lorenz,[1.0;0.0;0.0],(0.0,1.0),Float64[])
-        ODEProblem(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
         #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
         #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0),Float64[])
       ]
