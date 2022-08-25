@@ -162,7 +162,7 @@ get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not hav
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
 get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
 get_chunksize(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = Val(CS)
-function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS,AD},
+function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS,AD},
                              OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD}}) where {CS,AD}
                              Val(CS)
 end
