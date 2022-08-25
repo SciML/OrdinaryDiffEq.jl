@@ -248,7 +248,7 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
 end
 
 # Linear Exponential doesn't have any of the AD stuff
-function DiffEqBase.prepare_alg(alg::Union{LinearExponential,OrdinaryDiffEqLinearExponentialAlgorithm}, u0::AbstractArray,
+function DiffEqBase.prepare_alg(alg::Union{SplitEuler,LinearExponential,OrdinaryDiffEqLinearExponentialAlgorithm}, u0::AbstractArray,
         p, prob)
         alg
 end
