@@ -256,15 +256,24 @@ end
   beta1, beta2, beta3 = controller.beta
 
   EEst = DiffEqBase.value(integrator.EEst)
-  if iszero(EEst)
-    # If the error estimate is zero, we can increase the step size as much as
-    # desired. This additional check fixes problems of the code below when the
-    # error estimates become zero
-    # -> err1, err2, err3 become Inf
-    # -> err1^positive_number * err2^negative_number becomes NaN
-    # -> dt becomes NaN
-    EEst = eps(typeof(EEst))
-  end
+
+  # If the error estimate is zero, we can increase the step size as much as
+  # desired. This additional check fixes problems of the code below when the
+  # error estimates become zero
+  # -> err1, err2, err3 become Inf
+  # -> err1^positive_number * err2^negative_number becomes NaN
+  # -> dt becomes NaN
+  #
+  # `EEst_min` is smaller than PETSC_SMALL used in the equivalent logic in PETSc.
+  # For example, `eps(Float64) ≈ 2.2e-16` but `PETSC_SMALL ≈ 1.0e-10` for `double`.
+  EEst_min = eps(typeof(EEst))
+  # The code below is a bit more robust than
+  # ```
+  # if iszero(EEst)
+  #   EEst = eps(typeof(EEst))
+  # end
+  # ```
+  EEst = ifelse(EEst > EEst_min, EEst, EEst_min)
 
   controller.err[1] = inv(EEst)
   err1, err2, err3 = controller.err
@@ -272,7 +281,7 @@ end
   k = min(alg_order(alg), alg_adaptive_order(alg)) + 1
   dt_factor = err1^(beta1 / k) * err2^(beta2 / k) * err3^(beta3 / k)
   if isnan(dt_factor)
-    @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k controller.err[1] controller.err[2] controller.err[3]
+    @warn "unlimited dt_factor" dt_factor err1 err2 err3 beta1 beta2 beta3 k
   end
   dt_factor = controller.limiter(dt_factor)
 
