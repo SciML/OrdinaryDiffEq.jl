@@ -247,6 +247,12 @@ function DiffEqBase.prepare_alg(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorit
     end
 end
 
+# Linear Exponential doesn't have any of the AD stuff
+function DiffEqBase.prepare_alg(alg::Union{LinearExponential,OrdinaryDiffEqLinearExponentialAlgorithm}, u0::AbstractArray{T},
+        p, prob)
+        alg
+end
+
 @generated function pick_static_chunksize(::Val{chunksize}) where {chunksize}
     x = ForwardDiff.pickchunksize(chunksize)
     :(Val{$x}())
