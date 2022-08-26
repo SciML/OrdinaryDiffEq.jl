@@ -303,7 +303,7 @@ sol = solve(prob,Rodas4(autodiff=false))
 @test length(sol) < 20
 
 sim = test_convergence(dts,prob,Rodas42(),dense_errors=true)
-@test sim.𝒪est[:final] ≈ 5 atol=testTol
+@test sim.𝒪est[:final] ≈ 5.1 atol=testTol
 @test sim.𝒪est[:L2] ≈ 4 atol=testTol
 
 sol = solve(prob,Rodas42())
