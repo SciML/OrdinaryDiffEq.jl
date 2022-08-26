@@ -1,21 +1,21 @@
-abstract type RosenbrockTableau{T,T2} end
-struct RosenbrockFixedTableau{T,T2}<:RosenbrockTableau{T,T2}
-    a::Array{T,2}
-    C::Array{T,2}
-    b::Array{T,1}
+abstract type RosenbrockTableau{T, T2} end
+struct RosenbrockFixedTableau{T, T2} <: RosenbrockTableau{T, T2}
+    a::Array{T, 2}
+    C::Array{T, 2}
+    b::Array{T, 1}
     gamma::T2
-    d::Array{T,1}
-    c::Array{T2,1}
+    d::Array{T, 1}
+    c::Array{T2, 1}
 end
 
-struct RosenbrockAdaptiveTableau{T,T2}<:RosenbrockTableau{T,T2}
-    a::Array{T,2}
-    C::Array{T,2}
-    b::Array{T,1}
-    btilde::Array{T,1}
+struct RosenbrockAdaptiveTableau{T, T2} <: RosenbrockTableau{T, T2}
+    a::Array{T, 2}
+    C::Array{T, 2}
+    b::Array{T, 1}
+    btilde::Array{T, 1}
     gamma::T2
-    d::Array{T,1}
-    c::Array{T2,1}
+    d::Array{T, 1}
+    c::Array{T2, 1}
 end
 
 """
@@ -25,8 +25,8 @@ Transform BitArray (in the form of `xs.!=0` ) into 1D-Array of Bools by
 `[i for i in xs.!=0]` to satisfy the type constraint of RosenbrockTableau
 """
 macro _bitarray2boolarray(expr)
-    args=[:([i for i in $arg]) for arg in expr.args[2:end]]
-    args[end-2]=:(tab.gamma!=0)
+    args = [:([i for i in $arg]) for arg in expr.args[2:end]]
+    args[end - 2] = :(tab.gamma != 0)
     esc(:($(expr.args[1])($(args...))))
 end
 
@@ -36,9 +36,15 @@ end
 Convert normal tableau into a dummy tableau consisting of Bools. We use dummy tableaus
 where we only care about whether values in the tableau are zeros.
 """
-_masktab(tab::RosenbrockFixedTableau)=@_bitarray2boolarray RosenbrockFixedTableau(tab.a.!=0,tab.C.!=0,tab.b.!=0,tab.gamma!=0,tab.d.!=0,tab.c.!=0)
-_masktab(tab::RosenbrockAdaptiveTableau)=@_bitarray2boolarray RosenbrockAdaptiveTableau(tab.a.!=0,tab.C.!=0,tab.b.!=0,tab.btilde.!=0,tab.gamma!=0,tab.d.!=0,tab.c.!=0)
-
+function _masktab(tab::RosenbrockFixedTableau)
+    @_bitarray2boolarray RosenbrockFixedTableau(tab.a .!= 0, tab.C .!= 0, tab.b .!= 0,
+                                                tab.gamma != 0, tab.d .!= 0, tab.c .!= 0)
+end
+function _masktab(tab::RosenbrockAdaptiveTableau)
+    @_bitarray2boolarray RosenbrockAdaptiveTableau(tab.a .!= 0, tab.C .!= 0, tab.b .!= 0,
+                                                   tab.btilde .!= 0, tab.gamma != 0,
+                                                   tab.d .!= 0, tab.c .!= 0)
+end
 
 """
     _common_nonzero_vals(tab::RosenbrockTableau)
@@ -47,13 +53,13 @@ Return the common nonzero symbols in the tableau. Typical return value:
 `[[:a21,:a31,:a32],[:C21,:C31,:C32],[:b1,:b2,:b3],:gamma,[:d1,:d2,:d3],[:c1,:c2,:c3]]`
 """
 function _common_nonzero_vals(tab::RosenbrockTableau)
-    nzvals=[]
-    push!(nzvals,[Symbol(:a,ind[1],ind[2]) for ind in findall(!iszero,tab.a)])
-    push!(nzvals,[Symbol(:C,ind[1],ind[2]) for ind in findall(!iszero,tab.C)])
-    push!(nzvals,[Symbol(:b,ind) for ind in findall(!iszero,tab.b)])
-    push!(nzvals,:gamma)
-    push!(nzvals,[Symbol(:d,ind) for ind in findall(!iszero,tab.d)])
-    push!(nzvals,[Symbol(:c,ind) for ind in findall(!iszero,tab.c)])
+    nzvals = []
+    push!(nzvals, [Symbol(:a, ind[1], ind[2]) for ind in findall(!iszero, tab.a)])
+    push!(nzvals, [Symbol(:C, ind[1], ind[2]) for ind in findall(!iszero, tab.C)])
+    push!(nzvals, [Symbol(:b, ind) for ind in findall(!iszero, tab.b)])
+    push!(nzvals, :gamma)
+    push!(nzvals, [Symbol(:d, ind) for ind in findall(!iszero, tab.d)])
+    push!(nzvals, [Symbol(:c, ind) for ind in findall(!iszero, tab.c)])
     nzvals
 end
 
@@ -64,7 +70,7 @@ Return all the nonzero symbols in the tableau. Typical return value:
 `[:a21,:a31,:a32,:C21,:C31,:C32,:b1,:b2,:b3,:gamma,:d1,:d2,:d3,:c1,:c2,:c3]`
 """
 function _nonzero_vals(tab::RosenbrockFixedTableau)
-    nzvals=_common_nonzero_vals(tab)
+    nzvals = _common_nonzero_vals(tab)
     vcat(nzvals...)
 end
 
@@ -75,8 +81,8 @@ Typical return value:
 `[:a21,:a31,:a32,:C21,:C31,:C32,:b1,:b2,:b3,:btilde1,:btilde2,:btilde3,:gamma,:d1,:d2,:d3,:c1,:c2,:c3]`
 """
 function _nonzero_vals(tab::RosenbrockAdaptiveTableau)
-    nzvals=_common_nonzero_vals(tab)
-    push!(nzvals,[Symbol(:btilde,ind) for ind in findall(!iszero,tab.btilde)])
+    nzvals = _common_nonzero_vals(tab)
+    push!(nzvals, [Symbol(:btilde, ind) for ind in findall(!iszero, tab.btilde)])
     vcat(nzvals...)
 end
 
@@ -91,9 +97,9 @@ Insert a series of field statements like `[:(c2::T2),:(c3::T2)]` into the array 
 - `name::Symbol`: the prefix name of the values
 - `type::Symbol`: type in the statements
 """
-function _push_assigns!(valexprs,inds,name,type::Symbol)
+function _push_assigns!(valexprs, inds, name, type::Symbol)
     for ind in inds
-        push!(valexprs,:($(Symbol(name,"$(Tuple(ind)...)"))::$type))
+        push!(valexprs, :($(Symbol(name, "$(Tuple(ind)...)"))::$type))
     end
 end
 
@@ -106,19 +112,20 @@ according to the nonzero values of `tab.a`,`tab.C` and `tab.c` while others are 
 from their indices. One may choose to pass in a dummy tableau with type `<:RosenbrockTalbeau{Bool,Bool}`
 to fully control the tableau struct.
 """
-function gen_tableau_struct(tab::RosenbrockTableau,tabstructname::Symbol)
-    valexprs=Array{Expr,1}()
-    _push_assigns!(valexprs,findall(!iszero,tab.a),:a,:T)
-    _push_assigns!(valexprs,findall(!iszero,tab.C),:C,:T)
-    _push_assigns!(valexprs,eachindex(tab.b),:b,:T)
-    if typeof(tab)<:RosenbrockAdaptiveTableau
-        _push_assigns!(valexprs,eachindex(tab.btilde),:btilde,:T)
+function gen_tableau_struct(tab::RosenbrockTableau, tabstructname::Symbol)
+    valexprs = Array{Expr, 1}()
+    _push_assigns!(valexprs, findall(!iszero, tab.a), :a, :T)
+    _push_assigns!(valexprs, findall(!iszero, tab.C), :C, :T)
+    _push_assigns!(valexprs, eachindex(tab.b), :b, :T)
+    if typeof(tab) <: RosenbrockAdaptiveTableau
+        _push_assigns!(valexprs, eachindex(tab.btilde), :btilde, :T)
     end
-    push!(valexprs,:(gamma::T2))
-    _push_assigns!(valexprs,eachindex(tab.d),:d,:T)
-    _push_assigns!(valexprs,findall(!iszero,tab.c),:c,:T2)
-    quote struct $tabstructname{T,T2}
-        $(valexprs...)
+    push!(valexprs, :(gamma::T2))
+    _push_assigns!(valexprs, eachindex(tab.d), :d, :T)
+    _push_assigns!(valexprs, findall(!iszero, tab.c), :c, :T2)
+    quote
+        struct $tabstructname{T, T2}
+            $(valexprs...)
         end
     end
 end
@@ -130,14 +137,17 @@ Generate the tableau function expression emulating those in `tableaus/rosenbrock
 It takes in the tableau struct expression (generated by gen_tableau_sturct(...) or written by hand)
 to make sure the actual values of the tableau are organized in the right order.
 """
-function gen_tableau(tab::RosenbrockTableau,tabstructexpr::Expr,tabname::Symbol)
-    @capture(tabstructexpr, struct T_ fields__ end) || error("incorrect tableau expression")
+function gen_tableau(tab::RosenbrockTableau, tabstructexpr::Expr, tabname::Symbol)
+    @capture(tabstructexpr, struct T_
+                 fields__::Any
+             end) || error("incorrect tableau expression")
     tabstructname = namify(T)
-    valsym2tabdict=Dict("a"=>tab.a,"C"=>tab.C,"gamma"=>tab.gamma,"c"=>tab.c,"d"=>tab.d,"b"=>tab.b)
-    if typeof(tab)<:RosenbrockAdaptiveTableau
-        valsym2tabdict["btilde"]=tab.btilde
+    valsym2tabdict = Dict("a" => tab.a, "C" => tab.C, "gamma" => tab.gamma, "c" => tab.c,
+                          "d" => tab.d, "b" => tab.b)
+    if typeof(tab) <: RosenbrockAdaptiveTableau
+        valsym2tabdict["btilde"] = tab.btilde
     end
-    pattern=r"^([a-zA-Z]+)([1-9]{0,2})$"
+    pattern = r"^([a-zA-Z]+)([1-9]{0,2})$"
     assignexprs = Expr[]
     valsyms = Symbol[]
     for field in fields
@@ -148,7 +158,8 @@ function gen_tableau(tab::RosenbrockTableau,tabstructexpr::Expr,tabname::Symbol)
             push!(assignexprs, :($valsym = convert($valtype, $val)))
         end
     end
-    quote function $tabname(T, T2)
+    quote
+        function $tabname(T, T2)
             $(assignexprs...)
             $tabstructname($(valsyms...))
         end
@@ -162,9 +173,10 @@ Generate cache struct expression emulating those in `caches/rosenbrock_caches.jl
 The length of k1,k2,... in the mutable cache struct is determined by the length of `tab.b`
 because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
-function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
-    kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+function gen_cache_struct(tab::RosenbrockTableau, cachename::Symbol, constcachename::Symbol)
+    kstype = [:($(Symbol(:k, i))::rateType) for i in 1:length(tab.b)]
+    constcacheexpr = quote
+        struct $constcachename{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqConstantCache
             tf::TF
             uf::UF
             tab::Tab
@@ -173,8 +185,10 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             linsolve::F
         end
     end
-    cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+    cacheexpr = quote
+        @cache mutable struct $cachename{uType, rateType, uNoUnitsType, JType, WType,
+                                         TabType, TFType, UFType, F, JCType, GCType} <:
+                              RosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType
@@ -198,7 +212,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             grad_config::GCType
         end
     end
-    constcacheexpr,cacheexpr
+    constcacheexpr, cacheexpr
 end
 
 """
@@ -206,8 +220,11 @@ end
 
 Generate expressions for `alg_cache(...)` emulating those in `caches/rosenbrock_caches.jl`.
 """
-function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tabname::Symbol)
-    @capture(cacheexpr, @cache mutable struct T_ fields__ end) || error("incorrect cache expression")
+function gen_algcache(cacheexpr::Expr, constcachename::Symbol, algname::Symbol,
+                      tabname::Symbol)
+    @capture(cacheexpr, @cache mutable struct T_
+                 fields__::Any
+             end) || error("incorrect cache expression")
     cachename = namify(T)
     ksinit = Expr[]
     valsyms = Symbol[]
@@ -222,13 +239,19 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     end
 
     quote
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
-            tf = TimeDerivativeWrapper(f,u,p)
-            uf = UDerivativeWrapper(f,t,p)
-            J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
+        function alg_cache(alg::$algname, u, rate_prototype, uEltypeNoUnits,
+                           uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+                           reltol, p, calck, ::Val{false})
+            tf = TimeDerivativeWrapper(f, u, p)
+            uf = UDerivativeWrapper(f, t, p)
+            J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
+            $constcachename(tf, uf,
+                            $tabname(constvalue(uBottomEltypeNoUnits),
+                                     constvalue(tTypeNoUnits)), J, W, nothing)
         end
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+        function alg_cache(alg::$algname, u, rate_prototype, uEltypeNoUnits,
+                           uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+                           reltol, p, calck, ::Val{true})
             du = zero(rate_prototype)
             du1 = zero(rate_prototype)
             du2 = zero(rate_prototype)
@@ -236,21 +259,21 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
-            J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(true))
+            J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
             weight = similar(u, uEltypeNoUnits)
-            tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+            tab = $tabname(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 
-            tf = TimeGradientWrapper(f,uprev,p)
-            uf = UJacobianWrapper(f,t,p)
+            tf = TimeGradientWrapper(f, uprev, p)
+            uf = UJacobianWrapper(f, t, p)
             linsolve_tmp = zero(rate_prototype)
-            linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
-            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+            linprob = LinearProblem(W, _vec(linsolve_tmp); u0 = _vec(tmp))
+            linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
                             Pr = Diagonal(_vec(weight)))
-            grad_config = build_grad_config(alg,f,tf,du1,t)
-            jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+            grad_config = build_grad_config(alg, f, tf, du1, t)
+            jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
             $cachename($(valsyms...))
         end
     end
@@ -262,30 +285,31 @@ end
 Generate expressions for `initialize!(...)` in `perform_step/rosenbrock_perform_step.jl`.
 It only generates a default version of `initialize!` which support 3rd-order Hermite interpolation.
 """
-function gen_initialize(cachename::Symbol,constcachename::Symbol)
+function gen_initialize(cachename::Symbol, constcachename::Symbol)
     quote
         function initialize!(integrator, cache::$constcachename)
             integrator.kshortsize = 2
             integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-            integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+            integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p,
+                                                integrator.t)
             integrator.destats.nf += 1
 
             # Avoid undefined entries if k is an array of arrays
             integrator.fsallast = zero(integrator.fsalfirst)
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
-          end
+        end
 
-          function initialize!(integrator, cache::$cachename)
+        function initialize!(integrator, cache::$cachename)
             integrator.kshortsize = 2
-            @unpack fsalfirst,fsallast = cache
+            @unpack fsalfirst, fsallast = cache
             integrator.fsalfirst = fsalfirst
             integrator.fsallast = fsallast
             resize!(integrator.k, integrator.kshortsize)
-            integrator.k .= [fsalfirst,fsallast]
+            integrator.k .= [fsalfirst, fsallast]
             integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
             integrator.destats.nf += 1
-          end
+        end
     end
 end
 
@@ -297,60 +321,70 @@ The `perform_step!` function calculates `k1,k2,k3,...` defined by `(-W)ki=f(u+ai
 and then gives the result by `y_{n+1}=y_n+ki*bi`. Terms with 0s (according to tabmask) are skipped in the expressions.
 Special steps can be added before calculating `y_{n+1}`. The non-inplace `perform_step!` assumes the mass_matrix==I.
 """
-function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
-    dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tabmask.C)]
-    dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tabmask.d)]
-    iterexprs=[]
+function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool, Bool},
+                                   cachename::Symbol, n_normalstep::Int,
+                                   specialstepexpr = :nothing)
+    unpacktabexpr = :(@unpack () = cache.tab)
+    unpacktabexpr.args[3].args[1].args = _nonzero_vals(tabmask)
+    dtCijexprs = [:($(Symbol(:dtC, Cind[1], Cind[2])) = $(Symbol(:C, Cind[1], Cind[2])) / dt)
+                  for Cind in findall(!iszero, tabmask.C)]
+    dtdiexprs = [:($(Symbol(:dtd, dind)) = dt * $(Symbol(:d, dind)))
+                 for dind in eachindex(tabmask.d)]
+    iterexprs = []
     for i in 1:n_normalstep
-        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
-        Cijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
+        aijkj = [:($(Symbol(:a, i + 1, j)) * $(Symbol(:k, j)))
+                 for j in findall(!iszero, tabmask.a[i + 1, :])]
+        Cijkj = [:($(Symbol(:dtC, i + 1, j)) * $(Symbol(:k, j)))
+                 for j in findall(!iszero, tabmask.C[i + 1, :])]
         push!(iterexprs,
-        quote
-            $(Symbol(:k,i)) = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
-            integrator.destats.nsolve += 1
-            u=+(uprev,$(aijkj...))
-            du = f(u, p, t+$(Symbol(:c,i+1))*dt)
-            integrator.destats.nf += 1
-            if mass_matrix === I
-                linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
-            else
-                linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+($(Cijkj...)))
-            end
-        end)
+              quote
+                  $(Symbol(:k, i)) = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+                  integrator.destats.nsolve += 1
+                  u = +(uprev, $(aijkj...))
+                  du = f(u, p, t + $(Symbol(:c, i + 1)) * dt)
+                  integrator.destats.nf += 1
+                  if mass_matrix === I
+                      linsolve_tmp = +(du, $(Symbol(:dtd, i + 1)) * dT, $(Cijkj...))
+                  else
+                      linsolve_tmp = du + $(Symbol(:dtd, i + 1)) * dT +
+                                     mass_matrix * (+($(Cijkj...)))
+                  end
+              end)
     end
-    push!(iterexprs,specialstepexpr)
-    n=length(tabmask.b)
-    biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
+    push!(iterexprs, specialstepexpr)
+    n = length(tabmask.b)
+    biki = [:($(Symbol(:b, i)) * $(Symbol(:k, i))) for i in 1:n]
     push!(iterexprs,
-    quote
-        $(Symbol(:k,n))=_reshape(W\-_vec(linsolve_tmp), axes(uprev))
-        integrator.destats.nsolve += 1
-        u=+(uprev,$(biki...))
-    end)
+          quote
+              $(Symbol(:k, n)) = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+              integrator.destats.nsolve += 1
+              u = +(uprev, $(biki...))
+          end)
 
-    adaptiveexpr=[]
-    if typeof(tabmask)<:RosenbrockAdaptiveTableau
-        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in findall(!iszero,tabmask.btilde)]
-        push!(adaptiveexpr,quote
-            if integrator.opts.adaptive
-                utilde =  +($(btildeiki...))
-                atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                        integrator.opts.reltol,integrator.opts.internalnorm,t)
-                integrator.EEst = integrator.opts.internalnorm(atmp,t)
-            end
-        end)
+    adaptiveexpr = []
+    if typeof(tabmask) <: RosenbrockAdaptiveTableau
+        btildeiki = [:($(Symbol(:btilde, i)) * $(Symbol(:k, i)))
+                     for i in findall(!iszero, tabmask.btilde)]
+        push!(adaptiveexpr,
+              quote
+                  if integrator.opts.adaptive
+                      utilde = +($(btildeiki...))
+                      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                                                 integrator.opts.reltol,
+                                                 integrator.opts.internalnorm, t)
+                      integrator.EEst = integrator.opts.internalnorm(atmp, t)
+                  end
+              end)
     end
     quote
-        @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack tf,uf = cache
+        @muladd function perform_step!(integrator, cache::$cachename, repeat_step = false)
+            @unpack t, dt, uprev, u, f, p = integrator
+            @unpack tf, uf = cache
             $unpacktabexpr
 
             $(dtCijexprs...)
             $(dtdiexprs...)
-            dtgamma = dt*gamma
+            dtgamma = dt * gamma
 
             mass_matrix = integrator.f.mass_matrix
 
@@ -359,7 +393,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             dT = ForwardDiff.derivative(tf, t)
 
             W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-            linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
+            linsolve_tmp = integrator.fsalfirst + dtd1 * dT #calc_rosenbrock_differentiation!
 
             $(iterexprs...)
 
@@ -373,7 +407,6 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             $(adaptiveexpr...)
         end
     end
-
 end
 
 """
@@ -382,105 +415,118 @@ end
 Generate inplace version of `perform_step!` expression emulating those in `perform_step/rosenbrock_perform_step.jl`.
 The inplace `perform_step!` produces the same result as the non-inplace version except that it treats the mass_matrix appropriately.
 """
-function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
-    dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tabmask.C)]
-    dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tabmask.d)]
-    iterexprs=[]
+function gen_perform_step(tabmask::RosenbrockTableau{Bool, Bool}, cachename::Symbol,
+                          n_normalstep::Int, specialstepexpr = :nothing)
+    unpacktabexpr = :(@unpack () = cache.tab)
+    unpacktabexpr.args[3].args[1].args = _nonzero_vals(tabmask)
+    dtCij = [:($(Symbol(:dtC, "$(Cind[1])$(Cind[2])")) = $(Symbol(:C,
+                                                                  "$(Cind[1])$(Cind[2])")) /
+                                                         dt)
+             for Cind in findall(!iszero, tabmask.C)]
+    dtdi = [:($(Symbol(:dtd, dind[1])) = dt * $(Symbol(:d, dind[1])))
+            for dind in eachindex(tabmask.d)]
+    iterexprs = []
     for i in 1:n_normalstep
-        ki=Symbol(:k,i)
-        dtdj=Symbol(:dtd,i+1)
-        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
-        dtCijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
-        repeatstepexpr=[]
-        if i==1
-            repeatstepexpr=[:(!repeat_step)]
+        ki = Symbol(:k, i)
+        dtdj = Symbol(:dtd, i + 1)
+        aijkj = [:($(Symbol(:a, i + 1, j)) * $(Symbol(:k, j)))
+                 for j in findall(!iszero, tabmask.a[i + 1, :])]
+        dtCijkj = [:($(Symbol(:dtC, i + 1, j)) * $(Symbol(:k, j)))
+                   for j in findall(!iszero, tabmask.C[i + 1, :])]
+        repeatstepexpr = []
+        if i == 1
+            repeatstepexpr = [:(!repeat_step)]
         end
-        push!(iterexprs,quote
+        push!(iterexprs,
+              quote
+                  if $(i == 1)
+                      # Must be a part of the first linsolve for preconditioner step
+                      linres = dolinsolve(integrator, linsolve;
+                                          A = !repeat_step ? W : nothing,
+                                          b = _vec(linsolve_tmp))
+                  else
+                      linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
+                  end
 
-            if $(i==1)
-                # Must be a part of the first linsolve for preconditioner step
-                linres = dolinsolve(integrator, linsolve; A = !repeat_step ? W : nothing, b = _vec(linsolve_tmp))
-            else
-                linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
-            end
+                  linsolve = linres.cache
+                  vecu = _vec(linres.u)
+                  vecki = _vec($ki)
 
-            linsolve = linres.cache
-            vecu = _vec(linres.u)
-            vecki = _vec($ki)
+                  @.. broadcast=false vecki=-vecu
 
-            @.. broadcast=false vecki = -vecu
-
-            integrator.destats.nsolve += 1
-            @.. broadcast=false u = +(uprev,$(aijkj...))
-            f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
-            integrator.destats.nf += 1
-            if mass_matrix === I
-                @.. broadcast=false linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
-            else
-                @.. broadcast=false du1 = +($(dtCijkj...))
-                mul!(_vec(du2),mass_matrix,_vec(du1))
-                @.. broadcast=false linsolve_tmp = du + $dtdj*dT + du2
-            end
-        end)
+                  integrator.destats.nsolve += 1
+                  @.. broadcast=false u=+(uprev, $(aijkj...))
+                  f(du, u, p, t + $(Symbol(:c, i + 1)) * dt)
+                  integrator.destats.nf += 1
+                  if mass_matrix === I
+                      @.. broadcast=false linsolve_tmp=+(du, $dtdj * dT, $(dtCijkj...))
+                  else
+                      @.. broadcast=false du1=+($(dtCijkj...))
+                      mul!(_vec(du2), mass_matrix, _vec(du1))
+                      @.. broadcast=false linsolve_tmp=du + $dtdj * dT + du2
+                  end
+              end)
     end
-    push!(iterexprs,specialstepexpr)
-    n=length(tabmask.b)
-    ks=[Symbol(:k,i) for i in 1:n]
-    klast=Symbol(:k,n)
-    biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
-    push!(iterexprs,quote
+    push!(iterexprs, specialstepexpr)
+    n = length(tabmask.b)
+    ks = [Symbol(:k, i) for i in 1:n]
+    klast = Symbol(:k, n)
+    biki = [:($(Symbol(:b, i)) * $(Symbol(:k, i))) for i in 1:n]
+    push!(iterexprs, quote
+              linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
+              linsolve = linres.cache
+              vecu = _vec(linres.u)
+              vecklast = _vec($klast)
+              @.. broadcast=false vecklast=-vecu
 
-        linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
-        linsolve = linres.cache
-        vecu = _vec(linres.u)
-        vecklast = _vec($klast)
-        @.. broadcast=false vecklast = -vecu
+              integrator.destats.nsolve += 1
+              @.. broadcast=false u=+(uprev, $(biki...))
+          end)
 
-        integrator.destats.nsolve += 1
-        @.. broadcast=false u = +(uprev,$(biki...))
-    end)
-
-    adaptiveexpr=[]
-    if typeof(tabmask)<:RosenbrockAdaptiveTableau
-        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in findall(!iszero,tabmask.btilde)]
-        push!(adaptiveexpr,quote
-            utilde=du
-            if integrator.opts.adaptive
-                @.. broadcast=false utilde = +($(btildeiki...))
-                calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                    integrator.opts.reltol,integrator.opts.internalnorm,t)
-                integrator.EEst = integrator.opts.internalnorm(atmp,t)
-            end
-        end)
+    adaptiveexpr = []
+    if typeof(tabmask) <: RosenbrockAdaptiveTableau
+        btildeiki = [:($(Symbol(:btilde, i)) * $(Symbol(:k, i)))
+                     for i in findall(!iszero, tabmask.btilde)]
+        push!(adaptiveexpr,
+              quote
+                  utilde = du
+                  if integrator.opts.adaptive
+                      @.. broadcast=false utilde=+($(btildeiki...))
+                      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+                                           integrator.opts.reltol,
+                                           integrator.opts.internalnorm, t)
+                      integrator.EEst = integrator.opts.internalnorm(atmp, t)
+                  end
+              end)
     end
     quote
-        @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
+        @muladd function perform_step!(integrator, cache::$cachename, repeat_step = false)
+            @unpack t, dt, uprev, u, f, p = integrator
+            @unpack du, du1, du2, fsallast, dT, J, W, uf, tf, $(ks...), linsolve_tmp, jac_config, atmp, weight = cache
             $unpacktabexpr
 
             # Assignments
-            sizeu  = size(u)
+            sizeu = size(u)
             uidx = eachindex(integrator.uprev)
             mass_matrix = integrator.f.mass_matrix
 
             # Precalculations
             $(dtCij...)
             $(dtdi...)
-            dtgamma = dt*gamma
+            dtgamma = dt * gamma
 
             calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-                                 integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+                                 integrator.opts.abstol, integrator.opts.reltol,
+                                 integrator.opts.internalnorm, t)
 
-            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step,
+                                             true)
 
             linsolve = cache.linsolve
 
             $(iterexprs...)
 
-            f( fsallast,  u, p, t + dt)
+            f(fsallast, u, p, t + dt)
             integrator.destats.nf += 1
 
             $(adaptiveexpr...)
@@ -495,23 +541,44 @@ Rahunanthan, A., & Stanescu, D. (2010). High-order W-methods.
 Journal of computational and applied mathematics, 233(8), 1798-1811.
 """
 function RosenbrockW6S4OSTableau()
-    a=[0                  0                  0                  0                  0;
-       0.5812383407115008 0                  0                  0                  0;
-       0.9039624413714670 1.8615191555345010 0                  0                  0;
-       2.0765797196750000 0.1884255381414796 1.8701589674910320 0                  0;
-       4.4355506384843120 5.4571817986101890 4.6163507880689300 3.1181119524023610 0;
-       10.791701698483260 -10.05691522584131 14.995644854284190 5.2743399543909430 1.4297308712611900]
-    C=[0                  0                  0                  0                  0;
-       -2.661294105131369 0                  0                  0                  0;
-       -3.128450202373838 0.0000000000000000 0                  0                  0;
-       -6.920335474535658 -1.202675288266817 -9.733561811413620 0                  0;
-       -28.09530629102695 20.371262954793770 -41.04375275302869 -19.66373175620895 0;
-       9.7998186780974000 11.935792886603180 3.6738749290132010 14.807828541095500 0.8318583998690680]
-    b=[6.4562170746532350,-4.853141317768053,9.7653183340692600,2.0810841772787230,0.6603936866352417,0.6000000000000000]
-    gamma=0.2500000000000000
-    d=[0.2500000000000000,0.0836691184292894,0.0544718623516351,-0.3402289722355864,0.0337651588339529,-0.0903074267618540]
-    c=[0                 ,0.1453095851778752,0.3817422770256738,0.6367813704374599,0.7560744496323561,0.9271047239875670]
-    RosenbrockFixedTableau(a,C,b,gamma,d,c)
+    a = [0 0 0 0 0;
+         0.5812383407115008 0 0 0 0;
+         0.9039624413714670 1.8615191555345010 0 0 0;
+         2.0765797196750000 0.1884255381414796 1.8701589674910320 0 0;
+         4.4355506384843120 5.4571817986101890 4.6163507880689300 3.1181119524023610 0;
+         10.791701698483260 -10.05691522584131 14.995644854284190 5.2743399543909430 1.4297308712611900]
+    C = [0 0 0 0 0;
+         -2.661294105131369 0 0 0 0;
+         -3.128450202373838 0.0000000000000000 0 0 0;
+         -6.920335474535658 -1.202675288266817 -9.733561811413620 0 0;
+         -28.09530629102695 20.371262954793770 -41.04375275302869 -19.66373175620895 0;
+         9.7998186780974000 11.935792886603180 3.6738749290132010 14.807828541095500 0.8318583998690680]
+    b = [
+        6.4562170746532350,
+        -4.853141317768053,
+        9.7653183340692600,
+        2.0810841772787230,
+        0.6603936866352417,
+        0.6000000000000000,
+    ]
+    gamma = 0.2500000000000000
+    d = [
+        0.2500000000000000,
+        0.0836691184292894,
+        0.0544718623516351,
+        -0.3402289722355864,
+        0.0337651588339529,
+        -0.0903074267618540,
+    ]
+    c = [
+        0,
+        0.1453095851778752,
+        0.3817422770256738,
+        0.6367813704374599,
+        0.7560744496323561,
+        0.9271047239875670,
+    ]
+    RosenbrockFixedTableau(a, C, b, gamma, d, c)
 end
 
 """
@@ -525,32 +592,39 @@ Generate code for the RosenbrockW6S4OS method.
 placed in `perform_step/rosenbrock_perform_step.jl`.
 """
 macro RosenbrockW6S4OS(part)
-    tab=RosenbrockW6S4OSTableau()
-    tabmask=_masktab(tab)
-    algname=:RosenbrockW6S4OS
-    tabname=:RosenbrockW6S4OSTableau
-    tabstructname=:RosenbrockW6STableau
-    cachename=:RosenbrockW6SCache
-    constcachename=:RosenbrockW6SConstantCache
-    n_normalstep=length(tab.b)-1
-    if part.value==:tableau
+    tab = RosenbrockW6S4OSTableau()
+    tabmask = _masktab(tab)
+    algname = :RosenbrockW6S4OS
+    tabname = :RosenbrockW6S4OSTableau
+    tabstructname = :RosenbrockW6STableau
+    cachename = :RosenbrockW6SCache
+    constcachename = :RosenbrockW6SConstantCache
+    n_normalstep = length(tab.b) - 1
+    if part.value == :tableau
         #println("Generating const cache")
-        tabstructexpr=gen_tableau_struct(tabmask,tabstructname)
-        tabexpr=gen_tableau(tab,tabstructexpr,tabname)
-        return esc(quote $([tabstructexpr,tabexpr]...) end)
-    elseif part.value==:cache
+        tabstructexpr = gen_tableau_struct(tabmask, tabstructname)
+        tabexpr = gen_tableau(tab, tabstructexpr, tabname)
+        return esc(quote
+                       $([tabstructexpr, tabexpr]...)
+                   end)
+    elseif part.value == :cache
         #println("Generating cache")
-        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
-        algcacheexpr=gen_algcache(cacheexpr,constcachename,algname,tabname)
-        return esc(quote $([constcacheexpr,cacheexpr,algcacheexpr]...) end)
-    elseif part.value==:init
+        constcacheexpr, cacheexpr = gen_cache_struct(tabmask, cachename, constcachename)
+        algcacheexpr = gen_algcache(cacheexpr, constcachename, algname, tabname)
+        return esc(quote
+                       $([constcacheexpr, cacheexpr, algcacheexpr]...)
+                   end)
+    elseif part.value == :init
         #println("Generating initialize")
-        return esc(gen_initialize(cachename,constcachename))
-    elseif part.value==:performstep
+        return esc(gen_initialize(cachename, constcachename))
+    elseif part.value == :performstep
         #println("Generating perform_step")
-        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep)
-        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep)
-        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+        constperformstepexpr = gen_constant_perform_step(tabmask, constcachename,
+                                                         n_normalstep)
+        performstepexpr = gen_perform_step(tabmask, cachename, n_normalstep)
+        return esc(quote
+                       $([constperformstepexpr, performstepexpr]...)
+                   end)
     else
         throw(ArgumentError("Unknown parameter!"))
         nothing
@@ -565,19 +639,19 @@ of those sepecific tableaus: `Ros4dummyTableau()==_masktab(RosShamp4Tableau()) O
 ROS4 methods have the property of a4j==a3j so a is a 3*3 matrix instead of a 4*4 matrix and c is a 1*3 vector instead of a 1*4 vector.
 """
 function Ros4dummyTableau()#create a tabmask for all ROS4 methods where false->0,true->non-0
-    a=[false false false;
-       true  false false;
-       true  true  false]
-    C=[false false false false;
-       true  false false false;
-       true  true  false false;
-       true  true  true  false]
-    b=[true,true,true,true]
-    btilde=[true,true,true,true]
-    gamma=true
-    c=[false,true,true]
-    d=[true,true,true,true]
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [false false false;
+         true false false;
+         true true false]
+    C = [false false false false;
+         true false false false;
+         true true false false;
+         true true true false]
+    b = [true, true, true, true]
+    btilde = [true, true, true, true]
+    gamma = true
+    c = [false, true, true]
+    d = [true, true, true, true]
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -588,19 +662,19 @@ ACM Transactions on Mathematical Software (TOMS), 8: 2, 93-113.
 doi:10.1145/355993.355994
 """
 function RosShamp4Tableau()
-    a=[0      0     0;
-       2      0     0;
-       48//25 6//25 0]
-    C=[ 0         0        0    0;
-       -8         0        0    0;
-        372//25   12//5    0    0;
-       -112//125 -54//125 -2//5 0]
-    b=[19//9,1//2,25//108,125//108]
-    btilde=[17//54,7//36,0,125//108]
-    gamma=1//2
-    c=[0,1,3//5]
-    d=[1//2,-3//2,242//100,116//1000]#2.42,0.116
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [0 0 0;
+         2 0 0;
+         48//25 6//25 0]
+    C = [0 0 0 0;
+         -8 0 0 0;
+         372//25 12//5 0 0;
+         -112//125 -54//125 -2//5 0]
+    b = [19 // 9, 1 // 2, 25 // 108, 125 // 108]
+    btilde = [17 // 54, 7 // 36, 0, 125 // 108]
+    gamma = 1 // 2
+    c = [0, 1, 3 // 5]
+    d = [1 // 2, -3 // 2, 242 // 100, 116 // 1000]#2.42,0.116
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -610,19 +684,19 @@ van Veldhuizen, D-stability and Kaps-Rentrop-methods,
 M. Computing (1984) 32: 229. doi:10.1007/BF02243574
 """
 function Veldd4Tableau()
-    a=[0                 0                 0;
-       2                 0                 0;
-       4.812234362695436 4.578146956747842 0]
-    C=[ 0                  0                  0                 0;
-       -5.333333333333331  0                  0                 0;
-        6.100529678848254  1.804736797378427  0                 0;
-       -2.540515456634749 -9.443746328915205 -1.988471753215993 0]
-    b=[4.289339254654537,5.036098482851414,0.6085736420673917,1.355958941201148]
-    btilde=[2.175672787531755,2.950911222575741,-0.7859744544887430,-1.355958941201148]
-    gamma=0.2257081148225682
-    c=[0,0.4514162296451364,0.8755928946018455]
-    d=[0.2257081148225682,-0.04599403502680582,0.5177590504944076,-0.03805623938054428]
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [0 0 0;
+         2 0 0;
+         4.812234362695436 4.578146956747842 0]
+    C = [0 0 0 0;
+         -5.333333333333331 0 0 0;
+         6.100529678848254 1.804736797378427 0 0;
+         -2.540515456634749 -9.443746328915205 -1.988471753215993 0]
+    b = [4.289339254654537, 5.036098482851414, 0.6085736420673917, 1.355958941201148]
+    btilde = [2.175672787531755, 2.950911222575741, -0.7859744544887430, -1.355958941201148]
+    gamma = 0.2257081148225682
+    c = [0, 0.4514162296451364, 0.8755928946018455]
+    d = [0.2257081148225682, -0.04599403502680582, 0.5177590504944076, -0.03805623938054428]
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -632,19 +706,19 @@ van Veldhuizen, D-stability and Kaps-Rentrop-methods,
 M. Computing (1984) 32: 229. doi:10.1007/BF02243574
 """
 function Velds4Tableau()
-    a=[0    0    0;
-       2    0    0;
-       7//4 1//4 0]
-    C=[ 0     0    0 0;
-       -8     0    0 0;
-       -8    -1    0 0;
-        1//2 -1//2 2 0]
-    b=[4//3,2//3,-4//3,4//3]
-    btilde=[-1//3,-1//3,0,-4//3]
-    gamma=1//2
-    c=[0,1,1//2]
-    d=[1//2,-3//2,-3//4,1//4]
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [0 0 0;
+         2 0 0;
+         7//4 1//4 0]
+    C = [0 0 0 0;
+         -8 0 0 0;
+         -8 -1 0 0;
+         1//2 -1//2 2 0]
+    b = [4 // 3, 2 // 3, -4 // 3, 4 // 3]
+    btilde = [-1 // 3, -1 // 3, 0, -4 // 3]
+    gamma = 1 // 2
+    c = [0, 1, 1 // 2]
+    d = [1 // 2, -3 // 2, -3 // 4, 1 // 4]
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -655,19 +729,19 @@ with stepsize control for stiff ordinary differential equations.
 P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
 """
 function GRK4TTableau()
-    a=[0                 0                 0;
-       2                 0                 0;
-       4.524708207373116 4.163528788597648 0]
-    C=[ 0                  0                   0                 0;
-       -5.071675338776316  0                   0                 0;
-        6.020152728650786  0.1597506846727117  0                 0;
-       -1.856343618686113 -8.505380858179826  -2.084075136023187 0]
-    b=[3.957503746640777,4.624892388363313,0.6174772638750108,1.282612945269037]
-    btilde=[2.302155402932996,3.073634485392623,-0.8732808018045032,-1.282612945269037]
-    gamma=0.231
-    c=[0,0.462,0.8802083333333334]
-    d=[0.2310000000000000,-0.03962966775244303,0.5507789395789127,-0.05535098457052764]
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [0 0 0;
+         2 0 0;
+         4.524708207373116 4.163528788597648 0]
+    C = [0 0 0 0;
+         -5.071675338776316 0 0 0;
+         6.020152728650786 0.1597506846727117 0 0;
+         -1.856343618686113 -8.505380858179826 -2.084075136023187 0]
+    b = [3.957503746640777, 4.624892388363313, 0.6174772638750108, 1.282612945269037]
+    btilde = [2.302155402932996, 3.073634485392623, -0.8732808018045032, -1.282612945269037]
+    gamma = 0.231
+    c = [0, 0.462, 0.8802083333333334]
+    d = [0.2310000000000000, -0.03962966775244303, 0.5507789395789127, -0.05535098457052764]
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -678,19 +752,24 @@ with stepsize control for stiff ordinary differential equations.
 P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
 """
 function GRK4ATableau()
-    a=[0                 0                  0;
-       1.108860759493671 0                  0;
-       2.377085261983360 0.1850114988899692 0]
-    C=[ 0                 0                  0                 0;
-       -4.920188402397641 0                  0                 0;
-        1.055588686048583 3.351817267668938  0                 0;
-        3.846869007049313 3.427109241268180 -2.162408848753263 0]
-    b=[1.845683240405840,0.1369796894360503,0.7129097783291559,0.6329113924050632]
-    btilde=[0.04831870177201765,-0.6471108651049505,0.2186876660500240,-0.6329113924050632]
-    gamma=0.395
-    c=[0,0.438,0.87]
-    d=[0.395,-0.3726723954840920,0.06629196544571492,0.4340946962568634]
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [0 0 0;
+         1.108860759493671 0 0;
+         2.377085261983360 0.1850114988899692 0]
+    C = [0 0 0 0;
+         -4.920188402397641 0 0 0;
+         1.055588686048583 3.351817267668938 0 0;
+         3.846869007049313 3.427109241268180 -2.162408848753263 0]
+    b = [1.845683240405840, 0.1369796894360503, 0.7129097783291559, 0.6329113924050632]
+    btilde = [
+        0.04831870177201765,
+        -0.6471108651049505,
+        0.2186876660500240,
+        -0.6329113924050632,
+    ]
+    gamma = 0.395
+    c = [0, 0.438, 0.87]
+    d = [0.395, -0.3726723954840920, 0.06629196544571492, 0.4340946962568634]
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -700,19 +779,24 @@ E. Hairer, G. Wanner, Solving ordinary differential equations II,
 stiff and differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 """
 function Ros4LSTableau()
-    a=[0                 0                  0;
-       2                 0                  0;
-       1.867943637803922 0.2344449711399156 0]
-    C=[ 0                  0                   0                  0;
-       -7.137615036412310  0                   0                  0;
-        2.580708087951457  0.6515950076447975  0                  0;
-       -2.137148994382534 -0.3214669691237626 -0.6949742501781779 0]
-    b=[2.255570073418735,0.2870493262186792,0.4353179431840180,1.093502252409163]
-    btilde=[-0.2815431932141155,-0.07276199124938920,-0.1082196201495311,-1.093502252409163]
-    gamma=0.5728200000000000
-    c=[0,1.145640000000000,0.6552168638155900]
-    d=[0.5728200000000000,-1.769193891319233,0.7592633437920482,-0.1049021087100450]
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [0 0 0;
+         2 0 0;
+         1.867943637803922 0.2344449711399156 0]
+    C = [0 0 0 0;
+         -7.137615036412310 0 0 0;
+         2.580708087951457 0.6515950076447975 0 0;
+         -2.137148994382534 -0.3214669691237626 -0.6949742501781779 0]
+    b = [2.255570073418735, 0.2870493262186792, 0.4353179431840180, 1.093502252409163]
+    btilde = [
+        -0.2815431932141155,
+        -0.07276199124938920,
+        -0.1082196201495311,
+        -1.093502252409163,
+    ]
+    gamma = 0.5728200000000000
+    c = [0, 1.145640000000000, 0.6552168638155900]
+    d = [0.5728200000000000, -1.769193891319233, 0.7592633437920482, -0.1049021087100450]
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -728,75 +812,85 @@ The special property of ROS4 methods that a4j==a3j requires a special step in `p
 calculates `linsolve_tmp` from the previous `du` which reduces a function call.
 """
 macro Rosenbrock4(part)
-    tabmask=Ros4dummyTableau()#_masktab(tab)
-    cachename=:Rosenbrock4Cache
-    constcachename=:Rosenbrock4ConstantCache
-    RosShamp4tabname=:RosShamp4Tableau
-    Veldd4tabname=:Veldd4Tableau
-    Velds4tabname=:Velds4Tableau
-    GRK4Ttabname=:GRK4TTableau
-    GRK4Atabname=:GRK4ATableau
-    Ros4LStabname=:Ros4LStabTableau
-    n_normalstep=2 #for the third step a4j=a3j which reduced one function call
-    if part.value==:tableau
+    tabmask = Ros4dummyTableau()#_masktab(tab)
+    cachename = :Rosenbrock4Cache
+    constcachename = :Rosenbrock4ConstantCache
+    RosShamp4tabname = :RosShamp4Tableau
+    Veldd4tabname = :Veldd4Tableau
+    Velds4tabname = :Velds4Tableau
+    GRK4Ttabname = :GRK4TTableau
+    GRK4Atabname = :GRK4ATableau
+    Ros4LStabname = :Ros4LStabTableau
+    n_normalstep = 2 #for the third step a4j=a3j which reduced one function call
+    if part.value == :tableau
         #println("Generating tableau for Rosenbrock4")
-        tabstructexpr=gen_tableau_struct(tabmask,:Ros4Tableau)
-        tabexprs=Array{Expr,1}()
-        push!(tabexprs,tabstructexpr)
-        push!(tabexprs,gen_tableau(RosShamp4Tableau(),tabstructexpr,RosShamp4tabname))
-        push!(tabexprs,gen_tableau(Veldd4Tableau(),tabstructexpr,Veldd4tabname))
-        push!(tabexprs,gen_tableau(Velds4Tableau(),tabstructexpr,Velds4tabname))
-        push!(tabexprs,gen_tableau(GRK4TTableau(),tabstructexpr,GRK4Ttabname))
-        push!(tabexprs,gen_tableau(GRK4ATableau(),tabstructexpr,GRK4Atabname))
-        push!(tabexprs,gen_tableau(Ros4LSTableau(),tabstructexpr,Ros4LStabname))
-        return esc(quote $(tabexprs...) end)
-    elseif part.value==:cache
+        tabstructexpr = gen_tableau_struct(tabmask, :Ros4Tableau)
+        tabexprs = Array{Expr, 1}()
+        push!(tabexprs, tabstructexpr)
+        push!(tabexprs, gen_tableau(RosShamp4Tableau(), tabstructexpr, RosShamp4tabname))
+        push!(tabexprs, gen_tableau(Veldd4Tableau(), tabstructexpr, Veldd4tabname))
+        push!(tabexprs, gen_tableau(Velds4Tableau(), tabstructexpr, Velds4tabname))
+        push!(tabexprs, gen_tableau(GRK4TTableau(), tabstructexpr, GRK4Ttabname))
+        push!(tabexprs, gen_tableau(GRK4ATableau(), tabstructexpr, GRK4Atabname))
+        push!(tabexprs, gen_tableau(Ros4LSTableau(), tabstructexpr, Ros4LStabname))
+        return esc(quote
+                       $(tabexprs...)
+                   end)
+    elseif part.value == :cache
         #println("Generating cache for Rosenbrock4")
-        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
-        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:RosShamp4,RosShamp4tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Veldd4,Veldd4tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Velds4,Velds4tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:GRK4T,GRK4Ttabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:GRK4A,GRK4Atabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Ros4LStab,Ros4LStabname))
-        return esc(quote $(cacheexprs...) end)
-    elseif part.value==:performstep
+        constcacheexpr, cacheexpr = gen_cache_struct(tabmask, cachename, constcachename)
+        cacheexprs = Array{Expr, 1}([constcacheexpr, cacheexpr])
+        push!(cacheexprs,
+              gen_algcache(cacheexpr, constcachename, :RosShamp4, RosShamp4tabname))
+        push!(cacheexprs, gen_algcache(cacheexpr, constcachename, :Veldd4, Veldd4tabname))
+        push!(cacheexprs, gen_algcache(cacheexpr, constcachename, :Velds4, Velds4tabname))
+        push!(cacheexprs, gen_algcache(cacheexpr, constcachename, :GRK4T, GRK4Ttabname))
+        push!(cacheexprs, gen_algcache(cacheexpr, constcachename, :GRK4A, GRK4Atabname))
+        push!(cacheexprs,
+              gen_algcache(cacheexpr, constcachename, :Ros4LStab, Ros4LStabname))
+        return esc(quote
+                       $(cacheexprs...)
+                   end)
+    elseif part.value == :performstep
         #println("Generating perform_step for Rosenbrock4")
-        specialstepconst=quote
-            k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+        specialstepconst = quote
+            k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
             integrator.destats.nsolve += 1
             #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
             #du = f(u, p, t+c3*dt) #reduced function call
             if mass_matrix === I
-                linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+                linsolve_tmp = du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 + dtC43 * k3
             else
-                linsolve_tmp = du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
+                linsolve_tmp = du + dtd4 * dT +
+                               mass_matrix * (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
             end
         end
-        specialstep=quote
-
+        specialstep = quote
             linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmp))
             linsolve = linres.cache
             cache.linsolve = linsolve
             vecu = _vec(linres.u)
             veck3 = _vec(k3)
-            @.. broadcast=false veck3 = -vecu
+            @.. broadcast=false veck3=-vecu
 
             integrator.destats.nsolve += 1
             #@.. broadcast=false u = uprev + a31*k1 + a32*k2 #a4j=a3j
             #f( du,  u, p, t+c3*dt) #reduced function call
             if mass_matrix === I
-                @.. broadcast=false linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+                @.. broadcast=false linsolve_tmp=du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 +
+                                                 dtC43 * k3
             else
-                @.. broadcast=false du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-                mul!(du2,mass_matrix,du1)
-                @.. broadcast=false linsolve_tmp = du + dtd4*dT + du2
+                @.. broadcast=false du1=dtC41 * k1 + dtC42 * k2 + dtC43 * k3
+                mul!(du2, mass_matrix, du1)
+                @.. broadcast=false linsolve_tmp=du + dtd4 * dT + du2
             end
         end
-        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep,specialstepconst)
-        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep,specialstep)
-        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+        constperformstepexpr = gen_constant_perform_step(tabmask, constcachename,
+                                                         n_normalstep, specialstepconst)
+        performstepexpr = gen_perform_step(tabmask, cachename, n_normalstep, specialstep)
+        return esc(quote
+                       $([constperformstepexpr, performstepexpr]...)
+                   end)
     else
         throw(ArgumentError("Unknown parameter!"))
         nothing
@@ -810,20 +904,20 @@ end
 Generate a dummy tableau for ROS34W methods proposed by Rang and Angermann. This type of methods has 4 steps.
 """
 function Ros34dummyTableau()
-    a=[false false false false;
-       true  false false false;
-       true  true  false false;
-       true  true  true  false]
-    C=[false false false false;
-       true  false false false;
-       true  true  false false;
-       true  true  true  false]
-    b=[true,true,true,true]
-    btilde=[true,true,true,true]
-    gamma=true
-    c=[false,true,true,true]
-    d=[true,true,true,true]
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    a = [false false false false;
+         true false false false;
+         true true false false;
+         true true true false]
+    C = [false false false false;
+         true false false false;
+         true true false false;
+         true true true false]
+    b = [true, true, true, true]
+    btilde = [true, true, true, true]
+    gamma = true
+    c = [false, true, true, true]
+    d = [true, true, true, true]
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -834,16 +928,16 @@ Transform the tableau from values in the paper into values used in OrdinaryDiffE
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
 differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 """
-function _transformtab(Alpha,Gamma,B,Bhat)
-    invGamma=inv(Gamma)
-    a=Alpha*invGamma
-    C=diagm(0=>diag(invGamma))-invGamma
-    b=[(transpose(B)*invGamma)...]# [2Darray...]=>1Darray
-    btilde=[(transpose(B-Bhat)*invGamma)...]
-    gamma=Gamma[1,1]#Gamma11==Gamma22==...==Gammass
-    d=[sum(Gamma,dims=2)...]#di=sum_j Gamma_ij
-    c=[sum(Alpha,dims=2)...]#ci=sum_j Alpha_ij
-    (a,C,b,btilde,d,c)
+function _transformtab(Alpha, Gamma, B, Bhat)
+    invGamma = inv(Gamma)
+    a = Alpha * invGamma
+    C = diagm(0 => diag(invGamma)) - invGamma
+    b = [(transpose(B) * invGamma)...]# [2Darray...]=>1Darray
+    btilde = [(transpose(B - Bhat) * invGamma)...]
+    gamma = Gamma[1, 1]#Gamma11==Gamma22==...==Gammass
+    d = [sum(Gamma, dims = 2)...]#di=sum_j Gamma_ij
+    c = [sum(Alpha, dims = 2)...]#ci=sum_j Alpha_ij
+    (a, C, b, btilde, d, c)
 end
 
 """
@@ -855,19 +949,19 @@ Rang, J., & Angermann, L. (2005). New Rosenbrock W-methods of order 3 for partia
 differential algebraic equations of index 1. BIT Numerical Mathematics, 45(4), 761-787.
 """
 function ROS34PW1aTableau()
-    gamma=4.358665215084590e-1
-    Alpha=[0                 0                    0   0;
-           2.218787467653286 0                    0   0;
-           0                 0                    0   0; # can reduce one function call with specialized perform_step
-           1.208587690772214 7.511610241919324e-2 0.5 0]
-    Gamma=[ gamma                 0                    0     0;
-           -2.218787467653286     gamma                0     0;
-           -9.461966143940745e-2 -7.913526735718213e-3 gamma 0;
-           -1.870323744195384    -9.624340112825115e-2 2.726301276675511e-1 gamma]
-    B=[3.285609536316354e-1,-5.785609536316354e-1,0.25,1]
-    Bhat=[-0.25,0,0.25,1]#B-Bhat[3:4]==[0,0]
-    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    gamma = 4.358665215084590e-1
+    Alpha = [0 0 0 0;
+             2.218787467653286 0 0 0;
+             0 0 0 0; # can reduce one function call with specialized perform_step
+             1.208587690772214 7.511610241919324e-2 0.5 0]
+    Gamma = [gamma 0 0 0;
+             -2.218787467653286 gamma 0 0;
+             -9.461966143940745e-2 -7.913526735718213e-3 gamma 0;
+             -1.870323744195384 -9.624340112825115e-2 2.726301276675511e-1 gamma]
+    B = [3.285609536316354e-1, -5.785609536316354e-1, 0.25, 1]
+    Bhat = [-0.25, 0, 0.25, 1]#B-Bhat[3:4]==[0,0]
+    a, C, b, btilde, d, c = _transformtab(Alpha, Gamma, B, Bhat)
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -879,19 +973,19 @@ Rang, J., & Angermann, L. (2005). New Rosenbrock W-methods of order 3 for partia
 differential algebraic equations of index 1. BIT Numerical Mathematics, 45(4), 761-787.
 """
 function ROS34PW1bTableau()
-    gamma=4.358665215084590e-1
-    Alpha=[0                 0 0   0;
-           2.218787467653286 0 0   0;
-           2.218787467653286 0 0   0; # can reduce one function call with specialized perform_step
-           1.453923375357884 0 0.1 0]
-    Gamma=[ gamma              0                    0     0;
-           -2.218787467653286  gamma                0     0;
-           -2.848610224639349 -5.267530183845237e-2 gamma 0;
-           -1.128167857898393 -1.677546870499461e-1 5.452602553351021e-2 gamma]
-    B=[5.495647928937977e-1,-5.507258170857301e-1,0.25,7.511610241919324e-1]
-    Bhat=[-1.161024191932427e-3,0,0.25,7.511610241919324e-1]#B-Bhat[3:4]==[0,0]
-    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    gamma = 4.358665215084590e-1
+    Alpha = [0 0 0 0;
+             2.218787467653286 0 0 0;
+             2.218787467653286 0 0 0; # can reduce one function call with specialized perform_step
+             1.453923375357884 0 0.1 0]
+    Gamma = [gamma 0 0 0;
+             -2.218787467653286 gamma 0 0;
+             -2.848610224639349 -5.267530183845237e-2 gamma 0;
+             -1.128167857898393 -1.677546870499461e-1 5.452602553351021e-2 gamma]
+    B = [5.495647928937977e-1, -5.507258170857301e-1, 0.25, 7.511610241919324e-1]
+    Bhat = [-1.161024191932427e-3, 0, 0.25, 7.511610241919324e-1]#B-Bhat[3:4]==[0,0]
+    a, C, b, btilde, d, c = _transformtab(Alpha, Gamma, B, Bhat)
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -904,19 +998,24 @@ Rang, J., & Angermann, L. (2005). New Rosenbrock W-methods of order 3 for partia
 differential algebraic equations of index 1. BIT Numerical Mathematics, 45(4), 761-787.
 """
 function ROS34PW2Tableau()
-    gamma=4.3586652150845900e-1
-    Alpha=[0                      0                     0 0;
-           8.7173304301691801e-1  0                     0 0;
-           8.4457060015369423e-1 -1.1299064236484185e-1 0 0;
-           0                      0                     1 0]
-    Gamma=[ gamma                  0                     0     0;
-           -8.7173304301691801e-1  gamma                 0     0;
-           -9.0338057013044082e-1  5.4180672388095326e-2 gamma 0;
-            2.4212380706095346e-1 -1.2232505839045147    5.4526025533510214e-1 gamma]
-    B=[2.4212380706095346e-1,-1.2232505839045147,1.5452602553351020,4.3586652150845900e-1]
-    Bhat=[3.7810903145819369e-1,-9.6042292212423178e-2,0.5,2.1793326075422950e-1]
-    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    gamma = 4.3586652150845900e-1
+    Alpha = [0 0 0 0;
+             8.7173304301691801e-1 0 0 0;
+             8.4457060015369423e-1 -1.1299064236484185e-1 0 0;
+             0 0 1 0]
+    Gamma = [gamma 0 0 0;
+             -8.7173304301691801e-1 gamma 0 0;
+             -9.0338057013044082e-1 5.4180672388095326e-2 gamma 0;
+             2.4212380706095346e-1 -1.2232505839045147 5.4526025533510214e-1 gamma]
+    B = [
+        2.4212380706095346e-1,
+        -1.2232505839045147,
+        1.5452602553351020,
+        4.3586652150845900e-1,
+    ]
+    Bhat = [3.7810903145819369e-1, -9.6042292212423178e-2, 0.5, 2.1793326075422950e-1]
+    a, C, b, btilde, d, c = _transformtab(Alpha, Gamma, B, Bhat)
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -928,19 +1027,24 @@ Rang, J., & Angermann, L. (2005). New Rosenbrock W-methods of order 3 for partia
 differential algebraic equations of index 1. BIT Numerical Mathematics, 45(4), 761-787.
 """
 function ROS34PW3Tableau()#4th order
-    gamma=1.0685790213016289
-    Alpha=[0                      0                     0 0;
-           2.5155456020628817     0                     0 0;
-           5.0777280103144085e-1  0.75                  0 0;
-           1.3959081404277204e-1 -3.3111001065419338e-1 8.2040559712714178e-1 0]
-    Gamma=[ gamma                  0                      0     0;
-           -2.5155456020628817     gamma                  0     0;
-           -8.7991339217106512e-1 -9.6014187766190695e-1  gamma 0;
-           -4.1731389379448741e-1  4.1091047035857703e-1 -1.3558873204765276 gamma]
-    B=[2.2047681286931747e-1,2.7828278331185935e-3,7.1844787635140066e-3,7.6955588053404989e-1]
-    Bhat=[3.1300297285209688e-1,-2.8946895245112692e-1,9.7646597959903003e-1,0]
-    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
-    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+    gamma = 1.0685790213016289
+    Alpha = [0 0 0 0;
+             2.5155456020628817 0 0 0;
+             5.0777280103144085e-1 0.75 0 0;
+             1.3959081404277204e-1 -3.3111001065419338e-1 8.2040559712714178e-1 0]
+    Gamma = [gamma 0 0 0;
+             -2.5155456020628817 gamma 0 0;
+             -8.7991339217106512e-1 -9.6014187766190695e-1 gamma 0;
+             -4.1731389379448741e-1 4.1091047035857703e-1 -1.3558873204765276 gamma]
+    B = [
+        2.2047681286931747e-1,
+        2.7828278331185935e-3,
+        7.1844787635140066e-3,
+        7.6955588053404989e-1,
+    ]
+    Bhat = [3.1300297285209688e-1, -2.8946895245112692e-1, 9.7646597959903003e-1, 0]
+    a, C, b, btilde, d, c = _transformtab(Alpha, Gamma, B, Bhat)
+    RosenbrockAdaptiveTableau(a, C, b, btilde, gamma, d, c)
 end
 
 """
@@ -954,37 +1058,48 @@ Generate code for the ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3.
 `perform_step/rosenbrock_perform_step.jl`.
 """
 macro ROS34PW(part)
-    tabmask=Ros34dummyTableau()
-    cachename=:ROS34PWCache
-    constcachename=:ROS34PWConstantCache
-    ROS34PW1atabname=:ROS34PW1aTableau
-    ROS34PW1btabname=:ROS34PW1bTableau
-    ROS34PW2tabname=:ROS34PW2Tableau
-    ROS34PW3tabname=:ROS34PW3Tableau
-    n_normalstep=length(tabmask.b)-1
-    if part.value==:tableau
-        tabstructexpr=gen_tableau_struct(tabmask,:Ros34Tableau)
-        tabexprs=Array{Expr,1}([tabstructexpr])
-        push!(tabexprs,gen_tableau(ROS34PW1aTableau(),tabstructexpr,ROS34PW1atabname))
-        push!(tabexprs,gen_tableau(ROS34PW1bTableau(),tabstructexpr,ROS34PW1btabname))
-        push!(tabexprs,gen_tableau(ROS34PW2Tableau(),tabstructexpr,ROS34PW2tabname))
-        push!(tabexprs,gen_tableau(ROS34PW3Tableau(),tabstructexpr,ROS34PW3tabname))
-        return esc(quote $(tabexprs...) end)
-    elseif part.value==:cache
-        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
-        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW1a,ROS34PW1atabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW1b,ROS34PW1btabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW2,ROS34PW2tabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW3,ROS34PW3tabname))
-        return esc(quote $(cacheexprs...) end)
-    elseif part.value==:init
-        return esc(gen_initialize(cachename,constcachename))
-    elseif part.value==:performstep
-        performstepexprs=Array{Expr,1}()
-        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
-        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
-        return esc(quote $(performstepexprs...) end)
+    tabmask = Ros34dummyTableau()
+    cachename = :ROS34PWCache
+    constcachename = :ROS34PWConstantCache
+    ROS34PW1atabname = :ROS34PW1aTableau
+    ROS34PW1btabname = :ROS34PW1bTableau
+    ROS34PW2tabname = :ROS34PW2Tableau
+    ROS34PW3tabname = :ROS34PW3Tableau
+    n_normalstep = length(tabmask.b) - 1
+    if part.value == :tableau
+        tabstructexpr = gen_tableau_struct(tabmask, :Ros34Tableau)
+        tabexprs = Array{Expr, 1}([tabstructexpr])
+        push!(tabexprs, gen_tableau(ROS34PW1aTableau(), tabstructexpr, ROS34PW1atabname))
+        push!(tabexprs, gen_tableau(ROS34PW1bTableau(), tabstructexpr, ROS34PW1btabname))
+        push!(tabexprs, gen_tableau(ROS34PW2Tableau(), tabstructexpr, ROS34PW2tabname))
+        push!(tabexprs, gen_tableau(ROS34PW3Tableau(), tabstructexpr, ROS34PW3tabname))
+        return esc(quote
+                       $(tabexprs...)
+                   end)
+    elseif part.value == :cache
+        constcacheexpr, cacheexpr = gen_cache_struct(tabmask, cachename, constcachename)
+        cacheexprs = Array{Expr, 1}([constcacheexpr, cacheexpr])
+        push!(cacheexprs,
+              gen_algcache(cacheexpr, constcachename, :ROS34PW1a, ROS34PW1atabname))
+        push!(cacheexprs,
+              gen_algcache(cacheexpr, constcachename, :ROS34PW1b, ROS34PW1btabname))
+        push!(cacheexprs,
+              gen_algcache(cacheexpr, constcachename, :ROS34PW2, ROS34PW2tabname))
+        push!(cacheexprs,
+              gen_algcache(cacheexpr, constcachename, :ROS34PW3, ROS34PW3tabname))
+        return esc(quote
+                       $(cacheexprs...)
+                   end)
+    elseif part.value == :init
+        return esc(gen_initialize(cachename, constcachename))
+    elseif part.value == :performstep
+        performstepexprs = Array{Expr, 1}()
+        push!(performstepexprs,
+              gen_constant_perform_step(tabmask, constcachename, n_normalstep))
+        push!(performstepexprs, gen_perform_step(tabmask, cachename, n_normalstep))
+        return esc(quote
+                       $(performstepexprs...)
+                   end)
     else
         throw(ArgumentError("Unknown parameter!"))
         nothing
