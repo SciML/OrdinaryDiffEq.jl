@@ -223,7 +223,7 @@ Generate expressions for `alg_cache(...)` emulating those in `caches/rosenbrock_
 function gen_algcache(cacheexpr::Expr, constcachename::Symbol, algname::Symbol,
                       tabname::Symbol)
     @capture(cacheexpr, @cache mutable struct T_
-                 fields__::Any
+                 fields__
              end) || error("incorrect cache expression")
     cachename = namify(T)
     ksinit = Expr[]
