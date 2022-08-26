@@ -12,9 +12,9 @@ abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST,CJ} <:  OrdinaryDif
 const NewtonAlgorithm = Union{OrdinaryDiffEqNewtonAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm}
 const RosenbrockAlgorithm = Union{OrdinaryDiffEqRosenbrockAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm}
 
-abstract type OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ} <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing} end
+abstract type OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
 const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -3130,7 +3130,7 @@ end
 
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing}
+struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{1,false,Val{:forward},Val{true},nothing}
   krylov::Symbol
   m::Int
   iop::Int
@@ -3856,50 +3856,47 @@ RosenbrockW6S4OS(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),
 
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
 
-  """
-  Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
-    Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
-  """
-  @eval struct $Alg{FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ}
-    krylov::Bool
-    m::Int
-    iop::Int
-    autodiff::Bool
-    chunksize::Int
-  end
-  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing, chunksize=0,
-            diff_type = Val{:forward}) = $Alg{diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(krylov, m, iop, _unwrap_val(autodiff),
-            chunksize)
+    """
+    Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
+      Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
+    """
+    @eval struct $Alg{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ}
+        krylov::Bool
+        m::Int
+        iop::Int
+    end
+    @eval $Alg(; krylov=false, m=30, iop=0, autodiff=true, standardtag=Val{true}(), concrete_jac=nothing, chunk_size=Val{0}(),
+        diff_type=Val{:forward}) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),
+        diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(krylov, m, iop)
 end
 const ETD1 = NorsettEuler # alias
 for Alg in [:Exprb32, :Exprb43]
-  @eval struct $Alg{FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm{FDT,ST,CJ}
+  @eval struct $Alg{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ}
     m::Int
     iop::Int
-    autodiff::Bool
-    chunksize::Int
   end
-  @eval $Alg(;m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing, chunksize=0,
-            diff_type = Val{:forward}) = $Alg{diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(m, iop, _unwrap_val(autodiff), chunksize)
+  @eval $Alg(;m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing, chunk_size=Val{0}(),
+            diff_type = Val{:forward}) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),
+            diff_type,_unwrap_val(standardtag),
+            _unwrap_val(concrete_jac)}(m, iop)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
-  @eval struct $Alg{FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{FDT,ST,CJ}
+  @eval struct $Alg{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ}
     adaptive_krylov::Bool
     m::Int
     iop::Int
-    autodiff::Bool
-    chunksize::Int
   end
   @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
-              chunksize=0, diff_type = Val{:forward}) =
-              $Alg{diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(adaptive_krylov, m, iop, _unwrap_val(autodiff), chunksize)
+              chunk_size=Val{0}(), diff_type = Val{:forward}) =
+              $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),diff_type,
+              _unwrap_val(standardtag),_unwrap_val(concrete_jac)}(adaptive_krylov, m, iop)
 end
-struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing} end
+struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
 """
 ETD2: Exponential Runge-Kutta Method
   Second order Exponential Time Differencing method (in development).
 """
-struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm{Val{:forward},Val{true},nothing} end
+struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
 
 #########################################
 
