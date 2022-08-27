@@ -3,7 +3,8 @@ using LinearAlgebra
 using NLsolve
 using Test
 
-p_inv = [500.0
+p_inv = [
+    500.0
     0.084
     4.69
     2.0
@@ -33,7 +34,8 @@ p_inv = [500.0
     0.5  #Xtrans
     0.0  # Rtrans
     1.01 #Vm
-    0.0] # Vθ
+    0.0
+] # Vθ
 
 function vsm(dx, x, p, t)
     #PARAMETERS
@@ -186,13 +188,15 @@ function vsm(dx, x, p, t)
         (vi_filter - Vi_pcc - rg * ii_filter - ω_sys * lg * ir_filter)
 
     # Network interface algebraic equations 0 = I - YV
-    line_currents = ((Vr_cnv + Vi_cnv * 1im) - (Vr_pcc + Vi_pcc * 1im)) / (Rtrans + Xtrans * 1im)
+    line_currents =
+        ((Vr_cnv + Vi_cnv * 1im) - (Vr_pcc + Vi_pcc * 1im)) / (Rtrans + Xtrans * 1im)
     dx[i__ii_source] = ii_source - imag(line_currents)
     dx[i__ir_source] = ir_source - real(line_currents)
     return
 end
 
-u0 = [0.0,
+u0 = [
+    0.0,
     0.01,
     0.01,
     0.01,
@@ -221,19 +225,35 @@ M = diagm(ones(21))
 #Last 2 equations are algebraic
 M[20, 20] = M[21, 21] = 0.0
 
-f = ODEFunction(vsm, mass_matrix=M)
+f = ODEFunction(vsm, mass_matrix = M)
 
 condition(u, t, integrator) = t == 1.0
 affect!(integrator) = integrator.p[28] += 0.2
 cb = DiscreteCallback(condition, affect!)
 
 prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
-refsol = solve(prob, Rodas4(), saveat = 0.1, callback=cb, tstops=[1.0], reltol=1e-12, abstol=1e-18)
+refsol = solve(
+    prob,
+    Rodas4(),
+    saveat = 0.1,
+    callback = cb,
+    tstops = [1.0],
+    reltol = 1e-12,
+    abstol = 1e-18,
+)
 
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
     @show solver
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
-    sol = solve(prob, solver(), saveat=0.1, callback=cb, tstops=[1.0], reltol=1e-12, abstol=1e-16)
+    sol = solve(
+        prob,
+        solver(),
+        saveat = 0.1,
+        callback = cb,
+        tstops = [1.0],
+        reltol = 1e-12,
+        abstol = 1e-16,
+    )
     @test sol.retcode == :Success
     @test sol.t[end] == 20.0
     @test maximum(sol - refsol) < 1e-11
@@ -244,14 +264,15 @@ function hardstop!(du, u, p, t)
     y, f_wall, dy = u
     du[1] = dy
     du[2] = ifelse(y <= 0, y, f_wall)
-    du[3] = (-ifelse(t < 2, -pg*pm, pg*pm) - f_wall) / (-pm)
+    du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
 end
 
 fun = ODEFunction(hardstop!, mass_matrix = Diagonal([1, 0, 1]))
 prob = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
-@test solve(prob, ImplicitEuler(), dt=1/2^10, adaptive=false).retcode === :ConvergenceFailure
+@test solve(prob, ImplicitEuler(), dt = 1 / 2^10, adaptive = false).retcode ===
+      :ConvergenceFailure
 
-condition2 = (u,t,integrator) -> t == 2
+condition2 = (u, t, integrator) -> t == 2
 affect2! = integrator -> integrator.u[1] = 1e-6
 cb = DiscreteCallback(condition2, affect2!)
 
@@ -266,13 +287,14 @@ function choice_function(integrator)
 
     (N_FAILS[] > 3) + 1
 end
-simple_implicit_euler = ImplicitEuler(nlsolve = NLNewton(check_div = false, always_new = true))
+simple_implicit_euler =
+    ImplicitEuler(nlsolve = NLNewton(check_div = false, always_new = true))
 alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice_function)
 
 for alg in [simple_implicit_euler, alg_switch]
-    sol = solve(prob, alg, callback = cb, dt=1/2^10, adaptive=false)
+    sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
     @test sol.retcode === :Success
-    @test sol(0, idxs=1) == 5
-    @test sol(2, idxs=1) == 0
-    @test sol(4, idxs=1) > 10
+    @test sol(0, idxs = 1) == 5
+    @test sol(2, idxs = 1) == 0
+    @test sol(4, idxs = 1) > 10
 end

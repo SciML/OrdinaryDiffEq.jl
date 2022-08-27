@@ -1,47 +1,68 @@
-﻿abstract type OrdinaryDiffEqAlgorithm <: DiffEqBase.AbstractODEAlgorithm end
+abstract type OrdinaryDiffEqAlgorithm <: DiffEqBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
-abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
-abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
+abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} <:
+              OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ} <:
+              OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
+abstract type OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST,CJ} <:
+              OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
 
 abstract type OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
-abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST,CJ} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
-const NewtonAlgorithm = Union{OrdinaryDiffEqNewtonAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm}
-const RosenbrockAlgorithm = Union{OrdinaryDiffEqRosenbrockAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm}
+abstract type OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ} <:
+              OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
+abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST,CJ} <:
+              OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
+const NewtonAlgorithm =
+    Union{OrdinaryDiffEqNewtonAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm}
+const RosenbrockAlgorithm =
+    Union{OrdinaryDiffEqRosenbrockAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm}
 
 abstract type OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqLinearExponentialAlgorithm <: OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
-const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
+abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ} <:
+              OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqLinearExponentialAlgorithm <:
+              OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
+const ExponentialAlgorithm =
+    Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
+abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
+              OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ} <:
+              OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ} end
 
 # DAE Specific Algorithms
 abstract type DAEAlgorithm{CS,AD,FDT,ST,CJ} <: DiffEqBase.AbstractDAEAlgorithm end
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
-FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
+FunctionMap(; scale_by_time = false) = FunctionMap{scale_by_time}()
 
 function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
-  T = SciMLBase.remaker_of(thing)
-  T(; SciMLBase.struct_as_namedtuple(thing)...,kwargs...)
+    T = SciMLBase.remaker_of(thing)
+    T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
 end
 
-function DiffEqBase.remake(thing::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
-                        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
-                        DAEAlgorithm{CS,AD,FDT,ST,CJ}};
-                        linsolve, kwargs...) where {CS, AD, FDT, ST, CJ}
-  T = SciMLBase.remaker_of(thing)
-  T(; SciMLBase.struct_as_namedtuple(thing)...,
-      chunk_size=Val{CS}(),autodiff=Val{AD}(),standardtag=Val{ST}(),
-      concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
-      linsolve = linsolve,
-      kwargs...)
+function DiffEqBase.remake(
+    thing::Union{
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+        OrdinaryDiffEqImplicitAlgorithm{CS,AD,FDT,ST,CJ},
+        DAEAlgorithm{CS,AD,FDT,ST,CJ},
+    };
+    linsolve,
+    kwargs...,
+) where {CS,AD,FDT,ST,CJ}
+    T = SciMLBase.remaker_of(thing)
+    T(;
+        SciMLBase.struct_as_namedtuple(thing)...,
+        chunk_size = Val{CS}(),
+        autodiff = Val{AD}(),
+        standardtag = Val{ST}(),
+        concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
+        linsolve = linsolve,
+        kwargs...,
+    )
 end
 
 ###############################################################################
@@ -49,9 +70,9 @@ end
 # RK methods
 
 struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
-  tableau::TabType
+    tableau::TabType
 end
-ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
+ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
 @inline trivial_limiter!(u, integrator, p, t) = nothing
 """
@@ -66,311 +87,519 @@ KuttaPRK2p5: Parallel Explicit Runge-Kutta Method
   This requires that simultaneous calls to f are thread-safe.
 """
 struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
-  threading::TO
+    threading::TO
 end
-KuttaPRK2p5(;threading=true) = KuttaPRK2p5(threading)
+KuttaPRK2p5(; threading = true) = KuttaPRK2p5(threading)
 """
 AitkenNeville: Parallelized Explicit Extrapolation Method
    Euler extrapolation using Aitken-Neville with the Romberg Sequence.
 """
 struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-  max_order::Int
-  min_order::Int
-  init_order::Int
-  threading::TO
+    max_order::Int
+    min_order::Int
+    init_order::Int
+    threading::TO
 end
-AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=false) = AitkenNeville(max_order,min_order,init_order,threading)
+AitkenNeville(; max_order = 10, min_order = 1, init_order = 5, threading = false) =
+    AitkenNeville(max_order, min_order, init_order, threading)
 """
 ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
    Extrapolation of implicit Euler method with Romberg sequence.
    Similar to Hairer's SEULEX.
 """
-struct ImplicitEulerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  precs::P
-  n_max::Int
-  n_min::Int
-  n_init::Int
-  threading::TO
-  sequence::Symbol # Name of the subdividing sequence
+struct ImplicitEulerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <:
+       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    precs::P
+    n_max::Int
+    n_min::Int
+    n_init::Int
+    threading::TO
+    sequence::Symbol # Name of the subdividing sequence
 end
 
-function ImplicitEulerExtrapolation(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
-    diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
-    max_order=12,min_order=3,init_order=5,threading=false,sequence = :harmonic)
+function ImplicitEulerExtrapolation(;
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    max_order = 12,
+    min_order = 3,
+    init_order = 5,
+    threading = false,
+    sequence = :harmonic,
+)
 
-    linsolve = (linsolve === nothing && (
-                threading == true || threading isa PolyesterThreads)) ?
-                RFLUFactorization(;thread = Val(false)) : linsolve
+    linsolve =
+        (linsolve === nothing && (threading == true || threading isa PolyesterThreads)) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
-    n_min = max(3,min_order)
-    n_init = max(n_min + 1,init_order)
+    n_min = max(3, min_order)
+    n_init = max(n_min + 1, init_order)
     n_max = max(n_init + 1, max_order)
 
     # Warn user if orders have been changed
-    if (min_order, init_order, max_order) != (n_min,n_init,n_max)
-      @warn "The range of extrapolation orders and/or the initial order given to the
-        `ImplicitEulerExtrapolation` algorithm are not valid and have been changed:
-        Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
-        Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
-        Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
+    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+        @warn "The range of extrapolation orders and/or the initial order given to the
+          `ImplicitEulerExtrapolation` algorithm are not valid and have been changed:
+          Minimal order: " *
+              lpad(min_order, 2, " ") *
+              " --> " *
+              lpad(n_min, 2, " ") *
+              "
+Maximal order: " *
+              lpad(max_order, 2, " ") *
+              " --> " *
+              lpad(n_max, 2, " ") *
+              "
+Initial order: " *
+              lpad(init_order, 2, " ") *
+              " --> " *
+              lpad(n_init, 2, " ")
     end
 
     # Warn user if sequence has been changed:
     if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-      @warn "The `sequence` given to the `ImplicitEulerExtrapolation` algorithm
-          is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
-          Thus it has been changed
-        :$(sequence) --> :harmonic"
-      sequence = :harmonic
+        @warn "The `sequence` given to the `ImplicitEulerExtrapolation` algorithm
+            is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+            Thus it has been changed
+          :$(sequence) --> :harmonic"
+        sequence = :harmonic
     end
-    ImplicitEulerExtrapolation{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
-      linsolve,precs,n_max,n_min,n_init,threading,sequence)
+    ImplicitEulerExtrapolation{
+        _unwrap_val(chunk_size),
+        _unwrap_val(autodiff),
+        typeof(linsolve),
+        typeof(precs),
+        diff_type,
+        _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac),
+        typeof(threading),
+    }(
+        linsolve,
+        precs,
+        n_max,
+        n_min,
+        n_init,
+        threading,
+        sequence,
+    )
 end
 """
 ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
    Midpoint extrapolation using Barycentric coordinates
 """
-struct ExtrapolationMidpointDeuflhard{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-  n_min::Int # Minimal extrapolation order
-  n_init::Int # Initial extrapolation order
-  n_max::Int # Maximal extrapolation order
-  sequence::Symbol # Name of the subdividing sequence
-  threading::TO
-  sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
+struct ExtrapolationMidpointDeuflhard{TO} <:
+       OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+    n_min::Int # Minimal extrapolation order
+    n_init::Int # Initial extrapolation order
+    n_max::Int # Maximal extrapolation order
+    sequence::Symbol # Name of the subdividing sequence
+    threading::TO
+    sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
-function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10, sequence = :harmonic, threading = true, sequence_factor = 2)
-  # Enforce 1 <=  min_order <= init_order <= max_order:
-  n_min = max(1,min_order)
-  n_init = max(n_min,init_order)
-  n_max = max(n_init,max_order)
+function ExtrapolationMidpointDeuflhard(;
+    min_order = 1,
+    init_order = 5,
+    max_order = 10,
+    sequence = :harmonic,
+    threading = true,
+    sequence_factor = 2,
+)
+    # Enforce 1 <=  min_order <= init_order <= max_order:
+    n_min = max(1, min_order)
+    n_init = max(n_min, init_order)
+    n_max = max(n_init, max_order)
 
-  # Warn user if orders have been changed
-  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
-    @warn "The range of extrapolation orders and/or the initial order given to the
-      `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
-      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
-      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
-      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
-  end
+    # Warn user if orders have been changed
+    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+        @warn "The range of extrapolation orders and/or the initial order given to the
+          `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
+          Minimal order: " *
+              lpad(min_order, 2, " ") *
+              " --> " *
+              lpad(n_min, 2, " ") *
+              "
+Maximal order: " *
+              lpad(max_order, 2, " ") *
+              " --> " *
+              lpad(n_max, 2, " ") *
+              "
+Initial order: " *
+              lpad(init_order, 2, " ") *
+              " --> " *
+              lpad(n_init, 2, " ")
+    end
 
-  # Warn user if sequence_factor is not even
-  if sequence_factor%2 != 0
-    @warn "A non-even number cannot be used as sequence factor.
-          Thus is has been changed
-          $(sequence_factor) --> 2"
-    sequence_factor = 2
-  end
+    # Warn user if sequence_factor is not even
+    if sequence_factor % 2 != 0
+        @warn "A non-even number cannot be used as sequence factor.
+              Thus is has been changed
+              $(sequence_factor) --> 2"
+        sequence_factor = 2
+    end
 
-  # Warn user if sequence has been changed:
-  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-    @warn "The `sequence` given to the `ExtrapolationMidpointDeuflhard` algorithm
-       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
-       Thus it has been changed
-      :$(sequence) --> :harmonic"
-    sequence = :harmonic
-  end
+    # Warn user if sequence has been changed:
+    if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+        @warn "The `sequence` given to the `ExtrapolationMidpointDeuflhard` algorithm
+           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+           Thus it has been changed
+          :$(sequence) --> :harmonic"
+        sequence = :harmonic
+    end
 
-  # Initialize algorithm
-  ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading,sequence_factor)
+    # Initialize algorithm
+    ExtrapolationMidpointDeuflhard(
+        n_min,
+        n_init,
+        n_max,
+        sequence,
+        threading,
+        sequence_factor,
+    )
 end
 """
 ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
    Midpoint extrapolation using Barycentric coordinates
 """
-struct ImplicitDeuflhardExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  precs::P
-  n_min::Int # Minimal extrapolation order
-  n_init::Int # Initial extrapolation order
-  n_max::Int # Maximal extrapolation order
-  sequence::Symbol # Name of the subdividing sequence
+struct ImplicitDeuflhardExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <:
+       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    precs::P
+    n_min::Int # Minimal extrapolation order
+    n_init::Int # Initial extrapolation order
+    n_max::Int # Maximal extrapolation order
+    sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
-function ImplicitDeuflhardExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,
-  linsolve=nothing,precs = DEFAULT_PRECS,diff_type=Val{:forward},
-  min_order=1,init_order=5,max_order=10,sequence = :harmonic,threading=false)
-  # Enforce 1 <=  min_order <= init_order <= max_order:
-  n_min = max(1,min_order)
-  n_init = max(n_min,init_order)
-  n_max = max(n_init,max_order)
+function ImplicitDeuflhardExtrapolation(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    diff_type = Val{:forward},
+    min_order = 1,
+    init_order = 5,
+    max_order = 10,
+    sequence = :harmonic,
+    threading = false,
+)
+    # Enforce 1 <=  min_order <= init_order <= max_order:
+    n_min = max(1, min_order)
+    n_init = max(n_min, init_order)
+    n_max = max(n_init, max_order)
 
-  linsolve = (linsolve === nothing && (
-              threading == true || threading isa PolyesterThreads)) ?
-              RFLUFactorization(;thread = Val(false)) : linsolve
+    linsolve =
+        (linsolve === nothing && (threading == true || threading isa PolyesterThreads)) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
-  # Warn user if orders have been changed
-  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
-    @warn "The range of extrapolation orders and/or the initial order given to the
-      `ImplicitDeuflhardExtrapolation` algorithm are not valid and have been changed:
-      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
-      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
-      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
-  end
+    # Warn user if orders have been changed
+    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+        @warn "The range of extrapolation orders and/or the initial order given to the
+          `ImplicitDeuflhardExtrapolation` algorithm are not valid and have been changed:
+          Minimal order: " *
+              lpad(min_order, 2, " ") *
+              " --> " *
+              lpad(n_min, 2, " ") *
+              "
+Maximal order: " *
+              lpad(max_order, 2, " ") *
+              " --> " *
+              lpad(n_max, 2, " ") *
+              "
+Initial order: " *
+              lpad(init_order, 2, " ") *
+              " --> " *
+              lpad(n_init, 2, " ")
+    end
 
-  # Warn user if sequence has been changed:
-  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-    @warn "The `sequence` given to the `ImplicitDeuflhardExtrapolation` algorithm
-       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
-       Thus it has been changed
-      :$(sequence) --> :harmonic"
-    sequence = :harmonic
-  end
+    # Warn user if sequence has been changed:
+    if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+        @warn "The `sequence` given to the `ImplicitDeuflhardExtrapolation` algorithm
+           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+           Thus it has been changed
+          :$(sequence) --> :harmonic"
+        sequence = :harmonic
+    end
 
-  # Initialize algorithm
-  ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(threading)}(linsolve,precs,n_min,n_init,n_max,sequence,threading)
+    # Initialize algorithm
+    ImplicitDeuflhardExtrapolation{
+        _unwrap_val(chunk_size),
+        _unwrap_val(autodiff),
+        typeof(linsolve),
+        typeof(precs),
+        diff_type,
+        _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac),
+        typeof(threading),
+    }(
+        linsolve,
+        precs,
+        n_min,
+        n_init,
+        n_max,
+        sequence,
+        threading,
+    )
 end
 """
 ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
   Midpoint extrapolation using Barycentric coordinates, following Hairer's ODEX in the adaptivity behavior.
 """
-struct ExtrapolationMidpointHairerWanner{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-  n_min::Int # Minimal extrapolation order
-  n_init::Int # Initial extrapolation order
-  n_max::Int # Maximal extrapolation order
-  sequence::Symbol # Name of the subdividing sequence
-  threading::TO
-  sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
+struct ExtrapolationMidpointHairerWanner{TO} <:
+       OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+    n_min::Int # Minimal extrapolation order
+    n_init::Int # Initial extrapolation order
+    n_max::Int # Maximal extrapolation order
+    sequence::Symbol # Name of the subdividing sequence
+    threading::TO
+    sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
 end
-function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic, threading = true, sequence_factor = 2)
-  # Enforce 2 <=  min_order
-  # and min_order + 1 <= init_order <= max_order - 1:
-  n_min = max(2, min_order)
-  n_init = max(n_min + 1, init_order)
-  n_max = max(n_init + 1, max_order)
+function ExtrapolationMidpointHairerWanner(;
+    min_order = 2,
+    init_order = 5,
+    max_order = 10,
+    sequence = :harmonic,
+    threading = true,
+    sequence_factor = 2,
+)
+    # Enforce 2 <=  min_order
+    # and min_order + 1 <= init_order <= max_order - 1:
+    n_min = max(2, min_order)
+    n_init = max(n_min + 1, init_order)
+    n_max = max(n_init + 1, max_order)
 
-  # Warn user if orders have been changed
-  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
-    @warn "The range of extrapolation orders and/or the initial order given to the
-      `ExtrapolationMidpointHairerWanner` algorithm are not valid and have been changed:
-      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
-      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
-      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
-  end
+    # Warn user if orders have been changed
+    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+        @warn "The range of extrapolation orders and/or the initial order given to the
+          `ExtrapolationMidpointHairerWanner` algorithm are not valid and have been changed:
+          Minimal order: " *
+              lpad(min_order, 2, " ") *
+              " --> " *
+              lpad(n_min, 2, " ") *
+              "
+Maximal order: " *
+              lpad(max_order, 2, " ") *
+              " --> " *
+              lpad(n_max, 2, " ") *
+              "
+Initial order: " *
+              lpad(init_order, 2, " ") *
+              " --> " *
+              lpad(n_init, 2, " ")
+    end
 
-  # Warn user if sequence_factor is not even
-  if sequence_factor%2 != 0
-    @warn "A non-even number cannot be used as sequence factor.
-          Thus is has been changed
-          $(sequence_factor) --> 2"
-    sequence_factor = 2
-  end
+    # Warn user if sequence_factor is not even
+    if sequence_factor % 2 != 0
+        @warn "A non-even number cannot be used as sequence factor.
+              Thus is has been changed
+              $(sequence_factor) --> 2"
+        sequence_factor = 2
+    end
 
-  # Warn user if sequence has been changed:
-  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-    @warn "The `sequence` given to the `ExtrapolationMidpointHairerWanner` algorithm
-       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
-       Thus it has been changed
-      :$(sequence) --> :harmonic"
-    sequence = :harmonic
-  end
+    # Warn user if sequence has been changed:
+    if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+        @warn "The `sequence` given to the `ExtrapolationMidpointHairerWanner` algorithm
+           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+           Thus it has been changed
+          :$(sequence) --> :harmonic"
+        sequence = :harmonic
+    end
 
-  # Initialize algorithm
-  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading,sequence_factor)
+    # Initialize algorithm
+    ExtrapolationMidpointHairerWanner(
+        n_min,
+        n_init,
+        n_max,
+        sequence,
+        threading,
+        sequence_factor,
+    )
 end
 """
 ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
   Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
 """
-struct ImplicitHairerWannerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  precs::P
-  n_min::Int # Minimal extrapolation order
-  n_init::Int # Initial extrapolation order
-  n_max::Int # Maximal extrapolation order
-  sequence::Symbol # Name of the subdividing sequence
-  threading::TO
+struct ImplicitHairerWannerExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <:
+       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    precs::P
+    n_min::Int # Minimal extrapolation order
+    n_init::Int # Initial extrapolation order
+    n_max::Int # Maximal extrapolation order
+    sequence::Symbol # Name of the subdividing sequence
+    threading::TO
 end
 
-function ImplicitHairerWannerExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,
-  linsolve=nothing,precs = DEFAULT_PRECS,diff_type=Val{:forward},
-  min_order=2,init_order=5,max_order=10,sequence = :harmonic,threading=false)
-  # Enforce 2 <=  min_order
-  # and min_order + 1 <= init_order <= max_order - 1:
-  n_min = max(2, min_order)
-  n_init = max(n_min + 1, init_order)
-  n_max = max(n_init + 1, max_order)
+function ImplicitHairerWannerExtrapolation(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    diff_type = Val{:forward},
+    min_order = 2,
+    init_order = 5,
+    max_order = 10,
+    sequence = :harmonic,
+    threading = false,
+)
+    # Enforce 2 <=  min_order
+    # and min_order + 1 <= init_order <= max_order - 1:
+    n_min = max(2, min_order)
+    n_init = max(n_min + 1, init_order)
+    n_max = max(n_init + 1, max_order)
 
-  linsolve = (linsolve === nothing && (
-              threading == true || threading isa PolyesterThreads)) ?
-              RFLUFactorization(;thread = Val(false)) : linsolve
+    linsolve =
+        (linsolve === nothing && (threading == true || threading isa PolyesterThreads)) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
-  # Warn user if orders have been changed
-  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
-    @warn "The range of extrapolation orders and/or the initial order given to the
-      `ImplicitHairerWannerExtrapolation` algorithm are not valid and have been changed:
-      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
-      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
-      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
-  end
+    # Warn user if orders have been changed
+    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+        @warn "The range of extrapolation orders and/or the initial order given to the
+          `ImplicitHairerWannerExtrapolation` algorithm are not valid and have been changed:
+          Minimal order: " *
+              lpad(min_order, 2, " ") *
+              " --> " *
+              lpad(n_min, 2, " ") *
+              "
+Maximal order: " *
+              lpad(max_order, 2, " ") *
+              " --> " *
+              lpad(n_max, 2, " ") *
+              "
+Initial order: " *
+              lpad(init_order, 2, " ") *
+              " --> " *
+              lpad(n_init, 2, " ")
+    end
 
-  # Warn user if sequence has been changed:
-  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-    @warn "The `sequence` given to the `ImplicitHairerWannerExtrapolation` algorithm
-       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
-       Thus it has been changed
-      :$(sequence) --> :harmonic"
-    sequence = :harmonic
-  end
+    # Warn user if sequence has been changed:
+    if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+        @warn "The `sequence` given to the `ImplicitHairerWannerExtrapolation` algorithm
+           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+           Thus it has been changed
+          :$(sequence) --> :harmonic"
+        sequence = :harmonic
+    end
 
-  # Initialize algorithm
-  ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac), typeof(threading)}(
-      linsolve,precs,n_min,n_init,n_max,sequence,threading)
+    # Initialize algorithm
+    ImplicitHairerWannerExtrapolation{
+        _unwrap_val(chunk_size),
+        _unwrap_val(autodiff),
+        typeof(linsolve),
+        typeof(precs),
+        diff_type,
+        _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac),
+        typeof(threading),
+    }(
+        linsolve,
+        precs,
+        n_min,
+        n_init,
+        n_max,
+        sequence,
+        threading,
+    )
 end
 
 """
 ImplicitEulerBarycentricExtrapolation: Parallelized Implicit Extrapolation Method
   Euler extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
 """
-struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  precs::P
-  n_min::Int # Minimal extrapolation order
-  n_init::Int # Initial extrapolation order
-  n_max::Int # Maximal extrapolation order
-  sequence::Symbol # Name of the subdividing sequence
+struct ImplicitEulerBarycentricExtrapolation{CS,AD,F,P,FDT,ST,CJ,TO} <:
+       OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    precs::P
+    n_min::Int # Minimal extrapolation order
+    n_init::Int # Initial extrapolation order
+    n_max::Int # Maximal extrapolation order
+    sequence::Symbol # Name of the subdividing sequence
     threading::TO
-  sequence_factor::Int
+    sequence_factor::Int
 end
 
-function ImplicitEulerBarycentricExtrapolation(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,
-  linsolve=nothing,precs = DEFAULT_PRECS,diff_type=Val{:forward},
-  min_order=3,init_order=5,max_order=12,sequence = :harmonic,threading=false,sequence_factor = 2)
-  # Enforce 2 <=  min_order
-  # and min_order + 1 <= init_order <= max_order - 1:
-  n_min = max(3, min_order)
-  n_init = max(n_min + 1, init_order)
-  n_max = max(n_init + 1, max_order)
+function ImplicitEulerBarycentricExtrapolation(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    diff_type = Val{:forward},
+    min_order = 3,
+    init_order = 5,
+    max_order = 12,
+    sequence = :harmonic,
+    threading = false,
+    sequence_factor = 2,
+)
+    # Enforce 2 <=  min_order
+    # and min_order + 1 <= init_order <= max_order - 1:
+    n_min = max(3, min_order)
+    n_init = max(n_min + 1, init_order)
+    n_max = max(n_init + 1, max_order)
 
-  linsolve = (linsolve === nothing && (
-              threading == true || threading isa PolyesterThreads)) ?
-              RFLUFactorization(;thread = Val(false)) : linsolve
+    linsolve =
+        (linsolve === nothing && (threading == true || threading isa PolyesterThreads)) ?
+        RFLUFactorization(; thread = Val(false)) : linsolve
 
-  # Warn user if orders have been changed
-  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
-    @warn "The range of extrapolation orders and/or the initial order given to the
-      `ImplicitEulerBarycentricExtrapolation` algorithm are not valid and have been changed:
-      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
-      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
-      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
-  end
+    # Warn user if orders have been changed
+    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+        @warn "The range of extrapolation orders and/or the initial order given to the
+          `ImplicitEulerBarycentricExtrapolation` algorithm are not valid and have been changed:
+          Minimal order: " *
+              lpad(min_order, 2, " ") *
+              " --> " *
+              lpad(n_min, 2, " ") *
+              "
+Maximal order: " *
+              lpad(max_order, 2, " ") *
+              " --> " *
+              lpad(n_max, 2, " ") *
+              "
+Initial order: " *
+              lpad(init_order, 2, " ") *
+              " --> " *
+              lpad(n_init, 2, " ")
+    end
 
-  # Warn user if sequence has been changed:
-  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-    @warn "The `sequence` given to the `ImplicitEulerBarycentricExtrapolation` algorithm
-       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
-       Thus it has been changed
-      :$(sequence) --> :harmonic"
-    sequence = :harmonic
-  end
+    # Warn user if sequence has been changed:
+    if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+        @warn "The `sequence` given to the `ImplicitEulerBarycentricExtrapolation` algorithm
+           is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+           Thus it has been changed
+          :$(sequence) --> :harmonic"
+        sequence = :harmonic
+    end
 
-  # Initialize algorithm
-  ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-      typeof(linsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-      _unwrap_val(concrete_jac),typeof(threading)}(linsolve,precs,n_min,n_init,n_max,
-      sequence,threading,sequence_factor)
+    # Initialize algorithm
+    ImplicitEulerBarycentricExtrapolation{
+        _unwrap_val(chunk_size),
+        _unwrap_val(autodiff),
+        typeof(linsolve),
+        typeof(precs),
+        diff_type,
+        _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac),
+        typeof(threading),
+    }(
+        linsolve,
+        precs,
+        n_min,
+        n_init,
+        n_max,
+        sequence,
+        threading,
+        sequence_factor,
+    )
 end
 
 """
@@ -429,9 +658,9 @@ Anas5: Explicit Runge-Kutta Method
   Requires a periodicity estimate which when accurate the method becomes 5th order (and is otherwise 4th order with less error for better estimates).
 """
 struct Anas5{T} <: OrdinaryDiffEqAlgorithm
-  w::T
+    w::T
 end
-Anas5(; w=1) = Anas5(w)
+Anas5(; w = 1) = Anas5(w)
 
 
 """
@@ -460,22 +689,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1016/j.jcp.2009.02.032
 """
 struct ORK256{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-ORK256(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+ORK256(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = ORK256{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-ORK256(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = ORK256{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+ORK256(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    ORK256{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::ORK256)
-  print(io, "ORK256(stage_limiter! = ", alg.stage_limiter!,
-                 ", step_limiter! = ", alg.step_limiter!,
-                 ", thread = ", alg.thread,
-                 ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "ORK256(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 """
@@ -505,22 +758,49 @@ Julia is started with multiple threads.
 }
 """
 struct CarpenterKennedy2N54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-CarpenterKennedy2N54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+CarpenterKennedy2N54(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = CarpenterKennedy2N54{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-CarpenterKennedy2N54(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = CarpenterKennedy2N54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+CarpenterKennedy2N54(
+    stage_limiter!,
+    step_limiter! = trivial_limiter!;
+    williamson_condition = true,
+) = CarpenterKennedy2N54{typeof(stage_limiter!),typeof(step_limiter!),False}(
+    stage_limiter!,
+    step_limiter!,
+    False(),
+    williamson_condition,
+)
 
 function Base.show(io::IO, alg::CarpenterKennedy2N54)
-  print(io, "CarpenterKennedy2N54(stage_limiter! = ", alg.stage_limiter!,
-                               ", step_limiter! = ", alg.step_limiter!,
-                               ", thread = ", alg.thread,
-                               ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "CarpenterKennedy2N54(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 
@@ -549,22 +829,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1006/jcph.1998.5986
 """
 struct SHLDDRK64{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-SHLDDRK64(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+SHLDDRK64(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = SHLDDRK64{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-SHLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = SHLDDRK64{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+SHLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    SHLDDRK64{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::SHLDDRK64)
-  print(io, "SHLDDRK64(stage_limiter! = ", alg.stage_limiter!,
-                    ", step_limiter! = ", alg.step_limiter!,
-                    ", thread = ", alg.thread,
-                    ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "SHLDDRK64(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 struct SHLDDRK52 <: OrdinaryDiffEqAlgorithm end
@@ -578,13 +882,21 @@ HSLDDRK64: Low-Storage Method
   Fixed timestep only.
 """
 struct HSLDDRK64{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  williamson_condition::Bool
-  function HSLDDRK64(stage_limiter! =trivial_limiter!, step_limiter! =trivial_limiter!; williamson_condition=true)
-    Base.depwarn("HSLDDRK64 is deprecated, use SHLDDRK64 instead.", :HSLDDRK64)
-    SHLDDRK64(stage_limiter!, step_limiter!; williamson_condition=williamson_condition)
-  end
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    williamson_condition::Bool
+    function HSLDDRK64(
+        stage_limiter! = trivial_limiter!,
+        step_limiter! = trivial_limiter!;
+        williamson_condition = true,
+    )
+        Base.depwarn("HSLDDRK64 is deprecated, use SHLDDRK64 instead.", :HSLDDRK64)
+        SHLDDRK64(
+            stage_limiter!,
+            step_limiter!;
+            williamson_condition = williamson_condition,
+        )
+    end
 end
 
 """
@@ -615,22 +927,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
 struct DGLDDRK73_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-DGLDDRK73_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+DGLDDRK73_C(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = DGLDDRK73_C{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK73_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    DGLDDRK73_C{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::DGLDDRK73_C)
-  print(io, "DGLDDRK73_C(stage_limiter! = ", alg.stage_limiter!,
-                      ", step_limiter! = ", alg.step_limiter!,
-                      ", thread = ", alg.thread,
-                      ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "DGLDDRK73_C(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 """
@@ -661,22 +997,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
 struct DGLDDRK84_C{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-DGLDDRK84_C(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+DGLDDRK84_C(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = DGLDDRK84_C{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-DGLDDRK84_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK84_C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+DGLDDRK84_C(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    DGLDDRK84_C{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::DGLDDRK84_C)
-  print(io, "DGLDDRK84_C(stage_limiter! = ", alg.stage_limiter!,
-                      ", step_limiter! = ", alg.step_limiter!,
-                      ", thread = ", alg.thread,
-                      ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "DGLDDRK84_C(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 """
@@ -707,22 +1067,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
 struct DGLDDRK84_F{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-DGLDDRK84_F(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+DGLDDRK84_F(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = DGLDDRK84_F{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = DGLDDRK84_F{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    DGLDDRK84_F{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::DGLDDRK84_F)
-  print(io, "DGLDDRK84_F(stage_limiter! = ", alg.stage_limiter!,
-                      ", step_limiter! = ", alg.step_limiter!,
-                      ", thread = ", alg.thread,
-                      ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "DGLDDRK84_F(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 """
@@ -750,22 +1134,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
 struct NDBLSRK124{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-NDBLSRK124(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+NDBLSRK124(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = NDBLSRK124{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-NDBLSRK124(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK124{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+NDBLSRK124(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    NDBLSRK124{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::NDBLSRK124)
-  print(io, "NDBLSRK124(stage_limiter! = ", alg.stage_limiter!,
-                     ", step_limiter! = ", alg.step_limiter!,
-                     ", thread = ", alg.thread,
-                     ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "NDBLSRK124(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 """
@@ -793,22 +1201,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
 struct NDBLSRK134{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-NDBLSRK134(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+NDBLSRK134(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = NDBLSRK134{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK134{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    NDBLSRK134{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::NDBLSRK134)
-  print(io, "NDBLSRK134(stage_limiter! = ", alg.stage_limiter!,
-                     ", step_limiter! = ", alg.step_limiter!,
-                     ", thread = ", alg.thread,
-                     ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "NDBLSRK134(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 """
@@ -836,22 +1268,46 @@ Julia is started with multiple threads.
   doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
 struct NDBLSRK144{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-  williamson_condition::Bool
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+    williamson_condition::Bool
 end
 
-NDBLSRK144(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), williamson_condition = true) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread, williamson_condition)
+NDBLSRK144(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+    williamson_condition = true,
+) = NDBLSRK144{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+    williamson_condition,
+)
 
 # for backwards compatibility
-NDBLSRK144(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) = NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False(), williamson_condition)
+NDBLSRK144(stage_limiter!, step_limiter! = trivial_limiter!; williamson_condition = true) =
+    NDBLSRK144{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition,
+    )
 
 function Base.show(io::IO, alg::NDBLSRK144)
-  print(io, "NDBLSRK144(stage_limiter! = ", alg.stage_limiter!,
-                     ", step_limiter! = ", alg.step_limiter!,
-                     ", thread = ", alg.thread,
-                     ", williamson_condition = ", alg.williamson_condition, ")")
+    print(
+        io,
+        "NDBLSRK144(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ", williamson_condition = ",
+        alg.williamson_condition,
+        ")",
+    )
 end
 
 """
@@ -1084,20 +1540,40 @@ Julia is started with multiple threads.
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3Sp35{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-RDPK3Sp35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+RDPK3Sp35(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = RDPK3Sp35{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp35{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!) =
+    RDPK3Sp35{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::RDPK3Sp35)
-  print(io, "RDPK3Sp35(stage_limiter! = ", alg.stage_limiter!,
-                    ", step_limiter! = ", alg.step_limiter!,
-                    ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "RDPK3Sp35(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1125,20 +1601,40 @@ Julia is started with multiple threads.
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3SpFSAL35{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-RDPK3SpFSAL35(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+RDPK3SpFSAL35(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = RDPK3SpFSAL35{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL35{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!) =
+    RDPK3SpFSAL35{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::RDPK3SpFSAL35)
-  print(io, "RDPK3SpFSAL35(stage_limiter! = ", alg.stage_limiter!,
-                        ", step_limiter! = ", alg.step_limiter!,
-                        ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "RDPK3SpFSAL35(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1165,20 +1661,40 @@ Julia is started with multiple threads.
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3Sp49{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-RDPK3Sp49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+RDPK3Sp49(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = RDPK3Sp49{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp49{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!) =
+    RDPK3Sp49{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::RDPK3Sp49)
-  print(io, "RDPK3Sp49(stage_limiter! = ", alg.stage_limiter!,
-                    ", step_limiter! = ", alg.step_limiter!,
-                    ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "RDPK3Sp49(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1206,20 +1722,40 @@ Julia is started with multiple threads.
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3SpFSAL49{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-RDPK3SpFSAL49(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+RDPK3SpFSAL49(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = RDPK3SpFSAL49{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL49{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!) =
+    RDPK3SpFSAL49{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::RDPK3SpFSAL49)
-  print(io, "RDPK3SpFSAL49(stage_limiter! = ", alg.stage_limiter!,
-                        ", step_limiter! = ", alg.step_limiter!,
-                        ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "RDPK3SpFSAL49(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1246,20 +1782,40 @@ Julia is started with multiple threads.
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3Sp510{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-RDPK3Sp510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+RDPK3Sp510(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = RDPK3Sp510{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3Sp510{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!) =
+    RDPK3Sp510{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::RDPK3Sp510)
-  print(io, "RDPK3Sp510(stage_limiter! = ", alg.stage_limiter!,
-                     ", step_limiter! = ", alg.step_limiter!,
-                     ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "RDPK3Sp510(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1287,20 +1843,40 @@ Julia is started with multiple threads.
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3SpFSAL510{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-RDPK3SpFSAL510(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+RDPK3SpFSAL510(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = RDPK3SpFSAL510{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-RDPK3SpFSAL510(stage_limiter!, step_limiter! = trivial_limiter!) = RDPK3SpFSAL510{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+RDPK3SpFSAL510(stage_limiter!, step_limiter! = trivial_limiter!) =
+    RDPK3SpFSAL510{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::RDPK3SpFSAL510)
-  print(io, "RDPK3SpFSAL510(stage_limiter! = ", alg.stage_limiter!,
-                         ", step_limiter! = ", alg.step_limiter!,
-                         ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "RDPK3SpFSAL510(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 
@@ -1338,20 +1914,40 @@ Julia is started with multiple threads.
   https://doi.org/10.1016/0021-9991(88)90177-5
 """
 struct SSPRK22{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK22(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK22{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK22(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK22{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK22(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK22{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK22(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK22{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK22)
-  print(io, "SSPRK22(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK22(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1378,20 +1974,40 @@ Julia is started with multiple threads.
   https://doi.org/10.1016/0021-9991(88)90177-5
 """
 struct SSPRK33{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK33(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK33{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK33(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK33{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK33{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK33{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK33)
-  print(io, "SSPRK33(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK33(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1417,20 +2033,40 @@ Julia is started with multiple threads.
   Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK53{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK53(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK53(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK53{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK53(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK53(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK53{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK53)
-  print(io, "SSPRK53(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK53(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 struct KYKSSPRK42 <: OrdinaryDiffEq.OrdinaryDiffEqAlgorithm end
@@ -1458,20 +2094,40 @@ Julia is started with multiple threads.
   arXiv:1809.04807v1.
 """
 struct SSPRK53_2N1{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK53_2N1(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_2N1{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK53_2N1(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK53_2N1{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK53_2N1(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_2N1{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK53_2N1(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK53_2N1{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK53_2N1)
-  print(io, "SSPRK53_2N1(stage_limiter! = ", alg.stage_limiter!,
-                      ", step_limiter! = ", alg.step_limiter!,
-                      ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK53_2N1(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1497,20 +2153,40 @@ Julia is started with multiple threads.
   arXiv:1809.04807v1.
 """
 struct SSPRK53_2N2{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK53_2N2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_2N2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK53_2N2(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK53_2N2{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK53_2N2(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_2N2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK53_2N2(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK53_2N2{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK53_2N2)
-  print(io, "SSPRK53_2N2(stage_limiter! = ", alg.stage_limiter!,
-                      ", step_limiter! = ", alg.step_limiter!,
-                      ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK53_2N2(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1536,20 +2212,40 @@ Julia is started with multiple threads.
   arXiv:1809.04807v1.
 """
 struct SSPRK53_H{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK53_H(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK53_H{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK53_H(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK53_H{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK53_H(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK53_H{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK53_H(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK53_H{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK53_H)
-  print(io, "SSPRK53_H(stage_limiter! = ", alg.stage_limiter!,
-                    ", step_limiter! = ", alg.step_limiter!,
-                    ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK53_H(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1575,20 +2271,40 @@ Julia is started with multiple threads.
   Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK63{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK63(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK63{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK63(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK63{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK63(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK63{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK63(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK63{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK63)
-  print(io, "SSPRK63(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK63(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1614,20 +2330,40 @@ Julia is started with multiple threads.
   Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK73{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK73(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK73{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK73(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK73{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK73(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK73{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK73(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK73{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK73)
-  print(io, "SSPRK73(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK73(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1653,20 +2389,40 @@ Julia is started with multiple threads.
   Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK83{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK83(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK83{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK83(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK83{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK83(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK83{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK83(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK83{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK83)
-  print(io, "SSPRK83(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK83(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1705,20 +2461,40 @@ Efficient implementation (and optimized controller) developed by
   [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct SSPRK43{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK43(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK43{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK43(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK43{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK43(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK43{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK43(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK43{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK43)
-  print(io, "SSPRK43(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK43(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1747,20 +2523,40 @@ Julia is started with multiple threads.
   Example 6.1.
 """
 struct SSPRK432{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK432(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK432{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK432(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK432{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK432(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK432{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK432(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK432{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK432)
-  print(io, "SSPRK432(stage_limiter! = ", alg.stage_limiter!,
-                   ", step_limiter! = ", alg.step_limiter!,
-                   ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK432(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1782,10 +2578,11 @@ of the form `limiter!(u, integrator, p, t)`.
   [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
 """
 struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
 end
-SSPRKMSVS43(stage_limiter! = trivial_limiter!) = SSPRKMSVS43(stage_limiter!, trivial_limiter!)
+SSPRKMSVS43(stage_limiter! = trivial_limiter!) =
+    SSPRKMSVS43(stage_limiter!, trivial_limiter!)
 
 """
     SSPRKMSVS32(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
@@ -1806,10 +2603,11 @@ of the form `limiter!(u, integrator, p, t)`.
   [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
 """
 struct SSPRKMSVS32{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
 end
-SSPRKMSVS32(stage_limiter! = trivial_limiter!) = SSPRKMSVS32(stage_limiter!, trivial_limiter!)
+SSPRKMSVS32(stage_limiter! = trivial_limiter!) =
+    SSPRKMSVS32(stage_limiter!, trivial_limiter!)
 
 """
     SSPRK932(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
@@ -1836,20 +2634,40 @@ Julia is started with multiple threads.
   World Scientific, 2011.
 """
 struct SSPRK932{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK932(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK932{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK932(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK932{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK932(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK932{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK932(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK932{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK932)
-  print(io, "SSPRK932(stage_limiter! = ", alg.stage_limiter!,
-                   ", step_limiter! = ", alg.step_limiter!,
-                   ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK932(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1875,20 +2693,40 @@ Julia is started with multiple threads.
   Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK54{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK54(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK54{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK54(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK54(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK54{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK54)
-  print(io, "SSPRK54(stage_limiter! = ", alg.stage_limiter!,
-                  ", step_limiter! = ", alg.step_limiter!,
-                  ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK54(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -1915,20 +2753,40 @@ Julia is started with multiple threads.
   SIAM Journal on Scientific Computing 30.4 (2008): 2113-2136.
 """
 struct SSPRK104{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-SSPRK104(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = SSPRK104{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+SSPRK104(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = SSPRK104{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-SSPRK104(stage_limiter!, step_limiter! = trivial_limiter!) = SSPRK104{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+SSPRK104(stage_limiter!, step_limiter! = trivial_limiter!) =
+    SSPRK104{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::SSPRK104)
-  print(io, "SSPRK104(stage_limiter! = ", alg.stage_limiter!,
-                   ", step_limiter! = ", alg.step_limiter!,
-                   ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "SSPRK104(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -2011,17 +2869,32 @@ Julia is started with multiple threads.
 }
 """
 struct BS3{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-BS3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = BS3{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+BS3(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = BS3{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 function Base.show(io::IO, alg::BS3)
-  print(io, "BS3(stage_limiter! = ", alg.stage_limiter!,
-              ", step_limiter! = ", alg.step_limiter!,
-              ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "BS3(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -2071,20 +2944,40 @@ Julia is started with multiple threads.
 }
 """
 struct Tsit5{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
-Tsit5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False()) = Tsit5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!, step_limiter!, thread)
+Tsit5(;
+    stage_limiter! = trivial_limiter!,
+    step_limiter! = trivial_limiter!,
+    thread = False(),
+) = Tsit5{typeof(stage_limiter!),typeof(step_limiter!),typeof(thread)}(
+    stage_limiter!,
+    step_limiter!,
+    thread,
+)
 
 # for backwards compatibility
-Tsit5(stage_limiter!, step_limiter! = trivial_limiter!) = Tsit5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!, step_limiter!, False())
+Tsit5(stage_limiter!, step_limiter! = trivial_limiter!) =
+    Tsit5{typeof(stage_limiter!),typeof(step_limiter!),False}(
+        stage_limiter!,
+        step_limiter!,
+        False(),
+    )
 
 function Base.show(io::IO, alg::Tsit5)
-  print(io, "Tsit5(stage_limiter! = ", alg.stage_limiter!,
-                ", step_limiter! = ", alg.step_limiter!,
-                ", thread = ", alg.thread, ")")
+    print(
+        io,
+        "Tsit5(stage_limiter! = ",
+        alg.stage_limiter!,
+        ", step_limiter! = ",
+        alg.step_limiter!,
+        ", thread = ",
+        alg.thread,
+        ")",
+    )
 end
 
 """
@@ -2162,8 +3055,8 @@ BS5: Explicit Runge-Kutta Method
   Bogacki-Shampine 5/4 Runge-Kutta method. (lazy 5th order interpolant).
 """
 struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
-  lazy::Bool
-  BS5(;lazy=true) = new(lazy)
+    lazy::Bool
+    BS5(; lazy = true) = new(lazy)
 end
 
 """
@@ -2182,8 +3075,8 @@ Vern6: Explicit Runge-Kutta Method
   Verner's "Most Efficient" 6/5 Runge-Kutta method. (lazy 6th order interpolant).
 """
 struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
-  lazy::Bool
-  Vern6(;lazy=true) = new(lazy)
+    lazy::Bool
+    Vern6(; lazy = true) = new(lazy)
 end
 
 """
@@ -2202,8 +3095,8 @@ Vern7: Explicit Runge-Kutta Method
   Verner's "Most Efficient" 7/6 Runge-Kutta method. (lazy 7th order interpolant).
 """
 struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
-  lazy::Bool
-  Vern7(;lazy=true) = new(lazy)
+    lazy::Bool
+    Vern7(; lazy = true) = new(lazy)
 end
 
 """
@@ -2222,8 +3115,8 @@ Vern8: Explicit Runge-Kutta Method
   Verner's "Most Efficient" 8/7 Runge-Kutta method. (lazy 8th order interpolant)
 """
 struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
-  lazy::Bool
-  Vern8(;lazy=true) = new(lazy)
+    lazy::Bool
+    Vern8(; lazy = true) = new(lazy)
 end
 
 """
@@ -2242,8 +3135,8 @@ Vern9: Explicit Runge-Kutta Method
   Verner's "Most Efficient" 9/8 Runge-Kutta method. (lazy 9th order interpolant)
 """
 struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
-  lazy::Bool
-  Vern9(;lazy=true) = new(lazy)
+    lazy::Bool
+    Vern9(; lazy = true) = new(lazy)
 end
 """
 FRK65: Explicit Runge-Kutta
@@ -2251,8 +3144,8 @@ FRK65: Explicit Runge-Kutta
   Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
 """
 struct FRK65{T} <: OrdinaryDiffEqAdaptiveAlgorithm
-  omega::T
-  FRK65(omega=0.0) = new{typeof(omega)}(omega)
+    omega::T
+    FRK65(omega = 0.0) = new{typeof(omega)}(omega)
 end
 """
 PFRK87: Explicit Runge-Kutta
@@ -2260,8 +3153,8 @@ PFRK87: Explicit Runge-Kutta
   Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
 """
 struct PFRK87{T} <: OrdinaryDiffEqAdaptiveAlgorithm
-  omega::T
-  PFRK87(omega=0.0) = new{typeof(omega)}(omega)
+    omega::T
+    PFRK87(omega = 0.0) = new{typeof(omega)}(omega)
 end
 
 
@@ -2735,29 +3628,69 @@ struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 # IMEX Multistep methods
 
 struct CNAB2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
 
-CNAB2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      CNAB2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+CNAB2(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = CNAB2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 struct CNLF2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
-CNLF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      CNLF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+CNLF2(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = CNLF2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 """
 QNDF1: Multistep Method
@@ -2766,29 +3699,53 @@ QNDF1: Multistep Method
 
 See also `QNDF`.
 """
-struct QNDF1{CS,AD,F,F2,P,FDT,ST,CJ,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  kappa::κType
-  controller::Symbol
+struct QNDF1{CS,AD,F,F2,P,FDT,ST,CJ,κType} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    kappa::κType
+    controller::Symbol
 end
 
-QNDF1(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                                  extrapolant=:linear,kappa = -0.1850,
-                 controller = :Standard) =
-                 QNDF1{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-                 typeof(kappa)}(
-                 linsolve,nlsolve,precs,extrapolant,kappa,controller)
+QNDF1(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    kappa = -0.1850,
+    controller = :Standard,
+) = QNDF1{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(kappa),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    kappa,
+    controller,
+)
 
 """
 QBDF1: Multistep Method
 
 An alias of `QNDF1` with κ=0.
 """
-QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
+QBDF1(; kwargs...) = QNDF1(; kappa = 0, kwargs...)
 
 """
 QNDF2: Multistep Method
@@ -2796,29 +3753,53 @@ QNDF2: Multistep Method
 
 See also `QNDF`.
 """
-struct QNDF2{CS,AD,F,F2,P,FDT,ST,CJ,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  kappa::κType
-  controller::Symbol
+struct QNDF2{CS,AD,F,F2,P,FDT,ST,CJ,κType} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    kappa::κType
+    controller::Symbol
 end
 
-QNDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                 extrapolant=:linear,kappa = -1//9,
-                 controller = :Standard) =
-                 QNDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-                 typeof(kappa)}(
-                 linsolve,nlsolve,precs,extrapolant,kappa,controller)
+QNDF2(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    kappa = -1 // 9,
+    controller = :Standard,
+) = QNDF2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(kappa),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    kappa,
+    controller,
+)
 
 """
 QBDF2: Multistep Method
 
 An alias of `QNDF2` with κ=0.
 """
-QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
+QBDF2(; kwargs...) = QNDF2(; kappa = 0, kwargs...)
 
 """
 QNDF: Multistep Method
@@ -2836,32 +3817,65 @@ QNDF: Multistep Method
   publisher={SIAM}
 }
 """
-struct QNDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T,κType} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  max_order::Val{MO}
-  linsolve::F
-  nlsolve::F2
-  precs::P
+struct QNDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T,κType} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    max_order::Val{MO}
+    linsolve::F
+    nlsolve::F2
+    precs::P
     κ::K
-  tol::T
-  extrapolant::Symbol
-  kappa::κType
-  controller::Symbol
+    tol::T
+    extrapolant::Symbol
+    kappa::κType
+    controller::Symbol
 end
 
-QNDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-                extrapolant=:linear,kappa=promote(-0.1850,-1//9,-0.0823,-0.0415,0),
-                controller = :Standard) where {MO} =
-                QNDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-                typeof(κ),typeof(tol),typeof(kappa)}(
-                max_order,linsolve,nlsolve,precs,κ,tol,extrapolant,kappa,controller)
+QNDF(;
+    max_order::Val{MO} = Val{5}(),
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    κ = nothing,
+    tol = nothing,
+    extrapolant = :linear,
+    kappa = promote(-0.1850, -1 // 9, -0.0823, -0.0415, 0),
+    controller = :Standard,
+) where {MO} = QNDF{
+    MO,
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(tol),
+    typeof(kappa),
+}(
+    max_order,
+    linsolve,
+    nlsolve,
+    precs,
+    κ,
+    tol,
+    extrapolant,
+    kappa,
+    controller,
+)
 
 """
 QBDF: Multistep Method
 
 An alias of `QNDF` with κ=0.
 """
-QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
+QBDF(; kwargs...) = QNDF(; kappa = tuple(0 // 1, 0 // 1, 0 // 1, 0 // 1, 0 // 1), kwargs...)
 
 """
 FBDF: Fixed leading coefficient BDF
@@ -2876,23 +3890,54 @@ Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword arg
   publisher={Walter de Gruyter GmbH \\& Co. KG}
 }
 """
-struct FBDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  max_order::Val{MO}
-  linsolve::F
-  nlsolve::F2
-  precs::P
+struct FBDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    max_order::Val{MO}
+    linsolve::F
+    nlsolve::F2
+    precs::P
     κ::K
-  tol::T
-  extrapolant::Symbol
-  controller::Symbol
+    tol::T
+    extrapolant::Symbol
+    controller::Symbol
 end
 
-FBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-                extrapolant=:linear,controller = :Standard) where {MO} =
-                FBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-                typeof(κ),typeof(tol)}(
-                max_order,linsolve,nlsolve,precs,κ,tol,extrapolant,controller)
+FBDF(;
+    max_order::Val{MO} = Val{5}(),
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    κ = nothing,
+    tol = nothing,
+    extrapolant = :linear,
+    controller = :Standard,
+) where {MO} = FBDF{
+    MO,
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(tol),
+}(
+    max_order,
+    linsolve,
+    nlsolve,
+    precs,
+    κ,
+    tol,
+    extrapolant,
+    controller,
+)
 
 """
 Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
@@ -2900,31 +3945,88 @@ Dependent Partial Differential Equations. 1995 Society for Industrial and Applie
 Journal on Numerical Analysis, 32(3), pp 797-823, 1995. doi: https://doi.org/10.1137/0732037
 """
 struct SBDF{CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  κ::K
-  tol::T
-  extrapolant::Symbol
-  order::Int
-  ark::Bool
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    κ::K
+    tol::T
+    extrapolant::Symbol
+    order::Int
+    ark::Bool
 end
 
-SBDF(order;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-     linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-     extrapolant=:linear,ark=false) =
-     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-     typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,precs,κ,tol,extrapolant,order,ark)
+SBDF(
+    order;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    κ = nothing,
+    tol = nothing,
+    extrapolant = :linear,
+    ark = false,
+) = SBDF{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(tol),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    κ,
+    tol,
+    extrapolant,
+    order,
+    ark,
+)
 
 # All keyword form needed for remake
-SBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-     linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-     extrapolant=:linear,
-     order,ark=false) =
-     SBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-     typeof(κ),typeof(tol)}(
-     linsolve,nlsolve,precs,κ,tol,extrapolant,order,ark)
+SBDF(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    κ = nothing,
+    tol = nothing,
+    extrapolant = :linear,
+    order,
+    ark = false,
+) = SBDF{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(tol),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    κ,
+    tol,
+    extrapolant,
+    order,
+    ark,
+)
 
 """
     IMEXEuler(;kwargs...)
@@ -2948,7 +4050,7 @@ unew = uold + dt * (f1(unew) + f2(uold))
 
 See also `SBDF`, `IMEXEulerARK`.
 """
-IMEXEuler(;kwargs...) = SBDF(1;kwargs...)
+IMEXEuler(; kwargs...) = SBDF(1; kwargs...)
 
 """
     IMEXEulerARK(;kwargs...)
@@ -2975,7 +4077,7 @@ unew = uold + dt * (f1(unew) + f2(y1))
 
 See also `SBDF`, `IMEXEuler`.
 """
-IMEXEulerARK(;kwargs...) = SBDF(1;ark=true,kwargs...)
+IMEXEulerARK(; kwargs...) = SBDF(1; ark = true, kwargs...)
 
 """
     SBDF2(;kwargs...)
@@ -2990,7 +4092,7 @@ The two-step version of the IMEX multistep methods of
 
 See also `SBDF`.
 """
-SBDF2(;kwargs...) = SBDF(2;kwargs...)
+SBDF2(; kwargs...) = SBDF(2; kwargs...)
 
 """
     SBDF3(;kwargs...)
@@ -3005,7 +4107,7 @@ The three-step version of the IMEX multistep methods of
 
 See also `SBDF`.
 """
-SBDF3(;kwargs...) = SBDF(3;kwargs...)
+SBDF3(; kwargs...) = SBDF(3; kwargs...)
 
 """
     SBDF4(;kwargs...)
@@ -3020,26 +4122,26 @@ The four-step version of the IMEX multistep methods of
 
 See also `SBDF`.
 """
-SBDF4(;kwargs...) = SBDF(4;kwargs...)
+SBDF4(; kwargs...) = SBDF(4; kwargs...)
 
 # Adams/BDF methods in Nordsieck forms
 """
 AN5: Adaptive step size Adams explicit Method
   An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
 """
-struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE{bType,aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
-  algorithm::Symbol
-  bias1::bType
-  bias2::bType
-  bias3::bType
-  addon::aType
+    algorithm::Symbol
+    bias1::bType
+    bias2::bType
+    bias3::bType
+    addon::aType
 end
 
-JVODE(algorithm=:Adams;bias1=6, bias2=6,bias3=10,
-                 addon=1//10^6) = JVODE(algorithm,bias1,bias2,bias3,addon)
-JVODE_Adams(;kwargs...) = JVODE(:Adams;kwargs...)
-JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
+JVODE(algorithm = :Adams; bias1 = 6, bias2 = 6, bias3 = 10, addon = 1 // 10^6) =
+    JVODE(algorithm, bias1, bias2, bias3, addon)
+JVODE_Adams(; kwargs...) = JVODE(:Adams; kwargs...)
+JVODE_BDF(; kwargs...) = JVODE(:BDF; kwargs...)
 
 # ROCK methods
 
@@ -3052,11 +4154,12 @@ ROCK2: Stabilized Explicit Method
   Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 """
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
-  min_stages::Int
-  max_stages::Int
-  eigen_est::E
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
 end
-ROCK2(;min_stages=0,max_stages=200,eigen_est=nothing) = ROCK2(min_stages,max_stages,eigen_est)
+ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing) =
+    ROCK2(min_stages, max_stages, eigen_est)
 
 """
 Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
@@ -3068,11 +4171,12 @@ ROCK4: Stabilized Explicit Method
   Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 """
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
-  min_stages::Int
-  max_stages::Int
-  eigen_est::E
+    min_stages::Int
+    max_stages::Int
+    eigen_est::E
 end
-ROCK4(;min_stages=0,max_stages=152,eigen_est=nothing) = ROCK4(min_stages,max_stages,eigen_est)
+ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing) =
+    ROCK4(min_stages, max_stages, eigen_est)
 
 # SERK methods
 
@@ -3085,57 +4189,105 @@ B. P. Sommeijer, L. F. Shampine, J. G. Verwer. RKC: An Explicit Solver for Parab
 =#
 
 for Alg in [:ESERK4, :ESERK5, :RKC]
-  @eval begin
-    struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
-      eigen_est::E
+    @eval begin
+        struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+            eigen_est::E
+        end
+        $Alg(; eigen_est = nothing) = $Alg(eigen_est)
     end
-    $Alg(;eigen_est=nothing) = $Alg(eigen_est)
-  end
 end
 struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
-  controller::Symbol
-  eigen_est::E
+    controller::Symbol
+    eigen_est::E
 end
-SERK2(;controller=:PI,eigen_est=nothing) = SERK2(controller,eigen_est)
+SERK2(; controller = :PI, eigen_est = nothing) = SERK2(controller, eigen_est)
 
-struct IRKC{CS,AD,F,F2,P,FDT,ST,CJ,K,T,E} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  κ::K
-  tol::T
-  extrapolant::Symbol
-  controller::Symbol
-  eigen_est::E
+struct IRKC{CS,AD,F,F2,P,FDT,ST,CJ,K,T,E} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    κ::K
+    tol::T
+    extrapolant::Symbol
+    controller::Symbol
+    eigen_est::E
 end
 
-IRKC(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-                 extrapolant=:linear,controller = :Standard,eigen_est=nothing) =
-  IRKC{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(κ),typeof(tol),typeof(eigen_est)}(
-                 linsolve,nlsolve,precs,κ,tol,extrapolant,controller,eigen_est)
+IRKC(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    κ = nothing,
+    tol = nothing,
+    extrapolant = :linear,
+    controller = :Standard,
+    eigen_est = nothing,
+) = IRKC{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(tol),
+    typeof(eigen_est),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    κ,
+    tol,
+    extrapolant,
+    controller,
+    eigen_est,
+)
 
 ################################################################################
 
 # Linear Methods
 
-for Alg in [:MagnusMidpoint,:MagnusLeapfrog,:LieEuler,:MagnusGauss4,:MagnusNC6,:MagnusGL6,:MagnusGL8,:MagnusNC8,:MagnusGL4,:RKMK2,:RKMK4,:LieRK4,:CG2,:CG3]
-  @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
-    krylov::Bool
-    m::Int
-    iop::Int
-  end
-  @eval $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
+for Alg in [
+    :MagnusMidpoint,
+    :MagnusLeapfrog,
+    :LieEuler,
+    :MagnusGauss4,
+    :MagnusNC6,
+    :MagnusGL6,
+    :MagnusGL8,
+    :MagnusNC8,
+    :MagnusGL4,
+    :RKMK2,
+    :RKMK4,
+    :LieRK4,
+    :CG2,
+    :CG3,
+]
+    @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
+        krylov::Bool
+        m::Int
+        iop::Int
+    end
+    @eval $Alg(; krylov = false, m = 30, iop = 0) = $Alg(krylov, m, iop)
 end
 
 struct MagnusAdapt4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm{1,false,Val{:forward},Val{true},nothing}
-  krylov::Symbol
-  m::Int
-  iop::Int
+struct LinearExponential <:
+       OrdinaryDiffEqExponentialAlgorithm{1,false,Val{:forward},Val{true},nothing}
+    krylov::Symbol
+    m::Int
+    iop::Int
 end
-LinearExponential(;krylov=:off, m=10, iop=0) = LinearExponential(krylov, m, iop)
+LinearExponential(; krylov = :off, m = 10, iop = 0) = LinearExponential(krylov, m, iop)
 
 struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 
@@ -3158,25 +4310,53 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 RadauIIA3: Fully-Implicit Runge-Kutta Method
   An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA3{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  precs::P
-  extrapolant::Symbol
-  κ::Tol
-  maxiters::Int
-  fast_convergence_cutoff::C1
-  new_W_γdt_cutoff::C2
-  controller::Symbol
+struct RadauIIA3{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    precs::P
+    extrapolant::Symbol
+    κ::Tol
+    maxiters::Int
+    fast_convergence_cutoff::C1
+    new_W_γdt_cutoff::C2
+    controller::Symbol
 end
 
-RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                                linsolve=nothing,precs = DEFAULT_PRECS,
-                                extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
-                                controller=:Predictive,κ=nothing,maxiters=10) =
-                                RadauIIA3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                                typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-                                typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                                  linsolve,precs,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+RadauIIA3(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    extrapolant = :dense,
+    fast_convergence_cutoff = 1 // 5,
+    new_W_γdt_cutoff = 1 // 5,
+    controller = :Predictive,
+    κ = nothing,
+    maxiters = 10,
+) = RadauIIA3{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(fast_convergence_cutoff),
+    typeof(new_W_γdt_cutoff),
+}(
+    linsolve,
+    precs,
+    extrapolant,
+    κ,
+    maxiters,
+    fast_convergence_cutoff,
+    new_W_γdt_cutoff,
+    controller,
+)
 
 """
 @article{hairer1999stiff,
@@ -3193,26 +4373,56 @@ RadauIIA3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), 
 RadauIIA5: Fully-Implicit Runge-Kutta Method
    An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA5{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  κ::Tol
-  maxiters::Int
-  fast_convergence_cutoff::C1
-  new_W_γdt_cutoff::C2
-  controller::Symbol
+struct RadauIIA5{CS,AD,F,P,FDT,ST,CJ,Tol,C1,C2} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    κ::Tol
+    maxiters::Int
+    fast_convergence_cutoff::C1
+    new_W_γdt_cutoff::C2
+    controller::Symbol
 end
 
-RadauIIA5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                          linsolve=nothing,precs = DEFAULT_PRECS,
-                          extrapolant=:dense,fast_convergence_cutoff=1//5,new_W_γdt_cutoff=1//5,
-                          controller=:Predictive,κ=nothing,maxiters=10,smooth_est=true) =
-                          RadauIIA5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-                          typeof(κ),typeof(fast_convergence_cutoff),typeof(new_W_γdt_cutoff)}(
-                            linsolve,precs,smooth_est,extrapolant,κ,maxiters,fast_convergence_cutoff,new_W_γdt_cutoff,controller)
+RadauIIA5(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    extrapolant = :dense,
+    fast_convergence_cutoff = 1 // 5,
+    new_W_γdt_cutoff = 1 // 5,
+    controller = :Predictive,
+    κ = nothing,
+    maxiters = 10,
+    smooth_est = true,
+) = RadauIIA5{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(fast_convergence_cutoff),
+    typeof(new_W_γdt_cutoff),
+}(
+    linsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    κ,
+    maxiters,
+    fast_convergence_cutoff,
+    new_W_γdt_cutoff,
+    controller,
+)
 
 ################################################################################
 
@@ -3222,38 +4432,80 @@ ImplicitEuler: SDIRK Method
   A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
   Strong-stability preserving (SSP).
 """
-struct ImplicitEuler{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  controller::Symbol
+struct ImplicitEuler{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
 end
 
-ImplicitEuler(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                          linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                          extrapolant=:constant,
-                          controller=:PI) =
-                          ImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
-                          nlsolve,precs,extrapolant,controller)
+ImplicitEuler(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    controller = :PI,
+) = ImplicitEuler{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    controller,
+)
 """
 ImplicitMidpoint: SDIRK Method
   A second order A-stable symplectic and symmetric implicit solver.
   Good for highly stiff equations which need symplectic integration.
 """
-struct ImplicitMidpoint{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+struct ImplicitMidpoint{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
 
-ImplicitMidpoint(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      ImplicitMidpoint{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+ImplicitMidpoint(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = ImplicitMidpoint{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 """
 Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
@@ -3264,20 +4516,42 @@ Trapezoid: SDIRK Method
   "Almost symplectic" without numerical dampening.
    Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
 """
-struct Trapezoid{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  controller::Symbol
+struct Trapezoid{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
 end
 
-Trapezoid(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                                            extrapolant=:linear,
-                      controller = :PI) =
-                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant,controller)
+Trapezoid(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    controller = :PI,
+) = Trapezoid{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    controller,
+)
 
 """
 @article{hosea1996analysis,
@@ -3295,21 +4569,45 @@ TRBDF2: SDIRK Method
   A second order A-B-L-S-stable one-step ESDIRK method.
   Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
 """
-struct TRBDF2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct TRBDF2{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
 
-TRBDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                 linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                 smooth_est=true,extrapolant=:linear,
-                 controller = :PI) =
-TRBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-      linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+TRBDF2(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = TRBDF2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 @article{hindmarsh2005sundials,
@@ -3326,53 +4624,122 @@ TRBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nls
 SDIRK2: SDIRK Method
    An A-B-L stable 2nd order SDIRK method
 """
-struct SDIRK2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct SDIRK2{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
 
-SDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- SDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+SDIRK2(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = SDIRK2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
-struct SDIRK22{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  controller::Symbol
+struct SDIRK22{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
 end
 
-SDIRK22(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                                            extrapolant=:linear,
-                      controller = :PI) =
-                      Trapezoid{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant,controller)
+SDIRK22(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    controller = :PI,
+) = Trapezoid{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    controller,
+)
 
 
 struct SSPSDIRK2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ} # Not adaptive
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
 
-SSPSDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:constant,
-                   controller = :PI) =
- SSPSDIRK2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+SSPSDIRK2(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :constant,
+    controller = :PI,
+) = SSPSDIRK2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 @article{kvaerno2004singly,
@@ -3389,20 +4756,44 @@ SSPSDIRK2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), 
 Kvaerno3: SDIRK Method
   An A-L stable stiffly-accurate 3rd order ESDIRK method
 """
-struct Kvaerno3{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct Kvaerno3{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-Kvaerno3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- Kvaerno3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+Kvaerno3(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = Kvaerno3{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 @book{kennedy2001additive,
@@ -3415,32 +4806,76 @@ Kvaerno3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
 KenCarp3: SDIRK Method
   An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting
 """
-struct KenCarp3{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct KenCarp3{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-KenCarp3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- KenCarp3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+KenCarp3(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = KenCarp3{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 struct CFNLIRK3{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
-CFNLIRK3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      CFNLIRK3{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+CFNLIRK3(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = CFNLIRK3{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 """
 @article{hindmarsh2005sundials,
@@ -3457,86 +4892,212 @@ CFNLIRK3(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
 Cash4: SDIRK Method
   An A-L stable 4th order SDIRK method
 """
-struct Cash4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  embedding::Int
-  controller::Symbol
+struct Cash4{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    embedding::Int
+    controller::Symbol
 end
-Cash4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI,embedding=3) =
- Cash4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,embedding,controller)
+Cash4(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+    embedding = 3,
+) = Cash4{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    embedding,
+    controller,
+)
 
 
 struct SFSDIRK4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
-SFSDIRK4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      SFSDIRK4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+SFSDIRK4(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = SFSDIRK4{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 struct SFSDIRK5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
 
-SFSDIRK5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      SFSDIRK5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+SFSDIRK5(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = SFSDIRK5{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 struct SFSDIRK6{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
 
-SFSDIRK6(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      SFSDIRK6{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+SFSDIRK6(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = SFSDIRK6{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 struct SFSDIRK7{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
 
-SFSDIRK7(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:linear) =
-                      SFSDIRK7{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+SFSDIRK7(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = SFSDIRK7{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 struct SFSDIRK8{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
 
-SFSDIRK8(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                    linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                    extrapolant=:linear) =
-                    SFSDIRK8{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                    linsolve,nlsolve,precs,extrapolant)
+SFSDIRK8(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+) = SFSDIRK8{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 """
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
@@ -3546,20 +5107,44 @@ E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
 Hairer4: SDIRK Method
   An A-L stable 4th order SDIRK method
 """
-struct Hairer4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct Hairer4{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-Hairer4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- Hairer4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+Hairer4(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = Hairer4{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
@@ -3569,20 +5154,44 @@ E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
 Hairer42: SDIRK Method
   An A-L stable 4th order SDIRK method
 """
-struct Hairer42{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct Hairer42{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-Hairer42(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- Hairer42{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+Hairer42(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = Hairer42{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 @article{kvaerno2004singly,
@@ -3599,20 +5208,44 @@ Hairer42(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
 Kvaerno4: SDIRK Method
   An A-L stable stiffly-accurate 4th order ESDIRK metho
 """
-struct Kvaerno4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct Kvaerno4{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-Kvaerno4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- Kvaerno4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+Kvaerno4(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = Kvaerno4{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 @article{kvaerno2004singly,
@@ -3629,20 +5262,44 @@ Kvaerno4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
 Kvaerno5: SDIRK Method
   An A-L stable stiffly-accurate 5th order ESDIRK method
 """
-struct Kvaerno5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct Kvaerno5{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-Kvaerno5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- Kvaerno5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+Kvaerno5(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = Kvaerno5{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 @book{kennedy2001additive,
@@ -3655,20 +5312,44 @@ Kvaerno5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
 KenCarp4: SDIRK Method
   An A-L stable stiffly-accurate 4th order ESDIRK method with splitting
 """
-struct KenCarp4{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct KenCarp4{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-KenCarp4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- KenCarp4{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+KenCarp4(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = KenCarp4{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 """
 @article{kennedy2019higher,
   title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -3683,20 +5364,44 @@ KenCarp4(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
 KenCarp47: SDIRK Method
   An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting
 """
-struct KenCarp47{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct KenCarp47{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-KenCarp47(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- KenCarp47{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+KenCarp47(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = KenCarp47{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 """
 @book{kennedy2001additive,
@@ -3709,20 +5414,44 @@ KenCarp47(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), 
 KenCarp5: SDIRK Method
   An A-L stable stiffly-accurate 5th order ESDIRK method with splitting
 """
-struct KenCarp5{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct KenCarp5{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-KenCarp5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- KenCarp5{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+KenCarp5(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = KenCarp5{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 """
 @article{kennedy2019higher,
   title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -3737,33 +5466,81 @@ KenCarp5(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), c
 KenCarp58: SDIRK Method
   An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting
 """
-struct KenCarp58{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct KenCarp58{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-KenCarp58(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   smooth_est=true,extrapolant=:linear,
-                   controller = :PI) =
- KenCarp58{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-        linsolve,nlsolve,precs,smooth_est,extrapolant,controller)
+KenCarp58(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :PI,
+) = KenCarp58{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
-struct ESDIRK54I8L2SA{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  controller::Symbol
+struct ESDIRK54I8L2SA{CS,AD,F,F2,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
 end
-ESDIRK54I8L2SA(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                   linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                   extrapolant=:linear,controller = :PI) =
- ESDIRK54I8L2SA{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,nlsolve,precs,extrapolant,controller)
+ESDIRK54I8L2SA(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :linear,
+    controller = :PI,
+) = ESDIRK54I8L2SA{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    controller,
+)
 
 ################################################################################
 
@@ -3819,38 +5596,110 @@ University of Geneva, Switzerland.
 _unwrap_val(::Val{B}) where {B} = B
 _unwrap_val(B) = B
 
-for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas4P2, :Rodas5, :Rodas5P]
-  @eval begin
-    struct $Alg{CS,AD,F,P,FDT,ST,CJ} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-      linsolve::F
-      precs::P
+for Alg in [
+    :Rosenbrock23,
+    :Rosenbrock32,
+    :ROS3P,
+    :Rodas3,
+    :ROS34PW1a,
+    :ROS34PW1b,
+    :ROS34PW2,
+    :ROS34PW3,
+    :RosShamp4,
+    :Veldd4,
+    :Velds4,
+    :GRK4T,
+    :GRK4A,
+    :Ros4LStab,
+    :Rodas4,
+    :Rodas42,
+    :Rodas4P,
+    :Rodas4P2,
+    :Rodas5,
+    :Rodas5P,
+]
+    @eval begin
+        struct $Alg{CS,AD,F,P,FDT,ST,CJ} <:
+               OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+            linsolve::F
+            precs::P
+        end
+        $Alg(;
+            chunk_size = Val{0}(),
+            autodiff = Val{true}(),
+            standardtag = Val{true}(),
+            concrete_jac = nothing,
+            diff_type = Val{:forward},
+            linsolve = nothing,
+            precs = DEFAULT_PRECS,
+        ) = $Alg{
+            _unwrap_val(chunk_size),
+            _unwrap_val(autodiff),
+            typeof(linsolve),
+            typeof(precs),
+            diff_type,
+            _unwrap_val(standardtag),
+            _unwrap_val(concrete_jac),
+        }(
+            linsolve,
+            precs,
+        )
     end
-    $Alg(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},linsolve=nothing,precs = DEFAULT_PRECS,
-                              ) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,precs)
-  end
 end
 
-struct GeneralRosenbrock{CS,AD,F,ST,CJ,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,Val{:forward},ST,CJ}
-  tableau::TabType
-  factorization::F
+struct GeneralRosenbrock{CS,AD,F,ST,CJ,TabType} <:
+       OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD,Val{:forward},ST,CJ}
+    tableau::TabType
+    factorization::F
 end
 
-GeneralRosenbrock(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
-                    factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
-                    GeneralRosenbrock{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(factorization),_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(tableau)}(tableau,factorization)
+GeneralRosenbrock(;
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    factorization = lu!,
+    tableau = ROSENBROCK_DEFAULT_TABLEAU,
+) = GeneralRosenbrock{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(factorization),
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(tableau),
+}(
+    tableau,
+    factorization,
+)
 """
 RosenbrockW6S4OS: Rosenbrock-W Method
   A 4th order L-stable Rosenbrock-W method (fixed step only).
 """
-struct RosenbrockW6S4OS{CS,AD,F,P,FDT,ST,CJ} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  precs::P
+struct RosenbrockW6S4OS{CS,AD,F,P,FDT,ST,CJ} <:
+       OrdinaryDiffEqRosenbrockAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    precs::P
 end
-RosenbrockW6S4OS(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(),
-                  concrete_jac = nothing,diff_type=Val{:central},linsolve=nothing,
-                  precs = DEFAULT_PRECS) = RosenbrockW6S4OS{_unwrap_val(chunk_size),
-                  _unwrap_val(autodiff),typeof(linsolve),typeof(precs),diff_type,
-                  _unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,precs)
+RosenbrockW6S4OS(;
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:central},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+) = RosenbrockW6S4OS{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    precs,
+)
 
 ######################################
 
@@ -3860,38 +5709,89 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
     Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
       Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
     """
-    @eval struct $Alg{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ}
+    @eval struct $Alg{CS,AD,FDT,ST,CJ} <:
+                 OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ}
         krylov::Bool
         m::Int
         iop::Int
     end
-    @eval $Alg(; krylov=false, m=30, iop=0, autodiff=true, standardtag=Val{true}(), concrete_jac=nothing, chunk_size=Val{0}(),
-        diff_type=Val{:forward}) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),
-        diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(krylov, m, iop)
+    @eval $Alg(;
+        krylov = false,
+        m = 30,
+        iop = 0,
+        autodiff = true,
+        standardtag = Val{true}(),
+        concrete_jac = nothing,
+        chunk_size = Val{0}(),
+        diff_type = Val{:forward},
+    ) = $Alg{
+        _unwrap_val(chunk_size),
+        _unwrap_val(autodiff),
+        diff_type,
+        _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac),
+    }(
+        krylov,
+        m,
+        iop,
+    )
 end
 const ETD1 = NorsettEuler # alias
 for Alg in [:Exprb32, :Exprb43]
-  @eval struct $Alg{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ}
-    m::Int
-    iop::Int
-  end
-  @eval $Alg(;m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing, chunk_size=Val{0}(),
-            diff_type = Val{:forward}) = $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),
-            diff_type,_unwrap_val(standardtag),
-            _unwrap_val(concrete_jac)}(m, iop)
+    @eval struct $Alg{CS,AD,FDT,ST,CJ} <:
+                 OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS,AD,FDT,ST,CJ}
+        m::Int
+        iop::Int
+    end
+    @eval $Alg(;
+        m = 30,
+        iop = 0,
+        autodiff = true,
+        standardtag = Val{true}(),
+        concrete_jac = nothing,
+        chunk_size = Val{0}(),
+        diff_type = Val{:forward},
+    ) = $Alg{
+        _unwrap_val(chunk_size),
+        _unwrap_val(autodiff),
+        diff_type,
+        _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac),
+    }(
+        m,
+        iop,
+    )
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
-  @eval struct $Alg{CS,AD,FDT,ST,CJ} <: OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ}
-    adaptive_krylov::Bool
-    m::Int
-    iop::Int
-  end
-  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,
-              chunk_size=Val{0}(), diff_type = Val{:forward}) =
-              $Alg{_unwrap_val(chunk_size),_unwrap_val(autodiff),diff_type,
-              _unwrap_val(standardtag),_unwrap_val(concrete_jac)}(adaptive_krylov, m, iop)
+    @eval struct $Alg{CS,AD,FDT,ST,CJ} <:
+                 OrdinaryDiffEqExponentialAlgorithm{CS,AD,FDT,ST,CJ}
+        adaptive_krylov::Bool
+        m::Int
+        iop::Int
+    end
+    @eval $Alg(;
+        adaptive_krylov = true,
+        m = 30,
+        iop = 0,
+        autodiff = true,
+        standardtag = Val{true}(),
+        concrete_jac = nothing,
+        chunk_size = Val{0}(),
+        diff_type = Val{:forward},
+    ) = $Alg{
+        _unwrap_val(chunk_size),
+        _unwrap_val(autodiff),
+        diff_type,
+        _unwrap_val(standardtag),
+        _unwrap_val(concrete_jac),
+    }(
+        adaptive_krylov,
+        m,
+        iop,
+    )
 end
-struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
+struct SplitEuler <:
+       OrdinaryDiffEqExponentialAlgorithm{0,false,Val{:forward},Val{true},nothing} end
 """
 ETD2: Exponential Runge-Kutta Method
   Second order Exponential Time Differencing method (in development).
@@ -3908,29 +5808,58 @@ an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Compute
 ABDF2: Multistep Method
   An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
 """
-struct ABDF2{CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  κ::K
-  tol::T
-  smooth_est::Bool
-  extrapolant::Symbol
-  controller::Symbol
+struct ABDF2{CS,AD,F,F2,P,FDT,ST,CJ,K,T} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,FDT,ST,CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    κ::K
+    tol::T
+    smooth_est::Bool
+    extrapolant::Symbol
+    controller::Symbol
 end
-ABDF2(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-      κ=nothing,tol=nothing,linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-      smooth_est=true,extrapolant=:linear,
-      controller=:Standard) =
-ABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-      typeof(κ),typeof(tol)}(
-      linsolve,nlsolve,precs,κ,tol,smooth_est,extrapolant,controller)
+ABDF2(;
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    κ = nothing,
+    tol = nothing,
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    smooth_est = true,
+    extrapolant = :linear,
+    controller = :Standard,
+) = ABDF2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(tol),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    κ,
+    tol,
+    smooth_est,
+    extrapolant,
+    controller,
+)
 
 #########################################
 
 struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
-  algs::T
-  choice_function::F
+    algs::T
+    choice_function::F
 end
 
 ################################################################################
@@ -3940,16 +5869,36 @@ MEBDF2: Multistep Method
   Fixed timestep only.
 """
 struct MEBDF2{CS,AD,F,F2,P,FDT,ST,CJ} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
 end
-MEBDF2(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:constant) =
-                      MEBDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
-                      linsolve,nlsolve,precs,extrapolant)
+MEBDF2(;
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+) = MEBDF2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+)
 
 #################################################
 """
@@ -3957,25 +5906,46 @@ PDIRK44: Parallel Diagonally Implicit Runge-Kutta Method
   A 2 processor 4th order diagonally non-adaptive implicit method.
 """
 struct PDIRK44{CS,AD,F,F2,P,FDT,ST,CJ,TO} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  threading::TO
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    threading::TO
 end
-PDIRK44(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                      linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                      extrapolant=:constant,threading=true) =
-PDIRK44{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),typeof(threading)}(
-                      linsolve,nlsolve,precs,extrapolant,threading)
+PDIRK44(;
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    threading = true,
+) = PDIRK44{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(threading),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    threading,
+)
 ### Algorithm Groups
 
-const MultistepAlgorithms = Union{IRKN3,IRKN4,
-                                  ABDF2,
-                                  AB3,AB4,AB5,ABM32,ABM43,ABM54}
+const MultistepAlgorithms = Union{IRKN3,IRKN4,ABDF2,AB3,AB4,AB5,ABM32,ABM43,ABM54}
 
-const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
-                              KenCarp3,KenCarp4,KenCarp47,KenCarp5,KenCarp58,CFNLIRK3}
+const SplitAlgorithms =
+    Union{CNAB2,CNLF2,IRKC,SBDF,KenCarp3,KenCarp4,KenCarp47,KenCarp5,KenCarp58,CFNLIRK3}
 
 #=
 struct DBDF{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
@@ -3992,49 +5962,119 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
 =#
 
 struct DImplicitEuler{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  controller::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
 end
-DImplicitEuler(;chunk_size=Val{0}(),autodiff=true, standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                          linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                          extrapolant=:constant,
-                          controller=:Standard) =
-                          DImplicitEuler{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
-                          nlsolve,precs,extrapolant,controller)
+DImplicitEuler(;
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    controller = :Standard,
+) = DImplicitEuler{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    controller,
+)
 
 
 struct DABDF2{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  extrapolant::Symbol
-  controller::Symbol
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
 end
-DABDF2(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                          linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),
-                          extrapolant=:constant,
-                          controller=:Standard) =
-                          DABDF2{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),
-                          typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(linsolve,
-                          nlsolve,precs,extrapolant,controller)
+DABDF2(;
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    extrapolant = :constant,
+    controller = :Standard,
+) = DABDF2{
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+}(
+    linsolve,
+    nlsolve,
+    precs,
+    extrapolant,
+    controller,
+)
 
 struct DFBDF{MO,CS,AD,F,F2,P,FDT,ST,CJ,K,T} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
-  max_order::Val{MO}
-  linsolve::F
-  nlsolve::F2
-  precs::P
-  κ::K
-  tol::T
-  extrapolant::Symbol
-  controller::Symbol
+    max_order::Val{MO}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    κ::K
+    tol::T
+    extrapolant::Symbol
+    controller::Symbol
 end
-DFBDF(;max_order::Val{MO}=Val{5}(),chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concrete_jac = nothing,diff_type=Val{:forward},
-                linsolve=nothing,precs = DEFAULT_PRECS,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-                extrapolant=:linear,controller = :Standard) where {MO} =
-                DFBDF{MO,_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac),
-                typeof(κ),typeof(tol)}(
-                max_order,linsolve,nlsolve,precs,κ,tol,extrapolant,controller)
+DFBDF(;
+    max_order::Val{MO} = Val{5}(),
+    chunk_size = Val{0}(),
+    autodiff = Val{true}(),
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    nlsolve = NLNewton(),
+    κ = nothing,
+    tol = nothing,
+    extrapolant = :linear,
+    controller = :Standard,
+) where {MO} = DFBDF{
+    MO,
+    _unwrap_val(chunk_size),
+    _unwrap_val(autodiff),
+    typeof(linsolve),
+    typeof(nlsolve),
+    typeof(precs),
+    diff_type,
+    _unwrap_val(standardtag),
+    _unwrap_val(concrete_jac),
+    typeof(κ),
+    typeof(tol),
+}(
+    max_order,
+    linsolve,
+    nlsolve,
+    precs,
+    κ,
+    tol,
+    extrapolant,
+    controller,
+)

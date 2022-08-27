@@ -51,7 +51,7 @@ function printerrors(text, calc, solution, pa, t1)
     println()
 end
 
-@testset "symplectic $alg-$iip-$pa" for (alg, x, d) in ALGOS, iip in IIPS, pa = PARAMS
+@testset "symplectic $alg-$iip-$pa" for (alg, x, d) in ALGOS, iip in IIPS, pa in PARAMS
 
     dt = 0.01
     tspan = TSPAN
@@ -61,7 +61,7 @@ end
     prob = DynamicalODEProblem(dynfun, p0, q0, tspan, pa)
 
     if x || pa[1] == 1
-        sol = solve(prob, alg(); dt = dt)    
+        sol = solve(prob, alg(); dt = dt)
         calc = sol(t1)
         # printerrors("$alg-$iip-$pa", calc, solution, pa, t1)
         @test calc[1] ≈ solution(t1, pa)[1] rtol = errorbound(dt, d, calc[1])

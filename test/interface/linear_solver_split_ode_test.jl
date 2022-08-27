@@ -5,34 +5,30 @@ using LinearAlgebra, LinearSolve
 import OrdinaryDiffEq.dolinsolve
 
 n = 8
-dt = 1/16
+dt = 1 / 16
 u0 = ones(n)
-tspan = (0.0,1.0)
+tspan = (0.0, 1.0)
 
 M1 = 2ones(n) |> Diagonal #|> Array
 M2 = 2ones(n) |> Diagonal #|> Array
 
 f1 = M1 |> DiffEqArrayOperator
 f2 = M2 |> DiffEqArrayOperator
-prob = SplitODEProblem(f1,f2,u0,tspan)
+prob = SplitODEProblem(f1, f2, u0, tspan)
 
-for algname in (
-                :SBDF2,
-                :SBDF3,
-                :KenCarp47,
-               )
+for algname in (:SBDF2, :SBDF3, :KenCarp47)
     @testset "$algname" begin
 
-    alg0 = @eval $algname()
-    alg1 = @eval $algname(linsolve=GenericFactorization())
+        alg0 = @eval $algname()
+        alg1 = @eval $algname(linsolve = GenericFactorization())
 
-    kwargs = (dt=dt,)
+        kwargs = (dt = dt,)
 
-    # expected error message
-    msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
-    @test_logs (:warn, msg) solve(prob, alg0; kwargs...)
-    @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == :Success
-    @test_broken DiffEqBase.__solve(prob, alg1; kwargs...).retcode == :Success
+        # expected error message
+        msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
+        @test_logs (:warn, msg) solve(prob, alg0; kwargs...)
+        @test DiffEqBase.__solve(prob, alg0; kwargs...).retcode == :Success
+        @test_broken DiffEqBase.__solve(prob, alg1; kwargs...).retcode == :Success
 
     end
 end
@@ -42,11 +38,11 @@ end
 #####
 
 alg0 = KenCarp47()                                # passing case
-alg1 = KenCarp47(linsolve=GenericFactorization()) # failing case
+alg1 = KenCarp47(linsolve = GenericFactorization()) # failing case
 
 ## objects
-ig0 = SciMLBase.init(prob, alg0; dt=dt)
-ig1 = SciMLBase.init(prob, alg1; dt=dt)
+ig0 = SciMLBase.init(prob, alg0; dt = dt)
+ig1 = SciMLBase.init(prob, alg1; dt = dt)
 
 nl0 = ig0.cache.nlsolver
 nl1 = ig1.cache.nlsolver
@@ -61,15 +57,15 @@ W1 = lc1.A
 OrdinaryDiffEq.loopheader!(ig0)
 OrdinaryDiffEq.loopheader!(ig1)
 
-OrdinaryDiffEq.perform_step!(ig0,ig0.cache)
-OrdinaryDiffEq.perform_step!(ig1,ig1.cache)
+OrdinaryDiffEq.perform_step!(ig0, ig0.cache)
+OrdinaryDiffEq.perform_step!(ig1, ig1.cache)
 
 @test_broken OrdinaryDiffEq.nlsolvefail(nl0) # fails
-@test        OrdinaryDiffEq.nlsolvefail(nl1) # passes
+@test OrdinaryDiffEq.nlsolvefail(nl1) # passes
 
 # check operators
-@test        W0._concrete_form == W1._concrete_form
-@test_broken W0._func_cache    == W1._func_cache
+@test W0._concrete_form == W1._concrete_form
+@test_broken W0._func_cache == W1._func_cache
 
 # check operator application
 b = ones(n)
@@ -96,14 +92,14 @@ linres1 = dolinsolve(ig1, lc1; A = W1, b = b, linu = ones(n), reltol = 1e-8)
 # custom linsolve function
 ###
 
-function linsolve(A,b,u,p,newA,Pl,Pr,solverdata;kwargs...)
+function linsolve(A, b, u, p, newA, Pl, Pr, solverdata; kwargs...)
     # avoid preconditioner monkeybusiness
-    prob = LinearProblem(A,b;u0=u)
+    prob = LinearProblem(A, b; u0 = u)
     solve(prob, nothing)
     return u
 end
 
-alg = KenCarp47(linsolve=LinearSolveFunction(linsolve))
+alg = KenCarp47(linsolve = LinearSolveFunction(linsolve))
 
 @test solve(prob, alg).retcode == :Success
 
