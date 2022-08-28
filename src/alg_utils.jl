@@ -72,7 +72,16 @@ isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
-get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])::Bool
+function get_current_isfsal(alg::CompositeAlgorithm, cache) 
+    if cache.current == 1
+        isfsal(alg.algs[1])::Bool
+    elseif cache.current == 2
+        isfsal(alg.algs[2])::Bool
+    else
+        isfsal(alg.algs[cache.current])::Bool
+    end
+end
+
 all_fsal(alg, cache) = isfsal(alg)
 all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
 
