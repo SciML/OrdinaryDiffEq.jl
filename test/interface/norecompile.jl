@@ -14,6 +14,7 @@ function lorenz(du, u, p, t)
 end
 lorenzprob = ODEProblem{true,false}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
 @test typeof(prob) === typeof(lorenzprob)
+@test prob.f.f isa SciMLBase.FunctionWrappersWrappers.FunctionWrappersWrapper
 
 t1 = @elapsed sol = solve(lorenzprob, Rosenbrock23())
 t2 = @elapsed sol = solve(lorenzprob, Rosenbrock23(autodiff = false))
@@ -24,7 +25,7 @@ t3 = @elapsed sol = solve(lorenzprob2, Rosenbrock23())
 t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff = false))
 
 if VERSION >= v"1.8"
-    @test 5t1 < t3
+    @test 3t1 < t3
     @test t2 < t4
 end
 
