@@ -1,10 +1,10 @@
 using OrdinaryDiffEq
 
-function SinCosDiffEqToSolve!(ddu, du, u, p, t)
+function SinCosDiffEqToSolve!(ddu,du,u,p,t)
     ddu[1] = -u[1]
 end
 
-prob = SecondOrderODEProblem(SinCosDiffEqToSolve!, [2.0], [3.0], (0.0, 1.0))
+prob = SecondOrderODEProblem(SinCosDiffEqToSolve!,[2.0],[3.0],(0.0,1.0))
 sol = solve(prob, Tsit5())
 sol = solve(prob, Vern9())
 sol = solve(prob, ROCK4())

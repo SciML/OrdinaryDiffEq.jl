@@ -1,20 +1,23 @@
 using Documenter, OrdinaryDiffEq
 
 makedocs(
-    sitename = "OrdinaryDiffEq.jl",
-    authors = "Chris Rackauckas et al.",
-    clean = true,
-    doctest = false,
-    modules = [OrdinaryDiffEq],
-    format = Documenter.HTML(
-        analytics = "UA-90474609-3",
-        assets = ["assets/favicon.ico"],
-        canonical = "https://ordinarydiffeq.sciml.ai/stable/",
-    ),
-    pages = [
+    sitename="OrdinaryDiffEq.jl",
+    authors="Chris Rackauckas et al.",
+    clean=true,
+    doctest=false,
+    modules=[OrdinaryDiffEq],
+
+    format=Documenter.HTML(analytics = "UA-90474609-3",
+                           assets=["assets/favicon.ico"],
+                           canonical="https://ordinarydiffeq.sciml.ai/stable/"),
+
+    pages=[
         "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
-        "Usage" => "usage.md",
-    ],
+        "Usage" => "usage.md"
+    ]
 )
 
-deploydocs(repo = "github.com/SciML/OrdinaryDiffEq.jl"; push_preview = true)
+deploydocs(
+    repo="github.com/SciML/OrdinaryDiffEq.jl";
+    push_preview=true
+)

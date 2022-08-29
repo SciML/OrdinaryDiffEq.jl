@@ -1,5 +1,3 @@
-#! format: off
-
 abstract type RosenbrockTableau{T,T2} end
 struct RosenbrockFixedTableau{T,T2}<:RosenbrockTableau{T,T2}
     a::Array{T,2}

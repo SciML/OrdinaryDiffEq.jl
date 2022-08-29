@@ -28,8 +28,8 @@ resize!(i, 5)
 @test length(i.cache.nlsolver.cache.k) == 5
 @test length(i.cache.nlsolver.cache.atmp) == 5
 @test length(i.cache.nlsolver.cache.dz) == 5
-@test size(i.cache.nlsolver.cache.J) == (5, 5)
-@test size(i.cache.nlsolver.cache.W) == (5, 5)
+@test size(i.cache.nlsolver.cache.J) == (5,5)
+@test size(i.cache.nlsolver.cache.W) == (5,5)
 @test length(i.cache.nlsolver.cache.du1) == 5
 @test length(i.cache.nlsolver.cache.jac_config.fx) == 5
 @test length(i.cache.nlsolver.cache.jac_config.dx) == 5
@@ -38,7 +38,7 @@ resize!(i, 5)
 @test length(i.cache.nlsolver.cache.weight) == 5
 solve!(i)
 
-i = init(prob, ImplicitEuler(; autodiff = false))
+i = init(prob, ImplicitEuler(;autodiff=false))
 resize!(i, 5)
 @test length(i.cache.atmp) == 5
 @test length(i.cache.uprev) == 5
@@ -51,8 +51,8 @@ resize!(i, 5)
 @test length(i.cache.nlsolver.cache.k) == 5
 @test length(i.cache.nlsolver.cache.atmp) == 5
 @test length(i.cache.nlsolver.cache.dz) == 5
-@test size(i.cache.nlsolver.cache.J) == (5, 5)
-@test size(i.cache.nlsolver.cache.W) == (5, 5)
+@test size(i.cache.nlsolver.cache.J) == (5,5)
+@test size(i.cache.nlsolver.cache.W) == (5,5)
 @test length(i.cache.nlsolver.cache.du1) == 5
 @test length(i.cache.nlsolver.cache.jac_config.x1) == 5
 @test length(i.cache.nlsolver.cache.jac_config.fx) == 5
@@ -83,7 +83,7 @@ resize!(i, 5)
 @test length(i.cache.jac_config.p) == 5
 solve!(i)
 
-i = init(prob, Rosenbrock23(; autodiff = false))
+i = init(prob, Rosenbrock23(;autodiff=false))
 resize!(i, 5)
 @test length(i.cache.u) == 5
 @test length(i.cache.uprev) == 5
@@ -105,45 +105,45 @@ resize!(i, 5)
 @test length(i.cache.jac_config.fx1) == 5
 solve!(i)
 
-function f(du, u, p, t)
-    du[1] = 2.0 * u[1] - 1.2 * u[1] * u[2]
-    du[2] = -3 * u[2] + u[1] * u[2]
-    for i = 3:length(u)
-        du[i] = 0.0
-    end
+function f(du,u,p,t)
+  du[1] = 2.0 * u[1] - 1.2 * u[1]*u[2]
+  du[2] = -3 * u[2] + u[1]*u[2]
+  for i in 3:length(u)
+  	du[i] = 0.0
+  end
 end
-function f_jac(J, u, p, t)
-    J[1, 1] = 2.0 - 1.2 * u[2]
-    J[1, 2] = -1.2 * u[1]
-    J[2, 1] = 1 * u[2]
-    J[2, 2] = -3 + u[1]
-    for i = 3:length(u)
-        for j = 3:length(u)
-            if i == j
-                J[i, j] = 1.0
-            else
-                J[i, j] = 0.0
-            end
-        end
-    end
-    nothing
+function f_jac(J,u,p,t)
+  J[1,1] = 2.0 - 1.2 * u[2]
+  J[1,2] = -1.2 * u[1]
+  J[2,1] = 1 * u[2]
+  J[2,2] = -3 + u[1]
+  for i in 3:length(u)
+  	for j in 3:length(u)
+  		if i == j
+  			J[i, j] = 1.0
+  		else
+	  	    J[i, j] = 0.0
+	  	end
+  	end
+  end
+  nothing
 end
-ff = ODEFunction(f; jac = f_jac, jac_prototype = [1.0 1.0; 1.0 1.0])
+ff = ODEFunction(f;jac=f_jac,jac_prototype=[1.0 1.0; 1.0 1.0])
 
-cb = DiscreteCallback((u, t, integ) -> true, integ -> @views(integ.u[3:5]) .= 0)
+cb = DiscreteCallback((u,t,integ) -> true, integ -> @views(integ.u[3:5]) .= 0)
 prob = ODEProblem(ff, [1.0, 1.0], (0.0, 1.0))
-i = init(prob, ImplicitEuler(), callback = cb)
+i = init(prob, ImplicitEuler(), callback=cb)
 resize!(i, 5)
 solve!(i)
 
 
-function dsdt(ds, s, _, t)
+function dsdt(ds,s,_,t)
     # state looks like x1,v1, x2,v2, x3,v3,...
     ds[1:2:end] .= s[2:2:end] # velocity changes position
     ds[2:2:end] .= -1.0 # (constant downward acceleration)
 end
 
-function splitCheck(s, t, intgr)
+function splitCheck(s,t,intgr)
     #If any of the position coordinates are negative, we need to bounce (and resize).
     if any(s[1:2:end] .< 0.0)
         return true
@@ -157,7 +157,7 @@ function splitMod!(intgr)
 
     # flip the velocity sign
     for i = 1:2:length(s)
-        if s[i] < 0.0
+        if s[i]<0.0
             s[i] = 0.0
             s[i+1] = -s[i+1]
         end
@@ -165,20 +165,20 @@ function splitMod!(intgr)
 
     # Add a particle to the system.
     # comment out these lines and it will work with Rosenbrock32.
-    resize!(intgr, length(s) + 2) # (resizes s -> intgr.u)
+    resize!(intgr,length(s)+2) # (resizes s -> intgr.u)
     s[end-1] = rand() # new position
     s[end] = rand() # new velocity
 end
 
 function runSim(method)
     s0 = rand(2)
-    tspan = (0.0, 20.0)
-    prob = ODEProblem(dsdt, s0, tspan)
+    tspan = (0.0,20.0)
+    prob = ODEProblem(dsdt,s0,tspan)
 
     # callback to bounce / split system.
-    cb = DiscreteCallback(splitCheck, splitMod!)
+    cb = DiscreteCallback(splitCheck,splitMod!)
 
-    solve(prob, method, callback = cb, dtmax = 0.01)
+    solve(prob,method,callback=cb,dtmax=0.01)
     # setting dtmax here so the discrete callback doesn't miss the zero-crossing too badly.
     # ...no real reason not to use a continuous callback here, I just chose not to.
 end
@@ -186,4 +186,4 @@ end
 runSim(BS3())
 
 runSim(Rosenbrock23())
-runSim(Rosenbrock23(autodiff = false))
+runSim(Rosenbrock23(autodiff=false))
