@@ -569,13 +569,9 @@ end
 
     markfirststage!(nlsolver)
 
-    if typeof(integrator.f) <: SplitFunction
-        # Explicit tableau is not FSAL
-        # Make this not compute on repeat
-        if !repeat_step && !integrator.last_stepfail
-            f(z₁, integrator.uprev, p, integrator.t)
-            z₁ .*= dt
-        end
+    if typeof(integrator.f) <: SplitFunction && !repeat_step && !integrator.last_stepfail
+        f(z₁, integrator.uprev, p, integrator.t)
+        z₁ .*= dt
     else
         # FSAL Step 1
         @.. broadcast=false z₁=dt * integrator.fsalfirst
