@@ -90,6 +90,7 @@ end
         @time @safetestset "DAE Event Tests" begin include("integrators/dae_event.jl") end
         @time @safetestset "Cache Tests" begin include("integrators/ode_cache_tests.jl") end
         @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
+        @time @safetestset "IMEX Split Function Tests" begin include("integrators/split_ode_tests.jl") end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_I" || GROUP == "Regression")
