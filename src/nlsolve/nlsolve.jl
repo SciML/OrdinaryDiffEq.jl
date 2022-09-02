@@ -33,7 +33,14 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache = nothing,
 
     local ndz
     for iter in 1:maxiters
-        always_new && update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true))
+        if always_new && isnewton(nlsolver)
+            if ArrayInterface.ismutable(integrator.u)
+                @.. integrator.u = integrator.uprev + nlsolver.γ * nlsolver.z
+            else
+                integrator.u = @.. integrator.uprev + nlsolver.γ * nlsolver.z
+            end
+            update_W!(nlsolver, integrator, cache, γW, repeat_step, (true, true))
+        end
         nlsolver.iter = iter
 
         # compute next step and calculate norm of residuals
@@ -50,7 +57,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache = nothing,
             θ = ndz / ndzprev
 
             # When one Newton iteration basically does nothing, it's likely that we
-            # are at the percision limit of floating point number. Thus, we just call
+            # are at the precision limit of floating point number. Thus, we just call
             # it convergence/divergence according to `ndz` directly.
             if abs(θ - one(θ)) <= eps_around_one(θ)
                 if ndz <= one(ndz)

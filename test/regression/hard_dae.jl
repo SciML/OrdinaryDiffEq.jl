@@ -236,10 +236,15 @@ function hardstop!(du, u, p, t)
     du[3] = (-ifelse(t < 2, -pg * pm, pg * pm) - f_wall) / (-pm)
 end
 
+hardstop!(u, p, t) = (du = similar(u); hardstop!(du, u, p, t); du)
+
 fun = ODEFunction(hardstop!, mass_matrix = Diagonal([1, 0, 1]))
-prob = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
-@test solve(prob, ImplicitEuler(), dt = 1 / 2^10, adaptive = false).retcode ===
-      :ConvergenceFailure
+prob1 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
+prob2 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
+for prob in [prob1, prob2]
+    @test solve(prob, ImplicitEuler(), dt = 1 / 2^10, adaptive = false).retcode ===
+          :ConvergenceFailure
+end
 
 condition2 = (u, t, integrator) -> t == 2
 affect2! = integrator -> integrator.u[1] = 1e-6
@@ -260,7 +265,7 @@ simple_implicit_euler = ImplicitEuler(nlsolve = NLNewton(check_div = false,
                                                          always_new = true))
 alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice_function)
 
-for alg in [simple_implicit_euler, alg_switch]
+for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
     sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
     @test sol.retcode === :Success
     @test sol(0, idxs = 1) == 5
