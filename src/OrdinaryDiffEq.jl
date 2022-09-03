@@ -267,10 +267,10 @@ SnoopPrecompile.@precompile_all_calls begin
 
     prob_list = [ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
                  ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
-                 ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
-                 ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
-                 ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
-                 ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
+                 #ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
+                 #ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
+                 #ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
+                 #ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
                  #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0))
                  #ODEProblem{false,false}(lorenz_oop,[1.0;0.0;0.0],(0.0,1.0),Float64[])
                  ]
