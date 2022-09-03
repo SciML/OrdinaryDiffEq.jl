@@ -265,8 +265,10 @@ SnoopPrecompile.@precompile_all_calls begin
         #AutoVern7(TRBDF2(chunk_size = Val{1}())),
     ]
 
-    prob_list = [ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
-                 ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
+    prob_list = [ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                            (0.0, 1.0));
+                 ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                            (0.0, 1.0), Float64[])
                  #ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
                  #ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
                  #ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
