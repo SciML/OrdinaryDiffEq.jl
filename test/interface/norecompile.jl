@@ -26,10 +26,9 @@ t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff = false))
 if VERSION >= v"1.8"
     @test 3t1 < t3
     @test t2 < t4
+    integ = init(lorenzprob, Rosenbrock23())
+    @test integ.f.f isa SciMLBase.FunctionWrappersWrappers.FunctionWrappersWrapper
 end
-
-integ = init(lorenzprob, Rosenbrock23())
-@test integ.f.f isa SciMLBase.FunctionWrappersWrappers.FunctionWrappersWrapper
 
 solve(prob, EPIRK4s3A(), dt = 1e-1)
 
