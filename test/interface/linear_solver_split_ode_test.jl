@@ -60,18 +60,18 @@ OrdinaryDiffEq.loopheader!(ig1)
 OrdinaryDiffEq.perform_step!(ig0, ig0.cache)
 OrdinaryDiffEq.perform_step!(ig1, ig1.cache)
 
-@test !OrdinaryDiffEq.nlsolvefail(nl0)
-@test OrdinaryDiffEq.nlsolvefail(nl1)
+@test_broken OrdinaryDiffEq.nlsolvefail(nl0) # fails
+@test OrdinaryDiffEq.nlsolvefail(nl1) # passes
 
 # check operators
-@test W0._concrete_form != W1._concrete_form
+@test W0._concrete_form == W1._concrete_form
 @test_broken W0._func_cache == W1._func_cache
 
 # check operator application
 b = ones(n)
 @test W0 * b == W1 * b
 @test mul!(rand(n), W0, b) == mul!(rand(n), W1, b)
-#@test W0 \ b == W1 \ b
+@test W0 \ b == W1 \ b
 
 # check linear solve
 lc0.b .= 1.0
