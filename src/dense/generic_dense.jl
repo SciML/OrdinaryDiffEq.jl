@@ -70,7 +70,7 @@ end
 
 # Deprecate ASAP!
 @inline function DiffEqBase.addsteps!(args...)
-    _ode_addsteps!(args...)
+    ode_addsteps!(args...)
 end
 
 @inline function ode_interpolant(Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
