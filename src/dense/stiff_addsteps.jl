@@ -1,4 +1,4 @@
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p,
                               cache::Union{Rosenbrock23ConstantCache,
                                            Rosenbrock32ConstantCache},
                               always_calc_begin = false, allow_calc_end = true,
@@ -30,7 +30,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p,
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p,
                               cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
@@ -89,7 +89,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p,
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock23Cache{<:Array},
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock23Cache{<:Array},
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -147,7 +147,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock23Cache
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -235,7 +235,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCac
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -360,7 +360,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache{<:Array},
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache{<:Array},
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -519,7 +519,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache{<:Arr
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCache,
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -649,7 +649,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Consta
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -854,7 +854,7 @@ function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
     nothing
 end
 
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Array},
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Array},
                               always_calc_begin = false, allow_calc_end = true,
                               force_calc_end = false)
     if length(k) < 2 || always_calc_begin

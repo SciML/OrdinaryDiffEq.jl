@@ -1,5 +1,5 @@
 using Pkg
-using SafeTestsets
+using SafeTestsets, Test
 const LONGER_TESTS = false
 
 const GROUP = get(ENV, "GROUP", "All")
@@ -60,6 +60,8 @@ end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
+        using Test
+        @test Test.detect_ambiguities(OrdinaryDiffEq)
         @time @safetestset "Second Order with First Order Solver Tests" begin include("interface/second_order_with_first_order_solvers.jl") end
     end
 

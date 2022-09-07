@@ -1,4 +1,4 @@
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern6Cache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern6Cache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 9 || always_calc_begin
@@ -65,7 +65,7 @@
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7Cache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7Cache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 10 || always_calc_begin
@@ -160,7 +160,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7Cache{<:Array},
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7Cache{<:Array},
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 10 || always_calc_begin
@@ -297,7 +297,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern8Cache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern8Cache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 13 || always_calc_begin
@@ -425,7 +425,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9Cache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9Cache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 10 || always_calc_begin
@@ -579,7 +579,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9Cache{<:Array},
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9Cache{<:Array},
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 10 || always_calc_begin
@@ -806,7 +806,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern6ConstantCache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern6ConstantCache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 9 || always_calc_begin
@@ -860,7 +860,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7ConstantCache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7ConstantCache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 10 || always_calc_begin
@@ -934,7 +934,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern8ConstantCache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern8ConstantCache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 13 || always_calc_begin
@@ -1045,7 +1045,7 @@ end
     nothing
 end
 
-@muladd function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9ConstantCache,
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9ConstantCache,
                                       always_calc_begin = false, allow_calc_end = true,
                                       force_calc_end = false)
     if length(k) < 10 || always_calc_begin

@@ -34,29 +34,29 @@ end
     return lo
 end
 
-@inline function _ode_addsteps!(integrator, f = integrator.f, always_calc_begin = false,
+@inline function ode_addsteps!(integrator, f = integrator.f, always_calc_begin = false,
                                 allow_calc_end = true, force_calc_end = false)
     cache = integrator.cache
     if !(typeof(cache) <: CompositeCache)
-        DiffEqBase.addsteps!(integrator.k, integrator.tprev, integrator.uprev, integrator.u,
+        _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev, integrator.u,
                              integrator.dt, f, integrator.p, cache,
                              always_calc_begin, allow_calc_end, force_calc_end)
     else
         cache_current = cache.current
         if cache_current == 1
-            DiffEqBase.addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+            _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
                                  integrator.u,
                                  integrator.dt, f, integrator.p,
                                  @inbounds(cache.caches[1]),
                                  always_calc_begin, allow_calc_end, force_calc_end)
         elseif cache_current == 2
-            DiffEqBase.addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+            _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
                                  integrator.u,
                                  integrator.dt, f, integrator.p,
                                  @inbounds(cache.caches[2]),
                                  always_calc_begin, allow_calc_end, force_calc_end)
         else
-            DiffEqBase.addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+            _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
                                  integrator.u,
                                  integrator.dt, f, integrator.p,
                                  @inbounds(cache.caches[cache_current]),
@@ -65,7 +65,7 @@ end
     end
 end
 @inline function DiffEqBase.addsteps!(integrator::ODEIntegrator, args...)
-    _ode_addsteps!(integrator, args...)
+    ode_addsteps!(integrator, args...)
 end
 
 @inline function ode_interpolant(Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
@@ -289,12 +289,12 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
         elseif !id.dense
             return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif typeof(cache) <: CompositeCache
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                                    cache.caches[id.alg_choice[i₊]], idxs, deriv)
         else
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache) # update the kcurrent
             return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊], cache,
                                    idxs, deriv)
@@ -354,7 +354,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                                              deriv)
             end
         elseif typeof(cache) <: CompositeCache
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             if eltype(timeseries) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
@@ -364,7 +364,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                                           cache.caches[id.alg_choice[i₊]], idxs, deriv)
             end
         else
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache) # update the kcurrent
             if eltype(vals[j]) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
@@ -412,12 +412,12 @@ function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
         elseif !id.dense
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif typeof(cache) <: CompositeCache
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                                   cache.caches[id.alg_choice[i₊]], idxs, deriv)
         else
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache) # update the kcurrent
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊], cache,
                                   idxs, deriv)
@@ -460,12 +460,12 @@ function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
         elseif !id.dense
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif typeof(cache) <: CompositeCache
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                              cache.caches[id.alg_choice[i₊]], idxs, deriv)
         else
-            DiffEqBase.addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                                  cache) # update the kcurrent
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊], cache,
                              idxs, deriv)
@@ -478,7 +478,7 @@ end
 """
 By default, Hermite interpolant so update the derivative at the two ends
 """
-function DiffEqBase.addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false,
                               allow_calc_end = true, force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         if typeof(cache) <: OrdinaryDiffEqMutableCache
