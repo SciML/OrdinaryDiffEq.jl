@@ -35,32 +35,32 @@ end
 end
 
 @inline function ode_addsteps!(integrator, f = integrator.f, always_calc_begin = false,
-                                allow_calc_end = true, force_calc_end = false)
+                               allow_calc_end = true, force_calc_end = false)
     cache = integrator.cache
     if !(typeof(cache) <: CompositeCache)
         _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev, integrator.u,
-                             integrator.dt, f, integrator.p, cache,
-                             always_calc_begin, allow_calc_end, force_calc_end)
+                       integrator.dt, f, integrator.p, cache,
+                       always_calc_begin, allow_calc_end, force_calc_end)
     else
         cache_current = cache.current
         if cache_current == 1
             _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
-                                 integrator.u,
-                                 integrator.dt, f, integrator.p,
-                                 @inbounds(cache.caches[1]),
-                                 always_calc_begin, allow_calc_end, force_calc_end)
+                           integrator.u,
+                           integrator.dt, f, integrator.p,
+                           @inbounds(cache.caches[1]),
+                           always_calc_begin, allow_calc_end, force_calc_end)
         elseif cache_current == 2
             _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
-                                 integrator.u,
-                                 integrator.dt, f, integrator.p,
-                                 @inbounds(cache.caches[2]),
-                                 always_calc_begin, allow_calc_end, force_calc_end)
+                           integrator.u,
+                           integrator.dt, f, integrator.p,
+                           @inbounds(cache.caches[2]),
+                           always_calc_begin, allow_calc_end, force_calc_end)
         else
             _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
-                                 integrator.u,
-                                 integrator.dt, f, integrator.p,
-                                 @inbounds(cache.caches[cache_current]),
-                                 always_calc_begin, allow_calc_end, force_calc_end)
+                           integrator.u,
+                           integrator.dt, f, integrator.p,
+                           @inbounds(cache.caches[cache_current]),
+                           always_calc_begin, allow_calc_end, force_calc_end)
         end
     end
 end
@@ -290,12 +290,12 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
             return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif typeof(cache) <: CompositeCache
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+                           cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                                    cache.caches[id.alg_choice[i₊]], idxs, deriv)
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache) # update the kcurrent
+                           cache) # update the kcurrent
             return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊], cache,
                                    idxs, deriv)
         end
@@ -355,7 +355,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
             end
         elseif typeof(cache) <: CompositeCache
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+                           cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             if eltype(timeseries) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                                  cache.caches[id.alg_choice[i₊]], idxs, deriv)
@@ -365,7 +365,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
             end
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache) # update the kcurrent
+                           cache) # update the kcurrent
             if eltype(vals[j]) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                                  cache, idxs, deriv)
@@ -413,12 +413,12 @@ function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif typeof(cache) <: CompositeCache
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+                           cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                                   cache.caches[id.alg_choice[i₊]], idxs, deriv)
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache) # update the kcurrent
+                           cache) # update the kcurrent
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊], cache,
                                   idxs, deriv)
         end
@@ -461,12 +461,12 @@ function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif typeof(cache) <: CompositeCache
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache.caches[id.alg_choice[i₊]]) # update the kcurrent
+                           cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                              cache.caches[id.alg_choice[i₊]], idxs, deriv)
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                                 cache) # update the kcurrent
+                           cache) # update the kcurrent
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊], cache,
                              idxs, deriv)
         end
@@ -479,7 +479,7 @@ end
 By default, Hermite interpolant so update the derivative at the two ends
 """
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false,
-                              allow_calc_end = true, force_calc_end = false)
+                        allow_calc_end = true, force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         if typeof(cache) <: OrdinaryDiffEqMutableCache
             rtmp = similar(u, eltype(eltype(k)))
