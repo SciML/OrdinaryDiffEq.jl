@@ -166,7 +166,7 @@ end
     (cache.tmp,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
-                                          cache::OrdinaryDiffEqMutableCache)
+                                          cache::OrdinaryDiffEqCompositeCache)
     get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
