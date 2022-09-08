@@ -1,6 +1,7 @@
 ## initialize!
 
-@muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false}, integrator)
+@muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
+                             integrator::DiffEqBase.DEIntegrator)
     @unpack dt = integrator
     @unpack cache = nlsolver
 
@@ -10,7 +11,8 @@
     nothing
 end
 
-@muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true}, integrator)
+@muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
+                             integrator::DiffEqBase.DEIntegrator)
     @unpack u, uprev, t, dt, opts = integrator
     @unpack cache = nlsolver
     @unpack weight = cache

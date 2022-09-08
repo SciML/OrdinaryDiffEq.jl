@@ -9,8 +9,8 @@ dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::AbstractNLSolver, integrator, cache = nothing,
-                  repeat_step = false)
+function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator,
+                  cache = nothing, repeat_step = false)
     always_new = is_always_new(nlsolver)
     check_div′ = check_div(nlsolver)
     @label REDO
@@ -103,13 +103,14 @@ end
 
 ## default implementations
 
-initialize!(::AbstractNLSolver, integrator) = nothing
+initialize!(::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator) = nothing
 
 function initial_η(nlsolver::NLSolver, integrator)
     max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
 end
 
-function apply_step!(nlsolver::NLSolver{algType, iip}, integrator) where {algType, iip}
+function apply_step!(nlsolver::NLSolver{algType, iip},
+                     integrator::DiffEqBase.DEIntegrator) where {algType, iip}
     if iip
         @.. broadcast=false nlsolver.z=nlsolver.ztmp
     else
@@ -119,7 +120,7 @@ function apply_step!(nlsolver::NLSolver{algType, iip}, integrator) where {algTyp
     nothing
 end
 
-function postamble!(nlsolver::NLSolver, integrator)
+function postamble!(nlsolver::NLSolver, integrator::DiffEqBase.DEIntegrator)
     if DiffEqBase.has_destats(integrator)
         integrator.destats.nnonliniter += nlsolver.iter
 

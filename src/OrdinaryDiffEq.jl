@@ -284,6 +284,8 @@ SnoopPrecompile.@precompile_all_calls begin
     prob_list = nothing
 end
 
+const DEPRECATED_ADDSTEPS = true
+
 #General Functions
 export solve, solve!, init, step!
 

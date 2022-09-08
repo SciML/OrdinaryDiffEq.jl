@@ -1,12 +1,14 @@
 ## initialize!
 
-@muladd function initialize!(nlsolver::NLSolver{<:NLFunctional}, integrator)
+@muladd function initialize!(nlsolver::NLSolver{<:NLFunctional},
+                             integrator::DiffEqBase.DEIntegrator)
     nlsolver.cache.tstep = integrator.t + nlsolver.c * integrator.dt
 
     nothing
 end
 
-@muladd function initialize!(nlsolver::NLSolver{<:NLAnderson}, integrator)
+@muladd function initialize!(nlsolver::NLSolver{<:NLAnderson},
+                             integrator::DiffEqBase.DEIntegrator)
     @unpack cache = nlsolver
 
     cache.history = 0
