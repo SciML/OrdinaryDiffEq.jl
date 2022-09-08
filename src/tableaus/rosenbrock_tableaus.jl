@@ -40,7 +40,7 @@ struct ROS3PTableau{T, T2}
     d2::T
     d3::T
 end
-
+ 
 function ROS3PTableau(T, T2)
     gamma = convert(T, 1 / 2 + sqrt(3) / 6)
     igamma = inv(gamma)
@@ -48,13 +48,13 @@ function ROS3PTableau(T, T2)
     a31 = convert(T, igamma)
     a32 = convert(T, 0)
     C21 = convert(T, -igamma^2)
-    tmp = -igamma * (2 - (1 / 2) * igamma)
-    C31 = -igamma * (1 - tmp)
+    tmp = -igamma * (convert(T, 2) - convert(T, 1 / 2) * igamma)
+    C31 = -igamma * (convert(T, 1) - tmp)
     C32 = tmp
-    tmp = igamma * (2 / 3 - (1 / 6) * igamma)
-    b1 = igamma * (1 + tmp)
+    tmp = igamma * (convert(T, 2 / 3) - convert(T, 1 / 6) * igamma)
+    b1 = igamma * (convert(T, 1) + tmp)
     b2 = tmp
-    b3 = (1 / 3) * igamma
+    b3 = convert(T, 1 / 3) * igamma
     # btilde1 = convert(T,2.113248654051871)
     # btilde2 = convert(T,1.000000000000000)
     # btilde3 = convert(T,0.4226497308103742)
