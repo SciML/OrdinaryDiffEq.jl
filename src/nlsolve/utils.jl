@@ -6,6 +6,10 @@ get_new_W_γdt_cutoff(alg::NewtonAlgorithm) = alg.new_W_γdt_cutoff
 nlsolvefail(nlsolver::AbstractNLSolver) = nlsolvefail(get_status(nlsolver))
 nlsolvefail(status::NLStatus) = Int8(status) <= 0
 
+relax(nlsolver::AbstractNLSolver) = relax(nlsolver.alg)
+relax(alg::NLNewton) = alg.relax
+relax(_) = 0 // 1
+
 isnewton(::Any) = false
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
