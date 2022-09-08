@@ -40,7 +40,7 @@ struct ROS3PTableau{T, T2}
     d2::T
     d3::T
 end
- 
+
 function ROS3PTableau(T, T2)
     gamma = convert(T, 1 / 2 + sqrt(3) / 6)
     igamma = inv(gamma)
