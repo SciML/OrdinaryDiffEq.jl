@@ -1,2 +1,2 @@
 using Test, OrdinaryDiffEq
-@test Test.detect_ambiguities(OrdinaryDiffEq)
+@test isempty(Test.detect_ambiguities(OrdinaryDiffEq))
