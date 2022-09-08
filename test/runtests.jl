@@ -60,8 +60,7 @@ end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
-        using Test
-        @test Test.detect_ambiguities(OrdinaryDiffEq)
+        @time @safetestset "Ambiguity Tests" begin include("interface/ambiguity_tests.jl") end
         @time @safetestset "Second Order with First Order Solver Tests" begin include("interface/second_order_with_first_order_solvers.jl") end
     end
 
