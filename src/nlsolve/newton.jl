@@ -98,6 +98,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
 
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
+    if (r = relax(nlsolver); !iszero(r))
+        dz = (1 - r) * dz
+    end
     if DiffEqBase.has_destats(integrator)
         integrator.destats.nsolve += 1
     end
@@ -106,7 +109,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
                                opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
     # NDF and BDF are special because the truncation error is directly
-    # propertional to the total displacement.
+    # proportional to the total displacement.
     if integrator.alg isa QNDF
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end
@@ -201,12 +204,15 @@ end
     end
 
     !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
+    if (r = relax(nlsolver); !iszero(r))
+        rmul!(dz, 1 - r)
+    end
 
     calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
                          opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
     # NDF and BDF are special because the truncation error is directly
-    # propertional to the total displacement.
+    # proportional to the total displacement.
     if integrator.alg isa QNDF
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end
@@ -317,12 +323,15 @@ end
     end
 
     !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
+    if (r = relax(nlsolver); !iszero(r))
+        rmul!(dz, 1 - r)
+    end
 
     calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
                          opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
     # NDF and BDF are special because the truncation error is directly
-    # propertional to the total displacement.
+    # proportional to the total displacement.
     if integrator.alg isa QNDF
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end
