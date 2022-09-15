@@ -12,37 +12,37 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
              "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
              "Usage" => "usage.md",
              "Standard Non-Stiff ODEProblem Solvers" => [
-                "explicitrk.md",
-                "lowstorage_ssprk.md"
-                "explicit_extrapolation.md",
-                "nonstiff_multistep.md",
+                 "explicitrk.md",
+                 "lowstorage_ssprk.md"
+                 "explicit_extrapolation.md",
+                 "nonstiff_multistep.md",
              ],
              "Standard Stiff ODEProblem Solvers" => [
-                "firk.md",
-                "rosenbrock.md",
-                "stabilized_rk.md",
-                "sdirk.md",
-                "stiff_multistep.md",
-                "implicit_extrapolation.md"
+                 "firk.md",
+                 "rosenbrock.md",
+                 "stabilized_rk.md",
+                 "sdirk.md",
+                 "stiff_multistep.md",
+                 "implicit_extrapolation.md",
              ],
              "Second Order and Dynamical ODE Solvers" => [
-                "nystrom.md",
-                "symplectic.md"
+                 "nystrom.md",
+                 "symplectic.md",
              ],
              "IMEX Solvers" => [
-                "imex_multistep.md",
-                "imex_sdirk.md",
+                 "imex_multistep.md",
+                 "imex_sdirk.md",
              ],
              "Semilinear ODE Solvers" => [
-                "exponential_rk.md",
-                "magnus.md"
+                 "exponential_rk.md",
+                 "magnus.md",
              ],
              "DAEProblem Solvers" => [
-                "fully_implicit.md"
+                 "fully_implicit.md",
              ],
              "Misc Solvers" => [
-                "misc.md"
-             ]
+                 "misc.md",
+             ],
          ])
 
 deploydocs(repo = "github.com/SciML/OrdinaryDiffEq.jl";
