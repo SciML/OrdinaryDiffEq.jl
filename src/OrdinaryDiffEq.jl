@@ -96,6 +96,7 @@ const CompiledFloats = Union{Float32, Float64,
 
 import ArrayInterfaceStaticArrays, ArrayInterfaceGPUArrays
 import FunctionWrappersWrappers
+import Preferences
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 
@@ -216,8 +217,11 @@ SnoopPrecompile.@precompile_all_calls begin
         [10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
     end
 
-    solver_list = [
-        BS3(), Tsit5(), Vern7(), Vern9(), Rosenbrock23(), Rosenbrock23(autodiff = false),
+    nonstiff = [
+        BS3(), Tsit5(), Vern7(), Vern9(),
+    ]
+
+    stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
         #Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
 
         Rodas4(), Rodas4(autodiff = false),
@@ -237,7 +241,9 @@ SnoopPrecompile.@precompile_all_calls begin
 
         QNDF(), QNDF(autodiff = false),
         #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
+    ]
 
+    autoswitch = [
         AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff = false)),
         #AutoTsit5(Rosenbrock23(chunk_size = 1)),
         #AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
@@ -271,19 +277,59 @@ SnoopPrecompile.@precompile_all_calls begin
         #AutoVern7(TRBDF2(chunk_size = Val{1}())),
     ]
 
-    prob_list = [ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
-                 ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
-                 #ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
-                 #ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
-                 #ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0));
-                 #ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
-                 ]
+    solver_list = []
+
+    if Preferences.@load_preference("PrecompileNonStiff", true)
+        append!(solver_list, nonstiff)
+    end
+
+    if Preferences.@load_preference("PrecompileStiff", true)
+        append!(solver_list, stiff)
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSwitch", true)
+        append!(solver_list, autoswitch)
+    end
+
+    prob_list = []
+
+    if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSpecialize", false)
+        push!(prob_list,
+              ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                         (0.0, 1.0)))
+        push!(prob_list,
+              ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                         (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
+        push!(prob_list,
+              ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                                    (0.0, 1.0)))
+        push!(prob_list,
+              ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                                    (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileNoSpecialize", false)
+        push!(prob_list,
+              ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list,
+              ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                                                       Float64[]))
+    end
 
     for prob in prob_list, solver in solver_list
         solve(prob, solver)(5.0)
     end
 
     prob_list = nothing
+    solver_list = nothing
 end
 
 const DEPRECATED_ADDSTEPS = true
