@@ -72,7 +72,7 @@ import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,
                    islinear, timedepentdtmin
 
-@static if isdefined(DiffEqBase,:OrdinaryDiffEqTag)
+@static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
     import DiffEqBase: OrdinaryDiffEqTag
 else
     struct OrdinaryDiffEqTag end
