@@ -2283,7 +2283,7 @@ end
 }
 
 OwrenZen3: Explicit Runge-Kutta Method
-  Owren-Zennaro optimized interpolantion 3/2 method (free 3th order interpolant).
+  Owren-Zennaro optimized interpolation 3/2 method (free 3th order interpolant).
 """
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 """
@@ -2299,7 +2299,7 @@ struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 }
 
 OwrenZen4: Explicit Runge-Kutta Method
-  Owren-Zennaro optimized interpolantion 4/3 method (free 4th order interpolant).
+  Owren-Zennaro optimized interpolation 4/3 method (free 4th order interpolant).
 """
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -2316,7 +2316,7 @@ struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 }
 
 OwrenZen5: Explicit Runge-Kutta Method
-  Owren-Zennaro optimized interpolantion 5/4 method (free 5th order interpolant).
+  Owren-Zennaro optimized interpolation 5/4 method (free 5th order interpolant).
 """
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -2456,11 +2456,13 @@ Seventh-order Runge-Kutta Method, Information Processing Society of Japan,
 
 TanYam7: Explicit Runge-Kutta Method
   Tanaka-Yamashita 7 Runge-Kutta method.
+"""
+struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
+"""
 TsitPap8: Explicit Runge-Kutta Method
   Tsitouras-Papakostas 8/7 Runge-Kutta method.
 """
-struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
