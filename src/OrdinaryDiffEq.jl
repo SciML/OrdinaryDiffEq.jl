@@ -70,7 +70,13 @@ const TryAgain = DiffEqBase.SlowConvergence
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,
-                   islinear, timedepentdtmin, OrdinaryDiffEqTag
+                   islinear, timedepentdtmin
+
+@static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
+    import DiffEqBase: OrdinaryDiffEqTag
+else
+    struct OrdinaryDiffEqTag end
+end
 
 import SparseDiffTools
 import SparseDiffTools: matrix_colors, forwarddiff_color_jacobian!,
