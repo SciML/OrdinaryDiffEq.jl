@@ -13,7 +13,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
              "Usage" => "usage.md",
              "Standard Non-Stiff ODEProblem Solvers" => [
                  "nonstiff/explicitrk.md",
-                 "nonstiff/lowstorage_ssprk.md"
+                 "nonstiff/lowstorage_ssprk.md",
                  "nonstiff/explicit_extrapolation.md",
                  "nonstiff/nonstiff_multistep.md",
              ],
