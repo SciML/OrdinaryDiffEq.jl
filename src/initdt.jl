@@ -228,12 +228,9 @@ end
     p = prob.p
     oneunit_tType = oneunit(_tType)
     dtmax_tdir = tdir * dtmax
-    tspan = prob.tspan
-    length_tspan = abs(tspan[2] - tspan[1])
-    length_tspan = isfinite(length_tspan) ? length_tspan : oneunit_tType
 
     dtmin = nextfloat(integrator.opts.dtmin)
-    smalldt = convert(_tType, length_tspan * 1 // 2^20)
+    smalldt = convert(_tType, oneunit_tType * 1 // 10^(6)
 
     if integrator.isdae
         return tdir * max(smalldt, dtmin)
@@ -288,6 +285,8 @@ end
                                                                           tType},
                                       integrator) where {duType, uType, tType}
     _tType = eltype(tType)
-    oneunit_tType = oneunit(_tType)
-    return convert(_tType, oneunit_tType * 1 // 10^(6))
+    tspan = prob.tspan
+    init_dt = abs(tspan[2] - tspan[1])
+    init_dt = isfinite(init_dt) ? init_dt : oneunit(_tType)
+    return convert(_tType, init_dt * 1 // 10^(6))
 end
