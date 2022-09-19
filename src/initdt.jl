@@ -285,6 +285,8 @@ end
                                                                           tType},
                                       integrator) where {duType, uType, tType}
     _tType = eltype(tType)
-    oneunit_tType = oneunit(_tType)
-    return convert(_tType, oneunit_tType * 1 // 10^(6))
+    tspan = prob.tspan
+    init_dt = abs(tspan[2] - tspan[1])
+    init_dt = isfinite(init_dt) ? init_dt : oneunit(_tType)
+    return convert(_tType, init_dt * 1 // 10^(6))
 end
