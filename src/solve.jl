@@ -260,7 +260,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             steps = length(tstops)
         else
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
-            # Thereore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
+            # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
             # to prevent infinite loops.
             dtmin = DiffEqBase.prob2dtmin(prob)
             abs(dt) < dtmin && throw(ArgumentError("Supplied dt is smaller than dtmin"))
