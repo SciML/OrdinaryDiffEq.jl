@@ -259,8 +259,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         if dt == 0
             steps = length(tstops)
         else
-            # if not adaptive, user set `dt` should be respected.
-            dtmin = something(dtmin, zero(tspan[1]))
+            # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
+            # Thereore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
+            # to prevent infinite loops.
+            dtmin = DiffEqBase.prob2dtmin(prob)
             abs(dt) < dtmin && throw(ArgumentError("Supplied dt is smaller than dtmin"))
             steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
         end
