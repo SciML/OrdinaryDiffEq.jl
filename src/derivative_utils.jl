@@ -835,6 +835,9 @@ end
 
 function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
                    ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
+    # TODO - make J, W AbstractSciMLOperators
+    # TODO - if jvp given, make it SciMLOperators.FunctionOperator
+    # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
     islin, isode = islinearfunction(f, alg)
     if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
         W = WOperator{IIP}(f, u, dt)
