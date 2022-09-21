@@ -355,6 +355,7 @@ function Base.convert(::Type{Number}, W::WOperator)
     end
     return W._concrete_form
 end
+Base.size(W::WOperator) = size(W.J)
 Base.size(W::WOperator, d::Integer) = d <= 2 ? size(W.J)[d] : 1
 function Base.getindex(W::WOperator, i::Int)
     if W.transform
