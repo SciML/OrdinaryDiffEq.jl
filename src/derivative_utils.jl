@@ -355,7 +355,7 @@ function Base.convert(::Type{Number}, W::WOperator)
     end
     return W._concrete_form
 end
-Base.size(W::WOperator, args...) = size(W.J, args...)
+Base.size(W::WOperator, d::Integer) = d <= 2 ? size(W.J)[d] : 1
 function Base.getindex(W::WOperator, i::Int)
     if W.transform
         -W.mass_matrix[i] / W.gamma + W.J[i]
