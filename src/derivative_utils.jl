@@ -371,7 +371,14 @@ function Base.getindex(W::WOperator, I::Vararg{Int, N}) where {N}
         -W.mass_matrix[I...] + W.gamma * W.J[I...]
     end
 end
-function Base.:*(W::WOperator, x::Union{AbstractVecOrMat, Number})
+function Base.:*(W::WOperator, x::AbstractVecOrMat)
+    if W.transform
+        (W.mass_matrix * x) / -W.gamma + W.J * x
+    else
+        -W.mass_matrix * x + W.gamma * (W.J * x)
+    end
+end
+function Base.:*(W::WOperator, x::Number)
     if W.transform
         (W.mass_matrix * x) / -W.gamma + W.J * x
     else
