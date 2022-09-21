@@ -27,7 +27,8 @@ prob = remake(prob, u0 = u0, tspan = tspan)
 
 tspan = T.((2000, 2100))
 prob = remake(prob, tspan = tspan)
-@test_throws ArgumentError solve(prob, Euler(); dt = T(0.0001)) # Loops forever
+# set maxiters to prevent infinite loop on test failure
+@test_throws ArgumentError solve(prob, Euler(); dt = T(0.0001), maxiters = 10)
 
 function rober(du, u, p, t)
     y₁, y₂, y₃ = u
@@ -58,3 +59,7 @@ tspan = (0.0, 1e6)
 prob = ODEProblem(ODEFunction(f, mass_matrix = M), u0, tspan, p)
 sol = solve(prob, Rodas5())
 @test sol.t[end] == 1e6
+
+# test that dtmin is set based on timespan
+prob = ODEProblem((u, p, t) -> 1e20 * sin(1e20 * t), 0.1, (0, 1e-19))
+@test solve(prob, Tsit5()).retcode == :Success
