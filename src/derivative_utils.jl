@@ -16,7 +16,7 @@ struct StaticWOperator{isinv, T}
     end
 end
 isinv(W::StaticWOperator{S}) where {S} = S
-Base.:\(W::StaticWOperator, v) = isinv(W) ? W.W * v : W.W \ v
+Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.W \ v
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     @inbounds begin
