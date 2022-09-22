@@ -241,7 +241,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         ksEltype = Vector{typeof(ks_prototype)}
     end
 
-    # Have to convert incase passed in wrong.
+    # Have to convert in case passed in wrong.
     if save_idxs === nothing
         timeseries = timeseries_init === () ? uType[] :
                      convert(Vector{uType}, timeseries_init)
@@ -259,7 +259,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         if dt == 0
             steps = length(tstops)
         else
-            dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob; use_end_time = true))
+            # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
+            # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
+            # to prevent infinite loops.
+            dtmin = DiffEqBase.prob2dtmin(prob)
             abs(dt) < dtmin && throw(ArgumentError("Supplied dt is smaller than dtmin"))
             steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
         end
@@ -329,7 +332,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
     end
 
-    dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob; use_end_time = false))
+    dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob))
 
     save_end_user = save_end
     save_end = save_end === nothing ?
