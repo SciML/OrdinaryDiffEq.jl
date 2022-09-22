@@ -109,9 +109,9 @@ struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
-    n_max::Int
-    n_min::Int
-    n_init::Int
+    max_order::Int
+    min_order::Int
+    init_order::Int
     threading::TO
     sequence::Symbol # Name of the subdividing sequence
 end
@@ -126,18 +126,19 @@ function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = true,
                 (threading == true || threading isa PolyesterThreads)) ?
                RFLUFactorization(; thread = Val(false)) : linsolve
 
-    n_min = max(3, min_order)
-    n_init = max(n_min + 1, init_order)
-    n_max = max(n_init + 1, max_order)
+    min_order = max(3, min_order)
+    init_order = max(min_order + 1, init_order)
+    max_order = max(init_order + 1, max_order)
 
     # Warn user if orders have been changed
-    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+    if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitEulerExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(n_min, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(n_max, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
               "
-Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+              "
+Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Warn user if sequence has been changed:
@@ -151,7 +152,8 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
     ImplicitEulerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
                                typeof(linsolve), typeof(precs), diff_type,
                                _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-                               typeof(threading)}(linsolve, precs, n_max, n_min, n_init,
+                               typeof(threading)}(linsolve, precs, max_order, min_order,
+                                                  init_order,
                                                   threading, sequence)
 end
 """
@@ -160,9 +162,9 @@ ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
 """
 struct ExtrapolationMidpointDeuflhard{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-    n_min::Int # Minimal extrapolation order
-    n_init::Int # Initial extrapolation order
-    n_max::Int # Maximal extrapolation order
+    min_order::Int # Minimal extrapolation order
+    init_order::Int # Initial extrapolation order
+    max_order::Int # Maximal extrapolation order
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
@@ -171,18 +173,19 @@ function ExtrapolationMidpointDeuflhard(; min_order = 1, init_order = 5, max_ord
                                         sequence = :harmonic, threading = true,
                                         sequence_factor = 2)
     # Enforce 1 <=  min_order <= init_order <= max_order:
-    n_min = max(1, min_order)
-    n_init = max(n_min, init_order)
-    n_max = max(n_init, max_order)
+    min_order = max(1, min_order)
+    init_order = max(min_order, init_order)
+    max_order = max(init_order, max_order)
 
     # Warn user if orders have been changed
-    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+    if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(n_min, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(n_max, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
               "
-Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+              "
+Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Warn user if sequence_factor is not even
@@ -203,7 +206,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
     end
 
     # Initialize algorithm
-    ExtrapolationMidpointDeuflhard(n_min, n_init, n_max, sequence, threading,
+    ExtrapolationMidpointDeuflhard(min_order, init_order, max_order, sequence, threading,
                                    sequence_factor)
 end
 """
@@ -214,9 +217,9 @@ struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
-    n_min::Int # Minimal extrapolation order
-    n_init::Int # Initial extrapolation order
-    n_max::Int # Maximal extrapolation order
+    min_order::Int # Minimal extrapolation order
+    init_order::Int # Initial extrapolation order
+    max_order::Int # Maximal extrapolation order
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
@@ -227,22 +230,24 @@ function ImplicitDeuflhardExtrapolation(; chunk_size = Val{0}(), autodiff = Val{
                                         min_order = 1, init_order = 5, max_order = 10,
                                         sequence = :harmonic, threading = false)
     # Enforce 1 <=  min_order <= init_order <= max_order:
-    n_min = max(1, min_order)
-    n_init = max(n_min, init_order)
-    n_max = max(n_init, max_order)
+    min_order = max(1, min_order)
+    init_order = max(min_order, init_order)
+    max_order = max(init_order, max_order)
 
     linsolve = (linsolve === nothing &&
                 (threading == true || threading isa PolyesterThreads)) ?
                RFLUFactorization(; thread = Val(false)) : linsolve
 
     # Warn user if orders have been changed
-    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+    if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitDeuflhardExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(n_min, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(n_max, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
               "
-Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+              "
+Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
+        chunk_size
     end
 
     # Warn user if sequence has been changed:
@@ -258,7 +263,8 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
     ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
                                    typeof(linsolve), typeof(precs), diff_type,
                                    _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-                                   typeof(threading)}(linsolve, precs, n_min, n_init, n_max,
+                                   typeof(threading)}(linsolve, precs, min_order,
+                                                      init_order, max_order,
                                                       sequence, threading)
 end
 """
@@ -267,9 +273,9 @@ ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
 """
 struct ExtrapolationMidpointHairerWanner{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-    n_min::Int # Minimal extrapolation order
-    n_init::Int # Initial extrapolation order
-    n_max::Int # Maximal extrapolation order
+    min_order::Int # Minimal extrapolation order
+    init_order::Int # Initial extrapolation order
+    max_order::Int # Maximal extrapolation order
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     sequence_factor::Int # An even factor by which sequence is scaled for midpoint extrapolation
@@ -279,18 +285,19 @@ function ExtrapolationMidpointHairerWanner(; min_order = 2, init_order = 5, max_
                                            sequence_factor = 2)
     # Enforce 2 <=  min_order
     # and min_order + 1 <= init_order <= max_order - 1:
-    n_min = max(2, min_order)
-    n_init = max(n_min + 1, init_order)
-    n_max = max(n_init + 1, max_order)
+    min_order = max(2, min_order)
+    init_order = max(min_order + 1, init_order)
+    max_order = max(init_order + 1, max_order)
 
     # Warn user if orders have been changed
-    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+    if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ExtrapolationMidpointHairerWanner` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(n_min, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(n_max, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
               "
-Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+              "
+Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Warn user if sequence_factor is not even
@@ -311,7 +318,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
     end
 
     # Initialize algorithm
-    ExtrapolationMidpointHairerWanner(n_min, n_init, n_max, sequence, threading,
+    ExtrapolationMidpointHairerWanner(min_order, init_order, max_order, sequence, threading,
                                       sequence_factor)
 end
 """
@@ -322,9 +329,9 @@ struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
-    n_min::Int # Minimal extrapolation order
-    n_init::Int # Initial extrapolation order
-    n_max::Int # Maximal extrapolation order
+    min_order::Int # Minimal extrapolation order
+    init_order::Int # Initial extrapolation order
+    max_order::Int # Maximal extrapolation order
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
 end
@@ -338,22 +345,23 @@ function ImplicitHairerWannerExtrapolation(; chunk_size = Val{0}(), autodiff = V
                                            sequence = :harmonic, threading = false)
     # Enforce 2 <=  min_order
     # and min_order + 1 <= init_order <= max_order - 1:
-    n_min = max(2, min_order)
-    n_init = max(n_min + 1, init_order)
-    n_max = max(n_init + 1, max_order)
+    min_order = max(2, min_order)
+    init_order = max(min_order + 1, init_order)
+    max_order = max(init_order + 1, max_order)
 
     linsolve = (linsolve === nothing &&
                 (threading == true || threading isa PolyesterThreads)) ?
                RFLUFactorization(; thread = Val(false)) : linsolve
 
     # Warn user if orders have been changed
-    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+    if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitHairerWannerExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(n_min, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(n_max, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
               "
-Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+              "
+Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Warn user if sequence has been changed:
@@ -369,8 +377,9 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
     ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
                                       typeof(linsolve), typeof(precs), diff_type,
                                       _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-                                      typeof(threading)}(linsolve, precs, n_min, n_init,
-                                                         n_max, sequence, threading)
+                                      typeof(threading)}(linsolve, precs, min_order,
+                                                         init_order,
+                                                         max_order, sequence, threading)
 end
 
 """
@@ -381,9 +390,9 @@ struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
-    n_min::Int # Minimal extrapolation order
-    n_init::Int # Initial extrapolation order
-    n_max::Int # Maximal extrapolation order
+    min_order::Int # Minimal extrapolation order
+    init_order::Int # Initial extrapolation order
+    max_order::Int # Maximal extrapolation order
     sequence::Symbol # Name of the subdividing sequence
     threading::TO
     sequence_factor::Int
@@ -400,22 +409,23 @@ function ImplicitEulerBarycentricExtrapolation(; chunk_size = Val{0}(),
                                                threading = false, sequence_factor = 2)
     # Enforce 2 <=  min_order
     # and min_order + 1 <= init_order <= max_order - 1:
-    n_min = max(3, min_order)
-    n_init = max(n_min + 1, init_order)
-    n_max = max(n_init + 1, max_order)
+    min_order = max(3, min_order)
+    init_order = max(min_order + 1, init_order)
+    max_order = max(init_order + 1, max_order)
 
     linsolve = (linsolve === nothing &&
                 (threading == true || threading isa PolyesterThreads)) ?
                RFLUFactorization(; thread = Val(false)) : linsolve
 
     # Warn user if orders have been changed
-    if (min_order, init_order, max_order) != (n_min, n_init, n_max)
+    if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitEulerBarycentricExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(n_min, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(n_max, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
               "
-Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+              "
+Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
 
     # Warn user if sequence has been changed:
@@ -433,9 +443,9 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(n_init, 2, " ")
                                           _unwrap_val(standardtag),
                                           _unwrap_val(concrete_jac), typeof(threading)}(linsolve,
                                                                                         precs,
-                                                                                        n_min,
-                                                                                        n_init,
-                                                                                        n_max,
+                                                                                        min_order,
+                                                                                        init_order,
+                                                                                        max_order,
                                                                                         sequence,
                                                                                         threading,
                                                                                         sequence_factor)

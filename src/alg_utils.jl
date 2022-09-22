@@ -228,8 +228,6 @@ function DiffEqBase.prepare_alg(alg::Union{
                                            OrdinaryDiffEqExponentialAlgorithm{0, AD, FDT}},
                                 u0::AbstractArray{T},
                                 p, prob) where {AD, FDT, T}
-    alg isa OrdinaryDiffEqImplicitExtrapolationAlgorithm && return alg # remake fails, should get fixed
-
     if alg isa OrdinaryDiffEqExponentialAlgorithm
         linsolve = nothing
     elseif alg.linsolve === nothing
@@ -696,13 +694,13 @@ alg_order(alg::DFBDF) = 1#dummy value
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
-alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.n_max + 1)
-alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.n_max + 1)
-alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.n_max + 1)
-alg_maximum_order(alg::ImplicitHairerWannerExtrapolation) = 2(alg.n_max + 1)
-alg_maximum_order(alg::ImplicitEulerExtrapolation) = 2(alg.n_max + 1)
+alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.max_order + 1)
+alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.max_order + 1)
+alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.max_order + 1)
+alg_maximum_order(alg::ImplicitHairerWannerExtrapolation) = 2(alg.max_order + 1)
+alg_maximum_order(alg::ImplicitEulerExtrapolation) = 2(alg.max_order + 1)
 
-alg_maximum_order(alg::ImplicitEulerBarycentricExtrapolation) = alg.n_max
+alg_maximum_order(alg::ImplicitEulerBarycentricExtrapolation) = alg.max_order
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
 alg_adaptive_order(alg::Feagin10) = 8
@@ -819,12 +817,12 @@ end
 beta1_default(alg::FunctionMap, beta2) = 0
 beta1_default(alg::DP8, beta2) = typeof(beta2)(1 // alg_order(alg)) - beta2 / 5
 beta1_default(alg::DP5, beta2) = typeof(beta2)(1 // alg_order(alg)) - 3beta2 / 4
-beta1_default(alg::ExtrapolationMidpointDeuflhard, beta2) = 1 // (2alg.n_init + 1)
-beta1_default(alg::ImplicitDeuflhardExtrapolation, beta2) = 1 // (2alg.n_init + 1)
-beta1_default(alg::ExtrapolationMidpointHairerWanner, beta2) = 1 // (2alg.n_init + 1)
-beta1_default(alg::ImplicitHairerWannerExtrapolation, beta2) = 1 // (2alg.n_init + 1)
-beta1_default(alg::ImplicitEulerExtrapolation, beta2) = 1 // (alg.n_init + 1)
-beta1_default(alg::ImplicitEulerBarycentricExtrapolation, beta2) = 1 // (alg.n_init - 1)
+beta1_default(alg::ExtrapolationMidpointDeuflhard, beta2) = 1 // (2alg.init_order + 1)
+beta1_default(alg::ImplicitDeuflhardExtrapolation, beta2) = 1 // (2alg.init_order + 1)
+beta1_default(alg::ExtrapolationMidpointHairerWanner, beta2) = 1 // (2alg.init_order + 1)
+beta1_default(alg::ImplicitHairerWannerExtrapolation, beta2) = 1 // (2alg.init_order + 1)
+beta1_default(alg::ImplicitEulerExtrapolation, beta2) = 1 // (alg.init_order + 1)
+beta1_default(alg::ImplicitEulerBarycentricExtrapolation, beta2) = 1 // (alg.init_order - 1)
 
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0

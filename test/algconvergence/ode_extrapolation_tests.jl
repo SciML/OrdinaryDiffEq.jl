@@ -67,7 +67,7 @@ testTol = 0.2
                                              init_order = j, max_order = j,
                                              sequence = seq, threading = false)
             sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈alg.n_init + 1.1 atol=newTol #Superconvergence
+            @test sim.𝒪est[:final]≈alg.init_order + 1.1 atol=newTol #Superconvergence
         end
         # Regression test
         sol = solve(prob,
@@ -90,7 +90,7 @@ testTol = 0.2
                                                         init_order = j, max_order = j,
                                                         sequence = seq, threading = false)
             sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈alg.n_init + 0.5 atol=newTol #Superconvergence
+            @test sim.𝒪est[:final]≈alg.init_order + 0.5 atol=newTol #Superconvergence
         end
         # Regression test
         sol = solve(prob,
@@ -112,7 +112,7 @@ testTol = 0.2
                                                  init_order = j, max_order = j,
                                                  sequence = seq, threading = false)
             sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈2 * (alg.n_init + 1) atol=testTol
+            @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
         end
 
         # Regression test
@@ -135,7 +135,7 @@ testTol = 0.2
                                                     init_order = j, max_order = j,
                                                     sequence = seq, threading = false)
             sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈2 * (alg.n_init + 1) - 1 atol=testTol
+            @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) - 1 atol=testTol
         end
 
         alg = ImplicitHairerWannerExtrapolation(max_order = 9, min_order = 1,
@@ -159,7 +159,7 @@ testTol = 0.2
                                                  init_order = j, max_order = j,
                                                  sequence = seq, threading = false)
             sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈2 * (alg.n_init + 1) atol=testTol
+            @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
         end
 
         # Regression test
@@ -183,7 +183,7 @@ testTol = 0.2
                                                     init_order = j, max_order = j,
                                                     sequence = seq, threading = false)
             sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈2 * (alg.n_init + 1) atol=testTol
+            @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
         end
 
         # Regression test
