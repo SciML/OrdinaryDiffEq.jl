@@ -134,8 +134,9 @@ function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = true,
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitEulerExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
+              "
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
               "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
@@ -151,7 +152,8 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     ImplicitEulerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
                                typeof(linsolve), typeof(precs), diff_type,
                                _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-                               typeof(threading)}(linsolve, precs, max_order, min_order, init_order,
+                               typeof(threading)}(linsolve, precs, max_order, min_order,
+                                                  init_order,
                                                   threading, sequence)
 end
 """
@@ -179,8 +181,9 @@ function ExtrapolationMidpointDeuflhard(; min_order = 1, init_order = 5, max_ord
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
+              "
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
               "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
@@ -239,11 +242,13 @@ function ImplicitDeuflhardExtrapolation(; chunk_size = Val{0}(), autodiff = Val{
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitDeuflhardExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
+              "
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
               "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
-chunk_size    end
+        chunk_size
+    end
 
     # Warn user if sequence has been changed:
     if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
@@ -258,7 +263,8 @@ chunk_size    end
     ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
                                    typeof(linsolve), typeof(precs), diff_type,
                                    _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-                                   typeof(threading)}(linsolve, precs, min_order, init_order, max_order,
+                                   typeof(threading)}(linsolve, precs, min_order,
+                                                      init_order, max_order,
                                                       sequence, threading)
 end
 """
@@ -287,8 +293,9 @@ function ExtrapolationMidpointHairerWanner(; min_order = 2, init_order = 5, max_
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ExtrapolationMidpointHairerWanner` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
+              "
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
               "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
@@ -329,7 +336,7 @@ struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
     threading::TO
 end
 
-function ImplicitHairerWannerExtrapolation(;chunk_size = Val{0}(), autodiff = Val{true}(),
+function ImplicitHairerWannerExtrapolation(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                            standardtag = Val{true}(),
                                            concrete_jac = nothing,
                                            linsolve = nothing, precs = DEFAULT_PRECS,
@@ -350,8 +357,9 @@ function ImplicitHairerWannerExtrapolation(;chunk_size = Val{0}(), autodiff = Va
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitHairerWannerExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
+              "
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
               "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end
@@ -369,7 +377,8 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
                                       typeof(linsolve), typeof(precs), diff_type,
                                       _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-                                      typeof(threading)}(linsolve, precs, min_order, init_order,
+                                      typeof(threading)}(linsolve, precs, min_order,
+                                                         init_order,
                                                          max_order, sequence, threading)
 end
 
@@ -412,8 +421,9 @@ function ImplicitEulerBarycentricExtrapolation(; chunk_size = Val{0}(),
     if (min_order, init_order, max_order) != (min_order, init_order, max_order)
         @warn "The range of extrapolation orders and/or the initial order given to the
           `ImplicitEulerBarycentricExtrapolation` algorithm are not valid and have been changed:
-          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") * "
-             Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
+          Minimal order: " * lpad(min_order, 2, " ") * " --> " * lpad(min_order, 2, " ") *
+              "
+Maximal order: " * lpad(max_order, 2, " ") * " --> " * lpad(max_order, 2, " ") *
               "
 Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
     end

@@ -342,11 +342,12 @@ function create_extrapolation_coefficients(T,
     extrapolation_weights = zeros(Rational{BigInt}, max_order + 1, max_order + 1)
     for n in 1:max_order
         extrapolation_weights[n + 1, (n + 1):(max_order + 1)] = extrapolation_weights_2[n,
-                                                                                    n:max_order] //
-                                                            (nodes[n + 1] - nodes[1])
+                                                                                        n:max_order] //
+                                                                (nodes[n + 1] - nodes[1])
         extrapolation_weights[1, n] = 1 // prod(nodes[1] .- nodes[2:n])
     end
-    extrapolation_weights[1, max_order + 1] = 1 // prod(nodes[1] .- nodes[2:(max_order + 1)])
+    extrapolation_weights[1, max_order + 1] = 1 //
+                                              prod(nodes[1] .- nodes[2:(max_order + 1)])
 
     # Rescale barycentric weights to obtain weights of 1. Barycentric Formula
     for m in 1:(max_order + 1)
@@ -407,11 +408,12 @@ function create_extrapolation_coefficients(T, alg::ImplicitEulerBarycentricExtra
     extrapolation_weights = zeros(Rational{BigInt}, max_order + 1, max_order + 1)
     for n in 1:max_order
         extrapolation_weights[n + 1, (n + 1):(max_order + 1)] = extrapolation_weights_2[n,
-                                                                                    n:max_order] //
-                                                            (nodes[n + 1] - nodes[1])
+                                                                                        n:max_order] //
+                                                                (nodes[n + 1] - nodes[1])
         extrapolation_weights[1, n] = 1 // prod(nodes[1] .- nodes[2:n])
     end
-    extrapolation_weights[1, max_order + 1] = 1 // prod(nodes[1] .- nodes[2:(max_order + 1)])
+    extrapolation_weights[1, max_order + 1] = 1 //
+                                              prod(nodes[1] .- nodes[2:(max_order + 1)])
 
     # Rescale barycentric weights to obtain weights of 1. Barycentric Formula
     for m in 1:(max_order + 1)

@@ -228,7 +228,6 @@ function DiffEqBase.prepare_alg(alg::Union{
                                            OrdinaryDiffEqExponentialAlgorithm{0, AD, FDT}},
                                 u0::AbstractArray{T},
                                 p, prob) where {AD, FDT, T}
-
     if alg isa OrdinaryDiffEqExponentialAlgorithm
         linsolve = nothing
     elseif alg.linsolve === nothing
@@ -261,7 +260,6 @@ function DiffEqBase.prepare_alg(alg::Union{
     if (isbitstype(T) && sizeof(T) > 24) || (prob.f isa ODEFunction &&
         prob.f.f isa
         FunctionWrappersWrappers.FunctionWrappersWrapper)
-
         if alg isa OrdinaryDiffEqExponentialAlgorithm
             return remake(alg, chunk_size = Val{1}())
         else
