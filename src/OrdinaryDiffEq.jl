@@ -221,60 +221,41 @@ SnoopPrecompile.@precompile_all_calls begin
         BS3(), Tsit5(), Vern7(), Vern9(),
     ]
 
-    stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
-        #Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
-
-        Rodas4(), Rodas4(autodiff = false),
-        #Rodas4(chunk_size = 1), Rodas4(chunk_size = Val{1}()),
-
-        Rodas5(), Rodas5(autodiff = false),
-        #Rodas5(chunk_size = 1), Rodas5(chunk_size = Val{1}()),
-
-        Rodas5P(), Rodas5P(autodiff = false),
-        #Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
-
-        TRBDF2(), TRBDF2(autodiff = false),
-        #TRBDF2(chunk_size = 1), TRBDF2(chunk_size = Val{1}()),
-
-        KenCarp4(), KenCarp4(autodiff = false),
-        #KenCarp4(chunk_size = 1), KenCarp4(chunk_size = Val{1}()),
-
-        QNDF(), QNDF(autodiff = false),
-        #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
+    stiffautodiff = [Rosenbrock23(),
+        Rodas4(),
+        Rodas5(),
+        Rodas5P(),
+        TRBDF2(), 
+        KenCarp4(),
+        QNDF(), 
     ]
 
-    autoswitch = [
-        AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff = false)),
-        #AutoTsit5(Rosenbrock23(chunk_size = 1)),
-        #AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
+    stifffinitediff = [
+        Rosenbrock23(autodiff = false),
+        Rodas4(autodiff = false),
+        Rodas5(autodiff = false),
+        Rodas5P(autodiff = false),
+        TRBDF2(autodiff = false),
+        KenCarp4(autodiff = false),
+        QNDF(autodiff = false)
+    ]
 
-        AutoTsit5(TRBDF2()), AutoTsit5(TRBDF2(autodiff = false)),
-        #AutoTsit5(TRBDF2(chunk_size = 1)),
-        #AutoTsit5(TRBDF2(chunk_size = Val{1}())),
+    autoswitchautodiff = [
+        AutoTsit5(Rosenbrock23()),
+        AutoTsit5(TRBDF2()),
+        AutoVern9(KenCarp47()),
+        AutoVern9(Rodas5P()),
+        AutoVern7(Rodas4()),
+        AutoVern7(TRBDF2()),
+    ]
 
-        AutoVern9(KenCarp47()), AutoVern9(KenCarp47(autodiff = false)),
-        #AutoVern9(KenCarp47(chunk_size = 1)),
-        #AutoVern9(KenCarp47(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5()), AutoVern9(Rodas5(autodiff = false)),
-        #AutoVern9(Rodas5(chunk_size = 1)),
-        #AutoVern9(Rodas5(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5P()), AutoVern9(Rodas5P(autodiff = false)),
-        #AutoVern9(Rodas5P(chunk_size = 1)),
-        #AutoVern9(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(Rodas4()), AutoVern7(Rodas4(autodiff = false)),
-        #AutoVern7(Rodas4(chunk_size = 1)),
-        #AutoVern7(Rodas4(chunk_size = Val{1}())),
-
-        #AutoVern7(Rodas5P()), AutoVern7(Rodas5P(autodiff=false)),
-        #AutoVern7(Rodas5P(chunk_size = 1)),
-        #AutoVern7(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(TRBDF2()), AutoVern7(TRBDF2(autodiff = false)),
-        #AutoVern7(TRBDF2(chunk_size = 1)),
-        #AutoVern7(TRBDF2(chunk_size = Val{1}())),
+    autoswitchfinitediff = [
+        AutoTsit5(Rosenbrock23(autodiff = false)),
+        AutoTsit5(TRBDF2(autodiff = false)),
+        AutoVern9(KenCarp47(autodiff = false)),
+        AutoVern9(Rodas5P(autodiff = false)),
+        AutoVern7(Rodas4(autodiff = false)),
+        AutoVern7(TRBDF2(autodiff = false)),
     ]
 
     solver_list = []
@@ -283,12 +264,20 @@ SnoopPrecompile.@precompile_all_calls begin
         append!(solver_list, nonstiff)
     end
 
-    if Preferences.@load_preference("PrecompileStiff", true)
-        append!(solver_list, stiff)
+    if Preferences.@load_preference("PrecompileStiffAutoDiff", true)
+        append!(solver_list, stiffautodiff)
     end
 
-    if Preferences.@load_preference("PrecompileAutoSwitch", true)
-        append!(solver_list, autoswitch)
+    if Preferences.@load_preference("PrecompileStiffFiniteDiff", false)
+        append!(solver_list, stifffinitediff)
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSwitchAutoDiff", false)
+        append!(solver_list, autoswitchautodiff)
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSwitchFiniteDiff", true)
+        append!(solver_list, autoswitchfinitediff)
     end
 
     prob_list = []
