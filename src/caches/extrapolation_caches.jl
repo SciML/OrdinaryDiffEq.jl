@@ -151,11 +151,11 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     dtpropose = zero(dt)
     #cur_order = max(alg.init_order, alg.min_order)
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
-    Q = fill(zero(QType), alg.n_max + 1)
-    n_curr = alg.n_init
-    n_old = alg.n_init
-    T = Array{typeof(u), 2}(undef, alg.n_max + 1, alg.n_max + 1)
-    for i in 1:(alg.n_max + 1)
+    Q = fill(zero(QType), alg.max_order + 1)
+    n_curr = alg.init_order
+    n_old = alg.init_order
+    T = Array{typeof(u), 2}(undef, alg.max_order + 1, alg.max_order + 1)
+    for i in 1:(alg.max_order + 1)
         for j in 1:i
             T[i, j] = zero(u)
         end
@@ -165,7 +165,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
     sequence = generate_sequence(constvalue(uBottomEltypeNoUnits), alg)
-    stage_number = Vector{Int}(undef, alg.n_max + 1)
+    stage_number = Vector{Int}(undef, alg.max_order + 1)
 
     for n in 1:length(stage_number)
         s = zero(eltype(sequence))
@@ -175,8 +175,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
         stage_number[n] = 2 * Int(s) - n + 7
     end
     sigma = 9 // 10
-    work = fill(zero(eltype(Q)), alg.n_max + 1)
-    dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
+    work = fill(zero(eltype(Q)), alg.max_order + 1)
+    dt_new = fill(zero(eltype(Q)), alg.max_order + 1)
     ImplicitEulerExtrapolationConstantCache(Q, dtpropose, T, n_curr, n_old, A, step_no,
                                             sigma, tf, uf, sequence, stage_number, work,
                                             dt_new)
@@ -212,9 +212,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation, u, rate_prototype,
 
     #cur_order = max(alg.init_order, alg.min_order)
     dtpropose = zero(dt)
-    T = Array{typeof(u), 2}(undef, alg.n_max + 1, alg.n_max + 1)
+    T = Array{typeof(u), 2}(undef, alg.max_order + 1, alg.max_order + 1)
     # Initialize lower triangle of T to different instance of zeros array similar to u
-    for i in 1:(alg.n_max + 1)
+    for i in 1:(alg.max_order + 1)
         for j in 1:i
             T[i, j] = zero(u)
         end
@@ -312,26 +312,26 @@ function create_extrapolation_coefficients(T,
                                                       ImplicitHairerWannerExtrapolation})
     # Compute and return extrapolation_coefficients
 
-    @unpack n_min, n_init, n_max, sequence = alg
+    @unpack min_order, init_order, max_order, sequence = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
-        subdividing_sequence = BigInt.(1:(n_max + 1))
+        subdividing_sequence = BigInt.(1:(max_order + 1))
     elseif sequence == :romberg
-        subdividing_sequence = BigInt(2) .^ (0:n_max)
+        subdividing_sequence = BigInt(2) .^ (0:max_order)
     else # sequence == :bulirsch
         subdividing_sequence = [n == 0 ? BigInt(1) :
                                 (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) :
-                                 3 * BigInt(2)^(n ÷ 2 - 1)) for n in 0:n_max]
+                                 3 * BigInt(2)^(n ÷ 2 - 1)) for n in 0:max_order]
     end
 
     # Compute nodes corresponding to subdividing_sequence
     nodes = BigInt(1) .// subdividing_sequence .^ 2
 
     # Compute barycentric weights for internal extrapolation operators
-    extrapolation_weights_2 = zeros(Rational{BigInt}, n_max, n_max)
-    extrapolation_weights_2[1, :] = ones(Rational{BigInt}, 1, n_max)
-    for n in 2:n_max
+    extrapolation_weights_2 = zeros(Rational{BigInt}, max_order, max_order)
+    extrapolation_weights_2[1, :] = ones(Rational{BigInt}, 1, max_order)
+    for n in 2:max_order
         distance = nodes[2:n] .- nodes[n + 1]
         extrapolation_weights_2[1:(n - 1), n] = extrapolation_weights_2[1:(n - 1),
                                                                         n - 1] .// distance
@@ -339,17 +339,17 @@ function create_extrapolation_coefficients(T,
     end
 
     # Compute barycentric weights for extrapolation operators
-    extrapolation_weights = zeros(Rational{BigInt}, n_max + 1, n_max + 1)
-    for n in 1:n_max
-        extrapolation_weights[n + 1, (n + 1):(n_max + 1)] = extrapolation_weights_2[n,
-                                                                                    n:n_max] //
+    extrapolation_weights = zeros(Rational{BigInt}, max_order + 1, max_order + 1)
+    for n in 1:max_order
+        extrapolation_weights[n + 1, (n + 1):(max_order + 1)] = extrapolation_weights_2[n,
+                                                                                    n:max_order] //
                                                             (nodes[n + 1] - nodes[1])
         extrapolation_weights[1, n] = 1 // prod(nodes[1] .- nodes[2:n])
     end
-    extrapolation_weights[1, n_max + 1] = 1 // prod(nodes[1] .- nodes[2:(n_max + 1)])
+    extrapolation_weights[1, max_order + 1] = 1 // prod(nodes[1] .- nodes[2:(max_order + 1)])
 
     # Rescale barycentric weights to obtain weights of 1. Barycentric Formula
-    for m in 1:(n_max + 1)
+    for m in 1:(max_order + 1)
         extrapolation_weights[1:m, m] = -extrapolation_weights[1:m, m] .// nodes[1:m]
         if 2 <= m
             extrapolation_weights_2[1:(m - 1), m - 1] = -extrapolation_weights_2[1:(m - 1),
@@ -359,9 +359,9 @@ function create_extrapolation_coefficients(T,
     end
 
     # Compute scaling factors for internal extrapolation operators
-    extrapolation_scalars_2 = ones(Rational{BigInt}, n_max)
+    extrapolation_scalars_2 = ones(Rational{BigInt}, max_order)
     extrapolation_scalars_2[1] = -nodes[2]
-    for n in 1:(n_max - 1)
+    for n in 1:(max_order - 1)
         extrapolation_scalars_2[n + 1] = -extrapolation_scalars_2[n] * nodes[n + 2]
     end
 
@@ -377,26 +377,26 @@ end
 function create_extrapolation_coefficients(T, alg::ImplicitEulerBarycentricExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack n_min, n_init, n_max, sequence = alg
+    @unpack min_order, init_order, max_order, sequence = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
-        subdividing_sequence = BigInt.(1:(n_max + 1))
+        subdividing_sequence = BigInt.(1:(max_order + 1))
     elseif sequence == :romberg
-        subdividing_sequence = BigInt(2) .^ (0:n_max)
+        subdividing_sequence = BigInt(2) .^ (0:max_order)
     else # sequence == :bulirsch
         subdividing_sequence = [n == 0 ? BigInt(1) :
                                 (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) :
-                                 3 * BigInt(2)^(n ÷ 2 - 1)) for n in 0:n_max]
+                                 3 * BigInt(2)^(n ÷ 2 - 1)) for n in 0:max_order]
     end
 
     # Compute nodes corresponding to subdividing_sequence
     nodes = BigInt(1) .// subdividing_sequence
 
     # Compute barycentric weights for internal extrapolation operators
-    extrapolation_weights_2 = zeros(Rational{BigInt}, n_max, n_max)
-    extrapolation_weights_2[1, :] = ones(Rational{BigInt}, 1, n_max)
-    for n in 2:n_max
+    extrapolation_weights_2 = zeros(Rational{BigInt}, max_order, max_order)
+    extrapolation_weights_2[1, :] = ones(Rational{BigInt}, 1, max_order)
+    for n in 2:max_order
         distance = nodes[2:n] .- nodes[n + 1]
         extrapolation_weights_2[1:(n - 1), n] = extrapolation_weights_2[1:(n - 1),
                                                                         n - 1] .// distance
@@ -404,17 +404,17 @@ function create_extrapolation_coefficients(T, alg::ImplicitEulerBarycentricExtra
     end
 
     # Compute barycentric weights for extrapolation operators
-    extrapolation_weights = zeros(Rational{BigInt}, n_max + 1, n_max + 1)
-    for n in 1:n_max
-        extrapolation_weights[n + 1, (n + 1):(n_max + 1)] = extrapolation_weights_2[n,
-                                                                                    n:n_max] //
+    extrapolation_weights = zeros(Rational{BigInt}, max_order + 1, max_order + 1)
+    for n in 1:max_order
+        extrapolation_weights[n + 1, (n + 1):(max_order + 1)] = extrapolation_weights_2[n,
+                                                                                    n:max_order] //
                                                             (nodes[n + 1] - nodes[1])
         extrapolation_weights[1, n] = 1 // prod(nodes[1] .- nodes[2:n])
     end
-    extrapolation_weights[1, n_max + 1] = 1 // prod(nodes[1] .- nodes[2:(n_max + 1)])
+    extrapolation_weights[1, max_order + 1] = 1 // prod(nodes[1] .- nodes[2:(max_order + 1)])
 
     # Rescale barycentric weights to obtain weights of 1. Barycentric Formula
-    for m in 1:(n_max + 1)
+    for m in 1:(max_order + 1)
         extrapolation_weights[1:m, m] = -extrapolation_weights[1:m, m] .// nodes[1:m]
         if 2 <= m
             extrapolation_weights_2[1:(m - 1), m - 1] = -extrapolation_weights_2[1:(m - 1),
@@ -424,9 +424,9 @@ function create_extrapolation_coefficients(T, alg::ImplicitEulerBarycentricExtra
     end
 
     # Compute scaling factors for internal extrapolation operators
-    extrapolation_scalars_2 = ones(Rational{BigInt}, n_max)
+    extrapolation_scalars_2 = ones(Rational{BigInt}, max_order)
     extrapolation_scalars_2[1] = -nodes[2]
-    for n in 1:(n_max - 1)
+    for n in 1:(max_order - 1)
         extrapolation_scalars_2[n + 1] = -extrapolation_scalars_2[n] * nodes[n + 2]
     end
 
@@ -443,10 +443,10 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                            alg::ImplicitEulerBarycentricExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack n_min, n_init, n_max, sequence = alg
+    @unpack min_order, init_order, max_order, sequence = alg
 
-    n_max > 15 &&
-        error("n_max > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
+    max_order > 15 &&
+        error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
@@ -641,10 +641,10 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                                       ImplicitHairerWannerExtrapolation})
     # Compute and return extrapolation_coefficients
 
-    @unpack n_min, n_init, n_max, sequence = alg
+    @unpack min_order, init_order, max_order, sequence = alg
 
-    n_max > 15 &&
-        error("n_max > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
+    max_order > 15 &&
+        error("max_order > 15 not allowed for Float32 or Float64 with this algorithm. That's a bad idea.")
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
@@ -836,17 +836,17 @@ end
 function generate_sequence(T, alg::ImplicitEulerExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack n_min, n_init, n_max, sequence = alg
+    @unpack min_order, init_order, max_order, sequence = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
-        subdividing_sequence = BigInt.(1:(n_max + 1))
+        subdividing_sequence = BigInt.(1:(max_order + 1))
     elseif sequence == :romberg
-        subdividing_sequence = BigInt(2) .^ (0:n_max)
+        subdividing_sequence = BigInt(2) .^ (0:max_order)
     else # sequence == :bulirsch
         subdividing_sequence = [n == 0 ? BigInt(1) :
                                 (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) :
-                                 3 * BigInt(2)^(n ÷ 2 - 1)) for n in 0:n_max]
+                                 3 * BigInt(2)^(n ÷ 2 - 1)) for n in 0:max_order]
     end
 
     subdividing_sequence
@@ -855,17 +855,17 @@ end
 function generate_sequence(T::Type{<:CompiledFloats}, alg::ImplicitEulerExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @unpack n_min, n_init, n_max, sequence = alg
+    @unpack min_order, init_order, max_order, sequence = alg
 
     # Initialize subdividing_sequence:
     if sequence == :harmonic
-        subdividing_sequence = Int.(1:(n_max + 1))
+        subdividing_sequence = Int.(1:(max_order + 1))
     elseif sequence == :romberg
-        subdividing_sequence = Int(2) .^ (0:n_max)
+        subdividing_sequence = Int(2) .^ (0:max_order)
     else # sequence == :bulirsch
         subdividing_sequence = [n == 0 ? Int(1) :
                                 (isodd(n) ? Int(2)^((n + 1) ÷ 2) : 3 * Int(2)^(n ÷ 2 - 1))
-                                for n in 0:n_max]
+                                for n in 0:max_order]
     end
 
     subdividing_sequence
@@ -876,13 +876,13 @@ end
                                                                   } <:
                       OrdinaryDiffEqConstantCache
     # Values that are mutated
-    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
+    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
     n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
-    stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+    stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
@@ -892,19 +892,19 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
     # Initialize cache's members
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
-    Q = fill(zero(QType), alg.n_max - alg.n_min + 1)
-    n_curr = alg.n_init
-    n_old = alg.n_init
+    Q = fill(zero(QType), alg.max_order - alg.min_order + 1)
+    n_curr = alg.init_order
+    n_old = alg.init_order
     sequence_factor = alg.sequence_factor
 
     coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits), alg)
-    stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
+    stage_number = Vector{Int}(undef, alg.max_order - alg.min_order + 1)
     for n in 1:length(stage_number)
         s = zero(eltype(coefficients.subdividing_sequence))
-        for i in 1:(alg.n_min + n)
+        for i in 1:(alg.min_order + n)
             s += coefficients.subdividing_sequence[i]
         end
-        stage_number[n] = sequence_factor * Int(s) - alg.n_min - n + 3 - sequence_factor
+        stage_number[n] = sequence_factor * Int(s) - alg.min_order - n + 3 - sequence_factor
     end
 
     # Initialize cache
@@ -930,11 +930,11 @@ end
     k_tmps::Array{rateType, 1}
 
     # Constant values
-    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
+    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
     n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
     coefficients::extrapolation_coefficients
-    stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+    stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
@@ -954,8 +954,8 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard, u, rate_prototype,
     end
 
     tmp = zero(u)
-    T = Vector{typeof(u)}(undef, alg.n_max + 1)
-    for i in 1:(alg.n_max + 1)
+    T = Vector{typeof(u)}(undef, alg.max_order + 1)
+    for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
     res = uEltypeNoUnits.(zero(u))
@@ -981,13 +981,13 @@ end
                                                                   TF, UF} <:
                       OrdinaryDiffEqConstantCache
     # Values that are mutated
-    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
+    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
     n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
 
     # Constant values
     coefficients::extrapolation_coefficients
-    stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+    stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 
     tf::TF
     uf::UF
@@ -1014,11 +1014,11 @@ end
     k_tmps::Array{rateType, 1}
 
     # Constant values
-    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
+    Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.min_order - 1)
     n_curr::Int # Storage for the current extrapolation order
     n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
     coefficients::extrapolation_coefficients
-    stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+    stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.min_order - 1)
 
     du1::rateType
     du2::rateType
@@ -1042,12 +1042,12 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     # Initialize cache's members
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
-    Q = fill(zero(QType), alg.n_max - alg.n_min + 1)
-    n_curr = alg.n_init
-    n_old = alg.n_init
+    Q = fill(zero(QType), alg.max_order - alg.min_order + 1)
+    n_curr = alg.init_order
+    n_old = alg.init_order
 
     coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits), alg)
-    stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
+    stage_number = Vector{Int}(undef, alg.max_order - alg.min_order + 1)
 
     #==
     Work calculation in Deuflhard is referenced from here: https://link.springer.com/article/10.1007/BF01418332
@@ -1060,10 +1060,10 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     ===#
     for n in 1:length(stage_number)
         s = zero(eltype(coefficients.subdividing_sequence))
-        for i in 1:(alg.n_min + n)
+        for i in 1:(alg.min_order + n)
             s += coefficients.subdividing_sequence[i]
         end
-        stage_number[n] = 4 * Int(s) - alg.n_min - n - 1
+        stage_number[n] = 4 * Int(s) - alg.min_order - n - 1
     end
 
     #Update stage_number by the jacobian size
@@ -1093,8 +1093,8 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     end
 
     tmp = zero(u)
-    T = Vector{typeof(u)}(undef, alg.n_max + 1)
-    for i in 1:(alg.n_max + 1)
+    T = Vector{typeof(u)}(undef, alg.max_order + 1)
+    for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
     res = uEltypeNoUnits.(zero(u))
@@ -1195,13 +1195,13 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
     # Initialize cache's members
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
-    Q = fill(zero(QType), alg.n_max + 1)
-    n_curr = alg.n_init
-    n_old = alg.n_init
+    Q = fill(zero(QType), alg.max_order + 1)
+    n_curr = alg.init_order
+    n_old = alg.init_order
     sequence_factor = alg.sequence_factor
 
     coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits), alg)
-    stage_number = Vector{Int}(undef, alg.n_max + 1)
+    stage_number = Vector{Int}(undef, alg.max_order + 1)
     for n in 1:length(stage_number)
         s = zero(eltype(coefficients.subdividing_sequence))
         for i in 1:n
@@ -1211,8 +1211,8 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
     end
     sigma = 9 // 10
 
-    work = fill(zero(eltype(Q)), alg.n_max + 1)
-    dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
+    work = fill(zero(eltype(Q)), alg.max_order + 1)
+    dt_new = fill(zero(eltype(Q)), alg.max_order + 1)
     # Initialize the constant cache
     ExtrapolationMidpointHairerWannerConstantCache(Q, n_curr, n_old, coefficients,
                                                    stage_number, sigma, work, dt_new)
@@ -1265,8 +1265,8 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner, u, rate_prototype,
         u_temp4[i] = zero(u)
     end
     tmp = zero(u)
-    T = Vector{typeof(u)}(undef, alg.n_max + 1)
-    for i in 1:(alg.n_max + 1)
+    T = Vector{typeof(u)}(undef, alg.max_order + 1)
+    for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
     res = uEltypeNoUnits.(zero(u))
@@ -1316,9 +1316,9 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     # Initialize cache's members
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
-    Q = fill(zero(QType), alg.n_max + 1)
-    n_curr = alg.n_init
-    n_old = alg.n_init
+    Q = fill(zero(QType), alg.max_order + 1)
+    n_curr = alg.init_order
+    n_old = alg.init_order
 
     coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits), alg)
     #==Work Calculation (A[J] denotes Jth order work)
@@ -1339,7 +1339,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     Since we are using 4*N Sequence and only performing 4*N - 1 computations, The modified Work Equation becomes:
     A[J] = A[J - 1] + (4*N[J] - 1)* WKROW + WKDEC
     ==#
-    stage_number = Vector{Int}(undef, alg.n_max + 1)
+    stage_number = Vector{Int}(undef, alg.max_order + 1)
     for n in 1:length(stage_number)
         s = zero(eltype(coefficients.subdividing_sequence))
         for i in 1:n
@@ -1352,8 +1352,8 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
     # Initialize the constant cache
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
-    work = fill(zero(eltype(Q)), alg.n_max + 1)
-    dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
+    work = fill(zero(eltype(Q)), alg.max_order + 1)
+    dt_new = fill(zero(eltype(Q)), alg.max_order + 1)
     ImplicitHairerWannerExtrapolationConstantCache(Q, n_curr, n_old, coefficients,
                                                    stage_number, sigma, tf, uf, work,
                                                    dt_new)
@@ -1422,8 +1422,8 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation, u, rate_prototype,
         u_temp4[i] = zero(u)
     end
     tmp = zero(u)
-    T = Vector{typeof(u)}(undef, alg.n_max + 1)
-    for i in 1:(alg.n_max + 1)
+    T = Vector{typeof(u)}(undef, alg.max_order + 1)
+    for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
     res = uEltypeNoUnits.(zero(u))
@@ -1529,14 +1529,14 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     # Initialize cache's members
     QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
 
-    Q = fill(zero(QType), alg.n_max + 1)
-    n_curr = alg.n_init
-    n_old = alg.n_init
+    Q = fill(zero(QType), alg.max_order + 1)
+    n_curr = alg.init_order
+    n_old = alg.init_order
     sequence_factor = alg.sequence_factor
 
     coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits), alg)
 
-    stage_number = Vector{Int}(undef, alg.n_max + 1)
+    stage_number = Vector{Int}(undef, alg.max_order + 1)
     for n in 1:length(stage_number)
         s = zero(eltype(coefficients.subdividing_sequence))
         for i in 1:n
@@ -1546,8 +1546,8 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
     end
     sigma = 9 // 10
 
-    work = fill(zero(eltype(Q)), alg.n_max + 1)
-    dt_new = fill(zero(eltype(Q)), alg.n_max + 1)
+    work = fill(zero(eltype(Q)), alg.max_order + 1)
+    dt_new = fill(zero(eltype(Q)), alg.max_order + 1)
     # Initialize the constant cache
     tf = TimeDerivativeWrapper(f, u, p)
     uf = UDerivativeWrapper(f, t, p)
@@ -1618,8 +1618,8 @@ function alg_cache(alg::ImplicitEulerBarycentricExtrapolation, u, rate_prototype
         u_temp4[i] = zero(u)
     end
     tmp = zero(u)
-    T = Vector{typeof(u)}(undef, alg.n_max + 1)
-    for i in 1:(alg.n_max + 1)
+    T = Vector{typeof(u)}(undef, alg.max_order + 1)
+    for i in 1:(alg.max_order + 1)
         T[i] = zero(u)
     end
     res = uEltypeNoUnits.(zero(u))

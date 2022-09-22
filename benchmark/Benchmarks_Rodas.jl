@@ -147,13 +147,13 @@ for ip in 1:n_probs
     tspan = tspan_s[ip]
     prob = ODEProblem(f, y0_s[ip], tspan, param_s[ip])
     n = n_s[ip]
-    n_max = length(n)
+    max_order = length(n)
     h = (tspan[2] - tspan[1]) ./ n
-    err_end = zeros(n_max)
-    err_dense = zeros(n_max)
+    err_end = zeros(max_order)
+    err_dense = zeros(max_order)
     t_dense = range(tspan[1], tspan[2], length = 100)
     for m in 1:n_method
-        for i in 1:n_max
+        for i in 1:max_order
             global sol = solve(prob, methods[m], dt = h[i], adaptive = false)
             #       println(sol.destats);
             err_end[i] = max(1.0e-16,

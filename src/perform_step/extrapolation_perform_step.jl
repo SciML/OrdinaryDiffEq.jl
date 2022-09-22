@@ -277,9 +277,9 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -436,12 +436,12 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) ||
+            elseif (n_curr < alg.min_order + 1) ||
                    integrator.EEst <=
                    typeof(integrator.EEst)(prod(sequence[(n_curr + 2):(win_max + 1)] .//
                                                 sequence[1]^2))
@@ -533,9 +533,9 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -653,12 +653,12 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) ||
+            elseif (n_curr < alg.min_order + 1) ||
                    integrator.EEst <=
                    typeof(integrator.EEst)(prod(sequence[(n_curr + 2):(win_max + 1)] .//
                                                 sequence[1]^2))
@@ -752,8 +752,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
 
     if integrator.opts.adaptive
         # Set up the order window
-        win_min = max(alg.n_min, n_curr - 1)
-        win_max = min(alg.n_max, n_curr + 1)
+        win_min = max(alg.min_order, n_curr - 1)
+        win_max = min(alg.max_order, n_curr + 1)
 
         # Set up the current extrapolation order
         cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -838,13 +838,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                 end
             end
         end
-        nevals = cache.stage_number[n_curr - alg.n_min + 1] - 1
+        nevals = cache.stage_number[n_curr - alg.min_order + 1] - 1
         integrator.destats.nf += nevals
     end
 
     if integrator.opts.adaptive
         # Compute all information relating to an extrapolation order ≦ win_min
-        for i in (alg.n_min):n_curr
+        for i in (alg.min_order):n_curr
 
             #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
             #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
@@ -874,8 +874,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                 # Accept current approximation u of order n_curr
                 break
             elseif integrator.EEst <=
-                   tol^(stage_number[n_curr - alg.n_min + 1] /
-                        stage_number[win_max - alg.n_min + 1] - 1)
+                   tol^(stage_number[n_curr - alg.min_order + 1] /
+                        stage_number[win_max - alg.min_order + 1] - 1)
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1
@@ -966,14 +966,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
     u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
     tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
-    T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+    T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     # Start computation
     if integrator.opts.adaptive
         # Set up the order window
-        win_min = max(alg.n_min, n_curr - 1)
-        win_max = min(alg.n_max, n_curr + 1)
+        win_min = max(alg.min_order, n_curr - 1)
+        win_max = min(alg.max_order, n_curr + 1)
 
         # Set up the current extrapolation order
         cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -1049,13 +1049,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
                 end
             end
         end
-        nevals = cache.stage_number[n_curr - alg.n_min + 1] - 1
+        nevals = cache.stage_number[n_curr - alg.min_order + 1] - 1
         integrator.destats.nf += nevals
     end
 
     if integrator.opts.adaptive
         # Compute all information relating to an extrapolation order ≦ win_min
-        for i in (alg.n_min):n_curr
+        for i in (alg.min_order):n_curr
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
                 sum(broadcast(*, T[1:(i + 1)],
                               eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
@@ -1076,8 +1076,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
                 # Accept current approximation u of order n_curr
                 break
             elseif integrator.EEst <=
-                   tol^(stage_number[n_curr - alg.n_min + 1] /
-                        stage_number[win_max - alg.n_min + 1] - 1)
+                   tol^(stage_number[n_curr - alg.min_order + 1] /
+                        stage_number[win_max - alg.min_order + 1] - 1)
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1
@@ -1163,8 +1163,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
     if integrator.opts.adaptive
         # Set up the order window
-        win_min = max(alg.n_min, n_curr - 1)
-        win_max = min(alg.n_max, n_curr + 1)
+        win_min = max(alg.min_order, n_curr - 1)
+        win_max = min(alg.max_order, n_curr + 1)
 
         # Set up the current extrapolation order
         cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -1419,7 +1419,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
     if integrator.opts.adaptive
         # Compute all information relating to an extrapolation order ≦ win_min
-        for i in (alg.n_min):n_curr
+        for i in (alg.min_order):n_curr
 
             #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
             #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
@@ -1451,8 +1451,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 # Accept current approximation u of order n_curr
                 break
             elseif integrator.EEst <=
-                   tol^(stage_number[n_curr - alg.n_min + 1] /
-                        stage_number[win_max - alg.n_min + 1] - 1)
+                   tol^(stage_number[n_curr - alg.min_order + 1] /
+                        stage_number[win_max - alg.min_order + 1] - 1)
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1
@@ -1561,14 +1561,14 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
     u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-    T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+    T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     # Start computation
     if integrator.opts.adaptive
         # Set up the order window
-        win_min = max(alg.n_min, n_curr - 1)
-        win_max = min(alg.n_max, n_curr + 1)
+        win_min = max(alg.min_order, n_curr - 1)
+        win_max = min(alg.max_order, n_curr + 1)
 
         # Set up the current extrapolation order
         cache.n_old = n_curr # Save the suggested order for step_*_controller!
@@ -1708,7 +1708,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
 
     if integrator.opts.adaptive
         # Compute all information relating to an extrapolation order ≦ win_min
-        for i in (alg.n_min):n_curr
+        for i in (alg.min_order):n_curr
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
                 sum(broadcast(*, T[1:(i + 1)],
                               eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
@@ -1730,8 +1730,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                 # Accept current approximation u of order n_curr
                 break
             elseif integrator.EEst <=
-                   tol^(stage_number[n_curr - alg.n_min + 1] /
-                        stage_number[win_max - alg.n_min + 1] - 1)
+                   tol^(stage_number[n_curr - alg.min_order + 1] /
+                        stage_number[win_max - alg.min_order + 1] - 1)
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1
@@ -1821,9 +1821,9 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -1942,12 +1942,12 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) ||
+            elseif (n_curr < alg.min_order + 1) ||
                    integrator.EEst <=
                    typeof(integrator.EEst)(prod(subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                                                 subdividing_sequence[1]^2))
@@ -2039,14 +2039,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
     u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-    T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+    T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -2145,12 +2145,12 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) ||
+            elseif (n_curr < alg.min_order + 1) ||
                    integrator.EEst <=
                    typeof(integrator.EEst)(prod(subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                                                 subdividing_sequence[1]^2))
@@ -2234,14 +2234,14 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
     u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-    T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+    T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -2412,12 +2412,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) ||
+            elseif (n_curr < alg.min_order + 1) ||
                    integrator.EEst <=
                    typeof(integrator.EEst)(prod(subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                                                 subdividing_sequence[1]^2))
@@ -2513,9 +2513,9 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -2797,7 +2797,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             EEst1 = one(integrator.EEst)
             for i in (n_curr + 2):(win_max + 1)
@@ -2807,7 +2807,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) || integrator.EEst <= EEst1
+            elseif (n_curr < alg.min_order + 1) || integrator.EEst <= EEst1
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1
@@ -2932,14 +2932,14 @@ function perform_step!(integrator,
     # Create auxiliary variables
     u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
     u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
-    T = fill(zero(uprev), alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+    T = fill(zero(uprev), alg.max_order + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
     fill!(cache.Q, zero(eltype(cache.Q)))
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -3107,12 +3107,12 @@ function perform_step!(integrator,
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) ||
+            elseif (n_curr < alg.min_order + 1) ||
                    integrator.EEst <=
                    typeof(integrator.EEst)(prod(subdividing_sequence[(n_curr + 2):(win_max + 1)] .//
                                                 subdividing_sequence[1]^2))
@@ -3208,9 +3208,9 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
     if integrator.opts.adaptive
         # Set up the order window
-        # alg.n_min + 1 ≦ n_curr ≦ alg.n_max - 1 is enforced by step_*_controller!
-        if !(alg.n_min + 1 <= n_curr <= alg.n_max - 1)
-            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.n_min+1),$(alg.n_max-1)].
+        # alg.min_order + 1 ≦ n_curr ≦ alg.max_order - 1 is enforced by step_*_controller!
+        if !(alg.min_order + 1 <= n_curr <= alg.max_order - 1)
+            error("Something went wrong while setting up the order window: $n_curr ∉ [$(alg.min_order+1),$(alg.max_order-1)].
             Please report this error  ")
         end
         win_min = n_curr - 1
@@ -3505,7 +3505,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
         end
 
         # Check if an approximation of some order in the order window can be accepted
-        # Make sure a stepsize scaling factor of order (alg.n_min + 1) is provided for the step_*_controller!
+        # Make sure a stepsize scaling factor of order (alg.min_order + 1) is provided for the step_*_controller!
         while n_curr <= win_max
             EEst1 = one(integrator.EEst)
             for i in (n_curr + 2):(win_max + 1)
@@ -3517,7 +3517,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             if accept_step_controller(integrator, integrator.opts.controller)
                 # Accept current approximation u of order n_curr
                 break
-            elseif (n_curr < alg.n_min + 1) || integrator.EEst <= EEst1
+            elseif (n_curr < alg.min_order + 1) || integrator.EEst <= EEst1
                 # Reject current approximation order but pass convergence monitor
                 # Compute approximation of order (n_curr + 1)
                 n_curr = n_curr + 1

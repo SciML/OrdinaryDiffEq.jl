@@ -746,7 +746,7 @@ function stepsize_controller_internal!(integrator,
         qtmp = DiffEqBase.fastpow(integrator.EEst, controller.beta1) / integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
     end
-    integrator.cache.Q[integrator.cache.n_curr - alg.n_min + 1] = q
+    integrator.cache.Q[integrator.cache.n_curr - alg.min_order + 1] = q
 end
 
 function stepsize_predictor!(integrator,
@@ -762,8 +762,8 @@ function stepsize_predictor!(integrator,
         @unpack t, EEst = integrator
         @unpack stage_number = integrator.cache
         tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
-        s_curr = stage_number[integrator.cache.n_curr - alg.n_min + 1]
-        s_new = stage_number[n_new - alg.n_min + 1]
+        s_curr = stage_number[integrator.cache.n_curr - alg.min_order + 1]
+        s_new = stage_number[n_new - alg.min_order + 1]
         # Update gamma and beta1
         controller.beta1 = typeof(controller.beta1)(1 // (2integrator.cache.n_curr + 1))
         integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(1 // 4),
@@ -773,19 +773,19 @@ function stepsize_predictor!(integrator,
                                   controller.beta1) / integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
     end
-    integrator.cache.Q[n_new - alg.n_min + 1] = q
+    integrator.cache.Q[n_new - alg.min_order + 1] = q
 end
 
 function step_accept_controller!(integrator,
                                  alg::Union{ExtrapolationMidpointDeuflhard,
                                             ImplicitDeuflhardExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
-    @unpack n_min, n_max = alg
+    @unpack min_order, max_order = alg
     @unpack n_curr, n_old, Q = integrator.cache
     s = integrator.cache.stage_number
 
     # Compute new order based on available quantities
-    tmp = (n_min:n_curr) .- n_min .+ 1 # Index range of quantities computed so far
+    tmp = (min_order:n_curr) .- min_order .+ 1 # Index range of quantities computed so far
     dt_new = Vector{eltype(Q)}(undef, length(tmp) + 1)
     dt_new[1:(end - 1)] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
     dtmin = timedepentdtmin(integrator)
@@ -794,10 +794,10 @@ function step_accept_controller!(integrator,
 
     # n_new is the most efficient order of the last step
     work = s[tmp] ./ dt_new[1:(end - 1)]
-    n_new = argmin(work) + n_min - 1
+    n_new = argmin(work) + min_order - 1
 
     # Check if n_new may be increased
-    if n_new == n_curr < min(n_max, n_old + 1) # cf. win_max in perfom_step! of the last step
+    if n_new == n_curr < min(max_order, n_old + 1) # cf. win_max in perfom_step! of the last step
         # Predict stepsize scaling for order (n_new + 1)
         stepsize_predictor!(integrator, alg, n_new + 1) # Update cache.Q
 
@@ -812,7 +812,7 @@ function step_accept_controller!(integrator,
     end
 
     integrator.cache.n_curr = n_new
-    dt_new[n_new - n_min + 1]
+    dt_new[n_new - min_order + 1]
 end
 
 function step_reject_controller!(integrator,
@@ -825,7 +825,7 @@ function step_reject_controller!(integrator,
     end
     integrator.cache.n_curr = integrator.cache.n_old # Reset order for redoing the rejected step
     dt_red = integrator.dt /
-             integrator.cache.Q[integrator.cache.n_old - integrator.alg.n_min + 1]
+             integrator.cache.Q[integrator.cache.n_old - integrator.alg.min_order + 1]
     dtmin = timedepentdtmin(integrator)
     dt_red = integrator.tdir * max(dtmin, min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
     integrator.dt = dt_red
@@ -902,7 +902,7 @@ function step_accept_controller!(integrator,
                                             ImplicitEulerExtrapolation,
                                             ImplicitEulerBarycentricExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
-    @unpack n_min, n_max = alg
+    @unpack min_order, max_order = alg
     @unpack n_curr, n_old, Q, sigma, work, dt_new = integrator.cache
     s = integrator.cache.stage_number
 
@@ -920,23 +920,23 @@ function step_accept_controller!(integrator,
     end
     # Order selection
     n_new = n_old
-    if n_curr == n_min # Enforce n_min + 1 ≦ n_new
-        n_new = n_min + 1
+    if n_curr == min_order # Enforce min_order + 1 ≦ n_new
+        n_new = min_order + 1
     else
         if n_curr <= n_old
             if work[n_curr - 1] < sigma * work[n_curr]
-                n_new = max(n_curr - 1, n_old - 1, n_min + 1) # Enforce n_min + 1≦ n_new
+                n_new = max(n_curr - 1, n_old - 1, min_order + 1) # Enforce min_order + 1≦ n_new
             elseif work[n_curr] < sigma * work[n_curr - 1]
-                n_new = min(n_curr + 1, n_max - 1) # Enforce n_new ≦ n_max - 1
+                n_new = min(n_curr + 1, max_order - 1) # Enforce n_new ≦ max_order - 1
             else
-                n_new = n_curr # n_min + 1 ≦ n_curr
+                n_new = n_curr # min_order + 1 ≦ n_curr
             end
         else
             if work[n_old] < sigma * work[n_old + 1]
-                n_new = max(n_old - 1, n_min + 1)  # Enforce n_min + 1 ≦ n_new
+                n_new = max(n_old - 1, min_order + 1)  # Enforce min_order + 1 ≦ n_new
             end
             if work[n_curr + 1] < sigma * work[n_new + 1]
-                n_new = min(n_new + 1, n_max - 1) # Enforce n_new ≦ n_max - 1
+                n_new = min(n_new + 1, max_order - 1) # Enforce n_new ≦ max_order - 1
             end
         end
     end
@@ -963,7 +963,7 @@ function step_reject_controller!(integrator,
     # Order selection
     n_red = n_old
     if n_curr == n_old - 1
-        n_red = max(alg.n_min + 1, n_old - 1) # Enforce n_min + 1 ≦ n_red
+        n_red = max(alg.min_order + 1, n_old - 1) # Enforce min_order + 1 ≦ n_red
     end
     integrator.cache.n_curr = n_red
 
