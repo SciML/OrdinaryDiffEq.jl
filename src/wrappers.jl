@@ -21,11 +21,7 @@ function ArrayFuse(visible::AT, hidden::AT, p) where {AT}
     ArrayFuse{AT, eltype(visible), typeof(p)}(visible, hidden, p)
 end
 
-@inline function Base.materialize!(af::ArrayFuse,
-                                   src::Broadcast.Broadcasted{BS}) where {
-                                                                          BS <:
-                                                                          Broadcast.ArrayStyle
-                                                                          }
+@inline function Base.copyto!(af::ArrayFuse, src::Broadcast.Broadcasted{Nothing})
     @. af.visible = af.p[1] * af.visible + af.p[2] * src
     @. af.hidden = af.hidden + af.p[3] * af.visible
 end
