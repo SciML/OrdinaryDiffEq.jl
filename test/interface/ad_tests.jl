@@ -293,14 +293,14 @@ end
 
 #ode function
 function foo!(du, u, p, t)
-    du .= p.*u
+    du .= p .* u
     nothing
 end
 
 #least squares objective function
 function objfun(x, prob, data, solver, reltol, abstol)
     prob = remake(prob, p = x)
-    sol = solve(prob, solver, reltol = reltol, abstol=abstol)
+    sol = solve(prob, solver, reltol = reltol, abstol = abstol)
     ofv = 0.0
     if any((s.retcode != :Success for s in sol))
         ofv = 1e12
@@ -312,7 +312,7 @@ end
 
 p0 = [1.1, 1.2, 1.3, 1.4]
 tspan = (0.0, 1.0)
-u0 = 2*ones(4)
+u0 = 2 * ones(4)
 saveat = 0.0:0.01:1.0
 reltol = 1e-14
 abstol = 1e-14
@@ -320,10 +320,9 @@ prob = ODEProblem{true}(foo!, u0, tspan, p0, saveat = saveat)
 data = solve(prob, Tsit5(), reltol = reltol, abstol = abstol)
 fn(x, solver) = objfun(x, prob, data, solver, reltol, abstol)
 
-
-@test norm(ForwardDiff.gradient(x->fn(x, Tsit5()), p0)) < 1e-9
-@test norm(ForwardDiff.gradient(x->fn(x, Vern7()), p0)) < 1e-9
-@test norm(ForwardDiff.gradient(x->fn(x, Rodas4()), p0)) < 1e-9
-@test norm(ForwardDiff.gradient(x->fn(x, Rosenbrock23()), p0)) < 1e-6
-@test norm(ForwardDiff.gradient(x->fn(x, AutoTsit5(Rosenbrock23())), p0)) < 1e-9
-@test norm(ForwardDiff.gradient(x->fn(x, AutoVern9(Rodas4())), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, Tsit5()), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, Vern7()), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, Rodas4()), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, Rosenbrock23()), p0)) < 1e-6
+@test norm(ForwardDiff.gradient(x -> fn(x, AutoTsit5(Rosenbrock23())), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, AutoVern9(Rodas4())), p0)) < 1e-9
