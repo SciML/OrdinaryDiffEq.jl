@@ -18,9 +18,9 @@ sol3 = solve!(integrator)
 @test sol3.retcode == :Success
 
 # https://github.com/SciML/DifferentialEquations.jl/issues/904
-f(u,p,t) = -u
-prob = ODEProblem(f, 1.0, (0.0,1.0), save_on=false, save_start=false)
-int = init(prob,Tsit5())
+f(u, p, t) = -u
+prob = ODEProblem(f, 1.0, (0.0, 1.0), save_on = false, save_start = false)
+int = init(prob, Tsit5())
 
 reinit!(int, 0.0)
 solve!(int)
