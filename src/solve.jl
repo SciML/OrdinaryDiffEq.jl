@@ -163,10 +163,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            abstol_internal = real(convert(uBottomEltype,
-                                           oneunit(uBottomEltype) * 1 // 10^6))
+            abstol_internal = DiffEqBase.value(real(convert(uBottomEltype,
+                                           oneunit(uBottomEltype) * 1 // 10^6)))
         else
-            abstol_internal = real.(oneunit.(u) .* 1 // 10^6)
+            abstol_internal = DiffEqBase.value.(real.(oneunit.(u) .* 1 // 10^6))
         end
     else
         abstol_internal = real.(abstol)
