@@ -1,5 +1,5 @@
 using Test
-using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff
+using OrdinaryDiffEq, Calculus, ForwardDiff, FiniteDiff, LinearAlgebra
 
 function f(du, u, p, t)
     du[1] = -p[1]
@@ -288,3 +288,41 @@ function f(p)
     sum(solve(remake(prob, p = p), DABDF2(), saveat = 0.1, abstol = 1e-6, reltol = 1e-6))
 end
 @test ForwardDiff.gradient(f, [0.5])[1]≈0 atol=1e-2
+
+# https://github.com/SciML/DifferentialEquations.jl/issues/903
+
+#ode function
+function foo!(du, u, p, t)
+    du .= p .* u
+    nothing
+end
+
+#least squares objective function
+function objfun(x, prob, data, solver, reltol, abstol)
+    prob = remake(prob, p = x)
+    sol = solve(prob, solver, reltol = reltol, abstol = abstol)
+    ofv = 0.0
+    if any((s.retcode != :Success for s in sol))
+        ofv = 1e12
+    else
+        ofv = sum((sol .- data) .^ 2)
+    end
+    return ofv
+end
+
+p0 = [1.1, 1.2, 1.3, 1.4]
+tspan = (0.0, 1.0)
+u0 = 2 * ones(4)
+saveat = 0.0:0.01:1.0
+reltol = 1e-14
+abstol = 1e-14
+prob = ODEProblem{true}(foo!, u0, tspan, p0, saveat = saveat)
+data = solve(prob, Tsit5(), reltol = reltol, abstol = abstol)
+fn(x, solver) = objfun(x, prob, data, solver, reltol, abstol)
+
+@test norm(ForwardDiff.gradient(x -> fn(x, Tsit5()), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, Vern7()), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, Rodas4()), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, Rosenbrock23()), p0)) < 1e-6
+@test norm(ForwardDiff.gradient(x -> fn(x, AutoTsit5(Rosenbrock23())), p0)) < 1e-9
+@test norm(ForwardDiff.gradient(x -> fn(x, AutoVern9(Rodas4())), p0)) < 1e-9
