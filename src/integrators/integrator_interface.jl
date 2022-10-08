@@ -165,6 +165,11 @@ end
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
+@inline function DiffEqBase.get_tmp_cache(integrator,
+    alg::LinearExponential,
+    cache::OrdinaryDiffEqMutableCache)
+(cache.tmp,)
+end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
                                           cache::CompositeCache)
     get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
