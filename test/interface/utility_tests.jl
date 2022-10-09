@@ -1,5 +1,6 @@
 using OrdinaryDiffEq: WOperator, set_gamma!, calc_W, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
+using DiffEqCallbacks
 
 @testset "calc_W and calc_W!" begin
     A = [-1.0 0.0; 0.0 -0.5]
@@ -71,4 +72,23 @@ end
         sol2_ip = solve(ODEProblem(fun2_ip, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         @test sol1_ip(1.0)≈sol2_ip(1.0) atol=1e-5
     end
+end
+
+@testset "Callbacks with LinearExponential" begin
+    A = sprand(ComplexF64, 100, 100, 0.5)
+    A += A'
+
+    t_l = LinRange(0, 1, 100)
+
+    saved_values = SavedValues(Float64, Float64)
+    function save_func(u, t, integrator)
+        real(u' * A * u)
+    end
+    cb = SavingCallback(save_func, saved_values, saveat = t_l)
+
+    u0 = normalize(rand(ComplexF64, 100))
+    A = DiffEqArrayOperator(-1im * A)
+    prob = ODEProblem(A, u0, (0, 1.0))
+    solve(prob, LinearExponential(), dt = t_l[2] - t_l[1], callback = cb)
+    @test length(saved_values.saveval) == length(t_l)
 end
