@@ -870,7 +870,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # Thus setup JacVec and a concrete J, using sparsity when possible
         _f = islin ? (isode ? f.f : f.f1.f) : f
         J = if f.jac_prototype === nothing
-            ArrayInterface.zeromatrix(u)
+            ArrayInterface.undefmatrix(u)
         else
             deepcopy(f.jac_prototype)
         end
@@ -886,7 +886,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         W = WOperator{IIP}(f.mass_matrix, dt, J, u)
     else
         J = if f.jac_prototype === nothing
-            ArrayInterface.zeromatrix(u)
+            ArrayInterface.undefmatrix(u)
         else
             deepcopy(f.jac_prototype)
         end
