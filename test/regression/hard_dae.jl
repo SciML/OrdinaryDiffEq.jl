@@ -267,7 +267,7 @@ alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice
 
 for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
     sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
-    @test sol.retcode === :Success
+    @test sol.retcode == :Success
     @test sol(0, idxs = 1) == 5
     @test sol(2, idxs = 1) == 0
     @test sol(4, idxs = 1) > 10
