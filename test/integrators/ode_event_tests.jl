@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks, SparseArrays
+using OrdinaryDiffEq, RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks, SparseArrays,
+      LinearAlgebra
 
 f = function (u, p, t)
     -u + sin(-t)
