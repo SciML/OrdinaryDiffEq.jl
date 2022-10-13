@@ -34,7 +34,7 @@ using DiffEqBase: DEIntegrator
 import RecursiveArrayTools: chain, recursivecopy!
 
 using UnPack, ForwardDiff, RecursiveArrayTools,
-      DataStructures, FiniteDiff, ArrayInterface
+      DataStructures, FiniteDiff, ArrayInterfaceCore, ArrayInterface
 
 import ForwardDiff.Dual
 
