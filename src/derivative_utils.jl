@@ -461,16 +461,22 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     islin, _ = islinearfunction(integrator)
     islin && return false, false # no further JW eval when it's linear
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
-    alg isa DAEAlgorithm && return true, true
-    isnewton(nlsolver) || return true, true
+    errorfail = integrator.EEst > one(integrator.EEst)
+    isfreshJ = integrator.iter > 1 && errorfail
+    alg isa DAEAlgorithm && return !isfreshJ, true
+    isnewton(nlsolver) || return !isfreshJ, true
     isfirstcall(nlsolver) && return true, true
     isfs = isfirststage(nlsolver)
-    iszero(nlsolver.fast_convergence_cutoff) && return isfs, isfs
-    W_iγdt = inv(nlsolver.cache.W_γdt)
-    iγdt = inv(nlsolver.γ * integrator.dt)
-    smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
-    jbad = nlsolver.status === TryAgain && smallstepchange
-    errorfail = integrator.EEst > one(integrator.EEst)
+    isfreshJ = isJcurrent(nlsolver, integrator)
+    iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
+    if isfreshJ
+        jbad = false
+    else
+        W_iγdt = inv(nlsolver.cache.W_γdt)
+        iγdt = inv(nlsolver.γ * integrator.dt)
+        smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
+        jbad = nlsolver.status === TryAgain && smallstepchange
+    end
     return jbad, (jbad || (!smallstepchange) || (isfs && errorfail))
 end
 
