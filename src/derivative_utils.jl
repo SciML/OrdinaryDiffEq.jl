@@ -471,6 +471,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     if isfreshJ
         jbad = false
+        smallstepchange = true
     else
         W_iγdt = inv(nlsolver.cache.W_γdt)
         iγdt = inv(nlsolver.γ * integrator.dt)
