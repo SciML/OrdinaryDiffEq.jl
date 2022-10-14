@@ -329,10 +329,10 @@ fn(x, solver) = objfun(x, prob, data, solver, reltol, abstol)
 
 # test AD with LinearExponential()
 function f(x)
-    K = DiffEqArrayOperator(x) 
-    u0 = eltype(x).([1.0,0.0])
-    prob = ODEProblem(K, u0, (0.0,10.0))
-    sol = solve(prob, LinearExponential(), tstops = [0.0,10.0])[2,:]
+    K = DiffEqArrayOperator(x)
+    u0 = eltype(x).([1.0, 0.0])
+    prob = ODEProblem(K, u0, (0.0, 10.0))
+    sol = solve(prob, LinearExponential(), tstops = [0.0, 10.0])[2, :]
 end
 K_ = [-1.0 0.0; 1.0 -1.0]
-@test isapprox(ForwardDiff.jacobian(f,K_)[2], 0.00226999, atol=1e-6)
+@test isapprox(ForwardDiff.jacobian(f, K_)[2], 0.00226999, atol = 1e-6)
