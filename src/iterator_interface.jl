@@ -13,6 +13,7 @@
         @inbounds loopfooter!(integrator)
         @inbounds while !integrator.accept_step
             loopheader!(integrator)
+            check_error!(integrator) != :Success && return
             perform_step!(integrator, integrator.cache)
             loopfooter!(integrator)
         end
