@@ -128,7 +128,7 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, ::Type{uElt
         # Build up caches used by Krylov phiv
         m = min(alg.m, n)
         Ks = KrylovSubspace{T}(n, m)
-        phiv_cache = PhivCache{T}(m, maximum(plist))
+        phiv_cache = PhivCache(u, m, maximum(plist))
         ws = [Matrix{T}(undef, n, plist[i] + 1) for i in 1:length(plist)]
         KsCache = (Ks, phiv_cache, ws)
     else
@@ -358,7 +358,7 @@ function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
     W = Matrix{T}(undef, n, p + 1)                  # stores the w vectors
     P = Matrix{T}(undef, n, p + 2)                  # stores output from phiv!
     Ks = KrylovSubspace{T}(n, maxiter)            # stores output from arnoldi!
-    phiv_cache = PhivCache{T}(maxiter, p + 1)       # cache used by phiv! (need +1 for error estimation)
+    phiv_cache = PhivCache(u_prototpe, maxiter, p + 1) # cache used by phiv! (need +1 for error estimation)
     return u, W, P, Ks, phiv_cache
 end
 
@@ -767,7 +767,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm, u,
     # Build up caches used by Krylov phiv
     m = min(alg.m, n)
     Ks = KrylovSubspace{T}(n, m)
-    phiv_cache = PhivCache{T}(m, maximum(plist))
+    phiv_cache = PhivCache(u, m, maximum(plist))
     ws = [Matrix{T}(undef, n, plist[i] + 1) for i in 1:length(plist)]
     KsCache = (Ks, phiv_cache, ws)
     return uf, jac_config, J, KsCache
