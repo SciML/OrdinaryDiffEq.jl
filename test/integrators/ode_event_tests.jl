@@ -233,10 +233,10 @@ vaffect! = function (integrator, idx, retcode = nothing)
 end
 
 terminate_callback = ContinuousCallback(condition, affect!)
-custom_retcode_callback = ContinuousCallback(condition, x -> affect!(x, :Custom))
+custom_retcode_callback = ContinuousCallback(condition, x -> affect!(x, :MaxIters))
 vterminate_callback = VectorContinuousCallback(vcondition, vaffect!, 1)
 vcustom_retcode_callback = VectorContinuousCallback(vcondition,
-                                                    (x, idx) -> vaffect!(x, idx, :Custom),
+                                                    (x, idx) -> vaffect!(x, idx, :MaxIters),
                                                     1)
 
 tspan2 = (0.0, Inf)
@@ -246,7 +246,7 @@ sol5 = solve(prob2, Tsit5(), callback = terminate_callback)
 sol5_1 = solve(prob2, Tsit5(), callback = custom_retcode_callback)
 
 @test sol5.retcode == :Terminated
-@test sol5_1.retcode == :Custom
+@test sol5_1.retcode == :MaxIters
 @test sol5[end][1] < 3e-12
 @test sol5.t[end] ≈ sqrt(50 * 2 / 9.81)
 
@@ -254,7 +254,7 @@ sol5 = solve(prob2, Tsit5(), callback = vterminate_callback)
 sol5_1 = solve(prob2, Tsit5(), callback = vcustom_retcode_callback)
 
 @test sol5.retcode == :Terminated
-@test sol5_1.retcode == :Custom
+@test sol5_1.retcode == :MaxIters
 @test sol5[end][1] < 3e-12
 @test sol5.t[end] ≈ sqrt(50 * 2 / 9.81)
 
