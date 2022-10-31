@@ -277,7 +277,16 @@ SnoopPrecompile.@precompile_all_calls begin
         #AutoVern7(TRBDF2(chunk_size = Val{1}())),
     ]
 
+    low_storage = [
+        SSPRK43(), RDPK3SpFSAL35(), RDPK3SpFSAL49(),
+    ]
+
+    low_storage_nonadaptive = [
+        CarpenterKennedy2N54(williamson_condition=false),
+    ]
+
     solver_list = []
+    solver_list_nonadaptive = []
 
     if Preferences.@load_preference("PrecompileNonStiff", true)
         append!(solver_list, nonstiff)
@@ -289,6 +298,11 @@ SnoopPrecompile.@precompile_all_calls begin
 
     if Preferences.@load_preference("PrecompileAutoSwitch", true)
         append!(solver_list, autoswitch)
+    end
+
+    if Preferences.@load_preference("PrecompileLowStorage", false)
+        append!(solver_list, low_storage)
+        append!(solver_list_nonadaptive, low_storage_nonadaptive)
     end
 
     prob_list = []
@@ -326,6 +340,10 @@ SnoopPrecompile.@precompile_all_calls begin
 
     for prob in prob_list, solver in solver_list
         solve(prob, solver)(5.0)
+    end
+
+    for prob in prob_list, solver in solver_list_nonadaptive
+        solve(prob, solver; dt=0.5)(5.0)
     end
 
     prob_list = nothing
