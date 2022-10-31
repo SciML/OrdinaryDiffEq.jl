@@ -474,6 +474,9 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     isfs = isfirststage(nlsolver)
     isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
+    mm = integrator.f.mass_matrix
+    is_varying_mm = mm isa DiffEqArrayOperator &&
+                    mm.update_func !== SciMLBase.DEFAULT_UPDATE_FUNC
     if isfreshJ
         jbad = false
         smallstepchange = true
@@ -483,7 +486,8 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
         smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
         jbad = nlsolver.status === TryAgain && smallstepchange
     end
-    return jbad, (jbad || (!smallstepchange) || (isfs && errorfail))
+    wbad = (!smallstepchange) || (isfs && errorfail) || nlsolver.status === Divergence
+    return jbad, (is_varying_mm || jbad || wbad)
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
