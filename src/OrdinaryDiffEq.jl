@@ -282,7 +282,7 @@ SnoopPrecompile.@precompile_all_calls begin
     ]
 
     low_storage_nonadaptive = [
-        CarpenterKennedy2N54(williamson_condition=false),
+        CarpenterKennedy2N54(williamson_condition = false),
     ]
 
     solver_list = []
@@ -343,7 +343,7 @@ SnoopPrecompile.@precompile_all_calls begin
     end
 
     for prob in prob_list, solver in solver_list_nonadaptive
-        solve(prob, solver; dt=0.5)(5.0)
+        solve(prob, solver; dt = 0.5)(5.0)
     end
 
     prob_list = nothing
