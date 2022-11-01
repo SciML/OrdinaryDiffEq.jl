@@ -461,17 +461,31 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     islin, _ = islinearfunction(integrator)
     islin && return false, false # no further JW eval when it's linear
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
-    alg isa DAEAlgorithm && return true, true
-    isnewton(nlsolver) || return true, true
+    errorfail = integrator.EEst > one(integrator.EEst)
+    # TODO: add `isJcurrent` support for Rosenbrock solvers
+    if !isnewton(nlsolver) || alg isa DAEAlgorithm
+        isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
+                   (integrator.iter > 1 && errorfail && !integrator.u_modified)
+        return !isfreshJ, true
+    end
     isfirstcall(nlsolver) && return true, true
     isfs = isfirststage(nlsolver)
-    iszero(nlsolver.fast_convergence_cutoff) && return isfs, isfs
-    W_iγdt = inv(nlsolver.cache.W_γdt)
-    iγdt = inv(nlsolver.γ * integrator.dt)
-    smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
-    jbad = nlsolver.status === TryAgain && smallstepchange
-    errorfail = integrator.EEst > one(integrator.EEst)
-    return jbad, (jbad || (!smallstepchange) || (isfs && errorfail))
+    isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
+    iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
+    mm = integrator.f.mass_matrix
+    is_varying_mm = mm isa DiffEqArrayOperator &&
+                    mm.update_func !== SciMLBase.DEFAULT_UPDATE_FUNC
+    if isfreshJ
+        jbad = false
+        smallstepchange = true
+    else
+        W_iγdt = inv(nlsolver.cache.W_γdt)
+        iγdt = inv(nlsolver.γ * integrator.dt)
+        smallstepchange = abs(iγdt / W_iγdt - 1) <= get_new_W_γdt_cutoff(nlsolver)
+        jbad = nlsolver.status === TryAgain && smallstepchange
+    end
+    wbad = (!smallstepchange) || (isfs && errorfail) || nlsolver.status === Divergence
+    return jbad, (is_varying_mm || jbad || wbad)
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
@@ -652,7 +666,9 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
         is_compos && (integrator.eigen_est = constvalue(opnorm(LowerTriangular(W), Inf)) +
                                 inv(dtgamma)) # TODO: better estimate
-        return nothing
+        # It's equivalent with evaluating a new Jacobian, but not a new W,
+        # because we won't call `lu!`, and the iteration matrix is fresh.
+        return (true, false)
     elseif !W_transform && DiffEqBase.has_Wfact(f)
         f.Wfact(W, u, p, dtgamma, t)
         isnewton(nlsolver) && set_W_γdt!(nlsolver, dtgamma)
@@ -660,7 +676,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
             opn = opnorm(LowerTriangular(W), Inf)
             integrator.eigen_est = (constvalue(opn) + one(opn)) / dtgamma # TODO: better estimate
         end
-        return nothing
+        return (true, false)
     end
 
     # check if we need to update J or W
@@ -709,7 +725,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     end
 
     new_W && (integrator.destats.nw += 1)
-    return new_W
+    return new_jac, new_W
 end
 
 @noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step, W_transform = false)
@@ -782,13 +798,14 @@ end
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step,
                                           W_transform)
     nlsolver = nothing
-    # we need to skip calculating `W` when a step is repeated
-    new_W = false
+    # we need to skip calculating `J` and `W` when a step is repeated
+    new_jac = new_W = false
     if !repeat_step
-        new_W = calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step,
-                        W_transform)
+        new_jac, new_W = calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step,
+                                 W_transform)
     end
-    calc_tderivative!(integrator, cache, dtd1, repeat_step)
+    # If the Jacobian is not updated, we won't have to update ∂/∂t either.
+    calc_tderivative!(integrator, cache, dtd1, repeat_step || !new_jac)
     return new_W
 end
 
