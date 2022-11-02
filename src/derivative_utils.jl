@@ -462,8 +462,11 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     islin && return false, false # no further JW eval when it's linear
     !integrator.opts.adaptive && return true, true # Not adaptive will always refactorize
     errorfail = integrator.EEst > one(integrator.EEst)
+    if alg isa DAEAlgorithm
+        return true, true
+    end
     # TODO: add `isJcurrent` support for Rosenbrock solvers
-    if !isnewton(nlsolver) || alg isa DAEAlgorithm
+    if !isnewton(nlsolver)
         isfreshJ = !(integrator.alg isa CompositeAlgorithm) &&
                    (integrator.iter > 1 && errorfail && !integrator.u_modified)
         return !isfreshJ, true
