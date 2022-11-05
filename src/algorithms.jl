@@ -4406,7 +4406,6 @@ Scientific Computing, 18 (1), pp. 1-22.
 différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
 University of Geneva, Switzerland.
 =#
-import SciMLBase._unwrap_val
 
 for Alg in [
     :Rosenbrock23,
