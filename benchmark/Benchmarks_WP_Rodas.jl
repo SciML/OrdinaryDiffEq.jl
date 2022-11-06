@@ -47,7 +47,7 @@ end
 p_1 = x, b1, J
 function ode_1(du, u, p, t)
     x, b1, J = p
-    du[:] = J * u .+ b1 / (1 + t) .- (x .+ 1 / 2) .* (3 / 2 .- x) ./ (t + 1) .^ 2 .-
+    du[:] = J * u .+ b1 / (1 + t) .- (x .+ 1 / 2) .* (3 / 2 .- x) ./ (t + 1) .^ 2 .+
             2 / (1 + t)
     nothing
 end
