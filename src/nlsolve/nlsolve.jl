@@ -90,8 +90,9 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
         end
     end
 
-    if isnewton(nlsolver) && nlsolver.status == Divergence &&
-       !isJcurrent(nlsolver, integrator)
+    # Main.@infiltrate nlsolver.iter >= maxiters
+
+    if isnewton(nlsolver) && nlsolver.status == Divergence && !isJcurrent(nlsolver, integrator)
         nlsolver.status = TryAgain
         nlsolver.nfails += 1
         always_new || @goto REDO

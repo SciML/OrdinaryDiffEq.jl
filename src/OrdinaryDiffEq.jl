@@ -17,6 +17,8 @@ using LoopVectorization
 
 using LinearSolve, SimpleNonlinearSolve
 
+using LineSearches
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 

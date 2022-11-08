@@ -57,7 +57,7 @@ end
 function NLNewton(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
                   new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
                   relax = 0 // 1)
-    if !(0 <= relax < 1)
+    if relax isa Number && !(0 <= relax < 1)
         throw(ArgumentError("The relaxation parameter must be in [0, 1), got `relax = $relax`"))
     end
 
