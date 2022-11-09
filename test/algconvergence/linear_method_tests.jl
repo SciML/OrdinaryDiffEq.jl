@@ -228,7 +228,7 @@ f = SplitFunction(A, (du, u, p, t) -> du .= -u * B(u), _func_cache = similar(η)
 prob = SplitODEProblem(f, η, tspan)
 sol = solve(prob, CayleyEuler(), dt = 1 / 10)
 
-@test sol.retcode == :Success
+@test sol.retcode == ReturnCode.Success
 eig_err = [norm(eigvals(sol[i]) - eigvals(η)) for i in eachindex(sol)]
 @test all(≈(e, 0, atol = 1e-13) for e in eig_err)
 
@@ -242,7 +242,7 @@ f = SplitFunction(A, (u, p, t) -> -u * B(u), _func_cache = similar(η))
 prob = SplitODEProblem(f, η, tspan)
 sol = solve(prob, CayleyEuler(), dt = 1 / 10)
 
-@test sol.retcode == :Success
+@test sol.retcode == ReturnCode.Success
 eig_err = [norm(eigvals(sol[i]) - eigvals(η)) for i in eachindex(sol)]
 @test all(≈(e, 0, atol = 1e-13) for e in eig_err)
 

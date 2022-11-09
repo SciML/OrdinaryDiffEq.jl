@@ -508,7 +508,7 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
             loopheader!(integrator)
-            if integrator.do_error_check && check_error!(integrator) != :Success
+            if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
                 return integrator.sol
             end
             perform_step!(integrator, integrator.cache)
@@ -531,7 +531,7 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
     if integrator.sol.retcode != ReturnCode.Default
         return integrator.sol
     end
-    integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, :Success)
+    integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
 end
 
 # Helpers
