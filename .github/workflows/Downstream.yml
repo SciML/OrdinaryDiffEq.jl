@@ -25,7 +25,11 @@ jobs:
           - {user: SciML, repo: StochasticDiffEq.jl, group: Interface3}
           - {user: SciML, repo: StochasticDiffEq.jl, group: AlgConvergence}
           - {user: SciML, repo: DiffEqCallbacks.jl, group: All}
-          - {user: SciML, repo: SciMLSensitivity.jl, group: Downstream}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core1}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core2}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core3}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core4}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core5}
           - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream}
 
     steps:
