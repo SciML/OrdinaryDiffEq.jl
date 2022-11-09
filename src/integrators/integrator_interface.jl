@@ -434,7 +434,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
     end
 
     if reinit_retcode
-        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, :Default)
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
 end
 

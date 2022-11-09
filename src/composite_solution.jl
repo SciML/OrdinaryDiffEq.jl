@@ -26,7 +26,7 @@ function DiffEqBase.build_solution(prob::Union{DiffEqBase.AbstractODEProblem,
                                    interp = !isempty(du) ?
                                             DiffEqBase.HermiteInterpolation(t, u, du) :
                                             DiffEqBase.LinearInterpolation(t, u),
-                                   alg_choice = [1], retcode = :Default,
+                                   alg_choice = [1], retcode = ReturnCode.Default,
                                    destats = DiffEqBase.DEStats(), kwargs...)
     T = eltype(eltype(u))
     if typeof(prob.u0) <: Tuple
