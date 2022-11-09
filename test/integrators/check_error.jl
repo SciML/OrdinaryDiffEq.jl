@@ -29,7 +29,7 @@ step!(integrator, 10.0)
 # Test check_error
 integrator = init(prob, Tsit5(); options...)
 step!(integrator)
-@test check_error(integrator) == :Success
+@test check_error(integrator) == ReturnCode.Success
 ok = false
 for i in 1:(integrator.opts.maxiters)
     step!(integrator)

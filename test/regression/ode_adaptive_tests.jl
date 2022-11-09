@@ -84,5 +84,5 @@ for alg in [
     Rodas5P(),
 ]
     sol = solve(prob, alg)
-    @test sol.retcode == :Success
+    @test sol.retcode == ReturnCode.Success
 end

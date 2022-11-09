@@ -55,7 +55,7 @@ for f in [f_oop, f_ip]
         for Solver in [Rodas5, Rosenbrock23, Trapezoid, KenCarp4]
             for tol in [nothing, 1e-10]
                 sol_std = solve(prob_std, Solver(autodiff = ad), reltol = tol, abstol = tol)
-                @test sol_std.retcode == :Success
+                @test sol_std.retcode == ReturnCode.Success
                 for (i, prob) in enumerate(map(f -> ODEProblem(f, u0, tspan),
                                                [
                                                    ODEFunction(f, colorvec = colors,
@@ -65,7 +65,7 @@ for f in [f_oop, f_ip]
                                                                sparsity = jac_sp),
                                                ]))
                     sol = solve(prob, Solver(autodiff = ad), reltol = tol, abstol = tol)
-                    @test sol.retcode == :Success
+                    @test sol.retcode == ReturnCode.Success
                     if tol != nothing
                         @test sol_std.u[end]≈sol.u[end] atol=tol
                     else

@@ -62,4 +62,4 @@ sol = solve(prob, Rodas5())
 
 # test that dtmin is set based on timespan
 prob = ODEProblem((u, p, t) -> 1e20 * sin(1e20 * t), 0.1, (0, 1e-19))
-@test solve(prob, Tsit5()).retcode == :Success
+@test solve(prob, Tsit5()).retcode == ReturnCode.Success

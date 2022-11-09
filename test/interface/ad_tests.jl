@@ -302,7 +302,7 @@ function objfun(x, prob, data, solver, reltol, abstol)
     prob = remake(prob, p = x)
     sol = solve(prob, solver, reltol = reltol, abstol = abstol)
     ofv = 0.0
-    if any((s.retcode != :Success for s in sol))
+    if any((s.retcode != ReturnCode.Success for s in sol))
         ofv = 1e12
     else
         ofv = sum((sol .- data) .^ 2)

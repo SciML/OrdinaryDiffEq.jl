@@ -223,7 +223,7 @@ for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
     sol = solve(prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-12,
                 abstol = 1e-16)
-    @test sol.retcode == :Success
+    @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 20.0
     @test maximum(sol - refsol) < 1e-11
 end
@@ -267,7 +267,7 @@ alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice
 
 for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]
     sol = solve(prob, alg, callback = cb, dt = 1 / 2^10, adaptive = false)
-    @test sol.retcode == :Success
+    @test sol.retcode == ReturnCode.Success
     @test sol(0, idxs = 1) == 5
     @test sol(2, idxs = 1) == 0
     @test sol(4, idxs = 1) > 10
