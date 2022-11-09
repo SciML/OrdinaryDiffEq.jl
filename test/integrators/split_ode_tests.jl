@@ -60,7 +60,8 @@ sprob = ODEProblem(sfun, h0, tspan)
 
 #CFNLIRK3 has same erroneous FSAL logic as KenCarp solvers
 #Can't efficiently test with stiff problem (to cause dtmin issue) because it requires constant dt
-@test_broken solve(sprob, CFNLIRK3(), reltol = 1E-8, dt = 1E-5).retcode == ReturnCode.Success
+@test_broken solve(sprob, CFNLIRK3(), reltol = 1E-8, dt = 1E-5).retcode ==
+             ReturnCode.Success
 
 for Alg in (KenCarp3, KenCarp4, KenCarp5, KenCarp47, KenCarp58)
     print(Alg)
