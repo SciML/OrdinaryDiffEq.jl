@@ -243,7 +243,7 @@ prob1 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 prob2 = ODEProblem(fun, [5, 0, 0.0], (0, 4.0), [100, 10.0])
 for prob in [prob1, prob2]
     @test solve(prob, ImplicitEuler(), dt = 1 / 2^10, adaptive = false).retcode ==
-          :ConvergenceFailure
+          ReturnCode.ConvergenceFailure
 end
 
 condition2 = (u, t, integrator) -> t == 2

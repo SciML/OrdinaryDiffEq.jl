@@ -12,7 +12,7 @@ struct ODECompositeSolution{T, N, uType, uType2, EType, tType, rateType, P, A, I
     dense::Bool
     tslocation::Int
     destats::DE
-    retcode::Symbol
+    retcode::ReturnCode.T
 end
 
 function DiffEqBase.build_solution(prob::Union{DiffEqBase.AbstractODEProblem,
