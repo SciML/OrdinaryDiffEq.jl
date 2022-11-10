@@ -335,7 +335,7 @@ function addat!(integrator::ODEIntegrator, idxs)
     addat_non_user_cache!(integrator, integrator.cache, idxs)
 end
 
-function terminate!(integrator::ODEIntegrator, retcode = :Terminated)
+function terminate!(integrator::ODEIntegrator, retcode = ReturnCode.Terminated)
     integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, retcode)
     integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
 end
