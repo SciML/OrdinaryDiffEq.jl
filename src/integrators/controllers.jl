@@ -458,7 +458,7 @@ function step_accept_controller!(integrator, alg::QNDF{max_order}, q) where {max
     integrator.cache.consfailcnt = 0
     integrator.cache.nconsteps += 1
     if iszero(integrator.EEst)
-        q = inv(integrator.opts.qmax)
+        return integrator.dt * integrator.opts.qmax
     else
         est = integrator.EEst
         estₖ₋₁ = integrator.cache.EEst1
@@ -466,68 +466,69 @@ function step_accept_controller!(integrator, alg::QNDF{max_order}, q) where {max
         h = integrator.dt
         k = integrator.cache.order
         cache = integrator.cache
-        if integrator.cache.nconsteps < integrator.cache.order + 2
-            q = one(integrator.qold) #quasi-contsant steps
+        prefer_const_step = integrator.cache.nconsteps < integrator.cache.order + 2
+        zₛ = 1.2 # equivalent to integrator.opts.gamma
+        zᵤ = 0.1
+        Fᵤ = 10
+        expo = 1 / (k + 1)
+        z = zₛ * ((est)^expo)
+        F = inv(z)
+        hₙ = h
+        kₙ = k
+        if z <= zᵤ
+            hₖ = Fᵤ * h
         else
-            zₛ = 1.2 # equivalent to integrator.opts.gamma
-            zᵤ = 0.1
-            Fᵤ = 10
-            expo = 1 / (k + 1)
-            z = zₛ * ((est)^expo)
-            F = inv(z)
-            hₙ = h
-            kₙ = k
-            if z <= zᵤ
-                hₖ = Fᵤ * h
-            elseif zᵤ < z
-                hₖ = F * h
-            end
-            hₖ₋₁ = 0.0
-            hₖ₊₁ = 0.0
+            hₖ = F * h
+        end
+        hₖ₋₁ = 0.0
+        hₖ₊₁ = 0.0
 
-            if k > 1
-                expo = 1 / k
-                zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
-                Fₖ₋₁ = inv(zₖ₋₁)
-                if zₖ₋₁ <= 0.1
-                    hₖ₋₁ = 10 * h
-                elseif 1 / 10 < zₖ₋₁ <= 1.3
-                    hₖ₋₁ = Fₖ₋₁ * h
-                end
-                if hₖ₋₁ > hₖ
-                    hₙ = hₖ₋₁
-                    kₙ = k - 1
-                else
-                    hₙ = hₖ
-                    kₙ = k
-                end
+        if k > 1
+            expo = 1 / k
+            zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
+            Fₖ₋₁ = inv(zₖ₋₁)
+            if zₖ₋₁ <= 0.1
+                hₖ₋₁ = 10 * h
+            elseif 1 / 10 < zₖ₋₁ <= 1.3
+                hₖ₋₁ = Fₖ₋₁ * h
             end
-
-            if k < max_order
-                expo = 1 / (k + 2)
-                zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
-                Fₖ₊₁ = inv(zₖ₊₁)
-
-                if zₖ₊₁ <= 0.1
-                    hₖ₊₁ = 10 * h
-                elseif 0.1 < zₖ₊₁ <= 1.4
-                    hₖ₊₁ = Fₖ₊₁ * h
-                end
-                if hₖ₊₁ > hₙ
-                    hₙ = hₖ₊₁
-                    kₙ = k + 1
-                end
-            end
-            if hₙ <= h
-                hₙ = h
+            if hₖ₋₁ > hₖ
+                hₙ = hₖ₋₁
+                kₙ = k - 1
+            else
+                hₙ = hₖ
                 kₙ = k
             end
-            cache.order = kₙ
-            q = integrator.dt / hₙ
+        else
+            hₙ = hₖ
+            kₙ = k
+        end
+
+        if k < max_order
+            expo = 1 / (k + 2)
+            zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
+            Fₖ₊₁ = inv(zₖ₊₁)
+
+            if zₖ₊₁ <= 0.1
+                hₖ₊₁ = 10 * h
+            elseif 0.1 < zₖ₊₁ <= 1.4
+                hₖ₊₁ = Fₖ₊₁ * h
+            end
+            if hₖ₊₁ > hₙ
+                hₙ = hₖ₊₁
+                kₙ = k + 1
+            end
+        end
+        cache.order = kₙ
+        q = integrator.dt / hₙ
+    end
+    if prefer_const_step
+        if q < 1.2 && q > 0.6
+            return integrator.dt
         end
     end
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-        q = one(q)
+        return integrator.dt
     end
     return integrator.dt / q
 end
