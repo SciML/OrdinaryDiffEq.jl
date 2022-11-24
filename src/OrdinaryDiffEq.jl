@@ -15,7 +15,7 @@ using LinearAlgebra
 
 using LoopVectorization
 
-using LinearSolve, NonlinearSolve
+using LinearSolve, SimpleNonlinearSolve
 
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
