@@ -1,5 +1,5 @@
 """
-	ArrayFuse{AT, T, P} <: AbstractArray{T, 1}
+    ArrayFuse{AT, T, P} <: AbstractArray{T, 1}
 
 GPU Friendly type to wrap around two arrays - `visible` and `hidden`, for which when we `setindex!` some value `v` at index `i`
 we get
@@ -11,23 +11,25 @@ hidden[i] = hidden[i] + p[3] * visible[i]
 
 where p is a parameter tuple of size 3.
 """
-struct ArrayFuse{AT, T, P} <: AbstractArray{T, 1}
+struct ArrayFuse{AT, T, P}
     visible::AT
     hidden::AT
     p::P
 end
 
+Base.ndims(::Type{<:ArrayFuse{AT}}) where {AT} = ndims(AT)
+
 function ArrayFuse(visible::AT, hidden::AT, p) where {AT}
     ArrayFuse{AT, eltype(visible), typeof(p)}(visible, hidden, p)
 end
 
-@inline function Base.materialize!(af::ArrayFuse,
-                                   src::Broadcast.Broadcasted{BS}) where {
-                                                                          BS <:
-                                                                          Broadcast.ArrayStyle
-                                                                          }
+@inline function Base.copyto!(af::ArrayFuse, src::Broadcast.Broadcasted)
     @. af.visible = af.p[1] * af.visible + af.p[2] * src
     @. af.hidden = af.hidden + af.p[3] * af.visible
+end
+
+@inline function Base.materialize!(af::ArrayFuse, src::Broadcast.Broadcasted)
+    copyto!(af, src)
 end
 
 # not recommended but good to have
