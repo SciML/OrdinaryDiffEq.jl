@@ -13,7 +13,7 @@ function do_newJ(integrator, alg, cache, repeat_step)::Bool # for FIRK
     fast_convergence_cutoff = alg.fast_convergence_cutoff
     iszero(fast_convergence_cutoff) && return true
     # reuse J when there is fast convergence
-    fastconvergence = nlstatus === DiffEqBase.FastConvergence
+    fastconvergence = nlstatus === FastConvergence
     return !fastconvergence
 end
 
@@ -154,9 +154,9 @@ end
         # check divergence (not in initial step)
         if iter > 1
             θ = ndw / ndwprev
-            (diverge = θ > 1) && (cache.status = DiffEqBase.Divergence)
+            (diverge = θ > 1) && (cache.status = Divergence)
             (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
-                (cache.status = DiffEqBase.VerySlowConvergence)
+                (cache.status = VerySlowConvergence)
             if diverge || veryslowconvergence
                 break
             end
@@ -173,7 +173,7 @@ end
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
+            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                            Convergence
             fail_convergence = false
             break
@@ -295,7 +295,7 @@ end
         # check divergence (not in initial step)
         if iter > 1
             θ = ndw / ndwprev
-            (diverge = θ > 2) && (cache.status = DiffEqBase.Divergence)
+            (diverge = θ > 2) && (cache.status = Divergence)
             if diverge
                 break
             end
@@ -312,7 +312,7 @@ end
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
+            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                            Convergence
             fail_convergence = false
             break
@@ -436,9 +436,9 @@ end
         # check divergence (not in initial step)
         if iter > 1
             θ = ndw / ndwprev
-            (diverge = θ > 1) && (cache.status = DiffEqBase.Divergence)
+            (diverge = θ > 1) && (cache.status = Divergence)
             (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
-                (cache.status = DiffEqBase.VerySlowConvergence)
+                (cache.status = VerySlowConvergence)
             if diverge || veryslowconvergence
                 break
             end
@@ -457,7 +457,7 @@ end
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
+            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                            Convergence
             fail_convergence = false
             break
@@ -659,9 +659,9 @@ end
         # check divergence (not in initial step)
         if iter > 1
             θ = ndw / ndwprev
-            (diverge = θ > 1) && (cache.status = DiffEqBase.Divergence)
+            (diverge = θ > 1) && (cache.status = Divergence)
             (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
-                (cache.status = DiffEqBase.VerySlowConvergence)
+                (cache.status = VerySlowConvergence)
             if diverge || veryslowconvergence
                 break
             end
@@ -680,7 +680,7 @@ end
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
-            cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
+            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
                            Convergence
             fail_convergence = false
             break
