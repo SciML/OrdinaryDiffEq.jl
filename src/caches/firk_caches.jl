@@ -26,7 +26,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
     RadauIIA3ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt,
-                           DiffEqBase.Convergence, J)
+                           Convergence, J)
 end
 
 mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, UF, JC,
@@ -118,7 +118,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
                    J, W1,
                    uf, tab, κ, one(uToltype), 10000,
                    tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
-                   DiffEqBase.Convergence)
+                   Convergence)
 end
 
 mutable struct RadauIIA5ConstantCache{F, Tab, Tol, Dt, U, JType} <:
@@ -149,7 +149,7 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
     RadauIIA5ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt,
-                           DiffEqBase.Convergence, J)
+                           Convergence, J)
 end
 
 mutable struct RadauIIA5Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
@@ -261,5 +261,5 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    J, W1, W2,
                    uf, tab, κ, one(uToltype), 10000,
                    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt,
-                   DiffEqBase.Convergence)
+                   Convergence)
 end

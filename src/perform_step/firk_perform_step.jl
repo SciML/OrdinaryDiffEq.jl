@@ -174,7 +174,7 @@ end
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
-                           DiffEqBase.Convergence
+                           Convergence
             fail_convergence = false
             break
         end
@@ -313,7 +313,7 @@ end
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
-                           DiffEqBase.Convergence
+                           Convergence
             fail_convergence = false
             break
         end
@@ -458,7 +458,7 @@ end
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
-                           DiffEqBase.Convergence
+                           Convergence
             fail_convergence = false
             break
         end
@@ -681,7 +681,7 @@ end
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
             cache.status = η < alg.fast_convergence_cutoff ? DiffEqBase.FastConvergence :
-                           DiffEqBase.Convergence
+                           Convergence
             fail_convergence = false
             break
         end
