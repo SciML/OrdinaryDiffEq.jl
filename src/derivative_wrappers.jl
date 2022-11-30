@@ -139,7 +139,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 end
 
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
-                                     ::Val{transform} = Val(true)) where {transform, F1, F2}
+                          ::Val{transform} = Val(true)) where {transform, F1, F2}
     haslinsolve = hasfield(typeof(alg), :linsolve)
 
     if !DiffEqBase.has_jac(f) && # No Jacobian if has analytical solution
