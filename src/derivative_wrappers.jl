@@ -138,7 +138,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
     nothing
 end
 
-function DiffEqBase.build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
+function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
                                      ::Val{transform} = Val(true)) where {transform, F1, F2}
     haslinsolve = hasfield(typeof(alg), :linsolve)
 
@@ -184,7 +184,7 @@ function get_chunksize(jac_config::ForwardDiff.JacobianConfig{T, V, N, D}) where
     Val(N)
 end # don't degrade compile time information to runtime information
 
-function DiffEqBase.resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
+function resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJacCache, i)
     resize!(jac_config.fx, i)
     resize!(jac_config.dx, i)
     resize!(jac_config.t, i)
@@ -196,7 +196,7 @@ function DiffEqBase.resize_jac_config!(jac_config::SparseDiffTools.ForwardColorJ
     jac_config.p .= ps
 end
 
-function DiffEqBase.resize_jac_config!(jac_config::FiniteDiff.JacobianCache, i)
+function resize_jac_config!(jac_config::FiniteDiff.JacobianCache, i)
     resize!(jac_config, i)
     jac_config
 end
