@@ -121,6 +121,22 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     return linres
 end
 
+function wrapprecs(_Pl, _Pr, weight)
+    if _Pl !== nothing
+        Pl = LinearSolve.ComposePreconditioner(LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                                               _Pl)
+    else
+        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+    end
+
+    if _Pr !== nothing
+        Pr = LinearSolve.ComposePreconditioner(Diagonal(_vec(weight)), _Pr)
+    else
+        Pr = Diagonal(_vec(weight))
+    end
+    Pl, Pr
+end
+
 issuccess_W(W::LinearAlgebra.Factorization) = LinearAlgebra.issuccess(W)
 issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
