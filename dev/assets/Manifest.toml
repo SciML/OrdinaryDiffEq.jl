@@ -772,9 +772,9 @@ version = "0.33.21"
 
 [[deps.StatsFuns]]
 deps = ["ChainRulesCore", "HypergeometricFunctions", "InverseFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
-git-tree-sha1 = "89a3bfe98f5400f4ff58bb5cd1a9e46f95d08352"
+git-tree-sha1 = "ab6083f09b3e617e34a956b43e9d51b824206932"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "1.1.0"
+version = "1.1.1"
 
 [[deps.StrideArraysCore]]
 deps = ["ArrayInterface", "CloseOpenIntervals", "IfElse", "LayoutPointers", "ManualMemory", "SIMDTypes", "Static", "ThreadingUtilities"]
