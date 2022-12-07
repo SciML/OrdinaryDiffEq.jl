@@ -57,7 +57,7 @@
     #tmp = cache[2]
 
     if u0 isa Array
-        tmp = similar(u0, promote_type(eltype(u0), eltype(sk)))
+        tmp = similar(u0, typeof(u0[1] / sk[1])
         @inbounds @simd ivdep for i in eachindex(u0)
             tmp[i] = u0[i] / sk[i]
         end
