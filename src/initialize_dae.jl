@@ -105,7 +105,8 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     u0 = integrator.u
 
     dt = if alg.initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) : (prob.tspan[end] - prob.tspan[begin]) // 1000 # Haven't implemented norm reduction
+        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         alg.initdt
     end
@@ -169,7 +170,8 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     dtmax = integrator.opts.dtmax
 
     dt = if alg.initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) : (prob.tspan[end] - prob.tspan[begin]) // 1000 # Haven't implemented norm reduction
+        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
+        (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
     else
         alg.initdt
     end
