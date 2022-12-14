@@ -112,8 +112,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     u0 = integrator.u
 
     dt = if alg.initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
-        (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
+        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) : 1 // 1000 # Haven't implemented norm reduction
     else
         alg.initdt
     end
@@ -188,8 +187,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     dtmax = integrator.opts.dtmax
 
     dt = if alg.initdt === nothing
-        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) :
-        (prob.tspan[end] - prob.tspan[begin]) / 1000 # Haven't implemented norm reduction
+        integrator.dt != 0 ? min(integrator.dt / 5, dtmax) : 1 // 1000 # Haven't implemented norm reduction
     else
         alg.initdt
     end
@@ -252,7 +250,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     tmp = get_tmp_cache(integrator)[1]
     resid = get_tmp_cache(integrator)[2]
 
-    dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
+    dt = t != 0 ? min(t / 1000, dtmax) : dtmax # Haven't implemented norm reduction
 
     f(resid, integrator.du, u0, p, t)
     integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
@@ -295,7 +293,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     u0 = integrator.u
     dtmax = integrator.opts.dtmax
 
-    dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
+    dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax # Haven't implemented norm reduction
 
     nlequation_oop = u -> begin f((u - u0) / dt, u, p, t) end
 
