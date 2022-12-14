@@ -1,0 +1,92 @@
+steps:
+  - group: "🌊 Downstream Documentation"
+    steps:
+      - label: "{{matrix.package}} Documentation Build"
+        matrix:
+          setup:
+            user:
+              - "SciML"
+            package:
+              - "StochasticDiffEq.jl"
+              - "DiffEqCallbacks.jl"
+
+        env:
+          USER: "{{matrix.user}}"
+          PACKAGE: "{{matrix.package}}"
+
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1.8"
+
+        commands: |
+          git clone https://github.com/$${USER?}/$${PACKAGE?}.git downstream
+          julia --color=yes --project=downstream/docs --eval "
+            using Pkg
+            try
+              if isfile(\"downstream/docs/make.jl\")
+                # force it to use this PR's version of the package
+                Pkg.develop(PackageSpec(path=\".\"))  # resolver may fail with main deps
+                Pkg.update()
+                include(\"downstream/docs/make.jl\")
+              else
+                @info \"docs/make.jl file not present. Skipping doc build...\"
+              end
+            catch err
+              err isa Pkg.Resolve.ResolverError || rethrow()
+              # If we can't resolve that means this is incompatible by SemVer and this is fine
+              # It means we marked this as a breaking change, so we don't need to worry about
+              # Mistakenly introducing a breaking change, as we have intentionally made one
+              @info \"Not compatible with this release. No problem.\" exception=err
+              exit(0)  # Exit immediately, as a success
+            end
+          "
+
+        agents:
+          queue: "juliaecosystem"
+          sandbox.jl: true
+
+  # Documentation Builds that require GPU
+  - group: "🌊 Downstream Documentation - GPU"
+    steps:
+      - label: "{{matrix.package}} Documentation Build"
+        matrix:
+          setup:
+            user:
+              - "SciML" # the default user
+            package:
+              - "SciMLSensitivity.jl"
+
+        env:
+          USER: "{{matrix.user}}"
+          PACKAGE: "{{matrix.package}}"
+
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1.8"
+
+        commands: |
+          git clone https://github.com/$${USER?}/$${PACKAGE?}.git downstream
+          julia --color=yes --project=downstream/docs --eval "
+            using Pkg
+            try
+              if isfile(\"downstream/docs/make.jl\")
+                # force it to use this PR's version of the package
+                Pkg.develop(PackageSpec(path=\".\"))  # resolver may fail with main deps
+                Pkg.update()
+                include(\"downstream/docs/make.jl\")
+              else
+                @info \"docs/make.jl file not present. Skipping doc build...\"
+              end
+            catch err
+              err isa Pkg.Resolve.ResolverError || rethrow()
+              # If we can't resolve that means this is incompatible by SemVer and this is fine
+              # It means we marked this as a breaking change, so we don't need to worry about
+              # Mistakenly introducing a breaking change, as we have intentionally made one
+              @info \"Not compatible with this release. No problem.\" exception=err
+              exit(0)  # Exit immediately, as a success
+            end
+          "
+
+        agents:
+          queue: "juliagpu"
+          cuda: "*"

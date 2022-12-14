@@ -4,3 +4,9 @@ steps:
     agents:
       queue: "juliaecosystem"
       sandbox.jl: true
+
+  - label: ":pipeline: Launch Downstream Documentation Builds"
+    command: buildkite-agent pipeline upload .buildkite/docs_downstream.yml
+    agents:
+      queue: "juliaecosystem"
+      sandbox.jl: true
