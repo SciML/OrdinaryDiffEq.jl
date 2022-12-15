@@ -20,16 +20,9 @@ function BrownFullBasicInit(; abstol = 1e-10, nlsolve = nothing)
 end
 BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
 
-default_nlsolve(alg::Any, isinplace, u, autodiff = false) = alg
-function default_nlsolve(::Nothing, ::Val{false}, u, autodiff = false)
-    SimpleNewtonRaphson(autodiff = autodiff)
-end
-function default_nlsolve(::Nothing, ::Val{true}, u::T,
-                         autodiff = false) where {T <: Union{<:Number, StaticArray}}
-    SimpleNewtonRaphson(autodiff = autodiff)
-end
-function default_nlsolve(::Nothing, ::Val{true}, u, autodiff = false)
-    NewtonRaphson(autodiff = autodiff)
+default_nlsolve(alg, isinplace, u, autodiff = false) = alg
+function default_nlsolve(::Nothing, isinplace, u, autodiff = false)
+    NLSolveJL(autodiff = autodiff)
 end
 
 ## Notes
@@ -71,39 +64,25 @@ end
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::DefaultInit, x::Val{false})
     if prob.differential_vars === nothing
-        initializealg = ShampineCollocationInit()
+        _initialize_dae!(ShampineCollocationInit(), prob, initializealg, x)
     else
-        initializealg = BrownFullBasicInit(integrator.opts.abstol)
+        _initialize_dae!(BrownFullBasicInit(integrator.opts.abstol), prob, initializealg, x)
     end
-    _initialize_dae!(integrator, prob, initializealg, x)
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::DefaultInit, x::Val{true})
     if prob.differential_vars === nothing
-        initializealg = ShampineCollocationInit()
+        _initialize_dae!(ShampineCollocationInit(), prob, initializealg, x)
     else
-        initializealg = BrownFullBasicInit(integrator.opts.abstol)
+        _initialize_dae!(BrownFullBasicInit(integrator.opts.abstol), prob, initializealg, x)
     end
-    _initialize_dae!(integrator, prob, initializealg, x)
 end
 
 ## NoInit
 
-function _initialize_dae!(integrator, prob::ODEProblem,
-                          alg::NoInit, x::Val{true})
-end
-
-function _initialize_dae!(integrator, prob::ODEProblem,
-                          alg::NoInit, x::Val{false})
-end
-
-function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::NoInit, x::Val{false})
-end
-
-function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::NoInit, x::Val{true})
+function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
+                          alg::NoInit, x::Union{Val{true}, Val{false}})
 end
 
 ## ShampineCollocationInit
@@ -156,7 +135,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
         @.. broadcast=false integrator.u=integrator.uprev + z
     else
-        isad = SciMLBase.forwarddiffs_model(integrator.alg)
+        isad = alg_autodiff(integrator.alg)
         if isad
             chunk = ForwardDiff.pickchunksize(length(tmp))
             _tmp = PreallocationTools.dualcache(tmp, chunk)
@@ -177,7 +156,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
 
         nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isad)
 
-        nlfunc = NonlinearFunction(nlequation!; jac = f.jac,
+        nlfunc = NonlinearFunction(nlequation!;
                                    jac_prototype = f.jac_prototype)
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
         r = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
@@ -238,7 +217,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
 
         nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
 
-        nlfunc = NonlinearFunction(nlequation_oop; jac = f.jac,
+        nlfunc = NonlinearFunction(nlequation_oop;
                                    jac_prototype = f.jac_prototype)
         nlprob = NonlinearProblem(nlfunc, u0)
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
@@ -267,7 +246,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     f(resid, integrator.du, u0, p, t)
     integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
 
-    isad = SciMLBase.forwarddiffs_model(integrator.alg)
+    isad = alg_autodiff(integrator.alg)
     if isad
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
@@ -285,7 +264,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isad)
 
-    nlfunc = NonlinearFunction(nlequation!; jac = f.jac, jac_prototype = f.jac_prototype)
+    nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0, p)
     r = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
               reltol = integrator.opts.reltol)
@@ -316,7 +295,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
 
-    nlfunc = NonlinearFunction(nlequation; jac = f.jac, jac_prototype = f.jac_prototype)
+    nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0)
     r = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
               reltol = integrator.opts.reltol)
@@ -364,7 +343,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     integrator.opts.internalnorm(tmp, t) <= alg.abstol && return
     alg_u = @view u[algebraic_vars]
 
-    isad = SciMLBase.forwarddiffs_model(integrator.alg)
+    isad = alg_autodiff(integrator.alg)
     if isad
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
@@ -418,7 +397,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     integrator.opts.internalnorm(resid, t) <= alg.abstol && return
 
-    isad = SciMLBase.forwarddiffs_model(integrator.alg)
+    isad = alg_autodiff(integrator.alg)
     if isad
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         _tmp = PreallocationTools.dualcache(similar(u0), chunk)
@@ -484,7 +463,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
     end
 
-    isad = SciMLBase.forwarddiffs_model(integrator.alg)
+    isad = alg_autodiff(integrator.alg)
     if isad
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
@@ -509,7 +488,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         nlsolve = NewtonRaphson(autodiff = isad)
     end
 
-    nlfunc = NonlinearFunction(nlequation!; jac = f.jac, jac_prototype = f.jac_prototype)
+    nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
     r = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
 
@@ -552,7 +531,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, integrator.u)
 
-    nlfunc = NonlinearFunction(nlequation; jac = f.jac, jac_prototype = f.jac_prototype)
+    nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
     r = solve(nlprob, nlsolve)
