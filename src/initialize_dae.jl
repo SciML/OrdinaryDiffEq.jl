@@ -20,6 +20,7 @@ function BrownFullBasicInit(; abstol = 1e-10, nlsolve = nothing)
 end
 BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
 
+using SciMLNLSolve
 default_nlsolve(alg, isinplace, u, autodiff = false) = alg
 function default_nlsolve(::Nothing, isinplace, u, autodiff = false)
     NLSolveJL(autodiff = autodiff)
@@ -64,18 +65,22 @@ end
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::DefaultInit, x::Val{false})
     if prob.differential_vars === nothing
-        _initialize_dae!(ShampineCollocationInit(), prob, initializealg, x)
+        _initialize_dae!(integrator, prob,
+                         ShampineCollocationInit(), x)
     else
-        _initialize_dae!(BrownFullBasicInit(integrator.opts.abstol), prob, initializealg, x)
+        _initialize_dae!(integrator, prob,
+                         BrownFullBasicInit(integrator.opts.abstol), x)
     end
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::DefaultInit, x::Val{true})
     if prob.differential_vars === nothing
-        _initialize_dae!(ShampineCollocationInit(), prob, initializealg, x)
+        _initialize_dae!(integrator, prob,
+                         ShampineCollocationInit(), x)
     else
-        _initialize_dae!(BrownFullBasicInit(integrator.opts.abstol), prob, initializealg, x)
+        _initialize_dae!(integrator, prob,
+                         BrownFullBasicInit(integrator.opts.abstol), x)
     end
 end
 
