@@ -301,6 +301,7 @@ end
         end
         _vec(ztmp)
     end
+    return b, ustep
 end
 
 @inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator, f::TF, z) where {TF}
