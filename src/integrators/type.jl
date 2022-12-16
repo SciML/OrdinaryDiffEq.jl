@@ -174,4 +174,9 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
     end
 end
 
+mutable struct NullODEIntegrator{ProbType, AlgType}
+    prob::ProbType
+    alg::AlgType
+end
+
 # When this is changed, DelayDiffEq.jl must be changed as well!

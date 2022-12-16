@@ -152,6 +152,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         duprev = nothing
     end
 
+    if isnothing(u)
+        return NullODEIntegrator(prob, alg)
+    end
     uType = typeof(u)
     uBottomEltype = recursive_bottom_eltype(u)
     uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
@@ -159,7 +162,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if typeof(_alg) <: FunctionMap
+    if typeof(_alg) <: FunctionMap || isnothing(u)
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -532,6 +535,10 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
         return integrator.sol
     end
     integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
+end
+
+function DiffEqBase.solve!(integ::NullODEIntegrator)
+    DiffEqBase.build_null_solution(integ.prob)
 end
 
 # Helpers
