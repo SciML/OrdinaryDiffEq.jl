@@ -22,8 +22,11 @@ BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = not
 
 using SciMLNLSolve
 default_nlsolve(alg, isinplace, u, autodiff = false) = alg
-function default_nlsolve(::Nothing, isinplace, u, autodiff = false)
+function default_nlsolve(::Nothing, isinplace::Val{true}, u, autodiff = false)
     NLSolveJL()
+end
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, autodiff = false)
+    SimpleNewtonRaphson(autodiff = autodiff)
 end
 
 ## Notes
