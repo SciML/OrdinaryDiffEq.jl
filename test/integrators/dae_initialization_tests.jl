@@ -164,7 +164,7 @@ du₀ = [0.0, 0.0, 0.0]
 tspan = (0.0, 1.0)
 differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2())
+integrator = init(prob, DABDF2(); initializealg = ShampineCollocationInit())
 
 @test integrator.du[1]≈0.0 atol=1e-9
 @test_broken integrator.du[2]≈-1.0 atol=1e-9

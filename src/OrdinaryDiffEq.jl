@@ -42,6 +42,8 @@ import PreallocationTools
 
 using ExponentialUtilities
 
+using NonlinearSolve
+
 using NLsolve
 # Required by temporary fix in not in-place methods with 12+ broadcasts
 # `MVector` is used by Nordsieck forms
