@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqOperators, SparseArrays
+using OrdinaryDiffEq, DiffEqOperators, SparseArrays, LinearSolve
 using UnPack
 using ComponentArrays
 using Symbolics
