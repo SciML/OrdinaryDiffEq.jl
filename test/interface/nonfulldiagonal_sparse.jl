@@ -72,7 +72,7 @@ prior = ComponentArray(;
                        Dm = 0.046,
                        V_v = 18.0)
 
-r_space = collect(range(start = 0.0, stop = 2.0, length = 15))
+r_space = collect(range(0.0, 2.0, length = 15))
 computeparams = (Δr = r_space[2],
                  r_space = r_space,
                  countorderapprox = 2)
