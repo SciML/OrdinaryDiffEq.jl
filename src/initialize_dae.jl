@@ -234,9 +234,10 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
                       reltol = integrator.opts.reltol)
         integrator.u = nlsol.u
     end
-    integrator.uprev = integrator.u
+
+    integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = integrator.uprev
+        integrator.uprev2 = copy(integrator.uprev)
     end
 
     return
@@ -311,9 +312,10 @@ function _initialize_dae!(integrator, prob::DAEProblem,
               reltol = integrator.opts.reltol)
 
     integrator.u = r.u
-    integrator.uprev = integrator.u
+
+    integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = integrator.uprev
+        integrator.uprev2 = copy(integrator.uprev)
     end
 
     return
@@ -448,9 +450,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
         integrator.u = u
     end
 
-    integrator.uprev = integrator.u
+    integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = integrator.uprev
+        integrator.uprev2 = copy(integrator.uprev)
     end
 
     return
@@ -558,9 +560,9 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         integrator.du = du
     end
 
-    integrator.uprev = integrator.u
+    integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
-        integrator.uprev2 = integrator.uprev
+        integrator.uprev2 = copy(integrator.uprev)
     end
 
     return
