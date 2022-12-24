@@ -274,8 +274,9 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
         tmp = uprev * bdf_coeffs[k, 2]
         vc = _vec(tmp)
         for i in 1:(k - 1)
-            @.. broadcast=false @views vc += u_corrector[:, i] * bdf_coeffs[k, i + 2]
+            vc += @.. broadcast=false u_corrector[:, i]*bdf_coeffs[k, i + 2]
         end
+        tmp = reshape(vc, size(tmp))
     end
 
     nlsolver.tmp = tmp + cache.u₀
