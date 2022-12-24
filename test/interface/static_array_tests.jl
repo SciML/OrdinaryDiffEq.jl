@@ -267,4 +267,4 @@ sol2 = solve(prob, DFBDF(autodiff = false), reltol = 1e-8, abstol = 1e-8)
 g(sol1(0.0, Val{1}), sol1[1], nothing, 0.0)
 
 @test all(iszero, sol1[1] - sol2[1])
-@test all(abs.(sol1[end] .- sol2[end]) .< 1e-8)
+@test all(abs.(sol1[end] .- sol2[end]) .< 1e-7)
