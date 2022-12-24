@@ -98,7 +98,9 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
                           solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
-        linsolve = LinearSolve.set_prec(linsolve, _Pl, _Pr)
+        __Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
+        __Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
+        linsolve = LinearSolve.set_prec(linsolve, __Pl, __Pr)
     end
 
     linres = if reltol === nothing
