@@ -223,7 +223,8 @@ end
     ndz
 end
 
-@inline function _compute_rhs(nlsolver::NLSolver{<:NLNewton, false}, integrator, f::TF, z) where {TF}
+@inline function _compute_rhs(nlsolver::NLSolver{<:NLNewton, false}, integrator, f::TF,
+                              z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack tstep, invγdt = cache
@@ -261,7 +262,8 @@ end
     return ztmp, ustep
 end
 
-@inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true}, integrator, f::TF, z) where {TF}
+@inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true}, integrator, f::TF,
+                               z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, invγdt = cache
@@ -304,7 +306,8 @@ end
     return b, ustep
 end
 
-@inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator, f::TF, z) where {TF}
+@inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator,
+                               f::TF, z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, invγdt = cache
@@ -365,27 +368,35 @@ end
 end
 
 ## relax!
-relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF} = relax!(dz, nlsolver, integrator, f, relax(nlsolver))
-relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF} = relax(dz, nlsolver, integrator, f, relax(nlsolver))
-function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF, r::Number) where {TF}
+function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
+    relax!(dz, nlsolver, integrator, f, relax(nlsolver))
+end
+function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) where {TF}
+    relax(dz, nlsolver, integrator, f, relax(nlsolver))
+end
+function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+                r::Number) where {TF}
     if !iszero(r)
         rmul!(dz, 1 - r)
     end
 end
 
-function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF, linesearch) where {TF}
-    let dz=dz,
-        integrator=integrator,
-        nlsolver=nlsolver,
-        f=f,
-        linesearch=linesearch;
+function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+                linesearch) where {TF}
+    let dz = dz,
+        integrator = integrator,
+        nlsolver = nlsolver,
+        f = f,
+        linesearch = linesearch
+
         @unpack uprev, t, p, dt, opts = integrator
         @unpack z, tmp, ztmp, γ, iter, cache = nlsolver
         @unpack ustep, atmp = cache
         function resid(z)
             # recompute residual (rhs)
             b, ustep = _compute_rhs!(nlsolver, integrator, f, z)
-            calculate_residuals!(atmp, b, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
+            calculate_residuals!(atmp, b, uprev, ustep, opts.abstol, opts.reltol,
+                                 opts.internalnorm, t)
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
@@ -395,7 +406,7 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         end
         function dϕ(α)
             ϵ = sqrt(eps())
-            return (ϕ(α+ϵ) - ϕ(α)) / ϵ
+            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
         end
         function ϕdϕ(α)
             ϵ = sqrt(eps())
@@ -412,25 +423,29 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
     end
 end
 
-function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF, r::Number) where {TF}
+function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+               r::Number) where {TF}
     if !iszero(r)
-        dz = (1 - r)*dz
+        dz = (1 - r) * dz
     end
     return dz
 end
 
-function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF, linesearch) where {TF}
-    let dz=dz,
-        integrator=integrator,
-        nlsolver=nlsolver,
-        f=f,
-        linesearch=linesearch;
+function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
+               linesearch) where {TF}
+    let dz = dz,
+        integrator = integrator,
+        nlsolver = nlsolver,
+        f = f,
+        linesearch = linesearch
+
         @unpack uprev, t, p, dt, opts = integrator
         @unpack z, tmp, ztmp, γ, iter, cache = nlsolver
         function resid(z)
             # recompute residual (rhs)
             b, ustep = _compute_rhs(nlsolver, integrator, f, z)
-            atmp = calculate_residuals(b, uprev, ustep, opts.abstol, opts.reltol, opts.internalnorm, t)
+            atmp = calculate_residuals(b, uprev, ustep, opts.abstol, opts.reltol,
+                                       opts.internalnorm, t)
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
@@ -440,7 +455,7 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF, 
         end
         function dϕ(α)
             ϵ = sqrt(eps())
-            return (ϕ(α+ϵ) - ϕ(α)) / ϵ
+            return (ϕ(α + ϵ) - ϕ(α)) / ϵ
         end
         function ϕdϕ(α)
             ϵ = sqrt(eps())
