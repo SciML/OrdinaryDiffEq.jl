@@ -709,9 +709,9 @@ uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
 [[deps.SimpleNonlinearSolve]]
 deps = ["ArrayInterfaceCore", "FiniteDiff", "ForwardDiff", "Reexport", "SciMLBase", "SnoopPrecompile", "StaticArraysCore"]
-git-tree-sha1 = "6f33c18fad7789a59aa4abbc6eb13a7cc85c21be"
+git-tree-sha1 = "fc4b9f81a033cf6879c91bb7f5b3ff59008c7dd2"
 uuid = "727e6d20-b764-4bd8-a329-72de5adea6c7"
-version = "0.1.3"
+version = "0.1.4"
 
 [[deps.SimpleTraits]]
 deps = ["InteractiveUtils", "MacroTools"]
