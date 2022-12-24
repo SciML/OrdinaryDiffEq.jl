@@ -123,25 +123,15 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     return linres
 end
 
+function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight)
+    Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+    Pr = Diagonal(_vec(weight))
+    Pl, Pr
+end
+
 function wrapprecs(_Pl, _Pr, weight)
-    if _Pl !== nothing || _Pr !== nothing
-        if _Pl !== nothing
-            Pl = LinearSolve.ComposePreconditioner(LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                                                   _Pl)
-        else
-            Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
-        end
-
-        if _Pr !== nothing
-            Pr = LinearSolve.ComposePreconditioner(Diagonal(_vec(weight)), _Pr)
-        else
-            Pr = Diagonal(_vec(weight))
-        end
-    else
-        Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
-        Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
-    end
-
+    Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
+    Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
     Pl, Pr
 end
 
