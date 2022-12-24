@@ -57,6 +57,7 @@ end
         @time @safetestset "No Jac Tests" begin include("interface/nojac.jl") end
         @time @safetestset "Preconditioner Tests" begin include("interface/preconditioners.jl") end
         @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
+        @time @safetestset "Non-Full Diagonal Sparsity Tests" begin include("interface/nonfulldiagonal_sparse.jl") end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")

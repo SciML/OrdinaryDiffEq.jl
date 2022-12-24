@@ -149,6 +149,17 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
            (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
         (concrete_jac(alg) !== nothing && concrete_jac(alg))) # Jacobian if explicitly asked for
         jac_prototype = f.jac_prototype
+
+        if jac_prototype isa SparseMatrixCSC
+            if f.mass_matrix isa UniformScaling
+                idxs = diagind(jac_prototype)
+                @. @view(jac_prototype[idxs]) = 1
+            else
+                idxs = findall(!iszero, f.mass_matrix)
+                @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+            end
+        end
+
         sparsity, colorvec = sparsity_colorvec(f, u)
         if alg_autodiff(alg)
             _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
@@ -251,6 +262,17 @@ end
 
 function sparsity_colorvec(f, x)
     sparsity = f.sparsity
+
+    if sparsity isa SparseMatrixCSC
+        if f.mass_matrix isa UniformScaling
+            idxs = diagind(sparsity)
+            @. @view(sparsity[idxs]) = 1
+        else
+            idxs = findall(!iszero, f.mass_matrix)
+            @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+        end
+    end
+
     colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
                (isnothing(sparsity) ? (1:length(x)) : matrix_colors(sparsity))
     sparsity, colorvec
