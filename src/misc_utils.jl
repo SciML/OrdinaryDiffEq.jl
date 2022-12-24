@@ -124,18 +124,24 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 end
 
 function wrapprecs(_Pl, _Pr, weight)
-    if _Pl !== nothing
-        Pl = LinearSolve.ComposePreconditioner(LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                                               _Pl)
+    if _Pl !== nothing || _Pr !== nothing
+        if _Pl !== nothing
+            Pl = LinearSolve.ComposePreconditioner(LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
+                                                   _Pl)
+        else
+            Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+        end
+
+        if _Pr !== nothing
+            Pr = LinearSolve.ComposePreconditioner(Diagonal(_vec(weight)), _Pr)
+        else
+            Pr = Diagonal(_vec(weight))
+        end
     else
-        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+        Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
+        Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
     end
 
-    if _Pr !== nothing
-        Pr = LinearSolve.ComposePreconditioner(Diagonal(_vec(weight)), _Pr)
-    else
-        Pr = Diagonal(_vec(weight))
-    end
     Pl, Pr
 end
 
