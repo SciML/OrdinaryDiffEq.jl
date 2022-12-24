@@ -98,11 +98,9 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
                           solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
-        _weight = weight === nothing ?
-                  (linsolve.Pr isa Diagonal ? linsolve.Pr.diag : linsolve.Pr.inner.diag) :
-                  weight
-        Pl, Pr = wrapprecs(_Pl, _Pr, _weight)
-        linsolve = LinearSolve.set_prec(linsolve, Pl, Pr)
+        __Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
+        __Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
+        linsolve = LinearSolve.set_prec(linsolve, __Pl, __Pr)
     end
 
     linres = if reltol === nothing
@@ -125,19 +123,15 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     return linres
 end
 
-function wrapprecs(_Pl, _Pr, weight)
-    if _Pl !== nothing
-        Pl = LinearSolve.ComposePreconditioner(LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                                               _Pl)
-    else
-        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
-    end
+function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight)
+    Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+    Pr = Diagonal(_vec(weight))
+    Pl, Pr
+end
 
-    if _Pr !== nothing
-        Pr = LinearSolve.ComposePreconditioner(Diagonal(_vec(weight)), _Pr)
-    else
-        Pr = Diagonal(_vec(weight))
-    end
+function wrapprecs(_Pl, _Pr, weight)
+    Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
+    Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
     Pl, Pr
 end
 
