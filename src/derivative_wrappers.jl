@@ -2,7 +2,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                First call to automatic differentiation for time gradient
                                failed. This means that the user `f` function is not compatible
                                with automatic differentiation. Methods to fix this include:
-                               
+
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can befound at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
@@ -31,8 +31,8 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                algorithm as well.
                                """
 
-struct FirstAutodiffTgradError <: Exception 
-    e
+struct FirstAutodiffTgradError <: Exception
+    e::Any
 end
 
 function Base.showerror(io::IO, e::FirstAutodiffTgradError)
@@ -44,7 +44,7 @@ const FIRST_AUTODIFF_JAC_MESSAGE = """
                                First call to automatic differentiation for the Jacobian
                                failed. This means that the user `f` function is not compatible
                                with automatic differentiation. Methods to fix this include:
-                               
+
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can befound at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
@@ -66,8 +66,8 @@ const FIRST_AUTODIFF_JAC_MESSAGE = """
                                algorithm as well.
                                """
 
-struct FirstAutodiffJacError <: Exception 
-    e
+struct FirstAutodiffJacError <: Exception
+    e::Any
 end
 
 function Base.showerror(io::IO, e::FirstAutodiffJacError)
@@ -99,7 +99,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
         else
             f(grad_config, xdual)
         end
-        
+
         df .= first.(ForwardDiff.partials.(grad_config))
         integrator.destats.nf += 1
     else
