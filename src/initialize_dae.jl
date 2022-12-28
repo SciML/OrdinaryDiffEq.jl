@@ -23,7 +23,7 @@ BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = not
 using SciMLNLSolve
 default_nlsolve(alg, isinplace, u, autodiff = false) = alg
 function default_nlsolve(::Nothing, isinplace, u, autodiff = false)
-    NLSolveJL()
+    NLSolveJL(autodiff = autodiff ? :forward : :central)
 end
 function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, autodiff = false)
     SimpleNewtonRaphson(autodiff = autodiff)
@@ -380,7 +380,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, isad)
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
-    nlprob = NonlinearProblem(nlfunc, u[algebraic_vars], p)
+    nlprob = NonlinearProblem(nlfunc, alg_u, p)
     r = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
 
     alg_u .= r
