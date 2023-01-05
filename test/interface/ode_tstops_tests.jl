@@ -76,3 +76,15 @@ end
     prob = ODEProblem(ff, [0.0], (0.0f0, 1.0f0))
     sol = solve(prob, Tsit5(), tstops = [tval], callback = cb)
 end
+
+# https://github.com/SciML/DifferentialEquations.jl/issues/924
+@testset "Final Tstop Dtmin Handling" begin
+    f(u,p,t) = 1.01*u
+    u0 = 1/2
+    tspan = (0.0,1.0)
+    prob = ODEProblem(f,u0,tspan)
+    sol = solve(prob, Tsit5(), reltol=1e-8, abstol=1e-8)
+    tspan=(0.0,sol.t[end-1]+1e-6)
+    prob = ODEProblem(f,u0,tspan)
+    @test solve(prob, Tsit5(), reltol=1e-8, abstol=1e-8,dtmin=1e-5).retcode === ReturnCode.Success
+end

@@ -346,8 +346,6 @@ function update_uprev!(integrator)
 end
 
 function apply_step!(integrator)
-    integrator.accept_step = false # yay we got here, don't need this no more
-
     update_uprev!(integrator)
 
     #Update dt if adaptive or if fixed and the dt is allowed to change
