@@ -159,7 +159,7 @@ sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 
 # Adaptive methods regression test
 sol = solve(prob, DPRKN5())
-@test length(sol.u) < 160
+@test length(sol.u) < 36
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
 sol = solve(prob, DPRKN8())
@@ -316,7 +316,7 @@ sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 
 # Adaptive methods regression test
 sol = solve(prob, DPRKN5())
-@test length(sol.u) < 160
+@test length(sol.u) < 36
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
 sol = solve(prob, DPRKN8())

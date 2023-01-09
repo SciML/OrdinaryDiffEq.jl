@@ -412,41 +412,45 @@ function DPRKN5ConstantCache(T::Type, T2::Type)
 end
 
 function DPRKN5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-    DPRKN5ConstantCache(convert(T2, 0.125),
-    convert(T2, 0.25),
-    convert(T2, 0.5),
-    convert(T2, 0.75),
-    convert(T2, 1.0),
-    convert(T, 0.0078125),
-    convert(T, 0.010416666666666666),
-    convert(T, 0.020833333333333332),
-    convert(T, 0.041666666666666664),
-    convert(T, 0.08333333333333333),
-    convert(T, 0.0703125),
-    convert(T, 0.140625),
-    convert(T, 0.0703125),
-    convert(T, 0.07777777777777778),
-    convert(T, 0.26666666666666666),
-    convert(T, 0.06666666666666667),
-    convert(T, 0.08888888888888889),
-    convert(T, 0.07777777777777778),
-    convert(T, 0.26666666666666666),
-    convert(T, 0.06666666666666667),
-    convert(T, 0.08888888888888889),
-    convert(T, 0.07777777777777778),
-    convert(T, 0.35555555555555557),
-    convert(T, 0.13333333333333333),
-    convert(T, 0.35555555555555557),
-    convert(T, 0.07777777777777778),
-    convert(T, -0.08888888888888888),
-    convert(T, 0.26666666666666666),
-    convert(T, -0.26666666666666666),
-    convert(T, 0.26666666666666666),
-    convert(T, 0.07777777777777778),
-    convert(T, -0.31111111111111106),
-    convert(T, 0.4666666666666667),
-    convert(T, -0.31111111111111106),
-    convert(T, 0.07777777777777778))
+      c1 = convert(T2, 0.125)
+      c2 = convert(T2, 0.25)
+      c3 = convert(T2, 0.5)
+      c4 = convert(T2, 0.75)
+      c5 = convert(T2, 1.0)
+      a21 = convert(T, 0.0078125)
+      a31 = convert(T, 0.010416666666666666)
+      a32 = convert(T, 0.020833333333333332)
+      a41 = convert(T, 0.041666666666666664)
+      a43 = convert(T, 0.08333333333333333)
+      a51 = convert(T, 0.0703125)
+      a53 = convert(T, 0.140625)
+      a54 = convert(T, 0.0703125)
+      a61 = convert(T, 0.07777777777777778)
+      a63 = convert(T, 0.26666666666666666)
+      a64 = convert(T, 0.06666666666666667)
+      a65 = convert(T, 0.08888888888888889)
+      b1 = convert(T, 0.07777777777777778)
+      b3 = convert(T, 0.26666666666666666)
+      b4 = convert(T, 0.06666666666666667)
+      b5 = convert(T, 0.08888888888888889)
+      bp1 = convert(T, 0.07777777777777778)
+      bp3 = convert(T, 0.35555555555555557)
+      bp4 = convert(T, 0.13333333333333333)
+      bp5 = convert(T, 0.35555555555555557)
+      bp6 = convert(T, 0.07777777777777778)
+      btilde1 = convert(T, -0.08888888888888888)
+      btilde3 = convert(T, 0.26666666666666666)
+      btilde4 = convert(T, -0.26666666666666666)
+      btilde5 = convert(T, 0.08888888888888889)
+      bptilde1 = convert(T, 0.07777777777777778)
+      bptilde3 = convert(T, -0.31111111111111106)
+      bptilde4 = convert(T, 0.4666666666666667)
+      bptilde5 = convert(T, -0.31111111111111106)
+      bptilde6 = convert(T, 0.07777777777777778)
+      DPRKN5ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
+                          a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1,
+                          bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5,
+                          bptilde1, bptilde3, bptilde4, bptilde5, bptilde6)
 end
 
 struct DPRKN6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
