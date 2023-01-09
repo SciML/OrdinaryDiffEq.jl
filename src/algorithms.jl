@@ -2965,6 +2965,17 @@ struct ERKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 """
 struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
+"""
+@article{SimosOnHO,
+  title={On high order Runge-Kutta-Nystr{\"o}m pairs},
+  author={Theodore E. Simos and Ch. Tsitouras},
+  journal={J. Comput. Appl. Math.},
+  volume={400},
+  pages={113753}
+}
+"""
+struct ERKN7 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 ################################################################################
 
 # Adams Bashforth and Adams moulton methods

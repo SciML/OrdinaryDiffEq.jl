@@ -156,6 +156,9 @@ sim = test_convergence(dts, prob_big, ERKN4(), dense_errors = true)
 sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
+@test sim.𝒪est[:l2]≈7 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
 sol = solve(prob, DPRKN5())
@@ -170,6 +173,8 @@ sol = solve(prob, ERKN4(), reltol = 1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
+sol = solve(prob, ERKN7(), reltol = 1e-8)
+@test length(sol.u) < 38
 
 # Test array partition outside of symplectic
 
@@ -313,6 +318,9 @@ sim = test_convergence(dts, prob_big, ERKN4(), dense_errors = true)
 sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
+@test sim.𝒪est[:l2]≈7 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
 sol = solve(prob, DPRKN5())
@@ -327,3 +335,5 @@ sol = solve(prob, ERKN4(), reltol = 1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
+sol = solve(prob, ERKN7(), reltol = 1e-8)
+@test length(sol.u) < 38

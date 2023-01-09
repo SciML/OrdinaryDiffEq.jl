@@ -491,6 +491,7 @@ alg_order(alg::DPRKN8) = 8
 alg_order(alg::DPRKN12) = 12
 alg_order(alg::ERKN4) = 4
 alg_order(alg::ERKN5) = 5
+alg_order(alg::ERKN7) = 7
 
 alg_order(alg::Midpoint) = 2
 
