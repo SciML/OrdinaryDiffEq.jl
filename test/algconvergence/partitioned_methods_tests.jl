@@ -158,6 +158,8 @@ sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, DPRKN5())
+@test length(sol.u) < 160
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
 sol = solve(prob, DPRKN8())
@@ -313,6 +315,8 @@ sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, DPRKN5())
+@test length(sol.u) < 160
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
 sol = solve(prob, DPRKN8())
