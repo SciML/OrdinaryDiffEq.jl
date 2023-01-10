@@ -2884,6 +2884,19 @@ E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equatio
 struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 """
+@article{Bettis1973ARN,
+  title={A Runge-Kutta Nystrom algorithm},
+  author={Dale G. Bettis},
+  journal={Celestial mechanics},
+  year={1973},
+  volume={8},
+  pages={229-233},
+  publisher={Springer}
+}
+"""
+struct DPRKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
 @article{dormand1987runge,
   title={Runge-kutta-nystrom triples},
   author={Dormand, JR and Prince, PJ},
