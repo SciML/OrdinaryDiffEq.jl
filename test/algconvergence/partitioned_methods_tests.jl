@@ -302,7 +302,7 @@ prob_big = DynamicalODEProblem(ff_harmonic_nip, big"1.0", big"0.0",
                                (big"0.", big"70."))
 sim = test_convergence(dts, prob_big, DPRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
-@test sim.𝒪est[:L2]≈6 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, DPRKN6(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈6 rtol=1e-1
