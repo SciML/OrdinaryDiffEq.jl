@@ -129,18 +129,18 @@ end
 
 @muladd function perform_step!(integrator, cache::OwrenZen3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k1, k2, k3, k4, utilde, tmp, atmp = cache
+    @unpack k1, k2, k3, k4, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack a21, a31, a32, a41, a42, a43, c1, c2, btilde1, btilde2, btilde3 = cache.tab
     a1 = dt * a21
-    @.. broadcast=false tmp=uprev + a1 * k1
+    @.. broadcast=false thread=thread tmp=uprev + a1 * k1
     f(k2, tmp, p, t + c1 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
     f(k3, tmp, p, t + c2 * dt)
-    @.. broadcast=false u=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    @.. broadcast=false thread=thread u=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
     f(k4, u, p, t + dt)
     integrator.destats.nf += 3
     if integrator.opts.adaptive
-        @.. broadcast=false utilde=dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3)
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -208,22 +208,22 @@ end
 
 @muladd function perform_step!(integrator, cache::OwrenZen4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k1, k2, k3, k4, k5, k6, utilde, tmp, atmp = cache
+    @unpack k1, k2, k3, k4, k5, k6, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4, btilde1, btilde3, btilde4, btilde5 = cache.tab
     a = dt * a21
-    @.. broadcast=false tmp=uprev + a * k1
+    @.. broadcast=false thread=thread tmp=uprev + a * k1
     f(k2, tmp, p, t + c1 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
     f(k3, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
     f(k4, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
     f(k5, tmp, p, t + c4 * dt)
-    @.. broadcast=false u=uprev + dt * (a61 * k1 + a63 * k3 + a64 * k4 + a65 * k5)
+    @.. broadcast=false thread=thread u=uprev + dt * (a61 * k1 + a63 * k3 + a64 * k4 + a65 * k5)
     f(k6, u, p, t + dt)
     integrator.destats.nf += 5
     if integrator.opts.adaptive
-        @.. broadcast=false utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -341,31 +341,31 @@ end
 
 @muladd function perform_step!(integrator, cache::OwrenZen5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp = cache
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7 = cache.tab
     a = dt * a21
-    @.. broadcast=false tmp=uprev + a * k1
+    @.. broadcast=false thread=thread tmp=uprev + a * k1
     f(k2, tmp, p, t + c1 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
     f(k3, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a41 * k1 + a42 * k2 + k3)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + k3)
     f(k4, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
     f(k5, tmp, p, t + c4 * dt)
-    @.. broadcast=false tmp=uprev +
+    @.. broadcast=false thread=thread tmp=uprev +
                             dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
     f(k6, tmp, p, t + c5 * dt)
-    @.. broadcast=false tmp=uprev +
+    @.. broadcast=false thread=thread tmp=uprev +
                             dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 +
                              a76 * k6)
     f(k7, tmp, p, t + c6 * dt)
-    @.. broadcast=false u=uprev +
+    @.. broadcast=false thread=thread u=uprev +
                           dt *
                           (a81 * k1 + a83 * k3 + a84 * k4 + a85 * k5 + a86 * k6 + a87 * k7)
     f(k8, u, p, t + dt)
     integrator.destats.nf += 7
     if integrator.opts.adaptive
-        @.. broadcast=false utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5 + btilde6 * k6 + btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -531,37 +531,37 @@ end
 
 @muladd function perform_step!(integrator, cache::BS5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp = cache
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, bhat1, bhat3, bhat4, bhat5, bhat6, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, btilde8 = cache.tab
     a = dt * a21
-    @.. broadcast=false tmp=uprev + a * k1
+    @.. broadcast=false thread=thread tmp=uprev + a * k1
     f(k2, tmp, p, t + c1 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
     f(k3, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
     f(k4, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
     f(k5, tmp, p, t + c4 * dt)
-    @.. broadcast=false tmp=uprev +
+    @.. broadcast=false thread=thread tmp=uprev +
                             dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
     f(k6, tmp, p, t + c5 * dt)
-    @.. broadcast=false tmp=uprev +
+    @.. broadcast=false thread=thread tmp=uprev +
                             dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 +
                              a76 * k6)
     f(k7, tmp, p, t + dt)
-    @.. broadcast=false u=uprev +
+    @.. broadcast=false thread=thread u=uprev +
                           dt *
                           (a81 * k1 + a83 * k3 + a84 * k4 + a85 * k5 + a86 * k6 + a87 * k7)
     f(k8, u, p, t + dt)
     integrator.destats.nf += 7
     if integrator.opts.adaptive
-        @.. broadcast=false utilde=dt *
+        @.. broadcast=false thread=thread utilde=dt *
                                    (bhat1 * k1 + bhat3 * k3 + bhat4 * k4 + bhat5 * k5 +
                                     bhat6 * k6)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t)
         EEst1 = integrator.opts.internalnorm(atmp, t)
-        @.. broadcast=false utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5 + btilde6 * k6 + btilde7 * k7 +
                                     btilde8 * k8)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -574,17 +574,17 @@ end
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache.tab
-        @.. broadcast=false tmp=uprev +
+        @.. broadcast=false thread=thread tmp=uprev +
                                 dt * (a91 * k[1] + a92 * k[2] + a93 * k[3] + a94 * k[4] +
                                  a95 * k[5] + a96 * k[6] + a97 * k[7] + a98 * k[8])
         f(k[9], tmp, p, t + c6 * dt)
-        @.. broadcast=false tmp=uprev +
+        @.. broadcast=false thread=thread tmp=uprev +
                                 dt *
                                 (a101 * k[1] + a102 * k[2] + a103 * k[3] + a104 * k[4] +
                                  a105 * k[5] + a106 * k[6] + a107 * k[7] + a108 * k[8] +
                                  a109 * k[9])
         f(k[10], tmp, p, t + c7 * dt)
-        @.. broadcast=false tmp=uprev +
+        @.. broadcast=false thread=thread tmp=uprev +
                                 dt *
                                 (a111 * k[1] + a112 * k[2] + a113 * k[3] + a114 * k[4] +
                                  a115 * k[5] + a116 * k[6] + a117 * k[7] + a118 * k[8] +
@@ -932,36 +932,36 @@ end
 @muladd function perform_step!(integrator, cache::DP5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, c1, c2, c3, c4, c5, c6 = cache.tab
-    @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp = cache
+    @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack d1, d3, d4, d5, d6, d7 = cache.tab
     a = dt * a21
-    @.. broadcast=false tmp=uprev + a * k1
+    @.. broadcast=false thread=thread tmp=uprev + a * k1
     f(k2, tmp, p, t + c1 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
     f(k3, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
     f(k4, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
     f(k5, tmp, p, t + c4 * dt)
-    @.. broadcast=false tmp=uprev +
+    @.. broadcast=false thread=thread tmp=uprev +
                             dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
     f(k6, tmp, p, t + dt)
-    @.. broadcast=false update=a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6
-    @.. broadcast=false u=uprev + dt * update
+    @.. broadcast=false thread=thread update=a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6
+    @.. broadcast=false thread=thread u=uprev + dt * update
     f(k7, u, p, t + dt)
     integrator.destats.nf += 6
     if integrator.alg isa CompositeAlgorithm
         g6 = tmp
         g7 = u
         # Hairer II, page 22
-        @.. broadcast=false g6=g7 - g6
+        @.. broadcast=false thread=thread g6=g7 - g6
         ϱd = integrator.opts.internalnorm(g6, t)
-        @.. broadcast=false tmp=k7 - k6
+        @.. broadcast=false thread=thread tmp=k7 - k6
         ϱu = integrator.opts.internalnorm(tmp, t)
         integrator.eigen_est = (ϱu / ϱd) * oneunit(t)
     end
     if integrator.opts.adaptive
-        @.. broadcast=false utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5 + btilde6 * k6 + btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -969,12 +969,12 @@ end
     end
     if integrator.opts.calck
         #integrator.k[4] == k5
-        @.. broadcast=false integrator.k[4]=d1 * k1 + d3 * k3 + d4 * k4 + d5 * k5 +
+        @.. broadcast=false thread=thread integrator.k[4]=d1 * k1 + d3 * k3 + d4 * k4 + d5 * k5 +
                                             d6 * k6 + d7 * k7
         #bspl == k3
-        @.. broadcast=false bspl=k1 - update
+        @.. broadcast=false thread=thread bspl=k1 - update
         # k6 === integrator.k[3] === k2
-        @.. broadcast=false integrator.k[3]=update - k7 - bspl
+        @.. broadcast=false thread=thread integrator.k[3]=update - k7 - bspl
     end
     return nothing
 end
@@ -1087,15 +1087,15 @@ end
 @muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_Cache,
                                repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, u_1, u_2, kk_1, kk_2 = cache
+    @unpack k, fsalfirst, u_1, u_2, kk_1, kk_2, stage_limiter!, step_limiter!, thread = cache
     @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache.tab
 
-    @.. broadcast=false u_1=α_10 * uprev + dt * β_10 * integrator.fsalfirst
+    @.. broadcast=false thread=thread u_1=α_10 * uprev + dt * β_10 * integrator.fsalfirst
     f(kk_1, u_1, p, t + c_1 * dt)
-    @.. broadcast=false u_2=(α_20 * uprev +
+    @.. broadcast=false thread=thread u_2=(α_20 * uprev +
                              α_21 * u_1 + dt * β_21 * kk_1)
     f(kk_2, u_2, p, t + c_2 * dt)
-    @.. broadcast=false integrator.u=(α_30 * uprev + dt * β_30 * integrator.fsalfirst +
+    @.. broadcast=false thread=thread integrator.u=(α_30 * uprev + dt * β_30 * integrator.fsalfirst +
                                       α_32 * u_2 + dt * β_32 * kk_2)
     f(integrator.k[2], integrator.u, p, t + dt) # For interpolation, then FSAL'd
     integrator.destats.nf += 3
@@ -1169,25 +1169,25 @@ end
 
 @muladd function perform_step!(integrator, cache::RKO65Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, k, k1, k2, k3, k4, k5, k6 = cache
+    @unpack tmp, k, k1, k2, k3, k4, k5, k6, stage_limiter!, step_limiter!, thread = cache
     @unpack α21, α31, α41, α51, α32, α42, α52, α62, α43, α53, α63, α54, α64, α65, β2, β3, β4, β5, β6, c1, c2, c3, c4, c5, c6 = cache.tab
     #println("L221: tmp", tmp)
     f(k1, uprev, p, t + c1 * dt)
-    @.. broadcast=false tmp=uprev + α21 * dt * k1
+    @.. broadcast=false thread=thread tmp=uprev + α21 * dt * k1
     #println("L224: tmp/k", tmp, k1)
     f(k2, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + α31 * dt * k1 + α32 * dt * k2
+    @.. broadcast=false thread=thread tmp=uprev + α31 * dt * k1 + α32 * dt * k2
     f(k3, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + α41 * dt * k1 + α42 * dt * k2 + α43 * dt * k3
+    @.. broadcast=false thread=thread tmp=uprev + α41 * dt * k1 + α42 * dt * k2 + α43 * dt * k3
     f(k4, tmp, p, t + c4 * dt)
-    @.. broadcast=false tmp=uprev + α51 * dt * k1 + α52 * dt * k2 + α53 * dt * k3 +
+    @.. broadcast=false thread=thread tmp=uprev + α51 * dt * k1 + α52 * dt * k2 + α53 * dt * k3 +
                             α54 * dt * k4
     f(k5, tmp, p, t + c5 * dt)
-    @.. broadcast=false tmp=uprev + α62 * dt * k2 + α63 * dt * k3 + α64 * dt * k4 +
+    @.. broadcast=false thread=thread tmp=uprev + α62 * dt * k2 + α63 * dt * k3 + α64 * dt * k4 +
                             α65 * dt * k5
     f(k6, tmp, p, t + c6 * dt)
 
-    @.. broadcast=false u=uprev + dt * (β2 * k2 + β3 * k3 + β4 * k4 + β5 * k5 + β6 * k6)
+    @.. broadcast=false thread=thread u=uprev + dt * (β2 * k2 + β3 * k3 + β4 * k4 + β5 * k5 + β6 * k6)
     #println("L238: tmp/u", tmp, u)
     integrator.destats.nf += 6
 
@@ -1281,7 +1281,7 @@ end
 
 @muladd function perform_step!(integrator, cache::FRK65Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, atmp = cache
+    @unpack tmp, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack α21, α31, α41, α51, α61, α71, α81, α91, α32, α43, α53, α63, α73, α83, α54, α64, α74, α84, α94, α65, α75, α85, α95, α76, α86, α96, α87, α97, α98, β1, β7, β8, β1tilde, β4tilde, β5tilde, β6tilde, β7tilde, β8tilde, β9tilde, c2, c3, c4, c5, c6, c7, c8, c9, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11 = cache.tab
     alg = unwrap_alg(integrator, false)
 
@@ -1295,30 +1295,30 @@ end
     β6 = (f1 + νsq * (f2 + νsq * (f3 + νsq * (f4 + νsq * (f5 + νsq * f6))))) /
          (1 + νsq * (f8 + νsq * (f9 + νsq * (f10 + νsq * f11))))
 
-    @.. broadcast=false tmp=uprev + α21 * dt * k1
+    @.. broadcast=false thread=thread tmp=uprev + α21 * dt * k1
     f(k2, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + α31 * dt * k1 + α32 * dt * k2
+    @.. broadcast=false thread=thread tmp=uprev + α31 * dt * k1 + α32 * dt * k2
     f(k3, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + α41 * dt * k1 + α43 * dt * k3
+    @.. broadcast=false thread=thread tmp=uprev + α41 * dt * k1 + α43 * dt * k3
     f(k4, tmp, p, t + c4 * dt)
-    @.. broadcast=false tmp=uprev + α51 * dt * k1 + α53 * dt * k3 + α54 * dt * k4
+    @.. broadcast=false thread=thread tmp=uprev + α51 * dt * k1 + α53 * dt * k3 + α54 * dt * k4
     f(k5, tmp, p, t + c5 * dt)
-    @.. broadcast=false tmp=uprev + α61 * dt * k1 + α63 * dt * k3 + α64 * dt * k4 +
+    @.. broadcast=false thread=thread tmp=uprev + α61 * dt * k1 + α63 * dt * k3 + α64 * dt * k4 +
                             α65 * dt * k5
     f(k6, tmp, p, t + c6 * dt)
-    @.. broadcast=false tmp=uprev + α71 * dt * k1 + α73 * dt * k3 + α74 * dt * k4 +
+    @.. broadcast=false thread=thread tmp=uprev + α71 * dt * k1 + α73 * dt * k3 + α74 * dt * k4 +
                             α75 * dt * k5 + α76 * dt * k6
     f(k7, tmp, p, t + c7 * dt)
-    @.. broadcast=false tmp=uprev + α81 * dt * k1 + α83 * dt * k3 + α84 * dt * k4 +
+    @.. broadcast=false thread=thread tmp=uprev + α81 * dt * k1 + α83 * dt * k3 + α84 * dt * k4 +
                             α85 * dt * k5 + α86 * dt * k6 + α87 * dt * k7
     f(k8, tmp, p, t + c8 * dt)
-    @.. broadcast=false u=uprev +
+    @.. broadcast=false thread=thread u=uprev +
                           dt * (β1 * k1 + β4 * k4 + β5 * k5 + β6 * k6 + β7 * k7 + β8 * k8)
     f(k9, u, p, t + dt)
 
     integrator.destats.nf += 8
     if integrator.opts.adaptive
-        @.. broadcast=false utilde=dt * (β1tilde * k1 + β4tilde * k4 + β5tilde * k5 +
+        @.. broadcast=false thread=thread utilde=dt * (β1tilde * k1 + β4tilde * k4 + β5tilde * k5 +
                                     β6tilde * k6 + β7tilde * k7 + β8tilde * k8 +
                                     β9tilde * k9)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -1390,20 +1390,20 @@ end
 
 @muladd function perform_step!(integrator, cache::RKMCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k, k1, k2, k3, k4, k5, k6 = cache
+    @unpack tmp, fsalfirst, k, k1, k2, k3, k4, k5, k6, stage_limiter!, step_limiter!, thread = cache
     @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β6, c2, c3, c4, c5, c6 = cache.tab
 
-    @.. broadcast=false tmp=uprev + α2 * dt * k1
+    @.. broadcast=false thread=thread tmp=uprev + α2 * dt * k1
     f(k2, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + α3 * dt * k2
+    @.. broadcast=false thread=thread tmp=uprev + α3 * dt * k2
     f(k3, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + α4 * dt * k3
+    @.. broadcast=false thread=thread tmp=uprev + α4 * dt * k3
     f(k4, tmp, p, t + c4 * dt)
-    @.. broadcast=false tmp=uprev + α5 * dt * k4
+    @.. broadcast=false thread=thread tmp=uprev + α5 * dt * k4
     f(k5, tmp, p, t + c5 * dt)
-    @.. broadcast=false tmp=uprev + α6 * dt * k5
+    @.. broadcast=false thread=thread tmp=uprev + α6 * dt * k5
     f(k6, tmp, p, t + c6 * dt)
-    @.. broadcast=false u=uprev + dt * (β1 * k1 + β2 * k2 + β3 * k3 + β4 * k4 + β6 * k6)
+    @.. broadcast=false thread=thread u=uprev + dt * (β1 * k1 + β2 * k2 + β3 * k3 + β4 * k4 + β6 * k6)
     f(integrator.fsallast, u, p, t + dt)
     integrator.destats.nf += 6
     return nothing
@@ -1480,28 +1480,28 @@ function initialize!(integrator, cache::MSRK5Cache)
 end
 
 function perform_step!(integrator, cache::MSRK5Cache, repeat_step = false)
-    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp = cache
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp, stage_limiter!, step_limiter!, thread = cache
     @unpack a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, b1, b4, b5, b6, b7, b8, c2, c3, c4, c5, c6, c7, c8 = cache.tab
     @unpack u, uprev, t, dt, f, p = integrator
 
-    @.. broadcast=false tmp=uprev + dt * (a21 * k1)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a21 * k1)
     f(k2, tmp, p, t + c2 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
     f(k3, tmp, p, t + c3 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a41 * k1 + a43 * k3)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a43 * k3)
     f(k4, tmp, p, t + c4 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a51 * k1 + a53 * k3 + a54 * k4)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a51 * k1 + a53 * k3 + a54 * k4)
     f(k5, tmp, p, t + c5 * dt)
-    @.. broadcast=false tmp=uprev + dt * (a61 * k1 + a63 * k3 + a64 * k4 + a65 * k5)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a61 * k1 + a63 * k3 + a64 * k4 + a65 * k5)
     f(k6, tmp, p, t + c6 * dt)
-    @.. broadcast=false tmp=uprev +
+    @.. broadcast=false thread=thread tmp=uprev +
                             dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
     f(k7, tmp, p, t + c7 * dt)
-    @.. broadcast=false tmp=uprev +
+    @.. broadcast=false thread=thread tmp=uprev +
                             dt * (a81 * k1 + a83 * k3 + a84 * k4 + a85 * k5 + a86 * k6 +
                              a87 * k7)
     f(k8, tmp, p, t + c8 * dt)
-    @.. broadcast=false u=uprev +
+    @.. broadcast=false thread=thread u=uprev +
                           dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8)
     f(k9, u, p, t + dt)
     integrator.destats.nf += 8

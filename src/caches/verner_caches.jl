@@ -1,4 +1,4 @@
-@cache struct Vern6Cache{uType, rateType, uNoUnitsType, TabType} <:
+@cache struct Vern6Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -16,6 +16,9 @@
     rtmp::rateType
     atmp::uNoUnitsType
     tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function alg_cache(alg::Vern6, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -37,7 +40,7 @@ function alg_cache(alg::Vern6, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
-    Vern6Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, tab)
+    Vern6Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
 struct Vern6ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
@@ -52,7 +55,7 @@ function alg_cache(alg::Vern6, u, rate_prototype, ::Type{uEltypeNoUnits},
     Vern6ConstantCache(tab)
 end
 
-@cache struct Vern7Cache{uType, rateType, uNoUnitsType, TabType} <:
+@cache struct Vern7Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -71,6 +74,9 @@ end
     rtmp::rateType
     atmp::uNoUnitsType
     tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function alg_cache(alg::Vern7, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -94,7 +100,7 @@ function alg_cache(alg::Vern7, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
     Vern7Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp,
-               tab)
+               tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
 struct Vern7ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
@@ -109,7 +115,7 @@ function alg_cache(alg::Vern7, u, rate_prototype, ::Type{uEltypeNoUnits},
     Vern7ConstantCache(tab)
 end
 
-@cache struct Vern8Cache{uType, rateType, uNoUnitsType, TabType} <:
+@cache struct Vern8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -131,6 +137,9 @@ end
     rtmp::rateType
     atmp::uNoUnitsType
     tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function alg_cache(alg::Vern8, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -157,7 +166,7 @@ function alg_cache(alg::Vern8, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
     Vern8Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde,
-               tmp, rtmp, atmp, tab)
+               tmp, rtmp, atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
 struct Vern8ConstantCache{TabType} <: OrdinaryDiffEqConstantCache
@@ -172,7 +181,7 @@ function alg_cache(alg::Vern8, u, rate_prototype, ::Type{uEltypeNoUnits},
     Vern8ConstantCache(tab)
 end
 
-@cache struct Vern9Cache{uType, rateType, uNoUnitsType, TabType} <:
+@cache struct Vern9Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -197,6 +206,9 @@ end
     rtmp::rateType
     atmp::uNoUnitsType
     tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -226,7 +238,7 @@ function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
     recursivefill!(atmp, false)
     rtmp = uEltypeNoUnits === eltype(u) ? utilde : zero(rate_prototype)
     Vern9Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
-               k16, utilde, tmp, rtmp, atmp, tab)
+               k16, utilde, tmp, rtmp, atmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
 struct Vern9ConstantCache{TabType} <: OrdinaryDiffEqConstantCache

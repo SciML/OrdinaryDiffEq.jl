@@ -61,21 +61,21 @@ end
 
 @muladd function perform_step!(integrator, cache::KYKSSPRK42Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, tmp, fsalfirst = cache
+    @unpack k, tmp, fsalfirst, stage_limiter!, step_limiter!, thread = cache
     @unpack α20, α21, α30, α32, α40, α43, β10, β21, β30, β32, β40, β43, c1, c2, c3 = cache.tab
 
     δ = fsalfirst
     # u1 -> stored as u
-    @.. broadcast=false u=uprev + dt * β10 * δ
+    @.. broadcast=false thread=thread u=uprev + dt * β10 * δ
     f(k, u, p, t + c1 * dt)
     # u2
-    @.. broadcast=false tmp=α20 * uprev + α21 * u + dt * β21 * k
+    @.. broadcast=false thread=thread tmp=α20 * uprev + α21 * u + dt * β21 * k
     f(k, tmp, p, t + c2 * dt)
     # u3
-    @.. broadcast=false tmp=α30 * uprev + α32 * tmp + dt * β30 * δ + dt * β32 * k
+    @.. broadcast=false thread=thread tmp=α30 * uprev + α32 * tmp + dt * β30 * δ + dt * β32 * k
     f(k, tmp, p, t + c3 * dt)
     # u
-    @.. broadcast=false u=α40 * uprev + α43 * tmp + dt * β40 * δ + dt * β43 * k
+    @.. broadcast=false thread=thread u=α40 * uprev + α43 * tmp + dt * β40 * δ + dt * β43 * k
     f(k, u, p, t + dt)
 end
 
@@ -163,28 +163,28 @@ end
 
 @muladd function perform_step!(integrator, cache::SHLDDRK52Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, tmp = cache
+    @unpack k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread = cache
     @unpack α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5 = cache.tab
 
     # u1
-    @. tmp = dt * fsalfirst
-    @. u = uprev + β1 * tmp
+    @.. thread=thread tmp = dt * fsalfirst
+    @.. thread=thread u = uprev + β1 * tmp
     # u2
     f(k, u, p, t + c2 * dt)
-    @. tmp = α2 * tmp + dt * k
-    @. u = u + β2 * tmp
+    @.. thread=thread tmp = α2 * tmp + dt * k
+    @.. thread=thread u = u + β2 * tmp
     # u3
     f(k, u, p, t + c3 * dt)
-    @. tmp = α3 * tmp + dt * k
-    @. u = u + β3 * tmp
+    @.. thread=thread tmp = α3 * tmp + dt * k
+    @.. thread=thread u = u + β3 * tmp
     # u4
     f(k, u, p, t + c4 * dt)
-    @. tmp = α4 * tmp + dt * k
-    @. u = u + β4 * tmp
+    @.. thread=thread tmp = α4 * tmp + dt * k
+    @.. thread=thread u = u + β4 * tmp
     # u5 = u
     f(k, u, p, t + c5 * dt)
-    @. tmp = α5 * tmp + dt * k
-    @. u = u + β5 * tmp
+    @.. thread=thread tmp = α5 * tmp + dt * k
+    @.. thread=thread u = u + β5 * tmp
 
     f(k, u, p, t + dt)
 end
@@ -269,7 +269,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SHLDDRK_2NCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, tmp = cache
+    @unpack k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread = cache
     @unpack α21, α31, α41, α51, β11, β21, β31, β41, β51, c21, c31, c41, c51, α22, α32, α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32, c42, c52, c62 = cache.tab
 
     if integrator.u_modified
@@ -278,50 +278,50 @@ end
 
     if cache.step % 2 == 1
         # u1
-        @. tmp = dt * fsalfirst
-        @. u = uprev + β11 * tmp
+        @.. thread=thread tmp = dt * fsalfirst
+        @.. thread=thread u = uprev + β11 * tmp
         # u2
         f(k, u, p, t + c21 * dt)
-        @. tmp = α21 * tmp + dt * k
-        @. u = u + β21 * tmp
+        @.. thread=thread tmp = α21 * tmp + dt * k
+        @.. thread=thread u = u + β21 * tmp
         # u3
         f(k, u, p, t + c31 * dt)
-        @. tmp = α31 * tmp + dt * k
-        @. u = u + β31 * tmp
+        @.. thread=thread tmp = α31 * tmp + dt * k
+        @.. thread=thread u = u + β31 * tmp
         # u4
         f(k, u, p, t + c41 * dt)
-        @. tmp = α41 * tmp + dt * k
-        @. u = u + β41 * tmp
+        @.. thread=thread tmp = α41 * tmp + dt * k
+        @.. thread=thread u = u + β41 * tmp
         # u5 = u
         f(k, u, p, t + c51 * dt)
-        @. tmp = α51 * tmp + dt * k
-        @. u = u + β51 * tmp
+        @.. thread=thread tmp = α51 * tmp + dt * k
+        @.. thread=thread u = u + β51 * tmp
 
         f(k, u, p, t + dt)
     else
         # u1
-        @. tmp = dt * fsalfirst
-        @. u = uprev + β12 * tmp
+        @.. thread=thread tmp = dt * fsalfirst
+        @.. thread=thread u = uprev + β12 * tmp
         # u2
         f(k, u, p, t + c22 * dt)
-        @. tmp = α22 * tmp + dt * k
-        @. u = u + β22 * tmp
+        @.. thread=thread tmp = α22 * tmp + dt * k
+        @.. thread=thread u = u + β22 * tmp
         # u3
         f(k, u, p, t + c32 * dt)
-        @. tmp = α32 * tmp + dt * k
-        @. u = u + β32 * tmp
+        @.. thread=thread tmp = α32 * tmp + dt * k
+        @.. thread=thread u = u + β32 * tmp
         # u4
         f(k, u, p, t + c42 * dt)
-        @. tmp = α42 * tmp + dt * k
-        @. u = u + β42 * tmp
+        @.. thread=thread tmp = α42 * tmp + dt * k
+        @.. thread=thread u = u + β42 * tmp
         # u5 = u
         f(k, u, p, t + c52 * dt)
-        @. tmp = α52 * tmp + dt * k
-        @. u = u + β52 * tmp
+        @.. thread=thread tmp = α52 * tmp + dt * k
+        @.. thread=thread u = u + β52 * tmp
         # u6 = u
         f(k, u, p, t + c62 * dt)
-        @. tmp = α62 * tmp + dt * k
-        @. u = u + β62 * tmp
+        @.. thread=thread tmp = α62 * tmp + dt * k
+        @.. thread=thread u = u + β62 * tmp
 
         f(k, u, p, t + dt)
     end
@@ -1229,14 +1229,14 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRKMSVS32Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, u_1, u_2, stage_limiter!, step_limiter! = cache
+    @unpack k, fsalfirst, u_1, u_2, stage_limiter!, step_limiter!, thread = cache
 
     if cache.step < 3
-        @.. broadcast=false u=uprev + dt * fsalfirst
+        @.. broadcast=false thread=thread u=uprev + dt * fsalfirst
         stage_limiter!(u, integrator, p, t + dt)
         f(k, u, p, t + dt)
         integrator.destats.nf += 1
-        @.. broadcast=false u=(uprev + u + dt * k) / 2
+        @.. broadcast=false thread=thread u=(uprev + u + dt * k) / 2
         stage_limiter!(u, integrator, p, t + dt)
         step_limiter!(u, integrator, p, t + dt)
 
@@ -1247,7 +1247,7 @@ end
         end
     else
         Ω = 2
-        @.. broadcast=false u=((Ω * Ω - 1) / (Ω * Ω)) *
+        @.. broadcast=false thread=thread u=((Ω * Ω - 1) / (Ω * Ω)) *
                               (uprev + (Ω / (Ω - 1)) * dt * fsalfirst) +
                               (1 / (Ω * Ω)) * cache.u_2
         cache.u_2 .= u_1
@@ -1328,14 +1328,14 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPRKMSVS43Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, u_1, u_2, u_3, stage_limiter!, step_limiter!, k1, k2, k3 = cache
+    @unpack k, fsalfirst, u_1, u_2, u_3, stage_limiter!, step_limiter!, thread, k1, k2, k3 = cache
 
     if cache.step < 4
-        @.. broadcast=false u=uprev + dt * fsalfirst
+        @.. broadcast=false thread=thread u=uprev + dt * fsalfirst
         stage_limiter!(u, integrator, p, t + dt)
         f(k, u, p, t + dt)
         integrator.destats.nf += 1
-        @.. broadcast=false u=(uprev + u + dt * k) / 2
+        @.. broadcast=false thread=thread u=(uprev + u + dt * k) / 2
         stage_limiter!(u, integrator, p, t + dt)
         step_limiter!(u, integrator, p, t + dt)
         if cache.step == 1
@@ -1355,7 +1355,7 @@ end
         end
         # u
     else
-        @.. broadcast=false u=(16 / 27) * (uprev + 3 * dt * fsalfirst) +
+        @.. broadcast=false thread=thread u=(16 / 27) * (uprev + 3 * dt * fsalfirst) +
                               (11 / 27) * (u_3 + (12 / 11) * dt * k3)
         stage_limiter!(u, integrator, p, t + dt)
         step_limiter!(u, integrator, p, t + dt)
