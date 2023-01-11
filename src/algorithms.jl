@@ -783,7 +783,7 @@ end
 
 # for backwards compatibility
 function Anas5(stage_limiter!, step_limiter! = trivial_limiter!; w=1)
-  Anas{typeof(stage_limiter!), typeof(step_limiter!), False, typeof(w)}(stage_limiter!, step_limiter!, False(), w)
+  Anas5{typeof(stage_limiter!), typeof(step_limiter!), False, typeof(w)}(stage_limiter!, step_limiter!, False(), w)
 end
 
 function Base.show(io::IO, alg::Anas5)
@@ -1559,7 +1559,7 @@ end
 
 # for backwards compatibility
 function CKLLSRK54_3C(stage_limiter!, step_limiter! = trivial_limiter!)
-    Heun{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    CKLLSRK54_3C{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
                                                                  step_limiter!,
                                                                  False())
 end
@@ -3907,6 +3907,13 @@ function BS3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limite
                                                                        thread)
 end
 
+# for backwards compatibility
+function BS3(stage_limiter!, step_limiter! = trivial_limiter!)
+    BS3{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                 step_limiter!,
+                                                                 False())
+end
+
 function Base.show(io::IO, alg::BS3)
     print(io, "BS3(stage_limiter! = ", alg.stage_limiter!,
           ", step_limiter! = ", alg.step_limiter!,
@@ -4525,7 +4532,7 @@ end
 
 # for backwards compatibility
 function FRK65(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    FRK65{typeof(stage_limiter!), typeof(step_limiter!), False, typeofof(omega)}(stage_limiter!,
+    FRK65{typeof(stage_limiter!), typeof(step_limiter!), False, typeof(omega)}(stage_limiter!,
                                                                  step_limiter!,
                                                                  False(),
                                                                  omega)
