@@ -4312,6 +4312,23 @@ function Base.show(io::IO, alg::Vern6)
 end
 
 """
+    Vern7(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+
+Explicit Runge-Kutta Method
+  Verner's "Most Efficient" 7/6 Runge-Kutta method. (lazy 7th order interpolant).
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## Reference
 @article{verner2010numerically,
   title={Numerically optimal Runge--Kutta pairs with interpolants},
   author={Verner, James H},
@@ -4322,13 +4339,35 @@ end
   year={2010},
   publisher={Springer}
 }
-
-Vern7: Explicit Runge-Kutta Method
-  Verner's "Most Efficient" 7/6 Runge-Kutta method. (lazy 7th order interpolant).
 """
-struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
-    lazy::Bool
-    Vern7(; lazy = true) = new(lazy)
+struct Vern7{StageLimiter,StepLimiter,Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+  lazy::Bool
+end
+
+function Vern7(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!, thread = False(), lazy = true)
+    Vern7{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                          step_limiter!,
+                                                                          thread,
+                                                                          lazy)
+end
+
+# for backwards compatibility
+function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
+    Vern7{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                 step_limiter!,
+                                                                 False(),
+                                                                 lazy)
+end
+
+function Base.show(io::IO, alg::Vern7)
+  print(io, "Vern7(stage_limiter! = ", alg.stage_limiter!,
+                     ", step_limiter! = ", alg.step_limiter!,
+                     ", thread = ", alg.thread,
+                     ", lazy = ", alg.lazy,
+                     ")")
 end
 
 """
