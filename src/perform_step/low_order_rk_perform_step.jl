@@ -142,7 +142,7 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
@@ -226,7 +226,7 @@ end
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
@@ -368,7 +368,7 @@ end
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5 + btilde6 * k6 + btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
@@ -559,13 +559,13 @@ end
                                    (bhat1 * k1 + bhat3 * k3 + bhat4 * k4 + bhat5 * k5 +
                                     bhat6 * k6)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         EEst1 = integrator.opts.internalnorm(atmp, t)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5 + btilde6 * k6 + btilde7 * k7 +
                                     btilde8 * k8)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         EEst2 = integrator.opts.internalnorm(atmp, t)
         integrator.EEst = max(EEst1, EEst2)
     end
@@ -964,7 +964,7 @@ end
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
                                     btilde5 * k5 + btilde6 * k6 + btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     if integrator.opts.calck
@@ -1322,7 +1322,7 @@ end
                                     β6tilde * k6 + β7tilde * k7 + β8tilde * k8 +
                                     β9tilde * k9)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing

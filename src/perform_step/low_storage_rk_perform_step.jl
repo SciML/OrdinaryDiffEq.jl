@@ -488,7 +488,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -590,7 +590,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -700,7 +700,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -820,7 +820,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 

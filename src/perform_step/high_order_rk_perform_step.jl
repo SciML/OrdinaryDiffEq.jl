@@ -101,7 +101,7 @@ end
                                     btilde6 * k6 + btilde7 * k7 + btilde8 * k8 +
                                     btilde9 * k9 + btilde10 * k10)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
@@ -339,13 +339,13 @@ end
                                    (k1 * er1 + k6 * er6 + k7 * er7 + k8 * er8 + k9 * er9 +
                                     k10 * er10 + k11 * er11 + k12 * er12)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         err5 = integrator.opts.internalnorm(atmp, t) # Order 5
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde6 * k6 + btilde7 * k7 +
                                     btilde8 * k8 + btilde9 * k9 + btilde10 * k10 +
                                     btilde11 * k11 + btilde12 * k12)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         err3 = integrator.opts.internalnorm(atmp, t) # Order 3
         err52 = err5 * err5
         if err5 ≈ 0 && err3 ≈ 0
@@ -661,7 +661,7 @@ end
                                     btilde8 * k8 + btilde9 * k9 + btilde10 * k10 +
                                     btilde11 * k11 + btilde12 * k12 + btilde13 * k13)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
@@ -956,7 +956,7 @@ end
                                     β8tilde * k8 + β9tilde * k9 + β10tilde * k10 +
                                     β11tilde * k11 + β12tilde * k12)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)

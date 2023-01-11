@@ -185,7 +185,7 @@ end
         end
 
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
@@ -248,7 +248,7 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread tmp=dt * (fsalfirst - k)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
@@ -358,7 +358,7 @@ end
         f(_p, tmp, p, t + σ₁ * dt)
         @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         e1 = integrator.opts.internalnorm(atmp, t)
         @.. broadcast=false thread=thread tmp=(1 - σ₂) * uprev + σ₂ * u +
                                 σ₂ * (σ₂ - 1) *
@@ -371,7 +371,7 @@ end
         f(_p, tmp, p, t + σ₂ * dt)
         @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
         e2 = integrator.opts.internalnorm(atmp, t)
         integrator.EEst = 2.1342 * max(e1, e2)
         integrator.destats.nf += 2
