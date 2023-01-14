@@ -86,3 +86,7 @@ for alg in [
     sol = solve(prob, alg)
     @test sol.retcode == ReturnCode.Success
 end
+
+# test problems with zero-length vectors
+ode = ODEProblem((du, u, semi, t) -> du .= u, Float64[], (0.0, 1.0))
+@test_nowarn solve(ode, Tsit5())
