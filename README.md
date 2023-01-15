@@ -54,7 +54,7 @@ u0 = [1.0;0.0;0.0]
 tspan = (0.0,100.0)
 prob = ODEProblem(lorenz!,u0,tspan)
 sol = solve(prob,Tsit5())
-using Plots; plot(sol,vars=(1,2,3))
+using Plots; plot(sol,idxs=(1,2,3))
 ```
 
 Very fast static array versions can be specifically compiled to the size of your model. For example:
