@@ -1,4 +1,5 @@
-@cache struct TanYam7Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
+@cache struct TanYam7Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
+                           StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -53,7 +54,8 @@ function alg_cache(alg::TanYam7, u, rate_prototype, ::Type{uEltypeNoUnits},
     TanYam7ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct DP8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+@cache struct DP8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+                       Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k1::rateType
@@ -137,7 +139,8 @@ function alg_cache(alg::DP8, u, rate_prototype, ::Type{uEltypeNoUnits},
     DP8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct TsitPap8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
+@cache struct TsitPap8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter,
+                            StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -198,7 +201,8 @@ function alg_cache(alg::TsitPap8, u, rate_prototype, ::Type{uEltypeNoUnits},
     TsitPap8ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct PFRK87Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
+@cache struct PFRK87Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter,
+                          Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType

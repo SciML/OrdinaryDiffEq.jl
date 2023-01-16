@@ -64,7 +64,8 @@ function alg_cache(alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK33ConstantCache()
 end
 
-@cache struct KYKSSPRK42Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+@cache struct KYKSSPRK42Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread
+                              } <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -123,7 +124,8 @@ function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     tab = KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits),
                                   constvalue(tTypeNoUnits))
-    KYKSSPRK42Cache(u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    KYKSSPRK42Cache(u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
+                    alg.thread)
 end
 
 function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -207,7 +209,8 @@ function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SHLDDRK52Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+@cache struct SHLDDRK52Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
@@ -267,10 +270,12 @@ function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
     tab = SHLDDRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SHLDDRK52Cache(u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    SHLDDRK52Cache(u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
+                   alg.thread)
 end
 
-@cache mutable struct SHLDDRK_2NCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+@cache mutable struct SHLDDRK_2NCache{uType, rateType, TabType, StageLimiter, StepLimiter,
+                                      Thread} <:
                       OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -371,7 +376,8 @@ function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirst = zero(rate_prototype)
     tab = SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits),
                                   constvalue(tTypeNoUnits))
-    SHLDDRK_2NCache(u, uprev, k, tmp, fsalfirst, tab, 1, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+    SHLDDRK_2NCache(u, uprev, k, tmp, fsalfirst, tab, 1, alg.stage_limiter!,
+                    alg.step_limiter!, alg.thread)
 end
 
 @cache struct SSPRK53_2N1Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread
@@ -993,7 +999,8 @@ function alg_cache(alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRKMSVS32ConstantCache(u_2, u_1, dts, dtf, μ, 0.5, 1)
 end
 
-@cache mutable struct SSPRKMSVS43Cache{uType, rateType, StageLimiter, StepLimiter, Thread} <:
+@cache mutable struct SSPRKMSVS43Cache{uType, rateType, StageLimiter, StepLimiter, Thread
+                                       } <:
                       OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType

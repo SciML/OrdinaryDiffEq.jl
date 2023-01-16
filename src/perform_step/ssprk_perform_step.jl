@@ -72,10 +72,12 @@ end
     @.. broadcast=false thread=thread tmp=α20 * uprev + α21 * u + dt * β21 * k
     f(k, tmp, p, t + c2 * dt)
     # u3
-    @.. broadcast=false thread=thread tmp=α30 * uprev + α32 * tmp + dt * β30 * δ + dt * β32 * k
+    @.. broadcast=false thread=thread tmp=α30 * uprev + α32 * tmp + dt * β30 * δ +
+                                          dt * β32 * k
     f(k, tmp, p, t + c3 * dt)
     # u
-    @.. broadcast=false thread=thread u=α40 * uprev + α43 * tmp + dt * β40 * δ + dt * β43 * k
+    @.. broadcast=false thread=thread u=α40 * uprev + α43 * tmp + dt * β40 * δ +
+                                        dt * β43 * k
     f(k, u, p, t + dt)
 end
 
@@ -167,24 +169,24 @@ end
     @unpack α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5 = cache.tab
 
     # u1
-    @.. thread=thread tmp = dt * fsalfirst
-    @.. thread=thread u = uprev + β1 * tmp
+    @.. thread=thread tmp=dt * fsalfirst
+    @.. thread=thread u=uprev + β1 * tmp
     # u2
     f(k, u, p, t + c2 * dt)
-    @.. thread=thread tmp = α2 * tmp + dt * k
-    @.. thread=thread u = u + β2 * tmp
+    @.. thread=thread tmp=α2 * tmp + dt * k
+    @.. thread=thread u=u + β2 * tmp
     # u3
     f(k, u, p, t + c3 * dt)
-    @.. thread=thread tmp = α3 * tmp + dt * k
-    @.. thread=thread u = u + β3 * tmp
+    @.. thread=thread tmp=α3 * tmp + dt * k
+    @.. thread=thread u=u + β3 * tmp
     # u4
     f(k, u, p, t + c4 * dt)
-    @.. thread=thread tmp = α4 * tmp + dt * k
-    @.. thread=thread u = u + β4 * tmp
+    @.. thread=thread tmp=α4 * tmp + dt * k
+    @.. thread=thread u=u + β4 * tmp
     # u5 = u
     f(k, u, p, t + c5 * dt)
-    @.. thread=thread tmp = α5 * tmp + dt * k
-    @.. thread=thread u = u + β5 * tmp
+    @.. thread=thread tmp=α5 * tmp + dt * k
+    @.. thread=thread u=u + β5 * tmp
 
     f(k, u, p, t + dt)
 end
@@ -278,50 +280,50 @@ end
 
     if cache.step % 2 == 1
         # u1
-        @.. thread=thread tmp = dt * fsalfirst
-        @.. thread=thread u = uprev + β11 * tmp
+        @.. thread=thread tmp=dt * fsalfirst
+        @.. thread=thread u=uprev + β11 * tmp
         # u2
         f(k, u, p, t + c21 * dt)
-        @.. thread=thread tmp = α21 * tmp + dt * k
-        @.. thread=thread u = u + β21 * tmp
+        @.. thread=thread tmp=α21 * tmp + dt * k
+        @.. thread=thread u=u + β21 * tmp
         # u3
         f(k, u, p, t + c31 * dt)
-        @.. thread=thread tmp = α31 * tmp + dt * k
-        @.. thread=thread u = u + β31 * tmp
+        @.. thread=thread tmp=α31 * tmp + dt * k
+        @.. thread=thread u=u + β31 * tmp
         # u4
         f(k, u, p, t + c41 * dt)
-        @.. thread=thread tmp = α41 * tmp + dt * k
-        @.. thread=thread u = u + β41 * tmp
+        @.. thread=thread tmp=α41 * tmp + dt * k
+        @.. thread=thread u=u + β41 * tmp
         # u5 = u
         f(k, u, p, t + c51 * dt)
-        @.. thread=thread tmp = α51 * tmp + dt * k
-        @.. thread=thread u = u + β51 * tmp
+        @.. thread=thread tmp=α51 * tmp + dt * k
+        @.. thread=thread u=u + β51 * tmp
 
         f(k, u, p, t + dt)
     else
         # u1
-        @.. thread=thread tmp = dt * fsalfirst
-        @.. thread=thread u = uprev + β12 * tmp
+        @.. thread=thread tmp=dt * fsalfirst
+        @.. thread=thread u=uprev + β12 * tmp
         # u2
         f(k, u, p, t + c22 * dt)
-        @.. thread=thread tmp = α22 * tmp + dt * k
-        @.. thread=thread u = u + β22 * tmp
+        @.. thread=thread tmp=α22 * tmp + dt * k
+        @.. thread=thread u=u + β22 * tmp
         # u3
         f(k, u, p, t + c32 * dt)
-        @.. thread=thread tmp = α32 * tmp + dt * k
-        @.. thread=thread u = u + β32 * tmp
+        @.. thread=thread tmp=α32 * tmp + dt * k
+        @.. thread=thread u=u + β32 * tmp
         # u4
         f(k, u, p, t + c42 * dt)
-        @.. thread=thread tmp = α42 * tmp + dt * k
-        @.. thread=thread u = u + β42 * tmp
+        @.. thread=thread tmp=α42 * tmp + dt * k
+        @.. thread=thread u=u + β42 * tmp
         # u5 = u
         f(k, u, p, t + c52 * dt)
-        @.. thread=thread tmp = α52 * tmp + dt * k
-        @.. thread=thread u = u + β52 * tmp
+        @.. thread=thread tmp=α52 * tmp + dt * k
+        @.. thread=thread u=u + β52 * tmp
         # u6 = u
         f(k, u, p, t + c62 * dt)
-        @.. thread=thread tmp = α62 * tmp + dt * k
-        @.. thread=thread u = u + β62 * tmp
+        @.. thread=thread tmp=α62 * tmp + dt * k
+        @.. thread=thread u=u + β62 * tmp
 
         f(k, u, p, t + dt)
     end
@@ -1248,8 +1250,8 @@ end
     else
         Ω = 2
         @.. broadcast=false thread=thread u=((Ω * Ω - 1) / (Ω * Ω)) *
-                              (uprev + (Ω / (Ω - 1)) * dt * fsalfirst) +
-                              (1 / (Ω * Ω)) * cache.u_2
+                                            (uprev + (Ω / (Ω - 1)) * dt * fsalfirst) +
+                                            (1 / (Ω * Ω)) * cache.u_2
         cache.u_2 .= u_1
         cache.u_1 .= uprev
         stage_limiter!(u, integrator, p, t + dt)
@@ -1356,7 +1358,7 @@ end
         # u
     else
         @.. broadcast=false thread=thread u=(16 / 27) * (uprev + 3 * dt * fsalfirst) +
-                              (11 / 27) * (u_3 + (12 / 11) * dt * k3)
+                                            (11 / 27) * (u_3 + (12 / 11) * dt * k3)
         stage_limiter!(u, integrator, p, t + dt)
         step_limiter!(u, integrator, p, t + dt)
         cache.k3 .= k2

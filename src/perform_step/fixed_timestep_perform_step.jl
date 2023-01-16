@@ -185,7 +185,8 @@ end
         end
 
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
@@ -248,7 +249,8 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread tmp=dt * (fsalfirst - k)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
@@ -348,30 +350,40 @@ end
         σ₁ = 1 / 2 - sqrt(3) / 6
         σ₂ = 1 / 2 + sqrt(3) / 6
         @.. broadcast=false thread=thread tmp=(1 - σ₁) * uprev + σ₁ * u +
-                                σ₁ * (σ₁ - 1) *
-                                ((1 - 2σ₁) * (u - uprev) + (σ₁ - 1) * dt * k₁ +
-                                 σ₁ * dt * k₅)
+                                              σ₁ * (σ₁ - 1) *
+                                              ((1 - 2σ₁) * (u - uprev) +
+                                               (σ₁ - 1) * dt * k₁ +
+                                               σ₁ * dt * k₅)
         @.. broadcast=false thread=thread pprime=k₁ +
-                                   σ₁ * (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
-                                    σ₁ * (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev - 6 * u) +
-                                    6 * u) / dt
+                                                 σ₁ *
+                                                 (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
+                                                  σ₁ *
+                                                  (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev -
+                                                   6 * u) +
+                                                  6 * u) / dt
         f(_p, tmp, p, t + σ₁ * dt)
         @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         e1 = integrator.opts.internalnorm(atmp, t)
         @.. broadcast=false thread=thread tmp=(1 - σ₂) * uprev + σ₂ * u +
-                                σ₂ * (σ₂ - 1) *
-                                ((1 - 2σ₂) * (u - uprev) + (σ₂ - 1) * dt * k₁ +
-                                 σ₂ * dt * k₅)
+                                              σ₂ * (σ₂ - 1) *
+                                              ((1 - 2σ₂) * (u - uprev) +
+                                               (σ₂ - 1) * dt * k₁ +
+                                               σ₂ * dt * k₅)
         @.. broadcast=false thread=thread pprime=k₁ +
-                                   σ₂ * (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
-                                    σ₂ * (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev - 6 * u) +
-                                    6 * u) / dt
+                                                 σ₂ *
+                                                 (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
+                                                  σ₂ *
+                                                  (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev -
+                                                   6 * u) +
+                                                  6 * u) / dt
         f(_p, tmp, p, t + σ₂ * dt)
         @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         e2 = integrator.opts.internalnorm(atmp, t)
         integrator.EEst = 2.1342 * max(e1, e2)
         integrator.destats.nf += 2
@@ -431,7 +443,7 @@ end
 
 @muladd function perform_step!(integrator, cache::RK46NLCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, tmp, stage_limiter!,step_limiter!,thread = cache
+    @unpack k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread = cache
     @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6 = cache.tab
 
     # u1

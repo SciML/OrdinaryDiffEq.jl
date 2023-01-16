@@ -198,8 +198,9 @@ end
         f(k, u, p, t + c2end[i] * dt)
         integrator.destats.nf += 1
         @.. broadcast=false thread=thread tmp=tmp + δ2end[i] * u
-        @.. broadcast=false thread=thread u=γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev +
-                              β2end[i] * dt * k
+        @.. broadcast=false thread=thread u=γ12end[i] * u + γ22end[i] * tmp +
+                                            γ32end[i] * uprev +
+                                            β2end[i] * dt * k
     end
 
     f(k, u, p, t + dt)
@@ -482,13 +483,15 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -584,13 +587,15 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -682,7 +687,9 @@ end
     for i in eachindex(Aᵢ₁)
         integrator.opts.adaptive &&
             (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
-        @.. broadcast=false thread=thread gprev=uᵢ₋₃ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) * dt
+        @.. broadcast=false thread=thread gprev=uᵢ₋₃ +
+                                                (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) *
+                                                dt
         @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
         @.. broadcast=false thread=thread fᵢ₋₃=fᵢ₋₂
         @.. broadcast=false thread=thread fᵢ₋₂=k
@@ -694,13 +701,15 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -799,8 +808,9 @@ end
         integrator.opts.adaptive &&
             (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         @.. broadcast=false thread=thread gprev=uᵢ₋₄ +
-                                  (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃ +
-                                   Aᵢ₄[i] * fᵢ₋₄) * dt
+                                                (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ +
+                                                 Aᵢ₃[i] * fᵢ₋₃ +
+                                                 Aᵢ₄[i] * fᵢ₋₄) * dt
         @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
         @.. broadcast=false thread=thread fᵢ₋₄=fᵢ₋₃
         @.. broadcast=false thread=thread fᵢ₋₃=fᵢ₋₂
@@ -814,13 +824,15 @@ end
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 

@@ -236,7 +236,6 @@ println("SSPRKMSs")
 # SSPRKMSVS43
 @test SSPRKMSVS43() == SSPRKMSVS43(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 
-
 println("Low Storage RKs")
 
 # ORK256
@@ -348,35 +347,43 @@ regression_test(CKLLSRK85_4FM_4R(), 1.0, 1.8)
 regression_test(CKLLSRK75_4M_5R(), 8.0e-5, 1.6e-4)
 
 # ParsaniKetchesonDeconinck3S32
-@test ParsaniKetchesonDeconinck3S32() == ParsaniKetchesonDeconinck3S32(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S32() ==
+      ParsaniKetchesonDeconinck3S32(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S32(), 1.5e-2, 2.0e-2)
 
 # ParsaniKetchesonDeconinck3S82
-@test ParsaniKetchesonDeconinck3S82() == ParsaniKetchesonDeconinck3S82(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S82() ==
+      ParsaniKetchesonDeconinck3S82(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S82(), 1.5e-3, 3.0e-3)
 
 # ParsaniKetchesonDeconinck3S53
-@test ParsaniKetchesonDeconinck3S53() == ParsaniKetchesonDeconinck3S53(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S53() ==
+      ParsaniKetchesonDeconinck3S53(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S53(), 2.5e-4, 4.5e-4)
 
 # ParsaniKetchesonDeconinck3S173
-@test ParsaniKetchesonDeconinck3S173() == ParsaniKetchesonDeconinck3S173(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S173() ==
+      ParsaniKetchesonDeconinck3S173(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S173(), 3.5e-5, 5.5e-5)
 
 # ParsaniKetchesonDeconinck3S94
-@test ParsaniKetchesonDeconinck3S94() == ParsaniKetchesonDeconinck3S94(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S94() ==
+      ParsaniKetchesonDeconinck3S94(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S94(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S184
-@test ParsaniKetchesonDeconinck3S184() == ParsaniKetchesonDeconinck3S184(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S184() ==
+      ParsaniKetchesonDeconinck3S184(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S184(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S105
-@test ParsaniKetchesonDeconinck3S105() == ParsaniKetchesonDeconinck3S105(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S105() ==
+      ParsaniKetchesonDeconinck3S105(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S105(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S205
-@test ParsaniKetchesonDeconinck3S205() == ParsaniKetchesonDeconinck3S205(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
+@test ParsaniKetchesonDeconinck3S205() ==
+      ParsaniKetchesonDeconinck3S205(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
 
 # RDPK3Sp35

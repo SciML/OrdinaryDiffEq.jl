@@ -392,7 +392,7 @@ end
 
     k6 = f.f1(duprev, ku, p, t + dt * c5)
     u = uprev +
-        dt * (duprev + dt * (b1 * k1 + b3 * k3 +b4 * k4 + b5 * k5))
+        dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5))
     du = duprev +
          dt * (bp1 * k1 + bp3 * k3 + bp4 * k4 + bp5 * k5 + bp6 * k6)
 
@@ -406,7 +406,8 @@ end
     if integrator.opts.adaptive
         dtsq = dt^2
         uhat = dtsq * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5)
-        duhat = dt * (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 + bptilde5 * k5 + bptilde6 * k6)
+        duhat = dt * (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 + bptilde5 * k5 +
+                 bptilde6 * k6)
         utilde = ArrayPartition((duhat, uhat))
         atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
                                    integrator.opts.abstol, integrator.opts.reltol,
@@ -450,8 +451,12 @@ end
 
     f.f1(k6, duprev, ku, p, t + dt * c5)
     @tight_loop_macros for i in uidx
-        @inbounds u[i] = uprev[i] + dt * (duprev[i] + dt * (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i]))
-        @inbounds du[i] = duprev[i] + dt * (bp1 * k1[i] + bp3 * k3[i] + bp4 * k4[i] + bp5 * k5[i] + bp6 * k6[i])
+        @inbounds u[i] = uprev[i] +
+                         dt * (duprev[i] +
+                          dt * (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i]))
+        @inbounds du[i] = duprev[i] +
+                          dt * (bp1 * k1[i] + bp3 * k3[i] + bp4 * k4[i] + bp5 * k5[i] +
+                           bp6 * k6[i])
     end
 
     f.f1(k.x[1], du, u, p, t + dt)
@@ -463,7 +468,8 @@ end
         dtsq = dt^2
         @tight_loop_macros for i in uidx
             @inbounds uhat[i] = dtsq *
-                                (btilde1 * k1[i] + btilde3 * k3[i] + btilde4 * k4[i] + btilde5 * k5[i])
+                                (btilde1 * k1[i] + btilde3 * k3[i] + btilde4 * k4[i] +
+                                 btilde5 * k5[i])
             @inbounds duhat[i] = dt *
                                  (bptilde1 * k1[i] + bptilde3 * k3[i] + bptilde4 * k4[i] +
                                   bptilde5 * k5[i] + bptilde6 * k6[i])
@@ -1266,10 +1272,12 @@ end
     ku = uprev + dt * (c4 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
 
     k5 = f.f1(duprev, ku, p, t + dt * c4)
-    ku = uprev + dt * (c5 * duprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5))
+    ku = uprev +
+         dt * (c5 * duprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5))
 
     k6 = f.f1(duprev, ku, p, t + dt * c5)
-    ku = uprev + dt * (c6 * duprev + dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6))
+    ku = uprev +
+         dt * (c6 * duprev + dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6))
 
     k7 = f.f1(duprev, ku, p, t + dt * c6)
     u = uprev + dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5 + b6 * k6))
@@ -1284,8 +1292,10 @@ end
 
     if integrator.opts.adaptive
         dtsq = dt^2
-        uhat = dtsq * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6)
-        duhat = dt * (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 + bptilde5 * k5 + bptilde6 * k6 + bptilde7 * k7)
+        uhat = dtsq *
+               (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6)
+        duhat = dt * (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 + bptilde5 * k5 +
+                 bptilde6 * k6 + bptilde7 * k7)
         utilde = ArrayPartition((duhat, uhat))
         atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
                                    integrator.opts.abstol, integrator.opts.reltol,
@@ -1315,24 +1325,28 @@ end
 
     f.f1(k4, duprev, ku, p, t + dt * c3)
     @.. broadcast=false ku=uprev +
-                            dt * (c4 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
-
+                           dt *
+                           (c4 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
 
     f.f1(k5, duprev, ku, p, t + dt * c4)
     @.. broadcast=false ku=uprev +
-                            dt * (c5 * duprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5))
-     
+                           dt * (c5 * duprev +
+                            dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5))
+
     f.f1(k6, duprev, ku, p, t + dt * c5)
     @.. broadcast=false ku=uprev +
-                            dt * (c6 * duprev + dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6))                
+                           dt * (c6 * duprev +
+                            dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6))
 
     f.f1(k7, duprev, ku, p, t + dt * c6)
     @tight_loop_macros for i in uidx
         @inbounds u[i] = uprev[i] +
                          dt * (duprev[i] +
-                          dt * (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i] + b6 * k6[i]))
+                          dt *
+                          (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i] + b6 * k6[i]))
         @inbounds du[i] = duprev[i] +
-                          dt * (bp1 * k1[i] + bp3 * k3[i] + bp4 * k4[i] + bp5 * k5[i] + bp6 * k6[i] + bp7 * k7[i])
+                          dt * (bp1 * k1[i] + bp3 * k3[i] + bp4 * k4[i] + bp5 * k5[i] +
+                           bp6 * k6[i] + bp7 * k7[i])
     end
 
     f.f1(k.x[1], du, u, p, t + dt)
@@ -1344,7 +1358,7 @@ end
         dtsq = dt^2
         @tight_loop_macros for i in uidx
             @inbounds uhat[i] = dtsq *
-                                (btilde1 * k1[i] + btilde3 * k3[i] + btilde4 * k4[i] + 
+                                (btilde1 * k1[i] + btilde3 * k3[i] + btilde4 * k4[i] +
                                  btilde5 * k5[i] + btilde6 * k6[i])
             @inbounds duhat[i] = dt *
                                  (bptilde1 * k1[i] + bptilde3 * k3[i] + bptilde4 * k4[i] +
