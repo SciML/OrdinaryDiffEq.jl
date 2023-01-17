@@ -33,7 +33,9 @@ f_ssp = (u, p, t) -> begin sin(10t) * u * (1 - u) end
 test_problem_ssp = ODEProblem(f_ssp, 0.1, (0.0, 8.0))
 test_problem_ssp_long = ODEProblem(f_ssp, 0.1, (0.0, 1.e3))
 
-f_ssp_inplace = (du, u, p, t) -> begin @. du = sin(10t) * u * (1 - u) end
+f_ssp_inplace = (du, u, p, t) -> begin
+    @. du = sin(10t) * u * (1 - u)
+end
 test_problem_ssp_inplace = ODEProblem(f_ssp_inplace, rand(3, 3), (0.0, 8.0))
 
 # Test the memory usage, cf. #640
