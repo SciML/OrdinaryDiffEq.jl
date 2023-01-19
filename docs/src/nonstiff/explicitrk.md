@@ -1,5 +1,7 @@
 # Explicit Runge-Kutta Methods
 
+With the help of [FastBroadcast.jl](https://github.com/YingboMa/FastBroadcast.jl), we can use threaded parallelism to reduce compilation time for all of the explicit Runge-Kutta methods!  The ```thread``` option determines whether internal broadcasting on appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`, default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when Julia is started with multiple threads. When we call ```solve(prob, alg(thread=OrdinaryDiffEq.True()))```, we can turn on the multithreading option so that the compiler can easily optimize our code and achieve acceleration.
+
 ## Standard Explicit Runge-Kutta Methods
 
 ```@docs
