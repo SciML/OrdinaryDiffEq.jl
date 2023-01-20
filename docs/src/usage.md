@@ -44,7 +44,7 @@ prob = ODEProblem(lorenz,u0,tspan)
 sol = solve(prob,Tsit5())
 ```
 
-For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
+For “refined ODEs”, like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
 function HH_acceleration(dv,v,u,p,t)

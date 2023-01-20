@@ -762,7 +762,7 @@ end
 
 Explicit Runge-Kutta Method
   4th order Runge-Kutta method designed for periodic problems.
-  Requires a periodicity estimate which when accurate the method becomes 5th order (and is otherwise 4th order with less error for better estimates).
+  Requires a periodicity estimate, which when accurate the method becomes 5th order (and is otherwise 4th order with less error for better estimates).
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -771,7 +771,7 @@ of the form `limiter!(u, integrator, p, t)`.
 The argument `thread` determines whether internal broadcasting on
 appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
 default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads. 
+Julia is started with multiple threads.
 """
 struct Anas5{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -809,7 +809,7 @@ end
              thread = OrdinaryDiffEq.False(),
              williamson_condition = true)
 
-A second-order, five-stage explicit Runge-Kutta method for wave propogation
+A second-order, five-stage explicit Runge-Kutta method for wave propagation
 equations. Fixed timestep only.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
@@ -1466,7 +1466,7 @@ Julia is started with multiple threads.
 
 #Reference
 Kostas Tselios, T. E. Simos. Optimized Runge–Kutta Methods with Minimal Dispersion and Dissipation
-for Problems arising from Computational Ccoustics. Physics Letters A, 393(1-2), pp 38-47, 2007.
+for Problems arising from Computational Acoustics. Physics Letters A, 393(1-2), pp 38-47, 2007.
 doi: https://doi.org/10.1016/j.physleta.2006.10.072
 """
 struct TSLDDRK74{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
@@ -1502,7 +1502,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  4-stage, third order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  4-stage, third order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1546,7 +1546,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1590,7 +1590,7 @@ CKLLSRK95_4S(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
@@ -1634,7 +1634,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1677,7 +1677,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1721,7 +1721,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1765,7 +1765,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1808,7 +1808,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1851,7 +1851,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1894,7 +1894,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1937,7 +1937,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1980,7 +1980,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2023,7 +2023,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2065,7 +2065,7 @@ end
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())
 
-6-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+6-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2108,7 +2108,7 @@ end
                  thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2148,7 +2148,7 @@ end
 
 """
 CKLLSRK75_4M_5R: Low-Storage Method
-  7-stage, fifth order low-storage scheme, optimised for compressible Navier–Stokes equations.
+  7-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 """
 struct CKLLSRK75_4M_5R{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -2182,7 +2182,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  3-stage, second order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  3-stage, second order (3S) low-storage scheme, optimized  the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2233,7 +2233,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, second order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  8-stage, second order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2284,7 +2284,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, third order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  5-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2335,7 +2335,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  17-stage, third order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  17-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2386,7 +2386,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fourth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  9-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2437,7 +2437,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  18-stage, fourth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  18-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2488,7 +2488,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  10-stage, fifth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  10-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2539,7 +2539,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  20-stage, fifth order (3S) low-storage scheme, optimised for for the spectral difference method applied to wave propagation problems.
+  20-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -3764,7 +3764,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Explicit Runge-Kutta Method
-  Owren-Zennaro optimized interpolation 3/2 method (free 3th order interpolant).
+  Owren-Zennaro optimized interpolation 3/2 method (free 3rd order interpolant).
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -4328,7 +4328,7 @@ end
              lazy = true)
 
 Explicit Runge-Kutta Method
-  Verner's "Most Efficient" 6/5 Runge-Kutta method. (lazy 6th order interpolant).
+  Verner's “Most Efficient” 6/5 Runge-Kutta method. (lazy 6th order interpolant).
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -4388,7 +4388,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Explicit Runge-Kutta Method
-  Verner's "Most Efficient" 7/6 Runge-Kutta method. (lazy 7th order interpolant).
+  Verner's “Most Efficient” 7/6 Runge-Kutta method. (lazy 7th order interpolant).
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -4449,7 +4449,7 @@ end
              lazy = true)
 
 Explicit Runge-Kutta Method
-  Verner's "Most Efficient" 8/7 Runge-Kutta method. (lazy 8th order interpolant)
+  Verner's “Most Efficient” 8/7 Runge-Kutta method. (lazy 8th order interpolant)
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -4510,7 +4510,7 @@ end
              lazy = true)
 
 Explicit Runge-Kutta Method
-  Verner's "Most Efficient" 9/8 Runge-Kutta method. (lazy 9th order interpolant)
+  Verner's “Most Efficient” 9/8 Runge-Kutta method. (lazy 9th order interpolant)
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -4621,7 +4621,7 @@ end
              omega = 0.0)
 
 Explicit Runge-Kutta
-  Phase-fitted Runge-Kutta Runge-Kutta of 8th order.
+  Phase-fitted Runge-Kutta of 8th order.
   Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
@@ -6204,7 +6204,7 @@ end
 }
 
 Kvaerno4: SDIRK Method
-  An A-L stable stiffly-accurate 4th order ESDIRK metho
+  An A-L stable stiffly-accurate 4th order ESDIRK method.
 """
 struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
