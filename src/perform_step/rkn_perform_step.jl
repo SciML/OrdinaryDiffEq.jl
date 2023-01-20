@@ -8,9 +8,10 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache,
                                              Nystrom4VelocityIndependentConstantCache,
                                              Nystrom5VelocityIndependentConstantCache,
                                              IRKN3ConstantCache, IRKN4ConstantCache,
-                                             DPRKN5ConstantCache, DPRKN8ConstantCache,
-                                             DPRKN12ConstantCache, ERKN4ConstantCache,
-                                             ERKN5ConstantCache, ERKN7ConstantCache}
+                                             DPRKN4ConstantCache, DPRKN5ConstantCache,
+                                             DPRKN8ConstantCache, DPRKN12ConstantCache,
+                                             ERKN4ConstantCache, ERKN5ConstantCache,
+                                             ERKN7ConstantCache}
 
 function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.kshortsize = 2
@@ -28,9 +29,10 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            Nystrom4VelocityIndependentCache,
                                            Nystrom5VelocityIndependentCache,
                                            IRKN3Cache, IRKN4Cache,
-                                           DPRKN5Cache, DPRKN8Cache,
-                                           DPRKN12Cache, ERKN4Cache,
-                                           ERKN5Cache, ERKN7Cache}
+                                           DPRKN4Cache, DPRKN5Cache,
+                                           DPRKN8Cache, DPRKN12Cache,
+                                           ERKN4Cache, ERKN5Cache,
+                                           ERKN7Cache}
 
 function initialize!(integrator, cache::NystromDefaultInitialization)
     @unpack fsalfirst, k = cache
@@ -367,6 +369,94 @@ end
     integrator.destats.nf += 4
     integrator.destats.nf2 += 1
     return nothing
+end
+
+@muladd function perform_step!(integrator, cache::DPRKN4ConstantCache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev = integrator.uprev.x
+    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache
+    k1 = integrator.fsalfirst.x[1]
+
+    ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
+
+    k2 = f.f1(duprev, ku, p, t + dt * c1)
+    ku = uprev + dt * (c2 * duprev + dt * (a31 * k1 + a32 * k2))
+
+    k3 = f.f1(duprev, ku, p, t + dt * c2)
+    ku = uprev + dt * (c3 * duprev + dt * (a41 * k1 + a42 * k2 + a43 * k3))
+
+    k4 = f.f1(duprev, ku, p, t + dt * c3)
+
+    u = uprev + dt * (duprev + dt * (b1 * k1 + b2*k2 + b3 * k3))
+    du = duprev + dt * (bp1 * k1 + bp2 * k2 + bp3 * k3 + bp4 * k4)
+
+    integrator.u = ArrayPartition((du, u))
+    integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
+    integrator.destats.nf += 4
+    integrator.destats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+
+    if integrator.opts.adaptive
+        dtsq = dt^2
+        uhat = dtsq * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4)
+        duhat = dt * (bptilde1 * k1 + bptilde2 * k2 + bptilde3 * k3 + bptilde4 * k4)
+        utilde = ArrayPartition((duhat, uhat))
+        atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
+                                   integrator.opts.abstol, integrator.opts.reltol,
+                                   integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+end
+
+@muladd function perform_step!(integrator, cache::DPRKN4Cache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    du, u = integrator.u.x
+    duprev, uprev = integrator.uprev.x
+    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k, utilde = cache
+    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache.tab
+    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+    uidx = eachindex(integrator.uprev.x[2])
+    k1 = integrator.fsalfirst.x[1]
+
+    @.. broadcast=false ku=uprev + dt * (c1 * duprev + dt * a21 * k1)
+
+    f.f1(k2, duprev, ku, p, t + dt * c1)
+    @.. broadcast=false ku=uprev + dt * (c2 * duprev + dt * (a31 * k1 + a32 * k2))
+
+    f.f1(k3, duprev, ku, p, t + dt * c2)
+    @.. broadcast=false ku=uprev +
+                           dt * (c3 * duprev + dt * (a41 * k1 + a42 * k2 + a43 * k3))
+
+    f.f1(k4, duprev, ku, p, t + dt * c3)
+    @tight_loop_macros for i in uidx
+        @inbounds u[i] = uprev[i] +
+                            dt * (duprev[i] +
+                            dt * (b1 * k1[i] + b2 * k2[i] + b3 * k3[i]))
+        @inbounds du[i] = duprev[i] +
+                           dt * (bp1 * k1[i] + bp2 * k2[i] + bp3 * k3[i] + bp4 * k4[i])
+    end
+
+    f.f1(k.x[1], du, u, p, t + dt)
+    f.f2(k.x[2], du, u, p, t + dt)
+    integrator.destats.nf += 4
+    integrator.destats.nf2 += 1
+    if integrator.opts.adaptive
+        duhat, uhat = utilde.x
+        dtsq = dt^2
+        @tight_loop_macros for i in uidx
+            @inbounds uhat[i] = dtsq *
+                                (btilde1 * k1[i] + btilde2 * k2[i] + btilde3 * k3[i] +
+                                 btilde4 * k4[i])
+            @inbounds duhat[i] = dt *
+                                 (bptilde1 * k1[i] + bptilde2 * k2[i] + bptilde3 * k3[i] +
+                                  bptilde4 * k4[i])
+        end
+        calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
+                             integrator.opts.abstol, integrator.opts.reltol,
+                             integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN5ConstantCache, repeat_step = false)
