@@ -5794,9 +5794,11 @@ Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
   NY, USA.
 
 Trapezoid: SDIRK Method
-  A second order A-stable symmetric ESDIRK method.
-  "Almost symplectic" without numerical dampening.
-   Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
+A second order A-stable symmetric ESDIRK method.
+"Almost symplectic" without numerical dampening.
+ Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
+differences approximation to the second derivative terms in the local truncation error
+estimate (the SPICE approximation strategy).
 """
 struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
