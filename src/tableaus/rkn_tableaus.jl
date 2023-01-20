@@ -471,6 +471,93 @@ function ERKN7ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
                        convert(T, 0.5))
 end
 
+struct DPRKN4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    c1::T2
+    c2::T2
+    c3::T2
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    b1::T
+    b2::T
+    b3::T
+    bp1::T # bp denotes bprime
+    bp2::T
+    bp3::T
+    bp4::T
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
+    bptilde1::T
+    bptilde2::T
+    bptilde3::T
+    bptilde4::T
+end
+
+function DPRKN4ConstantCache(T::Type, T2::Type)
+    c1 = convert(T2, 1 // 4)
+    c2 = convert(T2, 7 // 10)
+    c3 = convert(T2, 1)
+    a21 = convert(T, 1 // 32)
+    a31 = convert(T, 7 // 1000)
+    a32 = convert(T, 119 // 500)
+    a41 = convert(T, 1 // 14)
+    a42 = convert(T, 8 // 27)
+    a43 = convert(T, 25 // 189)
+    b1 = convert(T, 1 // 14)
+    b2 = convert(T, 8 // 27)
+    b3 = convert(T, 25 // 189)
+    # b4 = convert(T, 0)
+    bp1 = convert(T, 1 // 14)
+    bp2 = convert(T, 32 // 81)
+    bp3 = convert(T, 250 // 567)
+    bp4 = convert(T, 5 // 54)
+    btilde1 = convert(T, 1 // 14 + 7 // 150)
+    btilde2 = convert(T, 8 // 27 - 67 // 150)
+    btilde3 = convert(T, 25 // 189 - 3 // 20)
+    btilde4 = convert(T, 1 // 20)
+    bptilde1 = convert(T, 1 // 14 - 13 // 21)
+    bptilde2 = convert(T, 32 // 81 + 20 // 27)
+    bptilde3 = convert(T, 250 // 567 - 275 // 189)
+    bptilde4 = convert(T, 5 // 54 + 1 // 3)
+    DPRKN4ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3,
+                        bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4,
+                        bptilde1, bptilde2, bptilde3, bptilde4)
+end
+
+function DPRKN4ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    c1 = convert(T2, 0.25)
+    c2 = convert(T2, 0.7)
+    c3 = convert(T2, 1.0)
+    a21 = convert(T, 0.03125)
+    a31 = convert(T, 0.007)
+    a32 = convert(T, 0.238)
+    a41 = convert(T, 0.07142857142857142)
+    a42 = convert(T, 0.2962962962962963)
+    a43 = convert(T, 0.13227513227513227)
+    b1 = convert(T, 0.07142857142857142)
+    b2 = convert(T, 0.2962962962962963)
+    b3 = convert(T, 0.13227513227513227)
+    bp1 = convert(T, 0.07142857142857142)
+    bp2 = convert(T, 0.3950617283950617)
+    bp3 = convert(T, 0.4409171075837742)
+    bp4 = convert(T, 0.09259259259259259)
+    btilde1 = convert(T, 0.11809523809523809)
+    btilde2 = convert(T, -0.15037037037037038)
+    btilde3 = convert(T, -0.017724867724867727)
+    btilde4 = convert(T, 0.05)
+    bptilde1 = convert(T, -0.5476190476190477)
+    bptilde2 = convert(T, 1.1358024691358024)
+    bptilde3 = convert(T, -1.0141093474426808)
+    bptilde4 = convert(T, 0.42592592592592593)
+    DPRKN4ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3,
+                        bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4,
+                        bptilde1, bptilde2, bptilde3, bptilde4)
+end
 struct DPRKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c1::T2
     c2::T2

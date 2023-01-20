@@ -4920,6 +4920,18 @@ E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equatio
 struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 """
+@article{Dormand1987FamiliesOR,
+  title={Families of Runge-Kutta-Nystrom Formulae},
+  author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
+  journal={Ima Journal of Numerical Analysis},
+  year={1987},
+  volume={7},
+  pages={235-250}
+}
+"""
+struct DPRKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
 @article{Bettis1973ARN,
   title={A Runge-Kutta Nystrom algorithm},
   author={Dale G. Bettis},
