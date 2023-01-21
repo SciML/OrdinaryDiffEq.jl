@@ -4959,6 +4959,18 @@ struct DPRKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DPRKN6 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 """
+@article{Dormand1987FamiliesOR,
+  title={Families of Runge-Kutta-Nystrom Formulae},
+  author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
+  journal={Ima Journal of Numerical Analysis},
+  year={1987},
+  volume={7},
+  pages={235-250}
+}
+"""
+struct DPRKN6FM <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+"""
 @article{dormand1987high,
   title={High-order embedded Runge-Kutta-Nystrom formulae},
   author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},

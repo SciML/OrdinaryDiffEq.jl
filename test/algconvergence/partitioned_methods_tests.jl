@@ -147,6 +147,9 @@ sim = test_convergence(dts, prob_big, DPRKN5(), dense_errors = true)
 sim = test_convergence(dts, prob_big, DPRKN6(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈6 rtol=1e-1
+sim = test_convergence(dts, prob_big, DPRKN6FM(), dense_errors = true)
+@test sim.𝒪est[:l2]≈6 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, DPRKN8(), dense_errors = true)
 @test sim.𝒪est[:l2]≈8 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -170,6 +173,8 @@ sol = solve(prob, DPRKN5())
 @test length(sol.u) < 38
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
+sol = solve(prob, DPRKN6FM())
+@test length(sol.u) < 25
 sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
 sol = solve(prob, DPRKN12())
@@ -314,6 +319,9 @@ sim = test_convergence(dts, prob_big, DPRKN5(), dense_errors = true)
 sim = test_convergence(dts, prob_big, DPRKN6(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈6 rtol=1e-1
+sim = test_convergence(dts, prob_big, DPRKN6FM(), dense_errors = true)
+@test sim.𝒪est[:l2]≈6 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, DPRKN8(), dense_errors = true)
 @test sim.𝒪est[:l2]≈8 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -337,6 +345,8 @@ sol = solve(prob, DPRKN5())
 @test length(sol.u) < 38
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
+sol = solve(prob, DPRKN6FM())
+@test length(sol.u) < 25
 sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
 sol = solve(prob, DPRKN12())
