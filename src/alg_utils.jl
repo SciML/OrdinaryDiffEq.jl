@@ -104,7 +104,7 @@ function _composite_beta1_default(algs::Tuple{T1, T2}, current, ::Val{QT},
                                   beta2) where {T1, T2, QT}
     if current == 1
         return QT(beta1_default(algs[1], beta2))
-    elseif current == 2
+    else
         return QT(beta1_default(algs[2], beta2))
     end
 end
@@ -126,7 +126,7 @@ function _composite_beta2_default(algs::Tuple{T1, T2}, current,
                                   ::Val{QT}) where {T1, T2, QT}
     if current == 1
         return QT(beta2_default(algs[1]))
-    elseif current == 2
+    else
         return QT(beta2_default(algs[2]))
     end
 end
