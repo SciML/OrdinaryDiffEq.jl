@@ -165,9 +165,9 @@ version = "0.4.0"
 
 [[deps.DiffEqBase]]
 deps = ["ArrayInterfaceCore", "ChainRulesCore", "DataStructures", "Distributions", "DocStringExtensions", "FastBroadcast", "ForwardDiff", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "Logging", "MuladdMacro", "Parameters", "PreallocationTools", "Printf", "RecursiveArrayTools", "Reexport", "Requires", "SciMLBase", "Setfield", "SparseArrays", "Static", "StaticArrays", "Statistics", "Tricks", "ZygoteRules"]
-git-tree-sha1 = "e98cb0828528c28784385cae543fa6c3172916bb"
+git-tree-sha1 = "1e0a1fde551d043af93996a52430c762b32d30c4"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.114.1"
+version = "6.114.2"
 
 [[deps.DiffResults]]
 deps = ["StaticArraysCore"]
@@ -431,9 +431,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LinearSolve]]
 deps = ["ArrayInterfaceCore", "DocStringExtensions", "FastLapackInterface", "GPUArraysCore", "IterativeSolvers", "KLU", "Krylov", "KrylovKit", "LinearAlgebra", "Preferences", "RecursiveFactorization", "Reexport", "SciMLBase", "Setfield", "SnoopPrecompile", "SparseArrays", "Sparspak", "SuiteSparse", "UnPack"]
-git-tree-sha1 = "fcf6a0d2704da31ee1aa41dc2171e6335dbd41d5"
+git-tree-sha1 = "960da8a80f9882fb52a5a199e944d3b86f0d2b94"
 uuid = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-version = "1.34.0"
+version = "1.34.1"
 
 [[deps.LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
@@ -512,9 +512,9 @@ version = "1.2.0"
 
 [[deps.NonlinearSolve]]
 deps = ["ArrayInterfaceCore", "DiffEqBase", "FiniteDiff", "ForwardDiff", "LinearAlgebra", "LinearSolve", "RecursiveArrayTools", "Reexport", "SciMLBase", "SimpleNonlinearSolve", "SnoopPrecompile", "SparseArrays", "SparseDiffTools", "StaticArraysCore", "UnPack"]
-git-tree-sha1 = "847efd501c7ee0caef3467e7e8286553b9d4dd45"
+git-tree-sha1 = "e2b063236a3103a3640ff1f2e3945ca387281cbe"
 uuid = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
-version = "1.2.0"
+version = "1.3.0"
 
 [[deps.OffsetArrays]]
 deps = ["Adapt"]
