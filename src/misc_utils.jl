@@ -53,8 +53,8 @@ end
 function diffdir(integrator::DiffEqBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
     dir = integrator.tdir > zero(integrator.tdir) ?
-          integrator.t > integrator.sol.prob.tspan[2] - difference ? -true : true :
-          integrator.t < integrator.sol.prob.tspan[2] + difference ? true : -true
+          integrator.t > integrator.sol.prob.tspan[2] - difference ? -1 : 1 :
+          integrator.t < integrator.sol.prob.tspan[2] + difference ? 1 : -1
 end
 
 abstract type AbstractThreadingOption end
