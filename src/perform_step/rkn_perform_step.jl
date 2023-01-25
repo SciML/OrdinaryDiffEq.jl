@@ -387,7 +387,7 @@ end
 
     k4 = f.f1(duprev, ku, p, t + dt * c3)
 
-    u = uprev + dt * (duprev + dt * (b1 * k1 + b2*k2 + b3 * k3))
+    u = uprev + dt * (duprev + dt * (b1 * k1 + b2 * k2 + b3 * k3))
     du = duprev + dt * (bp1 * k1 + bp2 * k2 + bp3 * k3 + bp4 * k4)
 
     integrator.u = ArrayPartition((du, u))
@@ -431,10 +431,10 @@ end
     f.f1(k4, duprev, ku, p, t + dt * c3)
     @tight_loop_macros for i in uidx
         @inbounds u[i] = uprev[i] +
-                            dt * (duprev[i] +
-                            dt * (b1 * k1[i] + b2 * k2[i] + b3 * k3[i]))
+                         dt * (duprev[i] +
+                               dt * (b1 * k1[i] + b2 * k2[i] + b3 * k3[i]))
         @inbounds du[i] = duprev[i] +
-                           dt * (bp1 * k1[i] + bp2 * k2[i] + bp3 * k3[i] + bp4 * k4[i])
+                          dt * (bp1 * k1[i] + bp2 * k2[i] + bp3 * k3[i] + bp4 * k4[i])
     end
 
     f.f1(k.x[1], du, u, p, t + dt)
@@ -721,7 +721,8 @@ end
     end
 end
 
-@muladd function perform_step!(integrator, cache::DPRKN6FMConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::DPRKN6FMConstantCache,
+                               repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
     @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde2, bptilde3, bptilde4, bptilde5 = cache
@@ -757,8 +758,10 @@ end
 
     if integrator.opts.adaptive
         dtsq = dt^2
-        uhat = dtsq * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5)
-        duhat = dt * (bptilde1 * k1 + bptilde2 * k2 + bptilde3 * k3 + bptilde4 * k4 + bptilde5 * k5)
+        uhat = dtsq *
+               (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5)
+        duhat = dt * (bptilde1 * k1 + bptilde2 * k2 + bptilde3 * k3 + bptilde4 * k4 +
+                 bptilde5 * k5)
         utilde = ArrayPartition((duhat, uhat))
         atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
                                    integrator.opts.abstol, integrator.opts.reltol,
@@ -797,13 +800,19 @@ end
     @tight_loop_macros for i in uidx
         @inbounds ku[i] = uprev[i] +
                           dt * (c5 * duprev[i] +
-                           dt * (a61 * k1[i] + a62 * k2[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]))
+                           dt * (a61 * k1[i] + a62 * k2[i] + a63 * k3[i] + a64 * k4[i] +
+                            a65 * k5[i]))
     end
 
     f.f1(k6, duprev, ku, p, t + dt * c5)
     @tight_loop_macros for i in uidx
-        @inbounds u[i] = uprev[i] + dt * (duprev[i] + dt * (b1 * k1[i] + b2 * k2[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i]))
-        @inbounds du[i] = duprev[i] + dt * (bp1 * k1[i] + bp2 * k2[i] + bp3 * k3[i] + bp4 * k4[i] + bp5 * k5[i] + bp6 * k6[i])
+        @inbounds u[i] = uprev[i] +
+                         dt * (duprev[i] +
+                          dt *
+                          (b1 * k1[i] + b2 * k2[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i]))
+        @inbounds du[i] = duprev[i] +
+                          dt * (bp1 * k1[i] + bp2 * k2[i] + bp3 * k3[i] + bp4 * k4[i] +
+                           bp5 * k5[i] + bp6 * k6[i])
     end
 
     f.f1(k.x[1], du, u, p, t + dt)
@@ -815,9 +824,11 @@ end
         dtsq = dt^2
         @tight_loop_macros for i in uidx
             @inbounds uhat[i] = dtsq *
-                                (btilde1 * k1[i] + btilde2 * k2[i] + btilde3 * k3[i] + btilde4 * k4[i] + btilde5 * k5[i])
+                                (btilde1 * k1[i] + btilde2 * k2[i] + btilde3 * k3[i] +
+                                 btilde4 * k4[i] + btilde5 * k5[i])
             @inbounds duhat[i] = dt *
-                                 (bptilde1 * k1[i] + bptilde2 * k2[i] + bptilde3 * k3[i] + bptilde4 * k4[i] + bptilde5 * k5[i])
+                                 (bptilde1 * k1[i] + bptilde2 * k2[i] + bptilde3 * k3[i] +
+                                  bptilde4 * k4[i] + bptilde5 * k5[i])
         end
         calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
                              integrator.opts.abstol, integrator.opts.reltol,

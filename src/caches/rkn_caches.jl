@@ -178,7 +178,8 @@ function alg_cache(alg::Nystrom5VelocityIndependent, u, rate_prototype,
                                              constvalue(tTypeNoUnits))
 end
 
-struct DPRKN4Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <: OrdinaryDiffEqMutableCache
+struct DPRKN4Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
+       OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -193,9 +194,9 @@ struct DPRKN4Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <: O
 end
 
 function alg_cache(alg::DPRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol, p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
     tab = DPRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
@@ -305,7 +306,8 @@ function alg_cache(alg::DPRKN6, u, rate_prototype, ::Type{uEltypeNoUnits},
     DPRKN6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct DPRKN6FMCache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <: OrdinaryDiffEqMutableCache
+@cache struct DPRKN6FMCache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
+              OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -322,29 +324,29 @@ end
 end
 
 function alg_cache(alg::DPRKN6FM, u, rate_prototype, ::Type{uEltypeNoUnits},
-         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-         dt, reltol, p, calck,
-         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-         reduced_rate_prototype = rate_prototype.x[2]
-         tab = DPRKN6FMConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-         k1 = zero(rate_prototype)
-         k2 = zero(reduced_rate_prototype)
-         k3 = zero(reduced_rate_prototype)
-         k4 = zero(reduced_rate_prototype)
-         k5 = zero(reduced_rate_prototype)
-         k6 = zero(reduced_rate_prototype)
-         k = zero(rate_prototype)
-         utilde = zero(u)
-         atmp = similar(u, uEltypeNoUnits)
-         recursivefill!(atmp, false)
-         tmp = zero(u)
-         DPRKN6FMCache(u, uprev, k1, k2, k3, k4, k5, k6, k, utilde, tmp, atmp, tab)
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol, p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    reduced_rate_prototype = rate_prototype.x[2]
+    tab = DPRKN6FMConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    k1 = zero(rate_prototype)
+    k2 = zero(reduced_rate_prototype)
+    k3 = zero(reduced_rate_prototype)
+    k4 = zero(reduced_rate_prototype)
+    k5 = zero(reduced_rate_prototype)
+    k6 = zero(reduced_rate_prototype)
+    k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tmp = zero(u)
+    DPRKN6FMCache(u, uprev, k1, k2, k3, k4, k5, k6, k, utilde, tmp, atmp, tab)
 end
 
 function alg_cache(alg::DPRKN6FM, u, rate_prototype, ::Type{uEltypeNoUnits},
-         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-         dt, reltol, p, calck,
-         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol, p, calck,
+                   ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     DPRKN6FMConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
