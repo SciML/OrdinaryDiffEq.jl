@@ -79,7 +79,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     end
 
     if prob isa DiffEqBase.ODEProblem
-        if !(prob.problem_type isa DiffEqBase.AbstractDynamicalODEProblem) && alg isa PartitionedAlgorithm
+        #if !(prob.problem_type isa DiffEqBase.AbstractDynamicalODEProblem) && alg isa PartitionedAlgorithm
+        if !(prob.f isa DiffEqBase.DynamicalODEFunction) && alg isa PartitionedAlgorithm
             error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
         end
     end
