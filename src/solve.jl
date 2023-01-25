@@ -78,8 +78,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         error("You cannot use an DAE Algorithm with a ODEProblem")
     end
 
-    if !(prob.problem_type isa DiffEqBase.AbstractDynamicalODEProblem) && alg isa PartitionedAlgorithm
-        error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
+    if prob isa DiffEqBase.AbstractODEProblem
+        if !(prob.problem_type isa DiffEqBase.AbstractDynamicalODEProblem) && alg isa PartitionedAlgorithm
+            error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
+        end
     end
 
     if typeof(prob.f) <: DynamicalODEFunction && typeof(prob.f.mass_matrix) <: Tuple
