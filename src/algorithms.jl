@@ -39,6 +39,12 @@ abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} 
 # DAE Specific Algorithms
 abstract type DAEAlgorithm{CS, AD, FDT, ST, CJ} <: DiffEqBase.AbstractDAEAlgorithm end
 
+# Partitioned ODE Specific Algorithms
+abstract type OrdinaryDiffEqPartitionedAlgorithm <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqAdaptivePartitionedAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
+const PartitionedAlgorithm = Union{OrdinaryDiffEqPartitionedAlgorithm,
+                                   OrdinaryDiffEqAdaptivePartitionedAlgorithm}
+
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(; scale_by_time = false) = FunctionMap{scale_by_time}()
 
@@ -4668,7 +4674,7 @@ end
 
 # Symplectic methods
 
-struct SymplecticEuler <: OrdinaryDiffEqAlgorithm end
+struct SymplecticEuler <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{verlet1967computer,
@@ -4682,7 +4688,7 @@ struct SymplecticEuler <: OrdinaryDiffEqAlgorithm end
   publisher={APS}
 }
 """
-struct VelocityVerlet <: OrdinaryDiffEqAlgorithm end
+struct VelocityVerlet <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{verlet1967computer,
@@ -4696,7 +4702,7 @@ struct VelocityVerlet <: OrdinaryDiffEqAlgorithm end
   publisher={APS}
 }
 """
-struct VerletLeapfrog <: OrdinaryDiffEqAlgorithm end
+struct VerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{verlet1967computer,
@@ -4710,7 +4716,7 @@ struct VerletLeapfrog <: OrdinaryDiffEqAlgorithm end
   publisher={APS}
 }
 """
-struct PseudoVerletLeapfrog <: OrdinaryDiffEqAlgorithm end
+struct PseudoVerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
@@ -4724,7 +4730,7 @@ struct PseudoVerletLeapfrog <: OrdinaryDiffEqAlgorithm end
   publisher={IOP Publishing}
 }
 """
-struct McAte2 <: OrdinaryDiffEqAlgorithm end
+struct McAte2 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{ruth1983canonical,
@@ -4737,7 +4743,7 @@ struct McAte2 <: OrdinaryDiffEqAlgorithm end
   year={1983}
 }
 """
-struct Ruth3 <: OrdinaryDiffEqAlgorithm end
+struct Ruth3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
@@ -4751,7 +4757,7 @@ struct Ruth3 <: OrdinaryDiffEqAlgorithm end
   publisher={IOP Publishing}
 }
 """
-struct McAte3 <: OrdinaryDiffEqAlgorithm end
+struct McAte3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{candy1991symplectic,
@@ -4765,8 +4771,8 @@ struct McAte3 <: OrdinaryDiffEqAlgorithm end
   publisher={Elsevier}
 }
 """
-struct CandyRoz4 <: OrdinaryDiffEqAlgorithm end
-struct McAte4 <: OrdinaryDiffEqAlgorithm end
+struct CandyRoz4 <: OrdinaryDiffEqPartitionedAlgorithm end
+struct McAte4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{sanz1993symplectic,
@@ -4780,7 +4786,7 @@ struct McAte4 <: OrdinaryDiffEqAlgorithm end
   publisher={World Scientific}
 }
 """
-struct CalvoSanz4 <: OrdinaryDiffEqAlgorithm end
+struct CalvoSanz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
@@ -4794,7 +4800,7 @@ struct CalvoSanz4 <: OrdinaryDiffEqAlgorithm end
   publisher={IOP Publishing}
 }
 """
-struct McAte42 <: OrdinaryDiffEqAlgorithm end
+struct McAte42 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
@@ -4808,7 +4814,7 @@ struct McAte42 <: OrdinaryDiffEqAlgorithm end
   publisher={IOP Publishing}
 }
 """
-struct McAte5 <: OrdinaryDiffEqAlgorithm end
+struct McAte5 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{yoshida1990construction,
@@ -4822,7 +4828,7 @@ struct McAte5 <: OrdinaryDiffEqAlgorithm end
   publisher={Elsevier}
 }
 """
-struct Yoshida6 <: OrdinaryDiffEqAlgorithm end
+struct Yoshida6 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{kahan1997composition,
@@ -4835,7 +4841,7 @@ struct Yoshida6 <: OrdinaryDiffEqAlgorithm end
   year={1997}
 }
 """
-struct KahanLi6 <: OrdinaryDiffEqAlgorithm end
+struct KahanLi6 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1995numerical,
@@ -4849,7 +4855,7 @@ struct KahanLi6 <: OrdinaryDiffEqAlgorithm end
   publisher={SIAM}
 }
 """
-struct McAte8 <: OrdinaryDiffEqAlgorithm end
+struct McAte8 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{kahan1997composition,
@@ -4862,7 +4868,7 @@ struct McAte8 <: OrdinaryDiffEqAlgorithm end
   year={1997}
 }
 """
-struct KahanLi8 <: OrdinaryDiffEqAlgorithm end
+struct KahanLi8 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{sofroniou2005derivation,
@@ -4876,7 +4882,7 @@ struct KahanLi8 <: OrdinaryDiffEqAlgorithm end
   publisher={Taylor \\& Francis}
 }
 """
-struct SofSpa10 <: OrdinaryDiffEqAlgorithm end
+struct SofSpa10 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 # Nyström methods
 
@@ -4887,21 +4893,21 @@ struct SofSpa10 <: OrdinaryDiffEqAlgorithm end
   publisher={Citeseer}
 }
 """
-struct IRKN3 <: OrdinaryDiffEqAlgorithm end
+struct IRKN3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
   Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
   Springer-Verlag.
 """
-struct Nystrom4 <: OrdinaryDiffEqAlgorithm end
+struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
   Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
   Springer-Verlag.
 """
-struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
+struct Nystrom4VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{rabiei2012numerical,
@@ -4910,14 +4916,14 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
   publisher={Citeseer}
 }
 """
-struct IRKN4 <: OrdinaryDiffEqAlgorithm end
+struct IRKN4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
   Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
   Springer-Verlag.
 """
-struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
+struct Nystrom5VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{Dormand1987FamiliesOR,
@@ -4929,7 +4935,7 @@ struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
   pages={235-250}
 }
 """
-struct DPRKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{Bettis1973ARN,
@@ -4942,7 +4948,7 @@ struct DPRKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end
   publisher={Springer}
 }
 """
-struct DPRKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{dormand1987runge,
@@ -4956,7 +4962,7 @@ struct DPRKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   publisher={Elsevier}
 }
 """
-struct DPRKN6 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN6 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{Dormand1987FamiliesOR,
@@ -4968,7 +4974,7 @@ struct DPRKN6 <: OrdinaryDiffEqAdaptiveAlgorithm end
   pages={235-250}
 }
 """
-struct DPRKN6FM <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN6FM <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{dormand1987high,
@@ -4982,7 +4988,7 @@ struct DPRKN6FM <: OrdinaryDiffEqAdaptiveAlgorithm end
   publisher={Oxford University Press}
 }
 """
-struct DPRKN8 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN8 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{dormand1987high,
@@ -4996,7 +5002,7 @@ struct DPRKN8 <: OrdinaryDiffEqAdaptiveAlgorithm end
   publisher={Oxford University Press}
 }
 """
-struct DPRKN12 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN12 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{demba2017embedded,
@@ -5009,7 +5015,7 @@ struct DPRKN12 <: OrdinaryDiffEqAdaptiveAlgorithm end
   year={2017}
 }
 """
-struct ERKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct ERKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{demba20165,
@@ -5023,7 +5029,7 @@ struct ERKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end
   publisher={Multidisciplinary Digital Publishing Institute}
 }
 """
-struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct ERKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 @article{SimosOnHO,
@@ -5034,7 +5040,7 @@ struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
   pages={113753}
 }
 """
-struct ERKN7 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 ################################################################################
 

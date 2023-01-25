@@ -78,16 +78,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         error("You cannot use an DAE Algorithm with a ODEProblem")
     end
 
-    partitioned_ode_solvers = [Nystrom4(), IRKN3(), IRKN4(), ERKN4(), ERKN5(), ERKN7(), Nystrom4VelocityIndependent(),
-                               Nystrom5VelocityIndependent(), DPRKN4(), DPRKN5(), DPRKN6(), DPRKN6FM(), DPRKN8(), DPRKN12(),
-                               SymplecticEuler(), VelocityVerlet(), VerletLeapfrog(), PseudoVerletLeapfrog(), McAte2(), Ruth3(),
-                               McAte3(), CandyRoz4(), McAte4(), CalvoSanz4(), McAte42(), McAte5(), Yoshida6(), KahanLi6(),
-                               McAte8(), KahanLi8(), SofSpa10()]
+    if prob.problem_type isa DiffEqBase.AbstractDynamicalODEProblem && !(alg isa PartitionedAlgorithm)
+        error("This solver is not able to solve partitioned ODE problem. Please choose another solver such as DPRKN6 or McAte5")
+    end
 
-    if prob isa DiffEqBase.AbstractODEProblem
-        if in(alg, partitioned_ode_solvers)
-            error("You cannot use an algorithm designed for partitioned ODE with an ODEProblem, please use DynamicalODEProblem/SecondOrderODEProblem/HamiltonianProblem instead.")
-        end
+    if !(prob.problem_type isa DiffEqBase.AbstractDynamicalODEProblem) && alg isa PartitionedAlgorithm
+        error("You can not use a solver designed for partitioned ODE with this problem. Please choose a solver suitable for your problem")
     end
 
     if typeof(prob.f) <: DynamicalODEFunction && typeof(prob.f.mass_matrix) <: Tuple
