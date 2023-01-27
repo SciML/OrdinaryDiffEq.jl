@@ -45,8 +45,7 @@ function initialize!(integrator, cache::CompositeCache)
     resize!(integrator.k, integrator.kshortsize)
 end
 
-
-function initialize!(integrator, cache::CompositeCache{Tuple{T1,T2}, F}) where {T1,T2,F}
+function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
     cache.current = cache.choice_function(integrator)
     if cache.current == 1
         initialize!(integrator, @inbounds(cache.caches[1]))
@@ -66,7 +65,8 @@ function perform_step!(integrator, cache::CompositeCache, repeat_step = false)
     end
 end
 
-function perform_step!(integrator, cache::CompositeCache{Tuple{T1,T2}, F}, repeat_step = false) where {T1,T2,F}
+function perform_step!(integrator, cache::CompositeCache{Tuple{T1, T2}, F},
+                       repeat_step = false) where {T1, T2, F}
     if cache.current == 1
         perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
     elseif cache.current == 2
@@ -76,7 +76,8 @@ end
 
 choose_algorithm!(integrator, cache::OrdinaryDiffEqCache) = nothing
 
-function choose_algorithm!(integrator, cache::CompositeCache{Tuple{T1,T2}, F}) where {T1,T2,F}
+function choose_algorithm!(integrator,
+                           cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
     new_current = cache.choice_function(integrator)
     @inbounds if new_current != cache.current
         if new_current == 1
