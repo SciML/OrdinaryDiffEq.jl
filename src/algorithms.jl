@@ -6667,6 +6667,9 @@ struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
 end
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
+    Base.Experimental.silence!(CompositeAlgorithm)
+end
 
 ################################################################################
 """

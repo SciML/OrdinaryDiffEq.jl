@@ -173,5 +173,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
               opts, destats, initializealg) # Leave off fsalfirst and last
     end
 end
-
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
+    Base.Experimental.silence!(ODEIntegrator)
+end
 # When this is changed, DelayDiffEq.jl must be changed as well!

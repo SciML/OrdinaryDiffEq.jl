@@ -433,6 +433,9 @@ end
     step_limiter!::StepLimiter
     thread::Thread
 end
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
+    Base.Experimental.silence!(Tsit5Cache)
+end
 
 @cache struct RK46NLCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache

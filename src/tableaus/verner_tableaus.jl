@@ -573,6 +573,31 @@ struct Vern7ExtraStages{T, T2}
     a1613::T
 end
 
+macro HorribleHackExtract(S_T, T, T2)
+    S = getproperty(__module__, S_T)
+    s = gensym(:s)
+    q = quote
+        $s = $S($T, $T2)
+    end
+    fn = fieldnames(S)
+    for n in fn
+        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
+    end
+    return esc(q)
+end
+macro HorribleHackExtract(S_T, T)
+    S = getproperty(__module__, S_T)
+    s = gensym(:s)
+    q = quote
+        $s = $S($T)
+    end
+    fn = fieldnames(S)
+    for n in fn
+        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
+    end
+    return esc(q)
+end
+
 function Vern7ExtraStages(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     c11 = convert(T2, 1)
     a1101 = convert(T, 0.04715561848627222)
@@ -643,7 +668,7 @@ function Vern7ExtraStages(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
                      a1601, a1604, a1605, a1606, a1607, a1608, a1609, a1611, a1612, a1613)
 end
 
-function Vern7ExtraStages(T, T2)
+@generated function Vern7ExtraStages(::Type{T}, ::Type{T2}) where {T, T2}
     c11 = convert(T2, 1)
     a1101 = convert(T, big" .4715561848627222170431765108838175679569e-1")
     a1104 = convert(T, big" .2575056429843415189596436101037687580986")
@@ -1038,8 +1063,8 @@ struct Vern7Tableau{T, T2}
     btilde8::T
     btilde9::T
     btilde10::T
-    extra::Vern7ExtraStages{T, T2}
-    interp::Vern7InterpolationCoefficients{T}
+    # extra::Vern7ExtraStages{T, T2}
+    # interp::Vern7InterpolationCoefficients{T}
 end
 
 function Vern7Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -1108,17 +1133,17 @@ function Vern7Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     btilde9 = convert(T, 0.08131747232495111)
     btilde10 = convert(T, -0.02029518466335628)
 
-    extra = Vern7ExtraStages(T, T2)
-    interp = Vern7InterpolationCoefficients(T)
+    # extra = Vern7ExtraStages(T, T2)
+    # interp = Vern7InterpolationCoefficients(T)
 
     Vern7Tableau(c2, c3, c4, c5, c6, c7, c8, a021, a031, a032, a041, a043, a051, a053, a054,
                  a061, a063, a064, a065, a071, a073, a074, a075, a076, a081, a083, a084,
                  a085, a086, a087, a091, a093, a094, a095, a096, a097, a098, a101, a103,
                  a104, a105, a106, a107, b1, b4, b5, b6, b7, b8, b9, btilde1, btilde4,
-                 btilde5, btilde6, btilde7, btilde8, btilde9, btilde10, extra, interp)
+                 btilde5, btilde6, btilde7, btilde8, btilde9, btilde10)
 end
 
-function Vern7Tableau(T, T2)
+@generated function Vern7Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     c2 = convert(T2, 1 // 200)
     c3 = convert(T2, 49 // 450)
     c4 = convert(T2, 49 // 300)
@@ -1227,14 +1252,14 @@ function Vern7Tableau(T, T2)
     btilde9 = convert(T, 181081444637946577 // 2226845467039736466)
     btilde10 = convert(T, -2152106665253777 // 106040260335225546)
 
-    extra = Vern7ExtraStages(T, T2)
-    interp = Vern7InterpolationCoefficients(T)
+    # extra = Vern7ExtraStages(T, T2)
+    # interp = Vern7InterpolationCoefficients(T)
 
     Vern7Tableau(c2, c3, c4, c5, c6, c7, c8, a021, a031, a032, a041, a043, a051, a053, a054,
                  a061, a063, a064, a065, a071, a073, a074, a075, a076, a081, a083, a084,
                  a085, a086, a087, a091, a093, a094, a095, a096, a097, a098, a101, a103,
                  a104, a105, a106, a107, b1, b4, b5, b6, b7, b8, b9, btilde1, btilde4,
-                 btilde5, btilde6, btilde7, btilde8, btilde9, btilde10, extra, interp)
+                 btilde5, btilde6, btilde7, btilde8, btilde9, btilde10)
 end
 
 ## Vern8
@@ -2604,7 +2629,7 @@ function Vern9ExtraStages(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
                      a2617, a2618, a2619, a2620, a2621)
 end
 
-function Vern9ExtraStages(T, T2)
+@generated function Vern9ExtraStages(::Type{T}, ::Type{T2}) where {T, T2}
     #  FIVE ADDITIONAL STAGES FOR INTERPOLANT OF ORDER  8
     c17 = convert(T2, 1)
     a1701 = convert(T, big" .1461197685842315252051541915018784713459e-1")
@@ -3376,8 +3401,8 @@ struct Vern9Tableau{T, T2}
     btilde14::T
     btilde15::T
     btilde16::T
-    extra::Vern9ExtraStages{T, T2}
-    interp::Vern9InterpolationCoefficients{T}
+    # extra::Vern9ExtraStages{T, T2}
+    # interp::Vern9InterpolationCoefficients{T}
 end
 
 function Vern9Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -3498,8 +3523,8 @@ function Vern9Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     btilde15 = convert(T, 0.030570139830827976)
     btilde16 = convert(T, -0.04834231373823958)
 
-    extra = Vern9ExtraStages(T, T2)
-    interp = Vern9InterpolationCoefficients(T)
+    # extra = Vern9ExtraStages(T, T2)
+    # interp = Vern9InterpolationCoefficients(T)
 
     Vern9Tableau(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, a0201, a0301,
                  a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701,
@@ -3511,10 +3536,10 @@ function Vern9Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
                  a1510, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609,
                  a1610, a1611, a1612, a1613, b1, b8, b9, b10, b11, b12, b13, b14, b15,
                  btilde1, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13,
-                 btilde14, btilde15, btilde16, extra, interp)
+                 btilde14, btilde15, btilde16)
 end
 
-function Vern9Tableau(T, T2)
+@generated function Vern9Tableau(::Type{T}, ::Type{T2}) where {T, T2}
     c1 = convert(T2, 1731 // 50000)
     c2 = convert(T2,
                  BigInt(7630049) // BigInt(53810000) -
@@ -3885,8 +3910,8 @@ function Vern9Tableau(T, T2)
     btilde16 = convert(T,
                        -1839190071060649887127895100784 // 38045139523510634351420875415397)
 
-    extra = Vern9ExtraStages(T, T2)
-    interp = Vern9InterpolationCoefficients(T)
+    # extra = Vern9ExtraStages(T, T2)
+    # interp = Vern9InterpolationCoefficients(T)
 
     Vern9Tableau(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, a0201, a0301,
                  a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701,
@@ -3898,5 +3923,5 @@ function Vern9Tableau(T, T2)
                  a1510, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609,
                  a1610, a1611, a1612, a1613, b1, b8, b9, b10, b11, b12, b13, b14, b15,
                  btilde1, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13,
-                 btilde14, btilde15, btilde16, extra, interp)
+                 btilde14, btilde15, btilde16)
 end

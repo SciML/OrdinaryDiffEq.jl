@@ -9,6 +9,9 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     choice_function::F
     current::Int
 end
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
+    Base.Experimental.silence!(CompositeCache)
+end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
