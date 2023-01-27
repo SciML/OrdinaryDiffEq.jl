@@ -43,24 +43,40 @@ end
                        always_calc_begin, allow_calc_end, force_calc_end)
     else
         cache_current = cache.current
-        if cache_current == 1
-            _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
-                           integrator.u,
-                           integrator.dt, f, integrator.p,
-                           @inbounds(cache.caches[1]),
-                           always_calc_begin, allow_calc_end, force_calc_end)
-        elseif cache_current == 2
-            _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
-                           integrator.u,
-                           integrator.dt, f, integrator.p,
-                           @inbounds(cache.caches[2]),
-                           always_calc_begin, allow_calc_end, force_calc_end)
+        if length(integrator.cache.caches) == 2
+            if cache_current == 1
+                _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+                            integrator.u,
+                            integrator.dt, f, integrator.p,
+                            cache.caches[1],
+                            always_calc_begin, allow_calc_end, force_calc_end)
+            elseif cache_current == 2
+                _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+                            integrator.u,
+                            integrator.dt, f, integrator.p,
+                            cache.caches[2],
+                            always_calc_begin, allow_calc_end, force_calc_end)
+            end
         else
-            _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
-                           integrator.u,
-                           integrator.dt, f, integrator.p,
-                           @inbounds(cache.caches[cache_current]),
-                           always_calc_begin, allow_calc_end, force_calc_end)
+            if cache_current == 1
+                _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+                            integrator.u,
+                            integrator.dt, f, integrator.p,
+                            cache.caches[1],
+                            always_calc_begin, allow_calc_end, force_calc_end)
+            elseif cache_current == 2
+                _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+                            integrator.u,
+                            integrator.dt, f, integrator.p,
+                            cache.caches[2],
+                            always_calc_begin, allow_calc_end, force_calc_end)
+            else
+                _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
+                            integrator.u,
+                            integrator.dt, f, integrator.p,
+                            cache.caches[cache_current],
+                            always_calc_begin, allow_calc_end, force_calc_end)
+            end
         end
     end
 end
