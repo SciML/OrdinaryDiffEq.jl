@@ -69,7 +69,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     T = recursive_unitless_bottom_eltype(u)
-    T2 = recursive_unitless_eltype(u)
+    T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
         @HorribleHackExtract Vern7Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp = cache
@@ -166,7 +166,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     T = recursive_unitless_bottom_eltype(u)
-    T2 = recursive_unitless_eltype(u)
+    T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
         @HorribleHackExtract Vern7Tableau T T2
 
@@ -434,7 +434,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     T = recursive_unitless_bottom_eltype(u)
-    T2 = recursive_unitless_eltype(u)
+    T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
         @HorribleHackExtract Vern9Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
@@ -589,7 +589,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     T = recursive_unitless_bottom_eltype(u)
-    T2 = recursive_unitless_eltype(u)
+    T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
         @HorribleHackExtract Vern9Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
@@ -872,7 +872,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     T = recursive_unitless_bottom_eltype(u)
-    T2 = recursive_unitless_eltype(u)
+    T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
         @HorribleHackExtract Vern7Tableau T T2
         copyat_or_push!(k, 1, f(uprev, p, t))
@@ -1059,7 +1059,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     T = recursive_unitless_bottom_eltype(u)
-    T2 = recursive_unitless_eltype(u)
+    T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
         @HorribleHackExtract Vern9Tableau T T2
         copyat_or_push!(k, 1, f(uprev, p, t))
