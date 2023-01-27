@@ -45,6 +45,17 @@ function initialize!(integrator, cache::CompositeCache)
     resize!(integrator.k, integrator.kshortsize)
 end
 
+
+function initialize!(integrator, cache::CompositeCache{Tuple{T1,T2}, F}) where {T1,T2,F}
+    cache.current = cache.choice_function(integrator)
+    if cache.current == 1
+        initialize!(integrator, @inbounds(cache.caches[1]))
+    elseif cache.current == 2
+        initialize!(integrator, @inbounds(cache.caches[2]))
+    end
+    resize!(integrator.k, integrator.kshortsize)
+end
+
 function perform_step!(integrator, cache::CompositeCache, repeat_step = false)
     if cache.current == 1
         perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
@@ -52,6 +63,14 @@ function perform_step!(integrator, cache::CompositeCache, repeat_step = false)
         perform_step!(integrator, @inbounds(cache.caches[2]), repeat_step)
     else
         perform_step!(integrator, @inbounds(cache.caches[cache.current]), repeat_step)
+    end
+end
+
+function perform_step!(integrator, cache::CompositeCache{Tuple{T1,T2}, F}, repeat_step = false) where {T1,T2,F}
+    if cache.current == 1
+        perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
+    elseif cache.current == 2
+        perform_step!(integrator, @inbounds(cache.caches[2]), repeat_step)
     end
 end
 
