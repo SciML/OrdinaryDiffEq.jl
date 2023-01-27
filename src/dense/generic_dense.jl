@@ -50,7 +50,8 @@ end
                             integrator.dt, f, integrator.p,
                             cache.caches[1],
                             always_calc_begin, allow_calc_end, force_calc_end)
-            elseif cache_current == 2
+            else
+                @assert cache_current == 2
                 _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
                             integrator.u,
                             integrator.dt, f, integrator.p,
