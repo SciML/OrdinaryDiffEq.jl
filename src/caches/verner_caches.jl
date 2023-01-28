@@ -245,9 +245,7 @@ function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
                alg.thread)
 end
 
-struct Vern9ConstantCache <: OrdinaryDiffEqConstantCache
-    # tab::TabType
-end
+struct Vern9ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
