@@ -1,3 +1,5 @@
+const NEGZERO = Float16(-0.0f0)
+
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
                                   cache::Union{FunctionMapConstantCache, FunctionMapCache},
                                   idxs, T::Type{Val{0}})
@@ -14,10 +16,10 @@ end
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
 @def dp5pre0 begin
-    b10 = @evalpoly(Θ, Float16(-0.0f0), 1)
-    b20 = @evalpoly(Θ, Float16(-0.0f0), 1, -1)
-    b30 = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), 1, -1)
-    b40 = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), 1, -2, 1)
+    b10 = @evalpoly(Θ, NEGZERO, 1)
+    b20 = @evalpoly(Θ, NEGZERO, 1, -1)
+    b30 = @evalpoly(Θ, NEGZERO, NEGZERO, 1, -1)
+    b40 = @evalpoly(Θ, NEGZERO, NEGZERO, 1, -2, 1)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::DP5ConstantCache, idxs::Nothing,
@@ -64,8 +66,8 @@ end
 
 @def dp5pre1 begin
     b20diff = @evalpoly(Θ, 1, -2)
-    b30diff = @evalpoly(Θ, Float16(-0.0f0), 2, -3)
-    b40diff = @evalpoly(Θ, Float16(-0.0f0), 2, -6, 4)
+    b30diff = @evalpoly(Θ, NEGZERO, 2, -3)
+    b40diff = @evalpoly(Θ, NEGZERO, 2, -6, 4)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -215,9 +217,9 @@ Second order strong stability preserving (SSP) interpolant.
 Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017).
 """
 @def ssprkpre0 begin
-    c00 = @evalpoly(Θ, 1, Float16(-0.0f0), -1)
+    c00 = @evalpoly(Θ, 1, NEGZERO, -1)
     c10 = Θ^2
-    b10dt = @evalpoly(Θ, Float16(-0.0f0), 1, -1) * dt
+    b10dt = @evalpoly(Θ, NEGZERO, 1, -1) * dt
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -374,13 +376,13 @@ end end
 
 @def tsit5pre0 begin
     @tsit5unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), r11, r12, r13, r14)
-    b2Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r22, r23, r24)
-    b3Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r32, r33, r34)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r42, r43, r44)
-    b5Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r52, r53, r54)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r62, r63, r64)
-    b7Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r72, r73, r74)
+    b1Θ = @evalpoly(Θ, NEGZERO, r11, r12, r13, r14)
+    b2Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r22, r23, r24)
+    b3Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r32, r33, r34)
+    b4Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r42, r43, r44)
+    b5Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r52, r53, r54)
+    b6Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r62, r63, r64)
+    b7Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r72, r73, r74)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Tsit5ConstantCache,
@@ -462,12 +464,12 @@ end
 @def tsit5pre1 begin
     @tsit5unpack
     b1Θdiff = @evalpoly(Θ, r11, 2*r12, 3*r13, 4*r14)
-    b2Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r22, 3*r23, 4*r24)
-    b3Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r32, 3*r33, 4*r34)
-    b4Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r42, 3*r43, 4*r44)
-    b5Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r52, 3*r53, 4*r54)
-    b6Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r62, 3*r63, 4*r64)
-    b7Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r72, 3*r73, 4*r74)
+    b2Θdiff = @evalpoly(Θ, NEGZERO, 2*r22, 3*r23, 4*r24)
+    b3Θdiff = @evalpoly(Θ, NEGZERO, 2*r32, 3*r33, 4*r34)
+    b4Θdiff = @evalpoly(Θ, NEGZERO, 2*r42, 3*r43, 4*r44)
+    b5Θdiff = @evalpoly(Θ, NEGZERO, 2*r52, 3*r53, 4*r54)
+    b6Θdiff = @evalpoly(Θ, NEGZERO, 2*r62, 3*r63, 4*r64)
+    b7Θdiff = @evalpoly(Θ, NEGZERO, 2*r72, 3*r73, 4*r74)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Tsit5ConstantCache,
@@ -710,10 +712,10 @@ end end
 
 @def owrenzen3pre0 begin
     @owrenzen3unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), 1, r12, r13)
-    b2Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r22, r23)
-    b3Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r32, r33)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), -1, 1)
+    b1Θ = @evalpoly(Θ, NEGZERO, 1, r12, r13)
+    b2Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r22, r23)
+    b3Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r32, r33)
+    b4Θ = @evalpoly(Θ, NEGZERO, NEGZERO, -1, 1)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -757,9 +759,9 @@ end
 @def owrenzen3pre1 begin
     @owrenzen3unpack
     b1Θdiff = @evalpoly(Θ, 1, 2*r12, 3*r13)
-    b2Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r22, 3*r23)
-    b3Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r32, 3*r33)
-    b4Θdiff = @evalpoly(Θ, Float16(-0.0f0), -2, 3)
+    b2Θdiff = @evalpoly(Θ, NEGZERO, 2*r22, 3*r23)
+    b3Θdiff = @evalpoly(Θ, NEGZERO, 2*r32, 3*r33)
+    b4Θdiff = @evalpoly(Θ, NEGZERO, -2, 3)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -892,11 +894,11 @@ end end
 
 @def owrenzen4pre0 begin
     @owrenzen4unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), 1, r12, r13, r14)
-    b3Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r32, r33, r34)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r42, r43, r44)
-    b5Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r52, r53, r54)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r62, r63, r64)
+    b1Θ = @evalpoly(Θ, NEGZERO, 1, r12, r13, r14)
+    b3Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r32, r33, r34)
+    b4Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r42, r43, r44)
+    b5Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r52, r53, r54)
+    b6Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r62, r63, r64)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -952,10 +954,10 @@ end
 @def owrenzen4pre1 begin
     @owrenzen4unpack
     b1Θdiff = @evalpoly(Θ, 1, 2*r12, 3*r13, 4*r14)
-    b3Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r32, 3*r33, 4*r34)
-    b4Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r42, 3*r43, 4*r44)
-    b5Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r52, 3*r53, 4*r54)
-    b6Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r62, 3*r63, 4*r64)
+    b3Θdiff = @evalpoly(Θ, NEGZERO, 2*r32, 3*r33, 4*r34)
+    b4Θdiff = @evalpoly(Θ, NEGZERO, 2*r42, 3*r43, 4*r44)
+    b5Θdiff = @evalpoly(Θ, NEGZERO, 2*r52, 3*r53, 4*r54)
+    b6Θdiff = @evalpoly(Θ, NEGZERO, 2*r62, 3*r63, 4*r64)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -1142,13 +1144,13 @@ end end
 
 @def owrenzen5pre0 begin
     @owrenzen5unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), 1, r12, r13, r14, r15)
-    b3Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r32, r33, r34, r35)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r42, r43, r44, r45)
-    b5Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r52, r53, r54, r55)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r62, r63, r64, r65)
-    b7Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r72, r73, r74, r75)
-    b8Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r82, r83, r84, r85)
+    b1Θ = @evalpoly(Θ, NEGZERO, 1, r12, r13, r14, r15)
+    b3Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r32, r33, r34, r35)
+    b4Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r42, r43, r44, r45)
+    b5Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r52, r53, r54, r55)
+    b6Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r62, r63, r64, r65)
+    b7Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r72, r73, r74, r75)
+    b8Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r82, r83, r84, r85)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -1209,12 +1211,12 @@ end
 @def owrenzen5pre1 begin
     @owrenzen5unpack
     b1Θdiff = @evalpoly(Θ, 1, 2*r12, 3*r13, 4*r14, 5*r15)
-    b3Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r32, 3*r33, 4*r34, 5*r35)
-    b4Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r42, 3*r43, 4*r44, 5*r45)
-    b5Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r52, 3*r53, 4*r54, 5*r55)
-    b6Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r62, 3*r63, 4*r64, 5*r65)
-    b7Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r72, 3*r73, 4*r74, 5*r75)
-    b8Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r82, 3*r83, 4*r84, 5*r85)
+    b3Θdiff = @evalpoly(Θ, NEGZERO, 2*r32, 3*r33, 4*r34, 5*r35)
+    b4Θdiff = @evalpoly(Θ, NEGZERO, 2*r42, 3*r43, 4*r44, 5*r45)
+    b5Θdiff = @evalpoly(Θ, NEGZERO, 2*r52, 3*r53, 4*r54, 5*r55)
+    b6Θdiff = @evalpoly(Θ, NEGZERO, 2*r62, 3*r63, 4*r64, 5*r65)
+    b7Θdiff = @evalpoly(Θ, NEGZERO, 2*r72, 3*r73, 4*r74, 5*r75)
+    b8Θdiff = @evalpoly(Θ, NEGZERO, 2*r82, 3*r83, 4*r84, 5*r85)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -1510,17 +1512,17 @@ end end
 
 @def bs5pre0 begin
     @bs5unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r012, r013, r014, r015, r016)
-    b3Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r032, r033, r034, r035, r036)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r042, r043, r044, r045, r046)
-    b5Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r052, r053, r054, r055, r056)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r062, r063, r064, r065, r066)
-    b7Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r072, r073, r074, r075, r076)
-    b8Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r082, r083, r084, r085, r086)
-    b9Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), Float16(-0.0f0), r093, r094, r095,
+    b1Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r012, r013, r014, r015, r016)
+    b3Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r032, r033, r034, r035, r036)
+    b4Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r042, r043, r044, r045, r046)
+    b5Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r052, r053, r054, r055, r056)
+    b6Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r062, r063, r064, r065, r066)
+    b7Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r072, r073, r074, r075, r076)
+    b8Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r082, r083, r084, r085, r086)
+    b9Θ = @evalpoly(Θ, NEGZERO, NEGZERO, NEGZERO, r093, r094, r095,
                     r096)
-    b10Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r102, r103, r104, r105, r106)
-    b11Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r112, r113, r114, r115, r116)
+    b10Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r102, r103, r104, r105, r106)
+    b11Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r112, r113, r114, r115, r116)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::BS5ConstantCache, idxs::Nothing,
@@ -1590,16 +1592,16 @@ end
 
 @def bs5pre1 begin
     @bs5unpack
-    b1Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
-    b3Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r032, 3*r033, 4*r034, 5*r035, 6*r036)
-    b4Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
-    b5Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r052, 3*r053, 4*r054, 5*r055, 6*r056)
-    b6Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r062, 3*r063, 4*r064, 5*r065, 6*r066)
-    b7Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r072, 3*r073, 4*r074, 5*r075, 6*r076)
-    b8Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r082, 3*r083, 4*r084, 5*r085, 6*r086)
-    b9Θdiff = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), 3*r093, 4*r094, 5*r095, 6*r096)
-    b10Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
-    b11Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
+    b1Θdiff = @evalpoly(Θ, NEGZERO, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
+    b3Θdiff = @evalpoly(Θ, NEGZERO, 2*r032, 3*r033, 4*r034, 5*r035, 6*r036)
+    b4Θdiff = @evalpoly(Θ, NEGZERO, 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
+    b5Θdiff = @evalpoly(Θ, NEGZERO, 2*r052, 3*r053, 4*r054, 5*r055, 6*r056)
+    b6Θdiff = @evalpoly(Θ, NEGZERO, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066)
+    b7Θdiff = @evalpoly(Θ, NEGZERO, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076)
+    b8Θdiff = @evalpoly(Θ, NEGZERO, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086)
+    b9Θdiff = @evalpoly(Θ, NEGZERO, NEGZERO, 3*r093, 4*r094, 5*r095, 6*r096)
+    b10Θdiff = @evalpoly(Θ, NEGZERO, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
+    b11Θdiff = @evalpoly(Θ, NEGZERO, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -1664,16 +1666,16 @@ end
 
 @def vern6pre0 begin
     @vern6unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), r011, r012, r013, r014, r015, r016)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r042, r043, r044, r045, r046)
-    b5Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r052, r053, r054, r055, r056)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r062, r063, r064, r065, r066)
-    b7Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r072, r073, r074, r075, r076)
-    b8Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r082, r083, r084, r085, r086)
-    b9Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r092, r093, r094, r095, r096)
-    b10Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r102, r103, r104, r105, r106)
-    b11Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r112, r113, r114, r115, r116)
-    b12Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r122, r123, r124, r125, r126)
+    b1Θ = @evalpoly(Θ, NEGZERO, r011, r012, r013, r014, r015, r016)
+    b4Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r042, r043, r044, r045, r046)
+    b5Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r052, r053, r054, r055, r056)
+    b6Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r062, r063, r064, r065, r066)
+    b7Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r072, r073, r074, r075, r076)
+    b8Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r082, r083, r084, r085, r086)
+    b9Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r092, r093, r094, r095, r096)
+    b10Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r102, r103, r104, r105, r106)
+    b11Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r112, r113, r114, r115, r116)
+    b12Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r122, r123, r124, r125, r126)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Vern6ConstantCache,
@@ -1733,15 +1735,15 @@ end
 @def vern6pre1 begin
     @vern6unpack
     b1Θdiff = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
-    b4Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
-    b5Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r052, 3*r053, 4*r054, 5*r055, 6*r056)
-    b6Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r062, 3*r063, 4*r064, 5*r065, 6*r066)
-    b7Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r072, 3*r073, 4*r074, 5*r075, 6*r076)
-    b8Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r082, 3*r083, 4*r084, 5*r085, 6*r086)
-    b9Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r092, 3*r093, 4*r094, 5*r095, 6*r096)
-    b10Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
-    b11Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
-    b12Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r122, 3*r123, 4*r124, 5*r125, 6*r126)
+    b4Θdiff = @evalpoly(Θ, NEGZERO, 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
+    b5Θdiff = @evalpoly(Θ, NEGZERO, 2*r052, 3*r053, 4*r054, 5*r055, 6*r056)
+    b6Θdiff = @evalpoly(Θ, NEGZERO, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066)
+    b7Θdiff = @evalpoly(Θ, NEGZERO, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076)
+    b8Θdiff = @evalpoly(Θ, NEGZERO, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086)
+    b9Θdiff = @evalpoly(Θ, NEGZERO, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096)
+    b10Θdiff = @evalpoly(Θ, NEGZERO, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
+    b11Θdiff = @evalpoly(Θ, NEGZERO, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
+    b12Θdiff = @evalpoly(Θ, NEGZERO, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -1794,24 +1796,24 @@ end
 
 @def vern7pre0 begin
     @vern7unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), r011, r012, r013, r014, r015, r016, r017)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r042, r043, r044, r045, r046, r047)
-    b5Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r052, r053, r054, r055, r056, r057)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r062, r063, r064, r065, r066, r067)
-    b7Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r072, r073, r074, r075, r076, r077)
-    b8Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r082, r083, r084, r085, r086, r087)
-    b9Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r092, r093, r094, r095, r096, r097)
-    b11Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r112, r113, r114, r115, r116,
+    b1Θ = @evalpoly(Θ, NEGZERO, r011, r012, r013, r014, r015, r016, r017)
+    b4Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r042, r043, r044, r045, r046, r047)
+    b5Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r052, r053, r054, r055, r056, r057)
+    b6Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r062, r063, r064, r065, r066, r067)
+    b7Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r072, r073, r074, r075, r076, r077)
+    b8Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r082, r083, r084, r085, r086, r087)
+    b9Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r092, r093, r094, r095, r096, r097)
+    b11Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r112, r113, r114, r115, r116,
                      r117)
-    b12Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r122, r123, r124, r125, r126,
+    b12Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r122, r123, r124, r125, r126,
                      r127)
-    b13Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r132, r133, r134, r135, r136,
+    b13Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r132, r133, r134, r135, r136,
                      r137)
-    b14Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r142, r143, r144, r145, r146,
+    b14Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r142, r143, r144, r145, r146,
                      r147)
-    b15Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r152, r153, r154, r155, r156,
+    b15Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r152, r153, r154, r155, r156,
                      r157)
-    b16Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r162, r163, r164, r165, r166,
+    b16Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r162, r163, r164, r165, r166,
                      r167)
 end
 
@@ -1878,18 +1880,18 @@ end
 @def vern7pre1 begin
     @vern7unpack
     b1Θdiff = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017)
-    b4Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r042, 3*r043, 4*r044, 5*r045, 6*r046, 7*r047)
-    b5Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r052, 3*r053, 4*r054, 5*r055, 6*r056, 7*r057)
-    b6Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r062, 3*r063, 4*r064, 5*r065, 6*r066, 7*r067)
-    b7Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r072, 3*r073, 4*r074, 5*r075, 6*r076, 7*r077)
-    b8Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087)
-    b9Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097)
-    b11Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117)
-    b12Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127)
-    b13Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r132, 3*r133, 4*r134, 5*r135, 6*r136, 7*r137)
-    b14Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147)
-    b15Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157)
-    b16Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r162, 3*r163, 4*r164, 5*r165, 6*r166, 7*r167)
+    b4Θdiff = @evalpoly(Θ, NEGZERO, 2*r042, 3*r043, 4*r044, 5*r045, 6*r046, 7*r047)
+    b5Θdiff = @evalpoly(Θ, NEGZERO, 2*r052, 3*r053, 4*r054, 5*r055, 6*r056, 7*r057)
+    b6Θdiff = @evalpoly(Θ, NEGZERO, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066, 7*r067)
+    b7Θdiff = @evalpoly(Θ, NEGZERO, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076, 7*r077)
+    b8Θdiff = @evalpoly(Θ, NEGZERO, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087)
+    b9Θdiff = @evalpoly(Θ, NEGZERO, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097)
+    b11Θdiff = @evalpoly(Θ, NEGZERO, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117)
+    b12Θdiff = @evalpoly(Θ, NEGZERO, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127)
+    b13Θdiff = @evalpoly(Θ, NEGZERO, 2*r132, 3*r133, 4*r134, 5*r135, 6*r136, 7*r137)
+    b14Θdiff = @evalpoly(Θ, NEGZERO, 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147)
+    b15Θdiff = @evalpoly(Θ, NEGZERO, 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157)
+    b16Θdiff = @evalpoly(Θ, NEGZERO, 2*r162, 3*r163, 4*r164, 5*r165, 6*r166, 7*r167)
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
@@ -1948,36 +1950,36 @@ end
 
 @def vern8pre0 begin
     @vern8unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), r011, r012, r013, r014, r015, r016, r017, r018)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r062, r063, r064, r065, r066, r067,
+    b1Θ = @evalpoly(Θ, NEGZERO, r011, r012, r013, r014, r015, r016, r017, r018)
+    b6Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r062, r063, r064, r065, r066, r067,
                     r068)
-    b7Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r072, r073, r074, r075, r076, r077,
+    b7Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r072, r073, r074, r075, r076, r077,
                     r078)
-    b8Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r082, r083, r084, r085, r086, r087,
+    b8Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r082, r083, r084, r085, r086, r087,
                     r088)
-    b9Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r092, r093, r094, r095, r096, r097,
+    b9Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r092, r093, r094, r095, r096, r097,
                     r098)
-    b10Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r102, r103, r104, r105, r106,
+    b10Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r102, r103, r104, r105, r106,
                      r107, r108)
-    b11Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r112, r113, r114, r115, r116,
+    b11Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r112, r113, r114, r115, r116,
                      r117, r118)
-    b12Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r122, r123, r124, r125, r126,
+    b12Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r122, r123, r124, r125, r126,
                      r127, r128)
-    b14Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r142, r143, r144, r145, r146,
+    b14Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r142, r143, r144, r145, r146,
                      r147, r148)
-    b15Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r152, r153, r154, r155, r156,
+    b15Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r152, r153, r154, r155, r156,
                      r157, r158)
-    b16Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r162, r163, r164, r165, r166,
+    b16Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r162, r163, r164, r165, r166,
                      r167, r168)
-    b17Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r172, r173, r174, r175, r176,
+    b17Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r172, r173, r174, r175, r176,
                      r177, r178)
-    b18Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r182, r183, r184, r185, r186,
+    b18Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r182, r183, r184, r185, r186,
                      r187, r188)
-    b19Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r192, r193, r194, r195, r196,
+    b19Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r192, r193, r194, r195, r196,
                      r197, r198)
-    b20Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r202, r203, r204, r205, r206,
+    b20Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r202, r203, r204, r205, r206,
                      r207, r208)
-    b21Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r212, r213, r214, r215, r216,
+    b21Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r212, r213, r214, r215, r216,
                      r217, r218)
 end
 
@@ -2054,35 +2056,35 @@ end
 @def vern8pre1 begin
     @vern8unpack
     b1Θdiff = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018)
-    b6Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r062, 3*r063, 4*r064, 5*r065, 6*r066, 7*r067,
+    b6Θdiff = @evalpoly(Θ, NEGZERO, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066, 7*r067,
                         8*r068)
-    b7Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r072, 3*r073, 4*r074, 5*r075, 6*r076, 7*r077,
+    b7Θdiff = @evalpoly(Θ, NEGZERO, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076, 7*r077,
                         8*r078)
-    b8Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087,
+    b8Θdiff = @evalpoly(Θ, NEGZERO, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087,
                         8*r088)
-    b9Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097,
+    b9Θdiff = @evalpoly(Θ, NEGZERO, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097,
                         8*r098)
-    b10Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r102, 3*r103, 4*r104, 5*r105, 6*r106, 7*r107,
+    b10Θdiff = @evalpoly(Θ, NEGZERO, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106, 7*r107,
                          8*r108)
-    b11Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117,
+    b11Θdiff = @evalpoly(Θ, NEGZERO, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117,
                          8*r118)
-    b12Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127,
+    b12Θdiff = @evalpoly(Θ, NEGZERO, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127,
                          8*r128)
-    b14Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147,
+    b14Θdiff = @evalpoly(Θ, NEGZERO, 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147,
                          8*r148)
-    b15Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157,
+    b15Θdiff = @evalpoly(Θ, NEGZERO, 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157,
                          8*r158)
-    b16Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r162, 3*r163, 4*r164, 5*r165, 6*r166, 7*r167,
+    b16Θdiff = @evalpoly(Θ, NEGZERO, 2*r162, 3*r163, 4*r164, 5*r165, 6*r166, 7*r167,
                          8*r168)
-    b17Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r172, 3*r173, 4*r174, 5*r175, 6*r176, 7*r177,
+    b17Θdiff = @evalpoly(Θ, NEGZERO, 2*r172, 3*r173, 4*r174, 5*r175, 6*r176, 7*r177,
                          8*r178)
-    b18Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r182, 3*r183, 4*r184, 5*r185, 6*r186, 7*r187,
+    b18Θdiff = @evalpoly(Θ, NEGZERO, 2*r182, 3*r183, 4*r184, 5*r185, 6*r186, 7*r187,
                          8*r188)
-    b19Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r192, 3*r193, 4*r194, 5*r195, 6*r196, 7*r197,
+    b19Θdiff = @evalpoly(Θ, NEGZERO, 2*r192, 3*r193, 4*r194, 5*r195, 6*r196, 7*r197,
                          8*r198)
-    b20Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r202, 3*r203, 4*r204, 5*r205, 6*r206, 7*r207,
+    b20Θdiff = @evalpoly(Θ, NEGZERO, 2*r202, 3*r203, 4*r204, 5*r205, 6*r206, 7*r207,
                          8*r208)
-    b21Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217,
+    b21Θdiff = @evalpoly(Θ, NEGZERO, 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217,
                          8*r218)
 end
 
@@ -2148,43 +2150,43 @@ end
 
 @def vern9pre0 begin
     @vern9unpack
-    b1Θ = @evalpoly(Θ, Float16(-0.0f0), r011, r012, r013, r014, r015, r016, r017, r018,
+    b1Θ = @evalpoly(Θ, NEGZERO, r011, r012, r013, r014, r015, r016, r017, r018,
                     r019)
-    b8Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r082, r083, r084, r085, r086, r087,
+    b8Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r082, r083, r084, r085, r086, r087,
                     r088, r089)
-    b9Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r092, r093, r094, r095, r096, r097,
+    b9Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r092, r093, r094, r095, r096, r097,
                     r098, r099)
-    b10Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r102, r103, r104, r105, r106,
+    b10Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r102, r103, r104, r105, r106,
                      r107, r108, r109)
-    b11Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r112, r113, r114, r115, r116,
+    b11Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r112, r113, r114, r115, r116,
                      r117, r118, r119)
-    b12Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r122, r123, r124, r125, r126,
+    b12Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r122, r123, r124, r125, r126,
                      r127, r128, r129)
-    b13Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r132, r133, r134, r135, r136,
+    b13Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r132, r133, r134, r135, r136,
                      r137, r138, r139)
-    b14Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r142, r143, r144, r145, r146,
+    b14Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r142, r143, r144, r145, r146,
                      r147, r148, r149)
-    b15Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r152, r153, r154, r155, r156,
+    b15Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r152, r153, r154, r155, r156,
                      r157, r158, r159)
-    b17Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r172, r173, r174, r175, r176,
+    b17Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r172, r173, r174, r175, r176,
                      r177, r178, r179)
-    b18Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r182, r183, r184, r185, r186,
+    b18Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r182, r183, r184, r185, r186,
                      r187, r188, r189)
-    b19Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r192, r193, r194, r195, r196,
+    b19Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r192, r193, r194, r195, r196,
                      r197, r198, r199)
-    b20Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r202, r203, r204, r205, r206,
+    b20Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r202, r203, r204, r205, r206,
                      r207, r208, r209)
-    b21Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r212, r213, r214, r215, r216,
+    b21Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r212, r213, r214, r215, r216,
                      r217, r218, r219)
-    b22Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r222, r223, r224, r225, r226,
+    b22Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r222, r223, r224, r225, r226,
                      r227, r228, r229)
-    b23Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r232, r233, r234, r235, r236,
+    b23Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r232, r233, r234, r235, r236,
                      r237, r238, r239)
-    b24Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r242, r243, r244, r245, r246,
+    b24Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r242, r243, r244, r245, r246,
                      r247, r248, r249)
-    b25Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r252, r253, r254, r255, r256,
+    b25Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r252, r253, r254, r255, r256,
                      r257, r258, r259)
-    b26Θ = @evalpoly(Θ, Float16(-0.0f0), Float16(-0.0f0), r262, r263, r264, r265, r266,
+    b26Θ = @evalpoly(Θ, NEGZERO, NEGZERO, r262, r263, r264, r265, r266,
                      r267, r268, r269)
 end
 
@@ -2266,58 +2268,58 @@ end
     @vern9unpack
     b1Θdiff = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018,
                         9*r019)
-    b8Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087,
+    b8Θdiff = @evalpoly(Θ, NEGZERO, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087,
                         8*r088,
                         9*r089)
-    b9Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097,
+    b9Θdiff = @evalpoly(Θ, NEGZERO, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097,
                         8*r098,
                         9*r099)
-    b10Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r102, 3*r103, 4*r104, 5*r105, 6*r106, 7*r107,
+    b10Θdiff = @evalpoly(Θ, NEGZERO, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106, 7*r107,
                          8*r108,
                          9*r109)
-    b11Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117,
+    b11Θdiff = @evalpoly(Θ, NEGZERO, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117,
                          8*r118,
                          9*r119)
-    b12Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127,
+    b12Θdiff = @evalpoly(Θ, NEGZERO, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127,
                          8*r128,
                          9*r129)
-    b13Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r132, 3*r133, 4*r134, 5*r135, 6*r136, 7*r137,
+    b13Θdiff = @evalpoly(Θ, NEGZERO, 2*r132, 3*r133, 4*r134, 5*r135, 6*r136, 7*r137,
                          8*r138,
                          9*r139)
-    b14Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147,
+    b14Θdiff = @evalpoly(Θ, NEGZERO, 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147,
                          8*r148,
                          9*r149)
-    b15Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157,
+    b15Θdiff = @evalpoly(Θ, NEGZERO, 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157,
                          8*r158,
                          9*r159)
-    b17Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r172, 3*r173, 4*r174, 5*r175, 6*r176, 7*r177,
+    b17Θdiff = @evalpoly(Θ, NEGZERO, 2*r172, 3*r173, 4*r174, 5*r175, 6*r176, 7*r177,
                          8*r178,
                          9*r179)
-    b18Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r182, 3*r183, 4*r184, 5*r185, 6*r186, 7*r187,
+    b18Θdiff = @evalpoly(Θ, NEGZERO, 2*r182, 3*r183, 4*r184, 5*r185, 6*r186, 7*r187,
                          8*r188,
                          9*r189)
-    b19Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r192, 3*r193, 4*r194, 5*r195, 6*r196, 7*r197,
+    b19Θdiff = @evalpoly(Θ, NEGZERO, 2*r192, 3*r193, 4*r194, 5*r195, 6*r196, 7*r197,
                          8*r198,
                          9*r199)
-    b20Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r202, 3*r203, 4*r204, 5*r205, 6*r206, 7*r207,
+    b20Θdiff = @evalpoly(Θ, NEGZERO, 2*r202, 3*r203, 4*r204, 5*r205, 6*r206, 7*r207,
                          8*r208,
                          9*r209)
-    b21Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217,
+    b21Θdiff = @evalpoly(Θ, NEGZERO, 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217,
                          8*r218,
                          9*r219)
-    b22Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r222, 3*r223, 4*r224, 5*r225, 6*r226, 7*r227,
+    b22Θdiff = @evalpoly(Θ, NEGZERO, 2*r222, 3*r223, 4*r224, 5*r225, 6*r226, 7*r227,
                          8*r228,
                          9*r229)
-    b23Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r232, 3*r233, 4*r234, 5*r235, 6*r236, 7*r237,
+    b23Θdiff = @evalpoly(Θ, NEGZERO, 2*r232, 3*r233, 4*r234, 5*r235, 6*r236, 7*r237,
                          8*r238,
                          9*r239)
-    b24Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r242, 3*r243, 4*r244, 5*r245, 6*r246, 7*r247,
+    b24Θdiff = @evalpoly(Θ, NEGZERO, 2*r242, 3*r243, 4*r244, 5*r245, 6*r246, 7*r247,
                          8*r248,
                          9*r249)
-    b25Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r252, 3*r253, 4*r254, 5*r255, 6*r256, 7*r257,
+    b25Θdiff = @evalpoly(Θ, NEGZERO, 2*r252, 3*r253, 4*r254, 5*r255, 6*r256, 7*r257,
                          8*r258,
                          9*r259)
-    b26Θdiff = @evalpoly(Θ, Float16(-0.0f0), 2*r262, 3*r263, 4*r264, 5*r265, 6*r266, 7*r267,
+    b26Θdiff = @evalpoly(Θ, NEGZERO, 2*r262, 3*r263, 4*r264, 5*r265, 6*r266, 7*r267,
                          8*r268,
                          9*r269)
 end
@@ -2829,16 +2831,16 @@ end end
 @def dprkn6pre0 begin
     @dprkn6unpack
     b1Θ = @evalpoly(Θ, r10, r11, r12, r13, r14)
-    b3Θ = @evalpoly(Θ, Float16(-0.0f0), r31, r32, r33, r34)
-    b4Θ = @evalpoly(Θ, Float16(-0.0f0), r41, r42, r43, r44)
-    b5Θ = @evalpoly(Θ, Float16(-0.0f0), r51, r52, r53, r54)
-    b6Θ = @evalpoly(Θ, Float16(-0.0f0), r61, r62, r63, r64)
+    b3Θ = @evalpoly(Θ, NEGZERO, r31, r32, r33, r34)
+    b4Θ = @evalpoly(Θ, NEGZERO, r41, r42, r43, r44)
+    b5Θ = @evalpoly(Θ, NEGZERO, r51, r52, r53, r54)
+    b6Θ = @evalpoly(Θ, NEGZERO, r61, r62, r63, r64)
 
     bp1Θ = @evalpoly(Θ, rp10, rp11, rp12, rp13, rp14)
-    bp3Θ = @evalpoly(Θ, Float16(-0.0f0), rp31, rp32, rp33, rp34)
-    bp4Θ = @evalpoly(Θ, Float16(-0.0f0), rp41, rp42, rp43, rp44)
-    bp5Θ = @evalpoly(Θ, Float16(-0.0f0), rp51, rp52, rp53, rp54)
-    bp6Θ = @evalpoly(Θ, Float16(-0.0f0), rp61, rp62, rp63, rp64)
+    bp3Θ = @evalpoly(Θ, NEGZERO, rp31, rp32, rp33, rp34)
+    bp4Θ = @evalpoly(Θ, NEGZERO, rp41, rp42, rp43, rp44)
+    bp5Θ = @evalpoly(Θ, NEGZERO, rp51, rp52, rp53, rp54)
+    bp6Θ = @evalpoly(Θ, NEGZERO, rp61, rp62, rp63, rp64)
 
     kk1, kk2, kk3 = k
     k1, k2 = kk1.x
