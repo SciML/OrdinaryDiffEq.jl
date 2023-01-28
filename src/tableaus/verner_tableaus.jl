@@ -3897,9 +3897,6 @@ end
     btilde16 = convert(T,
                        -1839190071060649887127895100784 // 38045139523510634351420875415397)
 
-    # extra = Vern9ExtraStages(T, T2)
-    # interp = Vern9InterpolationCoefficients(T)
-
     Vern9Tableau(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, a0201, a0301,
                  a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701,
                  a0704, a0705, a0706, a0801, a0806, a0807, a0901, a0906, a0907, a0908,
