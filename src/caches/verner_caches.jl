@@ -106,8 +106,7 @@ function alg_cache(alg::Vern7, u, rate_prototype, ::Type{uEltypeNoUnits},
                alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
-struct Vern7ConstantCache <: OrdinaryDiffEqConstantCache
-end
+struct Vern7ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Vern7, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
