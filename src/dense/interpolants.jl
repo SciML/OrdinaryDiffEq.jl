@@ -15,7 +15,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 """
 @def dp5pre0 begin
     Θ² = Θ * Θ
-    b10 = Θ * @evalpoly(Θ, 1)
+    b10 = Θ
     b20 = Θ * @evalpoly(Θ, 1, -1)
     b30 = Θ² * @evalpoly(Θ, 1, -1)
     b40 = Θ² * @evalpoly(Θ, 1, -2, 1)
