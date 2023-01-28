@@ -218,7 +218,6 @@ function alg_cache(alg::Vern9, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    # tab = Vern9Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = k2
