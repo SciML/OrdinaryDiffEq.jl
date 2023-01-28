@@ -534,28 +534,6 @@ struct Tsit5ConstantCacheActual{T, T2}
     btilde5::T
     btilde6::T
     btilde7::T
-    # r11::T
-    # r12::T
-    # r13::T
-    # r14::T
-    # r22::T
-    # r23::T
-    # r24::T
-    # r32::T
-    # r33::T
-    # r34::T
-    # r42::T
-    # r43::T
-    # r44::T
-    # r52::T
-    # r53::T
-    # r54::T
-    # r62::T
-    # r63::T
-    # r64::T
-    # r72::T
-    # r73::T
-    # r74::T
 end
 
 function Tsit5ConstantCacheActual(::Type{T},
