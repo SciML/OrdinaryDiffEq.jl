@@ -3393,8 +3393,6 @@ struct Vern9Tableau{T, T2}
     btilde14::T
     btilde15::T
     btilde16::T
-    # extra::Vern9ExtraStages{T, T2}
-    # interp::Vern9InterpolationCoefficients{T}
 end
 
 function Vern9Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
