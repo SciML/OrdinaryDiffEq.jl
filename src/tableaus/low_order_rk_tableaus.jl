@@ -603,14 +603,11 @@ function Tsit5ConstantCacheActual(::Type{T},
     btilde6 = convert(T, -0.45808210592918697)
     btilde7 = convert(T, 0.015151515151515152)
 
-    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62, r63, r64, r72, r73, r74 = Tsit5Interp(T)
     Tsit5ConstantCacheActual(c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52,
                              a53,
                              a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76,
                              btilde1,
                              btilde2, btilde3, btilde4, btilde5, btilde6, btilde7)
-    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62,
-    # r63, r64, r72, r73, r74)
 end
 
 @generated function Tsit5ConstantCacheActual(::Type{T}, ::Type{T2}) where {T, T2}
@@ -682,14 +679,11 @@ end
                       big"-4.580821059291869466616365188325542974428047279788398179474684434732070620889539e-01")
     btilde7 = convert(T, 1 // 66)
 
-    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62, r63, r64, r72, r73, r74 = Tsit5Interp(T)
     Tsit5ConstantCacheActual(c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52,
                              a53,
                              a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76,
                              btilde1,
                              btilde2, btilde3, btilde4, btilde5, btilde6, btilde7)
-    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62,
-    # r63, r64, r72, r73, r74)
 end
 
 """
