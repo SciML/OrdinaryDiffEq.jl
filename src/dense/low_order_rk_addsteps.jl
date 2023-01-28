@@ -150,7 +150,7 @@ end
     if length(k) < 7 || always_calc_begin
         T = recursive_unitless_bottom_eltype(u)
         T2 = typeof(one(t))
-        @OnDemandTableauExtract Tsit5ConstCacheActual T T2
+        @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
         @.. broadcast=false tmp=uprev + dt * (a21 * k1)
         f(k2, tmp, p, t + c1 * dt)

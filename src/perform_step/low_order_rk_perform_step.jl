@@ -771,7 +771,7 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
-    @OnDemandTableauExtract Tsit5ConstCacheActual T T2
+    @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     a = dt * a21
     @.. broadcast=false thread=thread tmp=uprev + a * k1
