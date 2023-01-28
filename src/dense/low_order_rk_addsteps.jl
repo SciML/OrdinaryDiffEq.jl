@@ -109,9 +109,10 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, c1, c2, c3, c4, c5, c6 = cache.tab
+        T = recursive_unitless_bottom_eltype(u)
+        T2 = typeof(one(t))
+        @OnDemandTableauExtract DP5ConstantCacheActual T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp = cache
-        @unpack d1, d3, d4, d5, d6, d7 = cache.tab
         uidx = eachindex(uprev)
         f(k1, uprev, p, t)
         @.. broadcast=false tmp=uprev + dt * (a21 * k1)
