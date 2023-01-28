@@ -19,7 +19,9 @@ for idx in eachindex(interpolation_results_2d)
     interpolation_results_2d[idx] = zero(prob_ode_2Dlinear.u0)
 end
 
-f_linear_inplace = (du, u, p, t) -> begin @. du = 1.01 * u end
+f_linear_inplace = (du, u, p, t) -> begin
+    @. du = 1.01 * u
+end
 prob_ode_linear_inplace = ODEProblem(ODEFunction(f_linear_inplace;
                                                  analytic = (u0, p, t) -> exp(1.01 * t) * u0),
                                      [0.5], (0.0, 1.0))

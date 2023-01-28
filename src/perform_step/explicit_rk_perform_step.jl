@@ -77,22 +77,24 @@ function initialize!(integrator, cache::ExplicitRKCache)
     integrator.destats.nf += 1
 end
 
-@generated function accumulate_explicit_stages!(out, A, uprev, kk, dt, ::Val{s}) where s
+@generated function accumulate_explicit_stages!(out, A, uprev, kk, dt, ::Val{s}) where {s}
     s <= 1 && error("$s must be > 1")
     # Note that `A` is transposed
     if s == 2
-        return :(@muladd @.. broadcast=false out = uprev + dt * (A[1, $s] * kk[1]))
+        return :(@muladd @.. broadcast=false out=uprev + dt * (A[1, $s] * kk[1]))
     else
-        expr = :(@muladd @.. broadcast=false out = uprev + dt * (A[1, $s] * kk[1] + A[2, $s] * kk[2]))
+        expr = :(@muladd @.. broadcast=false out=uprev +
+                                                 dt * (A[1, $s] * kk[1] + A[2, $s] * kk[2]))
         acc = expr.args[end].args[end].args[end].args[end].args[end].args
-        for i in 3:s-1
+        for i in 3:(s - 1)
             push!(acc, :(A[$i, $s] * kk[$i]))
         end
         return expr
     end
 end
 
-@muladd function compute_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages::Integer) where {F}
+@muladd function compute_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
+                                 stages::Integer) where {F}
     # Middle
     for i in 2:(stages - 1)
         @.. broadcast=false utilde=zero(kk[1][1])
@@ -113,9 +115,10 @@ end
     return nothing
 end
 
-@generated function compute_stages!(f::F, A, c, u, tmp, uprev, kk, p, t, dt, ::Val{s}) where {F, s}
+@generated function compute_stages!(f::F, A, c, u, tmp, uprev, kk, p, t, dt,
+                                    ::Val{s}) where {F, s}
     quote
-        Base.@nexprs $(s - 2) i′ -> begin
+        Base.@nexprs $(s - 2) i′->begin
             i = i′ + 1
             accumulate_explicit_stages!(tmp, A, uprev, kk, dt, Val(i))
             f(kk[i], tmp, p, t + c[i] * dt)
@@ -125,8 +128,21 @@ end
     end
 end
 
-function runtime_split_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages::Integer) where {F}
-    Base.@nif 16 (s -> (s == stages)) (s -> compute_stages!(f, A, c, u, tmp, uprev, kk, p, t, dt, Val(s))) (s -> compute_stages!(f, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages))
+function runtime_split_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
+                               stages::Integer) where {F}
+    Base.@nif 16 (s->(s == stages)) (s->compute_stages!(f, A, c, u, tmp, uprev, kk, p, t,
+                                                        dt, Val(s))) (s->compute_stages!(f,
+                                                                                         A,
+                                                                                         c,
+                                                                                         utilde,
+                                                                                         u,
+                                                                                         tmp,
+                                                                                         uprev,
+                                                                                         kk,
+                                                                                         p,
+                                                                                         t,
+                                                                                         dt,
+                                                                                         stages))
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step = false)
