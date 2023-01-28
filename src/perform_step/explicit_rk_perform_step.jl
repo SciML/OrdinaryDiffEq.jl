@@ -47,9 +47,9 @@ end
     u = uprev + dt * utilde
 
     if integrator.opts.adaptive
-        utilde = (α[1] - αEEst[1]) .* kk[1]
+        utilde = αEEst[1] .* kk[1]
         for i in 2:stages
-            utilde = utilde + (α[i] - αEEst[i]) * kk[i]
+            utilde = utilde + αEEst[i] * kk[i]
         end
         atmp = calculate_residuals(dt * utilde, uprev, u, integrator.opts.abstol,
                                    integrator.opts.reltol, integrator.opts.internalnorm, t)
