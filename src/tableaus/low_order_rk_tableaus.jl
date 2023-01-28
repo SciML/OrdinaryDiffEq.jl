@@ -498,7 +498,8 @@ function OwrenZen5ConstantCache(T, T2)
                            r62, r75, r74, r73, r72, r85, r84, r83, r82)
 end
 
-struct Tsit5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct Tsit5ConstantCache end
+struct Tsit5ConstantCacheActual{T, T2} <: OrdinaryDiffEqConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -533,32 +534,33 @@ struct Tsit5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     btilde5::T
     btilde6::T
     btilde7::T
-    r11::T
-    r12::T
-    r13::T
-    r14::T
-    r22::T
-    r23::T
-    r24::T
-    r32::T
-    r33::T
-    r34::T
-    r42::T
-    r43::T
-    r44::T
-    r52::T
-    r53::T
-    r54::T
-    r62::T
-    r63::T
-    r64::T
-    r72::T
-    r73::T
-    r74::T
+    # r11::T
+    # r12::T
+    # r13::T
+    # r14::T
+    # r22::T
+    # r23::T
+    # r24::T
+    # r32::T
+    # r33::T
+    # r34::T
+    # r42::T
+    # r43::T
+    # r44::T
+    # r52::T
+    # r53::T
+    # r54::T
+    # r62::T
+    # r63::T
+    # r64::T
+    # r72::T
+    # r73::T
+    # r74::T
 end
 
-function Tsit5ConstantCache(::Type{T},
-                            ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
+function Tsit5ConstantCacheActual(::Type{T},
+                                  ::Type{T2}) where {T <: CompiledFloats,
+                                                     T2 <: CompiledFloats}
     c1 = convert(T2, 0.161)
     c2 = convert(T2, 0.327)
     c3 = convert(T2, 0.9)
@@ -601,15 +603,15 @@ function Tsit5ConstantCache(::Type{T},
     btilde6 = convert(T, -0.45808210592918697)
     btilde7 = convert(T, 0.015151515151515152)
 
-    r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62, r63, r64, r72, r73, r74 = Tsit5Interp(T)
+    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62, r63, r64, r72, r73, r74 = Tsit5Interp(T)
     Tsit5ConstantCache(c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53,
                        a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, btilde1,
-                       btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, r11, r12, r13,
-                       r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62,
-                       r63, r64, r72, r73, r74)
+                       btilde2, btilde3, btilde4, btilde5, btilde6, btilde7)
+    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62,
+    # r63, r64, r72, r73, r74)
 end
 
-@generated function Tsit5ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
+@generated function Tsit5ConstantCacheActual(::Type{T}, ::Type{T2}) where {T, T2}
     c1 = convert(T2, 161 // 1000)
     c2 = convert(T2, 327 // 1000)
     c3 = convert(T2, 9 // 10)
@@ -678,12 +680,12 @@ end
                       big"-4.580821059291869466616365188325542974428047279788398179474684434732070620889539e-01")
     btilde7 = convert(T, 1 // 66)
 
-    r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62, r63, r64, r72, r73, r74 = Tsit5Interp(T)
+    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62, r63, r64, r72, r73, r74 = Tsit5Interp(T)
     Tsit5ConstantCache(c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53,
                        a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, btilde1,
-                       btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, r11, r12, r13,
-                       r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62,
-                       r63, r64, r72, r73, r74)
+                       btilde2, btilde3, btilde4, btilde5, btilde6, btilde7)
+    # r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62,
+    # r63, r64, r72, r73, r74)
 end
 
 """
@@ -742,7 +744,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function Tsit5Interp(T::Type)
+@generated function Tsit5Interp(::Type{T}) where {T}
     r11 = convert(T, big"0.999999999999999974283372471559910888475488471328")
     r12 = convert(T, big"-2.763706197274825911336735930481400260916070804192")
     r13 = convert(T, big"2.91325546182191274375068099306808")
