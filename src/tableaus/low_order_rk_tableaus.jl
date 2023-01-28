@@ -557,7 +557,8 @@ struct Tsit5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     r74::T
 end
 
-function Tsit5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+function Tsit5ConstantCache(::Type{T},
+                            ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
     c1 = convert(T2, 0.161)
     c2 = convert(T2, 0.327)
     c3 = convert(T2, 0.9)
@@ -608,7 +609,7 @@ function Tsit5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
                        r63, r64, r72, r73, r74)
 end
 
-function Tsit5ConstantCache(T::Type, T2::Type)
+@generated function Tsit5ConstantCache(::Type{T}, ::Type{T2}) where {T, T2}
     c1 = convert(T2, 161 // 1000)
     c2 = convert(T2, 327 // 1000)
     c3 = convert(T2, 9 // 10)
@@ -696,7 +697,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function Tsit5Interp(T::Type{<:CompiledFloats})
+function Tsit5Interp(::Type{T}) where {T}
     r11 = convert(T, 1.0)
     r12 = convert(T, -2.763706197274826)
     r13 = convert(T, 2.9132554618219126)

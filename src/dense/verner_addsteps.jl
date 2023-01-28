@@ -71,7 +71,7 @@ end
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
-        @HorribleHackExtract Vern7Tableau T T2
+        @OnDemandTableauExtract Vern7Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp = cache
         f(k1, uprev, p, t)
         @.. broadcast=false tmp=uprev + dt * (a021 * k1)
@@ -117,7 +117,7 @@ end
     if (allow_calc_end && length(k) < 16) || force_calc_end # Have not added the extra stages yet
         @unpack tmp = cache
         rtmp = similar(cache.k1)
-        @HorribleHackExtract Vern7ExtraStages T T2
+        @OnDemandTableauExtract Vern7ExtraStages T T2
         @.. broadcast=false tmp=uprev +
                                 dt *
                                 (a1101 * k[1] + a1104 * k[4] + a1105 * k[5] + a1106 * k[6] +
@@ -168,7 +168,7 @@ end
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
-        @HorribleHackExtract Vern7Tableau T T2
+        @OnDemandTableauExtract Vern7Tableau T T2
 
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp = cache
         f(k1, uprev, p, t)
@@ -241,7 +241,7 @@ end
     if (allow_calc_end && length(k) < 16) || force_calc_end # Have not added the extra stages yet
         @unpack tmp = cache
         rtmp = similar(cache.k1)
-        @HorribleHackExtract Vern7ExtraStages T T2
+        @OnDemandTableauExtract Vern7ExtraStages T T2
 
         @inbounds @simd ivdep for i in eachindex(u)
             tmp[i] = uprev[i] +
@@ -436,7 +436,7 @@ end
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
-        @HorribleHackExtract Vern9Tableau T T2
+        @OnDemandTableauExtract Vern9Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
         uidx = eachindex(uprev)
         f(k1, uprev, p, t)
@@ -504,7 +504,7 @@ end
         rtmp = similar(cache.k1)
         uidx = eachindex(uprev)
         @unpack tmp = cache
-        @HorribleHackExtract Vern9ExtraStages T T2
+        @OnDemandTableauExtract Vern9ExtraStages T T2
         @.. broadcast=false tmp=uprev +
                                 dt *
                                 (a1701 * k[1] + a1708 * k[2] + a1709 * k[3] + a1710 * k[4] +
@@ -591,7 +591,7 @@ end
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
-        @HorribleHackExtract Vern9Tableau T T2
+        @OnDemandTableauExtract Vern9Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
         uidx = eachindex(uprev)
         f(k1, uprev, p, t)
@@ -704,7 +704,7 @@ end
         rtmp = similar(cache.k1)
         uidx = eachindex(uprev)
         @unpack tmp = cache
-        @HorribleHackExtract Vern9ExtraStages T T2
+        @OnDemandTableauExtract Vern9ExtraStages T T2
 
         @inbounds @simd ivdep for i in uidx
             tmp[i] = uprev[i] +
@@ -874,7 +874,7 @@ end
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
-        @HorribleHackExtract Vern7Tableau T T2
+        @OnDemandTableauExtract Vern7Tableau T T2
         copyat_or_push!(k, 1, f(uprev, p, t))
         copyat_or_push!(k, 2, f(uprev + dt * (a021 * k[1]), p, t + c2 * dt))
         copyat_or_push!(k, 3, f(uprev + dt * (a031 * k[1] + a032 * k[2]), p, t + c3 * dt))
@@ -904,7 +904,7 @@ end
                            a106 * k[6] + a107 * k[7]), p, t + dt))
     end
     if (allow_calc_end && length(k) < 16) || force_calc_end # Have not added the extra stages yet
-        @HorribleHackExtract Vern7ExtraStages T T2
+        @OnDemandTableauExtract Vern7ExtraStages T T2
         copyat_or_push!(k, 11,
                         f(uprev +
                           dt *
@@ -1061,7 +1061,7 @@ end
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
     if length(k) < 10 || always_calc_begin
-        @HorribleHackExtract Vern9Tableau T T2
+        @OnDemandTableauExtract Vern9Tableau T T2
         copyat_or_push!(k, 1, f(uprev, p, t))
         copyat_or_push!(k, 2, f(uprev + dt * (a0201 * k[1]), p, t + c1 * dt))
         copyat_or_push!(k, 3, f(uprev + dt * (a0301 * k[1] + a0302 * k[2]), p, t + c2 * dt))
@@ -1126,8 +1126,7 @@ end
                            a1613 * k[7]), p, t + dt))
     end
     if (allow_calc_end && length(k) < 20) || force_calc_end # Have not added the extra stages yet
-        @HorribleHackExtract Vern9ExtraStages T T2
-
+        @OnDemandTableauExtract Vern9ExtraStages T T2
         copyat_or_push!(k, 11,
                         f(uprev +
                           dt *

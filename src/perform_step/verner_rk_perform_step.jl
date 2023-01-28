@@ -210,7 +210,7 @@ end
     @unpack t, dt, uprev, u, k, f, p = integrator
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
-    @HorribleHackExtract Vern7Tableau T T2
+    @OnDemandTableauExtract Vern7Tableau T T2
     k1 = f(uprev, p, t)
     a = dt * a021
     k2 = f(uprev + a * k1, p, t + c2 * dt)
@@ -261,7 +261,7 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @HorribleHackExtract Vern7ExtraStages T T2
+        @OnDemandTableauExtract Vern7ExtraStages T T2
         k[11] = f(uprev +
                   dt * (a1101 * k[1] + a1104 * k[4] + a1105 * k[5] + a1106 * k[6] +
                    a1107 * k[7] + a1108 * k[8] + a1109 * k[9]), p, t + c11 * dt)
@@ -320,7 +320,7 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
-    @HorribleHackExtract Vern7Tableau T T2
+    @OnDemandTableauExtract Vern7Tableau T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     f(k1, uprev, p, t)
     a = dt * a021
@@ -390,7 +390,7 @@ end
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack tmp = cache
-        @HorribleHackExtract Vern7ExtraStages T T2
+        @OnDemandTableauExtract Vern7ExtraStages T T2
         @.. broadcast=false thread=thread tmp=uprev +
                                               dt *
                                               (a1101 * k[1] + a1104 * k[4] + a1105 * k[5] +
@@ -776,7 +776,7 @@ end
     @unpack t, dt, uprev, u, f, p = integrator
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
-    @HorribleHackExtract Vern9Tableau T T2
+    @OnDemandTableauExtract Vern9Tableau T T2
     k1 = f(uprev, p, t)
     a = dt * a0201
     k2 = f(uprev + a * k1, p, t + c1 * dt)
@@ -850,7 +850,7 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @HorribleHackExtract Vern9ExtraStages T T2
+        @OnDemandTableauExtract Vern9ExtraStages T T2
         k[11] = f(uprev +
                   dt * (a1701 * k[1] + a1708 * k[2] + a1709 * k[3] + a1710 * k[4] +
                    a1711 * k[5] + a1712 * k[6] + a1713 * k[7] + a1714 * k[8] + a1715 * k[9]),
@@ -933,7 +933,7 @@ end
     uidx = eachindex(integrator.uprev)
     T = recursive_unitless_bottom_eltype(u)
     T2 = typeof(one(t))
-    @HorribleHackExtract Vern9Tableau T T2
+    @OnDemandTableauExtract Vern9Tableau T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     f(k1, uprev, p, t)
     a = dt * a0201
@@ -1036,7 +1036,7 @@ end
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack tmp = cache
-        @HorribleHackExtract Vern9ExtraStages T T2
+        @OnDemandTableauExtract Vern9ExtraStages T T2
         @.. broadcast=false thread=thread tmp=uprev +
                                               dt *
                                               (a1701 * k[1] + a1708 * k[2] + a1709 * k[3] +

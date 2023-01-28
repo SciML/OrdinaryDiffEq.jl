@@ -573,32 +573,8 @@ struct Vern7ExtraStages{T, T2}
     a1613::T
 end
 
-macro HorribleHackExtract(S_T, T, T2)
-    S = getproperty(__module__, S_T)
-    s = gensym(:s)
-    q = quote
-        $s = $S($T, $T2)
-    end
-    fn = fieldnames(S)
-    for n in fn
-        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
-    end
-    return esc(q)
-end
-macro HorribleHackExtract(S_T, T)
-    S = getproperty(__module__, S_T)
-    s = gensym(:s)
-    q = quote
-        $s = $S($T)
-    end
-    fn = fieldnames(S)
-    for n in fn
-        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
-    end
-    return esc(q)
-end
-
-function Vern7ExtraStages(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+function Vern7ExtraStages(::Type{T},
+                          ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
     c11 = convert(T2, 1)
     a1101 = convert(T, 0.04715561848627222)
     a1104 = convert(T, 0.25750564298434153)
@@ -820,7 +796,7 @@ struct Vern7InterpolationCoefficients{T}
     r167::T
 end
 
-function Vern7InterpolationCoefficients(T::Type{<:CompiledFloats})
+function Vern7InterpolationCoefficients(::Type{T}) where {T <: CompiledFloats}
     r011 = convert(T, 1)
     r012 = convert(T, -8.413387198332767)
     r013 = convert(T, 33.675508884490895)
@@ -912,7 +888,7 @@ function Vern7InterpolationCoefficients(T::Type{<:CompiledFloats})
                                    r157, r162, r163, r164, r165, r166, r167)
 end
 
-function Vern7InterpolationCoefficients(T)
+@generated function Vern7InterpolationCoefficients(::Type{T}) where {T}
     r011 = convert(T, big" 1")
     r012 = convert(T, big"-8.413387198332767469319987751201351965810")
     r013 = convert(T, big" 33.67550888449089654479469983556967202215")
@@ -1065,7 +1041,8 @@ struct Vern7Tableau{T, T2}
     btilde10::T
 end
 
-function Vern7Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+function Vern7Tableau(::Type{T},
+                      ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
     c2 = convert(T2, 0.005)
     c3 = convert(T2, 0.10888888888888888)
     c4 = convert(T2, 0.16333333333333333)
@@ -2465,7 +2442,8 @@ struct Vern9ExtraStages{T, T2}
     a2621::T
 end
 
-function Vern9ExtraStages(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+function Vern9ExtraStages(::Type{T},
+                          ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
     #  FIVE ADDITIONAL STAGES FOR INTERPOLANT OF ORDER  8
     c17 = convert(T2, 1)
     a1701 = convert(T, 0.014611976858423152)
@@ -2933,7 +2911,7 @@ struct Vern9InterpolationCoefficients{T}
     r269::T
 end
 
-function Vern9InterpolationCoefficients(T::Type{<:CompiledFloats})
+function Vern9InterpolationCoefficients(::Type{T}) where {T <: CompiledFloats}
     r011 = convert(T, 1)
     r012 = convert(T, -28.330488700617398)
     r013 = convert(T, 257.6535452078578)
@@ -3395,7 +3373,8 @@ struct Vern9Tableau{T, T2}
     btilde16::T
 end
 
-function Vern9Tableau(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+function Vern9Tableau(::Type{T},
+                      ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
     c1 = convert(T2, 0.03462)
     c2 = convert(T2, 0.09702435063878045)
     c3 = convert(T2, 0.14553652595817068)

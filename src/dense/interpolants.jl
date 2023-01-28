@@ -1789,7 +1789,7 @@ end
 ## Vern7
 @def vern7unpack begin
     var"#T#" = recursive_unitless_bottom_eltype(y₁)
-    @HorribleHackExtract Vern7InterpolationCoefficients var"#T#"
+    @OnDemandTableauExtract Vern7InterpolationCoefficients var"#T#"
 end
 
 @def vern7pre0 begin
@@ -2108,7 +2108,7 @@ end
 ## Vern9
 @def vern9unpack begin
     var"#T#" = recursive_unitless_bottom_eltype(y₁)
-    @HorribleHackExtract Vern9InterpolationCoefficients var"#T#"
+    @OnDemandTableauExtract Vern9InterpolationCoefficients var"#T#"
 end
 
 @def vern9pre0 begin
