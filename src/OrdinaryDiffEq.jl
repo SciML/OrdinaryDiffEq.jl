@@ -3,6 +3,11 @@ $(DocStringExtensions.README)
 """
 module OrdinaryDiffEq
 
+if isdefined(Base, :Experimental) &&
+   isdefined(Base.Experimental, Symbol("@max_methods"))
+    @eval Base.Experimental.@max_methods 1
+end
+
 using DocStringExtensions
 using Reexport
 @reexport using DiffEqBase
@@ -412,7 +417,7 @@ export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
 export SplitEuler
 
 export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
-       IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
+       IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7
 
 export ROCK2, ROCK4, RKC, IRKC, ESERK4, ESERK5, SERK2
 

@@ -342,6 +342,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
+    M isa UniformScaling && return
     update_coefficients!(M, u, p, t)
     algebraic_vars = [all(iszero, x) for x in eachcol(M)]
     algebraic_eqs = [all(iszero, x) for x in eachrow(M)]

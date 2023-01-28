@@ -77,14 +77,19 @@ isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
-function get_current_isfsal(alg::CompositeAlgorithm, cache)
-    if cache.current == 1
-        isfsal(alg.algs[1])::Bool
-    elseif cache.current == 2
-        isfsal(alg.algs[2])::Bool
+
+# evaluates f(t[i])
+_eval_index(f::F, t::Tuple{A}, _) where {F, A} = f(t[1])
+function _eval_index(f::F, t::Tuple{A, Vararg}, i) where {F, A}
+    if i == 1
+        f(t[1])
     else
-        isfsal(alg.algs[cache.current])::Bool
+        _eval_index(f, Base.tail(t), i - 1)
     end
+end
+
+function get_current_isfsal(alg::CompositeAlgorithm, cache)
+    _eval_index(isfsal, alg.algs, cache.current)::Bool
 end
 
 all_fsal(alg, cache) = isfsal(alg)
@@ -104,7 +109,7 @@ function _composite_beta1_default(algs::Tuple{T1, T2}, current, ::Val{QT},
                                   beta2) where {T1, T2, QT}
     if current == 1
         return QT(beta1_default(algs[1], beta2))
-    elseif current == 2
+    else
         return QT(beta1_default(algs[2], beta2))
     end
 end
@@ -126,7 +131,7 @@ function _composite_beta2_default(algs::Tuple{T1, T2}, current,
                                   ::Val{QT}) where {T1, T2, QT}
     if current == 1
         return QT(beta2_default(algs[1]))
-    elseif current == 2
+    else
         return QT(beta2_default(algs[2]))
     end
 end
@@ -330,7 +335,7 @@ end
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 function get_current_alg_autodiff(alg::CompositeAlgorithm, cache)
-    alg_autodiff(alg.algs[cache.current])
+    _eval_index(alg_autodiff, alg.algs, cache.current)::Bool
 end
 
 function alg_difftype(alg::Union{
@@ -389,7 +394,9 @@ end
 function get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, cache)
     alg_order(alg)
 end
-get_current_alg_order(alg::CompositeAlgorithm, cache) = alg_order(alg.algs[cache.current])
+function get_current_alg_order(alg::CompositeAlgorithm, cache)
+    _eval_index(alg_order, alg.algs, cache.current)::Int
+end
 
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache) = cache.order
 function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache)
@@ -429,7 +436,7 @@ function get_current_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgor
     alg_adaptive_order(alg)
 end
 function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
-    alg_adaptive_order(alg.algs[cache.current])
+    _eval_index(alg_adaptive_order, alg.algs, cache.current)::Int
 end
 
 alg_order(alg::FunctionMap) = 0
@@ -485,11 +492,15 @@ alg_order(alg::Nystrom4) = 4
 alg_order(alg::Nystrom4VelocityIndependent) = 4
 alg_order(alg::IRKN4) = 4
 alg_order(alg::Nystrom5VelocityIndependent) = 5
+alg_order(alg::DPRKN4) = 4
+alg_order(alg::DPRKN5) = 5
 alg_order(alg::DPRKN6) = 6
+alg_order(alg::DPRKN6FM) = 6
 alg_order(alg::DPRKN8) = 8
 alg_order(alg::DPRKN12) = 12
 alg_order(alg::ERKN4) = 4
 alg_order(alg::ERKN5) = 5
+alg_order(alg::ERKN7) = 7
 
 alg_order(alg::Midpoint) = 2
 
@@ -955,13 +966,7 @@ function unwrap_alg(integrator, is_stiff)
             return alg.algs[2]
         end
     else
-        if integrator.cache.current == 1
-            return alg.algs[1]
-        elseif integrator.cache.current == 2
-            return alg.algs[2]
-        else
-            return alg.algs[integrator.cache.current]
-        end
+        return _eval_index(identity, alg.algs, integrator.cache.current)
     end
 end
 

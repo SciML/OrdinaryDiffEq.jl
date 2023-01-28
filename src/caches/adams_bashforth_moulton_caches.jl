@@ -461,7 +461,8 @@ function alg_cache(alg::VCAB4, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp)
+    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+                        trivial_limiter!, False())
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 4)
@@ -556,7 +557,8 @@ function alg_cache(alg::VCAB5, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp)
+    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+                        trivial_limiter!, False())
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 5)
@@ -760,7 +762,8 @@ function alg_cache(alg::VCABM4, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp)
+    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+                        trivial_limiter!, False())
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 4)
@@ -863,7 +866,8 @@ function alg_cache(alg::VCABM5, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtmp = zero(u)
     ratmp = similar(u, uEltypeNoUnits)
     recursivefill!(ratmp, false)
-    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp)
+    rk4cache = RK4Cache(u, uprev, rk1, rk2, rk3, rk4, rk, rtmp, ratmp, trivial_limiter!,
+                        trivial_limiter!, False())
     fsalfirst = zero(rate_prototype)
     k4 = zero(rate_prototype)
     dts = fill(zero(dt), 5)
