@@ -703,7 +703,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function Tsit5Interp(::Type{T}) where {T}
+function Tsit5Interp(::Type{T}) where {T <: CompiledFloats}
     r11 = convert(T, 1.0)
     r12 = convert(T, -2.763706197274826)
     r13 = convert(T, 2.9132554618219126)
