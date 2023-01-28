@@ -443,8 +443,9 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, c1, c2, c3, c4, c5, c6 = cache
-        @unpack d1, d3, d4, d5, d6, d7 = cache
+        T = recursive_unitless_bottom_eltype(u)
+        T2 = typeof(one(t))
+        @OnDemandTableauExtract DP5ConstantCacheActual T T2
         k1 = f(uprev, p, t)
         k2 = f(uprev + dt * (a21 * k1), p, t + c1 * dt)
         k3 = f(uprev + dt * (a31 * k1 + a32 * k2), p, t + c2 * dt)
