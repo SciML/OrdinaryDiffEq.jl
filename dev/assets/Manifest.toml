@@ -446,9 +446,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.LoopVectorization]]
 deps = ["ArrayInterface", "ArrayInterfaceCore", "ArrayInterfaceOffsetArrays", "ArrayInterfaceStaticArrays", "CPUSummary", "ChainRulesCore", "CloseOpenIntervals", "DocStringExtensions", "ForwardDiff", "HostCPUFeatures", "IfElse", "LayoutPointers", "LinearAlgebra", "OffsetArrays", "PolyesterWeave", "SIMDDualNumbers", "SIMDTypes", "SLEEFPirates", "SnoopPrecompile", "SpecialFunctions", "Static", "ThreadingUtilities", "UnPack", "VectorizationBase"]
-git-tree-sha1 = "c3a7202222318121bf1db4547a27a1afd0cf9b88"
+git-tree-sha1 = "f127dff5c29692069c8ada8267864d252d417821"
 uuid = "bdcacae8-1622-11e9-2a5c-532679323890"
-version = "0.12.148"
+version = "0.12.149"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
