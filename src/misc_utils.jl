@@ -163,3 +163,12 @@ macro OnDemandTableauExtract(S_T, T)
     end
     return esc(q)
 end
+
+macro fold(arg)
+    # https://github.com/JuliaLang/julia/pull/43852
+    if VERSION < v"1.8.0-DEV.1484"
+        :(@generated $(esc(arg)))
+    else
+        :(Base.@assume_effects :foldable $(esc(arg)))
+    end
+end

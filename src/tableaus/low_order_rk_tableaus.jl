@@ -536,9 +536,9 @@ struct Tsit5ConstantCacheActual{T, T2}
     btilde7::T
 end
 
-function Tsit5ConstantCacheActual(::Type{T},
-                                  ::Type{T2}) where {T <: CompiledFloats,
-                                                     T2 <: CompiledFloats}
+@fold function Tsit5ConstantCacheActual(::Type{T},
+                                        ::Type{T2}) where {T <: CompiledFloats,
+                                                           T2 <: CompiledFloats}
     c1 = convert(T2, 0.161)
     c2 = convert(T2, 0.327)
     c3 = convert(T2, 0.9)
@@ -588,7 +588,7 @@ function Tsit5ConstantCacheActual(::Type{T},
                              btilde2, btilde3, btilde4, btilde5, btilde6, btilde7)
 end
 
-@generated function Tsit5ConstantCacheActual(::Type{T}, ::Type{T2}) where {T, T2}
+@fold function Tsit5ConstantCacheActual(::Type{T}, ::Type{T2}) where {T, T2}
     c1 = convert(T2, 161 // 1000)
     c2 = convert(T2, 327 // 1000)
     c3 = convert(T2, 9 // 10)
@@ -675,7 +675,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function Tsit5Interp(::Type{T}) where {T <: CompiledFloats}
+@fold function Tsit5Interp(::Type{T}) where {T <: CompiledFloats}
     r11 = convert(T, 1.0)
     r12 = convert(T, -2.763706197274826)
     r13 = convert(T, 2.9132554618219126)
@@ -720,7 +720,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-@generated function Tsit5Interp(::Type{T}) where {T}
+@fold function Tsit5Interp(::Type{T}) where {T}
     r11 = convert(T, big"0.999999999999999974283372471559910888475488471328")
     r12 = convert(T, big"-2.763706197274825911336735930481400260916070804192")
     r13 = convert(T, big"2.91325546182191274375068099306808")
@@ -1318,9 +1318,10 @@ struct DP5ConstantCacheActual{T, T2}
     d7::T
 end
 
-function DP5ConstantCacheActual(::Type{T},
-                                ::Type{T2}) where {T <: CompiledFloats, T2 <:
-                                                                        CompiledFloats}
+@fold function DP5ConstantCacheActual(::Type{T},
+                                      ::Type{T2}) where {T <: CompiledFloats,
+                                                         T2 <:
+                                                         CompiledFloats}
     a21 = convert(T, 0.2)
     a31 = convert(T, 0.075)
     a32 = convert(T, 0.225)
@@ -1366,7 +1367,7 @@ function DP5ConstantCacheActual(::Type{T},
                            btilde6, btilde7, c1, c2, c3, c4, c5, c6, d1, d3, d4, d5, d6, d7)
 end
 
-function DP5_dense_ds(::Type{T}) where {T <: CompiledFloats}
+@fold function DP5_dense_ds(::Type{T}) where {T <: CompiledFloats}
     d1 = convert(T, -1.1270175653862835)
     d3 = convert(T, 2.675424484351598)
     d4 = convert(T, -5.685526961588504)
@@ -1376,7 +1377,7 @@ function DP5_dense_ds(::Type{T}) where {T <: CompiledFloats}
     return d1, d3, d4, d5, d6, d7
 end
 
-@generated function DP5ConstantCacheActual(::Type{T}, ::Type{T2}) where {T, T2}
+@fold function DP5ConstantCacheActual(::Type{T}, ::Type{T2}) where {T, T2}
     a21 = convert(T, 1 // 5)
     a31 = convert(T, 3 // 40)
     a32 = convert(T, 9 // 40)
@@ -1422,7 +1423,7 @@ end
                            btilde6, btilde7, c1, c2, c3, c4, c5, c6, d1, d3, d4, d5, d6, d7)
 end
 
-@generated function DP5_dense_ds(::Type{T}) where {T}
+@fold function DP5_dense_ds(::Type{T}) where {T}
     d1 = convert(T, -12715105075 // 11282082432)
     d3 = convert(T, 87487479700 // 32700410799)
     d4 = convert(T, -10690763975 // 1880347072)
