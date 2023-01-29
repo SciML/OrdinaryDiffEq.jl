@@ -1200,7 +1200,7 @@ function alg_cache(alg::RKM, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache struct MSRK5Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
-              OrdinaryDiffEqCache
+              OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
@@ -1249,7 +1249,7 @@ function alg_cache(alg::MSRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
                alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
-@cache struct Stepanov5Cache{uType, rateType, TabType} <: OrdinaryDiffEqCache
+@cache struct Stepanov5Cache{uType, rateType, TabType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     tmp::uType
