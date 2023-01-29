@@ -68,8 +68,8 @@ end
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7Cache,
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern7Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp = cache
@@ -165,8 +165,8 @@ end
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7Cache{<:Array},
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern7Tableau T T2
 
@@ -433,8 +433,8 @@ end
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9Cache,
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern9Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
@@ -588,8 +588,8 @@ end
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9Cache{<:Array},
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern9Tableau T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
@@ -871,8 +871,8 @@ end
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern7ConstantCache,
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern7Tableau T T2
         copyat_or_push!(k, 1, f(uprev, p, t))
@@ -1058,8 +1058,8 @@ end
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Vern9ConstantCache,
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern9Tableau T T2
         copyat_or_push!(k, 1, f(uprev, p, t))

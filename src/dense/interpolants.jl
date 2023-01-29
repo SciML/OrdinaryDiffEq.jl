@@ -367,7 +367,7 @@ simplifying assumption
 Ch. Tsitouras
 """
 @def tsit5unpack begin
-    var"#T#" = recursive_unitless_bottom_eltype(y₁)
+    var"#T#" = constvalue(recursive_unitless_bottom_eltype(y₁))
     r11, r12, r13, r14, r22, r23, r24, r32, r33, r34, r42, r43, r44, r52, r53, r54, r62, r63, r64, r72, r73, r74 = Tsit5Interp(var"#T#")
 end
 
@@ -1787,7 +1787,7 @@ end
 
 ## Vern7
 @def vern7unpack begin
-    var"#T#" = recursive_unitless_bottom_eltype(y₁)
+    var"#T#" = constvalue(recursive_unitless_bottom_eltype(y₁))
     @OnDemandTableauExtract Vern7InterpolationCoefficients var"#T#"
 end
 
@@ -2106,7 +2106,7 @@ end
 
 ## Vern9
 @def vern9unpack begin
-    var"#T#" = recursive_unitless_bottom_eltype(y₁)
+    var"#T#" = constvalue(recursive_unitless_bottom_eltype(y₁))
     @OnDemandTableauExtract Vern9InterpolationCoefficients var"#T#"
 end
 

@@ -208,8 +208,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Vern7ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, k, f, p = integrator
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern7Tableau T T2
     k1 = f(uprev, p, t)
     a = dt * a021
@@ -318,8 +318,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Vern7Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern7Tableau T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     f(k1, uprev, p, t)
@@ -774,8 +774,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Vern9ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern9Tableau T T2
     k1 = f(uprev, p, t)
     a = dt * a0201
@@ -931,8 +931,8 @@ end
 @muladd function perform_step!(integrator, cache::Vern9Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     uidx = eachindex(integrator.uprev)
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern9Tableau T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     f(k1, uprev, p, t)

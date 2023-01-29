@@ -711,8 +711,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Tsit5ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
     k1 = integrator.fsalfirst
     a = dt * a21
@@ -769,8 +769,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     a = dt * a21
@@ -837,8 +837,8 @@ end
 
 @muladd function perform_step!(integrator, cache::DP5ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract DP5ConstantCacheActual T T2
     k1 = integrator.fsalfirst
     a = dt * a21
@@ -890,8 +890,8 @@ end
 
 @muladd function perform_step!(integrator, cache::DP5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    T = recursive_unitless_bottom_eltype(u)
-    T2 = typeof(one(t))
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract DP5ConstantCacheActual T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     a = dt * a21

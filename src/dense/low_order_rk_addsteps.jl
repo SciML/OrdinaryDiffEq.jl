@@ -109,8 +109,8 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        T = recursive_unitless_bottom_eltype(u)
-        T2 = typeof(one(t))
+        T = constvalue(recursive_unitless_bottom_eltype(u))
+        T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract DP5ConstantCacheActual T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp = cache
         uidx = eachindex(uprev)
@@ -149,8 +149,8 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 7 || always_calc_begin
-        T = recursive_unitless_bottom_eltype(u)
-        T2 = typeof(one(t))
+        T = constvalue(recursive_unitless_bottom_eltype(u))
+        T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
         @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
         @.. broadcast=false tmp=uprev + dt * (a21 * k1)
@@ -444,8 +444,8 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        T = recursive_unitless_bottom_eltype(u)
-        T2 = typeof(one(t))
+        T = constvalue(recursive_unitless_bottom_eltype(u))
+        T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract DP5ConstantCacheActual T T2
         k1 = f(uprev, p, t)
         k2 = f(uprev + dt * (a21 * k1), p, t + c1 * dt)
@@ -522,8 +522,8 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 7 || always_calc_begin
-        T = recursive_unitless_bottom_eltype(u)
-        T2 = typeof(one(t))
+        T = constvalue(recursive_unitless_bottom_eltype(u))
+        T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
         copyat_or_push!(k, 1, f(uprev, p, t))
         copyat_or_push!(k, 2, f(uprev + dt * (a21 * k[1]), p, t + c1 * dt))
