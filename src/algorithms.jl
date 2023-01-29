@@ -762,11 +762,11 @@ function Base.show(io::IO, alg::MSRK5)
 end
 
 """
-    MSRK54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+    Stepanov5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())
 
-4th order Explicit RK method.
+5th order Explicit RK method.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -786,28 +786,28 @@ Julia is started with multiple threads.
   volume={59}
 }
 """
-struct MSRK54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct Stepanov5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
 end
 
-function MSRK54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-               thread = False())
-    MSRK54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-                                                                         step_limiter!,
-                                                                         thread)
+function Stepanov5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+                   thread = False())
+    Stepanov5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                             step_limiter!,
+                                                                             thread)
 end
 
 # for backwards compatibility
-function MSRK54(stage_limiter!, step_limiter! = trivial_limiter!)
-    MSRK54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-                                                                step_limiter!,
-                                                                False())
+function Stepanov5(stage_limiter!, step_limiter! = trivial_limiter!)
+    Stepanov5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                    step_limiter!,
+                                                                    False())
 end
 
-function Base.show(io::IO, alg::MSRK54)
-    print(io, "MSRK54(stage_limiter! = ", alg.stage_limiter!,
+function Base.show(io::IO, alg::Stepanov5)
+    print(io, "Stepanov5(stage_limiter! = ", alg.stage_limiter!,
           ", step_limiter! = ", alg.step_limiter!,
           ", thread = ", alg.thread, ")")
 end
