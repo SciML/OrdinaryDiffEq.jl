@@ -168,14 +168,23 @@ function runtime_split_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
                                                                                          stages))
 end
 
-function runtime_split_fsal!(out, A, uprev, kk, dt, stages)
+function accumulate_fsal!(u, α, utilde, uprev, kk, dt, stages)
+    @.. broadcast=false utilde=α[1] * kk[1]
+    for i in 2:stages
+        @.. broadcast=false utilde=utilde + α[i] * kk[i]
+    end
+    @.. broadcast=false u=uprev + dt * utilde
+end
+
+function runtime_split_fsal!(out, A, utilde, uprev, kk, dt, stages)
     Base.@nif 17 (s->(s == stages)) (s->accumulate_explicit_stages!(out, A, uprev, kk, dt,
-                                                                    Val(s), Val(1))) (s->accumulate_explicit_stages!(out,
-                                                                                                                     A,
-                                                                                                                     uprev,
-                                                                                                                     kk,
-                                                                                                                     dt,
-                                                                                                                     stages))
+                                                                    Val(s + 1), Val(1))) (s->accumulate_fsal!(out,
+                                                                                                              A,
+                                                                                                              utilde,
+                                                                                                              uprev,
+                                                                                                              kk,
+                                                                                                              dt,
+                                                                                                              stages))
 end
 
 function runtime_split_EEst!(tmp, αEEst, utilde, kk, dt, stages)
@@ -199,7 +208,7 @@ end
 
     #Accumulate
     if !isfsal(alg.tableau)
-        runtime_split_fsal!(u, α, uprev, kk, dt, stages)
+        runtime_split_fsal!(u, α, utilde, uprev, kk, dt, stages)
     end
 
     if integrator.opts.adaptive
