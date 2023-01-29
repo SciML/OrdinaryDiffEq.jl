@@ -793,17 +793,17 @@ struct Stepanov5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlg
 end
 
 function Stepanov5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-               thread = False())
+                   thread = False())
     Stepanov5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-                                                                         step_limiter!,
-                                                                         thread)
+                                                                             step_limiter!,
+                                                                             thread)
 end
 
 # for backwards compatibility
 function Stepanov5(stage_limiter!, step_limiter! = trivial_limiter!)
     Stepanov5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-                                                                step_limiter!,
-                                                                False())
+                                                                    step_limiter!,
+                                                                    False())
 end
 
 function Base.show(io::IO, alg::Stepanov5)
