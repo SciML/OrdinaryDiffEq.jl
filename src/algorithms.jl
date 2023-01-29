@@ -762,6 +762,57 @@ function Base.show(io::IO, alg::MSRK5)
 end
 
 """
+    MSRK54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+
+4th order Explicit RK method.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## Reference
+@article{Stepanov2021Embedded5,
+  title={Embedded (4, 5) pairs of explicit 7-stage Runge–Kutta methods with FSAL property},
+  author={Misha Stepanov},
+  journal={Calcolo},
+  year={2021},
+  volume={59}
+}
+"""
+struct MSRK54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function MSRK54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+               thread = False())
+    MSRK54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                         step_limiter!,
+                                                                         thread)
+end
+
+# for backwards compatibility
+function MSRK54(stage_limiter!, step_limiter! = trivial_limiter!)
+    MSRK54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                step_limiter!,
+                                                                False())
+end
+
+function Base.show(io::IO, alg::MSRK54)
+    print(io, "MSRK54(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+end
+
+"""
     Anas5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())

@@ -1637,3 +1637,84 @@ function MSRK5ConstantCache(T::Type, T1::Type)
                        a74, a75, a76, a81, a83, a84, a85, a86, a87, b1, b4, b5, b6, b7, b8,
                        c2, c3, c4, c5, c6, c7, c8)
 end
+
+struct MSRK54ConstantCache{T,T1} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+
+  b1::T
+  # b2::T
+  b3::T
+  b4::T
+  b5::T
+  b6::T
+  
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+  btilde7::T
+
+  c2::T1
+  c3::T1
+  c4::T1
+  c5::T1
+  c6::T1
+end
+
+# Use rational numbers for testing. Define another function that defines the tab using floats.
+function MSRK54ConstantCache(T::Type, T1::Type)
+    a21 = T(1 // 5)
+    a31 = T(21 // 338)
+    a32 = T(441 // 1690)
+    a41 = T(639 // 392)
+    a42 = T(-729 // 140)
+    a43 = T(1755 // 392)
+    a51 = T(4878991 // 1693440)
+    a52 = T(-16601 // 1792)
+    a53 = T(210067 // 28224)
+    a54 = T(-1469 // 17280)
+    a61 = T(13759919 // 4230954)
+    a62 = T(-2995 // 287)
+    a63 = T(507312091 // 61294590)
+    a64 = T(-22 // 405)
+    a65 = T(-7040 // 180687)
+    b1 = T(1441 // 14742)
+    # b2 = T(0)
+    b3 = T(114244 // 234927)
+    b4 = T(118 // 81)
+    b5 = T(-12800 // 4407)
+    b6 = T(41 // 22)
+
+    btilde1 = T(-1 // 273)
+    btilde2 = T(0)
+    btilde3 = T(2197 // 174020)
+    btilde4 = T(-4 // 15)
+    btilde5 = T(1280 // 1469)
+    btilde6 = T(-33743 // 52712)
+    btilde7 = T(127 // 4792)
+
+    c2 = T1(1 // 5)
+    c3 = T1(21 // 65)
+    c4 = T1(9 // 10)
+    c5 = T1(39 // 40)
+    c6 = T1(1 // 1)
+
+  MSRK54ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b3, b4, b5, b6,
+                          btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6)
+end
