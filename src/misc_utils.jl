@@ -167,8 +167,8 @@ end
 macro fold(arg)
     # https://github.com/JuliaLang/julia/pull/43852
     if VERSION < v"1.8.0-DEV.1484"
-        :(@generated $(esc(arg)))
+        esc(:(@generated $arg))
     else
-        :(Base.@assume_effects :foldable $(esc(arg)))
+        esc(:(Base.@assume_effects :foldable $arg))
     end
 end
