@@ -1638,7 +1638,7 @@ function MSRK5ConstantCache(T::Type, T1::Type)
                        c2, c3, c4, c5, c6, c7, c8)
 end
 
-struct MSRK54ConstantCache{T,T1} <: OrdinaryDiffEqConstantCache
+struct Stepanov5ConstantCache{T,T1} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -1678,7 +1678,7 @@ struct MSRK54ConstantCache{T,T1} <: OrdinaryDiffEqConstantCache
 end
 
 # Use rational numbers for testing. Define another function that defines the tab using floats.
-function MSRK54ConstantCache(T::Type, T1::Type)
+function Stepanov5ConstantCache(T::Type, T1::Type)
     a21 = T(1 // 5)
     a31 = T(21 // 338)
     a32 = T(441 // 1690)
@@ -1715,6 +1715,6 @@ function MSRK54ConstantCache(T::Type, T1::Type)
     c5 = T1(39 // 40)
     c6 = T1(1 // 1)
 
-  MSRK54ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b3, b4, b5, b6,
+  Stepanov5ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b3, b4, b5, b6,
                           btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6)
 end

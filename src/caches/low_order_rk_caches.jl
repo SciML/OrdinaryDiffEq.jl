@@ -1249,7 +1249,7 @@ function alg_cache(alg::MSRK5, u, rate_prototype, ::Type{uEltypeNoUnits},
                alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
-@cache struct MSRK54Cache{uType, rateType, TabType} <: OrdinaryDiffEqCache
+@cache struct Stepanov5Cache{uType, rateType, TabType} <: OrdinaryDiffEqCache
   u::uType
   uprev::uType
   tmp::uType
@@ -1265,11 +1265,11 @@ end
   tab::TabType
 end
 
-function alg_cache(alg::MSRK54,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
-  return MSRK54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+function alg_cache(alg::Stepanov5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+  return Stepanov5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
-function alg_cache(alg::MSRK54,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+function alg_cache(alg::Stepanov5,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   k3 = zero(rate_prototype)
@@ -1280,6 +1280,6 @@ function alg_cache(alg::MSRK54,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uB
   k = zero(rate_prototype)
   tmp = zero(u)
   fsalfirst = zero(u)
-  tab = MSRK54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  MSRK54Cache(u,uprev,tmp,fsalfirst,k1, k2, k3, k4, k5, k6, k7, k, tab)
+  tab = Stepanov5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  Stepanov5Cache(u,uprev,tmp,fsalfirst,k1, k2, k3, k4, k5, k6, k7, k, tab)
 end

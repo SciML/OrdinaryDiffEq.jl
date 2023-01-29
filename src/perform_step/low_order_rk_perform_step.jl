@@ -1493,7 +1493,7 @@ function perform_step!(integrator, cache::MSRK5Cache, repeat_step = false)
     return nothing
 end
 
-function initialize!(integrator, cache::MSRK54ConstantCache)
+function initialize!(integrator, cache::Stepanov5ConstantCache)
   integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(undef,integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t)
@@ -1506,7 +1506,7 @@ function initialize!(integrator, cache::MSRK54ConstantCache)
   integrator.k[integrator.kshortsize] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::MSRK54ConstantCache, repeat_step=false)
+function perform_step!(integrator,cache::Stepanov5ConstantCache, repeat_step=false)
   @unpack u,uprev,f,p,dt,t = integrator
   @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b3, b4, b5, b6, btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6 = cache
 
@@ -1547,7 +1547,7 @@ function perform_step!(integrator,cache::MSRK54ConstantCache, repeat_step=false)
   integrator.u = u
 end
 
-function initialize!(integrator, cache::MSRK54Cache)
+function initialize!(integrator, cache::Stepanov5Cache)
   @unpack uprev,f,p,t = integrator
 
   integrator.kshortsize = 7
@@ -1566,7 +1566,7 @@ function initialize!(integrator, cache::MSRK54Cache)
   integrator.destats.nf += 1
 end
 
-function perform_step!(integrator, cache::MSRK54Cache, repeat_step=false)
+function perform_step!(integrator, cache::Stepanov5Cache, repeat_step=false)
   @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
   @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b3, b4, b5, b6, btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6 = cache.tab
   @unpack u, uprev, t, dt, f, p = integrator
