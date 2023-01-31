@@ -280,11 +280,12 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
     idx = sortperm(tvals, rev = tdir < 0)
 
     # start the search thinking it's ts[1]-ts[2]
-    i₋ = 1
-    i₊ = 2
+    i₋ref = Ref(1)
+    i₊ref = Ref(2)
     vals = map(idx) do j
         t = tvals[j]
-
+        i₊ = i₊ref[]
+        i₋ = i₋ref[]
         if continuity === :left
             # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
@@ -296,7 +297,8 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
             i₋ = max(1, _searchsortedlast(ts, t, i₋, tdir > 0))
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
-
+        i₊ref[] = i₊
+        i₋ref[] = i₋
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
