@@ -323,8 +323,9 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
     @unpack ts, timeseries, ks, f, cache = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
-    Tt = eltype(timeseries)
-    T = Base.promote_op(evaluate_interpolant, typeof(f), typeof(oneunit(Tt)), Tt, Tt, Int,
+    Tts = eltype(ts)
+    T = Base.promote_op(evaluate_interpolant, typeof(f), typeof(oneunit(Tts)), Tts,
+                        eltype(timeseries), Int,
                         Int, typeof(cache), typeof(idxs),
                         typeof(deriv), typeof(ks), typeof(ts), typeof(id), typeof(p))
     vals = Vector{T}(undef, length(idx))
