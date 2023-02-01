@@ -1638,6 +1638,86 @@ function MSRK5ConstantCache(T::Type, T1::Type)
                        c2, c3, c4, c5, c6, c7, c8)
 end
 
+struct MSRK6ConstantCache{T,T1} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a32::T
+    a41::T
+    a43::T
+    a51::T
+    a53::T
+    a54::T
+    a61::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a73::T
+    a74::T
+    a75::T
+    a76::T
+    a81::T
+    a83::T
+    a84::T
+    a85::T
+    a86::T
+    a87::T
+  
+    b1::T
+    b4::T
+    b5::T
+    b6::T
+    b7::T
+    b8::T
+  
+    c2::T1
+    c3::T1
+    c4::T1
+    c5::T1
+    c6::T1
+    c7::T1
+    c8::T1
+end
+
+function MSRK6ConstantCache(T::Type, T1::Type)
+    a21 = T(1//14)
+    a32 = T(1//7)
+    a41 = T(3//56)
+    a43 = T(9//56)
+    a51 = T(29//72)
+    a53 = T(-35//24)
+    a54 = T(14//9)
+    a61 = T(-17//56)
+    a63 = T(93//56)
+    a64 = T(-8//7)
+    a65 = T(3//7)
+    a71 = T(199//1372)
+    a73 = T(-195//196)
+    a74 = T(1259//784)
+    a75 = T(-3855//5488)
+    a76 = T(45//56)
+    a81 = T(4903//25596)
+    a83 = T(4487//2844)
+    a84 = T(-255101//102384)
+    a85 = T(33847//11376)
+    a86 = T(-94325//51192)
+    a87 = T(3773//6399)
+    b1 = T(16//243)
+    b4 = T(16807//53460)
+    b5 = T(53//300)
+    b6 = T(2401//12150)
+    b7 = T(2401//12150)
+    b8 = T(79//1650)
+    c2 = T1(1//14)
+    c3 = T1(1//7)
+    c4 = T1(3//14)
+    c5 = T1(1//2)
+    c6 = T1(9//14)
+    c7 = T1(6//7)
+    c8 = T1(1)
+  
+    MSRK6ConstantCache(a21,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,b1,b4,b5,b6,b7,b8,c2,c3,c4,c5,c6,c7,c8)
+end
+
 struct Stepanov5ConstantCache{T, T1} <: OrdinaryDiffEqConstantCache
     a21::T
     a31::T

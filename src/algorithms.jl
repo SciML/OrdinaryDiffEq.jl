@@ -762,6 +762,51 @@ function Base.show(io::IO, alg::MSRK5)
 end
 
 """
+    MSRK6(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+
+6th order Explicit RK method.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## Reference
+Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 5.
+"""
+struct MSRK6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function MSRK6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+               thread = False())
+    MSRK6{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                         step_limiter!,
+                                                                         thread)
+end
+
+# for backwards compatibility
+function MSRK6(stage_limiter!, step_limiter! = trivial_limiter!)
+    MSRK6{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                step_limiter!,
+                                                                False())
+end
+
+function Base.show(io::IO, alg::MSRK5)
+    print(io, "MSRK6(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+end
+
+"""
     Stepanov5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())
