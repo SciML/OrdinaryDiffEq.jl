@@ -778,7 +778,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
-Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 5.
+Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Table 4.
 """
 struct MSRK6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
