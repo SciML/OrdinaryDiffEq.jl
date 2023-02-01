@@ -323,17 +323,11 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
     @unpack ts, timeseries, ks, f, cache = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
-    Tts = eltype(ts)
-    T = Base.promote_op(evaluate_interpolant, typeof(f), typeof(oneunit(Tts)), Tts,
-                        eltype(timeseries), Int,
-                        Int, typeof(cache), typeof(idxs),
-                        typeof(deriv), typeof(ks), typeof(ts), typeof(id), typeof(p))
-    vals = Vector{T}(undef, length(idx))
     # start the search thinking it's ts[1]-ts[2]
-    i₋ = 1
-    i₊ = 2
-    for j in eachindex(idx, vals)
+    i₋₊ref = Ref((1, 2))
+    vals = map(idx) do j
         t = tvals[j]
+        (i₋, i₊) = i₋₊ref[]
         if continuity === :left
             # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
@@ -345,10 +339,11 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
             i₋ = max(1, _searchsortedlast(ts, t, i₋, tdir > 0))
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
+        i₋₊ref[] = (i₋, i₊)
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
-        vals[j] = evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
-                                       deriv, ks, ts, id, p)
+        evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
+                             deriv, ks, ts, id, p)
     end
     invpermute!(vals, idx)
     DiffEqArray(vals, tvals)
