@@ -800,7 +800,7 @@ function MSRK6(stage_limiter!, step_limiter! = trivial_limiter!)
                                                                 False())
 end
 
-function Base.show(io::IO, alg::MSRK5)
+function Base.show(io::IO, alg::MSRK6)
     print(io, "MSRK6(stage_limiter! = ", alg.stage_limiter!,
           ", step_limiter! = ", alg.step_limiter!,
           ", thread = ", alg.thread, ")")
