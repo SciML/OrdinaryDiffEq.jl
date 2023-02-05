@@ -267,6 +267,51 @@ end
     return expr
 end
 
+function _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
+                               cache, idxs,
+                               deriv, ks, ts, p)
+    _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
+                   cache) # update the kcurrent
+    return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
+                           cache, idxs, deriv)
+end
+function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
+                                  caches::Tuple{C1, C2, Vararg}, idxs,
+                                  deriv, ks, ts, p, cacheid) where {C1, C2}
+    if (cacheid -= 1) != 0
+        return evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊, Base.tail(caches),
+                                        idxs,
+                                        deriv, ks, ts, p, cacheid)
+    end
+    _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
+                          first(caches), idxs,
+                          deriv, ks, ts, p)
+end
+function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
+                                  caches::Tuple{C}, idxs,
+                                  deriv, ks, ts, p, _) where {C}
+    _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
+                          only(caches), idxs,
+                          deriv, ks, ts, p)
+end
+
+function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
+                              deriv, ks, ts, id, p)
+    if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+        return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
+                               deriv)
+    elseif !id.dense
+        return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
+    elseif typeof(cache) <: CompositeCache
+        return evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊, cache.caches, idxs,
+                                        deriv, ks, ts, p, id.alg_choice[i₊])
+    else
+        return _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
+                                     cache, idxs,
+                                     deriv, ks, ts, p)
+    end
+end
+
 """
 ode_interpolation(tvals,ts,timeseries,ks)
 
@@ -278,13 +323,11 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
     @unpack ts, timeseries, ks, f, cache = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
-
     # start the search thinking it's ts[1]-ts[2]
-    i₋ = 1
-    i₊ = 2
+    i₋₊ref = Ref((1, 2))
     vals = map(idx) do j
         t = tvals[j]
-
+        (i₋, i₊) = i₋₊ref[]
         if continuity === :left
             # we have i₋ = i₊ = 1 if t = ts[1], i₊ = i₋ + 1 = lastindex(ts) if t > ts[end],
             # and otherwise i₋ and i₊ satisfy ts[i₋] < t ≤ ts[i₊]
@@ -296,26 +339,11 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
             i₋ = max(1, _searchsortedlast(ts, t, i₋, tdir > 0))
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
-
+        i₋₊ref[] = (i₋, i₊)
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
-
-        if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
-            return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
-                                   deriv)
-        elseif !id.dense
-            return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
-        elseif typeof(cache) <: CompositeCache
-            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                           cache.caches[id.alg_choice[i₊]]) # update the kcurrent
-            return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                                   cache.caches[id.alg_choice[i₊]], idxs, deriv)
-        else
-            _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                           cache) # update the kcurrent
-            return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊], cache,
-                                   idxs, deriv)
-        end
+        evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
+                             deriv, ks, ts, id, p)
     end
     invpermute!(vals, idx)
     DiffEqArray(vals, tvals)
