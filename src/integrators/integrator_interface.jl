@@ -234,7 +234,7 @@ function resize_J_W!(cache, integrator, i)
         nf = nlsolve_f(f, integrator.alg)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
-            if isa(cache.J, DiffEqBase.AbstractDiffEqLinearOperator)
+            if isa(cache.J, AbstractSciMLOperator)
                 resize!(cache.J, i)
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
