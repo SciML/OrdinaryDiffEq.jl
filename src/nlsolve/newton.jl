@@ -93,7 +93,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
 
     # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    if W isa AbstractSciMLOperator
         W = update_coefficients!(W, ustep, p, tstep)
     end
 
@@ -169,7 +169,7 @@ end
     end
 
     # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    if W isa AbstractSciMLOperator
         update_coefficients!(W, ustep, p, tstep)
     end
 
@@ -288,7 +288,7 @@ end
     end
 
     # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    if W isa AbstractSciMLOperator
         update_coefficients!(W, ustep, p, tstep)
     end
 

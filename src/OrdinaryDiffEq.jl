@@ -68,7 +68,7 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
-using SciMLBase: NoInit, _unwrap_val
+using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,
@@ -369,7 +369,7 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        OwrenZen5,
        BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
        Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
-       RKM, MSRK5
+       RKM, MSRK5, MSRK6, Stepanov5
 
 export SSPRK22, SSPRK33, KYKSSPRK42, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63,
        SSPRK73, SSPRK83, SSPRK43, SSPRK432,
