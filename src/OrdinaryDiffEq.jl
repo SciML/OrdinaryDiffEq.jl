@@ -22,6 +22,8 @@ using LoopVectorization
 
 using LinearSolve, SimpleNonlinearSolve
 
+using SymbolicIndexingInterface
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 
@@ -36,7 +38,7 @@ using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
 
 using DiffEqBase: DEIntegrator
 
-import RecursiveArrayTools: chain, recursivecopy!
+import RecursiveArrayTools: chain, recursivecopy!, issymbollike
 
 using UnPack, ForwardDiff, RecursiveArrayTools,
       DataStructures, FiniteDiff, ArrayInterfaceCore, ArrayInterface

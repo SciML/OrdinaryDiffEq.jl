@@ -39,6 +39,7 @@ SnoopPrecompile = "66db9d55-30c0-4569-8b51-7e840670fc0c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SparseDiffTools = "47a9eef4-7e08-11e9-0b38-333d64bd3804"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]

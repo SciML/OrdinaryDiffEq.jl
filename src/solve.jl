@@ -240,6 +240,19 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         callback_cache = nothing
     end
 
+    if hassymbols(save_idxs)
+        if hassys(prob.f)
+            sym_idxs, int_idxs = partition_ints(save_idxs)
+            #TODO: Automatically find dependencies of observed variables
+
+            save_idxs = unique(vcat(state_sym_to_index.((prob.f.sys,),
+                                                        sym_idxs),
+                                    int_idxs))
+        else
+            error("save_idxs cannot be symbols if the problem does not come from a system")
+        end
+    end
+
     ### Algorithm-specific defaults ###
     if save_idxs === nothing
         ksEltype = Vector{rateType}
