@@ -240,7 +240,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         callback_cache = nothing
     end
 
-    if hassymbols(save_idxs)
+    if !isnothing(saveidxs) && hassymbols(save_idxs)
         if has_sys(prob.f)
             sym_idxs, int_idxs = partition_ints(save_idxs)
             #TODO: Automatically find dependencies of observed variables
