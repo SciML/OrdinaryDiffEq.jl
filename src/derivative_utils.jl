@@ -38,31 +38,6 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     end
 end
 
-function calc_tderivative!(integrator::ODEIntegrator{algType, IIP, <:Array}, cache, dtd1,
-                           repeat_step) where {algType, IIP}
-    @inbounds begin
-        @unpack t, dt, uprev, u, f, p = integrator
-        @unpack du2, fsalfirst, dT, tf, linsolve_tmp = cache
-
-        # Time derivative
-        if !repeat_step # skip calculation if step is repeated
-            if DiffEqBase.has_tgrad(f)
-                f.tgrad(dT, uprev, p, t)
-            else
-                tf.uprev = uprev
-                if !(p isa DiffEqBase.NullParameters)
-                    tf.p = p
-                end
-                derivative!(dT, tf, t, du2, integrator, cache.grad_config)
-            end
-        end
-
-        @inbounds @simd ivdep for i in eachindex(uprev)
-            linsolve_tmp[i] = fsalfirst[i] + dtd1 * dT[i]
-        end
-    end
-end
-
 function calc_tderivative(integrator, cache)
     @unpack t, dt, uprev, u, f, p = integrator
 
@@ -196,7 +171,7 @@ W = \\frac{1}{\\gamma}MM - J
 
 where `MM` is the mass matrix (a regular `AbstractMatrix` or a `UniformScaling`),
 `γ` is a real number proportional to the time step, and `J` is the Jacobian
-operator (must be a `AbstractDiffEqLinearOperator`). A `WOperator` can also be
+operator (must be a `AbstractSciMLOperator`). A `WOperator` can also be
 constructed using a `*DEFunction` directly as
 
     WOperator(f,gamma[;transform=false])
@@ -206,7 +181,7 @@ to be a diffeq operator --- it will automatically be converted to one.
 
 `WOperator` supports lazy `*` and `mul!` operations, the latter utilizing an
 internal cache (can be specified in the constructor; default to regular `Vector`).
-It supports all of `AbstractDiffEqLinearOperator`'s interface.
+It supports all of `AbstractSciMLOperator`'s interface.
 """
 mutable struct WOperator{IIP, T,
                          MType,
@@ -214,7 +189,7 @@ mutable struct WOperator{IIP, T,
                          JType,
                          F,
                          C,
-                         JV} <: DiffEqBase.AbstractDiffEqLinearOperator{T}
+                         JV} <: AbstractSciMLOperator{T}
     mass_matrix::MType
     gamma::GType
     J::JType
@@ -704,7 +679,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         W.transform = W_transform
         set_gamma!(W, dtgamma)
         if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec) &&
-           !(W.J isa SciMLBase.AbstractDiffEqLinearOperator)
+           !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
             (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
@@ -763,8 +738,8 @@ end
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
         else
-            if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator) && (!isnewton(nlsolver) ||
-                nlsolver.cache.W.J isa DiffEqBase.AbstractDiffEqLinearOperator)
+            if !isa(J, AbstractSciMLOperator) && (!isnewton(nlsolver) ||
+                nlsolver.cache.W.J isa AbstractSciMLOperator)
                 J = DiffEqArrayOperator(J)
             end
             W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec;
@@ -859,7 +834,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
     islin, isode = islinearfunction(f, alg)
-    if f.jac_prototype isa DiffEqBase.AbstractDiffEqLinearOperator
+    if f.jac_prototype isa AbstractSciMLOperator
         W = WOperator{IIP}(f, u, dt)
         J = W.J
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
@@ -900,7 +875,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
 
     elseif islin || (!IIP && DiffEqBase.has_jac(f))
         J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
-        if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+        if !isa(J, AbstractSciMLOperator)
             J = DiffEqArrayOperator(J)
         end
         W = WOperator{IIP}(f.mass_matrix, dt, J, u)

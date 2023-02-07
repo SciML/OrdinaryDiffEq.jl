@@ -1637,3 +1637,168 @@ function MSRK5ConstantCache(T::Type, T1::Type)
                        a74, a75, a76, a81, a83, a84, a85, a86, a87, b1, b4, b5, b6, b7, b8,
                        c2, c3, c4, c5, c6, c7, c8)
 end
+
+struct MSRK6ConstantCache{T, T1} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a32::T
+    a41::T
+    a43::T
+    a51::T
+    a53::T
+    a54::T
+    a61::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a73::T
+    a74::T
+    a75::T
+    a76::T
+    a81::T
+    a83::T
+    a84::T
+    a85::T
+    a86::T
+    a87::T
+
+    b1::T
+    b4::T
+    b5::T
+    b6::T
+    b7::T
+    b8::T
+
+    c2::T1
+    c3::T1
+    c4::T1
+    c5::T1
+    c6::T1
+    c7::T1
+    c8::T1
+end
+
+function MSRK6ConstantCache(T::Type, T1::Type)
+    a21 = T(1 // 14)
+    a32 = T(1 // 7)
+    a41 = T(3 // 56)
+    a43 = T(9 // 56)
+    a51 = T(29 // 72)
+    a53 = T(-35 // 24)
+    a54 = T(14 // 9)
+    a61 = T(-17 // 56)
+    a63 = T(93 // 56)
+    a64 = T(-8 // 7)
+    a65 = T(3 // 7)
+    a71 = T(199 // 1372)
+    a73 = T(-195 // 196)
+    a74 = T(1259 // 784)
+    a75 = T(-3855 // 5488)
+    a76 = T(45 // 56)
+    a81 = T(4903 // 25596)
+    a83 = T(4487 // 2844)
+    a84 = T(-255101 // 102384)
+    a85 = T(33847 // 11376)
+    a86 = T(-94325 // 51192)
+    a87 = T(3773 // 6399)
+    b1 = T(16 // 243)
+    b4 = T(16807 // 53460)
+    b5 = T(53 // 300)
+    b6 = T(2401 // 12150)
+    b7 = T(2401 // 12150)
+    b8 = T(79 // 1650)
+    c2 = T1(1 // 14)
+    c3 = T1(1 // 7)
+    c4 = T1(3 // 14)
+    c5 = T1(1 // 2)
+    c6 = T1(9 // 14)
+    c7 = T1(6 // 7)
+    c8 = T1(1)
+
+    MSRK6ConstantCache(a21, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74,
+                       a75, a76, a81, a83, a84, a85, a86, a87, b1, b4, b5, b6, b7, b8, c2,
+                       c3, c4, c5, c6, c7, c8)
+end
+
+struct Stepanov5ConstantCache{T, T1} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+
+    b1::T
+    # b2::T
+    b3::T
+    b4::T
+    b5::T
+    b6::T
+
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    btilde6::T
+    btilde7::T
+
+    c2::T1
+    c3::T1
+    c4::T1
+    c5::T1
+    c6::T1
+end
+
+# Use rational numbers for testing. Define another function that defines the tab using floats.
+function Stepanov5ConstantCache(T::Type, T1::Type)
+    a21 = T(1 // 5)
+    a31 = T(21 // 338)
+    a32 = T(441 // 1690)
+    a41 = T(639 // 392)
+    a42 = T(-729 // 140)
+    a43 = T(1755 // 392)
+    a51 = T(4878991 // 1693440)
+    a52 = T(-16601 // 1792)
+    a53 = T(210067 // 28224)
+    a54 = T(-1469 // 17280)
+    a61 = T(13759919 // 4230954)
+    a62 = T(-2995 // 287)
+    a63 = T(507312091 // 61294590)
+    a64 = T(-22 // 405)
+    a65 = T(-7040 // 180687)
+    b1 = T(1441 // 14742)
+    # b2 = T(0)
+    b3 = T(114244 // 234927)
+    b4 = T(118 // 81)
+    b5 = T(-12800 // 4407)
+    b6 = T(41 // 22)
+
+    btilde1 = T(-1 // 273)
+    btilde2 = T(0)
+    btilde3 = T(2197 // 174020)
+    btilde4 = T(-4 // 15)
+    btilde5 = T(1280 // 1469)
+    btilde6 = T(-33743 // 52712)
+    btilde7 = T(127 // 4792)
+
+    c2 = T1(1 // 5)
+    c3 = T1(21 // 65)
+    c4 = T1(9 // 10)
+    c5 = T1(39 // 40)
+    c6 = T1(1 // 1)
+
+    Stepanov5ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63,
+                           a64, a65, b1, b3, b4, b5, b6,
+                           btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7,
+                           c2, c3, c4, c5, c6)
+end

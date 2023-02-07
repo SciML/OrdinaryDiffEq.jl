@@ -555,7 +555,7 @@ function bdf_step_reject_controller!(integrator, EEst1)
     F = inv(z)
     if z <= 10
         hₖ = F * h
-    elseif z > 10
+    else # z > 10
         hₖ = 0.1 * h
     end
     hₙ = hₖ

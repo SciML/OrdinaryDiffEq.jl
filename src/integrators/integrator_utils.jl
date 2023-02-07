@@ -71,7 +71,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             val = ode_interpolant(Θ, integrator, integrator.opts.save_idxs, Val{0}) # out of place, but no force copy later
             copyat_or_push!(integrator.sol.t, integrator.saveiter, curt)
             save_val = val
-            copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, Val{false})
+            copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, false)
             if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                                 integrator.cache.current)
@@ -83,7 +83,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
             else
                 copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                                integrator.u[integrator.opts.save_idxs], Val{false})
+                                integrator.u[integrator.opts.save_idxs], false)
             end
             if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
                 integrator.saveiter_dense += 1
@@ -94,7 +94,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                     else
                         copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
                                         [k[integrator.opts.save_idxs] for k in integrator.k],
-                                        Val{false})
+                                        false)
                     end
                 end
             end
@@ -112,7 +112,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
         else
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                            integrator.u[integrator.opts.save_idxs], Val{false})
+                            integrator.u[integrator.opts.save_idxs], false)
         end
         copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
         if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
@@ -124,7 +124,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 else
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
                                     [k[integrator.opts.save_idxs] for k in integrator.k],
-                                    Val{false})
+                                    false)
                 end
             end
         end
@@ -171,7 +171,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
             copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
         else
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                            integrator.u[integrator.opts.save_idxs], Val{false})
+                            integrator.u[integrator.opts.save_idxs], false)
         end
         if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
             integrator.saveiter_dense += 1
@@ -182,7 +182,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
                 else
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
                                     [k[integrator.opts.save_idxs] for k in integrator.k],
-                                    Val{false})
+                                    false)
                 end
             end
         end
