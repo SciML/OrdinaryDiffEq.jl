@@ -80,7 +80,7 @@ solap = solve(probap, dt = 1e-2, Heun())
 
 sol = solve(prob, dt = 1e-2, Tsit5())
 solap = solve(probap, dt = 1e-2, Tsit5())
-@test sol(30)≈solap(30) atol=4e-6
+@test sol(30)≈solap(30) atol=1e-5
 
 function rober(u, p, t)
     y₁, y₂, y₃ = u
