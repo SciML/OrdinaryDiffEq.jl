@@ -711,7 +711,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Tsit5ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7 = cache
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
     k1 = integrator.fsalfirst
     a = dt * a21
     k2 = f(uprev + a * k1, p, t + c1 * dt)
@@ -767,7 +769,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7 = cache.tab
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     a = dt * a21
     @.. broadcast=false thread=thread tmp=uprev + a * k1
@@ -833,8 +837,9 @@ end
 
 @muladd function perform_step!(integrator, cache::DP5ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, c1, c2, c3, c4, c5, c6 = cache
-    @unpack d1, d3, d4, d5, d6, d7 = cache
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    @OnDemandTableauExtract DP5ConstantCacheActual T T2
     k1 = integrator.fsalfirst
     a = dt * a21
     k2 = f(uprev + a * k1, p, t + c1 * dt)
@@ -885,9 +890,10 @@ end
 
 @muladd function perform_step!(integrator, cache::DP5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, c1, c2, c3, c4, c5, c6 = cache.tab
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    @OnDemandTableauExtract DP5ConstantCacheActual T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
-    @unpack d1, d3, d4, d5, d6, d7 = cache.tab
     a = dt * a21
     @.. broadcast=false thread=thread tmp=uprev + a * k1
     f(k2, tmp, p, t + c1 * dt)
