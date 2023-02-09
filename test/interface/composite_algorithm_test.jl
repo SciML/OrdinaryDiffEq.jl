@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
+using DiffEqDevTools
+
 prob = prob_ode_2Dlinear
 choice_function(integrator) = (Int(integrator.t < 0.5) + 1)
 alg_double = CompositeAlgorithm((Tsit5(), Tsit5()), choice_function)
