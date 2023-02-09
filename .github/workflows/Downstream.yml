@@ -31,6 +31,7 @@ jobs:
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core4}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core5}
           - {user: SciML, repo: ModelingToolkit.jl, group: All}
+          - {user: SciML, repo: DiffEqDevTools.jl, group: Core}
           - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream}
 
     steps:
