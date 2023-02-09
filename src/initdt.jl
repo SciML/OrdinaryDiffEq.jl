@@ -173,7 +173,7 @@
     # Constant zone before callback
     # Just return first guess
     # Avoids AD issues
-    f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+    length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
 
     if u0 isa Array
         @inbounds @simd ivdep for i in eachindex(u0)
