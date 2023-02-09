@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqOperators, SparseArrays, LinearSolve
+using OrdinaryDiffEq, SparseArrays, LinearSolve, LinearAlgebra
 using UnPack
 using ComponentArrays
 using Symbolics
@@ -7,16 +7,54 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
     @info "Enclosing the time differential"
 
     @unpack Δr, r_space, countorderapprox = parameters.compute
-    countdiscretizationsteps = length(r_space)
+    N = length(r_space)
 
-    ∇ = CenteredDifference(1, countorderapprox, Δr, countdiscretizationsteps)
-    Δ = CenteredDifference(2, countorderapprox, Δr, countdiscretizationsteps)
-    # To concretize as arrays
-    tmpbc = NeumannBC((3.14, 1.0), Δr)
-    Δ, _ = Array(Δ * tmpbc)
-    ∇, _ = Array(∇ * tmpbc)
-    bc_x = zeros(Real, countdiscretizationsteps)
-    bc_xx = zeros(Real, countdiscretizationsteps)
+    function first_deriv(N)
+        dx = 1/(N + 1)
+        du = -1 * ones(N-1) # off diagonal
+        du2 = ones(N-1) # off diagonal
+        diag= zeros(N)
+        lower= spzeros(Float64, N)
+        upper= spzeros(Float64, N)
+        lower[1] = -1.0
+        upper[end] = 1.0
+        M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
+        DiffEqArrayOperator(1/dx * M)
+    end
+
+    function second_deriv(N)
+        dx = 1/(N + 1)
+        du = ones(N-1) # off diagonal
+        du2 = ones(N-1) # off diagonal
+        diag= -2 * ones(N)
+        lower= spzeros(Float64, N)
+        upper= spzeros(Float64, N)
+        lower[1] = 1.0
+        upper[end] = 1.0
+        M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
+        DiffEqArrayOperator(1/dx^2 * M)
+    end
+
+    function extender(N)
+        dx = 1/(N + 1)
+        diag= ones(N)
+        lower= spzeros(Float64, N)
+        upper= spzeros(Float64, N)
+        lower[1] = 1.0
+        upper[end] = 1.0
+        M = vcat(transpose(lower),
+                 sparse(diagm(diag)),
+                 transpose(upper))
+        DiffEqArrayOperator(1/dx^2 * M)
+    end
+
+    bc_handler = extender(N)
+
+    ∇ = first_deriv(N)*bc_handler
+    Δ = second_deriv(N)*bc_handler
+
+    bc_x = zeros(Real, N)
+    bc_xx = zeros(Real, N)
 
     function timedifferentialclosure!(du, u, p, t)
         @unpack (α, D, v, k_p, V_c, Q_l, Q_r, V_b,
@@ -79,7 +117,7 @@ computeparams = (Δr = r_space[2],
 parameters = (prior = prior,
               compute = computeparams)
 
-dudt = enclosethetimedifferential(parameters)
+dudt = enclosethetimedifferential(parameters, 15)
 IC = ones(length(r_space) + 3)
 odeprob = ODEProblem(dudt,
                      IC,
