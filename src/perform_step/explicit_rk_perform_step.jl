@@ -31,27 +31,26 @@ end
     end
 
     #Calc Last
-    utilde = zero(kk[1])
+    utilde_last = zero(kk[1])
     for j in 1:(stages - 1)
-        utilde = utilde + A[j, end] * kk[j]
+        utilde_last = utilde_last + A[j, end] * kk[j]
     end
-    kk[end] = f(uprev + dt * utilde, p, t + c[end] * dt)
+    u_beforefinal = uprev + dt * utilde_last
+    kk[end] = f(u_beforefinal, p, t + c[end] * dt)
     integrator.destats.nf += 1
     integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
 
     # Accumulate Result
-    utilde = α[1] * kk[1]
+    accum = α[1] * kk[1]
     for i in 2:stages
-        utilde = utilde + α[i] * kk[i]
+        accum = accum + α[i] * kk[i]
     end
-    u = uprev + dt * utilde
+    u = uprev + dt * accum
 
     if integrator.alg isa CompositeAlgorithm
         # Hairer II, page 22
-        utilde = kk[end] - kk[end-1]
-        ϱu = integrator.opts.internalnorm(utilde, t)
-        utilde = u - tmp
-        ϱd = integrator.opts.internalnorm(utilde, t)
+        ϱu = integrator.opts.internalnorm(kk[end] - kk[end-1], t)
+        ϱd = integrator.opts.internalnorm(u - u_beforefinal, t)
         integrator.eigen_est = ϱu / ϱd
     end
 
