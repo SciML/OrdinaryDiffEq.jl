@@ -11,6 +11,12 @@ alg_switch = CompositeAlgorithm((Tsit5(), Vern7()), choice_function)
 @test sol1.t == sol2.t
 @test sol1(0.8) == sol2(0.8)
 
+alg_double_erk = CompositeAlgorithm((ExplicitRK(), ExplicitRK()), choice_function)
+@time sol1 = solve(prob_ode_linear, alg_double_erk)
+@time sol2 = solve(prob_ode_linear, ExplicitRK())
+@test sol1.t == sol2.t
+@test sol1(0.8) == sol2(0.8)
+
 integrator1 = init(prob, alg_double2)
 integrator2 = init(prob, Vern6())
 solve!(integrator1)
@@ -43,4 +49,7 @@ A = [-0.027671669470584172 -0.0 -0.0 -0.0 -0.0 -0.0;
 prob = ODEProblem((du, u, p, t) -> mul!(du, A, u), zeros(6), (0.0, 1000), tstops = [192],
                   callback = DiscreteCallback(condition, affect!));
 sol = solve(prob, alg = AutoVern7(Rodas5()))
+@test sol.t[end] == 1000.0
+
+sol = solve(prob, alg = OrdinaryDiffEq.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
 @test sol.t[end] == 1000.0

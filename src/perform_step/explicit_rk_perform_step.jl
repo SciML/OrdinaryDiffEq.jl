@@ -13,7 +13,7 @@ end
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache,
                                repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    alg = unwrap_alg(integrator, nothing)
+    alg = unwrap_alg(integrator, false)
     @unpack A, c, α, αEEst, stages = cache
     @unpack kk = cache
 
@@ -45,6 +45,15 @@ end
         utilde = utilde + α[i] * kk[i]
     end
     u = uprev + dt * utilde
+
+    if integrator.alg isa CompositeAlgorithm
+        # Hairer II, page 22
+        utilde = kk[end] - kk[end-1]
+        ϱu = integrator.opts.internalnorm(utilde, t)
+        utilde = u - tmp
+        ϱd = integrator.opts.internalnorm(utilde, t)
+        integrator.eigen_est = ϱu / ϱd
+    end
 
     if integrator.opts.adaptive
         utilde = αEEst[1] .* kk[1]
@@ -198,7 +207,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    alg = unwrap_alg(integrator, nothing)
+    alg = unwrap_alg(integrator, false)
     # αEEst is `α - αEEst`
     @unpack A, c, α, αEEst, stages = cache.tab
     @unpack kk, utilde, tmp, atmp = cache
@@ -209,6 +218,15 @@ end
     #Accumulate
     if !isfsal(alg.tableau)
         runtime_split_fsal!(u, α, utilde, uprev, kk, dt, stages)
+    end
+
+    if integrator.alg isa CompositeAlgorithm
+        # Hairer II, page 22
+        @.. broadcast=false utilde= kk[end] - kk[end-1]
+        ϱu = integrator.opts.internalnorm(utilde, t)
+        @.. broadcast=false utilde=u - tmp
+        ϱd = integrator.opts.internalnorm(utilde, t)
+        integrator.eigen_est = ϱu / ϱd
     end
 
     if integrator.opts.adaptive
