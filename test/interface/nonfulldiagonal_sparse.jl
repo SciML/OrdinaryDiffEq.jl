@@ -10,48 +10,48 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
     N = length(r_space)
 
     function first_deriv(N)
-        dx = 1/(N + 1)
-        du = -1 * ones(N-1) # off diagonal
-        du2 = ones(N-1) # off diagonal
-        diag= zeros(N)
-        lower= spzeros(Float64, N)
-        upper= spzeros(Float64, N)
+        dx = 1 / (N + 1)
+        du = -1 * ones(N - 1) # off diagonal
+        du2 = ones(N - 1) # off diagonal
+        diag = zeros(N)
+        lower = spzeros(Float64, N)
+        upper = spzeros(Float64, N)
         lower[1] = -1.0
         upper[end] = 1.0
         M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
-        DiffEqArrayOperator(1/dx * M)
+        DiffEqArrayOperator(1 / dx * M)
     end
 
     function second_deriv(N)
-        dx = 1/(N + 1)
-        du = ones(N-1) # off diagonal
-        du2 = ones(N-1) # off diagonal
-        diag= -2 * ones(N)
-        lower= spzeros(Float64, N)
-        upper= spzeros(Float64, N)
+        dx = 1 / (N + 1)
+        du = ones(N - 1) # off diagonal
+        du2 = ones(N - 1) # off diagonal
+        diag = -2 * ones(N)
+        lower = spzeros(Float64, N)
+        upper = spzeros(Float64, N)
         lower[1] = 1.0
         upper[end] = 1.0
         M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
-        DiffEqArrayOperator(1/dx^2 * M)
+        DiffEqArrayOperator(1 / dx^2 * M)
     end
 
     function extender(N)
-        dx = 1/(N + 1)
-        diag= ones(N)
-        lower= spzeros(Float64, N)
-        upper= spzeros(Float64, N)
+        dx = 1 / (N + 1)
+        diag = ones(N)
+        lower = spzeros(Float64, N)
+        upper = spzeros(Float64, N)
         lower[1] = 1.0
         upper[end] = 1.0
         M = vcat(transpose(lower),
                  sparse(diagm(diag)),
                  transpose(upper))
-        DiffEqArrayOperator(1/dx^2 * M)
+        DiffEqArrayOperator(1 / dx^2 * M)
     end
 
     bc_handler = extender(N)
 
-    ∇ = first_deriv(N)*bc_handler
-    Δ = second_deriv(N)*bc_handler
+    ∇ = first_deriv(N) * bc_handler
+    Δ = second_deriv(N) * bc_handler
 
     bc_x = zeros(Real, N)
     bc_xx = zeros(Real, N)
@@ -117,7 +117,7 @@ computeparams = (Δr = r_space[2],
 parameters = (prior = prior,
               compute = computeparams)
 
-dudt = enclosethetimedifferential(parameters, 15)
+dudt = enclosethetimedifferential(parameters)
 IC = ones(length(r_space) + 3)
 odeprob = ODEProblem(dudt,
                      IC,
