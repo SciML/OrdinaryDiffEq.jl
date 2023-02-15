@@ -240,14 +240,15 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         callback_cache = nothing
     end
 
+    # Handle symbolic save_idxs
     if !isnothing(saveidxs) && hassymbols(save_idxs)
         if has_sys(prob.f)
             sym_idxs, int_idxs = partition_ints(save_idxs)
-            #TODO: Automatically find dependencies of observed variables
-
             save_idxs = unique(vcat(state_sym_to_index.((prob.f.sys,),
                                                         sym_idxs),
                                     int_idxs))
+            saved_syms = prob.f.sys.states[save_idxs]
+            sym_map = Dict(saved_syms .=> save_idxs)
         else
             error("save_idxs cannot be symbols if the problem does not come from a system")
         end
@@ -359,49 +360,28 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                save_everystep || isempty(saveat) || saveat isa Number ||
                prob.tspan[2] in saveat : save_end
 
-    opts = DEOptions{typeof(abstol_internal), typeof(reltol_internal),
-                     QT, tType, typeof(controller),
-                     typeof(internalnorm), typeof(internalopnorm),
-                     typeof(save_end_user),
-                     typeof(callbacks_internal),
-                     typeof(isoutofdomain),
-                     typeof(progress_message), typeof(unstable_check),
-                     typeof(tstops_internal),
+    opts = DEOptions{typeof(abstol_internal), typeof(reltol_internal), QT, tType,
+                     typeof(controller), typeof(internalnorm), typeof(internalopnorm),
+                     typeof(save_end_user), typeof(callbacks_internal),
+                     typeof(isoutofdomain), typeof(progress_message),
+                     typeof(unstable_check), typeof(tstops_internal),
                      typeof(d_discontinuities_internal), typeof(userdata),
-                     typeof(save_idxs),
-                     typeof(maxiters), typeof(tstops),
-                     typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
-                                                                adaptive, abstol_internal,
-                                                                reltol_internal,
-                                                                QT(gamma), QT(qmax),
-                                                                QT(qmin),
-                                                                QT(qsteady_max),
-                                                                QT(qsteady_min),
-                                                                QT(qoldinit),
-                                                                QT(failfactor),
-                                                                tType(dtmax), tType(dtmin),
-                                                                controller,
-                                                                internalnorm,
-                                                                internalopnorm,
-                                                                save_idxs, tstops_internal,
-                                                                saveat_internal,
-                                                                d_discontinuities_internal,
-                                                                tstops, saveat,
-                                                                d_discontinuities,
-                                                                userdata, progress,
-                                                                progress_steps,
-                                                                progress_name,
-                                                                progress_message,
-                                                                timeseries_errors,
-                                                                dense_errors, dense,
-                                                                save_on, save_start,
-                                                                save_end, save_end_user,
-                                                                callbacks_internal,
-                                                                isoutofdomain,
-                                                                unstable_check,
-                                                                verbose, calck, force_dtmin,
-                                                                advance_to_tstop,
-                                                                stop_at_next_tstop)
+                     typeof(save_idxs), typeof(maxiters), typeof(tstops), typeof(saveat),
+                     typeof(d_discontinuities),
+                     typeof(sym_map)}(maxiters, save_everystep, adaptive, abstol_internal,
+                                      reltol_internal, QT(gamma), QT(qmax), QT(qmin),
+                                      QT(qsteady_max), QT(qsteady_min), QT(qoldinit),
+                                      QT(failfactor), tType(dtmax), tType(dtmin),
+                                      controller,
+                                      internalnorm, internalopnorm, save_idxs, sym_map,
+                                      tstops_internal, saveat_internal,
+                                      d_discontinuities_internal, tstops, saveat,
+                                      d_discontinuities, userdata, progress, progress_steps,
+                                      progress_name, progress_message, timeseries_errors,
+                                      dense_errors, dense, save_on, save_start, save_end,
+                                      save_end_user, callbacks_internal, isoutofdomain,
+                                      unstable_check, verbose, calck, force_dtmin,
+                                      advance_to_tstop, stop_at_next_tstop)
 
     destats = DiffEqBase.DEStats(0)
 
@@ -409,13 +389,14 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
                                         dense = dense, k = ks, interp = id,
-                                        alg_choice = alg_choice,
+                                        alg_choice = alg_choice, sym_map = sym_map,
                                         calculate_error = false, destats = destats)
     else
         id = InterpolationData(f, timeseries, ts, ks, dense, cache)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
                                         dense = dense, k = ks, interp = id,
-                                        calculate_error = false, destats = destats)
+                                        sym_map = sym_map, calculate_error = false,
+                                        destats = destats)
     end
 
     if recompile_flag == true
