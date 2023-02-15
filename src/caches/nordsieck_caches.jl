@@ -30,8 +30,7 @@ function alg_cache(alg::AN5, u, rate_prototype, ::Type{uEltypeNoUnits},
     m = zero(l)
     c_LTE = c_conv = zero(tTypeNoUnits)
     dts = fill(zero(dt), 6)
-    tsit5tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits),
-                                  constvalue(tTypeNoUnits))
+    tsit5tab = Tsit5ConstantCache()
     AN5ConstantCache(z, l, m, c_LTE, c_conv, dts, Δ, tsit5tab, 1)
 end
 
@@ -67,7 +66,6 @@ function alg_cache(alg::AN5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     #################################################
     # Tsit5
-    tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
@@ -80,7 +78,7 @@ function alg_cache(alg::AN5, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    tsit5cache = Tsit5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, tab,
+    tsit5cache = Tsit5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
                             trivial_limiter!, trivial_limiter!, False())
     #################################################
     N = 5
@@ -152,8 +150,7 @@ function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
     m = zero(l)
     c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
     dts = fill(zero(dt), N + 1)
-    tsit5tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits),
-                                  constvalue(tTypeNoUnits))
+    tsit5tab = Tsit5ConstantCache()
     η = zero(dt / dt)
     JVODEConstantCache(z, l, m,
                        c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟, prev_𝒟,
@@ -213,7 +210,6 @@ function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
     #################################################
     # Tsit5
     # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
-    tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -225,7 +221,7 @@ function alg_cache(alg::JVODE, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    tsit5cache = Tsit5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, tab,
+    tsit5cache = Tsit5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp,
                             trivial_limiter!, trivial_limiter!, False())
     #################################################
     fsalfirst = zero(rate_prototype)

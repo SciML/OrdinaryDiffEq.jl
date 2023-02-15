@@ -90,3 +90,8 @@ end
 # test problems with zero-length vectors
 ode = ODEProblem((du, u, semi, t) -> du .= u, Float64[], (0.0, 1.0))
 @test_nowarn solve(ode, Tsit5())
+
+# test if the early exit in ode_determine_initdt doesn't hit in the case of
+# zero-length vectors, see https://github.com/SciML/OrdinaryDiffEq.jl/pull/1865
+integrator = init(ode, Tsit5())
+@test integrator.dt ≈ 1.0e-6

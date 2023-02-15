@@ -148,3 +148,37 @@ function partition_ints(idxs)
     ints = setdiff(idxs, syms)
     return syms, ints
 end
+
+macro OnDemandTableauExtract(S_T, T, T2)
+    S = getproperty(__module__, S_T)
+    s = gensym(:s)
+    q = quote
+        $s = $S($T, $T2)
+    end
+    fn = fieldnames(S)
+    for n in fn
+        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
+    end
+    return esc(q)
+end
+macro OnDemandTableauExtract(S_T, T)
+    S = getproperty(__module__, S_T)
+    s = gensym(:s)
+    q = quote
+        $s = $S($T)
+    end
+    fn = fieldnames(S)
+    for n in fn
+        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
+    end
+    return esc(q)
+end
+
+macro fold(arg)
+    # https://github.com/JuliaLang/julia/pull/43852
+    if VERSION < v"1.8.0-DEV.1484"
+        esc(:(@generated $arg))
+    else
+        esc(:(Base.@assume_effects :foldable $arg))
+    end
+end

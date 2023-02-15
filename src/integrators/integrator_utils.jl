@@ -61,10 +61,11 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
     saved, savedexactly = false, false
     !integrator.opts.save_on && return saved, savedexactly
     tdir_t = integrator.tdir * integrator.t
-    while !isempty(integrator.opts.saveat) && first(integrator.opts.saveat) <= tdir_t # Perform saveat
+    saveat = integrator.opts.saveat
+    while !isempty(saveat) && first(saveat) <= tdir_t # Perform saveat
         integrator.saveiter += 1
         saved = true
-        curt = integrator.tdir * pop!(integrator.opts.saveat)
+        curt = integrator.tdir * pop!(saveat)
         if curt != integrator.t # If <t, interpolate
             DiffEqBase.addsteps!(integrator)
             Θ = (curt - integrator.tprev) / integrator.dt

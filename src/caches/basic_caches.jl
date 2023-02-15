@@ -9,6 +9,9 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     choice_function::F
     current::Int
 end
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
+    Base.Experimental.silence!(CompositeCache)
+end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -107,7 +110,7 @@ function ExplicitRKConstantCache(tableau, rate_prototype)
     @unpack A, c, α, αEEst, stages = tableau
     A = copy(A') # Transpose A to column major looping
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
-    αEEst = α .- αEEst
+    αEEst = isempty(αEEst) ? αEEst : α .- αEEst
     ExplicitRKConstantCache(A, c, α, αEEst, stages, kk)
 end
 
