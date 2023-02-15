@@ -241,7 +241,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     end
 
     # Handle symbolic save_idxs
-    if !isnothing(saveidxs) && hassymbols(save_idxs)
+    if !isnothing(save_idxs) && hassymbols(save_idxs)
         if has_sys(prob.f)
             sym_idxs, int_idxs = partition_ints(save_idxs)
             save_idxs = unique(vcat(state_sym_to_index.((prob.f.sys,),
