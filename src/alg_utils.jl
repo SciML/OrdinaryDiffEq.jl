@@ -26,10 +26,8 @@ SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 ## OrdinaryDiffEq Internal Traits
 
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
-function isfsal(tab::DiffEqBase.ExplicitRKTableau{MType, VType, fsal}) where {MType, VType,
-                                                                              fsal}
-    fsal
-end
+isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
+
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas5) = false
@@ -922,6 +920,7 @@ ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
 ssp_coefficient(alg::SSPSDIRK2) = 4
 
 # stability regions
+alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
 alg_stability_size(alg::DP5) = 3.3066
 alg_stability_size(alg::Tsit5) = 3.5068
 alg_stability_size(alg::Vern6) = 4.8553
