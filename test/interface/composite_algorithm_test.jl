@@ -53,5 +53,6 @@ prob = ODEProblem((du, u, p, t) -> mul!(du, A, u), zeros(6), (0.0, 1000), tstops
 sol = solve(prob, alg = AutoVern7(Rodas5()))
 @test sol.t[end] == 1000.0
 
-sol = solve(prob, alg = OrdinaryDiffEq.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
+sol = solve(prob,
+            alg = OrdinaryDiffEq.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
 @test sol.t[end] == 1000.0

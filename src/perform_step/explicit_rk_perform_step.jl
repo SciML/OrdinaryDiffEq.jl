@@ -49,7 +49,7 @@ end
 
     if integrator.alg isa CompositeAlgorithm
         # Hairer II, page 22
-        ϱu = integrator.opts.internalnorm(kk[end] - kk[end-1], t)
+        ϱu = integrator.opts.internalnorm(kk[end] - kk[end - 1], t)
         ϱd = integrator.opts.internalnorm(u - u_beforefinal, t)
         integrator.eigen_est = ϱu / ϱd
     end
@@ -221,7 +221,7 @@ end
 
     if integrator.alg isa CompositeAlgorithm
         # Hairer II, page 22
-        @.. broadcast=false utilde= kk[end] - kk[end-1]
+        @.. broadcast=false utilde=kk[end] - kk[end - 1]
         ϱu = integrator.opts.internalnorm(utilde, t)
         @.. broadcast=false utilde=u - tmp
         ϱd = integrator.opts.internalnorm(utilde, t)
