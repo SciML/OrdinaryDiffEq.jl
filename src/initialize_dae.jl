@@ -25,7 +25,7 @@ default_nlsolve(alg, isinplace, u, autodiff = false) = alg
 function default_nlsolve(::Nothing, isinplace, u, autodiff = false)
     NLSolveJL(autodiff = autodiff ? :forward : :central)
 end
-function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, autodiff = false)
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArraysCore.StaticArray, autodiff = false)
     SimpleNewtonRaphson(autodiff = autodiff)
 end
 

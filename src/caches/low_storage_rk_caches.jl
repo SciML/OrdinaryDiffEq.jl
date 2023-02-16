@@ -14,10 +14,10 @@
 end
 
 struct LowStorageRK2NConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    A2end::SVector{N, T} # A1 is always zero
+    A2end::NTuple{N, T} # A1 is always zero
     B1::T
-    B2end::SVector{N, T}
-    c2end::SVector{N, T2} # c1 is always zero
+    B2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
 end
 
 function ORK256ConstantCache(T, T2)
@@ -25,20 +25,20 @@ function ORK256ConstantCache(T, T2)
     A3 = convert(T, -1.55798)
     A4 = convert(T, -1.0)
     A5 = convert(T, -0.45031)
-    A2end = SVector(A2, A3, A4, A5)
+    A2end = (A2, A3, A4, A5)
 
     B1 = convert(T, 0.2)
     B2 = convert(T, 0.83204)
     B3 = convert(T, 0.6)
     B4 = convert(T, 0.35394)
     B5 = convert(T, 0.2)
-    B2end = SVector(B2, B3, B4, B5)
+    B2end = (B2, B3, B4, B5)
 
     c2 = convert(T2, 0.2)
     c3 = convert(T2, 0.2)
     c4 = convert(T2, 0.8)
     c5 = convert(T2, 0.8)
-    c2end = SVector(c2, c3, c4, c5)
+    c2end = (c2, c3, c4, c5)
 
     LowStorageRK2NConstantCache{4, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -76,20 +76,20 @@ function CarpenterKennedy2N54ConstantCache(T, T2)
     A3 = convert(T, -2404267990393 // 2016746695238)
     A4 = convert(T, -3550918686646 // 2091501179385)
     A5 = convert(T, -1275806237668 // 842570457699)
-    A2end = SVector(A2, A3, A4, A5)
+    A2end = (A2, A3, A4, A5)
 
     B1 = convert(T, 1432997174477 // 9575080441755)
     B2 = convert(T, 5161836677717 // 13612068292357)
     B3 = convert(T, 1720146321549 // 2090206949498)
     B4 = convert(T, 3134564353537 // 4481467310338)
     B5 = convert(T, 2277821191437 // 14882151754819)
-    B2end = SVector(B2, B3, B4, B5)
+    B2end = (B2, B3, B4, B5)
 
     c2 = convert(T2, 1432997174477 // 9575080441755)
     c3 = convert(T2, 2526269341429 // 6820363962896)
     c4 = convert(T2, 2006345519317 // 3224310063776)
     c5 = convert(T2, 2802321613138 // 2924317926251)
-    c2end = SVector(c2, c3, c4, c5)
+    c2end = (c2, c3, c4, c5)
 
     LowStorageRK2NConstantCache{4, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -131,7 +131,7 @@ function SHLDDRK64ConstantCache(T, T2)
     A4 = convert(T, -1.5526678)
     A5 = convert(T, -3.4077973)
     A6 = convert(T, -1.0742640)
-    A2end = SVector(A2, A3, A4, A5, A6)
+    A2end = (A2, A3, A4, A5, A6)
 
     B1 = convert(T, 0.1453095)
     B2 = convert(T, 0.4653797)
@@ -139,14 +139,14 @@ function SHLDDRK64ConstantCache(T, T2)
     B4 = convert(T, 0.7795279)
     B5 = convert(T, 0.3574327)
     B6 = convert(T, 0.15)
-    B2end = SVector(B2, B3, B4, B5, B6)
+    B2end = (B2, B3, B4, B5, B6)
 
     c2 = convert(T2, 0.1453095)
     c3 = convert(T2, 0.3817422)
     c4 = convert(T2, 0.6367813)
     c5 = convert(T2, 0.7560744)
     c6 = convert(T2, 0.9271047)
-    c2end = SVector(c2, c3, c4, c5, c6)
+    c2end = (c2, c3, c4, c5, c6)
 
     LowStorageRK2NConstantCache{5, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -186,7 +186,7 @@ function DGLDDRK73_CConstantCache(T, T2)
     A5 = convert(T, -1.463149119280508)
     A6 = convert(T, -0.6592881281087830)
     A7 = convert(T, -1.667891931891068)
-    A2end = SVector(A2, A3, A4, A5, A6, A7)
+    A2end = (A2, A3, A4, A5, A6, A7)
 
     B1 = convert(T, 0.01197052673097840)
     B2 = convert(T, 0.8886897793820711)
@@ -195,7 +195,7 @@ function DGLDDRK73_CConstantCache(T, T2)
     B5 = convert(T, 0.3160214638138484)
     B6 = convert(T, 0.2483525368264122)
     B7 = convert(T, 0.06771230959408840)
-    B2end = SVector(B2, B3, B4, B5, B6, B7)
+    B2end = (B2, B3, B4, B5, B6, B7)
 
     c2 = convert(T2, 0.01197052673097840)
     c3 = convert(T2, 0.1823177940361990)
@@ -203,7 +203,7 @@ function DGLDDRK73_CConstantCache(T, T2)
     c5 = convert(T2, 0.6532031220148590)
     c6 = convert(T2, 0.8534401385678250)
     c7 = convert(T2, 0.9980466084623790)
-    c2end = SVector(c2, c3, c4, c5, c6, c7)
+    c2end = (c2, c3, c4, c5, c6, c7)
 
     LowStorageRK2NConstantCache{6, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -245,7 +245,7 @@ function DGLDDRK84_CConstantCache(T, T2)
     A6 = convert(T, -5.200129304403076)
     A7 = convert(T, 0.7837058945416420)
     A8 = convert(T, -0.5445836094332190)
-    A2end = SVector(A2, A3, A4, A5, A6, A7, A8)
+    A2end = (A2, A3, A4, A5, A6, A7, A8)
 
     B1 = convert(T, 0.2165936736758085)
     B2 = convert(T, 0.1773950826411583)
@@ -255,7 +255,7 @@ function DGLDDRK84_CConstantCache(T, T2)
     B6 = convert(T, 1.903416030422760)
     B7 = convert(T, 0.1314841743399048)
     B8 = convert(T, 0.2082583170674149)
-    B2end = SVector(B2, B3, B4, B5, B6, B7, B8)
+    B2end = (B2, B3, B4, B5, B6, B7, B8)
 
     c2 = convert(T2, 0.2165936736758085)
     c3 = convert(T2, 0.2660343487538170)
@@ -264,7 +264,7 @@ function DGLDDRK84_CConstantCache(T, T2)
     c6 = convert(T2, 0.4555149599187530)
     c7 = convert(T2, 0.7713219317101170)
     c8 = convert(T2, 0.9199028964538660)
-    c2end = SVector(c2, c3, c4, c5, c6, c7, c8)
+    c2end = (c2, c3, c4, c5, c6, c7, c8)
 
     LowStorageRK2NConstantCache{7, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -306,7 +306,7 @@ function DGLDDRK84_FConstantCache(T, T2)
     A6 = convert(T, -5.701295742793264)
     A7 = convert(T, 2.113903965664793)
     A8 = convert(T, -0.5339578826675280)
-    A2end = SVector(A2, A3, A4, A5, A6, A7, A8)
+    A2end = (A2, A3, A4, A5, A6, A7, A8)
 
     B1 = convert(T, 0.08037936882736950)
     B2 = convert(T, 0.5388497458569843)
@@ -316,7 +316,7 @@ function DGLDDRK84_FConstantCache(T, T2)
     B6 = convert(T, 1.679584245618894)
     B7 = convert(T, 0.2433728067008188)
     B8 = convert(T, 0.1422730459001373)
-    B2end = SVector(B2, B3, B4, B5, B6, B7, B8)
+    B2end = (B2, B3, B4, B5, B6, B7, B8)
 
     c2 = convert(T2, 0.08037936882736950)
     c3 = convert(T2, 0.3210064250338430)
@@ -325,7 +325,7 @@ function DGLDDRK84_FConstantCache(T, T2)
     c6 = convert(T2, 0.5040052477534100)
     c7 = convert(T2, 0.6578977561168540)
     c8 = convert(T2, 0.9484087623348481)
-    c2end = SVector(c2, c3, c4, c5, c6, c7, c8)
+    c2end = (c2, c3, c4, c5, c6, c7, c8)
 
     LowStorageRK2NConstantCache{7, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -371,7 +371,7 @@ function NDBLSRK124ConstantCache(T, T2)
     A10 = convert(T, -4.6466798960268143)
     A11 = convert(T, -0.1539613783825189)
     A12 = convert(T, -0.5943293901830616)
-    A2end = SVector(A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)
+    A2end = (A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)
 
     B1 = convert(T, 0.0650008435125904)
     B2 = convert(T, 0.0161459902249842)
@@ -385,7 +385,7 @@ function NDBLSRK124ConstantCache(T, T2)
     B10 = convert(T, 0.0757190350155483)
     B11 = convert(T, 0.2027862031054088)
     B12 = convert(T, 0.2167029365631842)
-    B2end = SVector(B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12)
+    B2end = (B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12)
 
     c2 = convert(T2, 0.0650008435125904)
     c3 = convert(T2, 0.0796560563081853)
@@ -398,7 +398,7 @@ function NDBLSRK124ConstantCache(T, T2)
     c10 = convert(T2, 0.6806551557645497)
     c11 = convert(T2, 0.7143773712418350)
     c12 = convert(T2, 0.9032588871651854)
-    c2end = SVector(c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12)
+    c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12)
 
     LowStorageRK2NConstantCache{11, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -445,7 +445,7 @@ function NDBLSRK134ConstantCache(T, T2)
     A11 = convert(T, -0.8295636426191777)
     A12 = convert(T, -4.7895970584252288)
     A13 = convert(T, -0.6606671432964504)
-    A2end = SVector(A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)
+    A2end = (A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)
 
     B1 = convert(T, 0.0271990297818803)
     B2 = convert(T, 0.1772488819905108)
@@ -460,7 +460,7 @@ function NDBLSRK134ConstantCache(T, T2)
     B11 = convert(T, 0.3749640721105318)
     B12 = convert(T, 1.6080235151003195)
     B13 = convert(T, 0.0961209123818189)
-    B2end = SVector(B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13)
+    B2end = (B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13)
 
     c2 = convert(T2, 0.0271990297818803)
     c3 = convert(T2, 0.0952594339119365)
@@ -474,7 +474,7 @@ function NDBLSRK134ConstantCache(T, T2)
     c11 = convert(T2, 0.6223252334314046)
     c12 = convert(T2, 0.6897593128753419)
     c13 = convert(T2, 0.9126827615920843)
-    c2end = SVector(c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13)
+    c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13)
 
     LowStorageRK2NConstantCache{12, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -522,7 +522,7 @@ function NDBLSRK144ConstantCache(T, T2)
     A12 = convert(T, -0.0932075369637460)
     A13 = convert(T, -0.9514200470875948)
     A14 = convert(T, -7.1151571693922548)
-    A2end = SVector(A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)
+    A2end = (A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)
 
     B1 = convert(T, 0.0367762454319673)
     B2 = convert(T, 0.3136296607553959)
@@ -538,7 +538,7 @@ function NDBLSRK144ConstantCache(T, T2)
     B12 = convert(T, 0.0024647284755382)
     B13 = convert(T, 0.0780348340049386)
     B14 = convert(T, 5.5059777270269628)
-    B2end = SVector(B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13, B14)
+    B2end = (B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13, B14)
 
     c2 = convert(T2, 0.0367762454319673)
     c3 = convert(T2, 0.1249685262725025)
@@ -553,7 +553,7 @@ function NDBLSRK144ConstantCache(T, T2)
     c12 = convert(T2, 0.8604711817462826)
     c13 = convert(T2, 0.8627060376969976)
     c14 = convert(T2, 0.8734213127600976)
-    c2end = SVector(c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14)
+    c2end = (c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14)
 
     LowStorageRK2NConstantCache{13, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -602,10 +602,10 @@ end
 end
 
 struct LowStorageRK2CConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    A2end::SVector{N, T} # A1 is always zero
+    A2end::NTuple{N, T} # A1 is always zero
     B1::T
-    B2end::SVector{N, T}
-    c2end::SVector{N, T2} # c1 is always zero
+    B2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
 end
 
 function CFRLDDRK64ConstantCache(T, T2)
@@ -614,7 +614,7 @@ function CFRLDDRK64ConstantCache(T, T2)
     A4 = convert(T, 0.08255631629428)
     A5 = convert(T, 0.65804425034331)
     A6 = convert(T, 0.31862993413251)
-    A2end = SVector(A2, A3, A4, A5, A6)
+    A2end = (A2, A3, A4, A5, A6)
 
     B1 = convert(T, 0.10893125722541)
     B2 = convert(T, 0.13201701492152)
@@ -622,14 +622,14 @@ function CFRLDDRK64ConstantCache(T, T2)
     B4 = convert(T, -0.59203884581148)
     B5 = convert(T, 0.47385028714844)
     B6 = convert(T, 0.48812405426094)
-    B2end = SVector(B2, B3, B4, B5, B6)
+    B2end = (B2, B3, B4, B5, B6)
 
     c2 = convert(T2, 0.28878526699679)
     c3 = convert(T2, 0.38176720366804)
     c4 = convert(T2, 0.71262082069639)
     c5 = convert(T2, 0.69606990893393)
     c6 = convert(T2, 0.83050587987157)
-    c2end = SVector(c2, c3, c4, c5, c6)
+    c2end = (c2, c3, c4, c5, c6)
 
     LowStorageRK2CConstantCache{5, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -665,7 +665,7 @@ function TSLDDRK74ConstantCache(T, T2)
     A5 = convert(T, 0.232328007537583987)
     A6 = convert(T, 0.256223412574146438)
     A7 = convert(T, 0.0978694102142697230)
-    A2end = SVector(A2, A3, A4, A5, A6, A7)
+    A2end = (A2, A3, A4, A5, A6, A7)
 
     B1 = convert(T, 0.0941840925477795334)
     B2 = convert(T, 0.149683694803496998)
@@ -674,7 +674,7 @@ function TSLDDRK74ConstantCache(T, T2)
     B5 = convert(T, 0.0605151571191401122)
     B6 = convert(T, 0.345986987898399296)
     B7 = convert(T, 0.186627171718797670)
-    B2end = SVector(B2, B3, B4, B5, B6, B7)
+    B2end = (B2, B3, B4, B5, B6, B7)
 
     c2 = convert(T2, 0.335750742677426401)
     c3 = convert(T2, 0.286254438654048527)
@@ -682,7 +682,7 @@ function TSLDDRK74ConstantCache(T, T2)
     c5 = convert(T2, 0.639198690801246909)
     c6 = convert(T2, 0.723609252956949472)
     c7 = convert(T2, 0.91124223849547205)
-    c2end = SVector(c2, c3, c4, c5, c6, c7)
+    c2end = (c2, c3, c4, c5, c6, c7)
 
     LowStorageRK2CConstantCache{6, T, T2}(A2end, B1, B2end, c2end)
 end
@@ -725,41 +725,41 @@ end
 end
 
 struct LowStorageRK3SConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    γ12end::SVector{N, T} # γ11 is always zero
-    γ22end::SVector{N, T} # γ21 is always one
-    γ32end::SVector{N, T} # γ31 is always zero
+    γ12end::NTuple{N, T} # γ11 is always zero
+    γ22end::NTuple{N, T} # γ21 is always one
+    γ32end::NTuple{N, T} # γ31 is always zero
     # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimisation?
-    δ2end::SVector{N, T} # δ1  is always one
+    δ2end::NTuple{N, T} # δ1  is always one
     β1::T
-    β2end::SVector{N, T}
-    c2end::SVector{N, T2} # c1 is always zero
+    β2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
 end
 
 function ParsaniKetchesonDeconinck3S32ConstantCache(T, T2)
     γ102 = convert(T, -1.2664395576322218e-1)
     γ103 = convert(T, 1.1426980685848858e+0)
-    γ12end = SVector(γ102, γ103)
+    γ12end = (γ102, γ103)
 
     γ202 = convert(T, 6.5427782599406470e-1)
     γ203 = convert(T, -8.2869287683723744e-2)
-    γ22end = SVector(γ202, γ203)
+    γ22end = (γ202, γ203)
 
     γ302 = convert(T, 0.0000000000000000e+0)
     γ303 = convert(T, 0.0000000000000000e+0)
-    γ32end = SVector(γ302, γ303)
+    γ32end = (γ302, γ303)
 
     δ02 = convert(T, 7.2196567116037724e-1)
     δ03 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03)
+    δ2end = (δ02, δ03)
 
     β1 = convert(T, 7.2366074728360086e-1)
     β02 = convert(T, 3.4217876502651023e-1)
     β03 = convert(T, 3.6640216242653251e-1)
-    β2end = SVector(β02, β03)
+    β2end = (β02, β03)
 
     c02 = convert(T2, 7.2366074728360086e-1)
     c03 = convert(T2, 5.9236433182015646e-1)
-    c2end = SVector(c02, c03)
+    c2end = (c02, c03)
 
     LowStorageRK3SConstantCache{2, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
@@ -797,7 +797,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
     γ106 = convert(T, 2.1452956294251941e+0)
     γ107 = convert(T, -9.5532770501880648e-1)
     γ108 = convert(T, 2.5361391125131094e-1)
-    γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108)
+    γ12end = (γ102, γ103, γ104, γ105, γ106, γ107, γ108)
 
     γ202 = convert(T, 4.4390665802303775e-1)
     γ203 = convert(T, 7.5333732286056154e-1)
@@ -806,7 +806,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
     γ206 = convert(T, -7.3823030755143193e-1)
     γ207 = convert(T, 7.0177211879534529e-1)
     γ208 = convert(T, 4.0185379950224559e-1)
-    γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208)
+    γ22end = (γ202, γ203, γ204, γ205, γ206, γ207, γ208)
 
     γ302 = convert(T, 0.0000000000000000e+0)
     γ303 = convert(T, 0.0000000000000000e+0)
@@ -815,7 +815,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
     γ306 = convert(T, 6.8770305706885126e-1)
     γ307 = convert(T, 6.3729822311671305e-2)
     γ308 = convert(T, -3.3679429978131387e-1)
-    γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308)
+    γ32end = (γ302, γ303, γ304, γ305, γ306, γ307, γ308)
 
     δ02 = convert(T, 2.9762522910396538e-1)
     δ03 = convert(T, 3.4212961014330662e-1)
@@ -824,7 +824,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
     δ06 = convert(T, -1.4040672669058066e-1)
     δ07 = convert(T, 2.1249567092409008e-1)
     δ08 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08)
+    δ2end = (δ02, δ03, δ04, δ05, δ06, δ07, δ08)
 
     β1 = convert(T, 9.9292229393265474e-1)
     β02 = convert(T, 5.2108385130005974e-1)
@@ -834,7 +834,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
     β06 = convert(T, 8.4604310411858186e-1)
     β07 = convert(T, -1.0191166090841246e-1)
     β08 = convert(T, 6.3190236038107500e-2)
-    β2end = SVector(β02, β03, β04, β05, β06, β07, β08)
+    β2end = (β02, β03, β04, β05, β06, β07, β08)
 
     c02 = convert(T2, 9.9292229393265474e-1)
     c03 = convert(T2, 1.0732413280565014e+0)
@@ -843,7 +843,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(T, T2)
     c06 = convert(T2, -6.7488037049720317e-1)
     c07 = convert(T2, -1.5868411612120166e+0)
     c08 = convert(T2, 2.1138242369563969e+0)
-    c2end = SVector(c02, c03, c04, c05, c06, c07, c08)
+    c2end = (c02, c03, c04, c05, c06, c07, c08)
 
     LowStorageRK3SConstantCache{7, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
@@ -878,38 +878,38 @@ function ParsaniKetchesonDeconinck3S53ConstantCache(T, T2)
     γ103 = convert(T, -1.3243708384977859e-1)
     γ104 = convert(T, 5.0556648948362981e-2)
     γ105 = convert(T, 5.6705507883024708e-1)
-    γ12end = SVector(γ102, γ103, γ104, γ105)
+    γ12end = (γ102, γ103, γ104, γ105)
 
     γ202 = convert(T, 5.5284013909611196e-1)
     γ203 = convert(T, 6.7318513326032769e-1)
     γ204 = convert(T, 2.8031054965521607e-1)
     γ205 = convert(T, 5.5215115815918758e-1)
-    γ22end = SVector(γ202, γ203, γ204, γ205)
+    γ22end = (γ202, γ203, γ204, γ205)
 
     γ302 = convert(T, 0.0000000000000000e+0)
     γ303 = convert(T, 0.0000000000000000e+0)
     γ304 = convert(T, 2.7525797946334213e-1)
     γ305 = convert(T, -8.9505445022148511e-1)
-    γ32end = SVector(γ302, γ303, γ304, γ305)
+    γ32end = (γ302, γ303, γ304, γ305)
 
     δ02 = convert(T, 3.4076878915216791e-1)
     δ03 = convert(T, 3.4143871647890728e-1)
     δ04 = convert(T, 7.2292984084963252e-1)
     δ05 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03, δ04, δ05)
+    δ2end = (δ02, δ03, δ04, δ05)
 
     β1 = convert(T, 2.3002859824852059e-1)
     β02 = convert(T, 3.0214498165167158e-1)
     β03 = convert(T, 8.0256010238856679e-1)
     β04 = convert(T, 4.3621618871511753e-1)
     β05 = convert(T, 1.1292705979513513e-1)
-    β2end = SVector(β02, β03, β04, β05)
+    β2end = (β02, β03, β04, β05)
 
     c02 = convert(T2, 2.3002859824852059e-1)
     c03 = convert(T2, 4.0500453764839639e-1)
     c04 = convert(T2, 8.9478204142351003e-1)
     c05 = convert(T2, 7.2351146275625733e-1)
-    c2end = SVector(c02, c03, c04, c05)
+    c2end = (c02, c03, c04, c05)
 
     LowStorageRK3SConstantCache{4, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
@@ -956,7 +956,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
     γ115 = convert(T, -2.8100719513641002e+0)
     γ116 = convert(T, 1.6142798657609492e-1)
     γ117 = convert(T, -2.5801264756641613e+0)
-    γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110, γ111, γ112, γ113,
+    γ12end = (γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110, γ111, γ112, γ113,
                      γ114, γ115, γ116, γ117)
 
     γ202 = convert(T, 3.2857861940811250e-1)
@@ -975,7 +975,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
     γ215 = convert(T, 1.0046657060652295e+0)
     γ216 = convert(T, -1.9795868964959054e-1)
     γ217 = convert(T, 1.3350583594705518e+0)
-    γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210, γ211, γ212, γ213,
+    γ22end = (γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210, γ211, γ212, γ213,
                      γ214, γ215, γ216, γ217)
 
     γ302 = convert(T, 0.0000000000000000e+0)
@@ -994,7 +994,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
     γ315 = convert(T, 1.1153826567096696e+0)
     γ316 = convert(T, 1.5503248734613539e+0)
     γ317 = convert(T, -1.2200245424704212e+0)
-    γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310, γ311, γ312, γ313,
+    γ32end = (γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310, γ311, γ312, γ313,
                      γ314, γ315, γ316, γ317)
 
     δ02 = convert(T, -3.7235794357769936e-1)
@@ -1013,7 +1013,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
     δ15 = convert(T, -5.8917530100546356e-1)
     δ16 = convert(T, 9.1328651048418164e-1)
     δ17 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15,
+    δ2end = (δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15,
                     δ16, δ17)
 
     β1 = convert(T, 4.9565403010221741e-2)
@@ -1033,7 +1033,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
     β15 = convert(T, -8.4798124766803512e-2)
     β16 = convert(T, -1.6923145636158564e-2)
     β17 = convert(T, -4.7305106233879957e-2)
-    β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09, β10, β11, β12, β13, β14, β15,
+    β2end = (β02, β03, β04, β05, β06, β07, β08, β09, β10, β11, β12, β13, β14, β15,
                     β16, β17)
 
     c02 = convert(T2, 4.9565403010221741e-2)
@@ -1052,7 +1052,7 @@ function ParsaniKetchesonDeconinck3S173ConstantCache(T, T2)
     c15 = convert(T2, 7.9041891347646720e-1)
     c16 = convert(T2, -1.0406955693161675e+0)
     c17 = convert(T2, -2.4607146824557105e-1)
-    c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15,
+    c2end = (c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15,
                     c16, c17)
 
     LowStorageRK3SConstantCache{16, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
@@ -1092,7 +1092,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
     γ107 = convert(T, 1.9856336960249132e-2)
     γ108 = convert(T, -2.8107894116913812e-1)
     γ109 = convert(T, 1.6894354373677900e-1)
-    γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109)
+    γ12end = (γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109)
 
     γ202 = convert(T, 2.4992627683300688e+0)
     γ203 = convert(T, 5.8668202764174726e-1)
@@ -1102,7 +1102,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
     γ207 = convert(T, 3.1196363453264964e-1)
     γ208 = convert(T, 4.3514189245414447e-1)
     γ209 = convert(T, 2.3596980658341213e-1)
-    γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209)
+    γ22end = (γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209)
 
     γ302 = convert(T, 0.0000000000000000e+0)
     γ303 = convert(T, 0.0000000000000000e+0)
@@ -1112,7 +1112,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
     γ307 = convert(T, -3.7522475499063573e-1)
     γ308 = convert(T, -3.3554373281046146e-1)
     γ309 = convert(T, -4.5609629702116454e-2)
-    γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309)
+    γ32end = (γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309)
 
     δ02 = convert(T, 1.2629238731608268e+0)
     δ03 = convert(T, 7.5749675232391733e-1)
@@ -1122,7 +1122,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
     δ07 = convert(T, 1.2735870231839268e+0)
     δ08 = convert(T, -6.2947382217730230e-1)
     δ09 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09)
+    δ2end = (δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09)
 
     β1 = convert(T, 2.8363432481011769e-1)
     β02 = convert(T, 9.7364980747486463e-1)
@@ -1133,7 +1133,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
     β07 = convert(T, 1.8084680519536503e-2)
     β08 = convert(T, 1.6057708856060501e-1)
     β09 = convert(T, 2.9522267863254809e-1)
-    β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09)
+    β2end = (β02, β03, β04, β05, β06, β07, β08, β09)
 
     c02 = convert(T2, 2.8363432481011769e-1)
     c03 = convert(T2, 5.4840742446661772e-1)
@@ -1143,7 +1143,7 @@ function ParsaniKetchesonDeconinck3S94ConstantCache(T, T2)
     c07 = convert(T2, 1.6659419385562171e+0)
     c08 = convert(T2, 9.7152778807463247e-1)
     c09 = convert(T2, 9.0515694340066954e-1)
-    c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09)
+    c2end = (c02, c03, c04, c05, c06, c07, c08, c09)
 
     LowStorageRK3SConstantCache{8, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
@@ -1191,7 +1191,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
     γ116 = convert(T, 8.3647761371829943e-1)
     γ117 = convert(T, 1.3087909830445710e+0)
     γ118 = convert(T, 9.0419681700177323e-1)
-    γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110, γ111, γ112, γ113,
+    γ12end = (γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110, γ111, γ112, γ113,
                      γ114, γ115, γ116, γ117, γ118)
 
     γ202 = convert(T, -1.2891068509748144e-1)
@@ -1211,7 +1211,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
     γ216 = convert(T, 8.3622292077033844e-1)
     γ217 = convert(T, -1.4179124272450148e+0)
     γ218 = convert(T, 1.3661459065331649e-1)
-    γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210, γ211, γ212, γ213,
+    γ22end = (γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210, γ211, γ212, γ213,
                      γ214, γ215, γ216, γ217, γ218)
 
     γ302 = convert(T, 0.0000000000000000e+0)
@@ -1231,7 +1231,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
     γ316 = convert(T, 2.6899932505676190e-2)
     γ317 = convert(T, 4.1882069379552307e-2)
     γ318 = convert(T, 6.2016148912381761e-2)
-    γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310, γ311, γ312, γ313,
+    γ32end = (γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310, γ311, γ312, γ313,
                      γ314, γ315, γ316, γ317, γ318)
 
     δ02 = convert(T, 3.5816500441970289e-1)
@@ -1251,7 +1251,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
     δ16 = convert(T, -7.3071238125137772e-1)
     δ17 = convert(T, 8.3936016960374532e-2)
     δ18 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15,
+    δ2end = (δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15,
                     δ16, δ17, δ18)
 
     β1 = convert(T, 1.2384169480626298e-1)
@@ -1272,7 +1272,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
     β16 = convert(T, -1.5508175395461857e-2)
     β17 = convert(T, -4.0095737929274988e-1)
     β18 = convert(T, 1.4949678367038011e-1)
-    β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09, β10, β11, β12, β13, β14, β15,
+    β2end = (β02, β03, β04, β05, β06, β07, β08, β09, β10, β11, β12, β13, β14, β15,
                     β16, β17, β18)
 
     c02 = convert(T2, 1.2384169480626298e-1)
@@ -1292,7 +1292,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(T, T2)
     c16 = convert(T2, 1.2755351018003545e+0)
     c17 = convert(T2, 8.0422507946168564e-1)
     c18 = convert(T2, 9.7508680250761848e-1)
-    c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15,
+    c2end = (c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15,
                     c16, c17, c18)
 
     LowStorageRK3SConstantCache{17, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
@@ -1333,7 +1333,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
     γ108 = convert(T, 3.1258317336761454e-1)
     γ109 = convert(T, -7.0071148003175443e-1)
     γ110 = convert(T, 4.8396209710057070e-1)
-    γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110)
+    γ12end = (γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110)
 
     γ202 = convert(T, 6.8714670697294733e-1)
     γ203 = convert(T, 1.0930247604585732e+0)
@@ -1344,7 +1344,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
     γ208 = convert(T, 1.2391292570651462e-1)
     γ209 = convert(T, 1.8427534793568445e-1)
     γ210 = convert(T, 5.7127889427161162e-2)
-    γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210)
+    γ22end = (γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210)
 
     γ302 = convert(T, 0.0000000000000000e+0)
     γ303 = convert(T, 0.0000000000000000e+0)
@@ -1355,7 +1355,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
     γ308 = convert(T, -2.1990945108072310e-1)
     γ309 = convert(T, -4.0824306603783045e-1)
     γ310 = convert(T, -1.3776697911236280e-1)
-    γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310)
+    γ32end = (γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310)
 
     δ02 = convert(T, -1.3317784091400336e-1)
     δ03 = convert(T, 8.2604227852898304e-1)
@@ -1366,7 +1366,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
     δ08 = convert(T, 3.8343138733685103e+0)
     δ09 = convert(T, 4.1222939718018692e+0)
     δ10 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10)
+    δ2end = (δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10)
 
     β1 = convert(T, 2.5978835757039448e-1)
     β02 = convert(T, 1.7770088002098183e-2)
@@ -1378,7 +1378,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
     β08 = convert(T, 1.6506056315937651e-1)
     β09 = convert(T, 2.1180932999328042e-1)
     β10 = convert(T, 1.5593923403495016e-1)
-    β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09, β10)
+    β2end = (β02, β03, β04, β05, β06, β07, β08, β09, β10)
 
     c02 = convert(T2, 2.5978835757039448e-1)
     c03 = convert(T2, 9.9045731158085557e-2)
@@ -1389,7 +1389,7 @@ function ParsaniKetchesonDeconinck3S105ConstantCache(T, T2)
     c08 = convert(T2, 7.6152246625852738e-1)
     c09 = convert(T2, 8.4270620830633836e-1)
     c10 = convert(T2, 9.1522098071770008e-1)
-    c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09, c10)
+    c2end = (c02, c03, c04, c05, c06, c07, c08, c09, c10)
 
     LowStorageRK3SConstantCache{9, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
 end
@@ -1439,7 +1439,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
     γ118 = convert(T, -8.8422252029506054e-1)
     γ119 = convert(T, -8.9129367099545231e-1)
     γ120 = convert(T, 1.5297157134040762e+0)
-    γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110, γ111, γ112, γ113,
+    γ12end = (γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110, γ111, γ112, γ113,
                      γ114, γ115, γ116, γ117, γ118, γ119, γ120)
 
     γ202 = convert(T, 8.8952052154583572e-1)
@@ -1461,7 +1461,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
     γ218 = convert(T, 6.2852588972458059e-2)
     γ219 = convert(T, 5.4473719351268962e-2)
     γ220 = convert(T, 2.4345446089014514e-2)
-    γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210, γ211, γ212, γ213,
+    γ22end = (γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210, γ211, γ212, γ213,
                      γ214, γ215, γ216, γ217, γ218, γ219, γ220)
 
     γ302 = convert(T, 0.0000000000000000e+0)
@@ -1483,7 +1483,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
     γ318 = convert(T, 5.4668509293072887e-1)
     γ319 = convert(T, 7.1414182420995431e-1)
     γ320 = convert(T, -1.0558095282893749e+0)
-    γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310, γ311, γ312, γ313,
+    γ32end = (γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310, γ311, γ312, γ313,
                      γ314, γ315, γ316, γ317, γ318, γ319, γ320)
 
     δ02 = convert(T, 1.4375468781258596e+0)
@@ -1505,7 +1505,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
     δ18 = convert(T, -3.2336329115436924e-1)
     δ19 = convert(T, 3.2899060754742177e-1)
     δ20 = convert(T, 0.0000000000000000e+0)
-    δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15,
+    δ2end = (δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15,
                     δ16, δ17, δ18, δ19, δ20)
 
     β1 = convert(T, 1.7342385375780556e-1)
@@ -1528,7 +1528,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
     β18 = convert(T, 8.3534647700054046e-2)
     β19 = convert(T, 9.8972579458252483e-2)
     β20 = convert(T, 4.3010116145097040e-2)
-    β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09, β10, β11, β12, β13, β14, β15,
+    β2end = (β02, β03, β04, β05, β06, β07, β08, β09, β10, β11, β12, β13, β14, β15,
                     β16, β17, β18, β19, β20)
 
     c02 = convert(T2, 1.7342385375780556e-1)
@@ -1550,7 +1550,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(T, T2)
     c18 = convert(T2, 4.1043824968249148e-1)
     c19 = convert(T2, 8.4898255952298962e-1)
     c20 = convert(T2, 3.3543896258348421e-1)
-    c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15,
+    c2end = (c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15,
                     c16, c17, c18, c19, c20)
 
     LowStorageRK3SConstantCache{19, T, T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
@@ -1603,46 +1603,46 @@ end
 end
 
 struct LowStorageRK3SpConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    γ12end::SVector{N, T} # γ11 is always zero
-    γ22end::SVector{N, T} # γ21 is always one
-    γ32end::SVector{N, T} # γ31 is always zero
+    γ12end::NTuple{N, T} # γ11 is always zero
+    γ22end::NTuple{N, T} # γ21 is always one
+    γ32end::NTuple{N, T} # γ31 is always zero
     # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
-    δ2end::SVector{N, T} # δ1  is always one
+    δ2end::NTuple{N, T} # δ1  is always one
     β1::T
-    β2end::SVector{N, T}
-    c2end::SVector{N, T2} # c1 is always zero
+    β2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
     bhat1::T
-    bhat2end::SVector{N, T}
+    bhat2end::NTuple{N, T}
 end
 
 function RDPK3Sp35ConstantCache(T, T2)
-    γ12end = SVector(convert(T, big"2.587669070352079020144955303389306026e-01"),
+    γ12end = (convert(T, big"2.587669070352079020144955303389306026e-01"),
                      convert(T, big"-1.324366873994502973977035353758550057e-01"),
                      convert(T, big"5.055601231460399101814291350373559483e-02"),
                      convert(T, big"5.670552807902877312521811889846000976e-01"))
 
-    γ22end = SVector(convert(T, big"5.528418745102160639901976698795928733e-01"),
+    γ22end = (convert(T, big"5.528418745102160639901976698795928733e-01"),
                      convert(T, big"6.731844400389673824374042790213570079e-01"),
                      convert(T, big"2.803103804507635075215805236096803381e-01"),
                      convert(T, big"5.521508873507393276457754945308880998e-01"))
 
-    γ32end = SVector(convert(T, big"0.000000000000000000000000000000000000e+00"),
+    γ32end = (convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"2.752585813446636957256614568573008811e-01"),
                      convert(T, big"-8.950548709279785077579454232514633376e-01"))
 
-    δ2end = SVector(convert(T, big"3.407687209321455242558804921815861422e-01"),
+    δ2end = (convert(T, big"3.407687209321455242558804921815861422e-01"),
                     convert(T, big"3.414399280584625023244387687873774697e-01"),
                     convert(T, big"7.229302732875589702087936723400941329e-01"),
                     convert(T, big"0.000000000000000000000000000000000000e+00"))
 
     β1 = convert(T, big"2.300285062878154351930669430512780706e-01")
-    β2end = SVector(convert(T, big"3.021457892454169700189445968126242994e-01"),
+    β2end = (convert(T, big"3.021457892454169700189445968126242994e-01"),
                     convert(T, big"8.025601039472704213300183888573974531e-01"),
                     convert(T, big"4.362158997637629844305216319994356355e-01"),
                     convert(T, big"1.129268494470295369172265188216779157e-01"))
 
-    c2end = SVector(convert(T, big"2.300285062878154351930669430512780706e-01"),
+    c2end = (convert(T, big"2.300285062878154351930669430512780706e-01"),
                     convert(T, big"4.050049049262914975700372321130661410e-01"),
                     convert(T, big"8.947823877926760224705450466361360720e-01"),
                     convert(T, big"7.235108137218888081489570284485201518e-01"))
@@ -1652,7 +1652,7 @@ function RDPK3Sp35ConstantCache(T, T2)
                     big"1.046363371354093758897668305991705199e-01"
                     -
                     big"1.147931563369900682037379182772608287e-01")
-    bhat2end = SVector(convert(T,
+    bhat2end = (convert(T,
                                big"9.520431574956758809511173383346476348e-02"
                                -
                                big"8.933559295232859013880114997436974196e-02"),
@@ -1704,7 +1704,7 @@ function alg_cache(alg::RDPK3Sp35, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function RDPK3Sp49ConstantCache(T, T2)
-    γ12end = SVector(convert(T, big"-4.655641301259180308677051498071354582e+00"),
+    γ12end = (convert(T, big"-4.655641301259180308677051498071354582e+00"),
                      convert(T, big"-7.720264924836063859141482018013692338e-01"),
                      convert(T, big"-4.024423213419724605695005429153112050e+00"),
                      convert(T, big"-2.129685246739018613087466942802498152e-02"),
@@ -1713,7 +1713,7 @@ function RDPK3Sp49ConstantCache(T, T2)
                      convert(T, big"-2.810790112885283952929218377438668784e-01"),
                      convert(T, big"1.689434895835535695524003319503844110e-01"))
 
-    γ22end = SVector(convert(T, big"2.499262752607825957145627300817258023e+00"),
+    γ22end = (convert(T, big"2.499262752607825957145627300817258023e+00"),
                      convert(T, big"5.866820365436136799319929406678132638e-01"),
                      convert(T, big"1.205141365412670762568835277881144391e+00"),
                      convert(T, big"3.474793796700868848597960521248007941e-01"),
@@ -1722,7 +1722,7 @@ function RDPK3Sp49ConstantCache(T, T2)
                      convert(T, big"4.351419055894087609560896967082486864e-01"),
                      convert(T, big"2.359698299440788299161958168555704234e-01"))
 
-    γ32end = SVector(convert(T, big"0.000000000000000000000000000000000000e+00"),
+    γ32end = (convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"7.621037111138170045618771082985664430e-01"),
                      convert(T, big"-1.981182159087218433914909510116664154e-01"),
@@ -1731,7 +1731,7 @@ function RDPK3Sp49ConstantCache(T, T2)
                      convert(T, big"-3.355436539000946543242869676125143358e-01"),
                      convert(T, big"-4.560963110717484359015342341157302403e-02"))
 
-    δ2end = SVector(convert(T, big"1.262923854387806460989545005598562667e+00"),
+    δ2end = (convert(T, big"1.262923854387806460989545005598562667e+00"),
                     convert(T, big"7.574967177560872438940839460448329992e-01"),
                     convert(T, big"5.163591158111222863455531895152351544e-01"),
                     convert(T, big"-2.746333792042827389548936599648122146e-02"),
@@ -1741,7 +1741,7 @@ function RDPK3Sp49ConstantCache(T, T2)
                     convert(T, big"0.000000000000000000000000000000000000e+00"))
 
     β1 = convert(T, big"2.836343531977826022543660465926414772e-01")
-    β2end = SVector(convert(T, big"9.736497978646965372894268287659773644e-01"),
+    β2end = (convert(T, big"9.736497978646965372894268287659773644e-01"),
                     convert(T, big"3.382358566377620380505126936670933370e-01"),
                     convert(T, big"-3.584937820217850715182820651063453804e-01"),
                     convert(T, big"-4.113955814725134294322006403954822487e-03"),
@@ -1750,7 +1750,7 @@ function RDPK3Sp49ConstantCache(T, T2)
                     convert(T, big"1.605771316794521018947553625079465692e-01"),
                     convert(T, big"2.952226811394310028003810072027839487e-01"))
 
-    c2end = SVector(convert(T, big"2.836343531977826022543660465926414772e-01"),
+    c2end = (convert(T, big"2.836343531977826022543660465926414772e-01"),
                     convert(T, big"5.484073767552486705240014599676811834e-01"),
                     convert(T, big"3.687229456675706936558667052479014150e-01"),
                     convert(T, big"-6.806119916032093175251948474173648331e-01"),
@@ -1764,7 +1764,7 @@ function RDPK3Sp49ConstantCache(T, T2)
                     big"4.550655927970944948340364817140593012e-02"
                     -
                     big"4.503731969165884304041981629148469971e-02")
-    bhat2end = SVector(convert(T,
+    bhat2end = (convert(T,
                                big"1.175968310492638562142460384341959193e-01"
                                -
                                big"1.859217322011968812563859888433403777e-01"),
@@ -1832,7 +1832,7 @@ function alg_cache(alg::RDPK3Sp49, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function RDPK3Sp510ConstantCache(T, T2)
-    γ12end = SVector(convert(T, big"4.043660078504695837542588769963326988e-01"),
+    γ12end = (convert(T, big"4.043660078504695837542588769963326988e-01"),
                      convert(T, big"-8.503427464263185087039788184485627962e-01"),
                      convert(T, big"-6.950894167072419998080989313353063399e+00"),
                      convert(T, big"9.238765225328278557805080247596562995e-01"),
@@ -1842,7 +1842,7 @@ function RDPK3Sp510ConstantCache(T, T2)
                      convert(T, big"-7.007114800567584871263283872289072079e-01"),
                      convert(T, big"4.839620970980726631935174740648996010e-01"))
 
-    γ22end = SVector(convert(T, big"6.871467069752345566001768382316915820e-01"),
+    γ22end = (convert(T, big"6.871467069752345566001768382316915820e-01"),
                      convert(T, big"1.093024760468898686510433898645775908e+00"),
                      convert(T, big"3.225975382330161123625348062949430509e+00"),
                      convert(T, big"1.041153700841396427100436517666787823e+00"),
@@ -1852,7 +1852,7 @@ function RDPK3Sp510ConstantCache(T, T2)
                      convert(T, big"1.842753479366766790220633908793933781e-01"),
                      convert(T, big"5.712788942697077644959290025755003720e-02"))
 
-    γ32end = SVector(convert(T, big"0.000000000000000000000000000000000000e+00"),
+    γ32end = (convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"-2.393405159342139386425044844626597490e+00"),
                      convert(T, big"-1.902854422095986544338294743445530533e+00"),
@@ -1862,7 +1862,7 @@ function RDPK3Sp510ConstantCache(T, T2)
                      convert(T, big"-4.082430660384876496971887725512427800e-01"),
                      convert(T, big"-1.377669791121207993339861855818881150e-01"))
 
-    δ2end = SVector(convert(T, big"-1.331778409133849616712007380176762548e-01"),
+    δ2end = (convert(T, big"-1.331778409133849616712007380176762548e-01"),
                     convert(T, big"8.260422785246030254485064732649153253e-01"),
                     convert(T, big"1.513700430513332405798616943654007796e+00"),
                     convert(T, big"-1.305810063177048110528482211982726539e+00"),
@@ -1873,7 +1873,7 @@ function RDPK3Sp510ConstantCache(T, T2)
                     convert(T, big"0.000000000000000000000000000000000000e+00"))
 
     β1 = convert(T, big"2.597883575710995826783320802193635406e-01")
-    β2end = SVector(convert(T, big"1.777008800169541694837687556103565007e-02"),
+    β2end = (convert(T, big"1.777008800169541694837687556103565007e-02"),
                     convert(T, big"2.481636637328140606807905234325691851e-01"),
                     convert(T, big"7.941736827560429420202759490815682546e-01"),
                     convert(T, big"3.885391296871822541486945325814526190e-01"),
@@ -1883,7 +1883,7 @@ function RDPK3Sp510ConstantCache(T, T2)
                     convert(T, big"2.118093299943235065178000892467421832e-01"),
                     convert(T, big"1.559392340339606299335442956580114440e-01"))
 
-    c2end = SVector(convert(T, big"2.597883575710995826783320802193635406e-01"),
+    c2end = (convert(T, big"2.597883575710995826783320802193635406e-01"),
                     convert(T, big"9.904573115730917688557891428202061598e-02"),
                     convert(T, big"2.155511882303785204133426661931565216e-01"),
                     convert(T, big"5.007950078421880417512789524851012021e-01"),
@@ -1898,7 +1898,7 @@ function RDPK3Sp510ConstantCache(T, T2)
                     big"5.734588484676193812418453938089759359e-02"
                     -
                     big"-2.280102305596364773323878383881954511e-03")
-    bhat2end = SVector(convert(T,
+    bhat2end = (convert(T,
                                big"1.971447518039733870541652912891291496e-02"
                                -
                                big"1.407393020823230537861040991952849386e-02"),
@@ -1992,47 +1992,47 @@ end
 end
 
 struct LowStorageRK3SpFSALConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    γ12end::SVector{N, T} # γ11 is always zero
-    γ22end::SVector{N, T} # γ21 is always one
-    γ32end::SVector{N, T} # γ31 is always zero
+    γ12end::NTuple{N, T} # γ11 is always zero
+    γ22end::NTuple{N, T} # γ21 is always one
+    γ32end::NTuple{N, T} # γ31 is always zero
     # TODO: γ302 == γ303 == 0 in all emthods implemented below -> possible optimization?
-    δ2end::SVector{N, T} # δ1  is always one
+    δ2end::NTuple{N, T} # δ1  is always one
     β1::T
-    β2end::SVector{N, T}
-    c2end::SVector{N, T2} # c1 is always zero
+    β2end::NTuple{N, T}
+    c2end::NTuple{N, T2} # c1 is always zero
     bhat1::T
-    bhat2end::SVector{N, T}
+    bhat2end::NTuple{N, T}
     bhatfsal::T
 end
 
 function RDPK3SpFSAL35ConstantCache(T, T2)
-    γ12end = SVector(convert(T, big"2.587771979725733308135192812685323706e-01"),
+    γ12end = (convert(T, big"2.587771979725733308135192812685323706e-01"),
                      convert(T, big"-1.324380360140723382965420909764953437e-01"),
                      convert(T, big"5.056033948190826045833606441415585735e-02"),
                      convert(T, big"5.670532000739313812633197158607642990e-01"))
 
-    γ22end = SVector(convert(T, big"5.528354909301389892439698870483746541e-01"),
+    γ22end = (convert(T, big"5.528354909301389892439698870483746541e-01"),
                      convert(T, big"6.731871608203061824849561782794643600e-01"),
                      convert(T, big"2.803103963297672407841316576323901761e-01"),
                      convert(T, big"5.521525447020610386070346724931300367e-01"))
 
-    γ32end = SVector(convert(T, big"0.000000000000000000000000000000000000e+00"),
+    γ32end = (convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"2.752563273304676380891217287572780582e-01"),
                      convert(T, big"-8.950526174674033822276061734289327568e-01"))
 
-    δ2end = SVector(convert(T, big"3.407655879334525365094815965895763636e-01"),
+    δ2end = (convert(T, big"3.407655879334525365094815965895763636e-01"),
                     convert(T, big"3.414382655003386206551709871126405331e-01"),
                     convert(T, big"7.229275366787987419692007421895451953e-01"),
                     convert(T, big"0.000000000000000000000000000000000000e+00"))
 
     β1 = convert(T, big"2.300298624518076223899418286314123354e-01")
-    β2end = SVector(convert(T, big"3.021434166948288809034402119555380003e-01"),
+    β2end = (convert(T, big"3.021434166948288809034402119555380003e-01"),
                     convert(T, big"8.025606185416310937583009085873554681e-01"),
                     convert(T, big"4.362158943603440930655148245148766471e-01"),
                     convert(T, big"1.129272530455059129782111662594436580e-01"))
 
-    c2end = SVector(convert(T, big"2.300298624518076223899418286314123354e-01"),
+    c2end = (convert(T, big"2.300298624518076223899418286314123354e-01"),
                     convert(T, big"4.050046072094990912268498160116125481e-01"),
                     convert(T, big"8.947822893693433545220710894560512805e-01"),
                     convert(T, big"7.235136928826589010272834603680114769e-01"))
@@ -2042,7 +2042,7 @@ function RDPK3SpFSAL35ConstantCache(T, T2)
                     big"9.484166705035703392326247283838082847e-02"
                     -
                     big"1.147935971023541171733601324486904546e-01")
-    bhat2end = SVector(convert(T,
+    bhat2end = (convert(T,
                                big"1.726371339430353766966762629176676070e-01"
                                -
                                big"8.933442853113315592708384523126474636e-02"),
@@ -2096,7 +2096,7 @@ function alg_cache(alg::RDPK3SpFSAL35, u, rate_prototype, ::Type{uEltypeNoUnits}
 end
 
 function RDPK3SpFSAL49ConstantCache(T, T2)
-    γ12end = SVector(convert(T, big"-4.655641447335068552684422206224169103e+00"),
+    γ12end = (convert(T, big"-4.655641447335068552684422206224169103e+00"),
                      convert(T, big"-7.720265099645871829248487209517314217e-01"),
                      convert(T, big"-4.024436690519806086742256154738379161e+00"),
                      convert(T, big"-2.129676284018530966221583708648634733e-02"),
@@ -2105,7 +2105,7 @@ function RDPK3SpFSAL49ConstantCache(T, T2)
                      convert(T, big"-2.810791146791038566946663374735713961e-01"),
                      convert(T, big"1.689434168754859644351230590422137972e-01"))
 
-    γ22end = SVector(convert(T, big"2.499262792574495009336242992898153462e+00"),
+    γ22end = (convert(T, big"2.499262792574495009336242992898153462e+00"),
                      convert(T, big"5.866820377718875577451517985847920081e-01"),
                      convert(T, big"1.205146086523094569925592464380295241e+00"),
                      convert(T, big"3.474793722186732780030762737753849272e-01"),
@@ -2114,7 +2114,7 @@ function RDPK3SpFSAL49ConstantCache(T, T2)
                      convert(T, big"4.351419539684379261368971206040518552e-01"),
                      convert(T, big"2.359698130028753572503744518147537768e-01"))
 
-    γ32end = SVector(convert(T, big"0.000000000000000000000000000000000000e+00"),
+    γ32end = (convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"7.621006678721315291614677352949377871e-01"),
                      convert(T, big"-1.981182504339400567765766904309673119e-01"),
@@ -2123,7 +2123,7 @@ function RDPK3SpFSAL49ConstantCache(T, T2)
                      convert(T, big"-3.355438309135169811915662336248989661e-01"),
                      convert(T, big"-4.560955005031121479972862973705108039e-02"))
 
-    δ2end = SVector(convert(T, big"1.262923876648114432874834923838556100e+00"),
+    δ2end = (convert(T, big"1.262923876648114432874834923838556100e+00"),
                     convert(T, big"7.574967189685911558308119415539596711e-01"),
                     convert(T, big"5.163589453140728104667573195005629833e-01"),
                     convert(T, big"-2.746327421802609557034437892013640319e-02"),
@@ -2133,7 +2133,7 @@ function RDPK3SpFSAL49ConstantCache(T, T2)
                     convert(T, big"0.000000000000000000000000000000000000e+00"))
 
     β1 = convert(T, big"2.836343005184365275160654678626695428e-01")
-    β2end = SVector(convert(T, big"9.736500104654741223716056170419660217e-01"),
+    β2end = (convert(T, big"9.736500104654741223716056170419660217e-01"),
                     convert(T, big"3.382359225242515288768487569778320563e-01"),
                     convert(T, big"-3.584943611106183357043212309791897386e-01"),
                     convert(T, big"-4.113944068471528211627210454497620358e-03"),
@@ -2142,7 +2142,7 @@ function RDPK3SpFSAL49ConstantCache(T, T2)
                     convert(T, big"1.605770645946802213926893453819236685e-01"),
                     convert(T, big"2.952227015964591648775833803635147962e-01"))
 
-    c2end = SVector(convert(T, big"2.836343005184365275160654678626695428e-01"),
+    c2end = (convert(T, big"2.836343005184365275160654678626695428e-01"),
                     convert(T, big"5.484076570002894365286665352032296535e-01"),
                     convert(T, big"3.687228761669438493478872632332010073e-01"),
                     convert(T, big"-6.806126440140844191258463830024463902e-01"),
@@ -2156,7 +2156,7 @@ function RDPK3SpFSAL49ConstantCache(T, T2)
                     big"2.483675912451591196775756814283216443e-02"
                     -
                     big"4.503732627263753698356970706617404465e-02")
-    bhat2end = SVector(convert(T,
+    bhat2end = (convert(T,
                                big"1.866327774562103796990092260942180726e-01"
                                -
                                big"1.859217303699847950262276860012454333e-01"),
@@ -2226,7 +2226,7 @@ function alg_cache(alg::RDPK3SpFSAL49, u, rate_prototype, ::Type{uEltypeNoUnits}
 end
 
 function RDPK3SpFSAL510ConstantCache(T, T2)
-    γ12end = SVector(convert(T, big"4.043660121685749695640462197806189975e-01"),
+    γ12end = (convert(T, big"4.043660121685749695640462197806189975e-01"),
                      convert(T, big"-8.503427289575839690883191973980814832e-01"),
                      convert(T, big"-6.950894175262117526410215315179482885e+00"),
                      convert(T, big"9.238765192731084931855438934978371889e-01"),
@@ -2236,7 +2236,7 @@ function RDPK3SpFSAL510ConstantCache(T, T2)
                      convert(T, big"-7.007114414440507927791249989236719346e-01"),
                      convert(T, big"4.839621016023833375810172323297465039e-01"))
 
-    γ22end = SVector(convert(T, big"6.871467028161416909922221357014564412e-01"),
+    γ22end = (convert(T, big"6.871467028161416909922221357014564412e-01"),
                      convert(T, big"1.093024748914750833700799552463885117e+00"),
                      convert(T, big"3.225975379607193001678365742708874597e+00"),
                      convert(T, big"1.041153702510101386914019859778740444e+00"),
@@ -2246,7 +2246,7 @@ function RDPK3SpFSAL510ConstantCache(T, T2)
                      convert(T, big"1.842753472370123193132193302369345580e-01"),
                      convert(T, big"5.712788998796583446479387686662738843e-02"))
 
-    γ32end = SVector(convert(T, big"0.000000000000000000000000000000000000e+00"),
+    γ32end = (convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"0.000000000000000000000000000000000000e+00"),
                      convert(T, big"-2.393405133244194727221124311276648940e+00"),
                      convert(T, big"-1.902854422421760920850597670305403139e+00"),
@@ -2256,7 +2256,7 @@ function RDPK3SpFSAL510ConstantCache(T, T2)
                      convert(T, big"-4.082430635847870963724591602173546218e-01"),
                      convert(T, big"-1.377669797880289713535665985132703979e-01"))
 
-    δ2end = SVector(convert(T, big"-1.331778419508803397033287009506932673e-01"),
+    δ2end = (convert(T, big"-1.331778419508803397033287009506932673e-01"),
                     convert(T, big"8.260422814750207498262063505871077303e-01"),
                     convert(T, big"1.513700425755728332485300719652378197e+00"),
                     convert(T, big"-1.305810059935023735972298885749903694e+00"),
@@ -2267,7 +2267,7 @@ function RDPK3SpFSAL510ConstantCache(T, T2)
                     convert(T, big"0.000000000000000000000000000000000000e+00"))
 
     β1 = convert(T, big"2.597883554788674084039539165398464630e-01")
-    β2end = SVector(convert(T, big"1.777008889438867858759149597539211023e-02"),
+    β2end = (convert(T, big"1.777008889438867858759149597539211023e-02"),
                     convert(T, big"2.481636629715501931294746189266601496e-01"),
                     convert(T, big"7.941736871152005775821844297293296135e-01"),
                     convert(T, big"3.885391285642019129575902994397298066e-01"),
@@ -2277,7 +2277,7 @@ function RDPK3SpFSAL510ConstantCache(T, T2)
                     convert(T, big"2.118093284937153836908655490906875007e-01"),
                     convert(T, big"1.559392342362059886106995325687547506e-01"))
 
-    c2end = SVector(convert(T, big"2.597883554788674084039539165398464630e-01"),
+    c2end = (convert(T, big"2.597883554788674084039539165398464630e-01"),
                     convert(T, big"9.904573247592460887087003212056568980e-02"),
                     convert(T, big"2.155511890524058691860390281856497503e-01"),
                     convert(T, big"5.007950088969676776844289399972611534e-01"),
@@ -2292,7 +2292,7 @@ function RDPK3SpFSAL510ConstantCache(T, T2)
                     big"-2.019255440012066080909442770590267512e-02"
                     -
                     big"-2.280100321836980811830528665041532799e-03")
-    bhat2end = SVector(convert(T,
+    bhat2end = (convert(T,
                                big"2.737903480959184339932730854141598275e-02"
                                -
                                big"1.407393115790186300730580636032878435e-02"),
@@ -2383,29 +2383,29 @@ end
 end
 
 struct LowStorageRK2RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    Aᵢ::SVector{N, T}
+    Aᵢ::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::SVector{N, T}
-    B̂ᵢ::SVector{N, T}
-    Cᵢ::SVector{N, T2}
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK43_2ConstantCache(T, T2)
     A1 = convert(T, Int128(11847461282814) // Int128(36547543011857))
     A2 = convert(T, Int128(3943225443063) // Int128(7078155732230))
     A3 = convert(T, Int128(-346793006927) // Int128(4029903576067))
-    Aᵢ = SVector(A1, A2, A3)
+    Aᵢ = (A1, A2, A3)
 
     B1 = convert(T, Int128(1017324711453) // Int128(9774461848756))
     B2 = convert(T, Int128(8237718856693) // Int128(13685301971492))
     B3 = convert(T, Int128(57731312506979) // Int128(19404895981398))
-    Bᵢ = SVector(B1, B2, B3)
+    Bᵢ = (B1, B2, B3)
 
     B̂1 = convert(T, Int128(15763415370699) // Int128(46270243929542))
     B̂2 = convert(T, Int128(514528521746) // Int128(5659431552419))
     B̂3 = convert(T, Int128(27030193851939) // Int128(9429696342944))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3)
+    B̂ᵢ = (B̂1, B̂2, B̂3)
 
     Bₗ = convert(T, Int128(-101169746363290) // Int128(37734290219643))
     B̂ₗ = convert(T, Int128(-69544964788955) // Int128(30262026368149))
@@ -2415,7 +2415,7 @@ function CKLLSRK43_2ConstantCache(T, T2)
     C3 = convert(T2,
                  Int128(41775191021672206476512620310545281003) //
                  Int128(67383242951014563804622635478530729598))  # A3 + B1 + B2
-    Cᵢ = SVector(C1, C2, C3)
+    Cᵢ = (C1, C2, C3)
 
     LowStorageRK2RPConstantCache{3, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -2452,19 +2452,19 @@ function CKLLSRK54_3CConstantCache(T, T2)
     A2 = convert(T, BigInt(6584761158862) // BigInt(12103376702013))
     A3 = convert(T, BigInt(2251764453980) // BigInt(15575788980749))
     A4 = convert(T, BigInt(26877169314380) // BigInt(34165994151039))
-    Aᵢ = SVector(A1, A2, A3, A4)
+    Aᵢ = (A1, A2, A3, A4)
 
     B1 = convert(T, BigInt(1153189308089) // BigInt(22510343858157))
     B2 = convert(T, BigInt(1772645290293) // BigInt(4653164025191))
     B3 = convert(T, BigInt(-1672844663538) // BigInt(4480602732383))
     B4 = convert(T, BigInt(2114624349019) // BigInt(3568978502595))
-    Bᵢ = SVector(B1, B2, B3, B4)
+    Bᵢ = (B1, B2, B3, B4)
 
     B̂1 = convert(T, BigInt(1016888040809) // BigInt(7410784769900))
     B̂2 = convert(T, BigInt(11231460423587) // BigInt(58533540763752))
     B̂3 = convert(T, BigInt(-1563879915014) // BigInt(6823010717585))
     B̂4 = convert(T, BigInt(606302364029) // BigInt(971179775848))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4)
 
     Bₗ = convert(T, BigInt(5198255086312) // BigInt(14908931495163))
     B̂ₗ = convert(T, BigInt(1097981568119) // BigInt(3980877426909))
@@ -2478,7 +2478,7 @@ function CKLLSRK54_3CConstantCache(T, T2)
     C4 = convert(T2,
                  BigInt(8054848232572758807908657851968985615984276476412066) //
                  BigInt(8139155613487734148190408375391604039319069461908135))   # A4 + B1 + B2 + B3
-    Cᵢ = SVector(C1, C2, C3, C4)
+    Cᵢ = (C1, C2, C3, C4)
 
     LowStorageRK2RPConstantCache{4, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -2519,7 +2519,7 @@ function CKLLSRK95_4SConstantCache(T, T2)
     A6 = convert(T, BigInt(9452544825720) // BigInt(13648368537481))
     A7 = convert(T, BigInt(4435885630781) // BigInt(26285702406235))
     A8 = convert(T, BigInt(2357909744247) // BigInt(11371140753790))
-    Aᵢ = SVector(A1, A2, A3, A4, A5, A6, A7, A8)
+    Aᵢ = (A1, A2, A3, A4, A5, A6, A7, A8)
 
     B1 = convert(T, BigInt(2274579626619) // BigInt(23610510767302))
     B2 = convert(T, BigInt(693987741272) // BigInt(12394497460941))
@@ -2529,7 +2529,7 @@ function CKLLSRK95_4SConstantCache(T, T2)
     B6 = convert(T, BigInt(13113619727965) // BigInt(44346030145118))
     B7 = convert(T, BigInt(393957816125) // BigInt(7825732611452))
     B8 = convert(T, BigInt(720647959663) // BigInt(6565743875477))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7, B8)
+    Bᵢ = (B1, B2, B3, B4, B5, B6, B7, B8)
 
     B̂1 = convert(T, BigInt(266888888871) // BigInt(3040372307578))
     B̂2 = convert(T, BigInt(34125631160) // BigInt(2973680843661))
@@ -2539,7 +2539,7 @@ function CKLLSRK95_4SConstantCache(T, T2)
     B̂6 = convert(T, BigInt(1408484642121) // BigInt(8758221613943))
     B̂7 = convert(T, BigInt(1454774750537) // BigInt(11112645198328))
     B̂8 = convert(T, BigInt(772137014323) // BigInt(4386814405182))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7, B̂8)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7, B̂8)
 
     Bₗ = convert(T, BigInt(3559252274877) // BigInt(14424734981077))
     B̂ₗ = convert(T, BigInt(277420604269) // BigInt(1857595682219))
@@ -2565,7 +2565,7 @@ function CKLLSRK95_4SConstantCache(T, T2)
     C8 = convert(T2,
                  BigInt(197565042693102647130189450792520184956129841555961940530192020871289515369046683661585184411130637357) //
                  BigInt(232196202198018941876505157326935602816917261769279531369710269478309137067357703513986211472070374865)) # A8 + B1 + B2 + B3 + B4 + B5 + B6 + B7
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7, C8)
+    Cᵢ = (C1, C2, C3, C4, C5, C6, C7, C8)
 
     LowStorageRK2RPConstantCache{8, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -2606,7 +2606,7 @@ function CKLLSRK95_4CConstantCache(T, T2)
     A6 = convert(T, BigInt(4475289710031) // BigInt(6420120086209))
     A7 = convert(T, BigInt(118394748311) // BigInt(9144450320350))
     A8 = convert(T, BigInt(3307377157135) // BigInt(13111544596386))
-    Aᵢ = SVector(A1, A2, A3, A4, A5, A6, A7, A8)
+    Aᵢ = (A1, A2, A3, A4, A5, A6, A7, A8)
 
     B1 = convert(T, BigInt(1051460336009) // BigInt(14326298067773))
     B2 = convert(T, BigInt(930517604889) // BigInt(7067438519321))
@@ -2616,7 +2616,7 @@ function CKLLSRK95_4CConstantCache(T, T2)
     B6 = convert(T, BigInt(3777666801280) // BigInt(13181243438959))
     B7 = convert(T, BigInt(286682614203) // BigInt(12966190094317))
     B8 = convert(T, BigInt(3296161604512) // BigInt(22629905347183))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7, B8)
+    Bᵢ = (B1, B2, B3, B4, B5, B6, B7, B8)
 
     B̂1 = convert(T, BigInt(3189770262221) // BigInt(35077884776239))
     B̂2 = convert(T, BigInt(780043871774) // BigInt(11919681558467))
@@ -2626,7 +2626,7 @@ function CKLLSRK95_4CConstantCache(T, T2)
     B̂6 = convert(T, BigInt(1400555694605) // BigInt(19784728594468))
     B̂7 = convert(T, BigInt(1183541508418) // BigInt(13436305181271))
     B̂8 = convert(T, BigInt(3036254792728) // BigInt(15493572606329))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7, B̂8)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7, B̂8)
 
     Bₗ = convert(T, BigInt(2993490409874) // BigInt(13266828321767))
     B̂ₗ = convert(T, BigInt(638483435745) // BigInt(4187244659458))
@@ -2652,7 +2652,7 @@ function CKLLSRK95_4CConstantCache(T, T2)
     C8 = convert(T2,
                  BigInt(1385843715228499555828057735261132084759031703937678116167963792224108372724503731226480538087331079769069) //
                  BigInt(1573111845759510782008384284066606688388217112071821912231287750254246452350240904652428530379336814559998)) # A8 + B1 + B2 + B3 + B4 + B5 + B6 + B7
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7, C8)
+    Cᵢ = (C1, C2, C3, C4, C5, C6, C7, C8)
 
     LowStorageRK2RPConstantCache{8, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -2693,7 +2693,7 @@ function CKLLSRK95_4MConstantCache(T, T2)
     A6 = convert(T, BigInt(1906712129266) // BigInt(6681214991155))
     A7 = convert(T, BigInt(311585568784) // BigInt(2369973437185))
     A8 = convert(T, BigInt(-4840285693886) // BigInt(7758383361725))
-    Aᵢ = SVector(A1, A2, A3, A4, A5, A6, A7, A8)
+    Aᵢ = (A1, A2, A3, A4, A5, A6, A7, A8)
 
     B1 = convert(T, BigInt(549666665015) // BigInt(5899839355879))
     B2 = convert(T, BigInt(-548816778320) // BigInt(9402908589133))
@@ -2703,7 +2703,7 @@ function CKLLSRK95_4MConstantCache(T, T2)
     B6 = convert(T, BigInt(-10259399787359) // BigInt(43440802207630))
     B7 = convert(T, BigInt(4242280279850) // BigInt(10722460893763))
     B8 = convert(T, BigInt(1887552771913) // BigInt(6099058196803))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7, B8)
+    Bᵢ = (B1, B2, B3, B4, B5, B6, B7, B8)
 
     B̂1 = convert(T, BigInt(330911065672) // BigInt(9937126492277))
     B̂2 = convert(T, BigInt(-872991930418) // BigInt(11147305689291))
@@ -2713,7 +2713,7 @@ function CKLLSRK95_4MConstantCache(T, T2)
     B̂6 = convert(T, BigInt(10265149063) // BigInt(2098741126425))
     B̂7 = convert(T, BigInt(1643090076625) // BigInt(4891294770654))
     B̂8 = convert(T, BigInt(116106750067) // BigInt(3955800826265))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7, B̂8)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7, B̂8)
 
     Bₗ = convert(T, BigInt(-453873186647) // BigInt(15285235680030))
     B̂ₗ = convert(T, BigInt(866868642257) // BigInt(42331321870877))
@@ -2739,7 +2739,7 @@ function CKLLSRK95_4MConstantCache(T, T2)
     C8 = convert(T2,
                  BigInt(22038106775746116973750004935225594022265950105933360206617843987546593773108577078867914238620973639) //
                  BigInt(228770596964454885481304478061363897900267080665965044117230250287302271092811814450282133504194141850))
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7, C8)
+    Cᵢ = (C1, C2, C3, C4, C5, C6, C7, C8)
 
     LowStorageRK2RPConstantCache{8, T, T2}(Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -2792,13 +2792,13 @@ end
 end
 
 struct LowStorageRK3RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    Aᵢ₁::SVector{N, T}
-    Aᵢ₂::SVector{N, T}
+    Aᵢ₁::NTuple{N, T}
+    Aᵢ₂::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::SVector{N, T}
-    B̂ᵢ::SVector{N, T}
-    Cᵢ::SVector{N, T2}
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK54_3C_3RConstantCache(T, T2)
@@ -2806,25 +2806,25 @@ function CKLLSRK54_3C_3RConstantCache(T, T2)
     A₁2 = convert(T, BigInt(4278267785271) // BigInt(6823155464066))
     A₁3 = convert(T, BigInt(2789585899612) // BigInt(8986505720531))
     A₁4 = convert(T, BigInt(15310836689591) // BigInt(24358012670437))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(-722262345248) // BigInt(10870640012513))
     A₂3 = convert(T, BigInt(1365858020701) // BigInt(8494387045469))
     A₂4 = convert(T, BigInt(3819021186) // BigInt(2763618202291))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4)
 
     B1 = convert(T, BigInt(846876320697) // BigInt(6523801458457))
     B2 = convert(T, BigInt(3032295699695) // BigInt(12397907741132))
     B3 = convert(T, BigInt(612618101729) // BigInt(6534652265123))
     B4 = convert(T, BigInt(1155491934595) // BigInt(2954287928812))
-    Bᵢ = SVector(B1, B2, B3, B4)
+    Bᵢ = (B1, B2, B3, B4)
 
     B̂1 = convert(T, BigInt(1296459667021) // BigInt(9516889378644))
     B̂2 = convert(T, BigInt(2599004989233) // BigInt(11990680747819))
     B̂3 = convert(T, BigInt(1882083615375) // BigInt(8481715831096))
     B̂4 = convert(T, BigInt(1577862909606) // BigInt(5567358792761))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4)
 
     Bₗ = convert(T, BigInt(707644755468) // BigInt(5028292464395))
     B̂ₗ = convert(T, BigInt(328334985361) // BigInt(2316973589007))
@@ -2838,7 +2838,7 @@ function CKLLSRK54_3C_3RConstantCache(T, T2)
     C4 = convert(T2,
                  BigInt(5468330126750791548369684419304733938034170906513585) //
                  BigInt(5444638279732761024893610553331663911104849888809108))
-    Cᵢ = SVector(C1, C2, C3, C4)
+    Cᵢ = (C1, C2, C3, C4)
 
     LowStorageRK3RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -2878,25 +2878,25 @@ function CKLLSRK54_3M_3RConstantCache(T, T2)
     A₁2 = convert(T, BigInt(21253110367599) // BigInt(14558944785238))
     A₁3 = convert(T, BigInt(4293647616769) // BigInt(14519312872408))
     A₁4 = convert(T, BigInt(-8941886866937) // BigInt(7464816931160))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(-12587430488023) // BigInt(11977319897242))
     A₂3 = convert(T, BigInt(6191878339181) // BigInt(13848262311063))
     A₂4 = convert(T, BigInt(19121624165801) // BigInt(12321025968027))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4)
 
     B1 = convert(T, BigInt(1977388745448) // BigInt(17714523675943))
     B2 = convert(T, BigInt(6528140725453) // BigInt(14879534818174))
     B3 = convert(T, BigInt(4395900531415) // BigInt(55649460397719))
     B4 = convert(T, BigInt(6567440254656) // BigInt(15757960182571))
-    Bᵢ = SVector(B1, B2, B3, B4)
+    Bᵢ = (B1, B2, B3, B4)
 
     B̂1 = convert(T, BigInt(390601394181) // BigInt(3503051559916))
     B̂2 = convert(T, BigInt(31150720071161) // BigInt(68604711794052))
     B̂3 = convert(T, BigInt(416927665232) // BigInt(6953044279741))
     B̂4 = convert(T, BigInt(3879867616328) // BigInt(8869216637007))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4)
 
     Bₗ = convert(T, BigInt(-436008689643) // BigInt(9453681332953))
     B̂ₗ = convert(T, BigInt(-163749046041) // BigInt(2599987820560))
@@ -2909,7 +2909,7 @@ function CKLLSRK54_3M_3RConstantCache(T, T2)
     C4 = convert(T2,
                  BigInt(10963106193663894855575270257133723083246622141340761) //
                  BigInt(12121458300971454511596914396147459030814063072954120))
-    Cᵢ = SVector(C1, C2, C3, C4)
+    Cᵢ = (C1, C2, C3, C4)
 
     LowStorageRK3RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -2949,25 +2949,25 @@ function CKLLSRK54_3N_3RConstantCache(T, T2)
     A₁2 = convert(T, BigInt(6808157035527) // BigInt(13197844641179))
     A₁3 = convert(T, BigInt(4367509502613) // BigInt(10454198590847))
     A₁4 = convert(T, BigInt(1236962429870) // BigInt(3429868089329))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(546509042554) // BigInt(9152262712923))
     A₂3 = convert(T, BigInt(625707605167) // BigInt(5316659119056))
     A₂4 = convert(T, BigInt(582400652113) // BigInt(7078426004906))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4)
 
     B1 = convert(T, BigInt(314199625218) // BigInt(7198350928319))
     B2 = convert(T, BigInt(6410344372641) // BigInt(17000082738695))
     B3 = convert(T, BigInt(292278564125) // BigInt(5593752632744))
     B4 = convert(T, BigInt(5010207514426) // BigInt(21876007855139))
-    Bᵢ = SVector(B1, B2, B3, B4)
+    Bᵢ = (B1, B2, B3, B4)
 
     B̂1 = convert(T, BigInt(1276689330531) // BigInt(10575835502045))
     B̂2 = convert(T, BigInt(267542835879) // BigInt(1241767155676))
     B̂3 = convert(T, BigInt(1564039648689) // BigInt(9024646069760))
     B̂4 = convert(T, BigInt(3243722451631) // BigInt(13364844673806))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4)
 
     Bₗ = convert(T, BigInt(5597675544274) // BigInt(18784428342765))
     B̂ₗ = convert(T, BigInt(606464709716) // BigInt(2447238536635))
@@ -2981,7 +2981,7 @@ function CKLLSRK54_3N_3RConstantCache(T, T2)
     C4 = convert(T2,
                  BigInt(2565873674791335200443549967376635530873909687156071) //
                  BigInt(2970969302106648098855751120425897741072516011514170))
-    Cᵢ = SVector(C1, C2, C3, C4)
+    Cᵢ = (C1, C2, C3, C4)
 
     LowStorageRK3RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3024,7 +3024,7 @@ function CKLLSRK85_4C_3RConstantCache(T, T2)
     A₁5 = convert(T, BigInt(42158992267337) // BigInt(9664249073111))
     A₁6 = convert(T, BigInt(970532350048) // BigInt(4459675494195))
     A₁7 = convert(T, BigInt(1415616989537) // BigInt(7108576874996))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(-343061178215) // BigInt(2523150225462))
@@ -3033,7 +3033,7 @@ function CKLLSRK85_4C_3RConstantCache(T, T2)
     A₂5 = convert(T, BigInt(-93461894168145) // BigInt(25333855312294))
     A₂6 = convert(T, BigInt(7285104933991) // BigInt(14106269434317))
     A₂7 = convert(T, BigInt(-4825949463597) // BigInt(16828400578907))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
 
     B1 = convert(T, BigInt(514862045033) // BigInt(4637360145389))
     B2 = convert(T, BigInt(0) // BigInt(1))
@@ -3042,7 +3042,7 @@ function CKLLSRK85_4C_3RConstantCache(T, T2)
     B5 = convert(T, BigInt(2561084526938) // BigInt(7959061818733))
     B6 = convert(T, BigInt(4857652849) // BigInt(7350455163355))
     B7 = convert(T, BigInt(1059943012790) // BigInt(2822036905401))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7)
+    Bᵢ = (B1, B2, B3, B4, B5, B6, B7)
 
     B̂1 = convert(T, BigInt(1269299456316) // BigInt(16631323494719))
     B̂2 = convert(T, BigInt(0) // BigInt(1))
@@ -3051,7 +3051,7 @@ function CKLLSRK85_4C_3RConstantCache(T, T2)
     B̂5 = convert(T, BigInt(7354111305649) // BigInt(15643939971922))
     B̂6 = convert(T, BigInt(768474111281) // BigInt(10081205039574))
     B̂7 = convert(T, BigInt(3439095334143) // BigInt(10786306938509))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
 
     Bₗ = convert(T, BigInt(2987336121747) // BigInt(15645656703944))
     B̂ₗ = convert(T, BigInt(-3808726110015) // BigInt(23644487528593))
@@ -3074,7 +3074,7 @@ function CKLLSRK85_4C_3RConstantCache(T, T2)
     C7 = convert(T2,
                  BigInt(1524044277359326675923410465291452002169116939509651) //
                  BigInt(4415279581486844959297591640758696961331751174567964))
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7)
+    Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
     LowStorageRK3RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3117,7 +3117,7 @@ function CKLLSRK85_4M_3RConstantCache(T, T2)
     A₁5 = convert(T, BigInt(2151445634296) // BigInt(7749920058933))
     A₁6 = convert(T, BigInt(15619711431787) // BigInt(74684159414562))
     A₁7 = convert(T, BigInt(12444295717883) // BigInt(11188327299274))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(475331134681) // BigInt(7396070923784))
@@ -3126,7 +3126,7 @@ function CKLLSRK85_4M_3RConstantCache(T, T2)
     A₂5 = convert(T, BigInt(1245361422071) // BigInt(3717287139065))
     A₂6 = convert(T, BigInt(1652079198131) // BigInt(3788458824028))
     A₂7 = convert(T, BigInt(-5225103653628) // BigInt(8584162722535))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
 
     B1 = convert(T, BigInt(83759458317) // BigInt(1018970565139))
     B2 = convert(T, BigInt(0) // BigInt(1))
@@ -3135,7 +3135,7 @@ function CKLLSRK85_4M_3RConstantCache(T, T2)
     B5 = convert(T, BigInt(6968891091250) // BigInt(16855527649349))
     B6 = convert(T, BigInt(783521911849) // BigInt(8570887289572))
     B7 = convert(T, BigInt(3686104854613) // BigInt(11232032898210))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7)
+    Bᵢ = (B1, B2, B3, B4, B5, B6, B7)
 
     B̂1 = convert(T, BigInt(-2632078767757) // BigInt(9365288548818))
     B̂2 = convert(T, BigInt(0) // BigInt(1))
@@ -3144,7 +3144,7 @@ function CKLLSRK85_4M_3RConstantCache(T, T2)
     B̂5 = convert(T, BigInt(-32993229351515) // BigInt(6883415042289))
     B̂6 = convert(T, BigInt(-3927384735361) // BigInt(7982454543710))
     B̂7 = convert(T, BigInt(9224293159931) // BigInt(15708162311543))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
 
     Bₗ = convert(T, BigInt(517396786175) // BigInt(6104475356879))
     B̂ₗ = convert(T, BigInt(624338737541) // BigInt(7691046757191))
@@ -3167,7 +3167,7 @@ function CKLLSRK85_4M_3RConstantCache(T, T2)
     C7 = convert(T2,
                  BigInt(1648260218501227913212294426176971326433416596592133) //
                  BigInt(1649556119556299790473636959153132604082083356090490))
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7)
+    Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
     LowStorageRK3RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3210,7 +3210,7 @@ function CKLLSRK85_4P_3RConstantCache(T, T2)
     A₁5 = convert(T, BigInt(18843935397718) // BigInt(7227975568851))
     A₁6 = convert(T, BigInt(6206560082614) // BigInt(27846110321329))
     A₁7 = convert(T, BigInt(2841125392315) // BigInt(14844217636077))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(-2491873887327) // BigInt(11519757507826))
@@ -3219,7 +3219,7 @@ function CKLLSRK85_4P_3RConstantCache(T, T2)
     A₂5 = convert(T, BigInt(-4943723744483) // BigInt(2558074780976))
     A₂6 = convert(T, BigInt(1024000837540) // BigInt(1998038638351))
     A₂7 = convert(T, BigInt(-2492809296391) // BigInt(9064568868273))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
 
     B1 = convert(T, BigInt(346820227625) // BigInt(3124407780749))
     B2 = convert(T, BigInt(0) // BigInt(1))
@@ -3228,7 +3228,7 @@ function CKLLSRK85_4P_3RConstantCache(T, T2)
     B5 = convert(T, BigInt(814249513470) // BigInt(2521483007009))
     B6 = convert(T, BigInt(195246859987) // BigInt(15831935944600))
     B7 = convert(T, BigInt(3570596951509) // BigInt(9788921605312))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7)
+    Bᵢ = (B1, B2, B3, B4, B5, B6, B7)
 
     B̂1 = convert(T, BigInt(679447319381) // BigInt(8240332772531))
     B̂2 = convert(T, BigInt(0) // BigInt(1))
@@ -3237,7 +3237,7 @@ function CKLLSRK85_4P_3RConstantCache(T, T2)
     B̂5 = convert(T, BigInt(2994516937385) // BigInt(6097853295694))
     B̂6 = convert(T, BigInt(1424705874463) // BigInt(19211220871144))
     B̂7 = convert(T, BigInt(11199564863291) // BigInt(35136367926059))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
 
     Bₗ = convert(T, BigInt(1886338382073) // BigInt(9981671730680))
     B̂ₗ = convert(T, BigInt(-1307718103703) // BigInt(13694144003901))
@@ -3260,7 +3260,7 @@ function CKLLSRK85_4P_3RConstantCache(T, T2)
     C7 = convert(T2,
                  BigInt(123785620236259768586332555932209432529705897037921) //
                  BigInt(353351523019265026737831367789312912172448045683187))
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7)
+    Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
     LowStorageRK3RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3318,14 +3318,14 @@ end
 end
 
 struct LowStorageRK4RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    Aᵢ₁::SVector{N, T}
-    Aᵢ₂::SVector{N, T}
-    Aᵢ₃::SVector{N, T}
+    Aᵢ₁::NTuple{N, T}
+    Aᵢ₂::NTuple{N, T}
+    Aᵢ₃::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::SVector{N, T}
-    B̂ᵢ::SVector{N, T}
-    Cᵢ::SVector{N, T2}
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK54_3N_4RConstantCache(T, T2)
@@ -3333,31 +3333,31 @@ function CKLLSRK54_3N_4RConstantCache(T, T2)
     A₁2 = convert(T, BigInt(6195609865473) // BigInt(14441396468602))
     A₁3 = convert(T, BigInt(7502925572378) // BigInt(28098850972003))
     A₁4 = convert(T, BigInt(4527781290407) // BigInt(9280887680514))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(2934593324920) // BigInt(16923654741811))
     A₂3 = convert(T, BigInt(16352725096886) // BigInt(101421723321009))
     A₂4 = convert(T, BigInt(3004243580591) // BigInt(16385320447374))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4)
 
     A₃1 = convert(T, BigInt(0) // BigInt(1))
     A₃2 = convert(T, BigInt(0) // BigInt(1))
     A₃3 = convert(T, BigInt(390352446067) // BigInt(5989890148791))
     A₃4 = convert(T, BigInt(902830387041) // BigInt(8154716972155))
-    Aᵢ₃ = SVector(A₃1, A₃2, A₃3, A₃4)
+    Aᵢ₃ = (A₃1, A₃2, A₃3, A₃4)
 
     B1 = convert(T, BigInt(929310922418) // BigInt(8329727308495))
     B2 = convert(T, BigInt(4343420149496) // BigInt(15735497610667))
     B3 = convert(T, BigInt(885252399220) // BigInt(9490460854667))
     B4 = convert(T, BigInt(3341719902227) // BigInt(13464012733180))
-    Bᵢ = SVector(B1, B2, B3, B4)
+    Bᵢ = (B1, B2, B3, B4)
 
     B̂1 = convert(T, BigInt(2929323122013) // BigInt(17725327880387))
     B̂2 = convert(T, BigInt(4379799101587) // BigInt(35838171763617))
     B̂3 = convert(T, BigInt(2267325134734) // BigInt(9725002913543))
     B̂4 = convert(T, BigInt(1519467056643) // BigInt(5852430786130))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4)
 
     Bₗ = convert(T, BigInt(2131913067577) // BigInt(7868783702050))
     B̂ₗ = convert(T, BigInt(3636375423974) // BigInt(16547514622827))
@@ -3371,7 +3371,7 @@ function CKLLSRK54_3N_4RConstantCache(T, T2)
     C4 = convert(T2,
                  BigInt(153823244836258719400905156342054669945035476219421) //
                  BigInt(172160249040778711548900853819650745575758693592285))
-    Cᵢ = SVector(C1, C2, C3, C4)
+    Cᵢ = (C1, C2, C3, C4)
 
     LowStorageRK4RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3413,31 +3413,31 @@ function CKLLSRK54_3M_4RConstantCache(T, T2)
     A₁2 = convert(T, BigInt(20567653057) // BigInt(89550000000))
     A₁3 = convert(T, BigInt(7407775) // BigInt(2008982))
     A₁4 = convert(T, BigInt(-4577300) // BigInt(867302297))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(15198616943) // BigInt(89550000000))
     A₂3 = convert(T, BigInt(-226244183627) // BigInt(80359280000))
     A₂4 = convert(T, BigInt(33311687500) // BigInt(8703531091))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4)
 
     A₃1 = convert(T, BigInt(0) // BigInt(1))
     A₃2 = convert(T, BigInt(0) // BigInt(1))
     A₃3 = convert(T, BigInt(9890667227) // BigInt(80359280000))
     A₃4 = convert(T, BigInt(-20567653057) // BigInt(6979191486))
-    Aᵢ₃ = SVector(A₃1, A₃2, A₃3, A₃4)
+    Aᵢ₃ = (A₃1, A₃2, A₃3, A₃4)
 
     B1 = convert(T, BigInt(297809) // BigInt(2384418))
     B2 = convert(T, BigInt(0) // BigInt(1))
     B3 = convert(T, BigInt(156250000) // BigInt(270591503))
     B4 = convert(T, BigInt(5030000) // BigInt(888933))
-    Bᵢ = SVector(B1, B2, B3, B4)
+    Bᵢ = (B1, B2, B3, B4)
 
     B̂1 = convert(T, BigInt(121286694859) // BigInt(931793198518))
     B̂2 = convert(T, BigInt(0) // BigInt(1))
     B̂3 = convert(T, BigInt(9680751416357) // BigInt(17201392077364))
     B̂4 = convert(T, BigInt(6633076090000) // BigInt(1042143269349))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4)
 
     Bₗ = convert(T, BigInt(-2927) // BigInt(546))
     B̂ₗ = convert(T, BigInt(-127961558623) // BigInt(21123456354))
@@ -3446,7 +3446,7 @@ function CKLLSRK54_3M_4RConstantCache(T, T2)
     C2 = convert(T2, BigInt(1997) // BigInt(5000))
     C3 = convert(T2, BigInt(199) // BigInt(200))
     C4 = convert(T2, BigInt(1) // BigInt(1))
-    Cᵢ = SVector(C1, C2, C3, C4)
+    Cᵢ = (C1, C2, C3, C4)
 
     LowStorageRK4RPConstantCache{4, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3489,35 +3489,35 @@ function CKLLSRK65_4M_4RConstantCache(T, T2)
     A₁3 = convert(T, BigInt(8253430823511) // BigInt(9903985211908))
     A₁4 = convert(T, BigInt(4157325866175) // BigInt(11306150349782))
     A₁5 = convert(T, BigInt(3299942024581) // BigInt(13404534943033))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4, A₁5)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4, A₁5)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(968127049827) // BigInt(6993254963231))
     A₂3 = convert(T, BigInt(-4242729801665) // BigInt(12001587034923))
     A₂4 = convert(T, BigInt(1960956671631) // BigInt(3017447659538))
     A₂5 = convert(T, BigInt(2088737530132) // BigInt(14638867961951))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4, A₂5)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4, A₂5)
 
     A₃1 = convert(T, BigInt(0) // BigInt(1))
     A₃2 = convert(T, BigInt(0) // BigInt(1))
     A₃3 = convert(T, BigInt(332803037697) // BigInt(7529436905221))
     A₃4 = convert(T, BigInt(-19590089343957) // BigInt(51581831082203))
     A₃5 = convert(T, BigInt(3811366828049) // BigInt(10653298326636))
-    Aᵢ₃ = SVector(A₃1, A₃2, A₃3, A₃4, A₃5)
+    Aᵢ₃ = (A₃1, A₃2, A₃3, A₃4, A₃5)
 
     B1 = convert(T, BigInt(1437717300581) // BigInt(14622899446031))
     B2 = convert(T, BigInt(0) // BigInt(1))
     B3 = convert(T, BigInt(3070006287879) // BigInt(9321175678070))
     B4 = convert(T, BigInt(2276970273632) // BigInt(7940670647385))
     B5 = convert(T, BigInt(-1056149936631) // BigInt(7427907425983))
-    Bᵢ = SVector(B1, B2, B3, B4, B5)
+    Bᵢ = (B1, B2, B3, B4, B5)
 
     B̂1 = convert(T, BigInt(399352205828) // BigInt(2843676810815))
     B̂2 = convert(T, BigInt(0) // BigInt(1))
     B̂3 = convert(T, BigInt(460449895996) // BigInt(4301836608005))
     B̂4 = convert(T, BigInt(15965746118666) // BigInt(21690343195681))
     B̂5 = convert(T, BigInt(-19281717001664) // BigInt(29911607353389))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5)
 
     Bₗ = convert(T, BigInt(2571845656138) // BigInt(6012342010435))
     B̂ₗ = convert(T, BigInt(5058427127221) // BigInt(7651806618075))
@@ -3534,7 +3534,7 @@ function CKLLSRK65_4M_4RConstantCache(T, T2)
     C5 = convert(T2,
                  BigInt(25828983228256103590265182981008154883102570637999497) //
                  BigInt(30568689961801519095090666149791133914967119469889228))
-    Cᵢ = SVector(C1, C2, C3, C4, C5)
+    Cᵢ = (C1, C2, C3, C4, C5)
 
     LowStorageRK4RPConstantCache{5, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3579,7 +3579,7 @@ function CKLLSRK85_4FM_4RConstantCache(T, T2)
     A₁5 = convert(T, BigInt(2786140924985) // BigInt(14262827431161))
     A₁6 = convert(T, BigInt(28327099865656) // BigInt(21470840267743))
     A₁7 = convert(T, BigInt(0) // BigInt(1))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4, A₁5, A₁6, A₁7)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(-16195115415565) // BigInt(7808461210678))
@@ -3588,7 +3588,7 @@ function CKLLSRK85_4FM_4RConstantCache(T, T2)
     A₂5 = convert(T, BigInt(6556893593075) // BigInt(12530787773541))
     A₂6 = convert(T, BigInt(-5015572218207) // BigInt(5719938983072))
     A₂7 = convert(T, BigInt(0) // BigInt(1))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4, A₂5, A₂6, A₂7)
 
     A₃1 = convert(T, BigInt(0) // BigInt(1))
     A₃2 = convert(T, BigInt(0) // BigInt(1))
@@ -3597,7 +3597,7 @@ function CKLLSRK85_4FM_4RConstantCache(T, T2)
     A₃5 = convert(T, BigInt(-2255846922213) // BigInt(30066310003000))
     A₃6 = convert(T, BigInt(3212719728776) // BigInt(7037340048693))
     A₃7 = convert(T, BigInt(0) // BigInt(1))
-    Aᵢ₃ = SVector(A₃1, A₃2, A₃3, A₃4, A₃5, A₃6, A₃7)
+    Aᵢ₃ = (A₃1, A₃2, A₃3, A₃4, A₃5, A₃6, A₃7)
 
     B1 = convert(T, BigInt(1147876221211) // BigInt(13910763665259))
     B2 = convert(T, BigInt(0) // BigInt(1))
@@ -3606,7 +3606,7 @@ function CKLLSRK85_4FM_4RConstantCache(T, T2)
     B5 = convert(T, BigInt(363006049056) // BigInt(22366003978609))
     B6 = convert(T, BigInt(6078825123673) // BigInt(15200143133108))
     B7 = convert(T, BigInt(583593328277) // BigInt(7028929464160))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7)
+    Bᵢ = (B1, B2, B3, B4, B5, B6, B7)
 
     B̂1 = convert(T, BigInt(2023383632057) // BigInt(26525303340911))
     B̂2 = convert(T, BigInt(0) // BigInt(1))
@@ -3615,7 +3615,7 @@ function CKLLSRK85_4FM_4RConstantCache(T, T2)
     B̂5 = convert(T, BigInt(-3883966523914) // BigInt(63014133260123))
     B̂6 = convert(T, BigInt(1643296191892) // BigInt(3432451463915))
     B̂7 = convert(T, BigInt(2576984903812) // BigInt(11692468803935))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7)
 
     Bₗ = convert(T, BigInt(0) // BigInt(1))
     B̂ₗ = convert(T, BigInt(-2393889703871) // BigInt(16641202878460))
@@ -3638,7 +3638,7 @@ function CKLLSRK85_4FM_4RConstantCache(T, T2)
     C7 = convert(T2,
                  BigInt(194373043039840208108258122050794558876) //
                  BigInt(388106905684556737922360607016380520227))
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7)
+    Cᵢ = (C1, C2, C3, C4, C5, C6, C7)
 
     LowStorageRK4RPConstantCache{7, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end
@@ -3701,15 +3701,15 @@ end
 end
 
 struct LowStorageRK5RPConstantCache{N, T, T2} <: OrdinaryDiffEqConstantCache
-    Aᵢ₁::SVector{N, T}
-    Aᵢ₂::SVector{N, T}
-    Aᵢ₃::SVector{N, T}
-    Aᵢ₄::SVector{N, T}
+    Aᵢ₁::NTuple{N, T}
+    Aᵢ₂::NTuple{N, T}
+    Aᵢ₃::NTuple{N, T}
+    Aᵢ₄::NTuple{N, T}
     Bₗ::T
     B̂ₗ::T
-    Bᵢ::SVector{N, T}
-    B̂ᵢ::SVector{N, T}
-    Cᵢ::SVector{N, T2}
+    Bᵢ::NTuple{N, T}
+    B̂ᵢ::NTuple{N, T}
+    Cᵢ::NTuple{N, T2}
 end
 
 function CKLLSRK75_4M_5RConstantCache(T, T2)
@@ -3719,7 +3719,7 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     A₁4 = convert(T, BigInt(5386479425293) // BigInt(11045691190948))
     A₁5 = convert(T, BigInt(-1717767168952) // BigInt(11602237717369))
     A₁6 = convert(T, BigInt(-10054679524430) // BigInt(10306851287569))
-    Aᵢ₁ = SVector(A₁1, A₁2, A₁3, A₁4, A₁5, A₁6)
+    Aᵢ₁ = (A₁1, A₁2, A₁3, A₁4, A₁5, A₁6)
 
     A₂1 = convert(T, BigInt(0) // BigInt(1))
     A₂2 = convert(T, BigInt(890852251480) // BigInt(14995156510369))
@@ -3727,7 +3727,7 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     A₂4 = convert(T, BigInt(1115398761892) // BigInt(28058504699217))
     A₂5 = convert(T, BigInt(5538441135605) // BigInt(13014942352969))
     A₂6 = convert(T, BigInt(23855853001162) // BigInt(20968156556405))
-    Aᵢ₂ = SVector(A₂1, A₂2, A₂3, A₂4, A₂5, A₂6)
+    Aᵢ₂ = (A₂1, A₂2, A₂3, A₂4, A₂5, A₂6)
 
     A₃1 = convert(T, BigInt(0) // BigInt(1))
     A₃2 = convert(T, BigInt(0) // BigInt(1))
@@ -3735,7 +3735,7 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     A₃4 = convert(T, BigInt(342961171087) // BigInt(6505721096888))
     A₃5 = convert(T, BigInt(-14472869285404) // BigInt(19736045536601))
     A₃6 = convert(T, BigInt(-8169744035288) // BigInt(5424738459363))
-    Aᵢ₃ = SVector(A₃1, A₃2, A₃3, A₃4, A₃5, A₃6)
+    Aᵢ₃ = (A₃1, A₃2, A₃3, A₃4, A₃5, A₃6)
 
     A₄1 = convert(T, BigInt(0) // BigInt(1))
     A₄2 = convert(T, BigInt(0) // BigInt(1))
@@ -3743,7 +3743,7 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     A₄4 = convert(T, BigInt(762111618422) // BigInt(5198184381557))
     A₄5 = convert(T, BigInt(2896263505307) // BigInt(6364015805096))
     A₄6 = convert(T, BigInt(60049403517654) // BigInt(26787923986853))
-    Aᵢ₄ = SVector(A₄1, A₄2, A₄3, A₄4, A₄5, A₄6)
+    Aᵢ₄ = (A₄1, A₄2, A₄3, A₄4, A₄5, A₄6)
 
     B1 = convert(T, BigInt(1008141064049) // BigInt(9867084721348))
     B2 = convert(T, BigInt(0) // BigInt(1))
@@ -3751,7 +3751,7 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     B4 = convert(T, BigInt(514621697208) // BigInt(8712119383831))
     B5 = convert(T, BigInt(1808964136873) // BigInt(4546032443428))
     B6 = convert(T, BigInt(-362754645297) // BigInt(3989911846061))
-    Bᵢ = SVector(B1, B2, B3, B4, B5, B6)
+    Bᵢ = (B1, B2, B3, B4, B5, B6)
 
     B̂1 = convert(T, BigInt(1633918545125) // BigInt(12016465907206))
     B̂2 = convert(T, BigInt(0) // BigInt(1))
@@ -3759,7 +3759,7 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     B̂4 = convert(T, BigInt(229286380958) // BigInt(6920724258831))
     B̂5 = convert(T, BigInt(5960415897193) // BigInt(14726168927560))
     B̂6 = convert(T, BigInt(-4042532386559) // BigInt(22820216867423))
-    B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6)
+    B̂ᵢ = (B̂1, B̂2, B̂3, B̂4, B̂5, B̂6)
 
     Bₗ = convert(T, BigInt(599706619333) // BigInt(7161178965783))
     B̂ₗ = convert(T, BigInt(930770261899) // BigInt(11134660916874))
@@ -3779,7 +3779,7 @@ function CKLLSRK75_4M_5RConstantCache(T, T2)
     C6 = convert(T2,
                  BigInt(309879595293732553069368807532997606922999693101104106883289601491) //
                  BigInt(309879595293732553069368804305686805880909932549908997963514738540))
-    Cᵢ = SVector(C1, C2, C3, C4, C5, C6)
+    Cᵢ = (C1, C2, C3, C4, C5, C6)
 
     LowStorageRK5RPConstantCache{6, T, T2}(Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ)
 end

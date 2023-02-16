@@ -1,7 +1,7 @@
 mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{46, Int}
-    fp1::SVector{46, T}
-    fp2::SVector{46, T}
+    ms::NTuple{46, Int}
+    fp1::NTuple{46, T}
+    fp2::NTuple{46, T}
     recf::Vector{T2}
     zprev::zType
     mdeg::Int
@@ -47,7 +47,7 @@ function alg_cache(alg::ROCK2, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 mutable struct ROCK4ConstantCache{T, T2, T3, T4, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{50, Int}
+    ms::NTuple{50, Int}
     fpa::Vector{T}
     fpb::Vector{T2}
     fpbe::Vector{T3}
@@ -200,9 +200,9 @@ function alg_cache(alg::IRKC, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{46, Int}
-    Cᵤ::SVector{4, Int}
-    Cₑ::SVector{4, Int}
+    ms::NTuple{46, Int}
+    Cᵤ::NTuple{4, Int}
+    Cₑ::NTuple{4, Int}
     zprev::zType
     Bᵢ::Vector{T}
     mdeg::Int
@@ -250,9 +250,9 @@ function alg_cache(alg::ESERK4, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{49, Int}
-    Cᵤ::SVector{5, Int}
-    Cₑ::SVector{5, Int}
+    ms::NTuple{49, Int}
+    Cᵤ::NTuple{5, Int}
+    Cₑ::NTuple{5, Int}
     zprev::zType
     Bᵢ::Vector{T}
     mdeg::Int
@@ -300,7 +300,7 @@ function alg_cache(alg::ESERK5, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 mutable struct SERK2ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
-    ms::SVector{11, Int}
+    ms::NTuple{11, Int}
     zprev::zType
     Bᵢ::Vector{T}
     mdeg::Int

@@ -347,7 +347,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
     U = SArray(U)
 
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order)))
+    γₖ = ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order))
 
     QNDFConstantCache(nlsolver, U, D, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1,
                       EEst2, γₖ)
@@ -423,7 +423,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     U = SArray(U)
 
     RU = Matrix(U)
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order)))
+    γₖ = ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order))
 
     QNDFCache(fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, RU, D, Dtmp,
               tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
