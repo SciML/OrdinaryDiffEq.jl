@@ -26,10 +26,8 @@ SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 ## OrdinaryDiffEq Internal Traits
 
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
-function isfsal(tab::DiffEqBase.ExplicitRKTableau{MType, VType, fsal}) where {MType, VType,
-                                                                              fsal}
-    fsal
-end
+isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
+
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas5) = false
