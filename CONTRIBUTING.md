@@ -1,0 +1,3 @@
+  - This repository follows the [SciMLStyle](https://github.com/SciML/SciMLStyle) and the SciML [ColPrac](https://github.com/SciML/ColPrac).
+  - Please run `using JuliaFormatter, OrdinaryDiffEq; format(joinpath(dirname(pathof(OrdinaryDiffEq)), ".."))` before commiting.
+  - Add tests for any new features.
