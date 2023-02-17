@@ -90,7 +90,7 @@ function update_D!(D, dd, k)
     return nothing
 end
 
-const γₖ = ntuple(k->sum(1 // j for j in 1:k), Val(6))
+const γₖ = ntuple(k->sum(1 // j for j in 1:k), 6)
 
 error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
 function error_constant(integrator, alg::QNDF, k)
