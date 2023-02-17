@@ -509,7 +509,7 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
                               uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
-    bdf_coeffs = SA[1 -1 0 0 0 0;
+    bdf_coeffs = [1 -1 0 0 0 0;
                     3//2 -2 1//2 0 0 0;
                     11//6 -3 3//2 -1//3 0 0;
                     25//12 -4 3 -4//3 1//4 0;
@@ -581,7 +581,7 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
                               uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
-    bdf_coeffs = SA[1 -1 0 0 0 0;
+    bdf_coeffs = [1 -1 0 0 0 0;
                     3//2 -2 1//2 0 0 0;
                     11//6 -3 3//2 -1//3 0 0;
                     25//12 -4 3 -4//3 1//4 0;
