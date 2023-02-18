@@ -1,5 +1,5 @@
 """
-	ArrayFuse{AT, T, P} <: AbstractArray{T, 1}
+    ArrayFuse{AT, T, P} <: AbstractArray{T, 1}
 
 GPU Friendly type to wrap around two arrays - `visible` and `hidden`, for which when we `setindex!` some value `v` at index `i`
 we get
@@ -11,36 +11,40 @@ hidden[i] = hidden[i] + p[3] * visible[i]
 
 where p is a parameter tuple of size 3.
 """
-struct ArrayFuse{AT, T, P} <: AbstractArray{T, 1}
-	visible::AT
-	hidden::AT
-	p::P
+struct ArrayFuse{AT, T, P}
+    visible::AT
+    hidden::AT
+    p::P
 end
 
-ArrayFuse(visible::AT, hidden::AT, p) where {AT} = ArrayFuse{AT, eltype(visible), typeof(p)}(visible, hidden, p)
+Base.ndims(::Type{<:ArrayFuse{AT}}) where {AT} = ndims(AT)
 
-@inline function Base.copyto!(af::OrdinaryDiffEq.ArrayFuse{AT, T, P}, src::Base.Broadcast.Broadcasted) where {AT, T, P}
-	@. af.visible = af.p[1] * af.visible + af.p[2] * src
-	@. af.hidden = af.hidden + af.p[3] * af.visible
+function ArrayFuse(visible::AT, hidden::AT, p) where {AT}
+    ArrayFuse{AT, eltype(visible), typeof(p)}(visible, hidden, p)
 end
 
-@inline function Base.copyto!(af::OrdinaryDiffEq.ArrayFuse{AT, T, P}, src::Base.Broadcast.Broadcasted{F1, Axes, F, Args}) where {AT, T, P, F1<:Base.Broadcast.AbstractArrayStyle{0}, Axes, F, Args<:Tuple}
-	@. af.visible = af.p[1] * af.visible + af.p[2] * src
-	@. af.hidden = af.hidden + af.p[3] * af.visible
+@inline function Base.copyto!(af::ArrayFuse, src::Broadcast.Broadcasted)
+    @. af.visible = af.p[1] * af.visible + af.p[2] * src
+    @. af.hidden = af.hidden + af.p[3] * af.visible
+end
+
+@inline function Base.materialize!(af::ArrayFuse, src::Broadcast.Broadcasted)
+    copyto!(af, src)
 end
 
 # not recommended but good to have
-@inline function Base.getindex(af::ArrayFuse, index)
-	return af.visible[index]
+@inline function Base.getindex(af::ArrayFuse, index::Int)
+    return af.visible[index]
 end
 
-@inline function Base.setindex!(af::ArrayFuse, value, index)
-	af.visible[index] = af.p[1] * af.visible[index] + af.p[2] * value
-	af.hidden[index] =  muladd(af.p[3], af.visible[index], af.hidden[index])
+@inline function Base.setindex!(af::ArrayFuse, value, index::Int)
+    af.visible[index] = af.p[1] * af.visible[index] + af.p[2] * value
+    af.hidden[index] = muladd(af.p[3], af.visible[index], af.hidden[index])
 end
 
 @inline Base.size(af::ArrayFuse) = length(af.visible)
 @inline Base.axes(af::ArrayFuse) = axes(af.visible)
 
-Adapt.adapt_structure(to, af::ArrayFuse{AT, T, P}) where {AT, T, P} = 
-	ArrayFuse(adapt(to, af.visible), adapt(to, af.hidden), af.p)
+function Adapt.adapt_structure(to, af::ArrayFuse{AT, T, P}) where {AT, T, P}
+    ArrayFuse(adapt(to, af.visible), adapt(to, af.hidden), af.p)
+end

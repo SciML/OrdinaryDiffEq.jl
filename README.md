@@ -1,9 +1,14 @@
 # OrdinaryDiffEq.jl
 
-[![Join the chat at https://gitter.im/JuliaDiffEq/Lobby](https://badges.gitter.im/JuliaDiffEq/Lobby.svg)](https://gitter.im/JuliaDiffEq/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://julialang.zulipchat.com #sciml-bridged](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged)
+[![Global Docs](https://img.shields.io/badge/docs-SciML-blue.svg)](https://docs.sciml.ai/OrdinaryDiffEq/stable/)
+
+[![codecov](https://codecov.io/gh/SciML/OrdinaryDiffEq.jl/branch/master/graph/badge.svg)](https://app.codecov.io/gh/SciML/OrdinaryDiffEq.jl)
 [![Build Status](https://github.com/SciML/OrdinaryDiffEq.jl/workflows/CI/badge.svg)](https://github.com/SciML/OrdinaryDiffEq.jl/actions?query=workflow%3ACI)
-[![Build status](https://badge.buildkite.com/5f39777d009ce94ef1dcf2a4881c68b9fbcaf6f69f1d8b8df2.svg)](https://buildkite.com/julialang/ordinarydiffeq-dot-jl)
-[![Package Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/OrdinaryDiffEq)](https://pkgs.genieframework.com?packages=OrdinaryDiffEq).
+[![Build status](https://badge.buildkite.com/5f39777d009ce94ef1dcf2a4881c68b9fbcaf6f69f1d8b8df2.svg?branch=master)](https://buildkite.com/julialang/ordinarydiffeq-dot-jl)
+
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
 OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the
 ordinary differential equation solvers and utilities. While completely independent
@@ -40,16 +45,16 @@ That example uses the out-of-place syntax `f(u,p,t)`, while the inplace syntax (
 
 ```julia
 using OrdinaryDiffEq
-function lorenz(du,u,p,t)
+function lorenz!(du,u,p,t)
  du[1] = 10.0(u[2]-u[1])
  du[2] = u[1]*(28.0-u[3]) - u[2]
  du[3] = u[1]*u[2] - (8/3)*u[3]
 end
 u0 = [1.0;0.0;0.0]
 tspan = (0.0,100.0)
-prob = ODEProblem(lorenz,u0,tspan)
+prob = ODEProblem(lorenz!,u0,tspan)
 sol = solve(prob,Tsit5())
-using Plots; plot(sol,vars=(1,2,3))
+using Plots; plot(sol,idxs=(1,2,3))
 ```
 
 Very fast static array versions can be specifically compiled to the size of your model. For example:
@@ -68,7 +73,7 @@ sol = solve(prob,Tsit5())
 For "refined ODEs", like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](https://diffeq.sciml.ai/dev/types/ode_types/). For example, in [DiffEqTutorials.jl](https://github.com/SciML/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
-function HH_acceleration(dv,v,u,p,t)
+function HH_acceleration!(dv,v,u,p,t)
     x,y  = u
     dx,dy = dv
     dv[1] = -x - 2x*y
@@ -76,7 +81,7 @@ function HH_acceleration(dv,v,u,p,t)
 end
 initial_positions = [0.0,0.1]
 initial_velocities = [0.5,0.0]
-prob = SecondOrderODEProblem(HH_acceleration,initial_velocities,initial_positions,tspan)
+prob = SecondOrderODEProblem(HH_acceleration!,initial_velocities,initial_positions,tspan)
 sol2 = solve(prob, KahanLi8(), dt=1/10);
 ```
 
