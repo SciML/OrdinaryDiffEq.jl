@@ -39,7 +39,7 @@ using DiffEqBase: DEIntegrator
 import RecursiveArrayTools: chain, recursivecopy!
 
 using UnPack, ForwardDiff, RecursiveArrayTools,
-      DataStructures, FiniteDiff, ArrayInterfaceCore, ArrayInterface
+      DataStructures, FiniteDiff, ArrayInterface, ArrayInterface
 
 import ForwardDiff.Dual
 
@@ -96,7 +96,6 @@ const CompiledFloats = Union{Float32, Float64,
                                  K <: Union{Float64, Float32},
                              }}
 
-import ArrayInterfaceStaticArrays, ArrayInterfaceGPUArrays
 import FunctionWrappersWrappers
 import Preferences
 
