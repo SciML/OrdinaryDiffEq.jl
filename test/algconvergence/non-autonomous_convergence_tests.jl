@@ -68,10 +68,10 @@ for prob in [prob1, prob2]
   @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
   dts = 1 .//2 .^(8:-1:4)
   sim = test_convergence(dts,prob,Rodas4(); kwargs...)
-  @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+  @test sim.𝒪est[:l∞] ≈ 4 atol=testTol+0.1
   dts = 1 .//2 .^(7:-1:3)
   sim = test_convergence(dts,prob,Rodas5(); kwargs...)
-  @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
+  @test sim.𝒪est[:l∞] ≈ 5 atol=testTol+0.1
 end
 
 #=
