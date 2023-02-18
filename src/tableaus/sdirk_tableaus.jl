@@ -1865,6 +1865,69 @@ function ESDIRK54I8L2SATableau(T, T2)
                           btilde8)
 end
 
+struct ESDIRK436L2SA2Tableau{T, T2}
+    γ::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    btilde6::T
+end
+
+function ESDIRK436L2SA2Tableau(T, T2)
+    γ = convert(T, 31 // 125)
+    a31 = convert(T, -360286518617 // 7014585480527)
+    a32 = convert(T, -360286518617 // 7014585480527)
+    a41 = convert(T, -506388693497 // 5937754990171)
+    a42 = convert(T, -506388693497 // 5937754990171)
+    a43 = convert(T, 7149918333491 // 13390931526268)
+    a51 = convert(T, -7628305438933 // 11061539393788)
+    a52 = convert(T, -7628305438933 // 11061539393788)
+    a53 = convert(T, 21592626537567 // 14352247503901)
+    a54 = convert(T, 11630056083252 // 17263101053231)
+    a61 = convert(T, -12917657251 // 5222094901039)
+    a62 = convert(T, -12917657251 // 5222094901039)
+    a63 = convert(T, 5602338284630 // 15643096342197)
+    a64 = convert(T, 9002339615474 // 18125249312447)
+    a65 = convert(T, -2420307481369 // 24731958684496)
+    c3 = convert(T2, 486119545908 // 3346201505189)
+    c4 = convert(T2, 1043 // 1706)
+    c5 = convert(T2, 1361 // 1300)
+    c6 = convert(T2, 1)
+    btilde1 = convert(T, 5106873525203549881053916 // 63280437666689274586070553)
+    btilde2 = convert(T, 5106873525203549881053916 // 63280437666689274586070553)
+    btilde3 = convert(T, -25162027003603428150355757 // 187362381104177276978781327)
+    btilde4 = convert(T, -4098711186040344850920813 // 204021751328880889263048263)
+    btilde5 = convert(T, -2403006641348284599749077 // 92621941821407359153398928)
+    btilde6 = convert(T, 20990421664717 // 1109114971657125)
+    ESDIRK436L2SA2Tableau(γ,
+                          a31, a32,
+                          a41, a42, a43,
+                          a51, a52, a53, a54,
+                          a61, a62, a63, a64, a65,
+                          c3, c4, c5, c6,
+                          btilde1, btilde2, btilde3, btilde4, btilde5, btilde6)
+end
+
 struct SDIRK22Tableau{T}
     a::T
     α::T

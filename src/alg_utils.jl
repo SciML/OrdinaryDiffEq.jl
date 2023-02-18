@@ -614,6 +614,7 @@ alg_order(alg::Kvaerno3) = 3
 alg_order(alg::Kvaerno4) = 4
 alg_order(alg::Kvaerno5) = 5
 alg_order(alg::ESDIRK54I8L2SA) = 5
+alg_order(alg::ESDIRK436L2SA2) = 4
 alg_order(alg::KenCarp3) = 3
 alg_order(alg::CFNLIRK3) = 3
 alg_order(alg::KenCarp4) = 4
@@ -1026,7 +1027,7 @@ isWmethod(alg::RosenbrockW6S4OS) = true
 isesdirk(alg::TRBDF2) = true
 function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
                              Kvaerno3, Kvaerno4, Kvaerno5,
-                             ESDIRK54I8L2SA, CFNLIRK3})
+                             ESDIRK54I8L2SA, ESDIRK436L2SA2, CFNLIRK3})
     true
 end
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
