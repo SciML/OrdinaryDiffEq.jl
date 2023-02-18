@@ -98,8 +98,21 @@ integrator = init(ode, Tsit5())
 
 # Adaptivity regression tests for ESDIRK
 
-prob = prob_ode_linear
+prob_linear = prob_ode_linear
+
+function lorenz(du, u, p, t)
+    du[1] = 10.0(u[2] - u[1])
+    du[2] = u[1] * (28.0 - u[3]) - u[2]
+    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+end
+u0 = [1.0; 0.0; 0.0]
+tspan = (0.0, 100.0)
+prob_lorenz = ODEProblem{true}(lorenz, u0, tspan)
 
 # ESDIRK436L2SA2
-sol = solve(prob, ESDIRK436L2SA2())
-@test length(sol.u) < 10
+
+sol_linear = solve(prob_linear, ESDIRK436L2SA2())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK436L2SA2())
+@test length(sol_lorenz.u) < 1500
