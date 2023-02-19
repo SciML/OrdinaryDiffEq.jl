@@ -4760,7 +4760,7 @@ function ROCK4ConstantCache(T, T2, zprev)
         0.0004668480955879464, 0.9136748776971255,
     ]
 
-    ROCK4ConstantCache{eltype(_fpa), eltype(_fpb), eltype(_fpbe), T2, typeof(zprev)}(ms,
+    ROCK4ConstantCache{eltype(fpa), eltype(fpb), eltype(fpbe), T2, typeof(zprev)}(ms,
                                                                                      fpa,
                                                                                      fpb,
                                                                                      fpbe,
