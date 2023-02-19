@@ -1928,6 +1928,86 @@ function ESDIRK436L2SA2Tableau(T, T2)
                           btilde1, btilde2, btilde3, btilde4, btilde5, btilde6)
 end
 
+struct ESDIRK437L2SATableau{T, T2}
+    γ::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a72::T
+    a73::T
+    a74::T
+    a75::T
+    a76::T
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+    c7::T2
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    btilde6::T
+    btilde7::T
+end
+
+function ESDIRK437L2SATableau(T, T2)
+    γ = convert(T, 1 // 8)
+    a31 = convert(T, -39188347878 // 1513744654945)
+    a32 = convert(T, -39188347878 // 1513744654945)
+    a41 = convert(T, 1748874742213 // 5168247530883)
+    a42 = convert(T, 1748874742213 // 5168247530883)
+    a43 = convert(T, -1748874742213 // 5795261096931)
+    a51 = convert(T, -6429340993097 // 17896796106705)
+    a52 = convert(T, -6429340993097 // 17896796106705)
+    a53 = convert(T, 9711656375562 // 10370074603625)
+    a54 = convert(T, 1137589605079 // 3216875020685)
+    a61 = convert(T, 405169606099 // 1734380148729)
+    a62 = convert(T, 405169606099 // 1734380148729)
+    a63 = convert(T, -264468840649 // 6105657584947)
+    a64 = convert(T, 118647369377 // 6233854714037)
+    a65 = convert(T, 683008737625 // 4934655825458)
+    a71 = convert(T, -5649241495537 // 14093099002237)
+    a72 = convert(T, -5649241495537 // 14093099002237)
+    a73 = convert(T, 5718691255176 // 6089204655961)
+    a74 = convert(T, 2199600963556 // 4241893152925)
+    a75 = convert(T, 8860614275765 // 11425531467341)
+    a76 = convert(T, -3696041814078 // 6641566663007)
+    c3 = convert(T2, 1200237871921 // 16391473681546)
+    c4 = convert(T2, 1 // 2)
+    c5 = convert(T2, 395 // 567)
+    c6 = convert(T2, 89 // 126)
+    c7 = convert(T2, 1)
+    btilde1 = convert(T, -14021722784906200638478406 / 88328749927055336625976631)
+    btilde2 = convert(T, -14021722784906200638478406 / 88328749927055336625976631)
+    btilde3 = convert(T, 3070711560882459617262660 / 10949513763298336699947229)
+    btilde4 = convert(T, 815814787991699828720304 / 45161095659596754702440075)
+    btilde5 = convert(T, 1195088015805686578873824 / 81172597762810000486866617)
+    btilde6 = convert(T, 740420675674591594133033 / 49448254888661947436093061)
+    btilde7 = convert(T, -3 / 280)
+    ESDIRK437L2SATableau(γ,
+                         a31, a32,
+                         a41, a42, a43,
+                         a51, a52, a53, a54,
+                         a61, a62, a63, a64, a65,
+                         a71, a72, a73, a74, a75, a76,
+                         c3, c4, c5, c6, c7,
+                         btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7)
+end
+
 struct SDIRK22Tableau{T}
     a::T
     α::T
