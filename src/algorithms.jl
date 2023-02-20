@@ -6601,6 +6601,35 @@ function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                              controller)
 end
 
+"""
+@article{Kennedy2019DiagonallyIR,
+  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+  author={Christopher A. Kennedy and Mark H. Carpenter},
+  journal={Applied Numerical Mathematics},
+  year={2019},
+  volume={146},
+  pages={221-244}
+}
+"""
+struct ESDIRK547L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
+end
+function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
+                        standardtag = Val{true}(), concrete_jac = nothing,
+                        diff_type = Val{:forward},
+                        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+                        extrapolant = :linear, controller = :PI)
+    ESDIRK547L2SA2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+                   typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+                   _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
+                                              controller)
+end
+
 ################################################################################
 
 # Rosenbrock Methods

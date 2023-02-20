@@ -905,3 +905,60 @@ function alg_cache(alg::ESDIRK437L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
                               uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
     ESDIRK437L2SAConstantCache(nlsolver, tab)
 end
+
+@cache mutable struct ESDIRK547L2SA2Cache{uType, rateType, uNoUnitsType, Tab, N} <:
+                      SDIRKMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    z₁::uType
+    z₂::uType
+    z₃::uType
+    z₄::uType
+    z₅::uType
+    z₆::uType
+    z₇::uType
+    atmp::uNoUnitsType
+    nlsolver::N
+    tab::Tab
+end
+
+function alg_cache(alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = ESDIRK547L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.γ
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+                              uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
+    fsalfirst = zero(rate_prototype)
+
+    z₁ = zero(u)
+    z₂ = zero(u)
+    z₃ = zero(u)
+    z₄ = zero(u)
+    z₅ = zero(u)
+    z₆ = zero(u)
+    z₇ = nlsolver.z
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+
+    ESDIRK547L2SA2Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver,
+                        tab)
+end
+
+mutable struct ESDIRK547L2SA2ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
+    nlsolver::N
+    tab::Tab
+end
+
+function alg_cache(alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits},
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tab = ESDIRK547L2SA2Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    γ, c = tab.γ, tab.γ
+    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
+                              uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
+    ESDIRK547L2SA2ConstantCache(nlsolver, tab)
+end

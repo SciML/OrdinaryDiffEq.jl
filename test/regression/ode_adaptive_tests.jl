@@ -117,3 +117,11 @@ sol_linear = solve(prob_linear, ESDIRK437L2SA())
 
 sol_lorenz = solve(prob_lorenz, ESDIRK437L2SA())
 @test length(sol_lorenz.u) < 1000
+
+# ESDIRK547L2SA2
+
+sol_linear = solve(prob_linear, ESDIRK547L2SA2())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK547L2SA2())
+@test length(sol_lorenz.u) < 1000
