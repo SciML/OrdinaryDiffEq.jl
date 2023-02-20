@@ -20,6 +20,8 @@ using LinearAlgebra
 
 using LoopVectorization
 
+import StaticArrayInterface
+
 using LinearSolve, SimpleNonlinearSolve
 
 # Interfaces

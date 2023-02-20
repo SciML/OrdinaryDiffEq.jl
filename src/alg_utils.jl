@@ -270,7 +270,7 @@ function DiffEqBase.prepare_alg(alg::Union{
         end
     end
 
-    L = ArrayInterface.known_length(typeof(u0))
+    L = StaticArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
 
         # If chunksize is zero, pick chunksize right at the start of solve and
