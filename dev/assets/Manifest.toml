@@ -98,10 +98,10 @@ uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
 version = "0.1.6"
 
 [[deps.CloseOpenIntervals]]
-deps = ["ArrayInterface", "Static"]
-git-tree-sha1 = "d61300b9895f129f4bd684b2aff97cf319b6c493"
+deps = ["Static", "StaticArrayInterface"]
+git-tree-sha1 = "70232f82ffaab9dc52585e0dd043b5e0c6b714f1"
 uuid = "fb6a15b2-703c-40df-9091-08a04967cfa9"
-version = "0.1.11"
+version = "0.1.12"
 
 [[deps.CommonSolve]]
 git-tree-sha1 = "9441451ee712d1aec22edad62db1a9af3dc8d852"
@@ -764,9 +764,15 @@ version = "2.1.7"
 
 [[deps.Static]]
 deps = ["IfElse"]
-git-tree-sha1 = "c35b107b61e7f34fa3f124026f2a9be97dea9e1c"
+git-tree-sha1 = "d0435ba43ab5ad1cbb5f0d286ca4ba67029ed3ee"
 uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
-version = "0.8.3"
+version = "0.8.4"
+
+[[deps.StaticArrayInterface]]
+deps = ["ArrayInterface", "Compat", "IfElse", "LinearAlgebra", "Requires", "SnoopPrecompile", "SparseArrays", "Static", "SuiteSparse"]
+git-tree-sha1 = "3ec129ef52ca5910c651151f077d29238899f942"
+uuid = "0d7ed370-da01-4f52-bd93-41d350b8b718"
+version = "1.1.0"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
