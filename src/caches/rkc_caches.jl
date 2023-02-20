@@ -250,7 +250,7 @@ function alg_cache(alg::ESERK4, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
-    ms::NTuple{49, Int}
+    ms::Vector{Int}
     Cᵤ::NTuple{5, Int}
     Cₑ::NTuple{5, Int}
     zprev::zType
