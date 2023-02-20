@@ -68,6 +68,8 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
+using IfElse
+
 using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
