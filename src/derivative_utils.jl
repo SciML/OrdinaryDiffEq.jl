@@ -754,7 +754,7 @@ end
         else
             W_full = W_transform ? J - mass_matrix * inv(dtgamma) :
                      dtgamma * J - mass_matrix
-            len = ArrayInterface.known_length(typeof(W_full))
+            len = StaticArrayInterface.known_length(typeof(W_full))
             W = if W_full isa Number
                 W_full
             elseif len !== nothing &&
@@ -891,7 +891,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         elseif IIP
             similar(J)
         else
-            len = ArrayInterface.known_length(typeof(J))
+            len = StaticArrayInterface.known_length(typeof(J))
             if len !== nothing &&
                typeof(alg) <:
                Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
