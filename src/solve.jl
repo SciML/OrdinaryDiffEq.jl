@@ -247,12 +247,19 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             if !isempty(int_idxs)
                 error("save_idxs cannot be a mix of symbols and integers")
             end
+            # handle odae
+            sts = if !isnothing(getfield(prob.f.sys, :unknown_states))
+                getfield(prob.f.sys, :unknown_states)
+            else
+                states(prob.f.sys)
+            end
+            obs = observed(prob.f.sys)
             if any(x -> is_observed_sym(prob.f.sys, x), sym_idxs)
-                sym_idxs = vcat(sym_idxs, get_deps_of_observed(prob.f.sys))
+                sym_idxs = vcat(sym_idxs, get_deps_of_observed(sts, obs))
             end
             sym_idxs = filter(x -> !is_observed_sym(prob.f.sys, x), sym_idxs)
-            save_idxs = map(i -> state_sym_to_index(prob.f.sys, i), sym_idxs) |> unique
-            saved_syms = prob.f.sys.states[save_idxs]
+            save_idxs = map(si -> state_sym_to_index(sts, si), sym_idxs) |> unique
+            saved_syms = sts[save_idxs]
             sym_map = Dict((saved_syms .=> eachindex(save_idxs))...)
         else
             error("save_idxs cannot be symbols if the problem does not come from a symbolic system")
