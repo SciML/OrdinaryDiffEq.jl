@@ -245,13 +245,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         if has_sys(prob.f)
             sym_idxs, int_idxs = partition_ints(save_idxs)
             if !isempty(int_idxs)
-                error("save_idxs cannot be a mix of symbols and integers if the problem comes from a symbolic system")
+                error("save_idxs cannot be a mix of symbols and integers")
             end
             if any(x -> is_observed_sym(prob.f.sys, x), sym_idxs)
                 sym_idxs = vcat(sym_idxs, get_deps_of_observed(prob.f.sys))
             end
             sym_idxs = filter(x -> !is_observed_sym(prob.f.sys, x), sym_idxs)
-            @show sym_idxs, is_observed_sym.((prob.f.sys,), sym_idxs)
             save_idxs = map(i -> state_sym_to_index(prob.f.sys, i), sym_idxs) |> unique
             saved_syms = prob.f.sys.states[save_idxs]
             sym_map = Dict((saved_syms .=> eachindex(save_idxs))...)
