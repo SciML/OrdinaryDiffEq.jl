@@ -34,13 +34,20 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
     algebraic_vars::AV
 end
 
-function Base.show(io::IO, t::Type{Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A, AV}}) where {uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A, AV}
+function Base.show(io::IO,
+                   t::Type{
+                           Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
+                                             TabType, TFType, UFType, F, JCType, GCType,
+                                             RTolType, A, AV}}) where {uType, rateType,
+                                                                       uNoUnitsType, JType,
+                                                                       WType,
+                                                                       TabType, TFType,
+                                                                       UFType, F, JCType,
+                                                                       GCType,
+                                                                       RTolType, A, AV}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "Rosenbrock23Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A,$AV}")
+        print(io,
+              "Rosenbrock23Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A,$AV}")
     else
         print(io, "Rosenbrock23Cache{$uType,…}")
     end
@@ -508,11 +515,27 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
                 linsolve, jac_config, grad_config, reltol, alg)
 end
 
-function Base.show(io::IO, t::Type{Rodas4Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A}}) where {uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A}
+function Base.show(io::IO,
+                   t::Type{
+                           Rodas4Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
+                                       TFType, UFType, F, JCType, GCType, RTolType, A}}) where {
+                                                                                                uType,
+                                                                                                rateType,
+                                                                                                uNoUnitsType,
+                                                                                                JType,
+                                                                                                WType,
+                                                                                                TabType,
+                                                                                                TFType,
+                                                                                                UFType,
+                                                                                                F,
+                                                                                                JCType,
+                                                                                                GCType,
+                                                                                                RTolType,
+                                                                                                A
+                                                                                                }
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "Rodas4Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A}")
+        print(io,
+              "Rodas4Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A}")
     else
         print(io, "Rodas4Cache{$uType,…}")
     end
@@ -755,11 +778,16 @@ end
     alg::A
 end
 
-function Base.show(io::IO, t::Type{Rosenbrock5Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A}}) where {uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A}
+function Base.show(io::IO,
+                   t::Type{
+                           Rosenbrock5Cache{uType, rateType, uNoUnitsType, JType, WType,
+                                            TabType,
+                                            TFType, UFType, F, JCType, GCType, RTolType, A}
+                           }) where {uType, rateType, uNoUnitsType, JType, WType, TabType,
+                                     TFType, UFType, F, JCType, GCType, RTolType, A}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "Rosenbrock5Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A}")
+        print(io,
+              "Rosenbrock5Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A}")
     else
         print(io, "Rosenbrock5Cache{$uType,…}")
     end
