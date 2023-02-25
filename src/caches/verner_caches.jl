@@ -89,9 +89,9 @@ end
     thread::Thread
 end
 
-function Base.show(io::IO, t::Type{Vern7Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread}}) where {uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread}
+function Base.show(io::IO, t::Type{Vern7Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread}}) where {uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "Vern7Cache{$uType,$rateType,$uNoUnitsType,$TabType,$StageLimiter,$StepLimiter,$Thread}")
+        print(io, "Vern7Cache{$uType,$rateType,$uNoUnitsType,$StageLimiter,$StepLimiter,$Thread}")
     else
         print(io, "Vern7Cache{$uType,…}")
     end
@@ -157,9 +157,9 @@ end
     thread::Thread
 end
 
-function Base.show(io::IO, t::Type{Vern8Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread}}) where {uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread}
+function Base.show(io::IO, t::Type{Vern8Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread}}) where {uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "Vern8Cache{$uType,$rateType,$uNoUnitsType,$TabType,$StageLimiter,$StepLimiter,$Thread}")
+        print(io, "Vern8Cache{$uType,$rateType,$uNoUnitsType,$StageLimiter,$StepLimiter,$Thread}")
     else
         print(io, "Vern8Cache{$uType,…}")
     end
@@ -234,9 +234,9 @@ end
     thread::Thread
 end
 
-function Base.show(io::IO, t::Type{Vern9Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread}}) where {uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread}
+function Base.show(io::IO, t::Type{Vern9Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread}}) where {uType, rateType, uNoUnitsType, StageLimiter, StepLimiter, Thread}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "Vern9Cache{$uType,$rateType,$uNoUnitsType,$TabType,$StageLimiter,$StepLimiter,$Thread}")
+        print(io, "Vern9Cache{$uType,$rateType,$uNoUnitsType,$StageLimiter,$StepLimiter,$Thread}")
     else
         print(io, "Vern9Cache{$uType,…}")
     end

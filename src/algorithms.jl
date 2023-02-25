@@ -6758,7 +6758,7 @@ for Alg in [
                  _unwrap_val(concrete_jac)}(linsolve, precs)
         end
 
-        function Base.show(io::IO, t::Type{Vern6{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P, FDT, ST, CJ}
+        function Base.show(io::IO, t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P, FDT, ST, CJ}
           if TruncatedStacktraces.VERBOSE[]
               print(io, "$Alg{$CS,$AD,$F,$P,$FDT,$ST,$CJ}")
           else

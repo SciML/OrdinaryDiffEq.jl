@@ -508,15 +508,13 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
                 linsolve, jac_config, grad_config, reltol, alg)
 end
 
-function Base.show(io::IO, t::Type{Rosenbrock4Cache{uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A}}) where {uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A}
+function Base.show(io::IO, t::Type{Rodas4Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
+    TFType, UFType, F, JCType, GCType, RTolType, A}}) where {uType, rateType, uNoUnitsType, JType, WType, TabType,
+    TFType, UFType, F, JCType, GCType, RTolType, A}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "Rosenbrock4Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A}")
+        print(io, "Rodas4Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A}")
     else
-        print(io, "Rosenbrock4Cache{$uType,…}")
+        print(io, "Rodas4Cache{$uType,…}")
     end
 end
 
@@ -757,11 +755,9 @@ end
     alg::A
 end
 
-function Base.show(io::IO, t::Type{Rosenbrock5Cache{uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A}}) where {uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A}
+function Base.show(io::IO, t::Type{Rosenbrock5Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
+    TFType, UFType, F, JCType, GCType, RTolType, A}}) where {uType, rateType, uNoUnitsType, JType, WType, TabType,
+    TFType, UFType, F, JCType, GCType, RTolType, A}
     if TruncatedStacktraces.VERBOSE[]
         print(io, "Rosenbrock5Cache{$uType,$rateType,$uNoUnitsType,$JType,$WType,$TabType,$TFType,$UFType,$F,$JCType,$GCType,$RTolType,$A}")
     else

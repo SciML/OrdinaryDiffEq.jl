@@ -49,10 +49,9 @@ end
 
 function Base.show(io::IO, t::Type{DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
                                     F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-                                    disccache}}) where {algType, IIP,
-                            uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
-                            ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
-                            CallbackCacheType, IA}
+                                    disccache}}) where {absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
+                                    F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+                                    disccache}
     if TruncatedStacktraces.VERBOSE[]
         print(io, "DEOptions{$absType,$relType,$QT,$tType,$Controller,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$tstopsType,$discType,$ECType,$SType,$MI,$tcache,$savecache,$disccache}")
     else
