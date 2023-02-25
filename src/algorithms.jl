@@ -4169,6 +4169,17 @@ struct Tsit5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     thread::Thread
 end
 
+function Base.show(io::IO,
+                   t::Type{Tsit5{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Tsit5{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Tsit5{$Thread,…}")
+    end
+end
+
 function Tsit5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False())
     Tsit5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
@@ -4460,6 +4471,17 @@ struct Vern6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
+function Base.show(io::IO,
+                   t::Type{Vern6{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern6{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern6{$Thread,…}")
+    end
+end
+
 function Vern6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
     Vern6{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
@@ -4518,6 +4540,17 @@ struct Vern7{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     step_limiter!::StepLimiter
     thread::Thread
     lazy::Bool
+end
+
+function Base.show(io::IO,
+                   t::Type{Vern7{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern7{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern7{$Thread,…}")
+    end
 end
 
 function Vern7(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
@@ -4581,6 +4614,17 @@ struct Vern8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
+function Base.show(io::IO,
+                   t::Type{Vern8{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern8{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern8{$Thread,…}")
+    end
+end
+
 function Vern8(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
     Vern8{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
@@ -4640,6 +4684,17 @@ struct Vern9{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     step_limiter!::StepLimiter
     thread::Thread
     lazy::Bool
+end
+
+function Base.show(io::IO,
+                   t::Type{Vern9{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern9{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern9{$Thread,…}")
+    end
 end
 
 function Vern9(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
@@ -6717,6 +6772,16 @@ for Alg in [
                  typeof(precs), diff_type, _unwrap_val(standardtag),
                  _unwrap_val(concrete_jac)}(linsolve, precs)
         end
+
+        function Base.show(io::IO,
+                           t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P,
+                                                                            FDT, ST, CJ}
+            if TruncatedStacktraces.VERBOSE[]
+                print(io, $Alg, "{$CS,$AD,$F,$P,$FDT,$ST,$CJ}")
+            else
+                print(io, $Alg, "{$CS,$AD,…}")
+            end
+        end
     end
 end
 
@@ -6850,6 +6915,15 @@ struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
 end
+
+function Base.show(io::IO, t::Type{CompositeAlgorithm{T, F}}) where {T, F}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "CompositeAlgorithm{$T,$F}")
+    else
+        print(io, "CompositeAlgorithm{$T,…}")
+    end
+end
+
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
 end
