@@ -216,6 +216,14 @@ end
     tab::Tab
 end
 
+function Base.show(io::IO, t::Type{KenCarp4Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {uType, rateType, uNoUnitsType, N, Tab, kType}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "KenCarp4Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
+    else
+        print(io, "KenCarp4Cache{$utype,…}")
+    end
+end
+
 function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
@@ -442,6 +450,14 @@ end
     tab::Tab
 end
 
+function Base.show(io::IO, t::Type{KenCarp47Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {uType, rateType, uNoUnitsType, N, Tab, kType}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "KenCarp47Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
+    else
+        print(io, "KenCarp47Cache{$utype,…}")
+    end
+end
+
 function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
@@ -525,6 +541,14 @@ end
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
+end
+
+function Base.show(io::IO, t::Type{KenCarp58Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {uType, rateType, uNoUnitsType, N, Tab, kType}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "KenCarp58Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
+    else
+        print(io, "KenCarp58Cache{$utype,…}")
+    end
 end
 
 function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},

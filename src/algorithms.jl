@@ -78,6 +78,7 @@ end
 ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
 trivial_limiter!(u, integrator, p, t) = nothing
+
 """
 Euler - The canonical forward Euler method. Fixed timestep only.
 """
@@ -5484,6 +5485,14 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                                 extrapolant, kappa, controller)
 end
 
+function Base.show(io::IO, t::Type{QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "QNDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T,$κType}")
+    else
+        print(io, "QNDF{…}")
+    end
+end
+
 """
 QBDF: Multistep Method
 
@@ -5527,6 +5536,14 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
          _unwrap_val(concrete_jac),
          typeof(κ), typeof(tol)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
                                  controller)
+end
+
+function Base.show(io::IO, t::Type{FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "FBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
+    else
+        print(io, "FBDF{…}")
+    end
 end
 
 """
@@ -5859,6 +5876,14 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     controller)
 end
 
+function Base.show(io::IO, t::Type{RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "RadauIIA3{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
+    else
+        print(io, "RadauIIA3{…}")
+    end
+end
+
 """
 @article{hairer1999stiff,
   title={Stiff differential equations solved by Radau methods},
@@ -5905,6 +5930,14 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     fast_convergence_cutoff,
                                                                                     new_W_γdt_cutoff,
                                                                                     controller)
+end
+
+function Base.show(io::IO, t::Type{RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "RadauIIA5{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
+    else
+        print(io, "RadauIIA5{…}")
+    end
 end
 
 ################################################################################
@@ -6024,6 +6057,14 @@ function TRBDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = V
            typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
            _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
                                       controller)
+end
+
+function Base.show(io::IO, t::Type{TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P, FDT, ST, CJ}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "TRBDF2{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
+    else
+        print(io, "TRBDF2{…}")
+    end
 end
 
 """
@@ -6477,6 +6518,15 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = Val{true}(),
              _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
                                         controller)
 end
+
+function Base.show(io::IO, t::Type{KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P, FDT, ST, CJ}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "KenCarp4{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
+    else
+        print(io, "KenCarp4{…}")
+    end
+end
+
 """
 @article{kennedy2019higher,
   title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -7052,4 +7102,12 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
           _unwrap_val(concrete_jac),
           typeof(κ), typeof(tol)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
                                   controller)
+end
+
+function Base.show(io::IO, t::Type{DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "DFBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
+    else
+        print(io, "DFBDF{…}")
+    end
 end
