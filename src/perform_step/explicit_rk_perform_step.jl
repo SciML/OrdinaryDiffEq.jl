@@ -12,10 +12,10 @@ end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache,
                                repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (;t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack A, c, α, αEEst, stages = cache
-    @unpack kk = cache
+    (;A, c, α, αEEst, stages) = cache
+    (;kk) = cache
 
     # Calc First
     kk[1] = integrator.fsalfirst
@@ -205,11 +205,11 @@ function runtime_split_EEst!(tmp, αEEst, utilde, kk, dt, stages)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (;t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
     # αEEst is `α - αEEst`
-    @unpack A, c, α, αEEst, stages = cache.tab
-    @unpack kk, utilde, tmp, atmp = cache
+    (;A, c, α, αEEst, stages) = cache.tab
+    (;kk, utilde, tmp, atmp) = cache
 
     runtime_split_stages!(f, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages)
     integrator.destats.nf += stages - 1

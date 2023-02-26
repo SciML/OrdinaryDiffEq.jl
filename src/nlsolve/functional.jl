@@ -9,7 +9,7 @@ end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLAnderson},
                              integrator::DiffEqBase.DEIntegrator)
-    @unpack cache = nlsolver
+    (;cache) = nlsolver
 
     cache.history = 0
     cache.tstep = integrator.t + nlsolver.c * integrator.dt
@@ -46,8 +46,8 @@ function compute_step!(nlsolver::NLSolver{<:NLFunctional}, integrator)
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson, false}, integrator)
-    @unpack cache = nlsolver
-    @unpack aa_start = cache
+    (;cache) = nlsolver
+    (;aa_start) = cache
 
     # perform Anderson acceleration
     previter = nlsolver.iter - 1
@@ -68,8 +68,8 @@ end
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson, true}, integrator)
-    @unpack cache = nlsolver
-    @unpack aa_start = cache
+    (;cache) = nlsolver
+    (;aa_start) = cache
 
     # perform Anderson acceleration
     previter = nlsolver.iter - 1
@@ -93,9 +93,9 @@ end
                                                              <:Union{NLFunctional,
                                                                      NLAnderson}, false},
                                           integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, γ, α, cache, tmp = nlsolver
-    @unpack tstep = cache
+    (;uprev, t, p, dt, opts) = integrator
+    (;z, γ, α, cache, tmp) = nlsolver
+    (;tstep) = cache
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -153,9 +153,9 @@ end
                                                              <:Union{NLFunctional,
                                                                      NLAnderson}, true},
                                           integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, cache = nlsolver
-    @unpack ustep, tstep, k, atmp, dz = cache
+    (;uprev, t, p, dt, opts) = integrator
+    (;z, tmp, ztmp, γ, α, cache) = nlsolver
+    (;ustep, tstep, k, atmp, dz) = cache
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -224,7 +224,7 @@ function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson}
 end
 
 function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
-    @unpack z₊old, Δz₊s = nlcache
+    (;z₊old, Δz₊s) = nlcache
 
     resize!(nlcache.ustep, i)
     resize!(nlcache.k, i)

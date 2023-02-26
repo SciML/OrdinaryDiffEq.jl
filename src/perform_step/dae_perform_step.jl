@@ -6,7 +6,7 @@ end
 
 function initialize!(integrator, cache::DImplicitEulerCache)
     integrator.kshortsize = 2
-    @unpack k₁, k₂ = cache
+    (;k₁, k₂) = cache
     resize!(integrator.k, integrator.kshortsize)
     integrator.k .= [k₁, k₂]
     integrator.k[1] .= integrator.du
@@ -15,8 +15,8 @@ end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerConstantCache,
                                repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack nlsolver = cache
+    (;t, dt, uprev, u, f, p) = integrator
+    (;nlsolver) = cache
 
     nlsolver.z = zero(u)
     nlsolver.tmp = zero(u)
@@ -57,9 +57,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerCache, repeat_step = false)
-    @unpack t, dt, uprev, du, u, f, p = integrator
-    @unpack atmp, nlsolver = cache
-    @unpack tmp = nlsolver
+    (;t, dt, uprev, du, u, f, p) = integrator
+    (;atmp, nlsolver) = cache
+    (;tmp) = nlsolver
 
     @. nlsolver.z = false
     @. nlsolver.tmp = false
@@ -104,8 +104,8 @@ function initialize!(integrator, cache::DABDF2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::DABDF2ConstantCache, repeat_step = false)
-    @unpack t, f, p = integrator
-    @unpack dtₙ₋₁, nlsolver = cache
+    (;t, f, p) = integrator
+    (;dtₙ₋₁, nlsolver) = cache
     dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
     if integrator.iter == 1 && !integrator.u_modified
@@ -163,7 +163,7 @@ function initialize!(integrator, cache::DABDF2Cache)
     integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
 
     integrator.kshortsize = 2
-    @unpack k₁, k₂ = cache.eulercache
+    (;k₁, k₂) = cache.eulercache
     resize!(integrator.k, integrator.kshortsize)
     integrator.k .= [k₁, k₂]
     integrator.k[1] .= integrator.du
@@ -171,9 +171,9 @@ function initialize!(integrator, cache::DABDF2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::DABDF2Cache, repeat_step = false)
-    @unpack t, dt, du, f, p = integrator
-    @unpack atmp, dtₙ₋₁, nlsolver = cache
-    @unpack z, tmp = nlsolver
+    (;t, dt, du, f, p) = integrator
+    (;atmp, dtₙ₋₁, nlsolver) = cache
+    (;z, tmp) = nlsolver
     uₙ, uₙ₋₁, uₙ₋₂, dtₙ = integrator.u, integrator.uprev, integrator.uprev2, integrator.dt
 
     if integrator.iter == 1 && !integrator.u_modified
@@ -235,8 +235,8 @@ end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
                        repeat_step = false) where {max_order}
-    @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps = cache
-    @unpack t, dt, u, f, p, uprev = integrator
+    (;ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps) = cache
+    (;t, dt, u, f, p, uprev) = integrator
 
     k = order
     reinitFBDF!(integrator, cache)
@@ -360,8 +360,8 @@ end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order},
                        repeat_step = false) where {max_order}
-    @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp = cache
-    @unpack t, dt, u, f, p, uprev = integrator
+    (;ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp) = cache
+    (;t, dt, u, f, p, uprev) = integrator
 
     reinitFBDF!(integrator, cache)
     k = order
@@ -415,7 +415,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order},
     end
     @.. broadcast=false terk_tmp=lte * terkp1_tmp
     if integrator.opts.adaptive
-        @unpack abstol, reltol, internalnorm = integrator.opts
+        (;abstol, reltol, internalnorm) = integrator.opts
         for i in 1:(k + 1)
             ts_tmp[i + 1] = ts[i]
         end

@@ -11,10 +11,10 @@ end
 
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5ConstantCache,
                                repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (;t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache
-    @unpack β1, β3, β5, β6, c2, c3, c4, c5_6 = cache
+    (;α21, α31, α32, α41, α42, α43, α5_6) = cache
+    (;β1, β3, β5, β6, c2, c3, c4, c5_6) = cache
 
     k1 = f(uprev, p, t)
     k2 = f(uprev + dt * α21 * k1, p, t + c2 * dt)
@@ -52,7 +52,7 @@ end
 end
 
 function initialize!(integrator, cache::KuttaPRK2p5Cache)
-    @unpack k, fsalfirst = cache
+    (;k, fsalfirst) = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
     integrator.kshortsize = 2
@@ -63,11 +63,11 @@ function initialize!(integrator, cache::KuttaPRK2p5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    (;t, dt, uprev, u, f, p) = integrator
     alg = unwrap_alg(integrator, false)
-    @unpack k, k1, k2, k3, k4, k5_6, fsalfirst, tmp = cache
-    @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache.tab
-    @unpack β1, β3, β5, β6, c2, c3, c4, c5_6 = cache.tab
+    (;k, k1, k2, k3, k4, k5_6, fsalfirst, tmp) = cache
+    (;α21, α31, α32, α41, α42, α43, α5_6) = cache.tab
+    (;β1, β3, β5, β6, c2, c3, c4, c5_6) = cache.tab
 
     f(k1, uprev, p, t)
 

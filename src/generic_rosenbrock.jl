@@ -280,7 +280,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
 
           function initialize!(integrator, cache::$cachename)
             integrator.kshortsize = 2
-            @unpack fsalfirst,fsallast = cache
+            (;fsalfirst,fsallast) = cache
             integrator.fsalfirst = fsalfirst
             integrator.fsallast = fsallast
             resize!(integrator.k, integrator.kshortsize)
@@ -346,8 +346,8 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack tf,uf = cache
+            (;t,dt,uprev,u,f,p) = integrator
+            (;tf,uf) = cache
             $unpacktabexpr
 
             $(dtCijexprs...)
@@ -459,8 +459,8 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
+            (;t,dt,uprev,u,f,p) = integrator
+            (;du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight) = cache
             $unpacktabexpr
 
             # Assignments

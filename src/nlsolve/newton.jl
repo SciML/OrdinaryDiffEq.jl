@@ -2,8 +2,8 @@
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
                              integrator::DiffEqBase.DEIntegrator)
-    @unpack dt = integrator
-    @unpack cache = nlsolver
+    (;dt) = integrator
+    (;cache) = nlsolver
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
@@ -13,9 +13,9 @@ end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
                              integrator::DiffEqBase.DEIntegrator)
-    @unpack u, uprev, t, dt, opts = integrator
-    @unpack cache = nlsolver
-    @unpack weight = cache
+    (;u, uprev, t, dt, opts) = integrator
+    (;cache) = nlsolver
+    (;weight) = cache
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
@@ -50,9 +50,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
 """
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, false}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, γ, α, cache = nlsolver
-    @unpack tstep, W, invγdt = cache
+    (;uprev, t, p, dt, opts) = integrator
+    (;z, tmp, γ, α, cache) = nlsolver
+    (;tstep, W, invγdt) = cache
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -121,9 +121,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
-    @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
+    (;uprev, t, p, dt, opts) = integrator
+    (;z, tmp, ztmp, γ, α, iter, cache) = nlsolver
+    (;W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight) = cache
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -224,9 +224,9 @@ end
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
-    @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
+    (;uprev, t, p, dt, opts) = integrator
+    (;z, tmp, ztmp, γ, α, iter, cache) = nlsolver
+    (;W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight) = cache
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 

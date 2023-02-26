@@ -6834,9 +6834,9 @@ for Alg in [
                            t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P,
                                                                             FDT, ST, CJ}
             if TruncatedStacktraces.VERBOSE[]
-                print(io, $Alg, "{$CS,$AD,$F,$P,$FDT,$ST,$CJ}")
+                print(io, $Alg, "{", CS,",",AD,",",F,",",P,",",FDT,",",ST,",",CJ,",}")
             else
-                print(io, $Alg, "{$CS,$AD,…}")
+                print(io, $Alg, "{…}")
             end
         end
     end

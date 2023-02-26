@@ -320,7 +320,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
                            continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    (;ts, timeseries, ks, f, cache) = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
     # start the search thinking it's ts[1]-ts[2]
@@ -357,7 +357,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                             continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    (;ts, timeseries, ks, f, cache) = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
 
@@ -432,7 +432,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
                            continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    (;ts, timeseries, ks, f, cache) = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
@@ -480,7 +480,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
                             continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    (;ts, timeseries, ks, f, cache) = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
     if continuity === :left
