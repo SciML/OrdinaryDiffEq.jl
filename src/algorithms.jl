@@ -77,6 +77,14 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
+function Base.show(io::IO, t::Type{ExplicitRK{TabType}}) where TabType
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "ExplicitRK{$TabType}")
+    else
+        print(io, "ExplicitRK{…}")
+    end
+end
+
 trivial_limiter!(u, integrator, p, t) = nothing
 
 """
