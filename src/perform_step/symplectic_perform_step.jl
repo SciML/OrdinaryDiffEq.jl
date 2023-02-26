@@ -949,8 +949,8 @@ end
 
 @muladd function perform_step!(integrator, cache::McAte8ConstantCache, repeat_step = false)
     (;t, dt, f, p) = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16 = cache
+    (;a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -1075,8 +1075,8 @@ end
 
 @muladd function perform_step!(integrator, cache::McAte8Cache, repeat_step = false)
     (;t, dt, f, p) = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16 = cache.tab
+    (;a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -1203,8 +1203,8 @@ end
 @muladd function perform_step!(integrator, cache::KahanLi8ConstantCache,
                                repeat_step = false)
     (;t, dt, f, p) = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18 = cache
+    (;a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -1343,8 +1343,8 @@ end
 
 @muladd function perform_step!(integrator, cache::KahanLi8Cache, repeat_step = false)
     (;t, dt, f, p) = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
-    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18 = cache.tab
+    (;a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 
@@ -1485,12 +1485,12 @@ end
 @muladd function perform_step!(integrator, cache::SofSpa10ConstantCache,
                                repeat_step = false)
     (;t, dt, f, p) = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    (;a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
     a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34,
     a35, a36,
     b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18,
     b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34,
-    b35, b36 = cache
+    b35, b36) = cache
     duprev, uprev, _, kuprev = load_symp_state(integrator)
 
     # update position
@@ -1755,12 +1755,12 @@ end
 
 @muladd function perform_step!(integrator, cache::SofSpa10Cache, repeat_step = false)
     (;t, dt, f, p) = integrator
-    @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    (;a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
     a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34,
     a35, a36,
     b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18,
     b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34,
-    b35, b36 = cache.tab
+    b35, b36) = cache.tab
     duprev, uprev, _, kuprev = load_symp_state(integrator)
     du, u, kdu, ku = alloc_symp_state(integrator)
 

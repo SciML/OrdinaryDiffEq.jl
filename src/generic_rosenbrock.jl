@@ -300,7 +300,7 @@ and then gives the result by `y_{n+1}=y_n+ki*bi`. Terms with 0s (according to ta
 Special steps can be added before calculating `y_{n+1}`. The non-inplace `perform_step!` assumes the mass_matrix==I.
 """
 function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
+    unpacktabexpr=:((;)=cache.tab)
     unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
     dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tabmask.C)]
     dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tabmask.d)]
@@ -385,7 +385,7 @@ Generate inplace version of `perform_step!` expression emulating those in `perfo
 The inplace `perform_step!` produces the same result as the non-inplace version except that it treats the mass_matrix appropriately.
 """
 function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
-    unpacktabexpr=:(@unpack ()=cache.tab)
+    unpacktabexpr=:((;)=cache.tab)
     unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
     dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tabmask.C)]
     dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tabmask.d)]
