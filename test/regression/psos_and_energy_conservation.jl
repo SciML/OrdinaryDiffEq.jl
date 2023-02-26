@@ -75,10 +75,10 @@ function hheom!(du, u, p, t)
     return nothing
 end
 
-@inline Vhh(q1, q2) = 1 // 2 * (q1^2 + q2^2 + 2q1^2 * q2 - 2 // 3 * q2^3)
-@inline Thh(p1, p2) = 1 // 2 * (p1^2 + p2^2)
-@inline Hhh(q1, q2, p1, p2) = Thh(p1, p2) + Vhh(q1, q2)
-@inline Hhh(u::AbstractVector) = Hhh(u...)
+Vhh(q1, q2) = 1 // 2 * (q1^2 + q2^2 + 2q1^2 * q2 - 2 // 3 * q2^3)
+Thh(p1, p2) = 1 // 2 * (p1^2 + p2^2)
+Hhh(q1, q2, p1, p2) = Thh(p1, p2) + Vhh(q1, q2)
+Hhh(u::AbstractVector) = Hhh(u...)
 
 # Energy
 const E = Hhh(u0)

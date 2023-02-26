@@ -561,7 +561,7 @@ function handle_dt!(integrator)
 end
 
 # time stops
-@inline function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where {T}
+function initialize_tstops(::Type{T}, tstops, d_discontinuities, tspan) where {T}
     tstops_internal = BinaryHeap{T}(DataStructures.FasterForward())
 
     t0, tf = tspan

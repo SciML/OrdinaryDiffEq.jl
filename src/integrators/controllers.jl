@@ -1,20 +1,20 @@
 
 abstract type AbstractController end
 
-@inline function stepsize_controller!(integrator, alg)
+function stepsize_controller!(integrator, alg)
     stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
 
 # checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller::AbstractController)
+function accept_step_controller(integrator, controller::AbstractController)
     return integrator.EEst <= 1
 end
 
-@inline function step_accept_controller!(integrator, alg, q)
+function step_accept_controller!(integrator, alg, q)
     step_accept_controller!(integrator, integrator.opts.controller, alg, q)
 end
 
-@inline function step_reject_controller!(integrator, alg)
+function step_reject_controller!(integrator, alg)
     step_reject_controller!(integrator, integrator.opts.controller, alg)
 end
 
@@ -53,7 +53,7 @@ the predicted step size.
 struct IController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::IController, alg)
+function stepsize_controller!(integrator, controller::IController, alg)
     @unpack qmin, qmax, gamma = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -121,7 +121,7 @@ mutable struct PIController{QT} <: AbstractController
     beta2::QT
 end
 
-@inline function stepsize_controller!(integrator, controller::PIController, alg)
+function stepsize_controller!(integrator, controller::PIController, alg)
     @unpack qold = integrator
     @unpack qmin, qmax, gamma = integrator.opts
     @unpack beta1, beta2 = controller
@@ -247,9 +247,9 @@ function Base.show(io::IO, controller::PIDController)
           ")")
 end
 
-@inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
+default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
-@inline function stepsize_controller!(integrator, controller::PIDController, alg)
+function stepsize_controller!(integrator, controller::PIDController, alg)
     @unpack qmax = integrator.opts
     beta1, beta2, beta3 = controller.beta
 
@@ -293,7 +293,7 @@ end
     return dt_factor
 end
 
-@inline function accept_step_controller(integrator, controller::PIDController)
+function accept_step_controller(integrator, controller::PIDController)
     return integrator.qold >= controller.accept_safety
 end
 
@@ -365,7 +365,7 @@ end
 struct PredictiveController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
+function stepsize_controller!(integrator, controller::PredictiveController, alg)
     @unpack qmin, qmax, gamma = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
 
@@ -720,7 +720,7 @@ function reset_alg_dependent_opts!(controller::ExtrapolationController, alg1, al
     end
 end
 
-@inline function stepsize_controller!(integrator,
+function stepsize_controller!(integrator,
                                       alg::Union{ExtrapolationMidpointDeuflhard,
                                                  ImplicitDeuflhardExtrapolation})
     # Dummy function
@@ -833,7 +833,7 @@ function step_reject_controller!(integrator,
     integrator.dt = dt_red
 end
 
-@inline function stepsize_controller!(integrator,
+function stepsize_controller!(integrator,
                                       alg::Union{ExtrapolationMidpointHairerWanner,
                                                  ImplicitHairerWannerExtrapolation,
                                                  ImplicitEulerExtrapolation,

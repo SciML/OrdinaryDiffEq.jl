@@ -2,7 +2,7 @@ using StaticArrays
 using OrdinaryDiffEq
 using Test
 
-@inbounds @inline function ż(z, p, t)
+@inbounds function ż(z, p, t)
     A, B, D = p
     p₀, p₂ = z[1:2]
     q₀, q₂ = z[3:4]

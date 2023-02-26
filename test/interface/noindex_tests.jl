@@ -26,7 +26,7 @@ end
 Base.Broadcast._broadcast_getindex(x::NoIndexArray, i) = x.x[i]
 Base.Broadcast.extrude(x::NoIndexArray) = x
 
-@inline function Base.copyto!(dest::NoIndexArray,
+function Base.copyto!(dest::NoIndexArray,
                               bc::Base.Broadcast.Broadcasted{<:NoIndexStyle})
     axes(dest) == axes(bc) || throwdm(axes(dest), axes(bc))
     bc′ = Base.Broadcast.preprocess(dest, bc)

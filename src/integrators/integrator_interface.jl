@@ -70,7 +70,7 @@ function set_proposed_dt!(integrator::ODEIntegrator, integrator2::ODEIntegrator)
     integrator.dtacc = integrator2.dtacc
 end
 
-@inline function DiffEqBase.get_du(integrator::ODEIntegrator)
+function DiffEqBase.get_du(integrator::ODEIntegrator)
     integrator.cache isa FunctionMapCache ||
         integrator.cache isa FunctionMapConstantCache &&
             error("Derivatives are not defined for this stepper.")
@@ -81,7 +81,7 @@ end
     end
 end
 
-@inline function DiffEqBase.get_du!(out, integrator::ODEIntegrator)
+function DiffEqBase.get_du!(out, integrator::ODEIntegrator)
     integrator.cache isa FunctionMapCache ||
         integrator.cache isa FunctionMapConstantCache &&
             error("Derivatives are not defined for this stepper.")
@@ -101,7 +101,7 @@ end
 end
 
 #TODO: Bigger caches for most algorithms
-@inline function DiffEqBase.get_tmp_cache(integrator::ODEIntegrator)
+function DiffEqBase.get_tmp_cache(integrator::ODEIntegrator)
     get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
 end
 # avoid method ambiguity
@@ -109,72 +109,72 @@ for typ in (OrdinaryDiffEqAlgorithm, Union{RadauIIA3, RadauIIA5},
             OrdinaryDiffEqNewtonAdaptiveAlgorithm,
             OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
             Union{SSPRK22, SSPRK33, SSPRK53_2N1, SSPRK53_2N2, SSPRK43, SSPRK432, SSPRK932})
-    @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
+    @eval function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
                                                     cache::OrdinaryDiffEqConstantCache)
         nothing
     end
 end
 
 # the ordering of the cache arrays is important!!!
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
+function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5},
+function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5},
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.atmp)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.tmp, cache.atmp)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
+function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.tmp, cache.nlsolver.z)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.linsolve_tmp)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::Union{SSPRK22, SSPRK33, SSPRK53_2N1,
                                                      SSPRK53_2N2, SSPRK43, SSPRK432,
                                                      SSPRK932},
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.k,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::OrdinaryDiffEqExponentialAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.dz)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::OrdinaryDiffEqLinearExponentialAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
+function DiffEqBase.get_tmp_cache(integrator,
                                           alg::LinearExponential,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
+function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
                                           cache::CompositeCache)
     get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
+function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
                                           cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.cache.dz, cache.atmp)
 end

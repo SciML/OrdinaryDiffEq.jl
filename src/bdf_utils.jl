@@ -1,4 +1,4 @@
-@inline function U!(k, U)
+function U!(k, U)
     @inbounds for r in 1:k
         U[1, r] = -r
         for j in 2:k

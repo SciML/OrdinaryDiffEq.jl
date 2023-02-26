@@ -1,4 +1,4 @@
-@inline eps_around_one(θ::T) where {T} = 100sqrt(eps(one(θ)))
+eps_around_one(θ::T) where {T} = 100sqrt(eps(one(θ)))
 
 """
     nlsolve!(nlsolver::AbstractNLSolver, integrator)
