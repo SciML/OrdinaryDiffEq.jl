@@ -20,6 +20,8 @@ using LinearAlgebra
 
 using LoopVectorization
 
+import StaticArrayInterface
+
 using LinearSolve, SimpleNonlinearSolve
 
 using SymbolicIndexingInterface
@@ -41,9 +43,11 @@ using DiffEqBase: DEIntegrator
 import RecursiveArrayTools: chain, recursivecopy!, issymbollike
 
 using UnPack, ForwardDiff, RecursiveArrayTools,
-      DataStructures, FiniteDiff, ArrayInterfaceCore, ArrayInterface
+      DataStructures, FiniteDiff, ArrayInterface, ArrayInterface
 
 import ForwardDiff.Dual
+
+import TruncatedStacktraces
 
 import PreallocationTools
 
@@ -69,6 +73,9 @@ import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
+
+
+using IfElse
 
 using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator, has_sys
 
@@ -98,7 +105,6 @@ const CompiledFloats = Union{Float32, Float64,
                                  K <: Union{Float64, Float32},
                              }}
 
-import ArrayInterfaceStaticArrays, ArrayInterfaceGPUArrays
 import FunctionWrappersWrappers
 import Preferences
 
@@ -396,9 +402,9 @@ export RadauIIA3, RadauIIA5
 export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
        Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
-       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8
-Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA, SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
-SFSDIRK7, SFSDIRK8
+       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
+       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
+       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,

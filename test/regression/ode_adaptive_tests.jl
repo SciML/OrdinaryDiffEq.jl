@@ -95,3 +95,33 @@ ode = ODEProblem((du, u, semi, t) -> du .= u, Float64[], (0.0, 1.0))
 # zero-length vectors, see https://github.com/SciML/OrdinaryDiffEq.jl/pull/1865
 integrator = init(ode, Tsit5())
 @test integrator.dt ≈ 1.0e-6
+
+# Adaptivity regression tests for ESDIRK
+
+prob_linear = prob_ode_linear
+
+prob_lorenz = ODEProblem{true}(lorenz, u0, tspan)
+
+# ESDIRK436L2SA2
+
+sol_linear = solve(prob_linear, ESDIRK436L2SA2())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK436L2SA2())
+@test length(sol_lorenz.u) < 1500
+
+# ESDIRK437L2SA
+
+sol_linear = solve(prob_linear, ESDIRK437L2SA())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK437L2SA())
+@test length(sol_lorenz.u) < 1000
+
+# ESDIRK547L2SA2
+
+sol_linear = solve(prob_linear, ESDIRK547L2SA2())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK547L2SA2())
+@test length(sol_lorenz.u) < 1000

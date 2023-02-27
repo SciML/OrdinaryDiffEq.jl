@@ -20,7 +20,7 @@ function constructDormandPrince(T::Type = Float64)
     αEEst = map(T, αEEst)
     c = map(T, c)
     return (DiffEqBase.ExplicitRKTableau(A, c, α, 5, αEEst = αEEst, adaptiveorder = 4,
-                                         fsal = true))
+                                         fsal = true, stability_size = 3.3066))
 end
 
 """

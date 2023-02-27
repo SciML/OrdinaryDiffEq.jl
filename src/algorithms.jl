@@ -77,6 +77,14 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
+function Base.show(io::IO, t::Type{ExplicitRK{TabType}}) where TabType
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "ExplicitRK{$TabType}")
+    else
+        print(io, "ExplicitRK{…}")
+    end
+end
+
 @inline trivial_limiter!(u, integrator, p, t) = nothing
 """
 Euler - The canonical forward Euler method. Fixed timestep only.
@@ -4169,6 +4177,17 @@ struct Tsit5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     thread::Thread
 end
 
+function Base.show(io::IO,
+                   t::Type{Tsit5{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Tsit5{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Tsit5{$Thread,…}")
+    end
+end
+
 function Tsit5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False())
     Tsit5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
@@ -4460,6 +4479,17 @@ struct Vern6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
+function Base.show(io::IO,
+                   t::Type{Vern6{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern6{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern6{$Thread,…}")
+    end
+end
+
 function Vern6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
     Vern6{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
@@ -4518,6 +4548,17 @@ struct Vern7{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     step_limiter!::StepLimiter
     thread::Thread
     lazy::Bool
+end
+
+function Base.show(io::IO,
+                   t::Type{Vern7{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern7{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern7{$Thread,…}")
+    end
 end
 
 function Vern7(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
@@ -4581,6 +4622,17 @@ struct Vern8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
+function Base.show(io::IO,
+                   t::Type{Vern8{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern8{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern8{$Thread,…}")
+    end
+end
+
 function Vern8(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
     Vern8{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
@@ -4640,6 +4692,17 @@ struct Vern9{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     step_limiter!::StepLimiter
     thread::Thread
     lazy::Bool
+end
+
+function Base.show(io::IO,
+                   t::Type{Vern9{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
+                                                                             StepLimiter,
+                                                                             Thread}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "Vern9{$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Vern9{$Thread,…}")
+    end
 end
 
 function Vern9(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
@@ -5429,6 +5492,14 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                                 extrapolant, kappa, controller)
 end
 
+function Base.show(io::IO, t::Type{QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "QNDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T,$κType}")
+    else
+        print(io, "QNDF{…}")
+    end
+end
+
 """
 QBDF: Multistep Method
 
@@ -5472,6 +5543,14 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
          _unwrap_val(concrete_jac),
          typeof(κ), typeof(tol)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
                                  controller)
+end
+
+function Base.show(io::IO, t::Type{FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "FBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
+    else
+        print(io, "FBDF{…}")
+    end
 end
 
 """
@@ -5804,6 +5883,14 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     controller)
 end
 
+function Base.show(io::IO, t::Type{RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "RadauIIA3{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
+    else
+        print(io, "RadauIIA3{…}")
+    end
+end
+
 """
 @article{hairer1999stiff,
   title={Stiff differential equations solved by Radau methods},
@@ -5850,6 +5937,14 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     fast_convergence_cutoff,
                                                                                     new_W_γdt_cutoff,
                                                                                     controller)
+end
+
+function Base.show(io::IO, t::Type{RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "RadauIIA5{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
+    else
+        print(io, "RadauIIA5{…}")
+    end
 end
 
 ################################################################################
@@ -5969,6 +6064,14 @@ function TRBDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = V
            typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
            _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
                                       controller)
+end
+
+function Base.show(io::IO, t::Type{TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P, FDT, ST, CJ}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "TRBDF2{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
+    else
+        print(io, "TRBDF2{…}")
+    end
 end
 
 """
@@ -6422,6 +6525,15 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = Val{true}(),
              _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
                                         controller)
 end
+
+function Base.show(io::IO, t::Type{KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P, FDT, ST, CJ}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "KenCarp4{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
+    else
+        print(io, "KenCarp4{…}")
+    end
+end
+
 """
 @article{kennedy2019higher,
   title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
@@ -6543,6 +6655,93 @@ function ESDIRK54I8L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                               controller)
 end
 
+"""
+@article{Kennedy2019DiagonallyIR,
+  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+  author={Christopher A. Kennedy and Mark H. Carpenter},
+  journal={Applied Numerical Mathematics},
+  year={2019},
+  volume={146},
+  pages={221-244}
+}
+"""
+struct ESDIRK436L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
+end
+function ESDIRK436L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
+                        standardtag = Val{true}(), concrete_jac = nothing,
+                        diff_type = Val{:forward},
+                        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+                        extrapolant = :linear, controller = :PI)
+    ESDIRK436L2SA2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+                   typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+                   _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
+                                              controller)
+end
+
+"""
+@article{Kennedy2019DiagonallyIR,
+  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+  author={Christopher A. Kennedy and Mark H. Carpenter},
+  journal={Applied Numerical Mathematics},
+  year={2019},
+  volume={146},
+  pages={221-244}
+}
+"""
+struct ESDIRK437L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
+end
+function ESDIRK437L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
+                       standardtag = Val{true}(), concrete_jac = nothing,
+                       diff_type = Val{:forward},
+                       linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+                       extrapolant = :linear, controller = :PI)
+    ESDIRK437L2SA{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+                  typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+                  _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
+                                             controller)
+end
+
+"""
+@article{Kennedy2019DiagonallyIR,
+  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+  author={Christopher A. Kennedy and Mark H. Carpenter},
+  journal={Applied Numerical Mathematics},
+  year={2019},
+  volume={146},
+  pages={221-244}
+}
+"""
+struct ESDIRK547L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
+end
+function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
+                        standardtag = Val{true}(), concrete_jac = nothing,
+                        diff_type = Val{:forward},
+                        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+                        extrapolant = :linear, controller = :PI)
+    ESDIRK547L2SA2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+                   typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+                   _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
+                                              controller)
+end
+
 ################################################################################
 
 # Rosenbrock Methods
@@ -6629,6 +6828,16 @@ for Alg in [
             $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
                  typeof(precs), diff_type, _unwrap_val(standardtag),
                  _unwrap_val(concrete_jac)}(linsolve, precs)
+        end
+
+        function Base.show(io::IO,
+                           t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P,
+                                                                            FDT, ST, CJ}
+            if TruncatedStacktraces.VERBOSE[]
+                print(io, $Alg, "{$CS,$AD,$F,$P,$FDT,$ST,$CJ}")
+            else
+                print(io, $Alg, "{$CS,$AD,…}")
+            end
         end
     end
 end
@@ -6763,6 +6972,15 @@ struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
 end
+
+function Base.show(io::IO, t::Type{CompositeAlgorithm{T, F}}) where {T, F}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "CompositeAlgorithm{$T,$F}")
+    else
+        print(io, "CompositeAlgorithm{$T,…}")
+    end
+end
+
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
 end
@@ -6891,4 +7109,12 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
           _unwrap_val(concrete_jac),
           typeof(κ), typeof(tol)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
                                   controller)
+end
+
+function Base.show(io::IO, t::Type{DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "DFBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
+    else
+        print(io, "DFBDF{…}")
+    end
 end

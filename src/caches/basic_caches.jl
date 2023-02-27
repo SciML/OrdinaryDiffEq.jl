@@ -9,6 +9,15 @@ mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
     choice_function::F
     current::Int
 end
+
+function Base.show(io::IO, t::Type{CompositeCache{T, F}}) where {T, F}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "CompositeCache{$T,$F}")
+    else
+        print(io, "CompositeCache{$T,…}")
+    end
+end
+
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeCache)
 end
@@ -73,6 +82,14 @@ end
     fsallast::rateType
     kk::Vector{rateType}
     tab::TabType
+end
+
+function Base.show(io::IO, t::Type{ExplicitRKCache{uType, rateType, uNoUnitsType, TabType}}) where {uType, rateType, uNoUnitsType, TabType}
+    if TruncatedStacktraces.VERBOSE[]
+        print(io, "ExplicitRKCache{$uType,$rateType,$uNoUnitsType,$TabType}")
+    else
+        print(io, "ExplicitRKCache{$utype,…}")
+    end
 end
 
 function alg_cache(alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},

@@ -526,6 +526,25 @@ function alg_cache(alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},
                alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
+function Base.show(io::IO,
+                   t::Type{
+                           OrdinaryDiffEq.Tsit5Cache{uType, rateType, uNoUnitsType,
+                                                     StageLimiter, StepLimiter, Thread}}) where {
+                                                                                                 uType,
+                                                                                                 rateType,
+                                                                                                 uNoUnitsType,
+                                                                                                 StageLimiter,
+                                                                                                 StepLimiter,
+                                                                                                 Thread
+                                                                                                 }
+    if TruncatedStacktraces.VERBOSE[]
+        print(io,
+              "Tsit5Cache{$uType,$rateType,$uNoUnitsType,$StageLimiter,$StepLimiter,$Thread}")
+    else
+        print(io, "Tsit5Cache{$uType,…}")
+    end
+end
+
 function alg_cache(alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,

@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
+using DiffEqDevTools
+
 prob = prob_ode_2Dlinear
 choice_function(integrator) = (Int(integrator.t < 0.5) + 1)
 alg_double = CompositeAlgorithm((Tsit5(), Tsit5()), choice_function)
@@ -8,6 +10,12 @@ alg_switch = CompositeAlgorithm((Tsit5(), Vern7()), choice_function)
 
 @time sol1 = solve(prob_ode_linear, alg_double)
 @time sol2 = solve(prob_ode_linear, Tsit5())
+@test sol1.t == sol2.t
+@test sol1(0.8) == sol2(0.8)
+
+alg_double_erk = CompositeAlgorithm((ExplicitRK(), ExplicitRK()), choice_function)
+@time sol1 = solve(prob_ode_linear, alg_double_erk)
+@time sol2 = solve(prob_ode_linear, ExplicitRK())
 @test sol1.t == sol2.t
 @test sol1(0.8) == sol2(0.8)
 
@@ -43,4 +51,8 @@ A = [-0.027671669470584172 -0.0 -0.0 -0.0 -0.0 -0.0;
 prob = ODEProblem((du, u, p, t) -> mul!(du, A, u), zeros(6), (0.0, 1000), tstops = [192],
                   callback = DiscreteCallback(condition, affect!));
 sol = solve(prob, alg = AutoVern7(Rodas5()))
+@test sol.t[end] == 1000.0
+
+sol = solve(prob,
+            alg = OrdinaryDiffEq.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
 @test sol.t[end] == 1000.0

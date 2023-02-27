@@ -26,10 +26,8 @@ SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 ## OrdinaryDiffEq Internal Traits
 
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
-function isfsal(tab::DiffEqBase.ExplicitRKTableau{MType, VType, fsal}) where {MType, VType,
-                                                                              fsal}
-    fsal
-end
+isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
+
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas5) = false
@@ -272,7 +270,7 @@ function DiffEqBase.prepare_alg(alg::Union{
         end
     end
 
-    L = ArrayInterface.known_length(typeof(u0))
+    L = StaticArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
 
         # If chunksize is zero, pick chunksize right at the start of solve and
@@ -616,6 +614,9 @@ alg_order(alg::Kvaerno3) = 3
 alg_order(alg::Kvaerno4) = 4
 alg_order(alg::Kvaerno5) = 5
 alg_order(alg::ESDIRK54I8L2SA) = 5
+alg_order(alg::ESDIRK436L2SA2) = 4
+alg_order(alg::ESDIRK437L2SA) = 4
+alg_order(alg::ESDIRK547L2SA2) = 5
 alg_order(alg::KenCarp3) = 3
 alg_order(alg::CFNLIRK3) = 3
 alg_order(alg::KenCarp4) = 4
@@ -922,6 +923,7 @@ ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
 ssp_coefficient(alg::SSPSDIRK2) = 4
 
 # stability regions
+alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
 alg_stability_size(alg::DP5) = 3.3066
 alg_stability_size(alg::Tsit5) = 3.5068
 alg_stability_size(alg::Vern6) = 4.8553
@@ -1026,8 +1028,9 @@ isWmethod(alg::RosenbrockW6S4OS) = true
 
 isesdirk(alg::TRBDF2) = true
 function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
-                             Kvaerno3, Kvaerno4, Kvaerno5,
-                             ESDIRK54I8L2SA, CFNLIRK3})
+                             Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
+                             ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
+                             CFNLIRK3})
     true
 end
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false

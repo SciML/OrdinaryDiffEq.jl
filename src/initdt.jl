@@ -132,11 +132,11 @@
         return tdir * dtmin
     end
 
-    dt₀ = OrdinaryDiffEq.ArrayInterface.IfElse.ifelse((d₀ < 1 // 10^(5)) |
-                                                      (d₁ < 1 // 10^(5)), smalldt,
-                                                      convert(_tType,
-                                                              oneunit_tType * (d₀ / d₁) /
-                                                              100))
+    dt₀ = IfElse.ifelse((d₀ < 1 // 10^(5)) |
+                        (d₁ < 1 // 10^(5)), smalldt,
+                        convert(_tType,
+                                oneunit_tType * (d₀ / d₁) /
+                                100))
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
     # else
