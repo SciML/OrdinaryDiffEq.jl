@@ -38,6 +38,7 @@ SparseDiffTools = "47a9eef4-7e08-11e9-0b38-333d64bd3804"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
+UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
 Adapt = "1.1, 2.0, 3.0"
@@ -71,6 +72,8 @@ SparseDiffTools = "1.26.2"
 StaticArrayInterface = "1.2"
 StaticArrays = "0.11, 0.12, 1.0"
 TruncatedStacktraces = "1"
+UnPack = "0.1, 1.0"
+julia = "1.6"
 
 [extras]
 AlgebraicMultigrid = "2169fc97-5a83-5252-b627-83903c6c433c"

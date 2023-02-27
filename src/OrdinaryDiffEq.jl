@@ -40,7 +40,7 @@ using DiffEqBase: DEIntegrator
 
 import RecursiveArrayTools: chain, recursivecopy!
 
-using ForwardDiff, RecursiveArrayTools,
+using UnPack, ForwardDiff, RecursiveArrayTools,
       DataStructures, FiniteDiff, ArrayInterface, ArrayInterface
 
 import ForwardDiff.Dual

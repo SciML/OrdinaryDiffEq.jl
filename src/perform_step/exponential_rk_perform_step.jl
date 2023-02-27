@@ -1584,7 +1584,9 @@ function perform_step!(integrator, cache::ETD2ConstantCache, repeat_step = false
     integrator.destats.nf += 1
     integrator.destats.nf2 += 1
     integrator.k[2] = lin + nl
-    @pack! integrator.fsallast = lin, nl, nlprev
+    integrator.fsallast.lin = lin
+    integrator.fsallast.nl = nl
+    integrator.fsallast.nlprev = nlprev
 end
 
 function initialize!(integrator, cache::ETD2Cache)
