@@ -245,26 +245,24 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         if has_sys(prob.f)
             sym_idxs, int_idxs = partition_ints(save_idxs)
             if !isempty(int_idxs)
-                error("save_idxs cannot be a mix of symbols and integers")
+                error("`save_idxs` cannot be a mix of symbols and integers")
             end
+            if is_dense_output(prob)
+                error("`save_idxs` cannot be symbols if output is dense, use the `dense_output = false` keyword argument in the problem constructor")
+            end
+            sys = prob.f.sys
             # handle odae
-            is_ODAE = hasfield(typeof(prob.f.sys), :unknown_states) &&
-                      !isnothing(getfield(prob.f.sys, :unknown_states))
-            sts = if is_ODAE
-                getfield(prob.f.sys, :unknown_states)
-            else
-                states(prob.f.sys)
-            end
-            obs = observed(prob.f.sys)
-            if any(x -> is_observed_sym(prob.f.sys, x), sym_idxs)
+            sts = unknown_states(sys)
+            obs = observed(sys)
+            if any(x -> is_observed_sym(sys, x), sym_idxs)
                 sym_idxs = vcat(sym_idxs, get_deps_of_observed(sts, obs))
             end
-            sym_idxs = filter(x -> !is_observed_sym(prob.f.sys, x), sym_idxs)
-            save_idxs = map(si -> state_sym_to_index(sts, si), sym_idxs) |> unique
+            sym_idxs = filter(x -> !is_observed_sym(sys, x), sym_idxs)
+            save_idxs = map(si -> state_sym_to_index(sys, si), sym_idxs) |> unique
             saved_syms = sts[save_idxs]
             sym_map = Dict((saved_syms .=> eachindex(save_idxs))...)
         else
-            error("save_idxs cannot be symbols if the problem does not come from a symbolic system")
+            error("`save_idxs` cannot be symbols if the problem does not come from a symbolic system")
         end
     else
         sym_map = nothing
