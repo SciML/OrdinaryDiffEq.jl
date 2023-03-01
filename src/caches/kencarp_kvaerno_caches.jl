@@ -216,7 +216,15 @@ end
     tab::Tab
 end
 
-function Base.show(io::IO, t::Type{KenCarp4Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {uType, rateType, uNoUnitsType, N, Tab, kType}
+function Base.show(io::IO,
+                   t::Type{KenCarp4Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {
+                                                                                                uType,
+                                                                                                rateType,
+                                                                                                uNoUnitsType,
+                                                                                                N,
+                                                                                                Tab,
+                                                                                                kType
+                                                                                                }
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp4Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
     else
@@ -450,7 +458,15 @@ end
     tab::Tab
 end
 
-function Base.show(io::IO, t::Type{KenCarp47Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {uType, rateType, uNoUnitsType, N, Tab, kType}
+function Base.show(io::IO,
+                   t::Type{KenCarp47Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {
+                                                                                                 uType,
+                                                                                                 rateType,
+                                                                                                 uNoUnitsType,
+                                                                                                 N,
+                                                                                                 Tab,
+                                                                                                 kType
+                                                                                                 }
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp47Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
     else
@@ -543,7 +559,15 @@ end
     tab::Tab
 end
 
-function Base.show(io::IO, t::Type{KenCarp58Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {uType, rateType, uNoUnitsType, N, Tab, kType}
+function Base.show(io::IO,
+                   t::Type{KenCarp58Cache{uType, rateType, uNoUnitsType, N, Tab, kType}}) where {
+                                                                                                 uType,
+                                                                                                 rateType,
+                                                                                                 uNoUnitsType,
+                                                                                                 N,
+                                                                                                 Tab,
+                                                                                                 kType
+                                                                                                 }
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp58Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
     else

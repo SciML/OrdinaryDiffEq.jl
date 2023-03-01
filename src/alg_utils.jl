@@ -571,6 +571,7 @@ alg_order(alg::ExplicitRK) = alg.tableau.order
 alg_order(alg::MSRK5) = 5
 alg_order(alg::MSRK6) = 6
 alg_order(alg::Stepanov5) = 5
+alg_order(alg::SIR54) = 5
 
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5

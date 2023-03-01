@@ -384,11 +384,22 @@ end
     atmpp1::uNoUnitsType
 end
 
-function Base.show(io::IO, t::Type{QNDFCache{MO, UType, RUType, rateType, N, coefType, dtType, EEstType,
-    gammaType, uType, uNoUnitsType}}) where {MO, UType, RUType, rateType, N, coefType, dtType, EEstType,
-    gammaType, uType, uNoUnitsType}
+function Base.show(io::IO,
+                   t::Type{
+                           QNDFCache{MO, UType, RUType, rateType, N, coefType, dtType,
+                                     EEstType,
+                                     gammaType, uType, uNoUnitsType}}) where {MO, UType,
+                                                                              RUType,
+                                                                              rateType, N,
+                                                                              coefType,
+                                                                              dtType,
+                                                                              EEstType,
+                                                                              gammaType,
+                                                                              uType,
+                                                                              uNoUnitsType}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "QNDFCache{$MO,$UType,$RUType,$rateType,$N,$coefType,$dtType,$EEstType,$gammaType,$uType,$uNoUnitsType}")
+        print(io,
+              "QNDFCache{$MO,$UType,$RUType,$rateType,$N,$coefType,$dtType,$EEstType,$gammaType,$uType,$uNoUnitsType}")
     else
         print(io, "QNDFCache{$utype,…}")
     end
@@ -581,11 +592,24 @@ end
     iters_from_event::Int
 end
 
-function Base.show(io::IO, t::Type{FBDFCache{MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-    coeffType, EEstType, rType, wType}}) where {MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-    coeffType, EEstType, rType, wType}
+function Base.show(io::IO,
+                   t::Type{
+                           FBDFCache{MO, N, rateType, uNoUnitsType, tsType, tType, uType,
+                                     uuType,
+                                     coeffType, EEstType, rType, wType}}) where {MO, N,
+                                                                                 rateType,
+                                                                                 uNoUnitsType,
+                                                                                 tsType,
+                                                                                 tType,
+                                                                                 uType,
+                                                                                 uuType,
+                                                                                 coeffType,
+                                                                                 EEstType,
+                                                                                 rType,
+                                                                                 wType}
     if TruncatedStacktraces.VERBOSE[]
-        print(io, "FBDFCache{$MO,$N,$rateType,$uNoUnitsType,$tsType,$tType,$uType,$uuType,$coeffType,$EEstType,$rType,$wType}")
+        print(io,
+              "FBDFCache{$MO,$N,$rateType,$uNoUnitsType,$tsType,$tType,$uType,$uuType,$coeffType,$EEstType,$rType,$wType}")
     else
         print(io, "FBDFCache{$utype,…}")
     end
