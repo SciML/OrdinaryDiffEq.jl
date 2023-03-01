@@ -12,7 +12,7 @@ function initialize!(integrator,
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -38,7 +38,7 @@ function initialize!(integrator,
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache,
@@ -90,7 +90,7 @@ end
     if integrator.opts.adaptive
         tmp = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -171,7 +171,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -235,7 +235,7 @@ end
         z₃ = z₂
         u = nlsolver.tmp + γ * z₂
         k2 = dt * f2(u, p, t + 2γdt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -255,7 +255,7 @@ end
         z₄ = z₂
         u = nlsolver.tmp + γ * z₃
         k3 = dt * f2(u, p, t + c3 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3
     else
         @unpack α41, α42 = cache.tab
@@ -272,7 +272,7 @@ end
     u = nlsolver.tmp + γ * z₄
     if typeof(integrator.f) <: SplitFunction
         k4 = dt * f2(u, p, t + dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 + eb2 * k2 +
             eb3 * k3 + eb4 * k4
     end
@@ -287,7 +287,7 @@ end
             tmp = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄
         end
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -366,7 +366,7 @@ end
         @.. broadcast=false u=tmp + γ * z₂
         f2(k2, u, p, t + 2γdt)
         k2 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -386,7 +386,7 @@ end
         @.. broadcast=false u=tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
                                 ea42 * k2 + ea43 * k3
     else
@@ -404,7 +404,7 @@ end
     if typeof(integrator.f) <: SplitFunction
         f2(k4, u, p, t + dt)
         k4 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 +
                               eb2 * k2 + eb3 * k3 + eb4 * k4
     end
@@ -426,7 +426,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -494,7 +494,7 @@ end
         z₃ = z₂
         u = nlsolver.tmp + γ * z₂
         k2 = dt * f2(u, p, t + c2 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         z₃ = z₂
@@ -513,7 +513,7 @@ end
         z₄ = z₃
         u = nlsolver.tmp + γ * z₃
         k3 = dt * f2(u, p, t + c3 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3
     else
         z₄ = z₃
@@ -529,7 +529,7 @@ end
     u = nlsolver.tmp + γ * z₄
     if typeof(integrator.f) <: SplitFunction
         k4 = dt * f2(u, p, t + dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         u = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 + eb2 * k2 +
             eb3 * k3 + eb4 * k4
     end
@@ -603,7 +603,7 @@ end
         @.. broadcast=false u=tmp + γ * z₂
         f2(k2, u, p, t + c2 * dt)
         k2 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         @.. broadcast=false z₃=z₂
@@ -622,7 +622,7 @@ end
         @.. broadcast=false u=tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
                                 ea42 * k2 + ea43 * k3
     else
@@ -639,7 +639,7 @@ end
     if typeof(integrator.f) <: SplitFunction
         f2(k4, u, p, t + dt)
         k4 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 +
                               eb2 * k2 + eb3 * k3 + eb4 * k4
     end
@@ -715,7 +715,7 @@ end
     if integrator.opts.adaptive
         tmp = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -806,7 +806,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -876,7 +876,7 @@ end
         z₃ = z₂
         u = nlsolver.tmp + γ * z₂
         k2 = dt * f2(u, p, t + 2γdt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -896,7 +896,7 @@ end
         z₄ = z₂
         u = nlsolver.tmp + γ * z₃
         k3 = dt * f2(u, p, t + c3 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3
     else
         z₄ = α41 * z₁ + α42 * z₂
@@ -915,7 +915,7 @@ end
         z₅ = z₄
         u = nlsolver.tmp + γ * z₄
         k4 = dt * f2(u, p, t + c4 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ + ea51 * k1 + ea52 * k2 +
               ea53 * k3 + ea54 * k4
     else
@@ -936,7 +936,7 @@ end
         z₆ = z₅
         u = nlsolver.tmp + γ * z₅
         k5 = dt * f2(u, p, t + c5 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ + ea61 * k1 + ea62 * k2 +
               ea63 * k3 + ea64 * k4 + ea65 * k5
     else
@@ -953,7 +953,7 @@ end
     u = nlsolver.tmp + γ * z₆
     if typeof(integrator.f) <: SplitFunction
         k6 = dt * f2(u, p, t + dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         u = uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ + γ * z₆ + eb1 * k1 +
             eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6
     end
@@ -969,7 +969,7 @@ end
             tmp = btilde1 * z₁ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ + btilde6 * z₆
         end
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -1055,7 +1055,7 @@ end
         @.. broadcast=false u=tmp + γ * z₂
         f2(k2, u, p, t + 2γdt)
         k2 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -1075,7 +1075,7 @@ end
         @.. broadcast=false u=tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
                                 ea42 * k2 + ea43 * k3
     else
@@ -1095,7 +1095,7 @@ end
         @.. broadcast=false u=tmp + γ * z₄
         f2(k4, u, p, t + c4 * dt)
         k4 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ +
                                 ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4
     else
@@ -1115,7 +1115,7 @@ end
         @.. broadcast=false u=tmp + γ * z₅
         f2(k5, u, p, t + c5 * dt)
         k5 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ +
                                 ea61 * k1 + ea62 * k2 + ea63 * k3 + ea64 * k4 + ea65 * k5
     else
@@ -1132,7 +1132,7 @@ end
     if typeof(integrator.f) <: SplitFunction
         f2(k6, u, p, t + dt)
         k6 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false u=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ + γ * z₆ +
                               eb1 * k1 + eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6
     end
@@ -1156,7 +1156,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -1255,7 +1255,7 @@ end
         tmp = btilde1 * z₁ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ + btilde6 * z₆ +
               btilde7 * z₇
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -1366,7 +1366,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -1439,7 +1439,7 @@ end
         z₃ = z₂
         u = nlsolver.tmp + γ * z₂
         k2 = dt * f2(u, p, t + 2γdt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -1459,7 +1459,7 @@ end
         z₄ = z₂
         u = nlsolver.tmp + γ * z₃
         k3 = dt * f2(u, p, t + c3 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a41 * z₁ + a43 * z₃ + ea41 * k1 + ea43 * k3
     else
         z₄ = α41 * z₁ + α42 * z₂
@@ -1478,7 +1478,7 @@ end
         z₅ = z₂
         u = nlsolver.tmp + γ * z₄
         k4 = dt * f2(u, p, t + c4 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a51 * z₁ + a53 * z₃ + a54 * z₄ + ea51 * k1 + ea53 * k3 + ea54 * k4
     else
         z₅ = α51 * z₁ + α52 * z₂
@@ -1497,7 +1497,7 @@ end
         z₆ = z₃
         u = nlsolver.tmp + γ * z₅
         k5 = dt * f2(u, p, t + c5 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ + ea61 * k1 + ea63 * k3 +
               ea64 * k4 + ea65 * k5
     else
@@ -1517,7 +1517,7 @@ end
         z₇ = z₂
         u = nlsolver.tmp + γ * z₆
         k6 = dt * f2(u, p, t + c6 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a71 * z₁ + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ + ea71 * k1 +
               ea73 * k3 + ea74 * k4 + ea75 * k5 + ea76 * k6
     else
@@ -1537,7 +1537,7 @@ end
         z₈ = z₅
         u = nlsolver.tmp + γ * z₇
         k7 = dt * f2(u, p, t + c7 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ + ea81 * k1 +
               ea83 * k3 + ea84 * k4 + ea85 * k5 + ea86 * k6 + ea87 * k7
     else
@@ -1554,7 +1554,7 @@ end
     u = nlsolver.tmp + γ * z₈
     if typeof(integrator.f) <: SplitFunction
         k8 = dt * f2(u, p, t + dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         u = uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ + γ * z₈ +
             eb1 * k1 + eb4 * k4 + eb5 * k5 + eb6 * k6 + eb7 * k7 + eb8 * k8
     end
@@ -1571,7 +1571,7 @@ end
                   btilde8 * z₈
         end
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -1657,7 +1657,7 @@ end
         @.. broadcast=false u=tmp + γ * z₂
         f2(k2, u, p, t + 2γdt)
         k2 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -1677,7 +1677,7 @@ end
         @.. broadcast=false u=tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a41 * z₁ + a43 * z₃ + ea41 * k1 + ea43 * k3
     else
         @.. broadcast=false z₄=α41 * z₁ + α42 * z₂
@@ -1696,7 +1696,7 @@ end
         @.. broadcast=false u=tmp + γ * z₄
         f2(k4, u, p, t + c4 * dt)
         k4 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a51 * z₁ + a53 * z₃ + a54 * z₄ + ea51 * k1 +
                                 ea53 * k3 + ea54 * k4
     else
@@ -1716,7 +1716,7 @@ end
         @.. broadcast=false u=tmp + γ * z₅
         f2(k5, u, p, t + c5 * dt)
         k5 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a63 * z₃ + a64 * z₄ + a65 * z₅ +
                                 ea61 * k1 + ea63 * k3 + ea64 * k4 + ea65 * k5
     else
@@ -1736,7 +1736,7 @@ end
         @.. broadcast=false u=tmp + γ * z₆
         f2(k6, u, p, t + c6 * dt)
         k6 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a71 * z₁ + a73 * z₃ + a74 * z₄ + a75 * z₅ +
                                 a76 * z₆ + ea71 * k1 + ea73 * k3 + ea74 * k4 + ea75 * k5 +
                                 ea76 * k6
@@ -1757,7 +1757,7 @@ end
         @.. broadcast=false u=tmp + γ * z₇
         f2(k7, u, p, t + c7 * dt)
         k7 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ +
                                 a87 * z₇ + ea81 * k1 + ea83 * k3 + ea84 * k4 + ea85 * k5 +
                                 ea86 * k6 + ea87 * k7
@@ -1775,7 +1775,7 @@ end
     if typeof(integrator.f) <: SplitFunction
         f2(k8, u, p, t + dt)
         k8 .*= dt
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         @.. broadcast=false u=uprev + a81 * z₁ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ +
                               γ * z₈ + eb1 * k1 + eb4 * k4 + eb5 * k5 + eb6 * k6 +
                               eb7 * k7 + eb8 * k8
@@ -1800,7 +1800,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -1876,7 +1876,7 @@ end
         z₃ = z₂
         u = nlsolver.tmp + γ * z₂
         k2 = dt * f2(u, p, t + 2γdt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -1896,7 +1896,7 @@ end
         z₄ = z₃
         u = nlsolver.tmp + γ * z₃
         k3 = dt * f2(u, p, t + c3 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3
     else
         z₄ = α41 * z₁ + α42 * z₂ + α43 * z₃
@@ -1915,7 +1915,7 @@ end
         z₅ = z₁
         u = nlsolver.tmp + γ * z₄
         k4 = dt * f2(u, p, t + c4 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ + ea51 * k1 + ea52 * k2 +
               ea53 * k3 + ea54 * k4
     else
@@ -1935,7 +1935,7 @@ end
         z₆ = z₃
         u = nlsolver.tmp + γ * z₅
         k5 = dt * f2(u, p, t + c5 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ + a65 * z₅ + ea61 * k1 +
               ea62 * k2 + ea63 * k3 + ea64 * k4 + ea65 * k5
     else
@@ -1955,7 +1955,7 @@ end
         z₇ = z₆
         u = nlsolver.tmp + γ * z₆
         k6 = dt * f2(u, p, t + c6 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ + ea71 * k1 + ea72 * k2 +
               ea73 * k3 + ea74 * k4 + ea75 * k5 + ea76 * k6
     else
@@ -1987,7 +1987,7 @@ end
             tmp = btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ + btilde6 * z₆ + btilde7 * z₇
         end
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -2072,7 +2072,7 @@ end
         @.. broadcast=false u=tmp + γ * z₂
         f2(k2, u, p, t + 2γdt)
         k2 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         #Guess is from Hermite derivative on z₁ and z₂
@@ -2092,7 +2092,7 @@ end
         @.. broadcast=false u=tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
                                 ea42 * k2 + ea43 * k3
     else
@@ -2112,7 +2112,7 @@ end
         @.. broadcast=false u=tmp + γ * z₄
         f2(k4, u, p, t + c4 * dt)
         k4 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ +
                                 ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4
     else
@@ -2132,7 +2132,7 @@ end
         @.. broadcast=false u=tmp + γ * z₅
         f2(k5, u, p, t + c5 * dt)
         k5 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ +
                                 a65 * z₅ + ea61 * k1 + ea62 * k2 + ea63 * k3 + ea64 * k4 +
                                 ea65 * k5
@@ -2153,7 +2153,7 @@ end
         @.. broadcast=false u=tmp + γ * z₆
         f2(k6, u, p, t + c6 * dt)
         k6 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ +
                                 ea71 * k1 + ea72 * k2 + ea73 * k3 + ea74 * k4 + ea75 * k5 +
                                 ea76 * k6
@@ -2172,7 +2172,7 @@ end
     if typeof(integrator.f) <: SplitFunction
         f2(k7, u, p, t + dt)
         k7 .*= dt
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         @.. broadcast=false u=uprev + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ + γ * z₇ +
                               eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6 + eb7 * k7
     end
@@ -2196,7 +2196,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -2274,7 +2274,7 @@ end
         z₃ = z₂
         u = nlsolver.tmp + γ * z₂
         k2 = dt * f2(u, p, t + 2γdt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -2294,7 +2294,7 @@ end
         z₄ = z₁
         u = nlsolver.tmp + γ * z₃
         k3 = dt * f2(u, p, t + c3 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3
     else
         z₄ = α41 * z₁ + α42 * z₂
@@ -2313,7 +2313,7 @@ end
         z₅ = z₂
         u = nlsolver.tmp + γ * z₄
         k4 = dt * f2(u, p, t + c4 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ + ea51 * k1 + ea52 * k2 +
               ea53 * k3 + ea54 * k4
     else
@@ -2333,7 +2333,7 @@ end
         z₆ = z₃
         u = nlsolver.tmp + γ * z₅
         k5 = dt * f2(u, p, t + c5 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ + a65 * z₅ + ea61 * k1 +
               ea62 * k2 + ea63 * k3 + ea64 * k4 + ea65 * k5
     else
@@ -2353,7 +2353,7 @@ end
         z₇ = z₃
         u = nlsolver.tmp + γ * z₆
         k6 = dt * f2(u, p, t + c6 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a71 * z₁ + a72 * z₂ + a73 * z₃ + a74 * z₄ + a75 * z₅ + a76 * z₆ +
               ea71 * k1 + ea72 * k2 + ea73 * k3 + ea74 * k4 + ea75 * k5 + ea76 * k6
     else
@@ -2373,7 +2373,7 @@ end
         z₈ = z₇
         u = nlsolver.tmp + γ * z₇
         k7 = dt * f2(u, p, t + c7 * dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         tmp = uprev + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ + ea81 * k1 +
               ea82 * k2 + ea83 * k3 + ea84 * k4 + ea85 * k5 + ea86 * k6 + ea87 * k7
     else
@@ -2390,7 +2390,7 @@ end
     u = nlsolver.tmp + γ * z₈
     if typeof(integrator.f) <: SplitFunction
         k8 = dt * f2(u, p, t + dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         u = uprev + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ + γ * z₈ +
             eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6 + eb7 * k7 + eb8 * k8
     end
@@ -2407,7 +2407,7 @@ end
                   btilde8 * z₈
         end
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -2493,7 +2493,7 @@ end
         @.. broadcast=false u=tmp + γ * z₂
         f2(k2, u, p, t + 2γdt)
         k2 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a31 * z₁ + a32 * z₂ + ea31 * k1 + ea32 * k2
     else
         # Guess is from Hermite derivative on z₁ and z₂
@@ -2513,7 +2513,7 @@ end
         @.. broadcast=false u=tmp + γ * z₃
         f2(k3, u, p, t + c3 * dt)
         k3 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
                                 ea42 * k2 + ea43 * k3
     else
@@ -2533,7 +2533,7 @@ end
         @.. broadcast=false u=tmp + γ * z₄
         f2(k4, u, p, t + c4 * dt)
         k4 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a51 * z₁ + a52 * z₂ + a53 * z₃ + a54 * z₄ +
                                 ea51 * k1 + ea52 * k2 + ea53 * k3 + ea54 * k4
     else
@@ -2553,7 +2553,7 @@ end
         @.. broadcast=false u=tmp + γ * z₅
         f2(k5, u, p, t + c5 * dt)
         k5 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a61 * z₁ + a62 * z₂ + a63 * z₃ + a64 * z₄ +
                                 a65 * z₅ + ea61 * k1 + ea62 * k2 + ea63 * k3 + ea64 * k4 +
                                 ea65 * k5
@@ -2574,7 +2574,7 @@ end
         @.. broadcast=false u=tmp + γ * z₆
         f2(k6, u, p, t + c6 * dt)
         k6 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a71 * z₁ + a72 * z₂ + a73 * z₃ + a74 * z₄ +
                                 a75 * z₅ + a76 * z₆ + ea71 * k1 + ea72 * k2 + ea73 * k3 +
                                 ea74 * k4 + ea75 * k5 + ea76 * k6
@@ -2596,7 +2596,7 @@ end
         @.. broadcast=false u=tmp + γ * z₇
         f2(k7, u, p, t + c7 * dt)
         k7 .*= dt
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         @.. broadcast=false tmp=uprev + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ +
                                 a87 * z₇ + ea81 * k1 + ea82 * k2 + ea83 * k3 + ea84 * k4 +
                                 ea85 * k5 + ea86 * k6 + ea87 * k7
@@ -2615,7 +2615,7 @@ end
     if typeof(integrator.f) <: SplitFunction
         f2(k8, u, p, t + dt)
         k8 .*= dt
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         @.. broadcast=false u=uprev + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇ +
                               γ * z₈ + eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6 +
                               eb7 * k7 + eb8 * k8
@@ -2640,7 +2640,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end

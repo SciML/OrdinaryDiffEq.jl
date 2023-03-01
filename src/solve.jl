@@ -390,19 +390,19 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                                                                 advance_to_tstop,
                                                                 stop_at_next_tstop)
 
-    destats = DiffEqBase.DEStats(0)
+    stats = DiffEqBase.Stats(0)
 
     if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
         id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
                                         dense = dense, k = ks, interp = id,
                                         alg_choice = alg_choice,
-                                        calculate_error = false, destats = destats)
+                                        calculate_error = false, stats = stats)
     else
         id = InterpolationData(f, timeseries, ts, ks, dense, cache)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
                                         dense = dense, k = ks, interp = id,
-                                        calculate_error = false, destats = destats)
+                                        calculate_error = false, stats = stats)
     end
 
     if recompile_flag == true
@@ -472,7 +472,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                                                       last_event_error, accept_step,
                                                       isout, reeval_fsal,
                                                       u_modified, reinitiailize, isdae,
-                                                      opts, destats, initializealg)
+                                                      opts, stats, initializealg)
 
     if initialize_integrator
         if isdae

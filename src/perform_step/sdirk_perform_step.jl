@@ -20,7 +20,7 @@ function initialize!(integrator,
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -54,7 +54,7 @@ function initialize!(integrator,
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache,
@@ -100,7 +100,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -147,7 +147,7 @@ end
     else
         integrator.EEst = 1
     end
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     f(integrator.fsallast, u, p, t + dt)
 end
 
@@ -172,7 +172,7 @@ end
     u = nlsolver.tmp + z
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -200,7 +200,7 @@ end
     nlsolvefail(nlsolver) && return
     @.. broadcast=false u=nlsolver.tmp + z
 
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     f(integrator.fsallast, u, p, t + dt)
 end
 
@@ -269,7 +269,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -345,7 +345,7 @@ end
         end
     end
 
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     f(integrator.fsallast, u, p, t + dt)
 end
 
@@ -388,7 +388,7 @@ end
     if integrator.opts.adaptive
         tmp = btilde1 * zprev + btilde2 * zᵧ + btilde3 * z
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -448,7 +448,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -517,7 +517,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -566,7 +566,7 @@ end
     if integrator.opts.adaptive
         tmp = z₁ / 2 - z₂ / 2
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -577,7 +577,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -629,7 +629,7 @@ end
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -638,7 +638,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     f(integrator.fsallast, u, p, t)
 end
 
@@ -711,7 +711,7 @@ end
         end
     end
 
-    integrator.destats.nf += 2
+    integrator.stats.nf += 2
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -786,7 +786,7 @@ end
         end
     end
 
-    integrator.destats.nf += 2
+    integrator.stats.nf += 2
     f(integrator.fsallast, u, p, t + dt)
 end
 
@@ -839,7 +839,7 @@ end
     ################################### Finalize
 
     integrator.fsallast = f(u, p, t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -888,7 +888,7 @@ end
 
     ################################### Finalize
 
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     f(integrator.fsallast, u, p, t)
 end
 
@@ -976,7 +976,7 @@ end
 
         tmp = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -1083,7 +1083,7 @@ end
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end
@@ -1995,7 +1995,7 @@ end
     if integrator.opts.adaptive
         tmp = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅
         if isnewton(nlsolver) && alg.smooth_est # From Shampine
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
         else
             est = tmp
@@ -2092,7 +2092,7 @@ end
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
                                 linu = _vec(est))
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         else
             est = tmp
         end

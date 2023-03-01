@@ -42,7 +42,7 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -59,7 +59,7 @@ function initialize!(integrator, cache::RadauIIA3Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     nothing
 end
 
@@ -71,7 +71,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     if integrator.opts.adaptive
         @unpack abstol, reltol = integrator.opts
         if reltol isa Number
@@ -112,7 +112,7 @@ end
     else
         LU1 = lu(-(αdt + βdt * im) * mass_matrix + J)
     end
-    integrator.destats.nw += 1
+    integrator.stats.nw += 1
 
     # Newton iteration
     local ndw, ff1, ff2
@@ -121,11 +121,11 @@ end
     iter = 0
     while iter < maxiters
         iter += 1
-        integrator.destats.nnonliniter += 1
+        integrator.stats.nnonliniter += 1
         # evaluate function
         ff1 = f(uprev + z1, p, t + c1 * dt)
         ff2 = f(uprev + z2, p, t + c2 * dt)
-        integrator.destats.nf += 2
+        integrator.stats.nf += 2
 
         fw1 = @. TI11 * ff1 + TI12 * ff2
         fw2 = @. TI21 * ff1 + TI22 * ff2
@@ -141,7 +141,7 @@ end
         rhs1 = @. fw1 - αdt * Mw1 + βdt * Mw2
         rhs2 = @. fw2 - βdt * Mw1 - αdt * Mw2
         dw12 = LU1 \ (@. rhs1 + rhs2 * im)
-        integrator.destats.nsolve += 1
+        integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
 
@@ -220,7 +220,7 @@ end
         @inbounds for II in CartesianIndices(J)
             W1[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
         end
-        integrator.destats.nw += 1
+        integrator.stats.nw += 1
     end
 
     #better initial guess
@@ -239,13 +239,13 @@ end
     iter = 0
     while iter < maxiters
         iter += 1
-        integrator.destats.nnonliniter += 1
+        integrator.stats.nnonliniter += 1
         # evaluate function
         @. tmp = uprev + z1
         f(fsallast, tmp, p, t + c1 * dt)
         @. tmp = uprev + z2
         f(k2, tmp, p, t + c2 * dt)
-        integrator.destats.nf += 2
+        integrator.stats.nf += 2
 
         @. fw1 = TI11 * fsallast + TI12 * k2
         @. fw2 = TI21 * fsallast + TI22 * k2
@@ -280,7 +280,7 @@ end
 
         cache.linsolve = linres.cache
 
-        integrator.destats.nsolve += 1
+        integrator.stats.nsolve += 1
         dw1 = real(dw12)
         dw2 = imag(dw12)
 
@@ -320,7 +320,7 @@ end
     end
     if fail_convergence
         integrator.force_stepfail = true
-        integrator.destats.nnonlinconvfail += 1
+        integrator.stats.nnonlinconvfail += 1
         return
     end
     cache.ηold = η
@@ -335,7 +335,7 @@ end
     end
 
     f(fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     return
 end
 
@@ -365,7 +365,7 @@ end
         LU1 = lu(-γdt * mass_matrix + J)
         LU2 = lu(-(αdt + βdt * im) * mass_matrix + J)
     end
-    integrator.destats.nw += 1
+    integrator.stats.nw += 1
 
     # TODO better initial guess
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
@@ -395,13 +395,13 @@ end
     iter = 0
     while iter < maxiters
         iter += 1
-        integrator.destats.nnonliniter += 1
+        integrator.stats.nnonliniter += 1
 
         # evaluate function
         ff1 = f(uprev + z1, p, t + c1 * dt)
         ff2 = f(uprev + z2, p, t + c2 * dt)
         ff3 = f(uprev + z3, p, t + dt) # c3 = 1
-        integrator.destats.nf += 3
+        integrator.stats.nf += 3
 
         fw1 = @.. broadcast=false TI11*ff1+TI12*ff2+TI13*ff3
         fw2 = @.. broadcast=false TI21*ff1+TI22*ff2+TI23*ff3
@@ -422,7 +422,7 @@ end
         rhs3 = @.. broadcast=false fw3 - βdt * Mw2-αdt * Mw3
         dw1 = LU1 \ rhs1
         dw23 = LU2 \ (@.. broadcast=false rhs2+rhs3 * im)
-        integrator.destats.nsolve += 2
+        integrator.stats.nsolve += 2
         dw2 = real(dw23)
         dw3 = imag(dw23)
 
@@ -465,7 +465,7 @@ end
     end
     if fail_convergence
         integrator.force_stepfail = true
-        integrator.destats.nnonlinconvfail += 1
+        integrator.stats.nnonlinconvfail += 1
         return
     end
     cache.ηold = η
@@ -478,7 +478,7 @@ end
         tmp = @.. broadcast=false e1dt*z1+e2dt*z2+e3dt*z3
         mass_matrix != I && (tmp = mass_matrix * tmp)
         utilde = @.. broadcast=false integrator.fsalfirst+tmp
-        alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
+        alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
         # RadauIIA5 needs a transformed rtol and atol see
         # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -487,9 +487,9 @@ end
         if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
            integrator.u_modified
             f0 = f(uprev .+ utilde, p, t)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             utilde = @.. broadcast=false f0+tmp
-            alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
+            alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
             atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
             integrator.EEst = internalnorm(atmp, t)
         end
@@ -506,7 +506,7 @@ end
     end
 
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -540,7 +540,7 @@ end
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
             W2[II] = -(αdt + βdt * im) * mass_matrix[Tuple(II)...] + J[II]
         end
-        integrator.destats.nw += 1
+        integrator.stats.nw += 1
     end
 
     # TODO better initial guess
@@ -575,7 +575,7 @@ end
     iter = 0
     while iter < maxiters
         iter += 1
-        integrator.destats.nnonliniter += 1
+        integrator.stats.nnonliniter += 1
 
         # evaluate function
         @.. broadcast=false tmp=uprev + z1
@@ -584,7 +584,7 @@ end
         f(k2, tmp, p, t + c2 * dt)
         @.. broadcast=false tmp=uprev + z3
         f(k3, tmp, p, t + dt) # c3 = 1
-        integrator.destats.nf += 3
+        integrator.stats.nf += 3
 
         @.. broadcast=false fw1=TI11 * fsallast + TI12 * k2 + TI13 * k3
         @.. broadcast=false fw2=TI21 * fsallast + TI22 * k2 + TI23 * k3
@@ -640,7 +640,7 @@ end
 
         cache.linsolve2 = linres2.cache
 
-        integrator.destats.nsolve += 2
+        integrator.stats.nsolve += 2
         dw2 = z2
         dw3 = z3
         @.. broadcast=false dw2=real(dw23)
@@ -688,7 +688,7 @@ end
     end
     if fail_convergence
         integrator.force_stepfail = true
-        integrator.destats.nnonlinconvfail += 1
+        integrator.stats.nnonlinconvfail += 1
         return
     end
     cache.ηold = η
@@ -707,7 +707,7 @@ end
             linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff),
                                  linu = _vec(utilde))
             cache.linsolve1 = linres1.cache
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
         end
 
         # RadauIIA5 needs a transformed rtol and atol see
@@ -719,14 +719,14 @@ end
            integrator.u_modified
             @.. broadcast=false utilde=uprev + utilde
             f(fsallast, utilde, p, t)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             @.. broadcast=false ubuff=fsallast + tmp
 
             if alg.smooth_est
                 linres1 = dolinsolve(integrator, linres1.cache; b = _vec(ubuff),
                                      linu = _vec(utilde))
                 cache.linsolve1 = linres1.cache
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
             end
 
             calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
@@ -745,6 +745,6 @@ end
     end
 
     f(fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     return
 end

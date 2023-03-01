@@ -51,7 +51,7 @@ end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII" || GROUP == "Interface")
         @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
-        @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
+        @time @safetestset "stats Tests" begin include("interface/stats_tests.jl") end
         @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
         @time @safetestset "Events + DAE addsteps Tests" begin include("interface/event_dae_addsteps.jl") end
         @time @safetestset "No Jac Tests" begin include("interface/nojac.jl") end

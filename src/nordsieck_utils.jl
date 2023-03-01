@@ -214,7 +214,7 @@ function nlsolve_functional!(integrator, cache::T) where {T}
         @unpack ratetmp = cache
         integrator.f(ratetmp, z[1], p, dt + t)
     end
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     maxiters = 3
     div_rate = 2
     # Zero out the difference vector
@@ -254,7 +254,7 @@ function nlsolve_functional!(integrator, cache::T) where {T}
             return false
         end
         δ_prev = δ
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         isconstcache ? (ratetmp = integrator.f(integrator.u, p, dt + t)) :
         integrator.f(ratetmp, integrator.u, p, dt + t)
     end

@@ -58,8 +58,8 @@ end
     elseif previter > aa_start
         # actually perform Anderson acceleration
         nlsolver.z = anderson(nlsolver.z, cache)
-        if DiffEqBase.has_destats(integrator)
-            integrator.destats.nsolve += 1
+        if DiffEqBase.has_stats(integrator)
+            integrator.stats.nsolve += 1
         end
     end
 
@@ -80,8 +80,8 @@ end
     elseif previter > aa_start
         # actually perform Anderson acceleration
         anderson!(nlsolver.z, cache)
-        if DiffEqBase.has_destats(integrator)
-            integrator.destats.nsolve += 1
+        if DiffEqBase.has_stats(integrator)
+            integrator.stats.nsolve += 1
         end
     end
 
@@ -131,8 +131,8 @@ end
             end
         end
     end
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     # compute norm of residuals
@@ -196,8 +196,8 @@ end
         end
     end
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     # compute norm of residuals

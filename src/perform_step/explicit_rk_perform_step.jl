@@ -2,7 +2,7 @@ function initialize!(integrator, cache::ExplicitRKConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -27,7 +27,7 @@ end
             utilde = utilde + A[j, i] * kk[j]
         end
         kk[i] = f(uprev + dt * utilde, p, t + c[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #Calc Last
@@ -37,7 +37,7 @@ end
     end
     u_beforefinal = uprev + dt * utilde_last
     kk[end] = f(u_beforefinal, p, t + c[end] * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
 
     # Accumulate Result
@@ -66,7 +66,7 @@ end
 
     if !isfsal(alg.tableau)
         integrator.fsallast = f(u, p, t + dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     integrator.k[1] = integrator.fsalfirst
@@ -82,7 +82,7 @@ function initialize!(integrator, cache::ExplicitRKCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @generated function accumulate_explicit_stages!(out, A, uprev, kk, dt, ::Val{s},
@@ -212,7 +212,7 @@ end
     @unpack kk, utilde, tmp, atmp = cache
 
     runtime_split_stages!(f, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages)
-    integrator.destats.nf += stages - 1
+    integrator.stats.nf += stages - 1
 
     #Accumulate
     if !isfsal(alg.tableau)
@@ -238,6 +238,6 @@ end
 
     if !isfsal(alg.tableau)
         f(integrator.fsallast, u, p, t + dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 end

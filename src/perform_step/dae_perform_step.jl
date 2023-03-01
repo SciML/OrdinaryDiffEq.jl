@@ -199,7 +199,7 @@ end
     @.. broadcast=false du=(nlsolver.α * z + nlsolver.tmp) * inv(nlsolver.γ * dt)
 
     @.. broadcast=false integrator.fsallast=du
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     if integrator.opts.adaptive
         btilde0 = (dtₙ₋₁ + dtₙ) * 1 // 6
         btilde1 = 1 + ρ
@@ -226,7 +226,7 @@ function initialize!(integrator, cache::DFBDFConstantCache)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.du, integrator.uprev, integrator.p,
                                         integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
@@ -355,7 +355,7 @@ function initialize!(integrator, cache::DFBDFCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     #integrator.f(integrator.fsalfirst, integrator.du, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    #integrator.destats.nf += 1
+    #integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order},
