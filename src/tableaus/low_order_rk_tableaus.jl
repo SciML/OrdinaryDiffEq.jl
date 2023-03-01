@@ -1787,3 +1787,98 @@ function Stepanov5ConstantCache(T::Type, T1::Type)
                            btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7,
                            c2, c3, c4, c5, c6)
 end
+
+struct SIR54ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a72::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  b5::T
+  b6::T
+  
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+  btilde7::T
+
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+end
+
+function SIR54ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    a21 = convert(T, 0.224991857145594237)
+    a31 = convert(T, 0.0891533610320671103)
+    a32 = convert(T, 0.238960211116888553)
+    a41 = convert(T, 1.30502239863058047)
+    a42 = convert(T, -5.50177549088639896)
+    a43 = convert(T, 5.14113139529316096)
+    a51 = convert(T, 1.76234012927544337)
+    a52 = convert(T, -7.44800428470202672)
+    a53 = convert(T, 6.70879999021246612)
+    a54 = convert(T, -0.0341377330357163063)
+    a61 = convert(T, 1.87412911619818746)
+    a62 = convert(T, -7.91467977711770718)
+    a63 = convert(T, 7.07985467092264069)
+    a64 = convert(T, -0.0244945338238275367)
+    a65 = convert(T, -0.0148094761792934300)
+    a71 = convert(T, 0.0986971498551664256)
+    a72 = convert(T, 0.00100729346874150652)
+    a73 = convert(T, 0.495118366873759549)
+    a74 = convert(T, 3.93767069618687179)
+    a75 = convert(T, -13.7395424087173685)
+    a76 = convert(T, 10.2070489023328292)
+
+    b1 = convert(T, 0.0986971498551664256)
+    b2 = convert(T, 0.00100729346874150652)
+    b3 = convert(T, 0.495118366873759549)
+    b4 = convert(T, 3.93767069618687179)
+    b5 = convert(T, -13.7395424087173685)
+    b6 = convert(T, 10.2070489023328292)
+
+    btilde1 = convert(T, 0.008811109678338494)
+    btilde2 = convert(T, 0.00011407564162559992)
+    btilde3 = convert(T, -0.029774887187671295)
+    btilde4 = convert(T, 9.643100938483734)
+    btilde5 = convert(T, -8.034112166420506)
+    btilde6 = convert(T, 6.31615797738573)
+    btilde7 = convert(T, -0.05)
+
+    c2 = convert(T2, 0.224991857145594237)
+    c3 = convert(T2, 0.328113572148955663)
+    c4 = convert(T2, 0.944378303037342471)
+    c5 = convert(T2, 0.988998101750166470)
+    c6 = convert(T2, 1.0)
+    c7 = convert(T2, 1.0)
+
+  SIR54ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, b1, b2, b3, b4, b5, b6,
+                     btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6, c7)
+end

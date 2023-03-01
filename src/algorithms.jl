@@ -866,6 +866,59 @@ function Base.show(io::IO, alg::Stepanov5)
 end
 
 """
+    SIR54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+
+5th order Explicit RK method suited for SIR-type epidemic models.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+
+## Reference
+@article{Kovalnogov2020RungeKuttaPS,
+  title={Runge–Kutta pairs suited for SIR‐type epidemic models},
+  author={Vladislav N. Kovalnogov and Theodore E. Simos and Ch. Tsitouras},
+  journal={Mathematical Methods in the Applied Sciences},
+  year={2020},
+  volume={44},
+  pages={5210 - 5216}
+}
+"""
+struct SIR54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+function SIR54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+                   thread = False())
+    SIR54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                             step_limiter!,
+                                                                             thread)
+end
+
+# for backwards compatibility
+function SIR54(stage_limiter!, step_limiter! = trivial_limiter!)
+    SIR54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                    step_limiter!,
+                                                                    False())
+end
+
+function Base.show(io::IO, alg::SIR54)
+    print(io, "SIR54(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+end
+
+"""
     Anas5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())
