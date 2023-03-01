@@ -77,7 +77,7 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
-function Base.show(io::IO, t::Type{ExplicitRK{TabType}}) where TabType
+function Base.show(io::IO, t::Type{ExplicitRK{TabType}}) where {TabType}
     if TruncatedStacktraces.VERBOSE[]
         print(io, "ExplicitRK{$TabType}")
     else
@@ -893,23 +893,23 @@ Julia is started with multiple threads.
 }
 """
 struct SIR54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function SIR54(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-                   thread = False())
+               thread = False())
     SIR54{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-                                                                             step_limiter!,
-                                                                             thread)
+                                                                         step_limiter!,
+                                                                         thread)
 end
 
 # for backwards compatibility
 function SIR54(stage_limiter!, step_limiter! = trivial_limiter!)
     SIR54{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-                                                                    step_limiter!,
-                                                                    False())
+                                                                step_limiter!,
+                                                                False())
 end
 
 function Base.show(io::IO, alg::SIR54)
@@ -5545,7 +5545,20 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                                 extrapolant, kappa, controller)
 end
 
-function Base.show(io::IO, t::Type{QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}
+function Base.show(io::IO,
+                   t::Type{QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}}) where {MO,
+                                                                                         CS,
+                                                                                         AD,
+                                                                                         F,
+                                                                                         F2,
+                                                                                         P,
+                                                                                         FDT,
+                                                                                         ST,
+                                                                                         CJ,
+                                                                                         K,
+                                                                                         T,
+                                                                                         κType
+                                                                                         }
     if TruncatedStacktraces.VERBOSE[]
         print(io, "QNDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T,$κType}")
     else
@@ -5598,7 +5611,12 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                  controller)
 end
 
-function Base.show(io::IO, t::Type{FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}
+function Base.show(io::IO,
+                   t::Type{FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS,
+                                                                                  AD, F, F2,
+                                                                                  P, FDT,
+                                                                                  ST, CJ, K,
+                                                                                  T}
     if TruncatedStacktraces.VERBOSE[]
         print(io, "FBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
     else
@@ -5936,7 +5954,16 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     controller)
 end
 
-function Base.show(io::IO, t::Type{RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}
+function Base.show(io::IO,
+                   t::Type{RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS,
+                                                                                      AD, F,
+                                                                                      P,
+                                                                                      FDT,
+                                                                                      ST,
+                                                                                      CJ,
+                                                                                      Tol,
+                                                                                      C1, C2
+                                                                                      }
     if TruncatedStacktraces.VERBOSE[]
         print(io, "RadauIIA3{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
     else
@@ -5992,7 +6019,16 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     controller)
 end
 
-function Base.show(io::IO, t::Type{RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}
+function Base.show(io::IO,
+                   t::Type{RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS,
+                                                                                      AD, F,
+                                                                                      P,
+                                                                                      FDT,
+                                                                                      ST,
+                                                                                      CJ,
+                                                                                      Tol,
+                                                                                      C1, C2
+                                                                                      }
     if TruncatedStacktraces.VERBOSE[]
         print(io, "RadauIIA5{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
     else
@@ -6119,7 +6155,9 @@ function TRBDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = V
                                       controller)
 end
 
-function Base.show(io::IO, t::Type{TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P, FDT, ST, CJ}
+function Base.show(io::IO,
+                   t::Type{TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P,
+                                                                          FDT, ST, CJ}
     if TruncatedStacktraces.VERBOSE[]
         print(io, "TRBDF2{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
     else
@@ -6579,7 +6617,9 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                         controller)
 end
 
-function Base.show(io::IO, t::Type{KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P, FDT, ST, CJ}
+function Base.show(io::IO,
+                   t::Type{KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2,
+                                                                            P, FDT, ST, CJ}
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp4{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
     else
@@ -7164,7 +7204,12 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                   controller)
 end
 
-function Base.show(io::IO, t::Type{DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}
+function Base.show(io::IO,
+                   t::Type{DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS,
+                                                                                   AD, F,
+                                                                                   F2, P,
+                                                                                   FDT, ST,
+                                                                                   CJ, K, T}
     if TruncatedStacktraces.VERBOSE[]
         print(io, "DFBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
     else

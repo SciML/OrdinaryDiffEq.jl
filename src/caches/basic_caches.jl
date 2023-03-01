@@ -84,7 +84,13 @@ end
     tab::TabType
 end
 
-function Base.show(io::IO, t::Type{ExplicitRKCache{uType, rateType, uNoUnitsType, TabType}}) where {uType, rateType, uNoUnitsType, TabType}
+function Base.show(io::IO,
+                   t::Type{ExplicitRKCache{uType, rateType, uNoUnitsType, TabType}}) where {
+                                                                                            uType,
+                                                                                            rateType,
+                                                                                            uNoUnitsType,
+                                                                                            TabType
+                                                                                            }
     if TruncatedStacktraces.VERBOSE[]
         print(io, "ExplicitRKCache{$uType,$rateType,$uNoUnitsType,$TabType}")
     else

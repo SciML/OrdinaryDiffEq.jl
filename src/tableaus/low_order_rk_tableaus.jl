@@ -1788,50 +1788,50 @@ function Stepanov5ConstantCache(T::Type, T1::Type)
                            c2, c3, c4, c5, c6)
 end
 
-struct SIR54ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
-  a21::T
-  a31::T
-  a32::T
-  a41::T
-  a42::T
-  a43::T
-  a51::T
-  a52::T
-  a53::T
-  a54::T
-  a61::T
-  a62::T
-  a63::T
-  a64::T
-  a65::T
-  a71::T
-  a72::T
-  a73::T
-  a74::T
-  a75::T
-  a76::T
+struct SIR54ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a72::T
+    a73::T
+    a74::T
+    a75::T
+    a76::T
 
-  b1::T
-  b2::T
-  b3::T
-  b4::T
-  b5::T
-  b6::T
-  
-  btilde1::T
-  btilde2::T
-  btilde3::T
-  btilde4::T
-  btilde5::T
-  btilde6::T
-  btilde7::T
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+    b5::T
+    b6::T
 
-  c2::T2
-  c3::T2
-  c4::T2
-  c5::T2
-  c6::T2
-  c7::T2
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    btilde6::T
+    btilde7::T
+
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+    c7::T2
 end
 
 function SIR54ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
@@ -1879,6 +1879,8 @@ function SIR54ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
     c6 = convert(T2, 1.0)
     c7 = convert(T2, 1.0)
 
-  SIR54ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, b1, b2, b3, b4, b5, b6,
-                     btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6, c7)
+    SIR54ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64,
+                       a65, a71, a72, a73, a74, a75, a76, b1, b2, b3, b4, b5, b6,
+                       btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2,
+                       c3, c4, c5, c6, c7)
 end
