@@ -94,7 +94,7 @@ function Base.show(io::IO,
     if TruncatedStacktraces.VERBOSE[]
         print(io, "ExplicitRKCache{$uType,$rateType,$uNoUnitsType,$TabType}")
     else
-        print(io, "ExplicitRKCache{$utype,…}")
+        print(io, "ExplicitRKCache{$uType,…}")
     end
 end
 

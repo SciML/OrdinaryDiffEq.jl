@@ -224,7 +224,7 @@ function Base.show(io::IO,
         print(io,
               "RadauIIA5Cache{$uType,$cuType,$uNoUnitsType,$rateType,$JType,$W1Type,$W2Type,$UF,$JC,$F1,$F2,$Tab,$Tol,$Dt,$rTol,$aTol}")
     else
-        print(io, "RadauIIA5Cache{$utype,…}")
+        print(io, "RadauIIA5Cache{$uType,…}")
     end
 end
 

@@ -228,7 +228,7 @@ function Base.show(io::IO,
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp4Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
     else
-        print(io, "KenCarp4Cache{$utype,…}")
+        print(io, "KenCarp4Cache{$uType,…}")
     end
 end
 
@@ -470,7 +470,7 @@ function Base.show(io::IO,
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp47Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
     else
-        print(io, "KenCarp47Cache{$utype,…}")
+        print(io, "KenCarp47Cache{$uType,…}")
     end
 end
 
@@ -571,7 +571,7 @@ function Base.show(io::IO,
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp58Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
     else
-        print(io, "KenCarp58Cache{$utype,…}")
+        print(io, "KenCarp58Cache{$uType,…}")
     end
 end
 
