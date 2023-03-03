@@ -401,7 +401,7 @@ function Base.show(io::IO,
         print(io,
               "QNDFCache{$MO,$UType,$RUType,$rateType,$N,$coefType,$dtType,$EEstType,$gammaType,$uType,$uNoUnitsType}")
     else
-        print(io, "QNDFCache{$utype,…}")
+        print(io, "QNDFCache{$uType,…}")
     end
 end
 
@@ -611,7 +611,7 @@ function Base.show(io::IO,
         print(io,
               "FBDFCache{$MO,$N,$rateType,$uNoUnitsType,$tsType,$tType,$uType,$uuType,$coeffType,$EEstType,$rType,$wType}")
     else
-        print(io, "FBDFCache{$utype,…}")
+        print(io, "FBDFCache{$uType,…}")
     end
 end
 
