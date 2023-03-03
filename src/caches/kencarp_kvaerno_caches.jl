@@ -228,7 +228,7 @@ function Base.show(io::IO,
     if TruncatedStacktraces.VERBOSE[]
         print(io, "KenCarp4Cache{$uType,$rateType,$uNoUnitsType,$N,$Tab,$kType}")
     else
-        print(io, "KenCarp4Cache{$utype,…}")
+        print(io, "KenCarp4Cache{$uType,…}")
     end
 end
 
