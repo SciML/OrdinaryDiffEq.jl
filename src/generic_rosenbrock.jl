@@ -280,7 +280,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
 
           function initialize!(integrator, cache::$cachename)
             integrator.kshortsize = 2
-            @static if VERSION >=1.8
+            @static if VERSION >=v"1.8"
     (;fsalfirst,fsallast) = cache
 else
     @unpack fsalfirst,fsallast = cache
@@ -350,12 +350,12 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @static if VERSION >=1.8
+            @static if VERSION >=v"1.8"
     (;t,dt,uprev,u,f,p) = integrator
 else
     @unpack t,dt,uprev,u,f,p = integrator
 end
-            @static if VERSION >=1.8
+            @static if VERSION >=v"1.8"
     (;tf,uf) = cache
 else
     @unpack tf,uf = cache
@@ -471,12 +471,12 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @static if VERSION >=1.8
+            @static if VERSION >=v"1.8"
     (;t,dt,uprev,u,f,p) = integrator
 else
     @unpack t,dt,uprev,u,f,p = integrator
 end
-            @static if VERSION >=1.8
+            @static if VERSION >=v"1.8"
     (;du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight) = cache
 else
     @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache

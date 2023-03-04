@@ -436,10 +436,10 @@ end
                 end
             else
                 @static if VERSION >= v"1.8"
-                    (; iter, maxiters) = integrator.cache
+                    (; iter, maxiters) = integrator.cache.nlsolver
                 else
-                    @unpack iter, maxiters = integrator.cache
-                end.nlsolver
+                    @unpack iter, maxiters = integrator.cache.nlsolver
+                end
             end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
