@@ -13,8 +13,16 @@ function initialize!(integrator, cache::ROCK2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ROCK2ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack ms, fp1, fp2, recf = cache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, fp1, fp2, recf) = cache
+    else
+        @unpack ms, fp1, fp2, recf = cache
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
@@ -88,9 +96,21 @@ function initialize!(integrator, cache::ROCK2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::ROCK2Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack k, tmp, uᵢ₋₂, uᵢ₋₁, atmp = cache
-    @unpack ms, fp1, fp2, recf = cache.constantcache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; k, tmp, uᵢ₋₂, uᵢ₋₁, atmp) = cache
+    else
+        @unpack k, tmp, uᵢ₋₂, uᵢ₋₁, atmp = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, fp1, fp2, recf) = cache.constantcache
+    else
+        @unpack ms, fp1, fp2, recf = cache.constantcache
+    end
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -172,8 +192,16 @@ function initialize!(integrator, cache::ROCK4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ROCK4ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack ms, fpa, fpb, fpbe, recf = cache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, fpa, fpb, fpbe, recf) = cache
+    else
+        @unpack ms, fpa, fpb, fpbe, recf = cache
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
@@ -293,9 +321,21 @@ function initialize!(integrator, cache::ROCK4Cache)
 end
 
 @muladd function perform_step!(integrator, cache::ROCK4Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k = cache
-    @unpack ms, fpa, fpb, fpbe, recf = cache.constantcache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k) = cache
+    else
+        @unpack uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, fpa, fpb, fpbe, recf) = cache.constantcache
+    else
+        @unpack ms, fpa, fpb, fpbe, recf = cache.constantcache
+    end
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -415,7 +455,11 @@ function initialize!(integrator, cache::RKCConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::RKCConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
@@ -500,8 +544,16 @@ function initialize!(integrator, cache::RKCCache)
 end
 
 @muladd function perform_step!(integrator, cache::RKCCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack k, tmp, gprev2, gprev, atmp = cache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; k, tmp, gprev2, gprev, atmp) = cache
+    else
+        @unpack k, tmp, gprev2, gprev, atmp = cache
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
     # The the number of degree for Chebyshev polynomial
@@ -576,8 +628,16 @@ end
 end
 
 function initialize!(integrator, cache::IRKCConstantCache)
-    @unpack uprev, p, t = integrator
-    @unpack f1, f2 = integrator.f
+    @static if VERSION >= v"1.8"
+        (; uprev, p, t) = integrator
+    else
+        @unpack uprev, p, t = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; f1, f2) = integrator.f
+    else
+        @unpack f1, f2 = integrator.f
+    end
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     cache.du₁ = f1(uprev, p, t)
@@ -593,9 +653,21 @@ function initialize!(integrator, cache::IRKCConstantCache)
 end
 
 function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack minm, du₁, du₂, nlsolver = cache
-    @unpack f1, f2 = integrator.f
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; minm, du₁, du₂, nlsolver) = cache
+    else
+        @unpack minm, du₁, du₂, nlsolver = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; f1, f2) = integrator.f
+    else
+        @unpack f1, f2 = integrator.f
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -708,8 +780,16 @@ function perform_step!(integrator, cache::IRKCConstantCache, repeat_step = false
 end
 
 function initialize!(integrator, cache::IRKCCache)
-    @unpack uprev, p, t = integrator
-    @unpack f1, f2 = integrator.f
+    @static if VERSION >= v"1.8"
+        (; uprev, p, t) = integrator
+    else
+        @unpack uprev, p, t = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; f1, f2) = integrator.f
+    else
+        @unpack f1, f2 = integrator.f
+    end
     integrator.kshortsize = 2
     integrator.fsalfirst = cache.fsalfirst
     integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
@@ -724,11 +804,31 @@ function initialize!(integrator, cache::IRKCCache)
 end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver = cache
-    @unpack tmp, z = nlsolver
-    @unpack minm = cache.constantcache
-    @unpack f1, f2 = integrator.f
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver) = cache
+    else
+        @unpack gprev, gprev2, f1ⱼ₋₁, f1ⱼ₋₂, f2ⱼ₋₁, du₁, du₂, atmp, nlsolver = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; tmp, z) = nlsolver
+    else
+        @unpack tmp, z = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; minm) = cache.constantcache
+    else
+        @unpack minm = cache.constantcache
+    end
+    @static if VERSION >= v"1.8"
+        (; f1, f2) = integrator.f
+    else
+        @unpack f1, f2 = integrator.f
+    end
 
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -860,8 +960,16 @@ function initialize!(integrator, cache::ESERK4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ESERK4ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack ms, Cᵤ, Cₑ = cache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, Cᵤ, Cₑ) = cache
+    else
+        @unpack ms, Cᵤ, Cₑ = cache
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -939,9 +1047,21 @@ function initialize!(integrator, cache::ESERK4Cache)
 end
 
 @muladd function perform_step!(integrator, cache::ESERK4Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
-    @unpack ms, Cᵤ, Cₑ = cache.constantcache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
+    else
+        @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, Cᵤ, Cₑ) = cache.constantcache
+    else
+        @unpack ms, Cᵤ, Cₑ = cache.constantcache
+    end
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -1021,8 +1141,16 @@ function initialize!(integrator, cache::ESERK5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ESERK5ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack ms, Cᵤ, Cₑ, Bᵢ = cache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, Cᵤ, Cₑ, Bᵢ) = cache
+    else
+        @unpack ms, Cᵤ, Cₑ, Bᵢ = cache
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -1099,9 +1227,21 @@ function initialize!(integrator, cache::ESERK5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::ESERK5Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
-    @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
+    else
+        @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, Cᵤ, Cₑ, Bᵢ) = cache.constantcache
+    else
+        @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
+    end
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
@@ -1181,8 +1321,16 @@ function initialize!(integrator, cache::SERK2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SERK2ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack ms, Bᵢ = cache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, Bᵢ) = cache
+    else
+        @unpack ms, Bᵢ = cache
+    end
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)
 
@@ -1243,9 +1391,21 @@ function initialize!(integrator, cache::SERK2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::SERK2Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-    @unpack uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
-    @unpack ms, Bᵢ = cache.constantcache
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k) = cache
+    else
+        @unpack uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; ms, Bᵢ) = cache.constantcache
+    else
+        @unpack ms, Bᵢ = cache.constantcache
+    end
     ccache = cache.constantcache
     alg = unwrap_alg(integrator, true)
     alg.eigen_est === nothing ? maxeig!(integrator, cache) : alg.eigen_est(integrator)

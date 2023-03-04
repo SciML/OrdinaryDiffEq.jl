@@ -2,8 +2,16 @@
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
                              integrator::DiffEqBase.DEIntegrator)
-    @unpack dt = integrator
-    @unpack cache = nlsolver
+    @static if VERSION >= v"1.8"
+        (; dt) = integrator
+    else
+        @unpack dt = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; cache) = nlsolver
+    else
+        @unpack cache = nlsolver
+    end
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
@@ -13,9 +21,21 @@ end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
                              integrator::DiffEqBase.DEIntegrator)
-    @unpack u, uprev, t, dt, opts = integrator
-    @unpack cache = nlsolver
-    @unpack weight = cache
+    @static if VERSION >= v"1.8"
+        (; u, uprev, t, dt, opts) = integrator
+    else
+        @unpack u, uprev, t, dt, opts = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; cache) = nlsolver
+    else
+        @unpack cache = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; weight) = cache
+    else
+        @unpack weight = cache
+    end
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
@@ -50,9 +70,21 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
 """
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, false}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, γ, α, cache = nlsolver
-    @unpack tstep, W, invγdt = cache
+    @static if VERSION >= v"1.8"
+        (; uprev, t, p, dt, opts) = integrator
+    else
+        @unpack uprev, t, p, dt, opts = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; z, tmp, γ, α, cache) = nlsolver
+    else
+        @unpack z, tmp, γ, α, cache = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; tstep, W, invγdt) = cache
+    else
+        @unpack tstep, W, invγdt = cache
+    end
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -121,9 +153,21 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
-    @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
+    @static if VERSION >= v"1.8"
+        (; uprev, t, p, dt, opts) = integrator
+    else
+        @unpack uprev, t, p, dt, opts = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; z, tmp, ztmp, γ, α, iter, cache) = nlsolver
+    else
+        @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight) = cache
+    else
+        @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
+    end
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -224,9 +268,21 @@ end
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
-    @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
+    @static if VERSION >= v"1.8"
+        (; uprev, t, p, dt, opts) = integrator
+    else
+        @unpack uprev, t, p, dt, opts = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; z, tmp, ztmp, γ, α, iter, cache) = nlsolver
+    else
+        @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight) = cache
+    else
+        @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
+    end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 

@@ -9,7 +9,11 @@ end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLAnderson},
                              integrator::DiffEqBase.DEIntegrator)
-    @unpack cache = nlsolver
+    @static if VERSION >= v"1.8"
+        (; cache) = nlsolver
+    else
+        @unpack cache = nlsolver
+    end
 
     cache.history = 0
     cache.tstep = integrator.t + nlsolver.c * integrator.dt
@@ -46,8 +50,16 @@ function compute_step!(nlsolver::NLSolver{<:NLFunctional}, integrator)
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson, false}, integrator)
-    @unpack cache = nlsolver
-    @unpack aa_start = cache
+    @static if VERSION >= v"1.8"
+        (; cache) = nlsolver
+    else
+        @unpack cache = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; aa_start) = cache
+    else
+        @unpack aa_start = cache
+    end
 
     # perform Anderson acceleration
     previter = nlsolver.iter - 1
@@ -68,8 +80,16 @@ end
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson, true}, integrator)
-    @unpack cache = nlsolver
-    @unpack aa_start = cache
+    @static if VERSION >= v"1.8"
+        (; cache) = nlsolver
+    else
+        @unpack cache = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; aa_start) = cache
+    else
+        @unpack aa_start = cache
+    end
 
     # perform Anderson acceleration
     previter = nlsolver.iter - 1
@@ -93,9 +113,21 @@ end
                                                              <:Union{NLFunctional,
                                                                      NLAnderson}, false},
                                           integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, γ, α, cache, tmp = nlsolver
-    @unpack tstep = cache
+    @static if VERSION >= v"1.8"
+        (; uprev, t, p, dt, opts) = integrator
+    else
+        @unpack uprev, t, p, dt, opts = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; z, γ, α, cache, tmp) = nlsolver
+    else
+        @unpack z, γ, α, cache, tmp = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; tstep) = cache
+    else
+        @unpack tstep = cache
+    end
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -153,9 +185,21 @@ end
                                                              <:Union{NLFunctional,
                                                                      NLAnderson}, true},
                                           integrator)
-    @unpack uprev, t, p, dt, opts = integrator
-    @unpack z, tmp, ztmp, γ, α, cache = nlsolver
-    @unpack ustep, tstep, k, atmp, dz = cache
+    @static if VERSION >= v"1.8"
+        (; uprev, t, p, dt, opts) = integrator
+    else
+        @unpack uprev, t, p, dt, opts = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; z, tmp, ztmp, γ, α, cache) = nlsolver
+    else
+        @unpack z, tmp, ztmp, γ, α, cache = nlsolver
+    end
+    @static if VERSION >= v"1.8"
+        (; ustep, tstep, k, atmp, dz) = cache
+    else
+        @unpack ustep, tstep, k, atmp, dz = cache
+    end
 
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
@@ -224,7 +268,11 @@ function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson}
 end
 
 function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
-    @unpack z₊old, Δz₊s = nlcache
+    @static if VERSION >= v"1.8"
+        (; z₊old, Δz₊s) = nlcache
+    else
+        @unpack z₊old, Δz₊s = nlcache
+    end
 
     resize!(nlcache.ustep, i)
     resize!(nlcache.k, i)

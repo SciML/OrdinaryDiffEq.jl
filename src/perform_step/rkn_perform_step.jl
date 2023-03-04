@@ -35,7 +35,11 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            ERKN5Cache, ERKN7Cache}
 
 function initialize!(integrator, cache::NystromDefaultInitialization)
-    @unpack fsalfirst, k = cache
+    @static if VERSION >= v"1.8"
+        (; fsalfirst, k) = cache
+    else
+        @unpack fsalfirst, k = cache
+    end
     duprev, uprev = integrator.uprev.x
 
     integrator.fsalfirst = fsalfirst
@@ -52,7 +56,11 @@ end
 
 @muladd function perform_step!(integrator, cache::Nystrom4ConstantCache,
                                repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
     k₁ = integrator.fsalfirst.x[1]
     halfdt = dt / 2
@@ -87,10 +95,18 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Nystrom4Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, fsalfirst, k₂, k₃, k₄, k = cache
+    @static if VERSION >= v"1.8"
+        (; tmp, fsalfirst, k₂, k₃, k₄, k) = cache
+    else
+        @unpack tmp, fsalfirst, k₂, k₃, k₄, k = cache
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k₁ = integrator.fsalfirst.x[1]
     halfdt = dt / 2
@@ -124,7 +140,11 @@ end
 
 @muladd function perform_step!(integrator, cache::Nystrom4VelocityIndependentConstantCache,
                                repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
     k₁ = integrator.fsalfirst.x[1]
     halfdt = dt / 2
@@ -153,10 +173,18 @@ end
 
 @muladd function perform_step!(integrator, cache::Nystrom4VelocityIndependentCache,
                                repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, fsalfirst, k₂, k₃, k = cache
+    @static if VERSION >= v"1.8"
+        (; tmp, fsalfirst, k₂, k₃, k) = cache
+    else
+        @unpack tmp, fsalfirst, k₂, k₃, k = cache
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k₁ = integrator.fsalfirst.x[1]
     halfdt = dt / 2
@@ -182,10 +210,18 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::IRKN3ConstantCache, repeat_step = false)
-    @unpack t, dt, k, tprev, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, k, tprev, f, p) = integrator
+    else
+        @unpack t, dt, k, tprev, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
     duprev2, uprev2 = integrator.uprev2.x
-    @unpack bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2 = cache
+    @static if VERSION >= v"1.8"
+        (; bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2) = cache
+    else
+        @unpack bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2 = cache
+    end
     k₁ = integrator.fsalfirst
     # if there's a discontinuity or the solver is in the first step
     if integrator.iter < 2 && !integrator.u_modified
@@ -215,13 +251,25 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::IRKN3Cache, repeat_step = false)
-    @unpack t, dt, k, tprev, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, k, tprev, f, p) = integrator
+    else
+        @unpack t, dt, k, tprev, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
     duprev2, uprev2 = integrator.uprev2.x
     uidx = eachindex(integrator.uprev.x[1])
-    @unpack tmp, fsalfirst, k₂, k = cache
-    @unpack bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, fsalfirst, k₂, k) = cache
+    else
+        @unpack tmp, fsalfirst, k₂, k = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2) = cache.tab
+    else
+        @unpack bconst1, bconst2, c1, a21, b1, b2, bbar1, bbar2 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k1cache = cache.tmp2
     k₁ = fsalfirst
@@ -257,13 +305,25 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::IRKN4Cache, repeat_step = false)
-    @unpack t, dt, k, tprev, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, k, tprev, f, p) = integrator
+    else
+        @unpack t, dt, k, tprev, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
     duprev2, uprev2 = integrator.uprev2.x
     uidx = eachindex(integrator.uprev.x[1])
-    @unpack tmp, tmp2, fsalfirst, k₂, k₃, k = cache
-    @unpack bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, tmp2, fsalfirst, k₂, k₃, k) = cache
+    else
+        @unpack tmp, tmp2, fsalfirst, k₂, k₃, k = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3) = cache.tab
+    else
+        @unpack bconst1, bconst2, c1, c2, a21, a32, b1, b2, b3, bbar1, bbar2, bbar3 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k1cache = integrator.cache.tmp2
     k₁ = fsalfirst
@@ -309,9 +369,17 @@ end
 
 @muladd function perform_step!(integrator, cache::Nystrom5VelocityIndependentConstantCache,
                                repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4) = cache
+    else
+        @unpack c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4 = cache
+    end
     k₁ = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k₁)
@@ -336,12 +404,24 @@ end
 
 @muladd function perform_step!(integrator, cache::Nystrom5VelocityIndependentCache,
                                repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
     uidx = eachindex(integrator.uprev.x[1])
-    @unpack tmp, fsalfirst, k₂, k₃, k₄, k = cache
-    @unpack c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, fsalfirst, k₂, k₃, k₄, k) = cache
+    else
+        @unpack tmp, fsalfirst, k₂, k₃, k₄, k = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4) = cache.tab
+    else
+        @unpack c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k₁ = integrator.fsalfirst.x[1]
 
@@ -372,9 +452,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN4ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4) = cache
+    else
+        @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -410,11 +498,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN4Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k, utilde = cache
-    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4) = cache.tab
+    else
+        @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -460,9 +560,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN5ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6) = cache
+    else
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -507,11 +615,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN5Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde = cache
-    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6) = cache.tab
+    else
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -591,9 +711,17 @@ function initialize!(integrator, cache::DPRKN6ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN6ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6) = cache
+    else
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -644,7 +772,11 @@ end
 end
 
 function initialize!(integrator, cache::DPRKN6Cache)
-    @unpack fsalfirst, k = cache
+    @static if VERSION >= v"1.8"
+        (; fsalfirst, k) = cache
+    else
+        @unpack fsalfirst, k = cache
+    end
     duprev, uprev = integrator.uprev.x
 
     integrator.fsalfirst = fsalfirst
@@ -661,11 +793,23 @@ function initialize!(integrator, cache::DPRKN6Cache)
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN6Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde = cache
-    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6) = cache.tab
+    else
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -723,9 +867,17 @@ end
 
 @muladd function perform_step!(integrator, cache::DPRKN6FMConstantCache,
                                repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde2, bptilde3, bptilde4, bptilde5 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde2, bptilde3, bptilde4, bptilde5) = cache
+    else
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde2, bptilde3, bptilde4, bptilde5 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -771,11 +923,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN6FMCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde = cache
-    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde2, bptilde3, bptilde4, bptilde5 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde2, bptilde3, bptilde4, bptilde5) = cache.tab
+    else
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, bp1, bp2, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde2, bptilde3, bptilde4, bptilde5 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -838,9 +1002,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN8ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9) = cache
+    else
+        @unpack c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -902,11 +1074,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN8Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k, utilde = cache
-    @unpack c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9) = cache.tab
+    else
+        @unpack c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -995,9 +1179,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN12ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, a109, a111, a113, a114, a115, a116, a117, a118, a119, a1110, a121, a123, a124, a125, a126, a127, a128, a129, a1210, a1211, a131, a133, a134, a135, a136, a137, a138, a139, a1310, a1311, a1312, a141, a143, a144, a145, a146, a147, a148, a149, a1410, a1411, a1412, a1413, a151, a153, a154, a155, a156, a157, a158, a159, a1510, a1511, a1512, a1513, a1514, a161, a163, a164, a165, a166, a167, a168, a169, a1610, a1611, a1612, a1613, a1614, a1615, a171, a173, a174, a175, a176, a177, a178, a179, a1710, a1711, a1712, a1713, a1714, a1715, b1, b7, b8, b9, b10, b11, b12, b13, b14, b15, bp1, bp7, bp8, bp9, bp10, bp11, bp12, bp13, bp14, bp15, bp16, bp17, btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8, bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14, bptilde15, bptilde16, bptilde17 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, a109, a111, a113, a114, a115, a116, a117, a118, a119, a1110, a121, a123, a124, a125, a126, a127, a128, a129, a1210, a1211, a131, a133, a134, a135, a136, a137, a138, a139, a1310, a1311, a1312, a141, a143, a144, a145, a146, a147, a148, a149, a1410, a1411, a1412, a1413, a151, a153, a154, a155, a156, a157, a158, a159, a1510, a1511, a1512, a1513, a1514, a161, a163, a164, a165, a166, a167, a168, a169, a1610, a1611, a1612, a1613, a1614, a1615, a171, a173, a174, a175, a176, a177, a178, a179, a1710, a1711, a1712, a1713, a1714, a1715, b1, b7, b8, b9, b10, b11, b12, b13, b14, b15, bp1, bp7, bp8, bp9, bp10, bp11, bp12, bp13, bp14, bp15, bp16, bp17, btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8, bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14, bptilde15, bptilde16, bptilde17) = cache
+    else
+        @unpack c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, a109, a111, a113, a114, a115, a116, a117, a118, a119, a1110, a121, a123, a124, a125, a126, a127, a128, a129, a1210, a1211, a131, a133, a134, a135, a136, a137, a138, a139, a1310, a1311, a1312, a141, a143, a144, a145, a146, a147, a148, a149, a1410, a1411, a1412, a1413, a151, a153, a154, a155, a156, a157, a158, a159, a1510, a1511, a1512, a1513, a1514, a161, a163, a164, a165, a166, a167, a168, a169, a1610, a1611, a1612, a1613, a1614, a1615, a171, a173, a174, a175, a176, a177, a178, a179, a1710, a1711, a1712, a1713, a1714, a1715, b1, b7, b8, b9, b10, b11, b12, b13, b14, b15, bp1, bp7, bp8, bp9, bp10, bp11, bp12, bp13, bp14, bp15, bp16, bp17, btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8, bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14, bptilde15, bptilde16, bptilde17 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -1112,11 +1304,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN12Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, k17, k, utilde = cache
-    @unpack c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, a109, a111, a113, a114, a115, a116, a117, a118, a119, a1110, a121, a123, a124, a125, a126, a127, a128, a129, a1210, a1211, a131, a133, a134, a135, a136, a137, a138, a139, a1310, a1311, a1312, a141, a143, a144, a145, a146, a147, a148, a149, a1410, a1411, a1412, a1413, a151, a153, a154, a155, a156, a157, a158, a159, a1510, a1511, a1512, a1513, a1514, a161, a163, a164, a165, a166, a167, a168, a169, a1610, a1611, a1612, a1613, a1614, a1615, a171, a173, a174, a175, a176, a177, a178, a179, a1710, a1711, a1712, a1713, a1714, a1715, b1, b7, b8, b9, b10, b11, b12, b13, b14, b15, bp1, bp7, bp8, bp9, bp10, bp11, bp12, bp13, bp14, bp15, bp16, bp17, btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8, bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14, bptilde15, bptilde16, bptilde17 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, k17, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, k17, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, a109, a111, a113, a114, a115, a116, a117, a118, a119, a1110, a121, a123, a124, a125, a126, a127, a128, a129, a1210, a1211, a131, a133, a134, a135, a136, a137, a138, a139, a1310, a1311, a1312, a141, a143, a144, a145, a146, a147, a148, a149, a1410, a1411, a1412, a1413, a151, a153, a154, a155, a156, a157, a158, a159, a1510, a1511, a1512, a1513, a1514, a161, a163, a164, a165, a166, a167, a168, a169, a1610, a1611, a1612, a1613, a1614, a1615, a171, a173, a174, a175, a176, a177, a178, a179, a1710, a1711, a1712, a1713, a1714, a1715, b1, b7, b8, b9, b10, b11, b12, b13, b14, b15, bp1, bp7, bp8, bp9, bp10, bp11, bp12, bp13, bp14, bp15, bp16, bp17, btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8, bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14, bptilde15, bptilde16, bptilde17) = cache.tab
+    else
+        @unpack c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, a109, a111, a113, a114, a115, a116, a117, a118, a119, a1110, a121, a123, a124, a125, a126, a127, a128, a129, a1210, a1211, a131, a133, a134, a135, a136, a137, a138, a139, a1310, a1311, a1312, a141, a143, a144, a145, a146, a147, a148, a149, a1410, a1411, a1412, a1413, a151, a153, a154, a155, a156, a157, a158, a159, a1510, a1511, a1512, a1513, a1514, a161, a163, a164, a165, a166, a167, a168, a169, a1610, a1611, a1612, a1613, a1614, a1615, a171, a173, a174, a175, a176, a177, a178, a179, a1710, a1711, a1712, a1713, a1714, a1715, b1, b7, b8, b9, b10, b11, b12, b13, b14, b15, bp1, bp7, bp8, bp9, bp10, bp11, bp12, bp13, bp14, bp15, bp16, bp17, btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8, bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14, bptilde15, bptilde16, bptilde17 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -1293,9 +1497,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ERKN4ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4) = cache
+    else
+        @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -1330,11 +1542,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ERKN4Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k, utilde = cache
-    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4) = cache.tab
+    else
+        @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -1380,9 +1604,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ERKN5ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4) = cache
+    else
+        @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -1414,11 +1646,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ERKN5Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k, utilde = cache
-    @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4) = cache.tab
+    else
+        @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -1461,9 +1705,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ERKN7ConstantCache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, b1, b3, b4, b5, b6, bp1, bp3, bp4, bp5, bp6, bp7, btilde1, btilde3, btilde4, btilde5, btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7 = cache
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, b1, b3, b4, b5, b6, bp1, bp3, bp4, bp5, bp6, bp7, btilde1, btilde3, btilde4, btilde5, btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7) = cache
+    else
+        @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, b1, b3, b4, b5, b6, bp1, bp3, bp4, bp5, bp6, bp7, btilde1, btilde3, btilde4, btilde5, btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7 = cache
+    end
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c1 * duprev + dt * a21 * k1)
@@ -1511,11 +1763,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ERKN7Cache, repeat_step = false)
-    @unpack t, dt, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, f, p) = integrator
+    else
+        @unpack t, dt, f, p = integrator
+    end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k, utilde = cache
-    @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, b1, b3, b4, b5, b6, bp1, bp3, bp4, bp5, bp6, bp7, btilde1, btilde3, btilde4, btilde5, btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7 = cache.tab
+    @static if VERSION >= v"1.8"
+        (; tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k, utilde) = cache
+    else
+        @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k, utilde = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, b1, b3, b4, b5, b6, bp1, bp3, bp4, bp5, bp6, bp7, btilde1, btilde3, btilde4, btilde5, btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7) = cache.tab
+    else
+        @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a73, a74, a75, a76, b1, b3, b4, b5, b6, bp1, bp3, bp4, bp5, bp6, bp7, btilde1, btilde3, btilde4, btilde5, btilde6, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7 = cache.tab
+    end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]

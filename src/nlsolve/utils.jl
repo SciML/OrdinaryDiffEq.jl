@@ -298,7 +298,11 @@ Return the next iterate of the fixed-point iteration `z = g(z)` by performing An
 acceleration based on the current iterate `z` and the settings and history in the `cache`.
 """
 @muladd function anderson(z, cache)
-    @unpack dz, Δz₊s, z₊old, dzold, R, Q, γs, history, droptol = cache
+    @static if VERSION >= v"1.8"
+        (; dz, Δz₊s, z₊old, dzold, R, Q, γs, history, droptol) = cache
+    else
+        @unpack dz, Δz₊s, z₊old, dzold, R, Q, γs, history, droptol = cache
+    end
 
     # increase size of history
     history += 1
@@ -363,7 +367,11 @@ Update the current iterate `z` of the fixed-point iteration `z = g(z)` in-place
 by performing Anderson acceleration based on the settings and history in the `cache`.
 """
 @muladd function anderson!(z, cache)
-    @unpack dz, z₊old, dzold, Δz₊s, γs, R, Q, history, droptol = cache
+    @static if VERSION >= v"1.8"
+        (; dz, z₊old, dzold, Δz₊s, γs, R, Q, history, droptol) = cache
+    else
+        @unpack dz, z₊old, dzold, Δz₊s, γs, R, Q, history, droptol = cache
+    end
 
     # increase size of history
     history += 1
@@ -429,7 +437,11 @@ end
 function resize_nlsolver!(integrator::DiffEqBase.DEIntegrator, i::Int)
     isdefined(integrator.cache, :nlsolver) || return
 
-    @unpack nlsolver = integrator.cache
+    @static if VERSION >= v"1.8"
+        (; nlsolver) = integrator.cache
+    else
+        @unpack nlsolver = integrator.cache
+    end
 
     if nlsolver isa AbstractArray
         for idx in eachindex(nlsolver)

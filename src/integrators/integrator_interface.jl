@@ -201,7 +201,11 @@ function DiffEqBase.add_saveat!(integrator::ODEIntegrator, t)
 end
 
 function resize!(integrator::ODEIntegrator, i::Int)
-    @unpack cache = integrator
+    @static if VERSION >= v"1.8"
+        (; cache) = integrator
+    else
+        @unpack cache = integrator
+    end
 
     for c in full_cache(cache)
         # Skip nothings which may exist in the cache since extra variables
@@ -214,7 +218,11 @@ function resize!(integrator::ODEIntegrator, i::Int)
 end
 # we can't use resize!(..., i::Union{Int, NTuple{N,Int}}) where {N} because of method ambiguities with DiffEqBase
 function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
-    @unpack cache = integrator
+    @static if VERSION >= v"1.8"
+        (; cache) = integrator
+    else
+        @unpack cache = integrator
+    end
 
     for c in full_cache(cache)
         resize!(c, i)
@@ -228,7 +236,11 @@ end
 function resize_J_W!(cache, integrator, i)
     (isdefined(cache, :J) && isdefined(cache, :W)) || return
 
-    @unpack f = integrator
+    @static if VERSION >= v"1.8"
+        (; f) = integrator
+    else
+        @unpack f = integrator
+    end
 
     if cache.W isa WOperator
         nf = nlsolve_f(f, integrator.alg)

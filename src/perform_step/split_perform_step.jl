@@ -14,7 +14,11 @@ end
 
 @muladd function perform_step!(integrator, cache::SplitEulerConstantCache,
                                repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p = integrator
+    end
     u = @.. broadcast=false uprev+dt * integrator.fsalfirst
     integrator.fsallast = f.f1(u, p, t + dt) + f.f2(u, p, t + dt)  # For the interpolation, needs k at the updated point
     integrator.destats.nf += 1
@@ -26,7 +30,11 @@ end
 
 function initialize!(integrator, cache::SplitEulerCache)
     integrator.kshortsize = 2
-    @unpack k, fsalfirst = cache
+    @static if VERSION >= v"1.8"
+        (; k, fsalfirst) = cache
+    else
+        @unpack k, fsalfirst = cache
+    end
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
     resize!(integrator.k, integrator.kshortsize)
@@ -40,7 +48,11 @@ function initialize!(integrator, cache::SplitEulerCache)
 end
 
 @muladd function perform_step!(integrator, cache::SplitEulerCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @static if VERSION >= v"1.8"
+        (; t, dt, uprev, u, f, p) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p = integrator
+    end
     @.. broadcast=false u=uprev + dt * integrator.fsalfirst
     f.f1(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
     f.f2(cache.tmp, u, p, t + dt) # For the interpolation, needs k at the updated point
