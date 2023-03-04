@@ -9,7 +9,11 @@
 end
 
 function R!(k, ρ, cache)
-    @unpack R = cache
+    @static if VERSION >= 1.8
+        (; R) = cache
+    else
+        @unpack R = cache
+    end
     @inbounds for r in 1:k
         R[1, r] = -r * ρ
         for j in 2:k
@@ -48,7 +52,11 @@ end
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
 function reinterpolate_history!(cache::OrdinaryDiffEqMutableCache, D, R, k)
-    @unpack tmp = cache.nlsolver
+    @static if VERSION >= 1.8
+        (; tmp) = cache.nlsolver
+    else
+        @unpack tmp = cache.nlsolver
+    end
     fill!(tmp, zero(eltype(D[1])))
     for j in 1:k
         for k in 1:k
@@ -94,7 +102,11 @@ const γₖ = @SVector[sum(1 // j for j in 1:k) for k in 1:6]
 
 error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
 function error_constant(integrator, alg::QNDF, k)
-    @unpack γₖ = integrator.cache
+    @static if VERSION >= 1.8
+        (; γₖ) = integrator.cache
+    else
+        @unpack γₖ = integrator.cache
+    end
     κ = alg.kappa[k]
     κ * γₖ[k] + inv(k + 1)
 end
@@ -196,8 +208,16 @@ end
 
 function reinitFBDF!(integrator, cache)
     # This function is used for initialize weights and arrays that store past history information. It will be used in the first-time step advancing and event handling.
-    @unpack weights, consfailcnt, ts, u_history, u_corrector, iters_from_event, order = cache
-    @unpack t, dt, uprev = integrator
+    @static if VERSION >= 1.8
+        (; weights, consfailcnt, ts, u_history, u_corrector, iters_from_event, order) = cache
+    else
+        @unpack weights, consfailcnt, ts, u_history, u_corrector, iters_from_event, order = cache
+    end
+    @static if VERSION >= 1.8
+        (; t, dt, uprev) = integrator
+    else
+        @unpack t, dt, uprev = integrator
+    end
 
     if integrator.u_modified
         order = cache.order = 1
@@ -235,8 +255,16 @@ end
 
 function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order}
     #calculate hᵏ⁻¹yᵏ⁻¹
-    @unpack ts_tmp, terk_tmp, u_history = cache
-    @unpack t, dt, u = integrator
+    @static if VERSION >= 1.8
+        (; ts_tmp, terk_tmp, u_history) = cache
+    else
+        @unpack ts_tmp, terk_tmp, u_history = cache
+    end
+    @static if VERSION >= 1.8
+        (; t, dt, u) = integrator
+    else
+        @unpack t, dt, u = integrator
+    end
     fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 1, Val(max_order))
     @.. broadcast=false terk_tmp=fd_weights[1, k] * u
     vc = _vec(terk_tmp)
@@ -247,8 +275,16 @@ function estimate_terk!(integrator, cache, k, ::Val{max_order}) where {max_order
 end
 
 function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_order}
-    @unpack ts_tmp, u_history = cache
-    @unpack t, dt = integrator
+    @static if VERSION >= 1.8
+        (; ts_tmp, u_history) = cache
+    else
+        @unpack ts_tmp, u_history = cache
+    end
+    @static if VERSION >= 1.8
+        (; t, dt) = integrator
+    else
+        @unpack t, dt = integrator
+    end
     fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 1, Val(max_order))
     terk = @.. broadcast=false fd_weights[1, k]*u
     #@show terk,fd_weights[1,k+1]

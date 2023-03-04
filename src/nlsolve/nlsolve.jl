@@ -25,7 +25,11 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
         always_new || update_W!(nlsolver, integrator, cache, γW, repeat_step)
     end
 
-    @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
+    @static if VERSION >= 1.8
+        (; maxiters, κ, fast_convergence_cutoff) = nlsolver
+    else
+        @unpack maxiters, κ, fast_convergence_cutoff = nlsolver
+    end
 
     initialize!(nlsolver, integrator)
     nlsolver.status = check_div′ ? Divergence : Convergence

@@ -3,7 +3,11 @@
 const RKCAlgs = Union{RKC, IRKC, ESERK4, ESERK5, SERK2}
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     isfirst = integrator.iter == 1 || integrator.u_modified
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    @static if VERSION >= 1.8
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
     maxiter = (typeof(integrator.alg) <: Union{ESERK4, ESERK5, SERK2}) ? 100 : 50
 
     safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
@@ -101,7 +105,11 @@ end
 
 function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     isfirst = integrator.iter == 1 || integrator.u_modified
-    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    @static if VERSION >= 1.8
+        (; t, dt, uprev, u, f, p, fsalfirst) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+    end
     if cache isa IRKCCache
         fz, z, atmp = integrator.fsallast, cache.nlsolver.tmp, cache.atmp
     else
@@ -228,7 +236,11 @@ end
 function choosedeg_SERK!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.constantcache)
-    @unpack ms = cache
+    @static if VERSION >= 1.8
+        (; ms) = cache
+    else
+        @unpack ms = cache
+    end
     start = 1
     @inbounds for i in 1:size(ms, 1)
         if ms[i] < cache.mdeg

@@ -12,10 +12,22 @@ end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache,
                                repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @static if VERSION >= 1.8
+        (; t, dt, uprev, u, f, p) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p = integrator
+    end
     alg = unwrap_alg(integrator, false)
-    @unpack A, c, α, αEEst, stages = cache
-    @unpack kk = cache
+    @static if VERSION >= 1.8
+        (; A, c, α, αEEst, stages) = cache
+    else
+        @unpack A, c, α, αEEst, stages = cache
+    end
+    @static if VERSION >= 1.8
+        (; kk) = cache
+    else
+        @unpack kk = cache
+    end
 
     # Calc First
     kk[1] = integrator.fsalfirst
@@ -205,11 +217,23 @@ function runtime_split_EEst!(tmp, αEEst, utilde, kk, dt, stages)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @static if VERSION >= 1.8
+        (; t, dt, uprev, u, f, p) = integrator
+    else
+        @unpack t, dt, uprev, u, f, p = integrator
+    end
     alg = unwrap_alg(integrator, false)
     # αEEst is `α - αEEst`
-    @unpack A, c, α, αEEst, stages = cache.tab
-    @unpack kk, utilde, tmp, atmp = cache
+    @static if VERSION >= 1.8
+        (; A, c, α, αEEst, stages) = cache.tab
+    else
+        @unpack A, c, α, αEEst, stages = cache.tab
+    end
+    @static if VERSION >= 1.8
+        (; kk, utilde, tmp, atmp) = cache
+    else
+        @unpack kk, utilde, tmp, atmp = cache
+    end
 
     runtime_split_stages!(f, A, c, utilde, u, tmp, uprev, kk, p, t, dt, stages)
     integrator.destats.nf += stages - 1

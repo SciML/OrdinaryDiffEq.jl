@@ -280,7 +280,11 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
 
           function initialize!(integrator, cache::$cachename)
             integrator.kshortsize = 2
-            @unpack fsalfirst,fsallast = cache
+            @static if VERSION >=1.8
+    (;fsalfirst,fsallast) = cache
+else
+    @unpack fsalfirst,fsallast = cache
+end
             integrator.fsalfirst = fsalfirst
             integrator.fsallast = fsallast
             resize!(integrator.k, integrator.kshortsize)
@@ -346,8 +350,16 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack tf,uf = cache
+            @static if VERSION >=1.8
+    (;t,dt,uprev,u,f,p) = integrator
+else
+    @unpack t,dt,uprev,u,f,p = integrator
+end
+            @static if VERSION >=1.8
+    (;tf,uf) = cache
+else
+    @unpack tf,uf = cache
+end
             $unpacktabexpr
 
             $(dtCijexprs...)
@@ -459,8 +471,16 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
-            @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
+            @static if VERSION >=1.8
+    (;t,dt,uprev,u,f,p) = integrator
+else
+    @unpack t,dt,uprev,u,f,p = integrator
+end
+            @static if VERSION >=1.8
+    (;du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight) = cache
+else
+    @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp,weight = cache
+end
             $unpacktabexpr
 
             # Assignments

@@ -705,9 +705,17 @@ end
 
 """
 @def owrenzen3unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r13, r12, r23, r22, r33, r32 = cache.tab
+    @static if VERSION >= 1.8
+        (; r13, r12, r23, r22, r33, r32) = cache.tab
+    else
+        @unpack r13, r12, r23, r22, r33, r32 = cache.tab
+    end
 else
-    @unpack r13, r12, r23, r22, r33, r32 = cache
+    @static if VERSION >= 1.8
+        (; r13, r12, r23, r22, r33, r32) = cache
+    else
+        @unpack r13, r12, r23, r22, r33, r32 = cache
+    end
 end end
 
 @def owrenzen3pre0 begin
@@ -888,9 +896,17 @@ end
 
 """
 @def owrenzen4unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache.tab
+    @static if VERSION >= 1.8
+        (; r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62) = cache.tab
+    else
+        @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache.tab
+    end
 else
-    @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache
+    @static if VERSION >= 1.8
+        (; r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62) = cache
+    else
+        @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache
+    end
 end end
 
 @def owrenzen4pre0 begin
@@ -1139,9 +1155,17 @@ end
 
 """
 @def owrenzen5unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache.tab
+    @static if VERSION >= 1.8
+        (; r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82) = cache.tab
+    else
+        @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache.tab
+    end
 else
-    @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache
+    @static if VERSION >= 1.8
+        (; r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82) = cache
+    else
+        @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache
+    end
 end end
 
 @def owrenzen5pre0 begin
@@ -1508,9 +1532,17 @@ end
 Coefficients taken from RKSuite
 """
 @def bs5unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache.tab
+    @static if VERSION >= 1.8
+        (; r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112) = cache.tab
+    else
+        @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache.tab
+    end
 else
-    @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache
+    @static if VERSION >= 1.8
+        (; r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112) = cache
+    else
+        @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache
+    end
 end end
 
 @def bs5pre0 begin
@@ -1666,7 +1698,11 @@ end
 
 ## Vern6
 @def vern6unpack begin
-    @unpack r011, r012, r013, r014, r015, r016, r042, r043, r044, r045, r046, r052, r053, r054, r055, r056, r062, r063, r064, r065, r066, r072, r073, r074, r075, r076, r082, r083, r084, r085, r086, r092, r093, r094, r095, r096, r102, r103, r104, r105, r106, r112, r113, r114, r115, r116, r122, r123, r124, r125, r126 = cache.tab.interp
+    @static if VERSION >= 1.8
+        (; r011, r012, r013, r014, r015, r016, r042, r043, r044, r045, r046, r052, r053, r054, r055, r056, r062, r063, r064, r065, r066, r072, r073, r074, r075, r076, r082, r083, r084, r085, r086, r092, r093, r094, r095, r096, r102, r103, r104, r105, r106, r112, r113, r114, r115, r116, r122, r123, r124, r125, r126) = cache.tab
+    else
+        @unpack r011, r012, r013, r014, r015, r016, r042, r043, r044, r045, r046, r052, r053, r054, r055, r056, r062, r063, r064, r065, r066, r072, r073, r074, r075, r076, r082, r083, r084, r085, r086, r092, r093, r094, r095, r096, r102, r103, r104, r105, r106, r112, r113, r114, r115, r116, r122, r123, r124, r125, r126 = cache.tab
+    end.interp
 end
 
 @def vern6pre0 begin
@@ -1953,7 +1989,11 @@ end
 
 ## Vern8
 @def vern8unpack begin
-    @unpack r011, r012, r013, r014, r015, r016, r017, r018, r062, r063, r064, r065, r066, r067, r068, r072, r073, r074, r075, r076, r077, r078, r082, r083, r084, r085, r086, r087, r088, r092, r093, r094, r095, r096, r097, r098, r102, r103, r104, r105, r106, r107, r108, r112, r113, r114, r115, r116, r117, r118, r122, r123, r124, r125, r126, r127, r128, r142, r143, r144, r145, r146, r147, r148, r152, r153, r154, r155, r156, r157, r158, r162, r163, r164, r165, r166, r167, r168, r172, r173, r174, r175, r176, r177, r178, r182, r183, r184, r185, r186, r187, r188, r192, r193, r194, r195, r196, r197, r198, r202, r203, r204, r205, r206, r207, r208, r212, r213, r214, r215, r216, r217, r218 = cache.tab.interp
+    @static if VERSION >= 1.8
+        (; r011, r012, r013, r014, r015, r016, r017, r018, r062, r063, r064, r065, r066, r067, r068, r072, r073, r074, r075, r076, r077, r078, r082, r083, r084, r085, r086, r087, r088, r092, r093, r094, r095, r096, r097, r098, r102, r103, r104, r105, r106, r107, r108, r112, r113, r114, r115, r116, r117, r118, r122, r123, r124, r125, r126, r127, r128, r142, r143, r144, r145, r146, r147, r148, r152, r153, r154, r155, r156, r157, r158, r162, r163, r164, r165, r166, r167, r168, r172, r173, r174, r175, r176, r177, r178, r182, r183, r184, r185, r186, r187, r188, r192, r193, r194, r195, r196, r197, r198, r202, r203, r204, r205, r206, r207, r208, r212, r213, r214, r215, r216, r217, r218) = cache.tab
+    else
+        @unpack r011, r012, r013, r014, r015, r016, r017, r018, r062, r063, r064, r065, r066, r067, r068, r072, r073, r074, r075, r076, r077, r078, r082, r083, r084, r085, r086, r087, r088, r092, r093, r094, r095, r096, r097, r098, r102, r103, r104, r105, r106, r107, r108, r112, r113, r114, r115, r116, r117, r118, r122, r123, r124, r125, r126, r127, r128, r142, r143, r144, r145, r146, r147, r148, r152, r153, r154, r155, r156, r157, r158, r162, r163, r164, r165, r166, r167, r168, r172, r173, r174, r175, r176, r177, r178, r182, r183, r184, r185, r186, r187, r188, r192, r193, r194, r195, r196, r197, r198, r202, r203, r204, r205, r206, r207, r208, r212, r213, r214, r215, r216, r217, r218 = cache.tab
+    end.interp
 end
 
 @def vern8pre0 begin
@@ -2834,9 +2874,17 @@ end
 
 """
 @def dprkn6unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache.tab
+    @static if VERSION >= 1.8
+        (; r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61) = cache.tab
+    else
+        @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache.tab
+    end
 else
-    @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache
+    @static if VERSION >= 1.8
+        (; r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61) = cache
+    else
+        @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache
+    end
 end end
 
 @def dprkn6pre0 begin
