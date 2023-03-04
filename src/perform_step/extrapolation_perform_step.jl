@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::AitkenNevilleCache)
     integrator.kshortsize = 2
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -19,18 +19,18 @@ function initialize!(integrator, cache::AitkenNevilleCache)
 end
 
 function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst, T, utilde, atmp, dtpropose, cur_order, A) = cache
     else
         @unpack k, fsalfirst, T, utilde, atmp, dtpropose, cur_order, A = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u_tmps, k_tmps) = cache
     else
         @unpack u_tmps, k_tmps = cache
@@ -156,13 +156,13 @@ function initialize!(integrator, cache::AitkenNevilleConstantCache)
 end
 
 function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dtpropose, T, cur_order, work, A) = cache
     else
         @unpack dtpropose, T, cur_order, work, A = cache
@@ -291,29 +291,29 @@ end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                        repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2) = cache
     else
         @unpack T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; J, W, uf, tf, jac_config) = cache
     else
         @unpack J, W, uf, tf, jac_config = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u_tmps, k_tmps, linsolve_tmps, u_tmps2) = cache
     else
         @unpack u_tmps, k_tmps, linsolve_tmps, u_tmps2 = cache
     end
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence) = cache
     else
         @unpack sequence = cache
@@ -570,18 +570,18 @@ end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCache,
                        repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dtpropose, T, n_curr, work, A, tf, uf) = cache
     else
         @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence, stage_number) = cache
     else
         @unpack sequence, stage_number = cache
@@ -776,7 +776,7 @@ end
 
 function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardCache)
     # cf. initialize! of MidpointCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -793,47 +793,47 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k) = cache
     else
         @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u_temp3, u_temp4, k_tmps) = cache
     else
         @unpack u_temp3, u_temp4, k_tmps = cache
     end
 
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; stage_number) = cache
     else
         @unpack stage_number = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence_factor) = alg
     else
         @unpack sequence_factor = alg
@@ -1042,41 +1042,41 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr) = cache
     else
         @unpack n_curr = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; stage_number) = cache
     else
         @unpack stage_number = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence_factor) = alg
     else
         @unpack sequence_factor = alg
@@ -1251,7 +1251,7 @@ end
 
 function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationCache)
     # cf. initialize! of MidpointCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -1268,48 +1268,48 @@ end
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2) = cache
     else
         @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u_temp3, u_temp4, k_tmps) = cache
     else
         @unpack u_temp3, u_temp4, k_tmps = cache
     end
 
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; stage_number) = cache
     else
         @unpack stage_number = cache
     end
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; J, W, uf, tf, linsolve_tmps, jac_config) = cache
     else
         @unpack J, W, uf, tf, linsolve_tmps, jac_config = cache
@@ -1703,36 +1703,36 @@ end
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr) = cache
     else
         @unpack n_curr = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; stage_number) = cache
     else
         @unpack stage_number = cache
@@ -1972,7 +1972,7 @@ end
 
 function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerCache)
     # cf. initialize! of MidpointCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -1989,41 +1989,41 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k) = cache
     else
         @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u_temp3, u_temp4, k_tmps) = cache
     else
         @unpack u_temp3, u_temp4, k_tmps = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence_factor) = alg
     else
         @unpack sequence_factor = alg
@@ -2237,36 +2237,36 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr) = cache
     else
         @unpack n_curr = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence_factor) = alg
     else
         @unpack sequence_factor = alg
@@ -2457,31 +2457,31 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr) = cache
     else
         @unpack n_curr = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
@@ -2739,7 +2739,7 @@ end
 
 function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationCache)
     # cf. initialize! of MidpointCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -2756,42 +2756,42 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2) = cache
     else
         @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u_temp3, u_temp4, k_tmps) = cache
     else
         @unpack u_temp3, u_temp4, k_tmps = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; J, W, uf, tf, linsolve_tmps, jac_config) = cache
     else
         @unpack J, W, uf, tf, linsolve_tmps, jac_config = cache
@@ -3206,36 +3206,36 @@ function perform_step!(integrator,
                        cache::ImplicitEulerBarycentricExtrapolationConstantCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr) = cache
     else
         @unpack n_curr = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence_factor) = alg
     else
         @unpack sequence_factor = alg
@@ -3489,7 +3489,7 @@ end
 
 function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache)
     # cf. initialize! of MidpointCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -3506,47 +3506,47 @@ end
 function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache,
                        repeat_step = false)
     # Unpack all information needed
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, dt, f, p) = integrator
     else
         @unpack t, uprev, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2) = cache
     else
         @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst, k, diff1, diff2 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u_temp3, u_temp4, k_tmps) = cache
     else
         @unpack u_temp3, u_temp4, k_tmps = cache
     end
     # Coefficients for obtaining u
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights, extrapolation_scalars) = cache.coefficients
     else
         @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
     end
     # Coefficients for obtaining utilde
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; extrapolation_weights_2, extrapolation_scalars_2) = cache.coefficients
     else
         @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
     end
     # Additional constant information
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; subdividing_sequence) = cache.coefficients
     else
         @unpack subdividing_sequence = cache.coefficients
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; sequence_factor) = alg
     else
         @unpack sequence_factor = alg
     end
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; J, W, uf, tf, linsolve_tmps, jac_config) = cache
     else
         @unpack J, W, uf, tf, linsolve_tmps, jac_config = cache

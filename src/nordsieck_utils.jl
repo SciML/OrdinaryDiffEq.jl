@@ -1,5 +1,5 @@
 function nordsieck_adjust!(integrator, cache::T) where {T}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; nextorder, order) = cache
     else
         @unpack nextorder, order = cache
@@ -19,7 +19,7 @@ end
 
 function nordsieck_finalize!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; order, dts) = cache
     else
         @unpack order, dts = cache
@@ -38,13 +38,13 @@ end
 
 function nordsieck_prepare_next!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; maxη, order, L) = cache
     else
         @unpack maxη, order, L = cache
     end
     # TODO: further clean up
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; bias1, bias2, bias3, addon) = integrator.alg
     else
         @unpack bias1, bias2, bias3, addon = integrator.alg
@@ -112,7 +112,7 @@ function calc_coeff!(cache::T) where {T}
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
         isvarorder = is_nordsieck_change_order(cache, 1)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; m, l, dts, order) = cache
         else
             @unpack m, l, dts, order = cache
@@ -180,7 +180,7 @@ end
 function perform_predict!(cache::T, rewind = false) where {T}
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; z, order) = cache
         else
             @unpack z, order = cache
@@ -215,7 +215,7 @@ function update_nordsieck_vector!(cache::T) where {T}
     isvode = (T <: JVODECache || T <: JVODEConstantCache)
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; z, Δ, l, order) = cache
         else
             @unpack z, Δ, l, order = cache
@@ -233,13 +233,13 @@ function update_nordsieck_vector!(cache::T) where {T}
 end
 
 function nlsolve_functional!(integrator, cache::T) where {T}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; f, dt, t, p) = integrator
     else
         @unpack f, dt, t, p = integrator
     end
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, l, c_conv, Δ) = cache
     else
         @unpack z, l, c_conv, Δ = cache
@@ -247,7 +247,7 @@ function nlsolve_functional!(integrator, cache::T) where {T}
     if isconstcache
         ratetmp = integrator.f(z[1], p, dt + t)
     else
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; ratetmp) = cache
         else
             @unpack ratetmp = cache
@@ -302,7 +302,7 @@ end
 
 function nordsieck_rescale!(cache::T, rewind = false) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, dts, order) = cache
     else
         @unpack z, dts, order = cache
@@ -342,7 +342,7 @@ end
 
 function nordsieck_adjust_order!(cache::T, dorder) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; order, dts) = cache
     else
         @unpack order, dts = cache
@@ -403,7 +403,7 @@ end
 
 function chooseη!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ηq, η₋₁, η₊₁, order, z, Δ) = cache
     else
         @unpack ηq, η₋₁, η₊₁, order, z, Δ = cache
@@ -447,12 +447,12 @@ end
 function stepsize_η₊₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
     isconstcache || (@unpack atmp, ratetmp = cache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev, t, u) = integrator
     else
         @unpack uprev, t, u = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, c_LTE₊₁, dts, c_𝒟) = cache
     else
         @unpack z, c_LTE₊₁, dts, c_𝒟 = cache
@@ -485,12 +485,12 @@ end
 function stepsize_η₋₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
     isconstcache || (atmp = cache.atmp)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev, t, u) = integrator
     else
         @unpack uprev, t, u = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, c_LTE₋₁) = cache
     else
         @unpack z, c_LTE₋₁ = cache

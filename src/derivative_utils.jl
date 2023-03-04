@@ -20,12 +20,12 @@ Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.W \ v
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     @inbounds begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; t, dt, uprev, u, f, p) = integrator
         else
             @unpack t, dt, uprev, u, f, p = integrator
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; du2, fsalfirst, dT, tf, linsolve_tmp) = cache
         else
             @unpack du2, fsalfirst, dT, tf, linsolve_tmp = cache
@@ -47,7 +47,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -75,7 +75,7 @@ either automatic or finite differencing will be used depending on the `uf` objec
 cache. If `next_step`, then it will evaluate the Jacobian at the next step.
 """
 function calc_J(integrator, cache, next_step::Bool = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dt, t, uprev, f, p, alg) = integrator
     else
         @unpack dt, t, uprev, f, p, alg = integrator
@@ -89,7 +89,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
         if DiffEqBase.has_jac(f)
             J = f.jac(duprev, uprev, p, t)
         else
-            @static if VERSION >= 1.8
+            @static if VERSION >= v"1.8"
                 (; uf) = cache
             else
                 @unpack uf = cache
@@ -101,7 +101,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
         if DiffEqBase.has_jac(f)
             J = f.jac(uprev, p, t)
         else
-            @static if VERSION >= 1.8
+            @static if VERSION >= v"1.8"
                 (; uf) = cache
             else
                 @unpack uf = cache
@@ -134,7 +134,7 @@ either automatic or finite differencing will be used depending on the `cache`.
 If `next_step`, then it will evaluate the Jacobian at the next step.
 """
 function calc_J!(J, integrator, cache, next_step::Bool = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dt, t, uprev, f, p, alg) = integrator
     else
         @unpack dt, t, uprev, f, p, alg = integrator
@@ -150,7 +150,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             uf = cache.uf
             f.jac(J, duprev, uprev, p, uf.α * uf.invγdt, t)
         else
-            @static if VERSION >= 1.8
+            @static if VERSION >= v"1.8"
                 (; du1, uf, jac_config) = cache
             else
                 @unpack du1, uf, jac_config = cache
@@ -165,7 +165,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         if DiffEqBase.has_jac(f)
             f.jac(J, uprev, p, t)
         else
-            @static if VERSION >= 1.8
+            @static if VERSION >= v"1.8"
                 (; du1, uf, jac_config) = cache
             else
                 @unpack du1, uf, jac_config = cache
@@ -658,7 +658,7 @@ end
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
                  repeat_step, W_transform = false, newJW = nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -670,7 +670,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         uprev = integrator.u
     end
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; J) = lcache
     else
         @unpack J = lcache
@@ -751,7 +751,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
 end
 
 @noinline function calc_W(integrator, nlsolver, dtgamma, repeat_step, W_transform = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, uprev, p, f) = integrator
     else
         @unpack t, uprev, p, f = integrator

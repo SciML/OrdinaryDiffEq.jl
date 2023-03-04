@@ -54,7 +54,7 @@ struct IController <: AbstractController
 end
 
 @inline function stepsize_controller!(integrator, controller::IController, alg)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qmin, qmax, gamma) = integrator.opts
     else
         @unpack qmin, qmax, gamma = integrator.opts
@@ -74,7 +74,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::IController, alg, q)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qsteady_min, qsteady_max) = integrator.opts
     else
         @unpack qsteady_min, qsteady_max = integrator.opts
@@ -87,7 +87,7 @@ function step_accept_controller!(integrator, controller::IController, alg, q)
 end
 
 function step_reject_controller!(integrator, controller::IController, alg)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qold) = integrator
     else
         @unpack qold = integrator
@@ -134,17 +134,17 @@ mutable struct PIController{QT} <: AbstractController
 end
 
 @inline function stepsize_controller!(integrator, controller::PIController, alg)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qold) = integrator
     else
         @unpack qold = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qmin, qmax, gamma) = integrator.opts
     else
         @unpack qmin, qmax, gamma = integrator.opts
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; beta1, beta2) = controller
     else
         @unpack beta1, beta2 = controller
@@ -163,7 +163,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::PIController, alg, q)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qsteady_min, qsteady_max, qoldinit) = integrator.opts
     else
         @unpack qsteady_min, qsteady_max, qoldinit = integrator.opts
@@ -178,12 +178,12 @@ function step_accept_controller!(integrator, controller::PIController, alg, q)
 end
 
 function step_reject_controller!(integrator, controller::PIController, alg)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; q11) = integrator
     else
         @unpack q11 = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qmin, gamma) = integrator.opts
     else
         @unpack qmin, gamma = integrator.opts
@@ -286,7 +286,7 @@ end
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
 
 @inline function stepsize_controller!(integrator, controller::PIDController, alg)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qmax) = integrator.opts
     else
         @unpack qmax = integrator.opts
@@ -338,7 +338,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::PIDController, alg, dt_factor)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qsteady_min, qsteady_max) = integrator.opts
     else
         @unpack qsteady_min, qsteady_max = integrator.opts
@@ -410,7 +410,7 @@ struct PredictiveController <: AbstractController
 end
 
 @inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qmin, qmax, gamma) = integrator.opts
     else
         @unpack qmin, qmax, gamma = integrator.opts
@@ -424,18 +424,18 @@ end
             fac = gamma
         else
             if alg isa Union{RadauIIA3, RadauIIA5}
-                @static if VERSION >= 1.8
+                @static if VERSION >= v"1.8"
                     (; iter) = integrator.cache
                 else
                     @unpack iter = integrator.cache
                 end
-                @static if VERSION >= 1.8
+                @static if VERSION >= v"1.8"
                     (; maxiters) = alg
                 else
                     @unpack maxiters = alg
                 end
             else
-                @static if VERSION >= 1.8
+                @static if VERSION >= v"1.8"
                     (; iter, maxiters) = integrator.cache
                 else
                     @unpack iter, maxiters = integrator.cache
@@ -452,7 +452,7 @@ end
 end
 
 function step_accept_controller!(integrator, controller::PredictiveController, alg, q)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; qmin, qmax, gamma, qsteady_min, qsteady_max) = integrator.opts
     else
         @unpack qmin, qmax, gamma, qsteady_min, qsteady_max = integrator.opts
@@ -477,7 +477,7 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
 end
 
 function step_reject_controller!(integrator, controller::PredictiveController, alg)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dt, success_iter, qold) = integrator
     else
         @unpack dt, success_iter, qold = integrator
@@ -656,7 +656,7 @@ function post_newton_controller!(integrator, alg)
 end
 
 function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; cache) = integrator
     else
         @unpack cache = integrator
@@ -673,12 +673,12 @@ end
 function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
                        cache::OrdinaryDiffEqMutableCache,
                        ::Val{max_order}) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, u, cache, uprev) = integrator
     else
         @unpack t, dt, u, cache, uprev = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history) = cache
     else
         @unpack atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history = cache
@@ -717,12 +717,12 @@ end
 function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
                        cache::OrdinaryDiffEqConstantCache,
                        ::Val{max_order}) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, u, cache, uprev) = integrator
     else
         @unpack t, dt, u, cache, uprev = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts_tmp, terkm2, terkm1, terk, terkp1, u_history) = cache
     else
         @unpack ts_tmp, terkm2, terkm1, terk, terkp1, u_history = cache
@@ -770,7 +770,7 @@ function stepsize_controller!(integrator,
                               alg::Union{FBDF{max_order}, DFBDF{max_order}}) where {
                                                                                     max_order
                                                                                     }
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; cache) = integrator
     else
         @unpack cache = integrator
@@ -827,7 +827,7 @@ function stepsize_controller_internal!(integrator,
                                                   ImplicitDeuflhardExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; controller) = integrator.opts
     else
         @unpack controller = integrator.opts
@@ -851,7 +851,7 @@ function stepsize_predictor!(integrator,
                              alg::Union{ExtrapolationMidpointDeuflhard,
                                         ImplicitDeuflhardExtrapolation}, n_new::Int)
     # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; controller) = integrator.opts
     else
         @unpack controller = integrator.opts
@@ -861,12 +861,12 @@ function stepsize_predictor!(integrator,
         q = inv(integrator.opts.qmax)
     else
         # Initialize
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; t, EEst) = integrator
         else
             @unpack t, EEst = integrator
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; stage_number) = integrator.cache
         else
             @unpack stage_number = integrator.cache
@@ -890,12 +890,12 @@ function step_accept_controller!(integrator,
                                  alg::Union{ExtrapolationMidpointDeuflhard,
                                             ImplicitDeuflhardExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, max_order) = alg
     else
         @unpack min_order, max_order = alg
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr, n_old, Q) = integrator.cache
     else
         @unpack n_curr, n_old, Q = integrator.cache
@@ -967,7 +967,7 @@ function stepsize_controller_internal!(integrator,
                                                   ImplicitEulerBarycentricExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; controller) = integrator.opts
     else
         @unpack controller = integrator.opts
@@ -1024,12 +1024,12 @@ function step_accept_controller!(integrator,
                                             ImplicitEulerExtrapolation,
                                             ImplicitEulerBarycentricExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, max_order) = alg
     else
         @unpack min_order, max_order = alg
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_curr, n_old, Q, sigma, work, dt_new) = integrator.cache
     else
         @unpack n_curr, n_old, Q, sigma, work, dt_new = integrator.cache
@@ -1088,7 +1088,7 @@ function step_reject_controller!(integrator,
                                             ImplicitEulerExtrapolation,
                                             ImplicitEulerBarycentricExtrapolation})
     # Compute and save order and stepsize for redoing the current step
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; n_old, n_curr, Q) = integrator.cache
     else
         @unpack n_old, n_curr, Q = integrator.cache

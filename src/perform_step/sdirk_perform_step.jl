@@ -59,7 +59,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -111,17 +111,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; atmp, nlsolver) = cache
     else
         @unpack atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp) = nlsolver
     else
         @unpack z, tmp = nlsolver
@@ -169,7 +169,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -200,17 +200,17 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; nlsolver) = cache
     else
         @unpack nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp) = nlsolver
     else
         @unpack z, tmp = nlsolver
@@ -238,7 +238,7 @@ end
 
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -312,17 +312,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; atmp, nlsolver) = cache
     else
         @unpack atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp) = nlsolver
     else
         @unpack z, tmp = nlsolver
@@ -398,12 +398,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::TRBDF2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, d, ω, btilde1, btilde2, btilde3, α1, α2) = cache.tab
     else
         @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
@@ -461,24 +461,24 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; zprev, zᵧ, atmp, nlsolver) = cache
     else
         @unpack zprev, zᵧ, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp) = nlsolver
     else
         @unpack z, tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     b = nlsolver.ztmp
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, d, ω, btilde1, btilde2, btilde3, α1, α2) = cache.tab
     else
         @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
@@ -533,24 +533,24 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::TRBDF2Cache{<:Array}, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; zprev, zᵧ, atmp, nlsolver) = cache
     else
         @unpack zprev, zᵧ, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp) = nlsolver
     else
         @unpack z, tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     b = nlsolver.ztmp
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, d, ω, btilde1, btilde2, btilde3, α1, α2) = cache.tab
     else
         @unpack γ, d, ω, btilde1, btilde2, btilde3, α1, α2 = cache.tab
@@ -620,7 +620,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -676,17 +676,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
@@ -747,12 +747,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK22ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a, α, β) = cache.tab
     else
         @unpack a, α, β = cache.tab
@@ -830,22 +830,22 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK22Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; atmp, nlsolver) = cache
     else
         @unpack atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp) = nlsolver
     else
         @unpack z, tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a, α, β) = cache.tab
     else
         @unpack a, α, β = cache.tab
@@ -920,7 +920,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -978,17 +978,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, nlsolver) = cache
     else
         @unpack z₁, z₂, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
@@ -1037,17 +1037,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Cash4ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2) = cache.tab
     else
         @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
@@ -1149,28 +1149,28 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Cash4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2) = cache.tab
     else
         @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
@@ -1273,12 +1273,12 @@ end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK4ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
@@ -1342,23 +1342,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
@@ -1419,12 +1419,12 @@ end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK5ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, c2, c3, c4, c5) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, c2, c3, c4, c5 = cache.tab
@@ -1499,23 +1499,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK5Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, c2, c3, c4, c5) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, c2, c3, c4, c5 = cache.tab
@@ -1586,12 +1586,12 @@ end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK6ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, c2, c3, c4, c5, c6) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, c2, c3, c4, c5, c6 = cache.tab
@@ -1677,23 +1677,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK6Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, c2, c3, c4, c5, c6) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, c2, c3, c4, c5, c6 = cache.tab
@@ -1777,12 +1777,12 @@ end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK7ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, c2, c3, c4, c5, c6, c7) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, c2, c3, c4, c5, c6, c7 = cache.tab
@@ -1879,23 +1879,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK7Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, c2, c3, c4, c5, c6, c7) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, c2, c3, c4, c5, c6, c7 = cache.tab
@@ -1991,12 +1991,12 @@ end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK8ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a92, a93, a94, a95, a96, a97, a98, c2, c3, c4, c5, c6, c7, c8) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a92, a93, a94, a95, a96, a97, a98, c2, c3, c4, c5, c6, c7, c8 = cache.tab
@@ -2106,23 +2106,23 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK8Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a92, a93, a94, a95, a96, a97, a98, c2, c3, c4, c5, c6, c7, c8) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a92, a93, a94, a95, a96, a97, a98, c2, c3, c4, c5, c6, c7, c8 = cache.tab
@@ -2229,22 +2229,22 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α21, α31, α32, α41, α43) = cache.tab
     else
         @unpack α21, α31, α32, α41, α43 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; bhat1, bhat2, bhat3, bhat4, btilde1, btilde2, btilde3, btilde4, btilde5) = cache.tab
     else
         @unpack bhat1, bhat2, bhat3, bhat4, btilde1, btilde2, btilde3, btilde4, btilde5 = cache.tab
@@ -2324,32 +2324,32 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4) = cache.tab
     else
         @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α21, α31, α32, α41, α43) = cache.tab
     else
         @unpack α21, α31, α32, α41, α43 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; bhat1, bhat2, bhat3, bhat4, btilde1, btilde2, btilde3, btilde4, btilde5) = cache.tab
     else
         @unpack bhat1, bhat2, bhat3, bhat4, btilde1, btilde2, btilde3, btilde4, btilde5 = cache.tab
@@ -2442,7 +2442,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ESDIRK54I8L2SAConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -2554,17 +2554,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK54I8L2SACache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
@@ -2675,7 +2675,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ESDIRK436L2SA2ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -2766,17 +2766,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK436L2SA2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
@@ -2865,7 +2865,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ESDIRK437L2SAConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -2966,17 +2966,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK437L2SACache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
@@ -3076,7 +3076,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ESDIRK547L2SA2ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -3177,17 +3177,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK547L2SA2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver

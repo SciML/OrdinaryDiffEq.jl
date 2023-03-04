@@ -19,7 +19,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SymplecticEulerConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -44,7 +44,7 @@ end
 
 function initialize!(integrator, cache::SymplecticEulerCache)
     integrator.kshortsize = 2
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -69,7 +69,7 @@ function initialize!(integrator, cache::SymplecticEulerCache)
 end
 
 @muladd function perform_step!(integrator, cache::SymplecticEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -191,7 +191,7 @@ end
 
 @muladd function perform_step!(integrator, cache::VelocityVerletConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -212,7 +212,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::VelocityVerletCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -235,12 +235,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic2ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, b1, b2) = cache
     else
         @unpack a1, a2, b1, b2 = cache
@@ -268,12 +268,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, b1, b2) = cache.tab
     else
         @unpack a1, a2, b1, b2 = cache.tab
@@ -303,12 +303,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic3ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, b1, b2, b3) = cache
     else
         @unpack a1, a2, a3, b1, b2, b3 = cache
@@ -344,12 +344,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, b1, b2, b3) = cache.tab
     else
         @unpack a1, a2, a3, b1, b2, b3 = cache.tab
@@ -387,12 +387,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic4ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, b1, b2, b3, b4) = cache
     else
         @unpack a1, a2, a3, a4, b1, b2, b3, b4 = cache
@@ -436,12 +436,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, b1, b2, b3, b4) = cache.tab
     else
         @unpack a1, a2, a3, a4, b1, b2, b3, b4 = cache.tab
@@ -487,13 +487,13 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic45ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, b1, b2, b3, b4, b5) = cache
     else
         @unpack a1, a2, a3, a4, a5, b1, b2, b3, b4, b5 = cache
@@ -548,13 +548,13 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic45Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, b1, b2, b3, b4, b5) = cache.tab
     else
         @unpack a1, a2, a3, a4, a5, b1, b2, b3, b4, b5 = cache.tab
@@ -611,12 +611,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic5ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) = cache
     else
         @unpack a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6 = cache
@@ -675,12 +675,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic5Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6) = cache.tab
     else
         @unpack a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, b6 = cache.tab
@@ -741,12 +741,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic6ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8) = cache
     else
         @unpack a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8 = cache
@@ -818,12 +818,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic6Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8) = cache.tab
     else
         @unpack a1, a2, a3, a4, a5, a6, a7, a8, b1, b2, b3, b4, b5, b6, b7, b8 = cache.tab
@@ -897,12 +897,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Symplectic62ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10) = cache
     else
         @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10 = cache
@@ -988,12 +988,12 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Symplectic62Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10) = cache.tab
     else
         @unpack a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10 = cache.tab
@@ -1080,7 +1080,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::McAte8ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -1210,7 +1210,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::McAte8Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -1342,7 +1342,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KahanLi8ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -1486,7 +1486,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KahanLi8Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -1632,7 +1632,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SofSpa10ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
@@ -1906,7 +1906,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SofSpa10Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator

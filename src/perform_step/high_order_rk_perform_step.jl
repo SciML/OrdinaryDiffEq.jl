@@ -11,12 +11,12 @@ function initialize!(integrator, cache::TanYam7ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::TanYam7ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, b1, b4, b5, b6, b7, b8, b9, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9, btilde10) = cache
     else
         @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, b1, b4, b5, b6, b7, b8, b9, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9, btilde10 = cache
@@ -68,17 +68,17 @@ function initialize!(integrator, cache::TanYam7Cache)
 end
 
 @muladd function perform_step!(integrator, cache::TanYam7Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, b1, b4, b5, b6, b7, b8, b9, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9, btilde10) = cache.tab
     else
         @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, b1, b4, b5, b6, b7, b8, b9, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9, btilde10 = cache.tab
@@ -226,12 +226,12 @@ function initialize!(integrator, cache::DP8ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::DP8ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, er1, er6, er7, er8, er9, er10, er11, er12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache
     else
         @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, er1, er6, er7, er8, er9, er10, er11, er12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache
@@ -289,12 +289,12 @@ end
     integrator.destats.nf += 1
     integrator.fsallast = k13
     if integrator.opts.calck
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615) = cache
         else
             @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716) = cache
         else
             @unpack d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = cache
@@ -349,18 +349,18 @@ function initialize!(integrator, cache::DP8Cache)
 end
 
 @muladd function perform_step!(integrator, cache::DP8Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     uidx = eachindex(integrator.uprev)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, er1, er6, er7, er8, er9, er10, er11, er12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache.tab
     else
         @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, er1, er6, er7, er8, er9, er10, er11, er12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, udiff, bspl, dense_tmp3, dense_tmp4, dense_tmp5, dense_tmp6, dense_tmp7, kupdate, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, udiff, bspl, dense_tmp3, dense_tmp4, dense_tmp5, dense_tmp6, dense_tmp7, kupdate, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
@@ -444,12 +444,12 @@ end
     f(k13, u, p, t + dt)
     integrator.destats.nf += 1
     if integrator.opts.calck
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615) = cache.tab
         else
             @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache.tab
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716) = cache.tab
         else
             @unpack d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = cache.tab
@@ -686,12 +686,12 @@ end
 
 @muladd function perform_step!(integrator, cache::TsitPap8ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13) = cache
     else
         @unpack c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13 = cache
@@ -757,17 +757,17 @@ function initialize!(integrator, cache::TsitPap8Cache)
 end
 
 @muladd function perform_step!(integrator, cache::TsitPap8Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13) = cache.tab
     else
         @unpack c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread = cache
@@ -946,12 +946,12 @@ function initialize!(integrator, cache::PFRK87ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::PFRK87ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) = cache
     else
         @unpack α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13 = cache
@@ -1059,17 +1059,17 @@ function initialize!(integrator, cache::PFRK87Cache)
 end
 
 @muladd function perform_step!(integrator, cache::PFRK87Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) = cache.tab
     else
         @unpack α0201, α0301, α0401, α0501, α0601, α0701, α0302, α0403, α0503, α0504, α0604, α0704, α0605, α0705, α0706, α0908, α1008, α1108, α1208, α1308, α1009, α1109, α1209, α1309, α1110, α1210, α1310, α1211, α1311, β1, β6, β7, β8, β9, β10, β11, β12, β13, β1tilde, β6tilde, β7tilde, β8tilde, β9tilde, β10tilde, β11tilde, β12tilde, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread = cache

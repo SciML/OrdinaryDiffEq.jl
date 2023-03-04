@@ -41,7 +41,7 @@ end
 ###########################################
 # Classical ExpRK integrators
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -73,12 +73,12 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step 
 end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, G, J, exphA, KsCache) = cache
     else
         @unpack tmp, rtmp, G, J, exphA, KsCache = cache
@@ -109,7 +109,7 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -135,12 +135,12 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
 end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; rtmp, J, KsCache) = cache
     else
         @unpack rtmp, J, KsCache = cache
@@ -167,7 +167,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step = false
 end
 
 function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -210,12 +210,12 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step = fal
 end
 
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, F2, J, KsCache) = cache
     else
         @unpack tmp, rtmp, F2, J, KsCache = cache
@@ -273,7 +273,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -332,12 +332,12 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step = fal
 end
 
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, Au, F2, F3, J, KsCache) = cache
     else
         @unpack tmp, rtmp, Au, F2, F3, J, KsCache = cache
@@ -408,7 +408,7 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -478,12 +478,12 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step = fal
 end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, Au, F2, F3, F4, J, KsCache) = cache
     else
         @unpack tmp, rtmp, Au, F2, F3, F4, J, KsCache = cache
@@ -574,7 +574,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -657,12 +657,12 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = f
 end
 
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, rtmp2, Au, F2, F3, F4, F5, J, KsCache) = cache
     else
         @unpack tmp, rtmp, rtmp2, Au, F2, F3, F4, F5, J, KsCache = cache
@@ -784,7 +784,7 @@ end
 #############################################
 # EPIRK integrators
 function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -834,12 +834,12 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
 end
 
 function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
     else
         @unpack tmp, rtmp, rtmp2, K, J, B, KsCache = cache
@@ -896,7 +896,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -933,12 +933,12 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step = 
 end
 
 function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
     else
         @unpack tmp, rtmp, rtmp2, K, J, B, KsCache = cache
@@ -982,7 +982,7 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -1021,12 +1021,12 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step = 
 end
 
 function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
     else
         @unpack tmp, rtmp, rtmp2, K, J, B, KsCache = cache
@@ -1075,7 +1075,7 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -1122,12 +1122,12 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step = f
 end
 
 function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, k, rtmp, rtmp2, J, B, KsCache) = cache
     else
         @unpack tmp, k, rtmp, rtmp2, J, B, KsCache = cache
@@ -1182,7 +1182,7 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -1226,12 +1226,12 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step = 
 end
 
 function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
     else
         @unpack tmp, rtmp, rtmp2, K, J, B, KsCache = cache
@@ -1286,7 +1286,7 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -1341,12 +1341,12 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step = f
 end
 
 function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, rtmp2, K, J, B, KsCache) = cache
     else
         @unpack tmp, rtmp, rtmp2, K, J, B, KsCache = cache
@@ -1408,7 +1408,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -1465,12 +1465,12 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step = f
 end
 
 function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, rtmp, rtmp2, dR, K, J, B, KsCache) = cache
     else
         @unpack tmp, rtmp, rtmp2, dR, K, J, B, KsCache = cache
@@ -1539,7 +1539,7 @@ end
 ######################################################
 # Adaptive exponential Rosenbrock integrators
 function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -1573,12 +1573,12 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = fa
 end
 
 function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; utilde, tmp, rtmp, F2, J, KsCache) = cache
     else
         @unpack utilde, tmp, rtmp, F2, J, KsCache = cache
@@ -1621,7 +1621,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -1667,12 +1667,12 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
 end
 
 function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; utilde, tmp, rtmp, Au, F2, F3, J, KsCache) = cache
     else
         @unpack utilde, tmp, rtmp, Au, F2, F3, J, KsCache = cache
@@ -1745,17 +1745,17 @@ function initialize!(integrator, cache::ETD2ConstantCache)
 end
 
 function perform_step!(integrator, cache::ETD2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; lin, nl, nlprev) = integrator.fsalfirst
     else
         @unpack lin, nl, nlprev = integrator.fsalfirst
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; exphA, phihA, B1, B0) = cache
     else
         @unpack exphA, phihA, B1, B0 = cache
@@ -1786,7 +1786,7 @@ function initialize!(integrator, cache::ETD2Cache)
 
     # Pre-start fsal
     integrator.fsalfirst = ETD2Fsal(rate_prototype)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; lin, nl) = integrator.fsalfirst
     else
         @unpack lin, nl = integrator.fsalfirst
@@ -1803,17 +1803,17 @@ function initialize!(integrator, cache::ETD2Cache)
 end
 
 function perform_step!(integrator, cache::ETD2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; lin, nl, nlprev) = integrator.fsalfirst
     else
         @unpack lin, nl, nlprev = integrator.fsalfirst
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; utmp, rtmp1, rtmp2, exphA, phihA, B1, B0) = cache
     else
         @unpack utmp, rtmp1, rtmp2, exphA, phihA, B1, B0 = cache

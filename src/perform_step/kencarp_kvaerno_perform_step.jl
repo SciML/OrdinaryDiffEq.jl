@@ -43,13 +43,13 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32 = cache.tab
@@ -115,22 +115,22 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32 = cache.tab
@@ -173,7 +173,7 @@ end
     if typeof(cache) <: Kvaerno3Cache
         @.. broadcast=false z₄=a31 * z₁ + a32 * z₂ + γ * z₃ # use yhat as prediction
     elseif typeof(cache) <: KenCarp3Cache
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; α41, α42) = cache.tab
         else
             @unpack α41, α42 = cache.tab
@@ -213,13 +213,13 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp3ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32, ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4, ebtilde1, ebtilde2, ebtilde3, ebtilde4) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32, ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4, ebtilde1, ebtilde2, ebtilde3, ebtilde4 = cache.tab
@@ -294,7 +294,7 @@ end
         integrator.destats.nf2 += 1
         tmp = uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 + ea42 * k2 + ea43 * k3
     else
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; α41, α42) = cache.tab
         else
             @unpack α41, α42 = cache.tab
@@ -350,32 +350,32 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde1, ebtilde2, ebtilde3, ebtilde4) = cache.tab
     else
         @unpack ebtilde1, ebtilde2, ebtilde3, ebtilde4 = cache.tab
@@ -454,7 +454,7 @@ end
         @.. broadcast=false tmp=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + ea41 * k1 +
                                 ea42 * k2 + ea43 * k3
     else
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; α41, α42) = cache.tab
         else
             @unpack α41, α42 = cache.tab
@@ -512,13 +512,13 @@ end
 
 @muladd function perform_step!(integrator, cache::CFNLIRK3ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, c2, c3, ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, c2, c3, ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4 = cache.tab
@@ -625,27 +625,27 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::CFNLIRK3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, c2, c3) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, c2, c3 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4 = cache.tab
@@ -749,23 +749,23 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno4ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, c3, c4) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, c3, c4 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α21, α31, α32, α41, α42) = cache.tab
     else
         @unpack α21, α31, α32, α41, α42 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde2, btilde3, btilde4, btilde5) = cache.tab
     else
         @unpack btilde1, btilde2, btilde3, btilde4, btilde5 = cache.tab
@@ -844,32 +844,32 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, c3, c4) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, c3, c4 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α21, α31, α32, α41, α42) = cache.tab
     else
         @unpack α21, α31, α32, α41, α42 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde2, btilde3, btilde4, btilde5) = cache.tab
     else
         @unpack btilde1, btilde2, btilde3, btilde4, btilde5 = cache.tab
@@ -956,38 +956,38 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp4ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c3, c4, c5) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c3, c4, c5 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α51, α52, α53, α54, α61, α62, α63, α64, α65) = cache.tab
     else
         @unpack α31, α32, α41, α42, α51, α52, α53, α54, α61, α62, α63, α64, α65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde3, btilde4, btilde5, btilde6) = cache.tab
     else
         @unpack btilde1, btilde3, btilde4, btilde5, btilde6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb1, eb3, eb4, eb5, eb6) = cache.tab
     else
         @unpack eb1, eb3, eb4, eb5, eb6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde1, ebtilde3, ebtilde4, ebtilde5, ebtilde6) = cache.tab
     else
         @unpack ebtilde1, ebtilde3, ebtilde4, ebtilde5, ebtilde6 = cache.tab
@@ -1156,52 +1156,52 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k1, k2, k3, k4, k5, k6) = cache
     else
         @unpack k1, k2, k3, k4, k5, k6 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c3, c4, c5) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c3, c4, c5 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α51, α52, α53, α54, α61, α62, α63, α64, α65) = cache.tab
     else
         @unpack α31, α32, α41, α42, α51, α52, α53, α54, α61, α62, α63, α64, α65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde3, btilde4, btilde5, btilde6) = cache.tab
     else
         @unpack btilde1, btilde3, btilde4, btilde5, btilde6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb1, eb3, eb4, eb5, eb6) = cache.tab
     else
         @unpack eb1, eb3, eb4, eb5, eb6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde1, ebtilde3, ebtilde4, ebtilde5, ebtilde6) = cache.tab
     else
         @unpack ebtilde1, ebtilde3, ebtilde4, ebtilde5, ebtilde6 = cache.tab
@@ -1378,23 +1378,23 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, c3, c4, c5, c6) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, c3, c4, c5, c6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde3, btilde4, btilde5, btilde6, btilde7) = cache.tab
     else
         @unpack btilde1, btilde3, btilde4, btilde5, btilde6, btilde7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α43, α51, α52, α53, α61, α62, α63) = cache.tab
     else
         @unpack α31, α32, α41, α42, α43, α51, α52, α53, α61, α62, α63 = cache.tab
@@ -1492,32 +1492,32 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, c3, c4, c5, c6) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, c3, c4, c5, c6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde3, btilde4, btilde5, btilde6, btilde7) = cache.tab
     else
         @unpack btilde1, btilde3, btilde4, btilde5, btilde6, btilde7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α43, α51, α52, α53, α61, α62, α63) = cache.tab
     else
         @unpack α31, α32, α41, α42, α43, α51, α52, α53, α61, α62, α63 = cache.tab
@@ -1624,43 +1624,43 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp5ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, c3, c4, c5, c6, c7) = cache.tab
     else
         @unpack γ, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, c3, c4, c5, c6, c7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α51, α52, α61, α62, α71, α72, α73, α74, α75, α81, α82, α83, α84, α85) = cache.tab
     else
         @unpack α31, α32, α41, α42, α51, α52, α61, α62, α71, α72, α73, α74, α75, α81, α82, α83, α84, α85 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde4, btilde5, btilde6, btilde7, btilde8) = cache.tab
     else
         @unpack btilde1, btilde4, btilde5, btilde6, btilde7, btilde8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea43, ea51, ea53, ea54, ea61, ea63, ea64, ea65) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea43, ea51, ea53, ea54, ea61, ea63, ea64, ea65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea71, ea73, ea74, ea75, ea76, ea81, ea83, ea84, ea85, ea86, ea87) = cache.tab
     else
         @unpack ea71, ea73, ea74, ea75, ea76, ea81, ea83, ea84, ea85, ea86, ea87 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb1, eb4, eb5, eb6, eb7, eb8) = cache.tab
     else
         @unpack eb1, eb4, eb5, eb6, eb7, eb8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde1, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     else
         @unpack ebtilde1, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8 = cache.tab
@@ -1870,57 +1870,57 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k1, k2, k3, k4, k5, k6, k7, k8) = cache
     else
         @unpack k1, k2, k3, k4, k5, k6, k7, k8 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, c3, c4, c5, c6, c7) = cache.tab
     else
         @unpack γ, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, c3, c4, c5, c6, c7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α51, α52, α61, α62, α71, α72, α73, α74, α75, α81, α82, α83, α84, α85) = cache.tab
     else
         @unpack α31, α32, α41, α42, α51, α52, α61, α62, α71, α72, α73, α74, α75, α81, α82, α83, α84, α85 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde1, btilde4, btilde5, btilde6, btilde7, btilde8) = cache.tab
     else
         @unpack btilde1, btilde4, btilde5, btilde6, btilde7, btilde8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea43, ea51, ea53, ea54, ea61, ea63, ea64, ea65) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea43, ea51, ea53, ea54, ea61, ea63, ea64, ea65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea71, ea73, ea74, ea75, ea76, ea81, ea83, ea84, ea85, ea86, ea87) = cache.tab
     else
         @unpack ea71, ea73, ea74, ea75, ea76, ea81, ea83, ea84, ea85, ea86, ea87 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb1, eb4, eb5, eb6, eb7, eb8) = cache.tab
     else
         @unpack eb1, eb4, eb5, eb6, eb7, eb8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde1, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     else
         @unpack ebtilde1, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8 = cache.tab
@@ -2138,38 +2138,38 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp47ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a73, a74, a75, a76, c3, c4, c5, c6) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a73, a74, a75, a76, c3, c4, c5, c6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α43, α51, α52, α61, α62, α63, α71, α72, α73, α74, α75, α76) = cache.tab
     else
         @unpack α31, α32, α41, α42, α43, α51, α52, α61, α62, α63, α71, α72, α73, α74, α75, α76 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde3, btilde4, btilde5, btilde6, btilde7) = cache.tab
     else
         @unpack btilde3, btilde4, btilde5, btilde6, btilde7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65, ea71, ea72, ea73, ea74, ea75, ea76) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65, ea71, ea72, ea73, ea74, ea75, ea76 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb3, eb4, eb5, eb6, eb7) = cache.tab
     else
         @unpack eb3, eb4, eb5, eb6, eb7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7) = cache.tab
     else
         @unpack ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7 = cache.tab
@@ -2358,52 +2358,52 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp47Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k1, k2, k3, k4, k5, k6, k7) = cache
     else
         @unpack k1, k2, k3, k4, k5, k6, k7 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a73, a74, a75, a76, c3, c4, c5, c6) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a73, a74, a75, a76, c3, c4, c5, c6 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α43, α51, α52, α61, α62, α63, α71, α72, α73, α74, α75, α76) = cache.tab
     else
         @unpack α31, α32, α41, α42, α43, α51, α52, α61, α62, α63, α71, α72, α73, α74, α75, α76 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde3, btilde4, btilde5, btilde6, btilde7) = cache.tab
     else
         @unpack btilde3, btilde4, btilde5, btilde6, btilde7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65, ea71, ea72, ea73, ea74, ea75, ea76) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65, ea71, ea72, ea73, ea74, ea75, ea76 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb3, eb4, eb5, eb6, eb7) = cache.tab
     else
         @unpack eb3, eb4, eb5, eb6, eb7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7) = cache.tab
     else
         @unpack ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7 = cache.tab
@@ -2602,43 +2602,43 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp58ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     nlsolver = cache.nlsolver
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a83, a84, a85, a86, a87, c3, c4, c5, c6, c7) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a83, a84, a85, a86, a87, c3, c4, c5, c6, c7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α51, α52, α61, α62, α63, α71, α72, α73, α81, α82, α83, α84, α85, α86, α87) = cache.tab
     else
         @unpack α31, α32, α41, α42, α51, α52, α61, α62, α63, α71, α72, α73, α81, α82, α83, α84, α85, α86, α87 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde3, btilde4, btilde5, btilde6, btilde7, btilde8) = cache.tab
     else
         @unpack btilde3, btilde4, btilde5, btilde6, btilde7, btilde8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea71, ea72, ea73, ea74, ea75, ea76, ea81, ea82, ea83, ea84, ea85, ea86, ea87) = cache.tab
     else
         @unpack ea71, ea72, ea73, ea74, ea75, ea76, ea81, ea82, ea83, ea84, ea85, ea86, ea87 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb3, eb4, eb5, eb6, eb7, eb8) = cache.tab
     else
         @unpack eb3, eb4, eb5, eb6, eb7, eb8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     else
         @unpack ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8 = cache.tab
@@ -2850,57 +2850,57 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp58Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver) = cache
     else
         @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k1, k2, k3, k4, k5, k6, k7, k8) = cache
     else
         @unpack k1, k2, k3, k4, k5, k6, k7, k8 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a83, a84, a85, a86, a87, c3, c4, c5, c6, c7) = cache.tab
     else
         @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a83, a84, a85, a86, a87, c3, c4, c5, c6, c7 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α31, α32, α41, α42, α51, α52, α61, α62, α63, α71, α72, α73, α81, α82, α83, α84, α85, α86, α87) = cache.tab
     else
         @unpack α31, α32, α41, α42, α51, α52, α61, α62, α63, α71, α72, α73, α81, α82, α83, α84, α85, α86, α87 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; btilde3, btilde4, btilde5, btilde6, btilde7, btilde8) = cache.tab
     else
         @unpack btilde3, btilde4, btilde5, btilde6, btilde7, btilde8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65) = cache.tab
     else
         @unpack ea21, ea31, ea32, ea41, ea42, ea43, ea51, ea52, ea53, ea54, ea61, ea62, ea63, ea64, ea65 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ea71, ea72, ea73, ea74, ea75, ea76, ea81, ea82, ea83, ea84, ea85, ea86, ea87) = cache.tab
     else
         @unpack ea71, ea72, ea73, ea74, ea75, ea76, ea81, ea82, ea83, ea84, ea85, ea86, ea87 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; eb3, eb4, eb5, eb6, eb7, eb8) = cache.tab
     else
         @unpack eb3, eb4, eb5, eb6, eb7, eb8 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8) = cache.tab
     else
         @unpack ebtilde3, ebtilde4, ebtilde5, ebtilde6, ebtilde7, ebtilde8 = cache.tab

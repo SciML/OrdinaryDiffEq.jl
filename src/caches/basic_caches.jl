@@ -142,7 +142,7 @@ struct ExplicitRKConstantCache{MType, VType, KType} <: OrdinaryDiffEqConstantCac
 end
 
 function ExplicitRKConstantCache(tableau, rate_prototype)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; A, c, α, αEEst, stages) = tableau
     else
         @unpack A, c, α, αEEst, stages = tableau

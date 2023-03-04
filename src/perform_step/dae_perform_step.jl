@@ -6,7 +6,7 @@ end
 
 function initialize!(integrator, cache::DImplicitEulerCache)
     integrator.kshortsize = 2
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k₁, k₂) = cache
     else
         @unpack k₁, k₂ = cache
@@ -19,12 +19,12 @@ end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; nlsolver) = cache
     else
         @unpack nlsolver = cache
@@ -69,17 +69,17 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, du, u, f, p) = integrator
     else
         @unpack t, dt, uprev, du, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; atmp, nlsolver) = cache
     else
         @unpack atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = nlsolver
     else
         @unpack tmp = nlsolver
@@ -128,12 +128,12 @@ function initialize!(integrator, cache::DABDF2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::DABDF2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, f, p) = integrator
     else
         @unpack t, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dtₙ₋₁, nlsolver) = cache
     else
         @unpack dtₙ₋₁, nlsolver = cache
@@ -195,7 +195,7 @@ function initialize!(integrator, cache::DABDF2Cache)
     integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
 
     integrator.kshortsize = 2
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k₁, k₂) = cache.eulercache
     else
         @unpack k₁, k₂ = cache.eulercache
@@ -207,17 +207,17 @@ function initialize!(integrator, cache::DABDF2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::DABDF2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, du, f, p) = integrator
     else
         @unpack t, dt, du, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; atmp, dtₙ₋₁, nlsolver) = cache
     else
         @unpack atmp, dtₙ₋₁, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp) = nlsolver
     else
         @unpack z, tmp = nlsolver
@@ -283,12 +283,12 @@ end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
                        repeat_step = false) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps) = cache
     else
         @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, u, f, p, uprev) = integrator
     else
         @unpack t, dt, u, f, p, uprev = integrator
@@ -416,12 +416,12 @@ end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order},
                        repeat_step = false) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp) = cache
     else
         @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, u, f, p, uprev) = integrator
     else
         @unpack t, dt, u, f, p, uprev = integrator
@@ -479,7 +479,7 @@ function perform_step!(integrator, cache::DFBDFCache{max_order},
     end
     @.. broadcast=false terk_tmp=lte * terkp1_tmp
     if integrator.opts.adaptive
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; abstol, reltol, internalnorm) = integrator.opts
         else
             @unpack abstol, reltol, internalnorm = integrator.opts

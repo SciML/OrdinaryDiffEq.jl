@@ -9,7 +9,7 @@ end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLAnderson},
                              integrator::DiffEqBase.DEIntegrator)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; cache) = nlsolver
     else
         @unpack cache = nlsolver
@@ -50,12 +50,12 @@ function compute_step!(nlsolver::NLSolver{<:NLFunctional}, integrator)
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson, false}, integrator)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; cache) = nlsolver
     else
         @unpack cache = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; aa_start) = cache
     else
         @unpack aa_start = cache
@@ -80,12 +80,12 @@ end
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLAnderson, true}, integrator)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; cache) = nlsolver
     else
         @unpack cache = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; aa_start) = cache
     else
         @unpack aa_start = cache
@@ -113,17 +113,17 @@ end
                                                              <:Union{NLFunctional,
                                                                      NLAnderson}, false},
                                           integrator)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev, t, p, dt, opts) = integrator
     else
         @unpack uprev, t, p, dt, opts = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, γ, α, cache, tmp) = nlsolver
     else
         @unpack z, γ, α, cache, tmp = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tstep) = cache
     else
         @unpack tstep = cache
@@ -185,17 +185,17 @@ end
                                                              <:Union{NLFunctional,
                                                                      NLAnderson}, true},
                                           integrator)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev, t, p, dt, opts) = integrator
     else
         @unpack uprev, t, p, dt, opts = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp, ztmp, γ, α, cache) = nlsolver
     else
         @unpack z, tmp, ztmp, γ, α, cache = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ustep, tstep, k, atmp, dz) = cache
     else
         @unpack ustep, tstep, k, atmp, dz = cache
@@ -268,7 +268,7 @@ function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson}
 end
 
 function Base.resize!(nlcache::NLAndersonCache, nlalg::NLAnderson, i::Int)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₊old, Δz₊s) = nlcache
     else
         @unpack z₊old, Δz₊s = nlcache

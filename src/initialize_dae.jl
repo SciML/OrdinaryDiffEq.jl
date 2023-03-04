@@ -105,7 +105,7 @@ Solve for `u`
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
                           isinplace::Val{true})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator
@@ -186,7 +186,7 @@ end
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
                           isinplace::Val{false})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator
@@ -253,7 +253,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::ShampineCollocationInit, isinplace::Val{true})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator
@@ -303,7 +303,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::ShampineCollocationInit, isinplace::Val{false})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator
@@ -355,7 +355,7 @@ end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{true})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator
@@ -416,7 +416,7 @@ end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{false})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator
@@ -485,7 +485,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{true})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator
@@ -546,7 +546,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{false})
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; p, t, f) = integrator
     else
         @unpack p, t, f = integrator

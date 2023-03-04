@@ -1,18 +1,18 @@
 function initialize!(integrator, cache::PDIRK44ConstantCache) end
 
 @muladd function perform_step!(integrator, cache::PDIRK44ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dt, uprev, u) = integrator
     else
         @unpack dt, uprev, u = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; nlsolver, tab) = cache
     else
         @unpack nlsolver, tab = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γs, cs, α1, α2, b1, b2, b3, b4) = tab
     else
         @unpack γs, cs, α1, α2, b1, b2, b3, b4 = tab
@@ -87,18 +87,18 @@ end
 function initialize!(integrator, cache::PDIRK44Cache) end
 
 @muladd function perform_step!(integrator, cache::PDIRK44Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; nlsolver, k1, k2, tab) = cache
     else
         @unpack nlsolver, k1, k2, tab = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; γs, cs, α1, α2, b1, b2, b3, b4) = tab
     else
         @unpack γs, cs, α1, α2, b1, b2, b3, b4 = tab

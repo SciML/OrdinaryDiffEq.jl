@@ -3,7 +3,7 @@
 const RKCAlgs = Union{RKC, IRKC, ESERK4, ESERK5, SERK2}
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     isfirst = integrator.iter == 1 || integrator.u_modified
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     else
         @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
@@ -105,7 +105,7 @@ end
 
 function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     isfirst = integrator.iter == 1 || integrator.u_modified
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     else
         @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
@@ -236,7 +236,7 @@ end
 function choosedeg_SERK!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.constantcache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ms) = cache
     else
         @unpack ms = cache

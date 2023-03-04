@@ -320,7 +320,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
                            continuity::Symbol = :left) where {I, D}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, timeseries, ks, f, cache) = id
     else
         @unpack ts, timeseries, ks, f, cache = id
@@ -361,7 +361,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                             continuity::Symbol = :left) where {I, D}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, timeseries, ks, f, cache) = id
     else
         @unpack ts, timeseries, ks, f, cache = id
@@ -440,7 +440,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
                            continuity::Symbol = :left) where {I, D}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, timeseries, ks, f, cache) = id
     else
         @unpack ts, timeseries, ks, f, cache = id
@@ -492,7 +492,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
                             continuity::Symbol = :left) where {I, D}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, timeseries, ks, f, cache) = id
     else
         @unpack ts, timeseries, ks, f, cache = id

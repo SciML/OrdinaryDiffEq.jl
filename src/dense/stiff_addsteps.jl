@@ -4,7 +4,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tf, uf, d) = cache
         else
             @unpack tf, uf, d = cache
@@ -39,12 +39,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, weight) = cache
         else
             @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, weight = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c₃₂, d) = cache.tab
         else
             @unpack c₃₂, d = cache.tab
@@ -105,12 +105,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock23Cache{<:Arr
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, uf, tf, linsolve_tmp, weight) = cache
         else
             @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, uf, tf, linsolve_tmp, weight = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c₃₂, d) = cache.tab
         else
             @unpack c₃₂, d = cache.tab
@@ -171,12 +171,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tf, uf) = cache
         else
             @unpack tf, uf = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
@@ -254,7 +254,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
 
         k5 = W \ linsolve_tmp
 
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35) = cache.tab
         else
             @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
@@ -271,12 +271,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
         else
             @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
@@ -390,7 +390,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
         vecu = _vec(linres.u)
         veck5 = _vec(k5)
         @.. broadcast=false veck5=-vecu
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35) = cache.tab
         else
             @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
@@ -408,12 +408,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache{<:Array},
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst) = cache
         else
             @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
@@ -556,7 +556,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache{<:Array},
         @inbounds @simd ivdep for i in eachindex(u)
             k5[i] = -linres.u[i]
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35) = cache.tab
         else
             @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
@@ -579,12 +579,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tf, uf) = cache
         else
             @unpack tf, uf = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
@@ -699,7 +699,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
 
         k8 = W \ linsolve_tmp
 
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48) = cache.tab
         else
             @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
@@ -721,12 +721,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight) = cache
         else
             @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
@@ -914,7 +914,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
         veck8 = _vec(k8)
         @.. broadcast=false veck8=-vecu
 
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48) = cache.tab
         else
             @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
@@ -938,12 +938,12 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Arra
                         always_calc_begin = false, allow_calc_end = true,
                         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst) = cache
         else
             @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
@@ -1178,7 +1178,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Arra
             k8[i] = -linres.u[i]
         end
 
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48) = cache.tab
         else
             @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab

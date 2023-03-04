@@ -11,12 +11,12 @@ function initialize!(integrator, cache::ABDF2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ABDF2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, f, p) = integrator
     else
         @unpack t, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dtₙ₋₁, nlsolver) = cache
     else
         @unpack dtₙ₋₁, nlsolver = cache
@@ -104,18 +104,18 @@ function initialize!(integrator, cache::ABDF2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::ABDF2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, f, p) = integrator
     else
         @unpack t, dt, f, p = integrator
     end
     #TODO: remove zₙ₋₁ from the cache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; atmp, dtₙ₋₁, zₙ₋₁, nlsolver) = cache
     else
         @unpack atmp, dtₙ₋₁, zₙ₋₁, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp, ztmp) = nlsolver
     else
         @unpack z, tmp, ztmp = nlsolver
@@ -194,12 +194,12 @@ end
 # SBDF
 
 function initialize!(integrator, cache::SBDFConstantCache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev, p, t) = integrator
     else
         @unpack uprev, p, t = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; f1, f2) = integrator.f
     else
         @unpack f1, f2 = integrator.f
@@ -219,18 +219,18 @@ function initialize!(integrator, cache::SBDFConstantCache)
 end
 
 function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev2, uprev3, uprev4, du₁, du₂, k₁, k₂, k₃, nlsolver) = cache
     else
         @unpack uprev2, uprev3, uprev4, du₁, du₂, k₁, k₂, k₃, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; f1, f2) = integrator.f
     else
         @unpack f1, f2 = integrator.f
@@ -290,12 +290,12 @@ function perform_step!(integrator, cache::SBDFConstantCache, repeat_step = false
 end
 
 function initialize!(integrator, cache::SBDFCache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev, p, t) = integrator
     else
         @unpack uprev, p, t = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; f1, f2) = integrator.f
     else
         @unpack f1, f2 = integrator.f
@@ -314,23 +314,23 @@ function initialize!(integrator, cache::SBDFCache)
 end
 
 function perform_step!(integrator, cache::SBDFCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev2, uprev3, uprev4, k₁, k₂, k₃, du₁, du₂, nlsolver) = cache
     else
         @unpack uprev2, uprev3, uprev4, k₁, k₂, k₃, du₁, du₂, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, z) = nlsolver
     else
         @unpack tmp, z = nlsolver
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; f1, f2) = integrator.f
     else
         @unpack f1, f2 = integrator.f
@@ -399,12 +399,12 @@ function initialize!(integrator, cache::QNDF1ConstantCache)
 end
 
 function perform_step!(integrator, cache::QNDF1ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev2, D, D2, R, U, dtₙ₋₁, nlsolver) = cache
     else
         @unpack uprev2, D, D2, R, U, dtₙ₋₁, nlsolver = cache
@@ -492,17 +492,17 @@ function initialize!(integrator, cache::QNDF1Cache)
 end
 
 function perform_step!(integrator, cache::QNDF1Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev2, D, D2, R, U, dtₙ₋₁, utilde, atmp, nlsolver) = cache
     else
         @unpack uprev2, D, D2, R, U, dtₙ₋₁, utilde, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp, ztmp) = nlsolver
     else
         @unpack z, tmp, ztmp = nlsolver
@@ -589,12 +589,12 @@ function initialize!(integrator, cache::QNDF2ConstantCache)
 end
 
 function perform_step!(integrator, cache::QNDF2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, nlsolver) = cache
     else
         @unpack uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, nlsolver = cache
@@ -706,17 +706,17 @@ function initialize!(integrator, cache::QNDF2Cache)
 end
 
 function perform_step!(integrator, cache::QNDF2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, utilde, atmp, nlsolver) = cache
     else
         @unpack uprev2, uprev3, dtₙ₋₁, dtₙ₋₂, D, D2, R, U, utilde, atmp, nlsolver = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z, tmp, ztmp) = nlsolver
     else
         @unpack z, tmp, ztmp = nlsolver
@@ -828,12 +828,12 @@ end
 
 function perform_step!(integrator, cache::QNDFConstantCache{max_order},
                        repeat_step = false) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dtprev, order, D, U, nlsolver, γₖ) = cache
     else
         @unpack dtprev, order, D, U, nlsolver, γₖ = cache
@@ -858,7 +858,7 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
     if dt != dtprev || cache.prevorder != k
         ρ = dt / dtprev
         integrator.cache.nconsteps = 0
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; U) = cache
         else
             @unpack U = cache
@@ -905,7 +905,7 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
     update_D!(D, dd, k)
 
     if integrator.opts.adaptive
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; abstol, reltol, internalnorm) = integrator.opts
         else
             @unpack abstol, reltol, internalnorm = integrator.opts
@@ -958,12 +958,12 @@ end
 
 function perform_step!(integrator, cache::QNDFCache{max_order},
                        repeat_step = false) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; dtprev, order, D, nlsolver, γₖ, dd, atmp, atmpm1, atmpp1, utilde, utildem1, utildep1, ϕ, u₀) = cache
     else
         @unpack dtprev, order, D, nlsolver, γₖ, dd, atmp, atmpm1, atmpp1, utilde, utildem1, utildep1, ϕ, u₀ = cache
@@ -988,7 +988,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
     if dt != dtprev || cache.prevorder != k
         ρ = dt / dtprev
         cache.nconsteps = 0
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; RU, U, Dtmp) = cache
         else
             @unpack RU, U, Dtmp = cache
@@ -1024,7 +1024,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
     if mass_matrix === I
         @.. broadcast=false nlsolver.tmp=(u₀ / β₀ - ϕ) / dt
     else
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp2) = cache
         else
             @unpack tmp2 = cache
@@ -1043,7 +1043,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
     @.. broadcast=false dd=u - u₀
     update_D!(D, dd, k)
     if integrator.opts.adaptive
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; abstol, reltol, internalnorm) = integrator.opts
         else
             @unpack abstol, reltol, internalnorm = integrator.opts
@@ -1094,7 +1094,7 @@ function initialize!(integrator, cache::MEBDF2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::MEBDF2ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -1151,12 +1151,12 @@ function initialize!(integrator, cache::MEBDF2Cache)
 end
 
 @muladd function perform_step!(integrator, cache::MEBDF2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; z₁, z₂, tmp2, nlsolver) = cache
     else
         @unpack z₁, z₂, tmp2, nlsolver = cache
@@ -1214,12 +1214,12 @@ end
 
 function perform_step!(integrator, cache::FBDFConstantCache{max_order},
                        repeat_step = false) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps) = cache
     else
         @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, u, f, p, uprev) = integrator
     else
         @unpack t, dt, u, f, p, uprev = integrator
@@ -1377,12 +1377,12 @@ end
 
 function perform_step!(integrator, cache::FBDFCache{max_order},
                        repeat_step = false) where {max_order}
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp) = cache
     else
         @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, u, f, p, uprev) = integrator
     else
         @unpack t, dt, u, f, p, uprev = integrator
@@ -1453,7 +1453,7 @@ function perform_step!(integrator, cache::FBDFCache{max_order},
     end
     @.. broadcast=false terk_tmp=lte * terkp1_tmp
     if integrator.opts.adaptive
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; abstol, reltol, internalnorm) = integrator.opts
         else
             @unpack abstol, reltol, internalnorm = integrator.opts

@@ -14,7 +14,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SplitEulerConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -30,7 +30,7 @@ end
 
 function initialize!(integrator, cache::SplitEulerCache)
     integrator.kshortsize = 2
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -48,7 +48,7 @@ function initialize!(integrator, cache::SplitEulerCache)
 end
 
 @muladd function perform_step!(integrator, cache::SplitEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator

@@ -4,7 +4,7 @@ function initialize!(integrator, cache::FunctionMapConstantCache)
 end
 
 function perform_step!(integrator, cache::FunctionMapConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; uprev, dt, t, f, p) = integrator
     else
         @unpack uprev, dt, t, f, p = integrator
@@ -30,13 +30,13 @@ function initialize!(integrator, cache::FunctionMapCache)
 end
 
 function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; u, uprev, dt, t, f, p) = integrator
     else
         @unpack u, uprev, dt, t, f, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp) = cache
     else
         @unpack tmp = cache
@@ -67,7 +67,7 @@ function initialize!(integrator, cache::EulerConstantCache)
 end
 
 function perform_step!(integrator, cache::EulerConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -83,7 +83,7 @@ end
 
 function initialize!(integrator, cache::EulerCache)
     integrator.kshortsize = 2
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -98,7 +98,7 @@ function initialize!(integrator, cache::EulerCache)
 end
 
 function perform_step!(integrator, cache::EulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -123,7 +123,7 @@ end
 @muladd function perform_step!(integrator,
                                cache::Union{HeunConstantCache, RalstonConstantCache},
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p, fsalfirst) = integrator
     else
         @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
@@ -170,7 +170,7 @@ end
 
 function initialize!(integrator, cache::Union{HeunCache, RalstonCache})
     integrator.kshortsize = 2
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -186,12 +186,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Union{HeunCache, RalstonCache},
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; fsalfirst, k, tmp, atmp, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack fsalfirst, k, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
@@ -247,7 +247,7 @@ end
 
 @muladd function perform_step!(integrator, cache::MidpointConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -271,7 +271,7 @@ end
 end
 
 function initialize!(integrator, cache::MidpointCache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -287,12 +287,12 @@ function initialize!(integrator, cache::MidpointCache)
 end
 
 @muladd function perform_step!(integrator, cache::MidpointCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, k, fsalfirst, atmp, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack tmp, k, fsalfirst, atmp, stage_limiter!, step_limiter!, thread = cache
@@ -326,7 +326,7 @@ function initialize!(integrator, cache::RK4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::RK4ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -376,7 +376,7 @@ end
 end
 
 function initialize!(integrator, cache::RK4Cache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, fsalfirst, k₂, k₃, k₄, k) = cache
     else
         @unpack tmp, fsalfirst, k₂, k₃, k₄, k = cache
@@ -392,12 +392,12 @@ function initialize!(integrator, cache::RK4Cache)
 end
 
 @muladd function perform_step!(integrator, cache::RK4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, fsalfirst, k₂, k₃, k₄, k, atmp, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack tmp, fsalfirst, k₂, k₃, k₄, k, atmp, stage_limiter!, step_limiter!, thread = cache
@@ -474,12 +474,12 @@ function initialize!(integrator, cache::RK46NLConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::RK46NLConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6) = cache
     else
         @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6 = cache
@@ -511,7 +511,7 @@ end
 end
 
 function initialize!(integrator, cache::RK46NLCache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst) = cache
     else
         @unpack k, fsalfirst = cache
@@ -526,17 +526,17 @@ function initialize!(integrator, cache::RK46NLCache)
 end
 
 @muladd function perform_step!(integrator, cache::RK46NLCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread) = cache
     else
         @unpack k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6) = cache.tab
     else
         @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6 = cache.tab
@@ -586,12 +586,12 @@ function initialize!(integrator, cache::Anas5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Anas5ConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, c2, c3, c4, c5, c6, b1, b3, b4, b5, b6) = cache
     else
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, c2, c3, c4, c5, c6, b1, b3, b4, b5, b6 = cache
@@ -645,18 +645,18 @@ function initialize!(integrator, cache::Anas5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::Anas5Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
     uidx = eachindex(integrator.uprev)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp) = cache
     else
         @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, c2, c3, c4, c5, c6, b1, b3, b4, b5, b6) = cache.tab
     else
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, c2, c3, c4, c5, c6, b1, b3, b4, b5, b6 = cache.tab

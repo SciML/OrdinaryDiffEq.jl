@@ -312,7 +312,7 @@ function create_extrapolation_coefficients(T,
                                                       ImplicitHairerWannerExtrapolation})
     # Compute and return extrapolation_coefficients
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, init_order, max_order, sequence) = alg
     else
         @unpack min_order, init_order, max_order, sequence = alg
@@ -382,7 +382,7 @@ end
 function create_extrapolation_coefficients(T, alg::ImplicitEulerBarycentricExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, init_order, max_order, sequence) = alg
     else
         @unpack min_order, init_order, max_order, sequence = alg
@@ -453,7 +453,7 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                            alg::ImplicitEulerBarycentricExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, init_order, max_order, sequence) = alg
     else
         @unpack min_order, init_order, max_order, sequence = alg
@@ -655,7 +655,7 @@ function create_extrapolation_coefficients(T::Type{<:CompiledFloats},
                                                       ImplicitHairerWannerExtrapolation})
     # Compute and return extrapolation_coefficients
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, init_order, max_order, sequence) = alg
     else
         @unpack min_order, init_order, max_order, sequence = alg
@@ -854,7 +854,7 @@ end
 function generate_sequence(T, alg::ImplicitEulerExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, init_order, max_order, sequence) = alg
     else
         @unpack min_order, init_order, max_order, sequence = alg
@@ -877,7 +877,7 @@ end
 function generate_sequence(T::Type{<:CompiledFloats}, alg::ImplicitEulerExtrapolation)
     # Compute and return extrapolation_coefficients
 
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; min_order, init_order, max_order, sequence) = alg
     else
         @unpack min_order, init_order, max_order, sequence = alg

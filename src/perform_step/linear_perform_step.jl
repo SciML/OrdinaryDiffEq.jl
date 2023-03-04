@@ -10,13 +10,13 @@ function initialize!(integrator, cache::MagnusMidpointCache)
 end
 
 function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -49,13 +49,13 @@ function initialize!(integrator, cache::LieRK4Cache)
 end
 
 function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -110,13 +110,13 @@ function initialize!(integrator, cache::RKMK4Cache)
 end
 
 function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -160,13 +160,13 @@ function initialize!(integrator, cache::RKMK2Cache)
 end
 
 function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -203,12 +203,12 @@ function initialize!(integrator, cache::CG3Cache)
 end
 
 function perform_step!(integrator, cache::CG3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -243,12 +243,12 @@ function initialize!(integrator, cache::CG2Cache)
 end
 
 function perform_step!(integrator, cache::CG2Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -280,12 +280,12 @@ function initialize!(integrator, cache::MagnusAdapt4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp, utilde, atmp) = cache
     else
         @unpack W, k, tmp, utilde, atmp = cache
@@ -356,13 +356,13 @@ function initialize!(integrator, cache::MagnusNC8Cache)
 end
 
 function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -439,13 +439,13 @@ function initialize!(integrator, cache::MagnusGL4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -481,13 +481,13 @@ function initialize!(integrator, cache::MagnusGL8Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -558,13 +558,13 @@ function initialize!(integrator, cache::MagnusNC6Cache)
 end
 
 function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -616,13 +616,13 @@ function initialize!(integrator, cache::MagnusGL6Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -668,13 +668,13 @@ function initialize!(integrator, cache::MagnusGauss4Cache)
 end
 
 function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -709,13 +709,13 @@ function initialize!(integrator, cache::LieEulerCache)
 end
 
 function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p) = integrator
     else
         @unpack t, dt, uprev, u, p = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -750,13 +750,13 @@ end
 
 function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = false,
                        alg_extrapolates = true, iter = 1)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, uprev2, u, p, iter) = integrator
     else
         @unpack t, dt, uprev, uprev2, u, p, iter = integrator
     end
     alg = unwrap_alg(integrator, nothing)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; W, k, tmp) = cache
     else
         @unpack W, k, tmp = cache
@@ -808,7 +808,7 @@ end
 
 function perform_step!(integrator, cache::LinearExponentialConstantCache,
                        repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, f, p) = integrator
     else
         @unpack t, dt, uprev, f, p = integrator
@@ -850,12 +850,12 @@ function initialize!(integrator, cache::LinearExponentialCache)
 end
 
 function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; tmp, KsCache) = cache
     else
         @unpack tmp, KsCache = cache
@@ -902,7 +902,7 @@ function initialize!(integrator, cache::CayleyEulerConstantCache)
 end
 
 function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
@@ -938,12 +938,12 @@ function initialize!(integrator, cache::CayleyEulerCache)
 end
 
 function perform_step!(integrator, cache::CayleyEulerCache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, p, f) = integrator
     else
         @unpack t, dt, uprev, u, p, f = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; k, V, tmp) = cache
     else
         @unpack k, V, tmp = cache

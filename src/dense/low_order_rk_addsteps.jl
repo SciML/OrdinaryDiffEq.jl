@@ -37,12 +37,12 @@ end
                                 force_calc_end = false)
     if length(k) < 6 || always_calc_begin
         uidx = eachindex(uprev)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, tmp = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4 = cache.tab
@@ -75,12 +75,12 @@ end
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
         uidx = eachindex(uprev)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, tmp = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6 = cache.tab
@@ -128,7 +128,7 @@ end
         T = constvalue(recursive_unitless_bottom_eltype(u))
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract DP5ConstantCacheActual T T2
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp = cache
@@ -172,7 +172,7 @@ end
         T = constvalue(recursive_unitless_bottom_eltype(u))
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
@@ -215,12 +215,12 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
         uidx = eachindex(uprev)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, tmp = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87) = cache.tab
         else
             @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87 = cache.tab
@@ -258,12 +258,12 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
     if (allow_calc_end && length(k) < 11) || force_calc_end # Have not added the extra stages yet
         uidx = eachindex(uprev)
         rtmp = similar(cache.k1)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp) = cache
         else
             @unpack tmp = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110) = cache.tab
         else
             @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache.tab
@@ -296,7 +296,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, c1, c2) = cache
         else
             @unpack a21, a31, a32, a41, a42, a43, c1, c2 = cache
@@ -320,12 +320,12 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, tmp) = cache
         else
             @unpack k1, k2, k3, k4, tmp = cache
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, c1, c2) = cache.tab
         else
             @unpack a21, a31, a32, a41, a42, a43, c1, c2 = cache.tab
@@ -352,7 +352,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 6 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4) = cache
         else
             @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4 = cache
@@ -428,7 +428,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6) = cache
         else
             @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6 = cache
@@ -695,7 +695,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87) = cache
         else
             @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87 = cache
@@ -726,7 +726,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
                            a87 * k[7]), p, t + dt))
     end
     if (allow_calc_end && length(k) < 11) || force_calc_end # Have not added the extra stages yet
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110) = cache
         else
             @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache

@@ -2,12 +2,12 @@
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 9 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98) = cache.tab
         else
             @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98 = cache.tab
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, tmp = cache
@@ -46,12 +46,12 @@
         copyat_or_push!(k, 9, k9)
     end
     if (allow_calc_end && length(k) < 12) || force_calc_end # Have not added the extra stages yet
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache.tab
         else
             @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab
         end.extra
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp) = cache
         else
             @unpack tmp = cache
@@ -88,7 +88,7 @@ end
     T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern7Tableau T T2
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp = cache
@@ -135,7 +135,7 @@ end
         copyat_or_push!(k, 10, k10)
     end
     if (allow_calc_end && length(k) < 16) || force_calc_end # Have not added the extra stages yet
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp) = cache
         else
             @unpack tmp = cache
@@ -194,7 +194,7 @@ end
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern7Tableau T T2
 
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, tmp = cache
@@ -267,7 +267,7 @@ end
         copyat_or_push!(k, 10, k10)
     end
     if (allow_calc_end && length(k) < 16) || force_calc_end # Have not added the extra stages yet
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp) = cache
         else
             @unpack tmp = cache
@@ -338,12 +338,12 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 13 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310) = cache.tab
         else
             @unpack c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310 = cache.tab
         end
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, tmp = cache
@@ -403,12 +403,12 @@ end
     end
     if (allow_calc_end && length(k) < 21) || force_calc_end # Have not added the extra stages yet
         rtmp = similar(cache.k1)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117) = cache.tab
         else
             @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab
         end.extra
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp) = cache
         else
             @unpack tmp = cache
@@ -485,7 +485,7 @@ end
     T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern9Tableau T T2
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
@@ -555,7 +555,7 @@ end
     if (allow_calc_end && length(k) < 20) || force_calc_end # Have not added the extra stages yet
         rtmp = similar(cache.k1)
         uidx = eachindex(uprev)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp) = cache
         else
             @unpack tmp = cache
@@ -648,7 +648,7 @@ end
     T2 = constvalue(typeof(one(t)))
     if length(k) < 10 || always_calc_begin
         @OnDemandTableauExtract Vern9Tableau T T2
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp) = cache
         else
             @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, tmp = cache
@@ -763,7 +763,7 @@ end
     if (allow_calc_end && length(k) < 20) || force_calc_end # Have not added the extra stages yet
         rtmp = similar(cache.k1)
         uidx = eachindex(uprev)
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; tmp) = cache
         else
             @unpack tmp = cache
@@ -882,7 +882,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 9 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98) = cache.tab
         else
             @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98 = cache.tab
@@ -914,7 +914,7 @@ end
                            a98 * k[8]), p, t + dt))
     end
     if (allow_calc_end && length(k) < 12) || force_calc_end # Have not added the extra stages yet
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache.tab
         else
             @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab
@@ -1020,7 +1020,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 13 || always_calc_begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310) = cache.tab
         else
             @unpack c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310 = cache.tab
@@ -1074,7 +1074,7 @@ end
                           t + dt))
     end
     if (allow_calc_end && length(k) < 21) || force_calc_end # Have not added the extra stages yet
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117) = cache.tab
         else
             @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab

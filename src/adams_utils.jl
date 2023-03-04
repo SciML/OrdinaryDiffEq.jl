@@ -3,7 +3,7 @@
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9
 function ϕ_and_ϕstar!(cache, du, k)
     @inbounds begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; dts, ϕstar_nm1, ϕ_n, ϕstar_n, β) = cache
         else
             @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
@@ -35,7 +35,7 @@ end
 
 function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache, VCABMCache}, du, k)
     @inbounds begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; dts, ϕstar_nm1, ϕ_n, ϕstar_n, β) = cache
         else
             @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
@@ -68,7 +68,7 @@ function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache, VCABMCache}, du, k)
 end
 
 function expand_ϕ_and_ϕstar!(cache, i)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; ξ, ξ0, β, dts, ϕstar_nm1, ϕ_n, ϕstar_n) = cache
     else
         @unpack ξ, ξ0, β, dts, ϕstar_nm1, ϕ_n, ϕstar_n = cache
@@ -86,7 +86,7 @@ end
 
 function ϕ_np1!(cache, du_np1, k)
     @inbounds begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; ϕ_np1, ϕstar_n) = cache
         else
             @unpack ϕ_np1, ϕstar_n = cache
@@ -116,7 +116,7 @@ end
 # Note that `g` is scaled by `dt` in here
 function g_coefs!(cache, k)
     @inbounds begin
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; dts, c, g) = cache
         else
             @unpack dts, c, g = cache

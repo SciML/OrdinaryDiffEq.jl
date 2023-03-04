@@ -73,7 +73,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     integrator.destats.nf += 1
     if integrator.opts.adaptive
-        @static if VERSION >= 1.8
+        @static if VERSION >= v"1.8"
             (; abstol, reltol) = integrator.opts
         else
             @unpack abstol, reltol = integrator.opts
@@ -90,33 +90,33 @@ function initialize!(integrator, cache::RadauIIA5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA3ConstantCache)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; T11, T12, T21, T22, TI11, TI12, TI21, TI22) = cache.tab
     else
         @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, α, β, e1, e2) = cache.tab
     else
         @unpack c1, c2, α, β, e1, e2 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; κ, cont1, cont2) = cache
     else
         @unpack κ, cont1, cont2 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     else
         @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; maxiters) = alg
     else
         @unpack maxiters = alg
@@ -227,22 +227,22 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA3Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p, fsallast, fsalfirst) = integrator
     else
         @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; T11, T12, T21, T22, TI11, TI12, TI21, TI22) = cache.tab
     else
         @unpack T11, T12, T21, T22, TI11, TI12, TI21, TI22 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, α, β, e1, e2) = cache.tab
     else
         @unpack c1, c2, α, β, e1, e2 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; κ, cont1, cont2) = cache
     else
         @unpack κ, cont1, cont2 = cache
@@ -252,13 +252,13 @@ end
     k, k2, fw1, fw2,
     J, W1,
     tmp, atmp, jac_config, rtol, atol = cache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     else
         @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; maxiters) = alg
     else
         @unpack maxiters = alg
@@ -393,33 +393,33 @@ end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p) = integrator
     else
         @unpack t, dt, uprev, u, f, p = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33) = cache.tab
     else
         @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
     else
         @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; κ, cont1, cont2, cont3) = cache
     else
         @unpack κ, cont1, cont2, cont3 = cache
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     else
         @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; maxiters) = alg
     else
         @unpack maxiters = alg
@@ -590,22 +590,22 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5Cache, repeat_step = false)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; t, dt, uprev, u, f, p, fsallast, fsalfirst) = integrator
     else
         @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33) = cache.tab
     else
         @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; c1, c2, γ, α, β, e1, e2, e3) = cache.tab
     else
         @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
     end
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; κ, cont1, cont2, cont3) = cache
     else
         @unpack κ, cont1, cont2, cont3 = cache
@@ -615,13 +615,13 @@ end
     k, k2, k3, fw1, fw2, fw3,
     J, W1, W2,
     tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; internalnorm, abstol, reltol, adaptive) = integrator.opts
     else
         @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     end
     alg = unwrap_alg(integrator, true)
-    @static if VERSION >= 1.8
+    @static if VERSION >= v"1.8"
         (; maxiters) = alg
     else
         @unpack maxiters = alg
