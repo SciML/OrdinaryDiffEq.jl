@@ -24,6 +24,8 @@ import StaticArrayInterface
 
 using LinearSolve, SimpleNonlinearSolve
 
+using SymbolicIndexingInterface
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 
@@ -38,7 +40,7 @@ using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
 
 using DiffEqBase: DEIntegrator
 
-import RecursiveArrayTools: chain, recursivecopy!
+import RecursiveArrayTools: chain, recursivecopy!, issymbollike
 
 using UnPack, ForwardDiff, RecursiveArrayTools,
       DataStructures, FiniteDiff, ArrayInterface, ArrayInterface
@@ -72,9 +74,10 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
+
 using IfElse
 
-using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator
+using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator, has_sys
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,

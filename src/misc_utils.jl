@@ -139,6 +139,16 @@ issuccess_W(W::LinearAlgebra.Factorization) = LinearAlgebra.issuccess(W)
 issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
+function hassymbols(v)
+    any(RecursiveArrayTools.issymbollike, v)
+end
+
+function partition_ints(idxs)
+    syms = filter(RecursiveArrayTools.issymbollike, idxs)
+    ints = setdiff(idxs, syms)
+    return syms, ints
+end
+
 macro OnDemandTableauExtract(S_T, T, T2)
     S = getproperty(__module__, S_T)
     s = gensym(:s)
