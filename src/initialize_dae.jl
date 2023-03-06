@@ -211,37 +211,19 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
 
     integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
 
-    if isdefined(integrator.cache, :nlsolver)
-        # backward Euler
-        nlsolver = integrator.cache.nlsolver
-        oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
-                                       integrator.dt
-        nlsolver.tmp .= integrator.uprev
-        nlsolver.γ, nlsolver.c = 1, 1
-        nlsolver.method = DIRK
-        integrator.dt = dt
-        z = nlsolve!(nlsolver, integrator, integrator.cache)
-        nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
-                                                                 olddt
-        # TODO: failure handling
-        nlsolvefail(nlsolver) &&
-            @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
-        @.. broadcast=false integrator.u=integrator.uprev + z
-    else
-        nlequation_oop = @closure (u, _) -> begin
-            update_coefficients!(M, u, p, t)
-            M * (u - u0) / dt - f(u, p, t)
-        end
-
-        nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
-
-        nlfunc = NonlinearFunction(nlequation_oop;
-                                   jac_prototype = f.jac_prototype)
-        nlprob = NonlinearProblem(nlfunc, u0)
-        nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-                      reltol = integrator.opts.reltol)
-        integrator.u = nlsol.u
+    nlequation_oop = @closure (u, _) -> begin
+        update_coefficients!(M, u, p, t)
+        M * (u - u0) / dt - f(u, p, t)
     end
+
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
+
+    nlfunc = NonlinearFunction(nlequation_oop;
+                               jac_prototype = f.jac_prototype)
+    nlprob = NonlinearProblem(nlfunc, u0)
+    nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
+                  reltol = integrator.opts.reltol)
+    integrator.u = nlsol.u
 
     integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
