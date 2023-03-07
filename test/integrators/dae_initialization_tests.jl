@@ -150,9 +150,9 @@ integrator = init(prob, DABDF2())
 
 # Need to be able to find the consistent solution of this problem, broken right now
 # analytical solution:
-# 	u[1](t) ->  cos(t)
-#	u[2](t) -> -sin(t)
-#	u[3](t) -> 2cos(t)
+#   u[1](t) ->  cos(t)
+#   u[2](t) -> -sin(t)
+#   u[3](t) -> 2cos(t)
 f = function (out, du, u, p, t)
     out[1] = du[1] - u[2]
     out[2] = du[2] + u[3] - cos(t)
@@ -196,3 +196,23 @@ integrator = init(prob, DABDF2())
 
 @test integrator.du[1]≈1.0 atol=1e-9
 @test integrator.du[2]≈1.0 atol=1e-9
+
+# to test that we get the right NL solve we need a broken solver.
+struct BrokenNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
+    BrokenNLSolve(; kwargs...) = new()
+end
+function SciMLBase.__solve(prob::NonlinearProblem,
+                           alg::BrokenNLSolve, args...;
+                           kwargs...)
+    u = fill(reinterpret(Float64, 0xDEADBEEFDEADBEEF), 3)
+    SciMLBase.build_solution(prob, alg, u, copy(u);
+                             retcode = ReturnCode.Success)
+end
+function rober(u, p, t)
+    u
+end
+f = ODEFunction(rober, mass_matrix = Diagonal([1.0, 1.0, 0.0]))
+prob = ODEProblem(f, ones(3), (0.0, 1.0))
+integrator = init(prob, Rodas5P(),
+                  initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
+@test all(isequal(reinterpret(Float64, 0xDEADBEEFDEADBEEF)), integrator.u)
