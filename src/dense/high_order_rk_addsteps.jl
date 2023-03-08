@@ -2,21 +2,9 @@
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 7 || always_calc_begin
-        @static if VERSION >= v"1.8"
-            (; c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache
-        else
-            @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache
-        end
-        @static if VERSION >= v"1.8"
-            (; c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615) = cache
-        else
-            @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache
-        end
-        @static if VERSION >= v"1.8"
-            (; d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716) = cache
-        else
-            @unpack d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = cache
-        end
+        @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache
+        @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache
+        @unpack d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = cache
         k1 = f(uprev, p, t)
         k2 = f(uprev + dt * (a0201 * k1), p, t + c2 * dt)
         k3 = f(uprev + dt * (a0301 * k1 + a0302 * k2), p, t + c3 * dt)
@@ -82,26 +70,10 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 7 || always_calc_begin
-        @static if VERSION >= v"1.8"
-            (; c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache.tab
-        else
-            @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab
-        end
-        @static if VERSION >= v"1.8"
-            (; c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615) = cache.tab
-        else
-            @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache.tab
-        end
-        @static if VERSION >= v"1.8"
-            (; d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716) = cache.tab
-        else
-            @unpack d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = cache.tab
-        end
-        @static if VERSION >= v"1.8"
-            (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, udiff, bspl, dense_tmp3, dense_tmp4, dense_tmp5, dense_tmp6, dense_tmp7, kupdate, utilde, tmp) = cache
-        else
-            @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, udiff, bspl, dense_tmp3, dense_tmp4, dense_tmp5, dense_tmp6, dense_tmp7, kupdate, utilde, tmp = cache
-        end
+        @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab
+        @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache.tab
+        @unpack d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = cache.tab
+        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, udiff, bspl, dense_tmp3, dense_tmp4, dense_tmp5, dense_tmp6, dense_tmp7, kupdate, utilde, tmp = cache
         utmp = utilde
         f(k1, uprev, p, t)
         @.. broadcast=false tmp=uprev + dt * (a0201 * k1)
@@ -182,26 +154,10 @@ end
 #=
 @muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::DP8Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<7 || always_calc_begin
-    @static if VERSION >=v"1.8"
-    (;c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211) = cache.tab
-else
     @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
-end
-    @static if VERSION >=v"1.8"
-    (;c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615) = cache.tab
-else
     @unpack c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = cache.tab
-end
-    @static if VERSION >=v"1.8"
-    (;d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716) = cache.tab
-else
     @unpack d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716 = cache.tab
-end
-    @static if VERSION >=v"1.8"
-    (;k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7,kupdate,utilde,tmp) = cache
-else
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7,kupdate,utilde,tmp = cache
-end
     utmp = utilde
     k = [cache.udiff,cache.bspl,cache.dense_tmp3,cache.dense_tmp4,cache.dense_tmp5,cache.dense_tmp6,cache.dense_tmp7]
     uidx = eachindex(u)

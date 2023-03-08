@@ -1,9 +1,5 @@
 function nordsieck_adjust!(integrator, cache::T) where {T}
-    @static if VERSION >= v"1.8"
-        (; nextorder, order) = cache
-    else
-        @unpack nextorder, order = cache
-    end
+    @unpack nextorder, order = cache
     if nextorder != order
         # TODO: optimize?
         nordsieck_adjust_order!(cache, nextorder - order)
@@ -19,11 +15,7 @@ end
 
 function nordsieck_finalize!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= v"1.8"
-        (; order, dts) = cache
-    else
-        @unpack order, dts = cache
-    end
+    @unpack order, dts = cache
     update_nordsieck_vector!(cache)
     cache.n_wait -= 1
     if is_nordsieck_change_order(cache, 1) && cache.order != 12
@@ -38,17 +30,9 @@ end
 
 function nordsieck_prepare_next!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= v"1.8"
-        (; maxη, order, L) = cache
-    else
-        @unpack maxη, order, L = cache
-    end
+    @unpack maxη, order, L = cache
     # TODO: further clean up
-    @static if VERSION >= v"1.8"
-        (; bias1, bias2, bias3, addon) = integrator.alg
-    else
-        @unpack bias1, bias2, bias3, addon = integrator.alg
-    end
+    @unpack bias1, bias2, bias3, addon = integrator.alg
     if integrator.EEst > one(integrator.EEst)
         nordsieck_rewind!(cache)
         cache.n_wait = max(2, cache.n_wait)
@@ -112,11 +96,7 @@ function calc_coeff!(cache::T) where {T}
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
         isvarorder = is_nordsieck_change_order(cache, 1)
-        @static if VERSION >= v"1.8"
-            (; m, l, dts, order) = cache
-        else
-            @unpack m, l, dts, order = cache
-        end
+        @unpack m, l, dts, order = cache
         dtsum = dt = dts[1]
         if order == 1
             l[1] = l[2] = cache.c_LTE₋₁ = cache.c_𝒟 = 1
@@ -180,11 +160,7 @@ end
 function perform_predict!(cache::T, rewind = false) where {T}
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
-        @static if VERSION >= v"1.8"
-            (; z, order) = cache
-        else
-            @unpack z, order = cache
-        end
+        @unpack z, order = cache
         # This can be parallelized
         if !rewind
             if isconst
@@ -215,11 +191,7 @@ function update_nordsieck_vector!(cache::T) where {T}
     isvode = (T <: JVODECache || T <: JVODEConstantCache)
     @inbounds begin
         isconst = T <: OrdinaryDiffEqConstantCache
-        @static if VERSION >= v"1.8"
-            (; z, Δ, l, order) = cache
-        else
-            @unpack z, Δ, l, order = cache
-        end
+        @unpack z, Δ, l, order = cache
         if isconst
             for i in 1:(order + 1)
                 z[i] = muladd.(l[i], Δ, z[i])
@@ -233,25 +205,13 @@ function update_nordsieck_vector!(cache::T) where {T}
 end
 
 function nlsolve_functional!(integrator, cache::T) where {T}
-    @static if VERSION >= v"1.8"
-        (; f, dt, t, p) = integrator
-    else
-        @unpack f, dt, t, p = integrator
-    end
+    @unpack f, dt, t, p = integrator
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= v"1.8"
-        (; z, l, c_conv, Δ) = cache
-    else
-        @unpack z, l, c_conv, Δ = cache
-    end
+    @unpack z, l, c_conv, Δ = cache
     if isconstcache
         ratetmp = integrator.f(z[1], p, dt + t)
     else
-        @static if VERSION >= v"1.8"
-            (; ratetmp) = cache
-        else
-            @unpack ratetmp = cache
-        end
+        @unpack ratetmp = cache
         integrator.f(ratetmp, z[1], p, dt + t)
     end
     integrator.destats.nf += 1
@@ -302,11 +262,7 @@ end
 
 function nordsieck_rescale!(cache::T, rewind = false) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= v"1.8"
-        (; z, dts, order) = cache
-    else
-        @unpack z, dts, order = cache
-    end
+    @unpack z, dts, order = cache
     eta = rewind ? dts[2] / dts[1] : dts[1] / dts[2]
     factor = eta
     for i in 2:(order + 1)
@@ -342,11 +298,7 @@ end
 
 function nordsieck_adjust_order!(cache::T, dorder) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= v"1.8"
-        (; order, dts) = cache
-    else
-        @unpack order, dts = cache
-    end
+    @unpack order, dts = cache
     # WIP: uncomment when finished
     #@inbound begin
     begin
@@ -403,11 +355,7 @@ end
 
 function chooseη!(integrator, cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
-    @static if VERSION >= v"1.8"
-        (; ηq, η₋₁, η₊₁, order, z, Δ) = cache
-    else
-        @unpack ηq, η₋₁, η₊₁, order, z, Δ = cache
-    end
+    @unpack ηq, η₋₁, η₊₁, order, z, Δ = cache
     η = max(ηq, η₋₁, η₊₁)
     if η < integrator.opts.qsteady_max
         cache.η = 1
@@ -447,16 +395,8 @@ end
 function stepsize_η₊₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
     isconstcache || (@unpack atmp, ratetmp = cache)
-    @static if VERSION >= v"1.8"
-        (; uprev, t, u) = integrator
-    else
-        @unpack uprev, t, u = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; z, c_LTE₊₁, dts, c_𝒟) = cache
-    else
-        @unpack z, c_LTE₊₁, dts, c_𝒟 = cache
-    end
+    @unpack uprev, t, u = integrator
+    @unpack z, c_LTE₊₁, dts, c_𝒟 = cache
     bias3 = integrator.alg.bias3
     addon = integrator.alg.addon
     q = order
@@ -485,16 +425,8 @@ end
 function stepsize_η₋₁!(integrator, cache::T, order) where {T}
     isconstcache = T <: OrdinaryDiffEqConstantCache
     isconstcache || (atmp = cache.atmp)
-    @static if VERSION >= v"1.8"
-        (; uprev, t, u) = integrator
-    else
-        @unpack uprev, t, u = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; z, c_LTE₋₁) = cache
-    else
-        @unpack z, c_LTE₋₁ = cache
-    end
+    @unpack uprev, t, u = integrator
+    @unpack z, c_LTE₋₁ = cache
     bias1 = integrator.alg.bias1
     addon = integrator.alg.addon
     cache.η₋₁ = 0

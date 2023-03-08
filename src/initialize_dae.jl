@@ -105,11 +105,7 @@ Solve for `u`
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
                           isinplace::Val{true})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
     tmp = first(get_tmp_cache(integrator))
@@ -186,11 +182,7 @@ end
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
                           isinplace::Val{false})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
     u0 = integrator.u
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
@@ -253,11 +245,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::ShampineCollocationInit, isinplace::Val{true})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
     u0 = integrator.u
 
     dtmax = integrator.opts.dtmax
@@ -303,11 +291,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::ShampineCollocationInit, isinplace::Val{false})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
     u0 = integrator.u
     dtmax = integrator.opts.dtmax
 
@@ -355,11 +339,7 @@ end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{true})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
     M isa UniformScaling && return
@@ -416,11 +396,7 @@ end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{false})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
 
     u0 = integrator.u
     M = integrator.f.mass_matrix
@@ -485,11 +461,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{true})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
     du = integrator.du
@@ -546,11 +518,7 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
                           alg::BrownFullBasicInit, isinplace::Val{false})
-    @static if VERSION >= v"1.8"
-        (; p, t, f) = integrator
-    else
-        @unpack p, t, f = integrator
-    end
+    @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
     if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t), t) <= alg.abstol

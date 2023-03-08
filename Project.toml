@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "6.49.0"
+version = "6.49.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -32,13 +32,13 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 SciMLNLSolve = "e9a6253c-8580-4d32-9898-8661bb511710"
 SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
+SimpleUnPack = "ce78b400-467f-4804-87d8-8f486da07d0a"
 SnoopPrecompile = "66db9d55-30c0-4569-8b51-7e840670fc0c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SparseDiffTools = "47a9eef4-7e08-11e9-0b38-333d64bd3804"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
-UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
 Adapt = "1.1, 2.0, 3.0"
@@ -67,12 +67,12 @@ Reexport = "0.2, 1.0"
 SciMLBase = "1.83"
 SciMLNLSolve = "0.1"
 SimpleNonlinearSolve = "0.1.4"
+SimpleUnPack = "1"
 SnoopPrecompile = "1"
 SparseDiffTools = "1.26.2"
 StaticArrayInterface = "1.2"
 StaticArrays = "0.11, 0.12, 1.0"
 TruncatedStacktraces = "1"
-UnPack = "0.1, 1.0"
 julia = "1.6"
 
 [extras]

@@ -23,11 +23,7 @@ function initialize!(integrator,
                                   ABM32Cache,
                                   ABM43Cache,
                                   ABM54Cache})
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k) = cache
-    else
-        @unpack fsalfirst, k = cache
-    end
+    @unpack fsalfirst, k = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
     integrator.kshortsize = 2
@@ -39,16 +35,8 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::AB3ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, k3) = cache
-    else
-        @unpack k2, k3 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, k3 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -80,16 +68,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB3Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tmp, fsalfirst, k2, k3, ralk2, k) = cache
-    else
-        @unpack tmp, fsalfirst, k2, k3, ralk2, k = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, fsalfirst, k2, k3, ralk2, k = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -117,16 +97,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM32ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, k3) = cache
-    else
-        @unpack k2, k3 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, k3 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -156,16 +128,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM32Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tmp, fsalfirst, k2, k3, ralk2, k) = cache
-    else
-        @unpack tmp, fsalfirst, k2, k3, ralk2, k = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, fsalfirst, k2, k3, ralk2, k = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -197,16 +161,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB4ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, k3, k4) = cache
-    else
-        @unpack k2, k3, k4 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, k3, k4 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -242,16 +198,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB4Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4) = cache
-    else
-        @unpack tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -287,16 +235,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM43ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, k3, k4) = cache
-    else
-        @unpack k2, k3, k4 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, k3, k4 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -332,16 +272,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM43Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, t5, t6, t7) = cache
-    else
-        @unpack tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, t5, t6, t7 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, fsalfirst, k2, k3, k4, ralk2, k, t2, t3, t4, t5, t6, t7 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -382,16 +314,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB5ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, k3, k4, k5) = cache
-    else
-        @unpack k2, k3, k4, k5 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, k3, k4, k5 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -430,16 +354,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::AB5Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4) = cache
-    else
-        @unpack tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -480,16 +396,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM54ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, k3, k4, k5) = cache
-    else
-        @unpack k2, k3, k4, k5 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, k3, k4, k5 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -528,16 +436,8 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ABM54Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, t5, t6, t7, t8) = cache
-    else
-        @unpack tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, t5, t6, t7, t8 = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tmp, fsalfirst, k2, k3, k4, k5, k, t2, t3, t4, t5, t6, t7, t8 = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -597,16 +497,8 @@ function initialize!(integrator, cache::VCAB3ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB3ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, tab) = cache
-    else
-        @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, tab = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, tab = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -658,11 +550,7 @@ end
 end
 
 function initialize!(integrator, cache::VCAB3Cache)
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k4) = cache
-    else
-        @unpack fsalfirst, k4 = cache
-    end
+    @unpack fsalfirst, k4 = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k4
     integrator.kshortsize = 2
@@ -674,16 +562,8 @@ function initialize!(integrator, cache::VCAB3Cache)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB3Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k4, dts, g, ϕstar_n, ϕstar_nm1, order, atmp, utilde, bs3cache) = cache
-    else
-        @unpack k4, dts, g, ϕstar_n, ϕstar_nm1, order, atmp, utilde, bs3cache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k4, dts, g, ϕstar_n, ϕstar_nm1, order, atmp, utilde, bs3cache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -745,16 +625,8 @@ function initialize!(integrator, cache::VCAB4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB4ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
-    else
-        @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -812,11 +684,7 @@ end
 end
 
 function initialize!(integrator, cache::VCAB4Cache)
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k4) = cache
-    else
-        @unpack fsalfirst, k4 = cache
-    end
+    @unpack fsalfirst, k4 = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k4
     integrator.kshortsize = 2
@@ -828,16 +696,8 @@ function initialize!(integrator, cache::VCAB4Cache)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB4Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache) = cache
-    else
-        @unpack k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -907,16 +767,8 @@ function initialize!(integrator, cache::VCAB5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB5ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
-    else
-        @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -981,11 +833,7 @@ end
 end
 
 function initialize!(integrator, cache::VCAB5Cache)
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k4) = cache
-    else
-        @unpack fsalfirst, k4 = cache
-    end
+    @unpack fsalfirst, k4 = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k4
     integrator.kshortsize = 2
@@ -997,16 +845,8 @@ function initialize!(integrator, cache::VCAB5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::VCAB5Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache) = cache
-    else
-        @unpack k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k4, dts, g, ϕ_n, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1083,16 +923,8 @@ function initialize!(integrator, cache::VCABM3ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM3ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, tab) = cache
-    else
-        @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, tab = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, tab = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1148,11 +980,7 @@ end
 end
 
 function initialize!(integrator, cache::VCABM3Cache)
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k4) = cache
-    else
-        @unpack fsalfirst, k4 = cache
-    end
+    @unpack fsalfirst, k4 = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k4
     integrator.kshortsize = 2
@@ -1164,16 +992,8 @@ function initialize!(integrator, cache::VCABM3Cache)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM3Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, bs3cache) = cache
-    else
-        @unpack k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, bs3cache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, bs3cache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1241,16 +1061,8 @@ function initialize!(integrator, cache::VCABM4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM4ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
-    else
-        @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1312,11 +1124,7 @@ end
 end
 
 function initialize!(integrator, cache::VCABM4Cache)
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k4) = cache
-    else
-        @unpack fsalfirst, k4 = cache
-    end
+    @unpack fsalfirst, k4 = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k4
     integrator.kshortsize = 2
@@ -1328,16 +1136,8 @@ function initialize!(integrator, cache::VCABM4Cache)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM4Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, rk4cache) = cache
-    else
-        @unpack k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k4, dts, g, ϕstar_n, ϕ_np1, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1411,16 +1211,8 @@ function initialize!(integrator, cache::VCABM5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::VCABM5ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache) = cache
-    else
-        @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, rk4constcache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
         cache.step = 1
@@ -1489,11 +1281,7 @@ end
 end
 
 function initialize!(integrator, cache::VCABM5Cache)
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k4) = cache
-    else
-        @unpack fsalfirst, k4 = cache
-    end
+    @unpack fsalfirst, k4 = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k4
     integrator.kshortsize = 2
@@ -1506,16 +1294,8 @@ end
 
 @muladd function perform_step!(integrator, cache::VCABM5Cache, repeat_step = false)
     @inbounds begin
-        @static if VERSION >= v"1.8"
-            (; t, dt, uprev, u, f, p) = integrator
-        else
-            @unpack t, dt, uprev, u, f, p = integrator
-        end
-        @static if VERSION >= v"1.8"
-            (; k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache) = cache
-        else
-            @unpack k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
-        end
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, atmp, utilde, rk4cache = cache
         k1 = integrator.fsalfirst
         if integrator.u_modified
             cache.step = 1
@@ -1604,16 +1384,8 @@ end
 
 @muladd function perform_step!(integrator, cache::VCABMConstantCache, repeat_step = false)
     @inbounds begin
-        @static if VERSION >= v"1.8"
-            (; t, dt, uprev, u, f, p) = integrator
-        else
-            @unpack t, dt, uprev, u, f, p = integrator
-        end
-        @static if VERSION >= v"1.8"
-            (; dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order) = cache
-        else
-            @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order = cache
-        end
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order = cache
         k1 = integrator.fsalfirst
         step = integrator.iter
         k = order
@@ -1686,11 +1458,7 @@ end
 end
 
 function initialize!(integrator, cache::VCABMCache)
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, k4) = cache
-    else
-        @unpack fsalfirst, k4 = cache
-    end
+    @unpack fsalfirst, k4 = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k4
     integrator.kshortsize = 2
@@ -1703,16 +1471,8 @@ end
 
 @muladd function perform_step!(integrator, cache::VCABMCache, repeat_step = false)
     @inbounds begin
-        @static if VERSION >= v"1.8"
-            (; t, dt, uprev, u, f, p) = integrator
-        else
-            @unpack t, dt, uprev, u, f, p = integrator
-        end
-        @static if VERSION >= v"1.8"
-            (; k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order, utilde, utildem2, utildem1, utildep1, atmp, atmpm1, atmpm2, atmpp1) = cache
-        else
-            @unpack k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order, utilde, utildem2, utildem1, utildep1, atmp, atmpm1, atmpm2, atmpp1 = cache
-        end
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack k4, dts, g, ϕ_n, ϕ_np1, ϕstar_n, ϕstar_nm1, order, max_order, utilde, utildem2, utildem1, utildep1, atmp, atmpm1, atmpm2, atmpp1 = cache
         k1 = integrator.fsalfirst
         step = integrator.iter
         k = order
@@ -1798,16 +1558,8 @@ function initialize!(integrator, cache::CNAB2ConstantCache)
 end
 
 function perform_step!(integrator, cache::CNAB2ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, nlsolver) = cache
-    else
-        @unpack k2, nlsolver = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, nlsolver = cache
     cnt = integrator.iter
     f1 = integrator.f.f1
     f2 = integrator.f.f2
@@ -1857,26 +1609,10 @@ function initialize!(integrator, cache::CNAB2Cache)
 end
 
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k1, k2, du₁, nlsolver) = cache
-    else
-        @unpack k1, k2, du₁, nlsolver = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; z, tmp) = nlsolver
-    else
-        @unpack z, tmp = nlsolver
-    end
-    @static if VERSION >= v"1.8"
-        (; f1) = f
-    else
-        @unpack f1 = f
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k1, k2, du₁, nlsolver = cache
+    @unpack z, tmp = nlsolver
+    @unpack f1 = f
     cnt = integrator.iter
 
     f1(du₁, uprev, p, t)
@@ -1923,16 +1659,8 @@ function initialize!(integrator, cache::CNLF2ConstantCache)
 end
 
 function perform_step!(integrator, cache::CNLF2ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k2, uprev2, nlsolver) = cache
-    else
-        @unpack k2, uprev2, nlsolver = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k2, uprev2, nlsolver = cache
     cnt = integrator.iter
     f1 = integrator.f.f1
     f2 = integrator.f.f2
@@ -1984,26 +1712,10 @@ function initialize!(integrator, cache::CNLF2Cache)
 end
 
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; uprev2, k2, du₁, nlsolver) = cache
-    else
-        @unpack uprev2, k2, du₁, nlsolver = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; z, tmp) = nlsolver
-    else
-        @unpack z, tmp = nlsolver
-    end
-    @static if VERSION >= v"1.8"
-        (; f1) = f
-    else
-        @unpack f1 = f
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack uprev2, k2, du₁, nlsolver = cache
+    @unpack z, tmp = nlsolver
+    @unpack f1 = f
     cnt = integrator.iter
 
     f1(du₁, uprev, p, t)

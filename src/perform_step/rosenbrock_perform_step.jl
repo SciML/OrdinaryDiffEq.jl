@@ -1,11 +1,7 @@
 function initialize!(integrator, cache::Union{Rosenbrock23Cache,
                                               Rosenbrock32Cache})
     integrator.kshortsize = 2
-    @static if VERSION >= v"1.8"
-        (; k₁, k₂, fsalfirst, fsallast) = cache
-    else
-        @unpack k₁, k₂, fsalfirst, fsallast = cache
-    end
+    @unpack k₁, k₂, fsalfirst, fsallast = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = fsallast
     resize!(integrator.k, integrator.kshortsize)
@@ -30,21 +26,9 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p, opts) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p, opts = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; c₃₂, d) = cache.tab
-    else
-        @unpack c₃₂, d = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p, opts = integrator
+    @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack c₃₂, d = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -144,21 +128,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache{<:Array},
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p, opts) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p, opts = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; c₃₂, d) = cache.tab
-    else
-        @unpack c₃₂, d = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p, opts = integrator
+    @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack c₃₂, d = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -278,21 +250,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p, opts) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p, opts = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; c₃₂, d) = cache.tab
-    else
-        @unpack c₃₂, d = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p, opts = integrator
+    @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack c₃₂, d = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -383,16 +343,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; c₃₂, d, tf, uf) = cache
-    else
-        @unpack c₃₂, d, tf, uf = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack c₃₂, d, tf, uf = cache
 
     # Precalculations
     γ = dt * d
@@ -456,16 +408,8 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; c₃₂, d, tf, uf) = cache
-    else
-        @unpack c₃₂, d, tf, uf = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack c₃₂, d, tf, uf = cache
 
     # Precalculations
     γ = dt * d
@@ -550,11 +494,7 @@ function initialize!(integrator,
                                   Rosenbrock34Cache,
                                   Rosenbrock4Cache})
     integrator.kshortsize = 2
-    @static if VERSION >= v"1.8"
-        (; fsalfirst, fsallast) = cache
-    else
-        @unpack fsalfirst, fsallast = cache
-    end
+    @unpack fsalfirst, fsallast = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = fsallast
     resize!(integrator.k, integrator.kshortsize)
@@ -566,21 +506,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tf, uf) = cache
-    else
-        @unpack tf, uf = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3) = cache.tab
-    else
-        @unpack a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tf, uf = cache
+    @unpack a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3 = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -649,21 +577,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; du, du1, du2, fsalfirst, fsallast, k1, k2, k3, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3) = cache.tab
-    else
-        @unpack a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3 = cache.tab
 
     # Assignments
     mass_matrix = integrator.f.mass_matrix
@@ -759,21 +675,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tf, uf) = cache
-    else
-        @unpack tf, uf = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4) = cache.tab
-    else
-        @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tf, uf = cache
+    @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -854,21 +758,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4) = cache.tab
-    else
-        @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
     # Assignments
     uidx = eachindex(integrator.uprev)
@@ -1003,21 +895,9 @@ function initialize!(integrator, cache::Rodas4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tf, uf) = cache
-    else
-        @unpack tf, uf = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4) = cache.tab
-    else
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tf, uf = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -1133,11 +1013,7 @@ end
     end
 
     if integrator.opts.calck
-        @static if VERSION >= v"1.8"
-            (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35) = cache.tab
-        else
-            @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        end
+        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
         integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
         integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
     end
@@ -1147,32 +1023,16 @@ end
 
 function initialize!(integrator, cache::Rodas4Cache)
     integrator.kshortsize = 2
-    @static if VERSION >= v"1.8"
-        (; dense1, dense2) = cache
-    else
-        @unpack dense1, dense2 = cache
-    end
+    @unpack dense1, dense2 = cache
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = dense1
     integrator.k[2] = dense2
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4) = cache.tab
-    else
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -1318,11 +1178,7 @@ end
     end
 
     if integrator.opts.calck
-        @static if VERSION >= v"1.8"
-            (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35) = cache.tab
-        else
-            @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        end
+        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
         @.. broadcast=false integrator.k[1]=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 +
                                             h25 * k5
         @.. broadcast=false integrator.k[2]=h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 +
@@ -1332,21 +1188,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache{<:Array}, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4) = cache.tab
-    else
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -1549,11 +1393,7 @@ end
     end
 
     if integrator.opts.calck
-        @static if VERSION >= v"1.8"
-            (; h21, h22, h23, h24, h25, h31, h32, h33, h34, h35) = cache.tab
-        else
-            @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        end
+        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
         @inbounds @simd ivdep for i in eachindex(u)
             integrator.k[1][i] = h21 * k1[i] + h22 * k2[i] + h23 * k3[i] + h24 * k4[i] +
                                  h25 * k5[i]
@@ -1579,21 +1419,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; tf, uf) = cache
-    else
-        @unpack tf, uf = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5) = cache.tab
-    else
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack tf, uf = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -1756,11 +1584,7 @@ end
     end
 
     if integrator.opts.calck
-        @static if VERSION >= v"1.8"
-            (; h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48) = cache.tab
-        else
-            @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
-        end
+        @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
         integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5 + h26 * k6 +
                           h27 * k7 + h28 * k8
         integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5 + h36 * k6 +
@@ -1775,11 +1599,7 @@ end
 
 function initialize!(integrator, cache::Rosenbrock5Cache)
     integrator.kshortsize = 3
-    @static if VERSION >= v"1.8"
-        (; dense1, dense2, dense3) = cache
-    else
-        @unpack dense1, dense2, dense3 = cache
-    end
+    @unpack dense1, dense2, dense3 = cache
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = dense1
     integrator.k[2] = dense2
@@ -1787,21 +1607,9 @@ function initialize!(integrator, cache::Rosenbrock5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5) = cache.tab
-    else
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -2006,11 +1814,7 @@ end
     end
 
     if integrator.opts.calck
-        @static if VERSION >= v"1.8"
-            (; h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48) = cache.tab
-        else
-            @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
-        end
+        @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
         @.. broadcast=false integrator.k[1]=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 +
                                             h25 * k5 + h26 * k6 + h27 * k7 + h28 * k8
         @.. broadcast=false integrator.k[2]=h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 +
@@ -2023,21 +1827,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache{<:Array},
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight) = cache
-    else
-        @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5) = cache.tab
-    else
-        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
 
     # Assignments
     sizeu = size(u)
@@ -2321,11 +2113,7 @@ end
     end
 
     if integrator.opts.calck
-        @static if VERSION >= v"1.8"
-            (; h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48) = cache.tab
-        else
-            @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
-        end
+        @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
         @inbounds @simd ivdep for i in eachindex(u)
             integrator.k[1][i] = h21 * k1[i] + h22 * k2[i] + h23 * k3[i] + h24 * k4[i] +
                                  h25 * k5[i] + h26 * k6[i] + h27 * k7[i] + h28 * k8[i]
