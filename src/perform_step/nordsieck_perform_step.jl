@@ -14,16 +14,8 @@ function initialize!(integrator, cache::AN5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; z, l, m, c_LTE, dts, tsit5tab) = cache
-    else
-        @unpack z, l, m, c_LTE, dts, tsit5tab = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack z, l, m, c_LTE, dts, tsit5tab = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified
         cache.order = 1
@@ -113,16 +105,8 @@ function initialize!(integrator, cache::AN5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p, uprev2) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p, uprev2 = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
-    else
-        @unpack z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache = cache
-    end
+    @unpack t, dt, uprev, u, f, p, uprev2 = integrator
+    @unpack z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified
         cache.order = 1
@@ -214,16 +198,8 @@ function initialize!(integrator, cache::JVODEConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::JVODEConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; z, l, m, c_LTE, dts, tsit5tab) = cache
-    else
-        @unpack z, l, m, c_LTE, dts, tsit5tab = cache
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack z, l, m, c_LTE, dts, tsit5tab = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified || integrator.iter == 1
         cache.order = 1
@@ -289,16 +265,8 @@ function initialize!(integrator, cache::JVODECache)
 end
 
 @muladd function perform_step!(integrator, cache::JVODECache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p, uprev2) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p, uprev2 = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache) = cache
-    else
-        @unpack z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache = cache
-    end
+    @unpack t, dt, uprev, u, f, p, uprev2 = integrator
+    @unpack z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified || integrator.iter == 1
         cache.order = 1

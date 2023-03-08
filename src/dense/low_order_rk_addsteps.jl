@@ -37,16 +37,8 @@ end
                                 force_calc_end = false)
     if length(k) < 6 || always_calc_begin
         uidx = eachindex(uprev)
-        @static if VERSION >= v"1.8"
-            (; k1, k2, k3, k4, k5, k6, tmp) = cache
-        else
-            @unpack k1, k2, k3, k4, k5, k6, tmp = cache
-        end
-        @static if VERSION >= v"1.8"
-            (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4) = cache.tab
-        else
-            @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4 = cache.tab
-        end
+        @unpack k1, k2, k3, k4, k5, k6, tmp = cache
+        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4 = cache.tab
         # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
         a = dt * a21
         @.. broadcast=false tmp=uprev + a * k1
@@ -75,16 +67,8 @@ end
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
         uidx = eachindex(uprev)
-        @static if VERSION >= v"1.8"
-            (; k1, k2, k3, k4, k5, k6, k7, k8, tmp) = cache
-        else
-            @unpack k1, k2, k3, k4, k5, k6, k7, k8, tmp = cache
-        end
-        @static if VERSION >= v"1.8"
-            (; a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6) = cache.tab
-        else
-            @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6 = cache.tab
-        end
+        @unpack k1, k2, k3, k4, k5, k6, k7, k8, tmp = cache
+        @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6 = cache.tab
         # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
         a = dt * a21
         @.. broadcast=false tmp=uprev + a * k1
@@ -128,11 +112,7 @@ end
         T = constvalue(recursive_unitless_bottom_eltype(u))
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract DP5ConstantCacheActual T T2
-        @static if VERSION >= v"1.8"
-            (; k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp) = cache
-        else
-            @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp = cache
-        end
+        @unpack k1, k2, k3, k4, k5, k6, k7, dense_tmp3, dense_tmp4, update, bspl, utilde, tmp, atmp = cache
         uidx = eachindex(uprev)
         f(k1, uprev, p, t)
         @.. broadcast=false tmp=uprev + dt * (a21 * k1)
@@ -172,11 +152,7 @@ end
         T = constvalue(recursive_unitless_bottom_eltype(u))
         T2 = constvalue(typeof(one(t)))
         @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-        @static if VERSION >= v"1.8"
-            (; k1, k2, k3, k4, k5, k6, k7, tmp) = cache
-        else
-            @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
-        end
+        @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
         @.. broadcast=false tmp=uprev + dt * (a21 * k1)
         f(k2, tmp, p, t + c1 * dt)
         @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
@@ -215,16 +191,8 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
         uidx = eachindex(uprev)
-        @static if VERSION >= v"1.8"
-            (; k1, k2, k3, k4, k5, k6, k7, k8, tmp) = cache
-        else
-            @unpack k1, k2, k3, k4, k5, k6, k7, k8, tmp = cache
-        end
-        @static if VERSION >= v"1.8"
-            (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87) = cache.tab
-        else
-            @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87 = cache.tab
-        end
+        @unpack k1, k2, k3, k4, k5, k6, k7, k8, tmp = cache
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87 = cache.tab
         @.. broadcast=false tmp=uprev + dt * a21 * k1
         f(k2, tmp, p, t + c1 * dt)
         @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
@@ -258,16 +226,8 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
     if (allow_calc_end && length(k) < 11) || force_calc_end # Have not added the extra stages yet
         uidx = eachindex(uprev)
         rtmp = similar(cache.k1)
-        @static if VERSION >= v"1.8"
-            (; tmp) = cache
-        else
-            @unpack tmp = cache
-        end
-        @static if VERSION >= v"1.8"
-            (; c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110) = cache.tab
-        else
-            @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache.tab
-        end
+        @unpack tmp = cache
+        @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache.tab
         @.. broadcast=false tmp=uprev +
                                 dt * (a91 * k[1] + a92 * k[2] + a93 * k[3] + a94 * k[4] +
                                  a95 * k[5] + a96 * k[6] + a97 * k[7] + a98 * k[8])
@@ -296,11 +256,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        @static if VERSION >= v"1.8"
-            (; a21, a31, a32, a41, a42, a43, c1, c2) = cache
-        else
-            @unpack a21, a31, a32, a41, a42, a43, c1, c2 = cache
-        end
+        @unpack a21, a31, a32, a41, a42, a43, c1, c2 = cache
         k1 = f(uprev, p, t)
         a1 = dt * a21
         k2 = f(uprev + a1 * k1, p, t + c1 * dt)
@@ -320,16 +276,8 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 4 || always_calc_begin
-        @static if VERSION >= v"1.8"
-            (; k1, k2, k3, k4, tmp) = cache
-        else
-            @unpack k1, k2, k3, k4, tmp = cache
-        end
-        @static if VERSION >= v"1.8"
-            (; a21, a31, a32, a41, a42, a43, c1, c2) = cache.tab
-        else
-            @unpack a21, a31, a32, a41, a42, a43, c1, c2 = cache.tab
-        end
+        @unpack k1, k2, k3, k4, tmp = cache
+        @unpack a21, a31, a32, a41, a42, a43, c1, c2 = cache.tab
         # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
         a1 = dt * a21
         @.. broadcast=false tmp=uprev + a1 * k1
@@ -352,11 +300,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 6 || always_calc_begin
-        @static if VERSION >= v"1.8"
-            (; a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4) = cache
-        else
-            @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4 = cache
-        end
+        @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4 = cache
         k1 = f(uprev, p, t)
         a = dt * a21
         k2 = f(uprev + a * k1, p, t + c1 * dt)
@@ -379,16 +323,8 @@ end
 @muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<6 || always_calc_begin
     uidx = eachindex(uprev)
-    @static if VERSION >=v"1.8"
-    (;k1,k2,k3,k4,k5,k6,tmp) = cache
-else
     @unpack k1,k2,k3,k4,k5,k6,tmp = cache
-end
-    @static if VERSION >=v"1.8"
-    (;a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4) = cache.tab
-else
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache.tab
-end
     # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
     a = dt*a21
     @tight_loop_macros for i in uidx
@@ -428,11 +364,7 @@ end
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
-        @static if VERSION >= v"1.8"
-            (; a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6) = cache
-        else
-            @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6 = cache
-        end
+        @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6 = cache
         k1 = f(uprev, p, t)
         a = dt * a21
         k2 = f(uprev + a * k1, p, t + c1 * dt)
@@ -462,16 +394,8 @@ end
 @muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<8 || always_calc_begin
     uidx = eachindex(uprev)
-    @static if VERSION >=v"1.8"
-    (;k1,k2,k3,k4,k5,k6,k7,k8,tmp) = cache
-else
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
-end
-    @static if VERSION >=v"1.8"
-    (;a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6) = cache.tab
-else
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache.tab
-end
     # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
     a = dt*a21
     @tight_loop_macros for i in uidx
@@ -544,21 +468,9 @@ end
 #=
 @muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::DP5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<4 || always_calc_begin
-    @static if VERSION >=v"1.8"
-    (;a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6) = cache.tab
-else
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
-end
-    @static if VERSION >=v"1.8"
-    (;k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp) = cache
-else
     @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
-end
-    @static if VERSION >=v"1.8"
-    (;d1,d3,d4,d5,d6,d7) = cache.tab
-else
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
-end
     uidx = eachindex(uprev)
     f(k1,uprev,p,t)
     @tight_loop_macros for i in uidx
@@ -638,16 +550,8 @@ end
 #=
 @muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<7 || always_calc_begin
-    @static if VERSION >=v"1.8"
-    (;c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76) = cache.tab
-else
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76 = cache.tab
-end
-    @static if VERSION >=v"1.8"
-    (;k1,k2,k3,k4,k5,k6,k7,tmp) = cache
-else
     @unpack k1,k2,k3,k4,k5,k6,k7,tmp = cache
-end
     uidx = eachindex(uprev)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a21*k1[i])
@@ -695,11 +599,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
                                 always_calc_begin = false, allow_calc_end = true,
                                 force_calc_end = false)
     if length(k) < 8 || always_calc_begin
-        @static if VERSION >= v"1.8"
-            (; c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87) = cache
-        else
-            @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87 = cache
-        end
+        @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87 = cache
         copyat_or_push!(k, 1, f(uprev, p, t))
         copyat_or_push!(k, 2, f(uprev + dt * a21 * k[1], p, t + c1 * dt))
         copyat_or_push!(k, 3, f(uprev + dt * (a31 * k[1] + a32 * k[2]), p, t + c2 * dt))
@@ -726,11 +626,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
                            a87 * k[7]), p, t + dt))
     end
     if (allow_calc_end && length(k) < 11) || force_calc_end # Have not added the extra stages yet
-        @static if VERSION >= v"1.8"
-            (; c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110) = cache
-        else
-            @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache
-        end
+        @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache
         copyat_or_push!(k, 9,
                         f(uprev +
                           dt *
@@ -760,16 +656,8 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
 @muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::BS5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k) < 8 || always_calc_begin
     uidx = eachindex(uprev)
-    @static if VERSION >=v"1.8"
-    (;k1,k2,k3,k4,k5,k6,k7,k8,tmp) = cache
-else
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
-end
-    @static if VERSION >=v"1.8"
-    (;c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87) = cache.tab
-else
     @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87 = cache.tab
-end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*a21*k1[i]
     end
@@ -810,16 +698,8 @@ end
   if (allow_calc_end && length(k)< 11) || force_calc_end # Have not added the extra stages yet
     uidx = eachindex(uprev)
     rtmp = similar(cache.k1)
-    @static if VERSION >=v"1.8"
-    (;tmp) = cache
-else
     @unpack tmp = cache
-end
-    @static if VERSION >=v"1.8"
-    (;c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110) = cache.tab
-else
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
-end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a91*k[1][i]+a92*k[2][i]+a93*k[3][i]+a94*k[4][i]+a95*k[5][i]+a96*k[6][i]+a97*k[7][i]+a98*k[8][i])
     end

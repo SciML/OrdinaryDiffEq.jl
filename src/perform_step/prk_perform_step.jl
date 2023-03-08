@@ -11,22 +11,10 @@ end
 
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5ConstantCache,
                                repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= v"1.8"
-        (; α21, α31, α32, α41, α42, α43, α5_6) = cache
-    else
-        @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; β1, β3, β5, β6, c2, c3, c4, c5_6) = cache
-    else
-        @unpack β1, β3, β5, β6, c2, c3, c4, c5_6 = cache
-    end
+    @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache
+    @unpack β1, β3, β5, β6, c2, c3, c4, c5_6 = cache
 
     k1 = f(uprev, p, t)
     k2 = f(uprev + dt * α21 * k1, p, t + c2 * dt)
@@ -64,11 +52,7 @@ end
 end
 
 function initialize!(integrator, cache::KuttaPRK2p5Cache)
-    @static if VERSION >= v"1.8"
-        (; k, fsalfirst) = cache
-    else
-        @unpack k, fsalfirst = cache
-    end
+    @unpack k, fsalfirst = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
     integrator.kshortsize = 2
@@ -79,27 +63,11 @@ function initialize!(integrator, cache::KuttaPRK2p5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, false)
-    @static if VERSION >= v"1.8"
-        (; k, k1, k2, k3, k4, k5_6, fsalfirst, tmp) = cache
-    else
-        @unpack k, k1, k2, k3, k4, k5_6, fsalfirst, tmp = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; α21, α31, α32, α41, α42, α43, α5_6) = cache.tab
-    else
-        @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache.tab
-    end
-    @static if VERSION >= v"1.8"
-        (; β1, β3, β5, β6, c2, c3, c4, c5_6) = cache.tab
-    else
-        @unpack β1, β3, β5, β6, c2, c3, c4, c5_6 = cache.tab
-    end
+    @unpack k, k1, k2, k3, k4, k5_6, fsalfirst, tmp = cache
+    @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache.tab
+    @unpack β1, β3, β5, β6, c2, c3, c4, c5_6 = cache.tab
 
     f(k1, uprev, p, t)
 
