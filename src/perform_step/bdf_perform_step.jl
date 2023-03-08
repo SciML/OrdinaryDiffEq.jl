@@ -865,7 +865,8 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
         copyto!(RU, R * U)
         @views mul!(Dtmp[:, 1:k], D[:, 1:k], RU[1:k, 1:k])
         D, Dtmp = Dtmp, D
-        @pack! cache = D, Dtmp
+        cache.D = D
+        cache.Dtmp = Dtmp
     end
 
     α₀ = 1
