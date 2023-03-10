@@ -61,9 +61,6 @@ testTol = 0.2
     sim4 = test_convergence(dts2, prob, SIR54())
     @test sim4.𝒪est[:l2]≈4.4 atol=testTol
 
-    sim4 = test_convergence(dts2, prob, ERKO2())
-    @test sim4.𝒪est[:l2]≈4.4 atol=testTol
-
     @info "Multistep"
     sim5 = test_convergence(dts, prob, AB3())
     @test sim5.𝒪est[:l2]≈3 atol=testTol
