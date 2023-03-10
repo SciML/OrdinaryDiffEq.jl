@@ -22,12 +22,14 @@ if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeCache)
 end
 
-function alg_cache(alg::CompositeAlgorithm{Tuple{T1,T2}, F}, u, rate_prototype,
-    ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
-    uprev2, f, t, dt, reltol, p, calck,
-    ::Val{V}) where {T1, T2, F, V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-          tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
+function alg_cache(alg::CompositeAlgorithm{Tuple{T1, T2}, F}, u, rate_prototype,
+                   ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
+                   ::Type{tTypeNoUnits}, uprev,
+                   uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{V}) where {T1, T2, F, V, uEltypeNoUnits, uBottomEltypeNoUnits,
+                                    tTypeNoUnits}
+    caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+                         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
     CompositeCache(caches, alg.choice_function, 1)
 end
 
@@ -35,11 +37,12 @@ function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoU
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{V}) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    caches = (alg_cache(alg.algs[1], u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-                         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)),
-            alg_cache(alg.algs[2], u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-                tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)),
-    )
+    caches = (alg_cache(alg.algs[1], u, rate_prototype, uEltypeNoUnits,
+                        uBottomEltypeNoUnits,
+                        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)),
+              alg_cache(alg.algs[2], u, rate_prototype, uEltypeNoUnits,
+                        uBottomEltypeNoUnits,
+                        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)))
     CompositeCache(caches, alg.choice_function, 1)
 end
 
@@ -142,11 +145,7 @@ struct ExplicitRKConstantCache{MType, VType, KType} <: OrdinaryDiffEqConstantCac
 end
 
 function ExplicitRKConstantCache(tableau, rate_prototype)
-    @static if VERSION >= v"1.8"
-        (; A, c, α, αEEst, stages) = tableau
-    else
-        @unpack A, c, α, αEEst, stages = tableau
-    end
+    @unpack A, c, α, αEEst, stages = tableau
     A = copy(A') # Transpose A to column major looping
     kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
     αEEst = isempty(αEEst) ? αEEst : α .- αEEst

@@ -21,16 +21,8 @@ function initialize!(integrator, cache::Vern6ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern6ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9) = cache.tab
-    else
-        @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9 = cache.tab
     k1 = integrator.fsalfirst
     a = dt * a21
     k2 = f(uprev + a * k1, p, t + c1 * dt)
@@ -74,11 +66,7 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @static if VERSION >= v"1.8"
-            (; c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache.tab.extra
-        else
-            @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab.extra
-        end
+        @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab.extra
         k[10] = f(uprev +
                   dt * (a1001 * k[1] + a1004 * k[4] + a1005 * k[5] + a1006 * k[6] +
                    a1007 * k[7] + a1008 * k[8] + a1009 * k[9]), p, t + c10 * dt)
@@ -101,11 +89,7 @@ function initialize!(integrator, cache::Vern6Cache)
     alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k9
-    @static if VERSION >= v"1.8"
-        (; k) = integrator
-    else
-        @unpack k = integrator
-    end
+    @unpack k = integrator
     resize!(k, integrator.kshortsize)
     k[1] = cache.k1
     k[2] = cache.k2
@@ -128,22 +112,10 @@ function initialize!(integrator, cache::Vern6Cache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern6Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
     uidx = eachindex(integrator.uprev)
-    @static if VERSION >= v"1.8"
-        (; c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9) = cache.tab
-    else
-        @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9 = cache.tab
-    end
-    @static if VERSION >= v"1.8"
-        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
-    else
-        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
-    end
+    @unpack c1, c2, c3, c4, c5, c6, a21, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, a91, a94, a95, a96, a97, a98, btilde1, btilde4, btilde5, btilde6, btilde7, btilde8, btilde9 = cache.tab
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     a = dt * a21
     @.. broadcast=false thread=thread tmp=uprev + a * k1
     f(k2, tmp, p, t + c1 * dt)
@@ -196,16 +168,8 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @static if VERSION >= v"1.8"
-            (; c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211) = cache.tab.extra
-        else
-            @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab.extra
-        end
-        @static if VERSION >= v"1.8"
-            (; tmp) = cache
-        else
-            @unpack tmp = cache
-        end
+        @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab.extra
+        @unpack tmp = cache
         @.. broadcast=false thread=thread tmp=uprev +
                                               dt *
                                               (a1001 * k[1] + a1004 * k[4] + a1005 * k[5] +
@@ -243,11 +207,7 @@ function initialize!(integrator, cache::Vern7ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern7ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, k, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, k, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, k, f, p = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern7Tableau T T2
@@ -330,16 +290,8 @@ end
 end
 
 function initialize!(integrator, cache::Vern7Cache)
-    @static if VERSION >= v"1.8"
-        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10) = cache
-    else
-        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10 = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; k) = integrator
-    else
-        @unpack k = integrator
-    end
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10 = cache
+    @unpack k = integrator
     alg = unwrap_alg(integrator, false)
     alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
     resize!(k, integrator.kshortsize)
@@ -365,19 +317,11 @@ function initialize!(integrator, cache::Vern7Cache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern7Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern7Tableau T T2
-    @static if VERSION >= v"1.8"
-        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
-    else
-        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
-    end
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     f(k1, uprev, p, t)
     a = dt * a021
     @.. broadcast=false thread=thread tmp=uprev + a * k1
@@ -445,11 +389,7 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @static if VERSION >= v"1.8"
-            (; tmp) = cache
-        else
-            @unpack tmp = cache
-        end
+        @unpack tmp = cache
         @OnDemandTableauExtract Vern7ExtraStages T T2
         @.. broadcast=false thread=thread tmp=uprev +
                                               dt *
@@ -512,16 +452,8 @@ function initialize!(integrator, cache::Vern8ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern8ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13) = cache.tab
-    else
-        @unpack c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13 = cache.tab
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13 = cache.tab
     k1 = f(uprev, p, t)
     a = dt * a0201
     k2 = f(uprev + a * k1, p, t + c2 * dt)
@@ -590,11 +522,7 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @static if VERSION >= v"1.8"
-            (; c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117) = cache.tab.extra
-        else
-            @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab.extra
-        end
+        @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab.extra
         k[14] = f(uprev +
                   dt * (a1401 * k[1] + a1406 * k[6] + a1407 * k[7] + a1408 * k[8] +
                    a1409 * k[9] + a1410 * k[10] + a1411 * k[11] + a1412 * k[12]), p,
@@ -636,16 +564,8 @@ end
 end
 
 function initialize!(integrator, cache::Vern8Cache)
-    @static if VERSION >= v"1.8"
-        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13) = cache
-    else
-        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13 = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; k) = integrator
-    else
-        @unpack k = integrator
-    end
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13 = cache
+    @unpack k = integrator
     alg = unwrap_alg(integrator, false)
     alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
     resize!(k, integrator.kshortsize)
@@ -671,22 +591,10 @@ function initialize!(integrator, cache::Vern8Cache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern8Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
     uidx = eachindex(integrator.uprev)
-    @static if VERSION >= v"1.8"
-        (; c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13) = cache.tab
-    else
-        @unpack c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13 = cache.tab
-    end
-    @static if VERSION >= v"1.8"
-        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
-    else
-        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
-    end
+    @unpack c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1301, a1304, a1305, a1306, a1307, a1308, a1309, a1310, b1, b6, b7, b8, b9, b10, b11, b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13 = cache.tab
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     f(k1, uprev, p, t)
     a = dt * a0201
     @.. broadcast=false thread=thread tmp=uprev + a * k1
@@ -771,16 +679,8 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @static if VERSION >= v"1.8"
-            (; c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117) = cache.tab.extra
-        else
-            @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab.extra
-        end
-        @static if VERSION >= v"1.8"
-            (; tmp) = cache
-        else
-            @unpack tmp = cache
-        end
+        @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab.extra
+        @unpack tmp = cache
         @.. broadcast=false thread=thread tmp=uprev +
                                               dt *
                                               (a1401 * k[1] + a1406 * k[6] + a1407 * k[7] +
@@ -873,11 +773,7 @@ function initialize!(integrator, cache::Vern9ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern9ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern9Tableau T T2
@@ -1007,16 +903,8 @@ end
 end
 
 function initialize!(integrator, cache::Vern9Cache)
-    @static if VERSION >= v"1.8"
-        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16) = cache
-    else
-        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16 = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; k) = integrator
-    else
-        @unpack k = integrator
-    end
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16 = cache
+    @unpack k = integrator
     alg = unwrap_alg(integrator, false)
     alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
     resize!(k, integrator.kshortsize)
@@ -1041,20 +929,12 @@ function initialize!(integrator, cache::Vern9Cache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern9Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; t, dt, uprev, u, f, p) = integrator
-    else
-        @unpack t, dt, uprev, u, f, p = integrator
-    end
+    @unpack t, dt, uprev, u, f, p = integrator
     uidx = eachindex(integrator.uprev)
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Vern9Tableau T T2
-    @static if VERSION >= v"1.8"
-        (; k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread) = cache
-    else
-        @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
-    end
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, rtmp, atmp, stage_limiter!, step_limiter!, thread = cache
     f(k1, uprev, p, t)
     a = dt * a0201
     @.. broadcast=false thread=thread tmp=uprev + a * k1
@@ -1155,11 +1035,7 @@ end
     if !alg.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
-        @static if VERSION >= v"1.8"
-            (; tmp) = cache
-        else
-            @unpack tmp = cache
-        end
+        @unpack tmp = cache
         @OnDemandTableauExtract Vern9ExtraStages T T2
         @.. broadcast=false thread=thread tmp=uprev +
                                               dt *
