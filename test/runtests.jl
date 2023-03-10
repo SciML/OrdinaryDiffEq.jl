@@ -24,7 +24,7 @@ end
         @time @safetestset "Inf Tests" begin include("interface/inf_handling.jl") end
         @time @safetestset "Jacobian Tests" begin include("interface/jacobian_tests.jl") end
         @time @safetestset "saveat Tests" begin include("interface/ode_saveat_tests.jl") end
-        @time @safetestset "save_idxs Tests" begin include("interface/ode_saveidxs_tests.jl") enda
+        @time @safetestset "save_idxs Tests" begin include("interface/ode_saveidxs_tests.jl") end
         @time @safetestset "Scalar Handling Tests" begin include("interface/scalar_handling_tests.jl") end
         @time @safetestset "Static Array Tests" begin include("interface/static_array_tests.jl") end
         @time @safetestset "u_modifed Tests" begin include("interface/umodified_test.jl") end
