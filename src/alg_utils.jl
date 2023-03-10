@@ -74,6 +74,8 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
+isfsal(alg::ERKO2) = false
+
 get_current_isfsal(alg, cache) = isfsal(alg)
 
 # evaluates f(t[i])
@@ -706,6 +708,8 @@ alg_order(alg::PDIRK44) = 4
 alg_order(alg::DImplicitEuler) = 1
 alg_order(alg::DABDF2) = 2
 alg_order(alg::DFBDF) = 1#dummy value
+
+alg_order(alg::ERKO2) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)

@@ -1402,3 +1402,29 @@ function alg_cache(alg::SIR54, u, rate_prototype, ::Type{uEltypeNoUnits},
     SIR54Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, tab,
                alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
+
+
+@cache struct ERKO2Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k1::rateType
+    k2::rateType
+    tmp::uType 
+    # fsalfirst::rateType # We need this?
+    tab::TabType 
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+  end
+
+  function alg_cache(alg::ERKO2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    return ERKO2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  end
+  
+  function alg_cache(alg::ERKO2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    tmp = zero(u)
+    tab = ERKO2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+    ERKO2Cache(u, uprev, k1, k2, tmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+  end

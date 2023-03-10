@@ -1884,3 +1884,24 @@ function SIR54ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats
                        btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2,
                        c3, c4, c5, c6, c7)
 end
+
+struct ERKO2ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    a21::T
+
+    b1::T
+    b2::T
+
+    c2::T2
+    
+end
+
+function ERKO2ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    a21 = convert(T, 0.6666666666666666)
+
+    b1 = convert(T, 0.25)
+    b2 = convert(T, 0.75)
+
+    c2 = convert(T2, 0.6666666666666666)
+    
+    ERKO2ConstantCache(a21, b1, b2, c2)
+end

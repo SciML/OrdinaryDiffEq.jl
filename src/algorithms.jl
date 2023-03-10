@@ -7216,3 +7216,36 @@ function Base.show(io::IO,
         print(io, "DFBDF{…}")
     end
 end
+
+"""
+    ERKO2(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+2nd order Explicit RK method 
+# ADD CITATION
+"""
+struct ERKO2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  thread::Thread
+end
+
+function ERKO2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+                   thread = False())
+    ERKO2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                             step_limiter!,
+                                                                             thread)
+end
+
+
+function ERKO2(stage_limiter!, step_limiter! = trivial_limiter!)
+    ERKO2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                    step_limiter!,
+                                                                    False())
+end
+
+function Base.show(io::IO, alg::ERKO2)
+    print(io, "ERKO2(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+end

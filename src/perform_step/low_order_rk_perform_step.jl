@@ -2203,3 +2203,85 @@ function perform_step!(integrator, cache::SIR54Cache, repeat_step = false)
 
     return nothing
 end
+
+
+function initialize!(integrator, cache::ERKO2ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.destats.nf += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast 
+
+end
+
+function perform_step!(integrator, cache::ERKO2ConstantCache, repeat_step = false)
+    @static if VERSION >= v"1.8"
+        (; u, uprev, f, p, dt, t) = integrator
+    else
+        @unpack u, uprev, f, p, dt, t = integrator
+    end
+    @static if VERSION >= v"1.8"
+        (; a21, b1, b2, c2) = cache
+    else
+        @unpack a21, b1, b2, c2 = cache
+    end
+
+    k1 = integrator.fsalfirst
+    tmp = uprev + dt * (a21 * k1)
+    k2 = f(tmp, p, t + c2 * dt)
+    integrator.fsallast= k2
+    
+    u = uprev + dt * (b1 * k1 + b2 * k2)
+    integrator.destats.nf += 1
+
+    integrator.k[1] = k1
+    integrator.k[2] = k2
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::ERKO2Cache)
+    @static if VERSION >= v"1.8"
+        (; uprev, f, p, t) = integrator
+    else
+        @unpack uprev, f, p, t = integrator
+    end
+
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k2
+
+    f(integrator.fsalfirst, uprev, p, t)
+    integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::ERKO2Cache, repeat_step = false)
+    @static if VERSION >= v"1.8"
+        (; k1, k2, tmp, stage_limiter!, step_limiter!, thread) = cache
+    else
+        @unpack k1, k2, tmp, stage_limiter!, step_limiter!, thread = cache
+    end
+    @static if VERSION >= v"1.8"
+        (; a21, b1, b2, c2) = cache.tab
+    else
+        @unpack a21, b1, b2, c2 = cache.tab
+    end
+    @static if VERSION >= v"1.8"
+        (; u, uprev, t, dt, f, p) = integrator
+    else
+        @unpack u, uprev, t, dt, f, p = integrator
+    end
+
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a21 * k1)
+    f(k2, tmp, p, t + c2 * dt)
+    integrator.destats.nf += 1
+
+    @.. broadcast=false thread=thread u=uprev +
+                                        dt * (b1 * k1 + b2 * k2)
+
+    return nothing
+end
