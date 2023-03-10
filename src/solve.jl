@@ -247,9 +247,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             if !isempty(int_idxs)
                 error("`save_idxs` cannot be a mix of symbols and integers")
             end
-            if is_dense_output(prob)
-                error("`save_idxs` cannot be symbols if output is dense, use the `dense_output = false` keyword argument in the problem constructor")
-            end
+
             sys = prob.f.sys
             # handle odae
             sts = unknown_states(sys)
@@ -260,7 +258,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             sym_idxs = filter(x -> !is_observed_sym(sys, x), sym_idxs)
             save_idxs = map(si -> state_sym_to_index(sys, si), sym_idxs) |> unique
             saved_syms = sts[save_idxs]
-            sym_map = Dict((saved_syms .=> eachindex(save_idxs))...)
+            sym_map = Dict((safe_unwrap.(saved_syms) .=> eachindex(save_idxs))...)
         else
             error("`save_idxs` cannot be symbols if the problem does not come from a symbolic system")
         end
