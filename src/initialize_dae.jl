@@ -127,7 +127,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
 
     integrator.opts.internalnorm(tmp, t) <= integrator.opts.abstol && return
 
-    if isdefined(integrator.cache, :nlsolver)
+    if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
         oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
@@ -203,7 +203,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
 
     integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
 
-    if isdefined(integrator.cache, :nlsolver)
+    if isdefined(integrator.cache, :nlsolver) && !isnothing(alg.nlsolve)
         # backward Euler
         nlsolver = integrator.cache.nlsolver
         oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
