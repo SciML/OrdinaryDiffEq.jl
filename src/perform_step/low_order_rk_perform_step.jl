@@ -1841,16 +1841,8 @@ function initialize!(integrator, cache::ERKO2ConstantCache)
 end
 
 function perform_step!(integrator, cache::ERKO2ConstantCache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; u, uprev, f, p, dt, t) = integrator
-    else
-        @unpack u, uprev, f, p, dt, t = integrator
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, b1, b2, c2) = cache
-    else
-        @unpack a21, b1, b2, c2 = cache
-    end
+    @unpack u, uprev, f, p, dt, t = integrator
+    @unpack a21, b1, b2, c2 = cache
 
     k1 = integrator.fsalfirst
     tmp = uprev + dt * (a21 * k1)
@@ -1866,11 +1858,7 @@ function perform_step!(integrator, cache::ERKO2ConstantCache, repeat_step = fals
 end
 
 function initialize!(integrator, cache::ERKO2Cache)
-    @static if VERSION >= v"1.8"
-        (; uprev, f, p, t) = integrator
-    else
-        @unpack uprev, f, p, t = integrator
-    end
+    @unpack uprev, f, p, t = integrator
 
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
@@ -1884,21 +1872,9 @@ function initialize!(integrator, cache::ERKO2Cache)
 end
 
 function perform_step!(integrator, cache::ERKO2Cache, repeat_step = false)
-    @static if VERSION >= v"1.8"
-        (; k1, k2, tmp, stage_limiter!, step_limiter!, thread) = cache
-    else
-        @unpack k1, k2, tmp, stage_limiter!, step_limiter!, thread = cache
-    end
-    @static if VERSION >= v"1.8"
-        (; a21, b1, b2, c2) = cache.tab
-    else
-        @unpack a21, b1, b2, c2 = cache.tab
-    end
-    @static if VERSION >= v"1.8"
-        (; u, uprev, t, dt, f, p) = integrator
-    else
-        @unpack u, uprev, t, dt, f, p = integrator
-    end
+    @unpack k1, k2, tmp, stage_limiter!, step_limiter!, thread = cache
+    @unpack a21, b1, b2, c2 = cache.tab
+    @unpack u, uprev, t, dt, f, p = integrator
 
     @.. broadcast=false thread=thread tmp=uprev + dt * (a21 * k1)
     f(k2, tmp, p, t + c2 * dt)
