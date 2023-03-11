@@ -44,7 +44,7 @@ end
         integrator.destats.nf += 1
     end
 
-    new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+    calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                          integrator.opts.abstol, integrator.opts.reltol,
@@ -146,7 +146,7 @@ end
         integrator.destats.nf += 1
     end
 
-    new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+    calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
                          integrator.opts.abstol, integrator.opts.reltol,
