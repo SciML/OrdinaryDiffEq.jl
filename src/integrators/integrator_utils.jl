@@ -221,7 +221,7 @@ function _loopfooter!(integrator)
                                  (integrator.opts.force_dtmin &&
                                   abs(integrator.dt) <= timedepentdtmin(integrator))
         if integrator.accept_step # Accept
-            integrator.destats.naccept += 1
+            integrator.stats.naccept += 1
             integrator.last_stepfail = false
             dtnew = DiffEqBase.value(step_accept_controller!(integrator, integrator.alg, q)) *
                     oneunit(integrator.dt)
@@ -241,10 +241,10 @@ function _loopfooter!(integrator)
             calc_dt_propose!(integrator, dtnew)
             handle_callbacks!(integrator)
         else # Reject
-            integrator.destats.nreject += 1
+            integrator.stats.nreject += 1
         end
     elseif !integrator.opts.adaptive #Not adaptive
-        integrator.destats.naccept += 1
+        integrator.stats.naccept += 1
         integrator.tprev = integrator.t
         integrator.t = if has_tstop(integrator)
             tstop = integrator.tdir * first_tstop(integrator)
@@ -276,8 +276,8 @@ function _loopfooter!(integrator)
     if integrator.cache isa CompositeCache
         cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),
                                                      integrator.t)
-        cur_eigen_est > integrator.destats.maxeig &&
-            (integrator.destats.maxeig = cur_eigen_est)
+        cur_eigen_est > integrator.stats.maxeig &&
+            (integrator.stats.maxeig = cur_eigen_est)
     end
     nothing
 end
@@ -441,7 +441,7 @@ end
 
 function reset_fsal!(integrator)
     # Under these condtions, these algorithms are not FSAL anymore
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.sol.prob isa DAEProblem
         DiffEqBase.initialize_dae!(integrator)

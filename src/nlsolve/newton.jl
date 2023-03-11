@@ -88,8 +88,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         end
     end
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     # update W
@@ -101,8 +101,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     if (r = relax(nlsolver); !iszero(r))
         dz = (1 - r) * dz
     end
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nsolve += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nsolve += 1
     end
 
     atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -128,8 +128,8 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     if isdae
@@ -189,8 +189,8 @@ end
 
     cache.linsolve = linres.cache
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nsolve += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nsolve += 1
     end
 
     # relaxed Newton
@@ -230,8 +230,8 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     if isdae
@@ -308,8 +308,8 @@ end
 
     cache.linsolve = linres.cache
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nsolve += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nsolve += 1
     end
 
     # relaxed Newton

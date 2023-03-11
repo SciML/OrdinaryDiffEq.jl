@@ -121,11 +121,11 @@ function apply_step!(nlsolver::NLSolver{algType, iip},
 end
 
 function postamble!(nlsolver::NLSolver, integrator::DiffEqBase.DEIntegrator)
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nnonliniter += nlsolver.iter
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nnonliniter += nlsolver.iter
 
         if nlsolvefail(nlsolver)
-            integrator.destats.nnonlinconvfail += 1
+            integrator.stats.nnonlinconvfail += 1
         end
     end
     integrator.force_stepfail = nlsolvefail(nlsolver)

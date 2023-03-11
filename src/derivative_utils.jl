@@ -90,7 +90,7 @@ function calc_J(integrator, cache, next_step::Bool = false)
             J = jacobian(uf, uprev, integrator)
         end
 
-        integrator.destats.njacs += 1
+        integrator.stats.njacs += 1
 
         if alg isa CompositeAlgorithm
             integrator.eigen_est = constvalue(opnorm(J, Inf))
@@ -145,7 +145,7 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         end
     end
 
-    integrator.destats.njacs += 1
+    integrator.stats.njacs += 1
 
     if alg isa CompositeAlgorithm
         integrator.eigen_est = constvalue(opnorm(J, Inf))
@@ -702,7 +702,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         end
     end
 
-    new_W && (integrator.destats.nw += 1)
+    new_W && (integrator.stats.nw += 1)
     return new_jac, new_W
 end
 
@@ -745,9 +745,9 @@ end
             W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec;
                                  transform = W_transform)
         end
-        integrator.destats.nw += 1
+        integrator.stats.nw += 1
     else
-        integrator.destats.nw += 1
+        integrator.stats.nw += 1
         J = calc_J(integrator, cache, next_step)
         if isdae
             W = J

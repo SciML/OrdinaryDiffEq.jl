@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::TanYam7ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -31,7 +31,7 @@ end
     k10 = f(uprev +
             dt * (a101 * k1 + a103 * k3 + a104 * k4 + a105 * k5 + a106 * k6 + a107 * k7 +
              a108 * k8), p, t + dt)
-    integrator.destats.nf += 9
+    integrator.stats.nf += 9
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
     if integrator.opts.adaptive
         utilde = dt *
@@ -42,7 +42,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.fsallast = f(u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -56,7 +56,7 @@ function initialize!(integrator, cache::TanYam7Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::TanYam7Cache, repeat_step = false)
@@ -102,7 +102,7 @@ end
                                         (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 +
                                          b8 * k8 +
                                          b9 * k9)
-    integrator.destats.nf += 10
+    integrator.stats.nf += 10
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
                                                   btilde5 * k5 +
@@ -115,7 +115,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     return nothing
 end
 
@@ -167,7 +167,7 @@ end
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i]+b4*k4[i]+b5*k5[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i])
   end
-  integrator.destats.nf += 10
+  integrator.stats.nf += 10
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i]+btilde4*k4[i]+btilde5*k5[i]+btilde6*k6[i]+btilde7*k7[i]+btilde8*k8[i]+btilde9*k9[i]+btilde10*k10[i])
@@ -176,7 +176,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   f(k, u, p, t+dt)
-  integrator.destats.nf += 1
+  integrator.stats.nf += 1
 end
 =#
 
@@ -184,7 +184,7 @@ function initialize!(integrator, cache::DP8ConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -222,7 +222,7 @@ end
             dt *
             (a1201 * k1 + a1204 * k4 + a1205 * k5 + a1206 * k6 + a1207 * k7 + a1208 * k8 +
              a1209 * k9 + a1210 * k10 + a1211 * k11), p, t + dt)
-    integrator.destats.nf += 11
+    integrator.stats.nf += 11
     kupdate = b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
               b12 * k12
     u = uprev + dt * kupdate
@@ -246,7 +246,7 @@ end
         end
     end
     k13 = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = k13
     if integrator.opts.calck
         @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache
@@ -260,7 +260,7 @@ end
         k16 = f(uprev +
                 dt * (a1601 * k1 + a1606 * k6 + a1607 * k7 + a1608 * k8 + a1609 * k9 +
                  a1613 * k13 + a1614 * k14 + a1615 * k15), p, t + c16 * dt)
-        integrator.destats.nf += 3
+        integrator.stats.nf += 3
         udiff = kupdate
         integrator.k[1] = udiff
         bspl = k1 - udiff
@@ -297,7 +297,7 @@ function initialize!(integrator, cache::DP8Cache)
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k13
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::DP8Cache, repeat_step = false)
@@ -355,7 +355,7 @@ end
                                               b9 * k9 +
                                               b10 * k10 + b11 * k11 + b12 * k12
     @.. broadcast=false thread=thread u=uprev + dt * kupdate
-    integrator.destats.nf += 12
+    integrator.stats.nf += 12
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt *
                                                  (k1 * er1 + k6 * er6 + k7 * er7 +
@@ -382,7 +382,7 @@ end
         end
     end
     f(k13, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     if integrator.opts.calck
         @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache.tab
         @unpack d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = cache.tab
@@ -404,7 +404,7 @@ end
                                                a1609 * k9 + a1613 * k13 + a1614 * k14 +
                                                a1615 * k15)
         f(k16, tmp, p, t + c16 * dt)
-        integrator.destats.nf += 3
+        integrator.stats.nf += 3
         @.. broadcast=false thread=thread udiff=kupdate
         @.. broadcast=false thread=thread bspl=k1 - udiff
         @.. broadcast=false thread=thread integrator.k[3]=udiff - k13 - bspl
@@ -495,7 +495,7 @@ end
     @inbounds kupdate[i] = b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i]
     @inbounds u[i] = uprev[i] + dt*kupdate[i]
   end
-  integrator.destats.nf += 12
+  integrator.stats.nf += 12
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12)
@@ -515,7 +515,7 @@ end
     end
   end
   f(k13, u, p, t+dt)
-  integrator.destats.nf += 1
+  integrator.stats.nf += 1
   if integrator.opts.calck
     @unpack c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = cache.tab
     @unpack d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716 = cache.tab
@@ -531,7 +531,7 @@ end
       @inbounds tmp[i] = uprev[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1613*k13[i]+a1614*k14[i]+a1615*k15[i])
     end
     f(k16, tmp, p, t + c16*dt)
-    integrator.destats.nf += 3
+    integrator.stats.nf += 3
     @tight_loop_macros for i in uidx
       @inbounds udiff[i]= kupdate[i]
       @inbounds bspl[i] = k1[i] - udiff[i]
@@ -547,7 +547,7 @@ end
 
 function initialize!(integrator, cache::TsitPap8ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -622,7 +622,7 @@ end
             dt *
             (a1301 * k1 + a1304 * k4 + a1305 * k5 + a1306 * k6 + a1307 * k7 + a1308 * k8 +
              a1309 * k9 + a1310 * k10), p, t + dt)
-    integrator.destats.nf += 12
+    integrator.stats.nf += 12
     u = uprev +
         dt * (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12)
@@ -635,7 +635,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -649,7 +649,7 @@ function initialize!(integrator, cache::TsitPap8Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::TsitPap8Cache, repeat_step = false)
@@ -714,7 +714,7 @@ end
                                         (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 +
                                          b10 * k10 +
                                          b11 * k11 + b12 * k12)
-    integrator.destats.nf += 13
+    integrator.stats.nf += 13
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde6 * k6 +
                                                   btilde7 * k7 +
@@ -728,7 +728,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     return nothing
 end
 
@@ -792,7 +792,7 @@ end
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i])
   end
-  integrator.destats.nf += 13
+  integrator.stats.nf += 13
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i])
@@ -801,13 +801,13 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   f(k, u, p, t+dt)
-  integrator.destats.nf += 1
+  integrator.stats.nf += 1
 end
 =#
 
 function initialize!(integrator, cache::PFRK87ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -892,7 +892,7 @@ end
             dt *
             (α1301 * k1 + α1304 * k4 + α1305 * k5 + α1306 * k6 + α1307 * k7 + α1308 * k8 +
              α1309 * k9 + α1310 * k10 + α1311 * k11), p, t + c13 * dt)
-    integrator.destats.nf += 12
+    integrator.stats.nf += 12
     u = uprev +
         dt * (β1 * k1 + β6 * k6 + β7 * k7 + β8 * k8 + β9 * k9 + β10 * k10 + β11 * k11 +
          β12 * k12 + β13 * k13)
@@ -905,7 +905,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -919,7 +919,7 @@ function initialize!(integrator, cache::PFRK87Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::PFRK87Cache, repeat_step = false)
@@ -1027,7 +1027,7 @@ end
                                         (β1 * k1 + β6 * k6 + β7 * k7 + β8 * k8 + β9 * k9 +
                                          β10 * k10 +
                                          β11 * k11 + β12 * k12 + β13 * k13)
-    integrator.destats.nf += 13
+    integrator.stats.nf += 13
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (β1tilde * k1 + β6tilde * k6 +
                                                   β7tilde * k7 +
@@ -1040,6 +1040,6 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     return nothing
 end

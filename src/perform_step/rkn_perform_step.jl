@@ -20,8 +20,8 @@ function initialize!(integrator, cache::NystromCCDefaultInitialization)
     duprev, uprev = integrator.uprev.x
     kdu = integrator.f.f1(duprev, uprev, integrator.p, integrator.t)
     ku = integrator.f.f2(duprev, uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
     integrator.fsalfirst = ArrayPartition((kdu, ku))
 end
 
@@ -46,8 +46,8 @@ function initialize!(integrator, cache::NystromDefaultInitialization)
     integrator.k[2] = integrator.fsallast
     integrator.f.f1(integrator.k[1].x[1], duprev, uprev, integrator.p, integrator.t)
     integrator.f.f2(integrator.k[1].x[2], duprev, uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
 end
 
 @muladd function perform_step!(integrator, cache::Nystrom4ConstantCache,
@@ -80,8 +80,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 end
@@ -118,8 +118,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
 end
 
 @muladd function perform_step!(integrator, cache::Nystrom4VelocityIndependentConstantCache,
@@ -145,8 +145,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 3
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 3
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 end
@@ -177,8 +177,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 3
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 3
+    integrator.stats.nf2 += 1
 end
 
 @muladd function perform_step!(integrator, cache::IRKN3ConstantCache, repeat_step = false)
@@ -194,7 +194,7 @@ end
         k1cache = ArrayParition((k.x[1], f.f1(duprev, uprev, p, t + c1 * dt)))
         kdu = uprev + dt * (c1 * duprev + dt * a21 * k1cache.x[1])
         k₂.x[1] = f.f1(duprev, kdu, p, t + c1 * dt)
-        integrator.destats.nf += 2
+        integrator.stats.nf += 2
     else
         kdu = uprev2 + dt * (c1 * duprev2 + dt * a21 * k1cache.x[1])
         ku = uprev + dt * (c1 * duprev + dt * a21 * k1cache.x[2])
@@ -207,8 +207,8 @@ end
 
         integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt),
                                               f.f2(du, u, p, t + dt)))
-        integrator.destats.nf += 3
-        integrator.destats.nf2 += 1
+        integrator.stats.nf += 3
+        integrator.stats.nf2 += 1
         copyto!(k₂.x[1], k₂.x[2])
         k1cache = ArrayPartition((k1cache.x[1], k.x[2]))
     end # end if
@@ -232,7 +232,7 @@ end
         f.f1(k1cache.x[2], duprev, uprev, p, t + c1 * dt)
         @.. broadcast=false kdu=uprev + dt * (c1 * duprev + dt * a21 * k1cache.x[2])
         f.f1(k₂.x[1], duprev, kdu, p, t + c1 * dt)
-        integrator.destats.nf += 2
+        integrator.stats.nf += 2
     else
         @.. broadcast=false kdu=uprev2 + dt * (c1 * duprev2 + dt * a21 * k1cache.x[1])
         @.. broadcast=false ku=uprev + dt * (c1 * duprev + dt * a21 * k1cache.x[2])
@@ -248,8 +248,8 @@ end
         end
         f.f1(k.x[1], du, u, p, t + dt)
         f.f2(k.x[2], du, u, p, t + dt)
-        integrator.destats.nf += 3
-        integrator.destats.nf2 += 1
+        integrator.stats.nf += 3
+        integrator.stats.nf2 += 1
         copyto!(k₂.x[1], k₂.x[2])
         copyto!(k1cache.x[2], k1cache.x[1])
         copyto!(k1cache.x[1], k.x[1])
@@ -276,7 +276,7 @@ end
         f.f1(k₂.x[1], duprev, kdu, p, t + c1 * dt)
         @.. broadcast=false kdu=uprev + dt * (c2 * duprev + dt * a32 * k1cache.x[2])
         f.f1(k₃.x[1], duprev, kdu, p, t + c1 * dt)
-        integrator.destats.nf += 3
+        integrator.stats.nf += 3
     else
         @.. broadcast=false ku=uprev + dt * (c1 * duprev + dt * a21 * k1cache.x[1])
         @.. broadcast=false kdu=uprev2 + dt * (c1 * duprev2 + dt * a21 * k1cache.x[2])
@@ -298,8 +298,8 @@ end
         end
         f.f1(k.x[1], du, u, p, t + dt)
         f.f2(k.x[2], du, u, p, t + dt)
-        integrator.destats.nf += 4
-        integrator.destats.nf2 += 1
+        integrator.stats.nf += 4
+        integrator.stats.nf2 += 1
         copyto!(k₂.x[1], k₂.x[2])
         copyto!(k₃.x[1], k₃.x[2])
         copyto!(k1cache.x[2], k1cache.x[1])
@@ -328,8 +328,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 end
@@ -366,8 +366,8 @@ end
     @.. broadcast=false du=duprev + dt * (b1 * k₁ + b2 * k₂ + b3 * k₃ + b4 * k₄)
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     return nothing
 end
 
@@ -392,8 +392,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 
@@ -439,8 +439,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -488,8 +488,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 6
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 6
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 
@@ -551,8 +551,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 6
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 6
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -578,8 +578,8 @@ function initialize!(integrator, cache::DPRKN6ConstantCache)
 
     kdu = integrator.f.f1(duprev, uprev, integrator.p, integrator.t)
     ku = integrator.f.f2(duprev, uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
     integrator.fsalfirst = ArrayPartition((kdu, ku))
     integrator.fsallast = zero(integrator.fsalfirst)
 
@@ -626,8 +626,8 @@ end
     integrator.k[1] = ArrayPartition(integrator.fsalfirst.x[1], k2)
     integrator.k[2] = ArrayPartition(k3, k4)
     integrator.k[3] = ArrayPartition(k5, k6)
-    integrator.destats.nf += 6
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 6
+    integrator.stats.nf2 += 1
 
     if integrator.opts.adaptive
         dtsq = dt^2
@@ -656,8 +656,8 @@ function initialize!(integrator, cache::DPRKN6Cache)
     integrator.k[3] = ArrayPartition(cache.k5, cache.k6)
     integrator.f.f1(integrator.fsallast.x[1], duprev, uprev, integrator.p, integrator.t)
     integrator.f.f2(integrator.fsallast.x[2], duprev, uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
 end
 
 @muladd function perform_step!(integrator, cache::DPRKN6Cache, repeat_step = false)
@@ -705,8 +705,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 6
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 6
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -751,8 +751,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 6
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 6
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 
@@ -817,8 +817,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 6
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 6
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -881,8 +881,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 9
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 9
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 
@@ -973,8 +973,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 9
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 9
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -1090,8 +1090,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 17
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 17
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     if integrator.opts.adaptive
@@ -1266,8 +1266,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 17
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 17
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -1312,8 +1312,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 
@@ -1359,8 +1359,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -1399,8 +1399,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     if integrator.opts.adaptive
@@ -1443,8 +1443,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
@@ -1491,8 +1491,8 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 
@@ -1557,8 +1557,8 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.destats.nf += 4
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
