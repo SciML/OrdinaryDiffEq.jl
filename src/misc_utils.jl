@@ -114,9 +114,9 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
        !LinearSolve.needs_concrete_A(_alg.linsolve) &&
        linsolve.A isa WOperator && linsolve.A.J isa SparseDiffTools.JacVec
         if alg_autodiff(_alg)
-            integrator.destats.nf += linres.iters
+            integrator.stats.nf += linres.iters
         else
-            integrator.destats.nf += 2 * linres.iters
+            integrator.stats.nf += 2 * linres.iters
         end
     end
 

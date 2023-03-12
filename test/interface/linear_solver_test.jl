@@ -12,8 +12,8 @@ prob = ODEProblem(ODEFunction(A; mass_matrix = M), u0, (0.0, 1.0))
 
 for alg in [Rosenbrock23(), Rosenbrock23(linsolve = KLUFactorization())]
     sol = solve(prob, alg)
-    @test sol.destats.njacs == 0
-    @test sol.destats.nw == 1
+    @test sol.stats.njacs == 0
+    @test sol.stats.nw == 1
 end
 
 ## OOP

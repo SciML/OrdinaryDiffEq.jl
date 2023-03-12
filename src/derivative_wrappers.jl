@@ -101,7 +101,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
         end
 
         df .= first.(ForwardDiff.partials.(grad_config))
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     else
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
                                                dir = diffdir(integrator))
@@ -112,7 +112,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
                 tmp *= 2
             end
         end
-        integrator.destats.nf += tmp
+        integrator.stats.nf += tmp
     end
     nothing
 end
@@ -123,7 +123,7 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
     tmp = length(x) # We calculate derivtive for all elements in gradient
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         if integrator.iter == 1
             try
                 d = ForwardDiff.derivative(f, x)
@@ -139,7 +139,7 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
         if alg_difftype(alg) === Val{:central} || alg_difftype(alg) === Val{:forward}
             tmp *= 2
         end
-        integrator.destats.nf += tmp
+        integrator.stats.nf += tmp
         d
     end
 end
@@ -203,7 +203,7 @@ function jacobian(f, x, integrator)
         J, tmp = jacobian_finitediff(f, x, alg_difftype(alg), dir, colorvec, sparsity,
                                      jac_prototype)
     end
-    integrator.destats.nf += tmp
+    integrator.stats.nf += tmp
     J
 end
 
@@ -232,19 +232,19 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
         else
             forwarddiff_color_jacobian!(J, f, x, jac_config)
         end
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     else
         isforward = alg_difftype(alg) === Val{:forward}
         if isforward
             forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
             f(forwardcache, x)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             tmp = jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache,
                                                integrator)
         else # not forward difference
             tmp = jacobian_finitediff!(J, f, x, jac_config, integrator)
         end
-        integrator.destats.nf += tmp
+        integrator.stats.nf += tmp
     end
     nothing
 end

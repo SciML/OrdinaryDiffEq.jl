@@ -6,7 +6,7 @@ function initialize!(integrator, cache::MagnusMidpointCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = false)
@@ -27,7 +27,7 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = fal
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 function initialize!(integrator, cache::LieRK4Cache)
     integrator.kshortsize = 2
@@ -37,7 +37,7 @@ function initialize!(integrator, cache::LieRK4Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
@@ -79,7 +79,7 @@ function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::RKMK4Cache)
@@ -90,7 +90,7 @@ function initialize!(integrator, cache::RKMK4Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
@@ -121,7 +121,7 @@ function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::RKMK2Cache)
@@ -132,7 +132,7 @@ function initialize!(integrator, cache::RKMK2Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
@@ -156,7 +156,7 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::CG3Cache)
@@ -167,7 +167,7 @@ function initialize!(integrator, cache::CG3Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::CG3Cache, repeat_step = false)
@@ -188,7 +188,7 @@ function perform_step!(integrator, cache::CG3Cache, repeat_step = false)
          uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::CG2Cache)
@@ -199,7 +199,7 @@ function initialize!(integrator, cache::CG2Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::CG2Cache, repeat_step = false)
@@ -217,7 +217,7 @@ function perform_step!(integrator, cache::CG2Cache, repeat_step = false)
     u .= (exp((1 / 2) * (k1)) * (exp((1 / 2) * k2))) * uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusAdapt4Cache)
@@ -228,7 +228,7 @@ function initialize!(integrator, cache::MagnusAdapt4Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false)
@@ -279,7 +279,7 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false
     u .= exp(v4) * uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     if integrator.opts.adaptive
         utilde = u - exp(y6) * uprev
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
@@ -296,7 +296,7 @@ function initialize!(integrator, cache::MagnusNC8Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
@@ -360,7 +360,7 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
         u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusGL4Cache)
@@ -371,7 +371,7 @@ function initialize!(integrator, cache::MagnusGL4Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
@@ -394,7 +394,7 @@ function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
         u .= exp(Ω) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusGL8Cache)
@@ -405,7 +405,7 @@ function initialize!(integrator, cache::MagnusGL8Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
@@ -463,7 +463,7 @@ function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
         u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusNC6Cache)
@@ -474,7 +474,7 @@ function initialize!(integrator, cache::MagnusNC6Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
@@ -513,7 +513,7 @@ function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
         u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusGL6Cache)
@@ -524,7 +524,7 @@ function initialize!(integrator, cache::MagnusGL6Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
@@ -557,7 +557,7 @@ function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
         u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusGauss4Cache)
@@ -568,7 +568,7 @@ function initialize!(integrator, cache::MagnusGauss4Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false)
@@ -590,7 +590,7 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false
         u .= exp((dt / 2) .* (A + B) + ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B)) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::LieEulerCache)
@@ -601,7 +601,7 @@ function initialize!(integrator, cache::LieEulerCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
@@ -622,7 +622,7 @@ function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusLeapfrogCache)
@@ -633,7 +633,7 @@ function initialize!(integrator, cache::MagnusLeapfrogCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = false,
@@ -655,7 +655,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
         end
 
         integrator.f(integrator.fsallast, u, p, t + dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         iter += 1
     else
         L = integrator.f.f
@@ -669,14 +669,14 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
         end
         uprev = u
         integrator.f(integrator.fsallast, u, p, t + dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 end
 
 function initialize!(integrator, cache::LinearExponentialConstantCache)
     # Pre-start fsal
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
 
     # Initialize interpolation derivatives
@@ -705,7 +705,7 @@ function perform_step!(integrator, cache::LinearExponentialConstantCache,
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -715,7 +715,7 @@ function initialize!(integrator, cache::LinearExponentialCache)
     # Pre-start fsal
     integrator.fsalfirst = zero(cache.rtmp)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
 
     # Initialize interpolation derivatives
@@ -749,7 +749,7 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
     # Update integrator state
     u .= tmp
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -759,7 +759,7 @@ cay(A) = inv(I - 1 / 2 * A) * (I + 1 / 2 * A)
 function initialize!(integrator, cache::CayleyEulerConstantCache)
     # Pre-start fsal
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
 
     # Initialize interpolation derivatives
@@ -784,7 +784,7 @@ function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step 
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -798,7 +798,7 @@ function initialize!(integrator, cache::CayleyEulerCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::CayleyEulerCache, repeat_step = false)
@@ -820,5 +820,5 @@ function perform_step!(integrator, cache::CayleyEulerCache, repeat_step = false)
 
     # Update integrator state
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end

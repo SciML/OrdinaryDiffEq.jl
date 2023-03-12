@@ -8,7 +8,7 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
     integrator.k[1] = k₁
     integrator.k[2] = k₂
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator,
@@ -17,7 +17,7 @@ function initialize!(integrator,
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -41,7 +41,7 @@ end
 
     if repeat_step
         f(integrator.fsalfirst, uprev, p, t)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -64,11 +64,11 @@ end
     veck₁ = _vec(k₁)
 
     @.. broadcast=false veck₁=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + dto2 * k₁
     f(f₁, u, p, t + dto2)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         copyto!(tmp, k₁)
@@ -83,14 +83,14 @@ end
     veck2 = _vec(k₂)
 
     @.. broadcast=false veck2=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false k₂+=k₁
     @.. broadcast=false u=uprev + dt * k₂
 
     if integrator.opts.adaptive
         f(fsallast, u, p, t + dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
 
         if mass_matrix === I
             @.. broadcast=false linsolve_tmp=fsallast - c₃₂ * (k₂ - f₁) -
@@ -107,7 +107,7 @@ end
         veck3 = _vec(k₃)
         @.. broadcast=false veck3=-vecu
 
-        integrator.destats.nsolve += 1
+        integrator.stats.nsolve += 1
 
         if mass_matrix === I
             @.. broadcast=false tmp=dto6 * (k₁ - 2 * k₂ + k₃)
@@ -143,7 +143,7 @@ end
 
     if repeat_step
         f(integrator.fsalfirst, uprev, p, t)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     new_W = calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -167,13 +167,13 @@ end
         k₁[i] = -linres.u[i]
     end
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + dto2 * k₁[i]
     end
     f(f₁, u, p, t + dto2)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         copyto!(tmp, k₁)
@@ -191,7 +191,7 @@ end
         k₂[i] = -linres.u[i]
     end
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         k₂[i] += k₁[i]
@@ -202,7 +202,7 @@ end
 
     if integrator.opts.adaptive
         f(fsallast, u, p, t + dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
 
         if mass_matrix === I
             @inbounds @simd ivdep for i in eachindex(u)
@@ -226,7 +226,7 @@ end
         @inbounds @simd ivdep for i in eachindex(u)
             k₃[i] = -linres.u[i]
         end
-        integrator.destats.nsolve += 1
+        integrator.stats.nsolve += 1
 
         if mass_matrix === I
             @inbounds @simd ivdep for i in eachindex(u)
@@ -265,7 +265,7 @@ end
 
     if repeat_step
         f(integrator.fsalfirst, uprev, p, t)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
@@ -288,11 +288,11 @@ end
     veck₁ = _vec(k₁)
 
     @.. broadcast=false veck₁=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + dto2 * k₁
     f(f₁, u, p, t + dto2)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         tmp .= k₁
@@ -307,12 +307,12 @@ end
     veck2 = _vec(k₂)
 
     @.. broadcast=false veck2=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false k₂+=k₁
     @.. broadcast=false tmp=uprev + dt * k₂
     f(fsallast, tmp, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=fsallast - c₃₂ * (k₂ - f₁) - 2(k₁ - fsalfirst) +
@@ -328,7 +328,7 @@ end
     veck3 = _vec(k₃)
 
     @.. broadcast=false veck3=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + dto6 * (k₁ + 4k₂ + k₃)
 
@@ -353,7 +353,7 @@ end
 
     if repeat_step
         integrator.fsalfirst = f(uprev, p, t)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     mass_matrix = integrator.f.mass_matrix
@@ -368,21 +368,21 @@ end
     end
 
     k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     f₁ = f(uprev + dto2 * k₁, p, t + dto2)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
     else
         k₂ = _reshape(W \ -_vec(f₁ - mass_matrix * k₁), axes(uprev)) + k₁
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + dt * k₂
 
     if integrator.opts.adaptive
         integrator.fsallast = f(u, p, t + dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
 
         if mass_matrix === I
             k₃ = _reshape(W \
@@ -393,7 +393,7 @@ end
                            c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
             k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
         end
-        integrator.destats.nsolve += 1
+        integrator.stats.nsolve += 1
 
         utilde = dto6 * (k₁ - 2 * k₂ + k₃)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
@@ -420,7 +420,7 @@ end
 
     if repeat_step
         integrator.fsalfirst = f(uprev, p, t)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     # Time derivative
@@ -433,9 +433,9 @@ end
     end
 
     k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     f₁ = f(uprev + dto2 * k₁, p, t + dto2)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
@@ -444,10 +444,10 @@ end
         k₂ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev)) + k₁
     end
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     tmp = uprev + dt * k₂
     integrator.fsallast = f(tmp, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         k₃ = _reshape(W \
@@ -458,7 +458,7 @@ end
                        2 * integrator.fsalfirst + dt * dT
         k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + dto6 * (k₁ + 4k₂ + k₃)
 
     if integrator.opts.adaptive
@@ -481,7 +481,7 @@ function initialize!(integrator,
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -501,7 +501,7 @@ function initialize!(integrator,
     integrator.k[1] = fsalfirst
     integrator.k[2] = fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
@@ -534,10 +534,10 @@ end
     linsolve_tmp = integrator.fsalfirst + dtd1 * dT
 
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a21 * k1
     du = f(u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd2 * dT + dtC21 * k1
@@ -546,10 +546,10 @@ end
     end
 
     k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -558,10 +558,10 @@ end
     end
 
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + b1 * k1 + b2 * k2 + b3 * k3
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.opts.adaptive
         utilde = btilde1 * k1 + btilde2 * k2 + btilde3 * k3
@@ -616,11 +616,11 @@ end
     veck1 = _vec(k1)
 
     @.. broadcast=false veck1=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a21 * k1
     f(du, u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
@@ -636,11 +636,11 @@ end
 
     @.. broadcast=false veck2=-vecu
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     f(du, u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -656,11 +656,11 @@ end
 
     @.. broadcast=false veck3=-vecu
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + b1 * k1 + b2 * k2 + b3 * k3
     f(fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.opts.adaptive
         @.. broadcast=false utilde=btilde1 * k1 + btilde2 * k2 + btilde3 * k3
@@ -707,7 +707,7 @@ end
     linsolve_tmp = integrator.fsalfirst + dtd1 * dT
 
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev # +a21*k1 a21 == 0
     # du = f(u, p, t+c2*dt) c2 == 0 and a21 == 0 => du = f(uprev, p, t) == fsalfirst
 
@@ -718,10 +718,10 @@ end
     end
 
     k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -730,7 +730,7 @@ end
     end
 
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 + dtC43 * k3
@@ -739,10 +739,10 @@ end
     end
 
     k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.opts.adaptive
         utilde = btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4
@@ -802,7 +802,7 @@ end
     veck1 = _vec(k1)
 
     @.. broadcast=false veck1=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     #=
     a21 == 0 and c2 == 0
@@ -823,11 +823,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck2 = _vec(k2)
     @.. broadcast=false veck2=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     f(du, u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
@@ -840,7 +840,7 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck3 = _vec(k3)
     @.. broadcast=false veck3=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 +
@@ -854,11 +854,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck4 = _vec(k4)
     @.. broadcast=false veck4=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4
     f(fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.opts.adaptive
         @.. broadcast=false utilde=btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4
@@ -935,15 +935,15 @@ end
     end
 
     du = f(uprev, p, t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     linsolve_tmp = du + dtd1 * dT
 
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a21 * k1
     du = f(u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd2 * dT + dtC21 * k1
@@ -952,10 +952,10 @@ end
     end
 
     k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -964,10 +964,10 @@ end
     end
 
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a41 * k1 + a42 * k2 + a43 * k3
     du = f(u, p, t + c4 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
@@ -976,10 +976,10 @@ end
     end
 
     k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     du = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
@@ -989,10 +989,10 @@ end
     end
 
     k5 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = u + k5
     du = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
@@ -1003,7 +1003,7 @@ end
     end
 
     k6 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = u + k6
 
     if integrator.opts.adaptive
@@ -1063,7 +1063,7 @@ end
     dtgamma = dt * gamma
 
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1083,11 +1083,11 @@ end
 
     @.. broadcast=false k1=-linres.u
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a21 * k1
     f(du, u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
@@ -1099,11 +1099,11 @@ end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     @.. broadcast=false k2=-linres.u
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     f(du, u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -1115,11 +1115,11 @@ end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     @.. broadcast=false k3=-linres.u
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
     f(du, u, p, t + c4 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT +
@@ -1132,11 +1132,11 @@ end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     @.. broadcast=false k4=-linres.u
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du +
@@ -1149,11 +1149,11 @@ end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     @.. broadcast=false k5=-linres.u
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     u .+= k5
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 +
@@ -1167,7 +1167,7 @@ end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     @.. broadcast=false k6=-linres.u
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     u .+= k6
 
@@ -1221,7 +1221,7 @@ end
     dtgamma = dt * gamma
 
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1242,13 +1242,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k1[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a21 * k1[i]
     end
     f(du, u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1269,13 +1269,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k2[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a31 * k1[i] + a32 * k2[i]
     end
     f(du, u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1296,13 +1296,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k3[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a41 * k1[i] + a42 * k2[i] + a43 * k3[i]
     end
     f(du, u, p, t + c4 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1324,13 +1324,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k4[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a51 * k1[i] + a52 * k2[i] + a53 * k3[i] + a54 * k4[i]
     end
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1352,13 +1352,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k5[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] += k5[i]
     end
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1380,7 +1380,7 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k6[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] += k6[i]
@@ -1472,15 +1472,15 @@ end
     end
 
     du1 = f(uprev, p, t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     linsolve_tmp = du1 + dtd1 * dT
 
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a21 * k1
     du = f(u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd2 * dT + dtC21 * k1
@@ -1489,10 +1489,10 @@ end
     end
 
     k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a31 * k1 + a32 * k2
     du = f(u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -1501,10 +1501,10 @@ end
     end
 
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a41 * k1 + a42 * k2 + a43 * k3
     du = f(u, p, t + c4 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
@@ -1513,10 +1513,10 @@ end
     end
 
     k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     du = f(u, p, t + c5 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd5 * dT + (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
@@ -1526,10 +1526,10 @@ end
     end
 
     k5 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = uprev + a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5
     du = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC61 * k1 + dtC62 * k2 + dtC63 * k3 + dtC64 * k4 + dtC65 * k5)
@@ -1540,10 +1540,10 @@ end
     end
 
     k6 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = u + k6
     du = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du +
@@ -1557,10 +1557,10 @@ end
     end
 
     k7 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = u + k7
     du = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du +
@@ -1574,7 +1574,7 @@ end
     end
 
     k8 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
     u = u + k8
 
     if integrator.opts.adaptive
@@ -1654,7 +1654,7 @@ end
     dtgamma = dt * gamma
 
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1676,11 +1676,11 @@ end
     veck1 = _vec(k1)
 
     @.. broadcast=false veck1=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a21 * k1
     f(du, u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
@@ -1693,11 +1693,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck2 = _vec(k2)
     @.. broadcast=false veck2=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     f(du, u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
@@ -1710,11 +1710,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck3 = _vec(k3)
     @.. broadcast=false veck3=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
     f(du, u, p, t + c4 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT +
@@ -1728,11 +1728,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck4 = _vec(k4)
     @.. broadcast=false veck4=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     f(du, u, p, t + c5 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd5 * dT +
@@ -1746,11 +1746,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck5 = _vec(k5)
     @.. broadcast=false veck5=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC61 * k1 + dtC62 * k2 + dtC63 * k3 +
@@ -1765,11 +1765,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck6 = _vec(k6)
     @.. broadcast=false veck6=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     u .+= k6
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC71 * k1 + dtC72 * k2 + dtC73 * k3 +
@@ -1784,11 +1784,11 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck7 = _vec(k7)
     @.. broadcast=false veck7=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     u .+= k7
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + (dtC81 * k1 + dtC82 * k2 + dtC83 * k3 +
@@ -1803,7 +1803,7 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     veck8 = _vec(k8)
     @.. broadcast=false veck8=-vecu
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     u .+= k8
 
@@ -1874,7 +1874,7 @@ end
     dtgamma = dt * gamma
 
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
@@ -1899,13 +1899,13 @@ end
         veck1[i] = -vecu[i]
     end
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a21 * k1[i]
     end
     f(du, u, p, t + c2 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1927,13 +1927,13 @@ end
         k2[i] = -linres.u[i]
     end
 
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a31 * k1[i] + a32 * k2[i]
     end
     f(du, u, p, t + c3 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1954,13 +1954,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k3[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a41 * k1[i] + a42 * k2[i] + a43 * k3[i]
     end
     f(du, u, p, t + c4 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -1982,13 +1982,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k4[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a51 * k1[i] + a52 * k2[i] + a53 * k3[i] + a54 * k4[i]
     end
     f(du, u, p, t + c5 * dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -2011,14 +2011,14 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k5[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] = uprev[i] + a61 * k1[i] + a62 * k2[i] + a63 * k3[i] + a64 * k4[i] +
                a65 * k5[i]
     end
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -2041,13 +2041,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k6[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] += k6[i]
     end
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -2070,13 +2070,13 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k7[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] += k7[i]
     end
     f(du, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @inbounds @simd ivdep for i in eachindex(u)
@@ -2100,7 +2100,7 @@ end
     @inbounds @simd ivdep for i in eachindex(u)
         k8[i] = -linres.u[i]
     end
-    integrator.destats.nsolve += 1
+    integrator.stats.nsolve += 1
 
     @inbounds @simd ivdep for i in eachindex(u)
         u[i] += k8[i]

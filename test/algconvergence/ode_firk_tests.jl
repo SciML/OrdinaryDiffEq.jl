@@ -18,8 +18,8 @@ for iip in (true, false)
     end
     sol = solve(vanstiff, RadauIIA5())
     if iip
-        @test sol.destats.naccept + sol.destats.nreject > sol.destats.njacs # J reuse
-        @test sol.destats.njacs < sol.destats.nw # W reuse
+        @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
+        @test sol.stats.njacs < sol.stats.nw # W reuse
     end
     @test length(sol) < 150
     @test length(solve(remake(vanstiff, p = 1e7), RadauIIA5())) < 150
@@ -47,8 +47,8 @@ for iip in (true, false)
     end
     sol = solve(vanstiff, RadauIIA3())
     if iip
-        @test sol.destats.naccept + sol.destats.nreject > sol.destats.njacs # J reuse
-        @test sol.destats.njacs < sol.destats.nw # W reuse
+        @test sol.stats.naccept + sol.stats.nreject > sol.stats.njacs # J reuse
+        @test sol.stats.njacs < sol.stats.nw # W reuse
     end
     @test length(sol) < 5000 # the error estimate is not very good
 end

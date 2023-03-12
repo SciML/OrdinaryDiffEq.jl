@@ -270,7 +270,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
             integrator.kshortsize = 2
             integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
             integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
 
             # Avoid undefined entries if k is an array of arrays
             integrator.fsallast = zero(integrator.fsalfirst)
@@ -286,7 +286,7 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
             resize!(integrator.k, integrator.kshortsize)
             integrator.k .= [fsalfirst,fsallast]
             integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
           end
     end
 end
@@ -311,10 +311,10 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
         push!(iterexprs,
         quote
             $(Symbol(:k,i)) = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             u=+(uprev,$(aijkj...))
             du = f(u, p, t+$(Symbol(:c,i+1))*dt)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             if mass_matrix === I
                 linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
             else
@@ -328,7 +328,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     push!(iterexprs,
     quote
         $(Symbol(:k,n))=_reshape(W\-_vec(linsolve_tmp), axes(uprev))
-        integrator.destats.nsolve += 1
+        integrator.stats.nsolve += 1
         u=+(uprev,$(biki...))
     end)
 
@@ -366,7 +366,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             $(iterexprs...)
 
             integrator.fsallast = f(u, p, t + dt)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
 
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
@@ -414,10 +414,10 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
 
             @.. broadcast=false vecki = -vecu
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             @.. broadcast=false u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             if mass_matrix === I
                 @.. broadcast=false linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
             else
@@ -440,7 +440,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
         vecklast = _vec($klast)
         @.. broadcast=false vecklast = -vecu
 
-        integrator.destats.nsolve += 1
+        integrator.stats.nsolve += 1
         @.. broadcast=false u = +(uprev,$(biki...))
     end)
 
@@ -483,7 +483,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             $(iterexprs...)
 
             f( fsallast,  u, p, t + dt)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
 
             $(adaptiveexpr...)
         end
@@ -767,7 +767,7 @@ macro Rosenbrock4(part)
         #println("Generating perform_step for Rosenbrock4")
         specialstepconst=quote
             k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
             #du = f(u, p, t+c3*dt) #reduced function call
             if mass_matrix === I
@@ -785,7 +785,7 @@ macro Rosenbrock4(part)
             veck3 = _vec(k3)
             @.. broadcast=false veck3 = -vecu
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             #@.. broadcast=false u = uprev + a31*k1 + a32*k2 #a4j=a3j
             #f( du,  u, p, t+c3*dt) #reduced function call
             if mass_matrix === I

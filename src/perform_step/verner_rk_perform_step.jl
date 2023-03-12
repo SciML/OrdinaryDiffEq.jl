@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::Vern6ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     alg = unwrap_alg(integrator, false)
     alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -37,7 +37,7 @@ end
     u = uprev + dt * (a91 * k1 + a94 * k4 + a95 * k5 + a96 * k6 + a97 * k7 + a98 * k8)
     integrator.fsallast = f(u, p, t + dt)
     k9 = integrator.fsallast
-    integrator.destats.nf += 8
+    integrator.stats.nf += 8
     if typeof(integrator.alg) <: CompositeAlgorithm
         g9 = u
         ϱu = integrator.opts.internalnorm(k9 - k8, t)
@@ -78,7 +78,7 @@ end
                   dt * (a1201 * k[1] + a1204 * k[4] + a1205 * k[5] + a1206 * k[6] +
                    a1207 * k[7] + a1208 * k[8] + a1209 * k[9] + a1210 * k[10] +
                    a1211 * k[11]), p, t + c12 * dt)
-        integrator.destats.nf += 3
+        integrator.stats.nf += 3
     end
 
     integrator.u = u
@@ -108,7 +108,7 @@ function initialize!(integrator, cache::Vern6Cache)
     end
 
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Vern6Cache, repeat_step = false)
@@ -142,7 +142,7 @@ end
                                         (a91 * k1 + a94 * k4 + a95 * k5 + a96 * k6 +
                                          a97 * k7 + a98 * k8)
     f(k9, u, p, t + dt)
-    integrator.destats.nf += 8
+    integrator.stats.nf += 8
     if integrator.alg isa CompositeAlgorithm
         g9 = u
         g8 = tmp
@@ -189,7 +189,7 @@ end
                                                a1206 * k[6] +
                                                a1207 * k[7] + a1208 * k[8] + a1209 * k[9] +
                                                a1210 * k[10] + a1211 * k[11])
-        integrator.destats.nf += 3
+        integrator.stats.nf += 3
         f(k[12], tmp, p, t + c12 * dt)
     end
     return nothing
@@ -230,7 +230,7 @@ end
           dt * (a101 * k1 + a103 * k3 + a104 * k4 + a105 * k5 + a106 * k6 + a107 * k7)
     k9 = f(g9, p, t + dt)
     k10 = f(g10, p, t + dt)
-    integrator.destats.nf += 10
+    integrator.stats.nf += 10
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
     if typeof(integrator.alg) <: CompositeAlgorithm
         ϱu = integrator.opts.internalnorm(k10 - k9, t)
@@ -285,7 +285,7 @@ end
                   dt * (a1601 * k[1] + a1604 * k[4] + a1605 * k[5] + a1606 * k[6] +
                    a1607 * k[7] + a1608 * k[8] + a1609 * k[9] + a1611 * k[11] +
                    a1612 * k[12] + a1613 * k[13]), p, t + c16 * dt)
-        integrator.destats.nf += 6
+        integrator.stats.nf += 6
     end
 end
 
@@ -364,7 +364,7 @@ end
                                         (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 +
                                          b8 * k8 +
                                          b9 * k9)
-    integrator.destats.nf += 10
+    integrator.stats.nf += 10
     if integrator.alg isa CompositeAlgorithm
         g10 = u
         g9 = tmp
@@ -435,7 +435,7 @@ end
                                                a1611 * k[11] + a1612 * k[12] +
                                                a1613 * k[13])
         f(k[16], tmp, p, t + c16 * dt)
-        integrator.destats.nf += 6
+        integrator.stats.nf += 6
     end
     return nothing
 end
@@ -486,7 +486,7 @@ end
            a1309 * k9 + a1310 * k10)
     k12 = f(g12, p, t + dt)
     k13 = f(g13, p, t + dt)
-    integrator.destats.nf += 13
+    integrator.stats.nf += 13
     u = uprev +
         dt * (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12)
@@ -559,7 +559,7 @@ end
                    a2109 * k[9] + a2110 * k[10] + a2111 * k[11] + a2112 * k[12] +
                    a2114 * k[14] + a2115 * k[15] + a2116 * k[16] + a2117 * k[17]), p,
                   t + c21 * dt)
-        integrator.destats.nf += 8
+        integrator.stats.nf += 8
     end
 end
 
@@ -647,7 +647,7 @@ end
                                          a1307 * k7 +
                                          a1308 * k8 + a1309 * k9 + a1310 * k10)
     f(k13, u, p, t + dt)
-    integrator.destats.nf += 13
+    integrator.stats.nf += 13
     if integrator.alg isa CompositeAlgorithm
         g13 = u
         g12 = tmp
@@ -755,7 +755,7 @@ end
                                                a2112 * k[12] + a2114 * k[14] +
                                                a2115 * k[15] +
                                                a2116 * k[16] + a2117 * k[17])
-        integrator.destats.nf += 8
+        integrator.stats.nf += 8
         f(k[21], tmp, p, t + c21 * dt)
     end
     return nothing
@@ -815,7 +815,7 @@ end
            a1611 * k11 + a1612 * k12 + a1613 * k13)
     k15 = f(g15, p, t + dt)
     k16 = f(g16, p, t + dt)
-    integrator.destats.nf += 16
+    integrator.stats.nf += 16
     u = uprev +
         dt * (b1 * k1 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 + b12 * k12 + b13 * k13 +
          b14 * k14 + b15 * k15)
@@ -898,7 +898,7 @@ end
                    a2611 * k[5] + a2612 * k[6] + a2613 * k[7] + a2614 * k[8] +
                    a2615 * k[9] + a2617 * k[11] + a2618 * k[12] + a2619 * k[13] +
                    a2620 * k[14] + a2621 * k[15]), p, t + c26 * dt)
-        integrator.destats.nf += 10
+        integrator.stats.nf += 10
     end
 end
 
@@ -1002,7 +1002,7 @@ end
                                          a1610 * k10 + a1611 * k11 + a1612 * k12 +
                                          a1613 * k13)
     f(k16, u, p, t + dt)
-    integrator.destats.nf += 16
+    integrator.stats.nf += 16
     if integrator.alg isa CompositeAlgorithm
         g16 = u
         g15 = tmp
@@ -1135,7 +1135,7 @@ end
                                                a2618 * k[12] +
                                                a2619 * k[13] + a2620 * k[14] +
                                                a2621 * k[15])
-        integrator.destats.nf += 10
+        integrator.stats.nf += 10
         f(k[20], tmp, p, t + c26 * dt)
     end
     return nothing
