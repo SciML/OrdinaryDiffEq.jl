@@ -13,10 +13,10 @@ struct PDIRK44ConstantCache{N, TabType} <: OrdinaryDiffEqConstantCache
 end
 
 struct PDIRK44Tableau{T, T2}
-    γs::SVector{2, T2}
-    cs::SVector{4, T2}
-    α1::SVector{2, T}
-    α2::SVector{2, T}
+    γs::NTuple{2, T2}
+    cs::NTuple{4, T2}
+    α1::NTuple{2, T}
+    α2::NTuple{2, T}
     b1::T
     b2::T
     b3::T
@@ -26,18 +26,18 @@ end
 function PDIRK44Tableau(T, T2)
     γ1 = convert(T2, 1 // 2)
     γ2 = convert(T2, 2 // 3)
-    γs = SVector(γ1, γ2)
+    γs = (γ1, γ2)
     c1 = convert(T2, 1 // 2)
     c2 = convert(T2, 2 // 3)
     c3 = convert(T2, 1 // 2)
     c4 = convert(T2, 1 // 3)
-    cs = SVector(c1, c2, c3, c4)
+    cs = (c1, c2, c3, c4)
     α11 = convert(T, -5 // 2)
     α12 = convert(T, -5 // 3)
-    α1 = SVector(α11, α12)
+    α1 = (α11, α12)
     α21 = convert(T, 5 // 2)
     α22 = convert(T, 4 // 3)
-    α2 = SVector(α21, α22)
+    α2 = (α21, α22)
     b1 = convert(T, -1 // 1)
     b2 = convert(T, -1 // 1)
     b3 = convert(T, 3 // 2)

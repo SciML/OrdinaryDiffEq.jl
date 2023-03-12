@@ -732,7 +732,7 @@ end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
     elseif DiffEqBase.has_jac(f)
         J = f.jac(uprev, p, t)
-        if typeof(J) <: StaticArray &&
+        if typeof(J) <: StaticArraysCore.StaticArray &&
            typeof(integrator.alg) <:
            Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
             W = W_transform ? J - mass_matrix * inv(dtgamma) :

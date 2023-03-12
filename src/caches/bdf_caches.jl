@@ -347,7 +347,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     end
     U = SArray(U)
 
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order)))
+    γₖ = ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order))
 
     QNDFConstantCache(nlsolver, U, D, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1,
                       EEst2, γₖ)
@@ -444,7 +444,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     U = SArray(U)
 
     RU = Matrix(U)
-    γₖ = SVector(ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order)))
+    γₖ = ntuple(k -> sum(tTypeNoUnits(1 // j) for j in 1:k), Val(max_order))
 
     QNDFCache(fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, RU, D, Dtmp,
               tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
@@ -530,11 +530,11 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
                               uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
-    bdf_coeffs = SA[1 -1 0 0 0 0;
-                    3//2 -2 1//2 0 0 0;
-                    11//6 -3 3//2 -1//3 0 0;
-                    25//12 -4 3 -4//3 1//4 0;
-                    137//60 -5 5 -10//3 5//4 -1//5]
+    bdf_coeffs = [1 -1 0 0 0 0;
+                  3//2 -2 1//2 0 0 0;
+                  11//6 -3 3//2 -1//3 0 0;
+                  25//12 -4 3 -4//3 1//4 0;
+                  137//60 -5 5 -10//3 5//4 -1//5]
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
@@ -625,11 +625,11 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
                               uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
-    bdf_coeffs = SA[1 -1 0 0 0 0;
-                    3//2 -2 1//2 0 0 0;
-                    11//6 -3 3//2 -1//3 0 0;
-                    25//12 -4 3 -4//3 1//4 0;
-                    137//60 -5 5 -10//3 5//4 -1//5]
+    bdf_coeffs = [1 -1 0 0 0 0;
+                  3//2 -2 1//2 0 0 0;
+                  11//6 -3 3//2 -1//3 0 0;
+                  25//12 -4 3 -4//3 1//4 0;
+                  137//60 -5 5 -10//3 5//4 -1//5]
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
     u_history = Matrix{eltype(u)}(undef, length(u), max_order + 2)
     order = 1
