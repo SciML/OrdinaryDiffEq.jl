@@ -103,11 +103,7 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
         linsolve = LinearSolve.set_prec(linsolve, __Pl, __Pr)
     end
 
-    linres = if reltol === nothing
-        solve(linsolve; reltol)
-    else
-        solve(linsolve; reltol)
-    end
+    solve(linsolve; reltol)
 
     # TODO: this ignores the add of the `f` count for add_steps!
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
