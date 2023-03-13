@@ -223,3 +223,12 @@ function Base.show(io::IO,
         print(io, "ODEIntegrator{$IIP,$algType,$uType,$tType,…}")
     end
 end
+
+function Base.getproperty(integ::ODEIntegrator, s::Symbol)
+    if s === :destats
+        @warn "destats has been deprecated for stats"
+        getfield(integ,:stats)
+    else
+        getfield(integ,s)
+    end
+end
