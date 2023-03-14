@@ -25,38 +25,38 @@ end
 function alg_cache(alg::CompositeAlgorithm{Tuple{T1, T2}, F}, u, rate_prototype,
                    ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits}, uprev,
-                   uprev2, f, t, dt, reltol, p, calck,
+                   uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{V}) where {T1, T2, F, V, uEltypeNoUnits, uBottomEltypeNoUnits,
                                     tTypeNoUnits}
     caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-                         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
+                         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, verbose, Val(V))
     CompositeCache(caches, alg.choice_function, 1)
 end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   dt, reltol, p, calck, verbose,
                    ::Val{V}) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     caches = (alg_cache(alg.algs[1], u, rate_prototype, uEltypeNoUnits,
                         uBottomEltypeNoUnits,
-                        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)),
+                        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, verbose, Val(V)),
               alg_cache(alg.algs[2], u, rate_prototype, uEltypeNoUnits,
                         uBottomEltypeNoUnits,
-                        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)))
+                        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, verbose, Val(V)))
     CompositeCache(caches, alg.choice_function, 1)
 end
 
 # map + closure approach doesn't infer
 @generated function __alg_cache(algs::T, u, rate_prototype, ::Type{uEltypeNoUnits},
                                 ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev,
-                                uprev2, f, t, dt, reltol, p, calck,
+                                uprev2, f, t, dt, reltol, p, calck, verbose,
                                 ::Val{V}) where {T <: Tuple, V, uEltypeNoUnits,
                                                  uBottomEltypeNoUnits, tTypeNoUnits}
     return Expr(:tuple,
                 map(1:length(T.types)) do i
                     :(alg_cache(algs[$i], u, rate_prototype, uEltypeNoUnits,
                                 uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-                                reltol, p, calck, Val($V)))
+                                reltol, p, calck, verbose, Val($V)))
                 end...)
 end
 
@@ -70,7 +70,7 @@ end
 
 function alg_cache(alg::FunctionMap, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     FunctionMapCache(u, uprev,
                      FunctionMap_scale_by_time(alg) ? rate_prototype :
@@ -81,7 +81,7 @@ struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::FunctionMap, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     FunctionMapConstantCache()
 end
@@ -115,7 +115,7 @@ end
 
 function alg_cache(alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     kk = Vector{typeof(rate_prototype)}(undef, 0)
     for i in 1:(alg.tableau.stages)
@@ -154,7 +154,7 @@ end
 
 function alg_cache(alg::ExplicitRK, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-                   dt, reltol, p, calck,
+                   dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     ExplicitRKConstantCache(alg.tableau, rate_prototype)
 end

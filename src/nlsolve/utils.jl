@@ -129,26 +129,26 @@ DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, ::Type{uEltypeNoUnits},
                         ::Type{uBottomEltypeNoUnits},
-                        ::Type{tTypeNoUnits}, γ, c,
+                        ::Type{tTypeNoUnits}, γ, c, verbose,
                         iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
                    uBottomEltypeNoUnits,
-                   tTypeNoUnits, γ, c, 1, iip)
+                   tTypeNoUnits, γ, c, 1, verbose, iip)
 end
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, ::Type{uEltypeNoUnits},
                         ::Type{uBottomEltypeNoUnits},
-                        ::Type{tTypeNoUnits}, γ, c, α,
+                        ::Type{tTypeNoUnits}, γ, c, α, verbose,
                         iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-                   uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
+                   uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, verbose, iip)
 end
 
 function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
                         t, dt,
                         f, rate_prototype, ::Type{uEltypeNoUnits},
                         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-                        γ, c, α,
+                        γ, c, α, verbose,
                         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
                                             tTypeNoUnits}
     #TODO
@@ -192,7 +192,7 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
         Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                      nothing)..., weight)
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true, verbose=verbose,
                         Pl = Pl, Pr = Pr,
                         assumptions = LinearSolve.OperatorAssumptions(Val(true)))
 
