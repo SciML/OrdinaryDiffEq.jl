@@ -232,7 +232,7 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
                         t, dt,
                         f, rate_prototype, ::Type{uEltypeNoUnits},
                         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-                        γ, c, α,
+                        γ, c, α, verbose,
                         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
                                              tTypeNoUnits}
     #TODO
