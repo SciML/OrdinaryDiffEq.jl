@@ -4123,7 +4123,6 @@ struct Alshina2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
   step_limiter!::StepLimiter
   thread::Thread
 end
-export Alshina2
 
 function Alshina2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                    thread = False())
@@ -4181,7 +4180,6 @@ struct Alshina3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
   step_limiter!::StepLimiter
   thread::Thread
 end
-export Alshina3
 
 function Alshina3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                    thread = False())
@@ -4239,7 +4237,6 @@ struct Alshina4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
   step_limiter!::StepLimiter
   thread::Thread
 end
-export Alshina4
 
 function Alshina4(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                    thread = False())
@@ -4298,7 +4295,6 @@ struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
   step_limiter!::StepLimiter
   thread::Thread
 end
-export Alshina6
 
 function Alshina6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                    thread = False())

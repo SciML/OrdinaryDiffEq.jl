@@ -61,17 +61,17 @@ testTol = 0.2
     sim4 = test_convergence(dts2, prob, SIR54())
     @test sim4.𝒪est[:l2]≈4.4 atol=testTol
 
-    sim2 = test_convergence(dts3, prob, Alshina2())
-    @test sim2.𝒪est[:l2]≈1 atol=testTol
+    sim2 = test_convergence(dts, prob, Alshina2())
+    @test sim2.𝒪est[:l∞]≈2 atol=testTol
 
-    sim3 = test_convergence(dts3, prob, Alshina3())
-    @test sim3.𝒪est[:l2]≈1 atol=testTol
+    sim3 = test_convergence(dts, prob, Alshina3())
+    @test sim3.𝒪est[:l∞]≈3 atol=testTol
 
-    sim4 = test_convergence(dts3, prob, Alshina4())
-    @test sim4.𝒪est[:l2]≈3 atol=testTol
+    sim4 = test_convergence(dts, prob, Alshina4())
+    @test sim4.𝒪est[:l∞]≈4 atol=testTol
 
-    sim6 = test_convergence(dts1, prob, Alshina6())
-    @test sim6.𝒪est[:l2]≈4 atol=testTol
+    sim6 = test_convergence(dts4, prob, Alshina6())
+    @test sim6.𝒪est[:l∞]≈6 atol=testTol
 
     @info "Multistep"
     sim5 = test_convergence(dts, prob, AB3())
