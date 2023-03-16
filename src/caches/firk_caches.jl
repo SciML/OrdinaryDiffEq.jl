@@ -198,36 +198,7 @@ mutable struct RadauIIA5Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     W_γdt::Dt
     status::NLStatus
 end
-
-function Base.show(io::IO,
-                   t::Type{
-                           RadauIIA5Cache{uType, cuType, uNoUnitsType, rateType, JType,
-                                          W1Type, W2Type,
-                                          UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol}}) where {
-                                                                                             uType,
-                                                                                             cuType,
-                                                                                             uNoUnitsType,
-                                                                                             rateType,
-                                                                                             JType,
-                                                                                             W1Type,
-                                                                                             W2Type,
-                                                                                             UF,
-                                                                                             JC,
-                                                                                             F1,
-                                                                                             F2,
-                                                                                             Tab,
-                                                                                             Tol,
-                                                                                             Dt,
-                                                                                             rTol,
-                                                                                             aTol
-                                                                                             }
-    if TruncatedStacktraces.VERBOSE[]
-        print(io,
-              "RadauIIA5Cache{$uType,$cuType,$uNoUnitsType,$rateType,$JType,$W1Type,$W2Type,$UF,$JC,$F1,$F2,$Tab,$Tol,$Dt,$rTol,$aTol}")
-    else
-        print(io, "RadauIIA5Cache{$uType,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace RadauIIA5Cache 1
 
 function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
