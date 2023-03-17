@@ -396,7 +396,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     if isad
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
-        _du_tmp = PreallocationTools.dualcache(tmp, chunk)
+        _du_tmp = PreallocationTools.dualcache(similar(tmp), chunk)
     else
         _tmp, _du_tmp = tmp, similar(tmp)
     end
@@ -419,7 +419,6 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
     nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
-
     alg_u .= nlsol
 
     recursivecopy!(integrator.uprev, integrator.u)
