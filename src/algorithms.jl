@@ -6795,7 +6795,15 @@ for Alg in [
                  _unwrap_val(concrete_jac)}(linsolve, precs)
         end
 
-        TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
+        function Base.show(io::IO,
+                           t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P,
+                                                                            FDT, ST, CJ}
+            if TruncatedStacktraces.VERBOSE[]
+                invoke(show, Tuple{IO, Type}, io, t)
+            else
+                print(io, $Alg, "{$CS,$AD,…}")
+            end
+        end
     end
 end
 
