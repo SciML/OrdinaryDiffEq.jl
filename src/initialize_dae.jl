@@ -143,9 +143,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         z = nlsolve!(nlsolver, integrator, integrator.cache)
         nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
                                                                  olddt
-        # TODO: failure handling
-        nlsolvefail(nlsolver) &&
-            @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
+        failed = nlsolvefail(nlsolver)
         @.. broadcast=false integrator.u=integrator.uprev + z
     else
         isad = alg_autodiff(integrator.alg)
@@ -172,15 +170,21 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         nlfunc = NonlinearFunction(nlequation!;
                                    jac_prototype = f.jac_prototype)
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
-        r = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-                  reltol = integrator.opts.reltol)
-        integrator.u .= r.u
+        nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
+                      reltol = integrator.opts.reltol)
+        integrator.u .= nlsol.u
+        failed = nlsol.retcode != ReturnCode.Success
     end
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
         recursivecopy!(integrator.uprev2, integrator.uprev)
     end
 
+    if failed
+        @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end
 
@@ -223,9 +227,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         z = nlsolve!(nlsolver, integrator, integrator.cache)
         nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
                                                                  olddt
-        # TODO: failure handling
-        nlsolvefail(nlsolver) &&
-            @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
+        failed = nlsolvefail(nlsolver)
         @.. broadcast=false integrator.u=integrator.uprev + z
     else
         nlequation_oop = @closure (u, _) -> begin
@@ -241,6 +243,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
                       reltol = integrator.opts.reltol)
         integrator.u = nlsol.u
+        failed = nlsol.retcode != ReturnCode.Success
     end
 
     integrator.uprev = copy(integrator.u)
@@ -248,6 +251,11 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         integrator.uprev2 = copy(integrator.uprev)
     end
 
+    if failed
+        @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end
 
@@ -289,15 +297,19 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0, p)
-    r = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-              reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
+                  reltol = integrator.opts.reltol)
 
-    integrator.u = r.u
+    integrator.u = nlsol.u
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
         recursivecopy!(integrator.uprev2, integrator.uprev)
     end
-
+    if nlsol.retcode != ReturnCode.Success
+        @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end
 
@@ -324,16 +336,20 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0)
-    r = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-              reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
+                  reltol = integrator.opts.reltol)
 
-    integrator.u = r.u
+    integrator.u = nlsol.u
 
     integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
         integrator.uprev2 = copy(integrator.uprev)
     end
-
+    if nlsol.retcode != ReturnCode.Success
+        @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end
 
@@ -402,15 +418,19 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
-    r = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
 
-    alg_u .= r
+    alg_u .= nlsol
 
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
         recursivecopy!(integrator.uprev2, integrator.uprev)
     end
 
+    if nlsol.retcode != ReturnCode.Success
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end
 
@@ -464,9 +484,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
-    r = solve(nlprob, nlsolve)
+    nlsol = solve(nlprob, nlsolve)
 
-    u[algebraic_vars] .= r.u
+    u[algebraic_vars] .= nlsol.u
 
     if u0 isa Number
         # This doesn't fix static arrays!
@@ -480,6 +500,10 @@ function _initialize_dae!(integrator, prob::ODEProblem,
         integrator.uprev2 = copy(integrator.uprev)
     end
 
+    if nlsol.retcode != ReturnCode.Success
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end
 
@@ -531,16 +555,20 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
-    r = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
 
-    @. du = ifelse(differential_vars, r.u, du)
-    @. u = ifelse(differential_vars, u, r.u)
+    @. du = ifelse(differential_vars, nlsol.u, du)
+    @. u = ifelse(differential_vars, u, nlsol.u)
 
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
         recursivecopy!(integrator.uprev2, integrator.uprev)
     end
 
+    if nlsol.retcode != ReturnCode.Success
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end
 
@@ -579,10 +607,10 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
 
-    r = solve(nlprob, nlsolve)
+    nlsol = solve(nlprob, nlsolve)
 
-    du = ifelse.(differential_vars, r.u, du)
-    u = ifelse.(differential_vars, u, r.u)
+    du = ifelse.(differential_vars, nlsol.u, du)
+    u = ifelse.(differential_vars, u, nlsol.u)
 
     if integrator.u isa Number && integrator.du isa Number
         # This doesn't fix static arrays!
@@ -598,5 +626,9 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         integrator.uprev2 = copy(integrator.uprev)
     end
 
+    if nlsol.retcode != ReturnCode.Success
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+                                                        ReturnCode.InitialFailure)
+    end
     return
 end

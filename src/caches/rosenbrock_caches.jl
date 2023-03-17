@@ -179,7 +179,7 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqCo
     autodiff::Bool
 end
 
-function Rosenbrock23ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where T
+function Rosenbrock23ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
     tab = Rosenbrock23Tableau(T)
     Rosenbrock23ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
@@ -208,7 +208,7 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqCo
     autodiff::Bool
 end
 
-function Rosenbrock32ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where T
+function Rosenbrock32ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
     tab = Rosenbrock32Tableau(T)
     Rosenbrock32ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
