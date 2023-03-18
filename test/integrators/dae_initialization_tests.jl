@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StaticArrays, Test
+using OrdinaryDiffEq, StaticArrays, LinearAlgebra, Test
 
 ## Mass Matrix
 
