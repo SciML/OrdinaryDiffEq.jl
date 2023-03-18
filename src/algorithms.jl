@@ -7242,20 +7242,4 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                   controller)
 end
 
-<<<<<<< HEAD
-function Base.show(io::IO,
-                   t::Type{DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS,
-                                                                                   AD, F,
-                                                                                   F2, P,
-                                                                                   FDT, ST,
-                                                                                   CJ, K, T}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "DFBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
-    else
-        print(io, "DFBDF{…}")
-    end
-end
-
-=======
 TruncatedStacktraces.@truncate_stacktrace DFBDF
->>>>>>> 21df5b035c445b41604393f747b2530c7b7dfa17
