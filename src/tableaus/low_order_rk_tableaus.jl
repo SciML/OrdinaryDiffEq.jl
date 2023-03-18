@@ -1890,20 +1890,22 @@ struct Alshina2ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 
     b1::T
     b2::T
+    b1tilde::T
 
     c2::T2
     
 end
 
-function Alshina2ConstantCache(T::Type{<:Float64}, T2::Type{<:Float64})
+function Alshina2ConstantCache(T, T2)
     a21 = convert(T, 0.6666666666666666)
 
     b1 = convert(T, 0.25)
     b2 = convert(T, 0.75)
+    b1tilde = convert(T, 1.0)
 
-    c2 = convert(T2, 0.6666666666666666)
+    c2 = convert(T2, 0.666666666666666)
     
-    Alshina2ConstantCache(a21, b1, b2, c2)
+    Alshina2ConstantCache(a21, b1, b2, b1tilde, c2)
 end
 
 struct Alshina3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
@@ -1914,13 +1916,14 @@ struct Alshina3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     b1::T
     b2::T
     b3::T
+    b2tilde::T
 
     c2::T2
     c3::T2
     
 end
 
-function Alshina3ConstantCache(T::Type{<:Float64}, T2::Type{<:Float64})
+function Alshina3ConstantCache(T, T2)
     a21 = convert(T, 0.5)
     a31 = convert(T, 0.0)
     a32 = convert(T, 0.75)
@@ -1928,51 +1931,12 @@ function Alshina3ConstantCache(T::Type{<:Float64}, T2::Type{<:Float64})
     b1 = convert(T, 0.2222222222222222)
     b2 = convert(T, 0.3333333333333333)
     b3 = convert(T, 0.4444444444444444)
-
+    b2tilde = convert(T, 0.4444444444444444)
+    
     c2 = convert(T2, 0.5)
     c3 = convert(T2, 0.75)
     
-    Alshina3ConstantCache(a21, a31, a32, b1, b2, b3, c2, c3)
-end
-
-struct Alshina4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
-    a21::T
-    a31::T
-    a32::T
-    a41::T
-    a42::T
-    a43::T
-    
-
-    b1::T
-    b2::T
-    b3::T
-    b4::T
-
-    c2::T2
-    c3::T2
-    c4::T2
-    
-end
-
-function Alshina4ConstantCache(T::Type{<:Float64}, T2::Type{<:Float64})
-    a21 = convert(T, 0.5)
-    a31 = convert(T, 0.0)
-    a32 = convert(T, 0.5)
-    a41 = convert(T, 0.0)
-    a42 = convert(T, 0.0)
-    a43 = convert(T, 1.0)
-
-    b1 = convert(T, 0.16666666666666666)
-    b2 = convert(T, 0.3333333333333333)
-    b3 = convert(T, 0.3333333333333333)
-    b4 = convert(T, 0.16666666666666666)
-
-    c2 = convert(T2, 0.5)
-    c3 = convert(T2, 0.5)
-    c4 = convert(T2, 1.0)
-    
-    Alshina4ConstantCache(a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, c2, c3, c4)
+    Alshina3ConstantCache(a21, a31, a32, b1, b2, b3, b2tilde, c2, c3)
 end
 
 struct Alshina6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
@@ -1999,9 +1963,9 @@ struct Alshina6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     a76::T
 
     b1::T
-    b2::T
-    b3::T
-    b4::T
+    # b2::T
+    # b3::T
+    # b4::T
     b5::T
     b6::T
     b7::T
@@ -2015,7 +1979,7 @@ struct Alshina6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     
 end
 
-function Alshina6ConstantCache(T::Type{<:Float64}, T2::Type{<:Float64})
+function Alshina6ConstantCache(T, T2)
     a21 = convert(T, 0.5714285714285714)
     a31 = convert(T, 1.0267857142857142)
     a32 = convert(T, -0.3125)
@@ -2039,9 +2003,9 @@ function Alshina6ConstantCache(T::Type{<:Float64}, T2::Type{<:Float64})
     a76 = convert(T, 1.381966011250105)
 
     b1 = convert(T, 0.08333333333333333)
-    b2 = convert(T, 0.0)
-    b3 = convert(T, 0.0)
-    b4 = convert(T, 0.0)
+    # b2 = convert(T, 0.0)
+    # b3 = convert(T, 0.0)
+    # b4 = convert(T, 0.0)
     b5 = convert(T, 0.4166666666666667)
     b6 = convert(T, 0.4166666666666667)
     b7 = convert(T, 0.08333333333333333)
@@ -2054,5 +2018,5 @@ function Alshina6ConstantCache(T::Type{<:Float64}, T2::Type{<:Float64})
     c7 = convert(T2, 1.0)
     
     Alshina6ConstantCache(a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76,
-        b1, b2, b3, b4, b5, b6, b7, c2, c3, c4, c5, c6, c7)
+        b1, b5, b6, b7, c2, c3, c4, c5, c6, c7)
 end

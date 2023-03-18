@@ -4118,7 +4118,7 @@ Julia is started with multiple threads.
   journal = {Computational Mathematics and Mathematical Physics}
 }
 """
-struct Alshina2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+struct Alshina2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -4175,7 +4175,7 @@ Julia is started with multiple threads.
   journal = {Computational Mathematics and Mathematical Physics}
 }
 """
-struct Alshina3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+struct Alshina3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
   thread::Thread
@@ -4200,64 +4200,6 @@ function Base.show(io::IO, alg::Alshina3)
           ", step_limiter! = ", alg.step_limiter!,
           ", thread = ", alg.thread, ")")
 end
-
-"""
-    Alshina4(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-4th order, 4-stage Explicit Runge-Kutta Method with optimal parameters.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{Alshina2008,
-  doi = {10.1134/s0965542508030068},
-  url = {https://doi.org/10.1134/s0965542508030068},
-  year = {2008},
-  month = mar,
-  publisher = {Pleiades Publishing Ltd},
-  volume = {48},
-  number = {3},
-  pages = {395--405},
-  author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
-  title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
-  journal = {Computational Mathematics and Mathematical Physics}
-}
-"""
-struct Alshina4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
-end
-
-function Alshina4(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-                   thread = False())
-    Alshina4{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-                                                                             step_limiter!,
-                                                                             thread)
-end
-
-
-function Alshina4(stage_limiter!, step_limiter! = trivial_limiter!)
-    Alshina4{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-                                                                    step_limiter!,
-                                                                    False())
-end
-
-function Base.show(io::IO, alg::Alshina4)
-    print(io, "Alshina4(stage_limiter! = ", alg.stage_limiter!,
-          ", step_limiter! = ", alg.step_limiter!,
-          ", thread = ", alg.thread, ")")
-end
-
 
 """
     Alshina6(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,

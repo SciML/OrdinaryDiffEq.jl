@@ -67,9 +67,6 @@ testTol = 0.2
     sim3 = test_convergence(dts, prob, Alshina3())
     @test sim3.𝒪est[:l∞]≈3 atol=testTol
 
-    sim4 = test_convergence(dts, prob, Alshina4())
-    @test sim4.𝒪est[:l∞]≈4 atol=testTol
-
     sim6 = test_convergence(dts4, prob, Alshina6())
     @test sim6.𝒪est[:l∞]≈6 atol=testTol
 

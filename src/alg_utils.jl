@@ -709,7 +709,6 @@ alg_order(alg::DFBDF) = 1#dummy value
 
 alg_order(alg::Alshina2) = 2
 alg_order(alg::Alshina3) = 3
-alg_order(alg::Alshina4) = 4
 alg_order(alg::Alshina6) = 6
 
 alg_maximum_order(alg) = alg_order(alg)
