@@ -77,13 +77,7 @@ struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 
-function Base.show(io::IO, t::Type{ExplicitRK{TabType}}) where {TabType}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "ExplicitRK{$TabType}")
-    else
-        print(io, "ExplicitRK{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace ExplicitRK
 
 @inline trivial_limiter!(u, integrator, p, t) = nothing
 """
@@ -4230,16 +4224,7 @@ struct Tsit5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     thread::Thread
 end
 
-function Base.show(io::IO,
-                   t::Type{Tsit5{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
-                                                                             StepLimiter,
-                                                                             Thread}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "Tsit5{$StageLimiter,$StepLimiter,$Thread}")
-    else
-        print(io, "Tsit5{$Thread,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace Tsit5 3
 
 function Tsit5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False())
@@ -4532,16 +4517,7 @@ struct Vern6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
-function Base.show(io::IO,
-                   t::Type{Vern6{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
-                                                                             StepLimiter,
-                                                                             Thread}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "Vern6{$StageLimiter,$StepLimiter,$Thread}")
-    else
-        print(io, "Vern6{$Thread,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace Vern6 3
 
 function Vern6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
@@ -4603,16 +4579,7 @@ struct Vern7{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
-function Base.show(io::IO,
-                   t::Type{Vern7{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
-                                                                             StepLimiter,
-                                                                             Thread}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "Vern7{$StageLimiter,$StepLimiter,$Thread}")
-    else
-        print(io, "Vern7{$Thread,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace Vern7 3
 
 function Vern7(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
@@ -4675,16 +4642,7 @@ struct Vern8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
-function Base.show(io::IO,
-                   t::Type{Vern8{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
-                                                                             StepLimiter,
-                                                                             Thread}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "Vern8{$StageLimiter,$StepLimiter,$Thread}")
-    else
-        print(io, "Vern8{$Thread,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace Vern8 3
 
 function Vern8(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
@@ -4747,16 +4705,7 @@ struct Vern9{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorit
     lazy::Bool
 end
 
-function Base.show(io::IO,
-                   t::Type{Vern9{StageLimiter, StepLimiter, Thread}}) where {StageLimiter,
-                                                                             StepLimiter,
-                                                                             Thread}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "Vern9{$StageLimiter,$StepLimiter,$Thread}")
-    else
-        print(io, "Vern9{$Thread,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace Vern9 3
 
 function Vern9(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
                thread = False(), lazy = true)
@@ -5545,26 +5494,7 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                                 extrapolant, kappa, controller)
 end
 
-function Base.show(io::IO,
-                   t::Type{QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType}}) where {MO,
-                                                                                         CS,
-                                                                                         AD,
-                                                                                         F,
-                                                                                         F2,
-                                                                                         P,
-                                                                                         FDT,
-                                                                                         ST,
-                                                                                         CJ,
-                                                                                         K,
-                                                                                         T,
-                                                                                         κType
-                                                                                         }
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "QNDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T,$κType}")
-    else
-        print(io, "QNDF{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace QNDF
 
 """
 QBDF: Multistep Method
@@ -5611,18 +5541,7 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                  controller)
 end
 
-function Base.show(io::IO,
-                   t::Type{FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS,
-                                                                                  AD, F, F2,
-                                                                                  P, FDT,
-                                                                                  ST, CJ, K,
-                                                                                  T}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "FBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
-    else
-        print(io, "FBDF{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace FBDF
 
 """
 Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton. Implicit-Explicit Methods for Time-
@@ -5954,22 +5873,7 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     controller)
 end
 
-function Base.show(io::IO,
-                   t::Type{RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS,
-                                                                                      AD, F,
-                                                                                      P,
-                                                                                      FDT,
-                                                                                      ST,
-                                                                                      CJ,
-                                                                                      Tol,
-                                                                                      C1, C2
-                                                                                      }
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "RadauIIA3{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
-    else
-        print(io, "RadauIIA3{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace RadauIIA3
 
 """
 @article{hairer1999stiff,
@@ -6018,23 +5922,7 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                                                                     new_W_γdt_cutoff,
                                                                                     controller)
 end
-
-function Base.show(io::IO,
-                   t::Type{RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2}}) where {CS,
-                                                                                      AD, F,
-                                                                                      P,
-                                                                                      FDT,
-                                                                                      ST,
-                                                                                      CJ,
-                                                                                      Tol,
-                                                                                      C1, C2
-                                                                                      }
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "RadauIIA5{$CS,$AD,$F,$P,$FDT,$ST,$CJ,$Tol,$C1,$C2}")
-    else
-        print(io, "RadauIIA5{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace RadauIIA5
 
 ################################################################################
 
@@ -6155,15 +6043,7 @@ function TRBDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = V
                                       controller)
 end
 
-function Base.show(io::IO,
-                   t::Type{TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2, P,
-                                                                          FDT, ST, CJ}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "TRBDF2{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
-    else
-        print(io, "TRBDF2{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace TRBDF2
 
 """
 @article{hindmarsh2005sundials,
@@ -6617,15 +6497,7 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                         controller)
 end
 
-function Base.show(io::IO,
-                   t::Type{KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ}}) where {CS, AD, F, F2,
-                                                                            P, FDT, ST, CJ}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "KenCarp4{$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ}")
-    else
-        print(io, "KenCarp4{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace KenCarp4
 
 """
 @article{kennedy2019higher,
@@ -6927,7 +6799,7 @@ for Alg in [
                            t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P,
                                                                             FDT, ST, CJ}
             if TruncatedStacktraces.VERBOSE[]
-                print(io, $Alg, "{$CS,$AD,$F,$P,$FDT,$ST,$CJ}")
+                invoke(show, Tuple{IO, Type}, io, t)
             else
                 print(io, $Alg, "{$CS,$AD,…}")
             end
@@ -7066,13 +6938,7 @@ struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
     choice_function::F
 end
 
-function Base.show(io::IO, t::Type{CompositeAlgorithm{T, F}}) where {T, F}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "CompositeAlgorithm{$T,$F}")
-    else
-        print(io, "CompositeAlgorithm{$T,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
 
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
@@ -7204,15 +7070,4 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
                                   controller)
 end
 
-function Base.show(io::IO,
-                   t::Type{DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T}}) where {MO, CS,
-                                                                                   AD, F,
-                                                                                   F2, P,
-                                                                                   FDT, ST,
-                                                                                   CJ, K, T}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "DFBDF{$MO,$CS,$AD,$F,$F2,$P,$FDT,$ST,$CJ,$K,$T}")
-    else
-        print(io, "DFBDF{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace DFBDF

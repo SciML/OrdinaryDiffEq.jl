@@ -47,24 +47,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     stop_at_next_tstop::Bool
 end
 
-function Base.show(io::IO,
-                   t::Type{
-                           DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3,
-                                     F4, F5, F6,
-                                     F7, tstopsType, discType, ECType, SType, MI, tcache,
-                                     savecache,
-                                     disccache}}) where {absType, relType, QT, tType,
-                                                         Controller, F1, F2, F3, F4, F5, F6,
-                                                         F7, tstopsType, discType, ECType,
-                                                         SType, MI, tcache, savecache,
-                                                         disccache}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io,
-              "DEOptions{$absType,$relType,$QT,$tType,$Controller,$F1,$F2,$F3,$F4,$F5,$F6,$F7,$tstopsType,$discType,$ECType,$SType,$MI,$tcache,$savecache,$disccache}")
-    else
-        print(io, "DEOptions{…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace DEOptions
 
 """
     ODEIntegrator
@@ -198,31 +181,7 @@ if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
 end
 # When this is changed, DelayDiffEq.jl must be changed as well!
 
-function Base.show(io::IO,
-                   t::Type{
-                           ODEIntegrator{algType, IIP,
-                                         uType, duType, tType, pType, eigenType, EEstT, QT,
-                                         tdirType,
-                                         ksEltype, SolType, F, CacheType, O, FSALType,
-                                         EventErrorType,
-                                         CallbackCacheType, IA}}) where {algType, IIP,
-                                                                         uType, duType,
-                                                                         tType, pType,
-                                                                         eigenType, EEstT,
-                                                                         QT, tdirType,
-                                                                         ksEltype, SolType,
-                                                                         F, CacheType, O,
-                                                                         FSALType,
-                                                                         EventErrorType,
-                                                                         CallbackCacheType,
-                                                                         IA}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io,
-              "ODEIntegrator{$algType,$IIP,$uType,$duType,$tType,$pType,$eigenType,$EEstT,$QT,$tdirType,$ksEltype,$SolType,$F,$CacheType,$O,$FSALType,$EventErrorType,$CallbackCacheType,$IA}")
-    else
-        print(io, "ODEIntegrator{$IIP,$algType,$uType,$tType,…}")
-    end
-end
+TruncatedStacktraces.@truncate_stacktrace ODEIntegrator 2 1 3 4
 
 function Base.getproperty(integ::ODEIntegrator, s::Symbol)
     if s === :destats
