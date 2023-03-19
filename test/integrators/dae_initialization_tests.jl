@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StaticArrays, Test
+using OrdinaryDiffEq, StaticArrays, LinearAlgebra, Test
 
 ## Mass Matrix
 
@@ -208,10 +208,10 @@ function SciMLBase.__solve(prob::NonlinearProblem,
     SciMLBase.build_solution(prob, alg, u, copy(u);
                              retcode = ReturnCode.Success)
 end
-function rober(u, p, t)
+function f2(u, p, t)
     u
 end
-f = ODEFunction(rober, mass_matrix = Diagonal([1.0, 1.0, 0.0]))
+f = ODEFunction(f2, mass_matrix = Diagonal([1.0, 1.0, 0.0]))
 prob = ODEProblem(f, ones(3), (0.0, 1.0))
 integrator = init(prob, Rodas5P(),
                   initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
