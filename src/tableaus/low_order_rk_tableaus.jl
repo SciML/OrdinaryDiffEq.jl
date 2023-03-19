@@ -1910,7 +1910,7 @@ end
 
 struct Alshina3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     a21::T
-    a31::T
+    # a31::T
     a32::T
 
     b1::T
@@ -1925,7 +1925,7 @@ end
 
 function Alshina3ConstantCache(T, T2)
     a21 = convert(T, 0.5)
-    a31 = convert(T, 0.0)
+    # a31 = convert(T, 0.0)
     a32 = convert(T, 0.75)
 
     b1 = convert(T, 0.2222222222222222)
@@ -1936,7 +1936,7 @@ function Alshina3ConstantCache(T, T2)
     c2 = convert(T2, 0.5)
     c3 = convert(T2, 0.75)
     
-    Alshina3ConstantCache(a21, a31, a32, b1, b2, b3, b2tilde, c2, c3)
+    Alshina3ConstantCache(a21, a32, b1, b2, b3, b2tilde, c2, c3)
 end
 
 struct Alshina6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache

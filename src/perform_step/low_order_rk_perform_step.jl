@@ -1832,7 +1832,8 @@ end
 function initialize!(integrator, cache::Alshina2ConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = zero(integrator.fsalfirst)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -1872,10 +1873,13 @@ function initialize!(integrator, cache::Alshina2Cache)
     integrator.k[2] = cache.k2
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k2
+
+    f(integrator.fsalfirst, uprev, p, t)
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
-    @unpack k1, k2, tmp, stage_limiter!, step_limiter!, thread = cache
+    @unpack k1, k2, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack a21, b1, b2, b1tilde, c2 = cache.tab
     @unpack u, uprev, t, dt, f, p = integrator
     
@@ -1885,9 +1889,9 @@ function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
 
     @.. broadcast=false thread=thread u=uprev +
                                         dt * (b1 * k1 + b2 * k2)
-    integrator.stats.nf += 2
+
     if integrator.opts.adaptive
-        @.. broadcast=false thread=thread utilde=dt * (b1tilde * k1)
+        @.. broadcast=false thread=thread utilde= dt * (b1tilde * k1)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t,
                              thread)
@@ -1902,7 +1906,8 @@ end
 function initialize!(integrator, cache::Alshina3ConstantCache)
     integrator.kshortsize = 3
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = zero(integrator.fsalfirst)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = zero(integrator.fsalfirst)
@@ -1912,12 +1917,12 @@ end
 
 function perform_step!(integrator, cache::Alshina3ConstantCache, repeat_step = false)
     @unpack u, uprev, f, p, dt, t = integrator
-    @unpack a21, a31, a32, b1, b2, b3, b2tilde, c2, c3 = cache
+    @unpack a21, a32, b1, b2, b3, b2tilde, c2, c3 = cache
 
     k1 = f(uprev, p, t)
     tmp = uprev + dt * (a21 * k1)
     k2 = f(tmp, p, t + c2 * dt)
-    tmp = uprev + dt * (a31 * k1 + a32 * k2)
+    tmp = uprev + dt * (a32 * k2)
     k3 = f(tmp, p, t + c3 * dt)
     u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3)
     
@@ -1950,19 +1955,19 @@ function initialize!(integrator, cache::Alshina3Cache)
 end
 
 function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
-    @unpack k1, k2, k3, tmp, stage_limiter!, step_limiter!, thread = cache
-    @unpack a21, a31, a32, b1, b2, b3, b2tilde, c2, c3 = cache.tab
+    @unpack k1, k2, k3, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
+    @unpack a21, a32, b1, b2, b3, b2tilde, c2, c3 = cache.tab
     @unpack u, uprev, t, dt, f, p = integrator
 
     f(k1, uprev, p, t)
     @.. broadcast=false thread=thread tmp=uprev + dt * (a21 * k1)
     f(k2, tmp, p, t + c2 * dt)
-    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a32 * k2)
     f(k3, tmp, p, t + c3 * dt)
     @.. broadcast=false thread=thread u=uprev +
                                         dt * (b1 * k1 + b2 * k2 + b3 * k3)
     if integrator.opts.adaptive
-        @.. broadcast=false thread=thread utilde=dt * (b2tilde * k2)
+        @.. broadcast=false thread=thread utilde= dt * (b2tilde * k2)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t,
                              thread)
@@ -1986,7 +1991,10 @@ function initialize!(integrator, cache::Alshina6ConstantCache)
     integrator.k[4] = zero(integrator.fsalfirst)
     integrator.k[5] = zero(integrator.fsalfirst)
     integrator.k[6] = zero(integrator.fsalfirst)
-    integrator.k[7] = integrator.fsallast 
+    integrator.k[7] = integrator.fsallast
+
+    f(integrator.fsalfirst, uprev, p, t)
+    integrator.stats.nf += 1
 
 end
 
