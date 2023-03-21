@@ -1784,7 +1784,7 @@ function initialize!(integrator, cache::SIR54Cache)
 end
 
 function perform_step!(integrator, cache::SIR54Cache, repeat_step = false)
-    @unpack k1, k2, k3, k4, k5, k6, k7, k8, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
+    @unpack k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, b1, b2, b3, b4, b5, b6, btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, c2, c3, c4, c5, c6, c7 = cache.tab
     @unpack u, uprev, t, dt, f, p = integrator
 
@@ -1952,6 +1952,10 @@ function initialize!(integrator, cache::Alshina3Cache)
     integrator.k[3] = cache.k3
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k3
+
+    f(integrator.fsalfirst, uprev, p, t)
+    integrator.stats.nf += 1
+    
 end
 
 function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
