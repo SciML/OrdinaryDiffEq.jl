@@ -1987,7 +1987,8 @@ end
 function initialize!(integrator, cache::Alshina6ConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-    integrator.fsalfirst = zero(integrator.fsalfirst)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = zero(integrator.fsalfirst)
@@ -1996,10 +1997,7 @@ function initialize!(integrator, cache::Alshina6ConstantCache)
     integrator.k[5] = zero(integrator.fsalfirst)
     integrator.k[6] = zero(integrator.fsalfirst)
     integrator.k[7] = integrator.fsallast
-
-    f(integrator.fsalfirst, uprev, p, t)
-    integrator.stats.nf += 1
-
+    
 end
 
 function perform_step!(integrator, cache::Alshina6ConstantCache, repeat_step = false)
