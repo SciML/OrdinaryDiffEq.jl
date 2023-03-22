@@ -193,7 +193,8 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                      nothing)..., weight)
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                        Pl = Pl, Pr = Pr)
+                        Pl = Pl, Pr = Pr,
+                        assumptions = LinearSolve.OperatorAssumptions(Val(true)))
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))

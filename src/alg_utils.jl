@@ -26,10 +26,8 @@ SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 ## OrdinaryDiffEq Internal Traits
 
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
-function isfsal(tab::DiffEqBase.ExplicitRKTableau{MType, VType, fsal}) where {MType, VType,
-                                                                              fsal}
-    fsal
-end
+isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
+
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas5) = false
@@ -77,14 +75,19 @@ isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
-function get_current_isfsal(alg::CompositeAlgorithm, cache)
-    if cache.current == 1
-        isfsal(alg.algs[1])::Bool
-    elseif cache.current == 2
-        isfsal(alg.algs[2])::Bool
+
+# evaluates f(t[i])
+_eval_index(f::F, t::Tuple{A}, _) where {F, A} = f(t[1])
+function _eval_index(f::F, t::Tuple{A, Vararg}, i) where {F, A}
+    if i == 1
+        f(t[1])
     else
-        isfsal(alg.algs[cache.current])::Bool
+        _eval_index(f, Base.tail(t), i - 1)
     end
+end
+
+function get_current_isfsal(alg::CompositeAlgorithm, cache)
+    _eval_index(isfsal, alg.algs, cache.current)::Bool
 end
 
 all_fsal(alg, cache) = isfsal(alg)
@@ -104,7 +107,7 @@ function _composite_beta1_default(algs::Tuple{T1, T2}, current, ::Val{QT},
                                   beta2) where {T1, T2, QT}
     if current == 1
         return QT(beta1_default(algs[1], beta2))
-    elseif current == 2
+    else
         return QT(beta1_default(algs[2], beta2))
     end
 end
@@ -126,7 +129,7 @@ function _composite_beta2_default(algs::Tuple{T1, T2}, current,
                                   ::Val{QT}) where {T1, T2, QT}
     if current == 1
         return QT(beta2_default(algs[1]))
-    elseif current == 2
+    else
         return QT(beta2_default(algs[2]))
     end
 end
@@ -231,10 +234,10 @@ function DiffEqBase.prepare_alg(alg::Union{
     if alg isa OrdinaryDiffEqExponentialAlgorithm
         linsolve = nothing
     elseif alg.linsolve === nothing
-        if (prob.f isa ODEFunction && prob.f.f isa SciMLBase.AbstractDiffEqOperator)
+        if (prob.f isa ODEFunction && prob.f.f isa AbstractSciMLOperator)
             linsolve = LinearSolve.defaultalg(prob.f.f, u0)
         elseif (prob.f isa SplitFunction &&
-                prob.f.f1.f isa SciMLBase.AbstractDiffEqOperator)
+                prob.f.f1.f isa AbstractSciMLOperator)
             linsolve = LinearSolve.defaultalg(prob.f.f1.f, u0)
             if (linsolve === nothing) | (linsolve isa LinearSolve.AbstractFactorization)
                 msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
@@ -244,7 +247,7 @@ function DiffEqBase.prepare_alg(alg::Union{
         elseif (prob isa ODEProblem || prob isa DDEProblem) &&
                (prob.f.mass_matrix === nothing ||
                 (prob.f.mass_matrix !== nothing &&
-                 !(typeof(prob.f.jac_prototype) <: SciMLBase.AbstractDiffEqOperator)))
+                 !(typeof(prob.f.jac_prototype) <: AbstractSciMLOperator)))
             linsolve = LinearSolve.defaultalg(prob.f.jac_prototype, u0)
         else
             # If mm is a sparse matrix and A is a DiffEqArrayOperator, then let linear
@@ -267,7 +270,7 @@ function DiffEqBase.prepare_alg(alg::Union{
         end
     end
 
-    L = ArrayInterface.known_length(typeof(u0))
+    L = StaticArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
 
         # If chunksize is zero, pick chunksize right at the start of solve and
@@ -330,7 +333,7 @@ end
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 function get_current_alg_autodiff(alg::CompositeAlgorithm, cache)
-    alg_autodiff(alg.algs[cache.current])
+    _eval_index(alg_autodiff, alg.algs, cache.current)::Bool
 end
 
 function alg_difftype(alg::Union{
@@ -389,7 +392,9 @@ end
 function get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, cache)
     alg_order(alg)
 end
-get_current_alg_order(alg::CompositeAlgorithm, cache) = alg_order(alg.algs[cache.current])
+function get_current_alg_order(alg::CompositeAlgorithm, cache)
+    _eval_index(alg_order, alg.algs, cache.current)::Int
+end
 
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache) = cache.order
 function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache)
@@ -429,7 +434,7 @@ function get_current_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgor
     alg_adaptive_order(alg)
 end
 function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
-    alg_adaptive_order(alg.algs[cache.current])
+    _eval_index(alg_adaptive_order, alg.algs, cache.current)::Int
 end
 
 alg_order(alg::FunctionMap) = 0
@@ -485,11 +490,15 @@ alg_order(alg::Nystrom4) = 4
 alg_order(alg::Nystrom4VelocityIndependent) = 4
 alg_order(alg::IRKN4) = 4
 alg_order(alg::Nystrom5VelocityIndependent) = 5
+alg_order(alg::DPRKN4) = 4
+alg_order(alg::DPRKN5) = 5
 alg_order(alg::DPRKN6) = 6
+alg_order(alg::DPRKN6FM) = 6
 alg_order(alg::DPRKN8) = 8
 alg_order(alg::DPRKN12) = 12
 alg_order(alg::ERKN4) = 4
 alg_order(alg::ERKN5) = 5
+alg_order(alg::ERKN7) = 7
 
 alg_order(alg::Midpoint) = 2
 
@@ -560,6 +569,9 @@ alg_order(alg::RK4) = 4
 alg_order(alg::RKM) = 4
 alg_order(alg::ExplicitRK) = alg.tableau.order
 alg_order(alg::MSRK5) = 5
+alg_order(alg::MSRK6) = 6
+alg_order(alg::Stepanov5) = 5
+alg_order(alg::SIR54) = 5
 
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5
@@ -603,6 +615,9 @@ alg_order(alg::Kvaerno3) = 3
 alg_order(alg::Kvaerno4) = 4
 alg_order(alg::Kvaerno5) = 5
 alg_order(alg::ESDIRK54I8L2SA) = 5
+alg_order(alg::ESDIRK436L2SA2) = 4
+alg_order(alg::ESDIRK437L2SA) = 4
+alg_order(alg::ESDIRK547L2SA2) = 5
 alg_order(alg::KenCarp3) = 3
 alg_order(alg::CFNLIRK3) = 3
 alg_order(alg::KenCarp4) = 4
@@ -909,6 +924,7 @@ ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
 ssp_coefficient(alg::SSPSDIRK2) = 4
 
 # stability regions
+alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
 alg_stability_size(alg::DP5) = 3.3066
 alg_stability_size(alg::Tsit5) = 3.5068
 alg_stability_size(alg::Vern6) = 4.8553
@@ -955,13 +971,7 @@ function unwrap_alg(integrator, is_stiff)
             return alg.algs[2]
         end
     else
-        if integrator.cache.current == 1
-            return alg.algs[1]
-        elseif integrator.cache.current == 2
-            return alg.algs[2]
-        else
-            return alg.algs[integrator.cache.current]
-        end
+        return _eval_index(identity, alg.algs, integrator.cache.current)
     end
 end
 
@@ -1019,8 +1029,9 @@ isWmethod(alg::RosenbrockW6S4OS) = true
 
 isesdirk(alg::TRBDF2) = true
 function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
-                             Kvaerno3, Kvaerno4, Kvaerno5,
-                             ESDIRK54I8L2SA, CFNLIRK3})
+                             Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
+                             ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
+                             CFNLIRK3})
     true
 end
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false

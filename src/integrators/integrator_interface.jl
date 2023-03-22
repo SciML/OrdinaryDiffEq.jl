@@ -234,7 +234,7 @@ function resize_J_W!(cache, integrator, i)
         nf = nlsolve_f(f, integrator.alg)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
-            if isa(cache.J, DiffEqBase.AbstractDiffEqLinearOperator)
+            if isa(cache.J, AbstractSciMLOperator)
                 resize!(cache.J, i)
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
@@ -445,7 +445,7 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
                                          integrator.opts.internalnorm, integrator.sol.prob,
                                          integrator)
     integrator.dtpropose = integrator.dt
-    integrator.destats.nf += 2
+    integrator.stats.nf += 2
 end
 
 function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
@@ -473,4 +473,4 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
     u_modified!(integrator, true)
 end
 
-DiffEqBase.has_destats(i::ODEIntegrator) = true
+DiffEqBase.has_stats(i::ODEIntegrator) = true

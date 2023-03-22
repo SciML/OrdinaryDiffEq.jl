@@ -104,7 +104,8 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
     jac_config = jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw12)
 
     linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
-    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true)
+    linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
@@ -197,6 +198,7 @@ mutable struct RadauIIA5Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     W_γdt::Dt
     status::NLStatus
 end
+TruncatedStacktraces.@truncate_stacktrace RadauIIA5Cache 1
 
 function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
@@ -243,11 +245,13 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, dw1)
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
-    linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true)
+    linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                     assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
-    linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true)
+    linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
+                     assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 

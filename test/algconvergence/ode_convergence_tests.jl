@@ -49,8 +49,17 @@ testTol = 0.2
     sim_ms5 = test_convergence(dts2, prob, MSRK5())
     @test sim_ms5.𝒪est[:l∞]≈5 atol=testTol
 
+    sim_ms6 = test_convergence(dts4, prob, MSRK6())
+    @test sim_ms6.𝒪est[:l∞]≈6 atol=testTol
+
+    sim_ms54 = test_convergence(dts2, prob, Stepanov5())
+    @test sim_ms54.𝒪est[:l∞]≈5 atol=0.5
+
     sim4 = test_convergence(dts, prob, BS3())
     @test sim4.𝒪est[:l2]≈3 atol=testTol
+
+    sim4 = test_convergence(dts2, prob, SIR54())
+    @test sim4.𝒪est[:l2]≈4.4 atol=testTol
 
     @info "Multistep"
     sim5 = test_convergence(dts, prob, AB3())
@@ -267,4 +276,13 @@ end
 
     sim118 = test_convergence(dts, prob, KenCarp58())
     @test sim118.𝒪est[:final]≈5 atol=testTol
+
+    sim119 = test_convergence(dts, prob, ESDIRK436L2SA2())
+    @test sim119.𝒪est[:final]≈4 atol=testTol
+
+    sim120 = test_convergence(dts, prob, ESDIRK437L2SA())
+    @test sim120.𝒪est[:final]≈4 atol=testTol
+
+    sim121 = test_convergence(dts, prob, ESDIRK547L2SA2())
+    @test sim121.𝒪est[:final]≈5 atol=2 * testTol
 end

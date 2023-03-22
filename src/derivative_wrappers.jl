@@ -1,3 +1,80 @@
+const FIRST_AUTODIFF_TGRAD_MESSAGE = """
+                               First call to automatic differentiation for time gradient
+                               failed. This means that the user `f` function is not compatible
+                               with automatic differentiation. Methods to fix this include:
+
+                               1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
+                                  Rosenbrock23(autodiff=false)). More details can befound at
+                                  https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                                  differentiation (using tools like PreallocationTools.jl). More details
+                                  can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
+                               3. Defining analytical Jacobians and time gradients. More details can be
+                                  found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction
+
+                               Note 1: this failure occured inside of the time gradient function. These
+                               time gradients are only required by Rosenbrock methods (`Rosenbrock23`,
+                               `Rodas4`, etc.) are are done by automatic differentiation w.r.t. the
+                               argument `t`. If your function is compatible with automatic differentiation
+                               w.r.t. `u`, i.e. for Jacobian generation, another way to work around this
+                               issue is to switch to a non-Rosenbrock method.
+
+                               Note 2: turning off automatic differentiation tends to have a very minimal
+                               performance impact (for this use case, because it's forward mode for a
+                               square Jacobian. This is different from optimization gradient scenarios).
+                               However, one should be careful as some methods are more sensitive to
+                               accurate gradients than others. Specifically, Rodas methods like `Rodas4`
+                               and `Rodas5P` require accurate Jacobians in order to have good convergence,
+                               while many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),
+                               and Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which
+                               is sensitive to autodiff and solving at a low tolerance, please change the
+                               algorithm as well.
+                               """
+
+struct FirstAutodiffTgradError <: Exception
+    e::Any
+end
+
+function Base.showerror(io::IO, e::FirstAutodiffTgradError)
+    println(io, FIRST_AUTODIFF_TGRAD_MESSAGE)
+    Base.showerror(io, e.e)
+end
+
+const FIRST_AUTODIFF_JAC_MESSAGE = """
+                               First call to automatic differentiation for the Jacobian
+                               failed. This means that the user `f` function is not compatible
+                               with automatic differentiation. Methods to fix this include:
+
+                               1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
+                                  Rosenbrock23(autodiff=false)). More details can befound at
+                                  https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                                  differentiation (using tools like PreallocationTools.jl). More details
+                                  can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
+                               3. Defining analytical Jacobians. More details can be
+                                  found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction
+
+                               Note: turning off automatic differentiation tends to have a very minimal
+                               performance impact (for this use case, because it's forward mode for a
+                               square Jacobian. This is different from optimization gradient scenarios).
+                               However, one should be careful as some methods are more sensitive to
+                               accurate gradients than others. Specifically, Rodas methods like `Rodas4`
+                               and `Rodas5P` require accurate Jacobians in order to have good convergence,
+                               while many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),
+                               and Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which
+                               is sensitive to autodiff and solving at a low tolerance, please change the
+                               algorithm as well.
+                               """
+
+struct FirstAutodiffJacError <: Exception
+    e::Any
+end
+
+function Base.showerror(io::IO, e::FirstAutodiffJacError)
+    println(io, FIRST_AUTODIFF_JAC_MESSAGE)
+    Base.showerror(io, e.e)
+end
+
 function derivative!(df::AbstractArray{<:Number}, f,
                      x::Union{Number, AbstractArray{<:Number}}, fx::AbstractArray{<:Number},
                      integrator, grad_config)
@@ -12,9 +89,19 @@ function derivative!(df::AbstractArray{<:Number}, f,
 
         xdual = Dual{T, eltype(df), 1}(convert(eltype(df), x),
                                        ForwardDiff.Partials((one(eltype(df)),)))
-        f(grad_config, xdual)
+
+        if integrator.iter == 1
+            try
+                f(grad_config, xdual)
+            catch e
+                throw(FirstAutodiffTgradError(e))
+            end
+        else
+            f(grad_config, xdual)
+        end
+
         df .= first.(ForwardDiff.partials.(grad_config))
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     else
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
                                                dir = diffdir(integrator))
@@ -25,7 +112,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
                 tmp *= 2
             end
         end
-        integrator.destats.nf += tmp
+        integrator.stats.nf += tmp
     end
     nothing
 end
@@ -36,15 +123,23 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
     tmp = length(x) # We calculate derivtive for all elements in gradient
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg)
-        integrator.destats.nf += 1
-        d = ForwardDiff.derivative(f, x)
+        integrator.stats.nf += 1
+        if integrator.iter == 1
+            try
+                d = ForwardDiff.derivative(f, x)
+            catch e
+                throw(FirstAutodiffTgradError(e))
+            end
+        else
+            d = ForwardDiff.derivative(f, x)
+        end
     else
         d = FiniteDiff.finite_difference_derivative(f, x, alg_difftype(alg),
                                                     dir = diffdir(integrator))
         if alg_difftype(alg) === Val{:central} || alg_difftype(alg) === Val{:forward}
             tmp *= 2
         end
-        integrator.destats.nf += tmp
+        integrator.stats.nf += tmp
         d
     end
 end
@@ -92,7 +187,15 @@ function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
     local tmp
     if alg_autodiff(alg)
-        J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
+        if integrator.iter == 1
+            try
+                J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
+            catch e
+                throw(FirstAutodiffJacError(e))
+            end
+        else
+            J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
+        end
     else
         jac_prototype = integrator.f.jac_prototype
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
@@ -100,7 +203,7 @@ function jacobian(f, x, integrator)
         J, tmp = jacobian_finitediff(f, x, alg_difftype(alg), dir, colorvec, sparsity,
                                      jac_prototype)
     end
-    integrator.destats.nf += tmp
+    integrator.stats.nf += tmp
     J
 end
 
@@ -120,20 +223,28 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
                    jac_config)
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg)
-        forwarddiff_color_jacobian!(J, f, x, jac_config)
-        integrator.destats.nf += 1
+        if integrator.iter == 1
+            try
+                forwarddiff_color_jacobian!(J, f, x, jac_config)
+            catch e
+                throw(FirstAutodiffJacError(e))
+            end
+        else
+            forwarddiff_color_jacobian!(J, f, x, jac_config)
+        end
+        integrator.stats.nf += 1
     else
         isforward = alg_difftype(alg) === Val{:forward}
         if isforward
             forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
             f(forwardcache, x)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             tmp = jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache,
                                                integrator)
         else # not forward difference
             tmp = jacobian_finitediff!(J, f, x, jac_config, integrator)
         end
-        integrator.destats.nf += tmp
+        integrator.stats.nf += tmp
     end
     nothing
 end
@@ -149,6 +260,17 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
            (alg.linsolve === nothing || LinearSolve.needs_concrete_A(alg.linsolve))))) ||
         (concrete_jac(alg) !== nothing && concrete_jac(alg))) # Jacobian if explicitly asked for
         jac_prototype = f.jac_prototype
+
+        if jac_prototype isa SparseMatrixCSC
+            if f.mass_matrix isa UniformScaling
+                idxs = diagind(jac_prototype)
+                @. @view(jac_prototype[idxs]) = 1
+            else
+                idxs = findall(!iszero, f.mass_matrix)
+                @. @view(jac_prototype[idxs]) = @view(f.mass_matrix[idxs])
+            end
+        end
+
         sparsity, colorvec = sparsity_colorvec(f, u)
         if alg_autodiff(alg)
             _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
@@ -251,6 +373,17 @@ end
 
 function sparsity_colorvec(f, x)
     sparsity = f.sparsity
+
+    if sparsity isa SparseMatrixCSC
+        if f.mass_matrix isa UniformScaling
+            idxs = diagind(sparsity)
+            @. @view(sparsity[idxs]) = 1
+        else
+            idxs = findall(!iszero, f.mass_matrix)
+            @. @view(sparsity[idxs]) = @view(f.mass_matrix[idxs])
+        end
+    end
+
     colorvec = DiffEqBase.has_colorvec(f) ? f.colorvec :
                (isnothing(sparsity) ? (1:length(x)) : matrix_colors(sparsity))
     sparsity, colorvec

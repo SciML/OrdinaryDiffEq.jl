@@ -384,6 +384,8 @@ end
     atmpp1::uNoUnitsType
 end
 
+TruncatedStacktraces.@truncate_stacktrace QNDFCache 1
+
 function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
@@ -570,6 +572,8 @@ end
     equi_ts::tsType
     iters_from_event::Int
 end
+
+TruncatedStacktraces.@truncate_stacktrace FBDFCache 1
 
 function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

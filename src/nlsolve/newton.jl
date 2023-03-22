@@ -58,12 +58,12 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     ztmp, ustep = _compute_rhs(nlsolver, integrator, f, z)
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    if W isa AbstractSciMLOperator
         W = update_coefficients!(W, ustep, p, tstep)
     end
 
@@ -96,14 +96,14 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     b, ustep = _compute_rhs!(nlsolver, integrator, f, z)
 
     # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    if W isa AbstractSciMLOperator
         update_coefficients!(W, ustep, p, tstep)
     end
 
@@ -123,8 +123,8 @@ end
 
     cache.linsolve = linres.cache
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nsolve += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nsolve += 1
     end
 
     # relaxed Newton
@@ -162,8 +162,8 @@ end
     f = nlsolve_f(integrator)
     isdae = f isa DAEFunction
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nf += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nf += 1
     end
 
     b, ustep = _compute_rhs!(nlsolver, integrator, f, z)

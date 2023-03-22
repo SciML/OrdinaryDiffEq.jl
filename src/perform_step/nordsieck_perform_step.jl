@@ -2,7 +2,7 @@ function initialize!(integrator, cache::AN5ConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -101,7 +101,7 @@ function initialize!(integrator, cache::AN5Cache)
     integrator.k[6] = cache.tsit5cache.k6
     integrator.k[7] = cache.tsit5cache.k7
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step = false)
@@ -186,7 +186,7 @@ function initialize!(integrator, cache::JVODEConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -205,7 +205,7 @@ end
         cache.order = 1
         z[1] = integrator.uprev
         z[2] = f(uprev, p, t) * dt
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         dts[1] = dt
     end
     # Reset time
@@ -261,7 +261,7 @@ function initialize!(integrator, cache::JVODECache)
     integrator.k[6] = cache.tsit5cache.k6
     integrator.k[7] = cache.tsit5cache.k7
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::JVODECache, repeat_step = false)
@@ -272,7 +272,7 @@ end
         cache.order = 1
         @.. broadcast=false z[1]=integrator.uprev
         f(z[2], uprev, p, t)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         @.. broadcast=false z[2]=z[2] * dt
         dts[1] = dt
     end

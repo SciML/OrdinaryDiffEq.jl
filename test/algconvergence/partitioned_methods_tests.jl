@@ -138,9 +138,18 @@ sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic, [big"1.0", big"1.0"],
                                [big"0.0", big"0.0"], (big"0.", big"70."))
+sim = test_convergence(dts, prob_big, DPRKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob_big, DPRKN5(), dense_errors = true)
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, DPRKN6(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈6 rtol=1e-1
+sim = test_convergence(dts, prob_big, DPRKN6FM(), dense_errors = true)
+@test sim.𝒪est[:l2]≈6 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, DPRKN8(), dense_errors = true)
 @test sim.𝒪est[:l2]≈8 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -153,10 +162,19 @@ sim = test_convergence(dts, prob_big, ERKN4(), dense_errors = true)
 sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
+@test sim.𝒪est[:l2]≈7 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, DPRKN4())
+@test length(sol.u) < 25
+sol = solve(prob, DPRKN5())
+@test length(sol.u) < 38
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
+sol = solve(prob, DPRKN6FM())
+@test length(sol.u) < 25
 sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
 sol = solve(prob, DPRKN12())
@@ -165,6 +183,8 @@ sol = solve(prob, ERKN4(), reltol = 1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
+sol = solve(prob, ERKN7(), reltol = 1e-8)
+@test length(sol.u) < 38
 
 # Test array partition outside of symplectic
 
@@ -290,9 +310,18 @@ sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic_nip, big"1.0", big"0.0",
                                (big"0.", big"70."))
+sim = test_convergence(dts, prob_big, DPRKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob_big, DPRKN5(), dense_errors = true)
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, DPRKN6(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈6 rtol=1e-1
+sim = test_convergence(dts, prob_big, DPRKN6FM(), dense_errors = true)
+@test sim.𝒪est[:l2]≈6 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, DPRKN8(), dense_errors = true)
 @test sim.𝒪est[:l2]≈8 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -305,10 +334,19 @@ sim = test_convergence(dts, prob_big, ERKN4(), dense_errors = true)
 sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
+@test sim.𝒪est[:l2]≈7 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, DPRKN4())
+@test length(sol.u) < 25
+sol = solve(prob, DPRKN5())
+@test length(sol.u) < 38
 sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
+sol = solve(prob, DPRKN6FM())
+@test length(sol.u) < 25
 sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
 sol = solve(prob, DPRKN12())
@@ -317,3 +355,5 @@ sol = solve(prob, ERKN4(), reltol = 1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
+sol = solve(prob, ERKN7(), reltol = 1e-8)
+@test length(sol.u) < 38

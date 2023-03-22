@@ -3,6 +3,11 @@ $(DocStringExtensions.README)
 """
 module OrdinaryDiffEq
 
+if isdefined(Base, :Experimental) &&
+   isdefined(Base.Experimental, Symbol("@max_methods"))
+    @eval Base.Experimental.@max_methods 1
+end
+
 using DocStringExtensions
 using Reexport
 @reexport using DiffEqBase
@@ -14,6 +19,8 @@ using MuladdMacro, SparseArrays, FastClosures
 using LinearAlgebra
 
 using LoopVectorization
+
+import StaticArrayInterface
 
 using LinearSolve, SimpleNonlinearSolve
 
@@ -35,10 +42,12 @@ using DiffEqBase: DEIntegrator
 
 import RecursiveArrayTools: chain, recursivecopy!
 
-using UnPack, ForwardDiff, RecursiveArrayTools,
-      DataStructures, FiniteDiff, ArrayInterfaceCore, ArrayInterface
+using SimpleUnPack, ForwardDiff, RecursiveArrayTools,
+      DataStructures, FiniteDiff, ArrayInterface, ArrayInterface
 
 import ForwardDiff.Dual
+
+import TruncatedStacktraces
 
 import PreallocationTools
 
@@ -65,7 +74,9 @@ using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
 
-using SciMLBase: NoInit, _unwrap_val
+using IfElse
+
+using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,
@@ -93,7 +104,6 @@ const CompiledFloats = Union{Float32, Float64,
                                  K <: Union{Float64, Float32},
                              }}
 
-import ArrayInterfaceStaticArrays, ArrayInterfaceGPUArrays
 import FunctionWrappersWrappers
 import Preferences
 
@@ -366,7 +376,7 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        OwrenZen5,
        BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
        Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
-       RKM, MSRK5
+       RKM, MSRK5, MSRK6, Stepanov5, SIR54
 
 export SSPRK22, SSPRK33, KYKSSPRK42, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63,
        SSPRK73, SSPRK83, SSPRK43, SSPRK432,
@@ -391,9 +401,9 @@ export RadauIIA3, RadauIIA5
 export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
        Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
-       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8
-Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA, SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
-SFSDIRK7, SFSDIRK8
+       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
+       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
+       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
@@ -414,7 +424,7 @@ export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
 export SplitEuler
 
 export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
-       IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
+       IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7
 
 export ROCK2, ROCK4, RKC, IRKC, ESERK4, ESERK5, SERK2
 

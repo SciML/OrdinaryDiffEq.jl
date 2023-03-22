@@ -61,17 +61,18 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
     saved, savedexactly = false, false
     !integrator.opts.save_on && return saved, savedexactly
     tdir_t = integrator.tdir * integrator.t
-    while !isempty(integrator.opts.saveat) && first(integrator.opts.saveat) <= tdir_t # Perform saveat
+    saveat = integrator.opts.saveat
+    while !isempty(saveat) && first(saveat) <= tdir_t # Perform saveat
         integrator.saveiter += 1
         saved = true
-        curt = integrator.tdir * pop!(integrator.opts.saveat)
+        curt = integrator.tdir * pop!(saveat)
         if curt != integrator.t # If <t, interpolate
             DiffEqBase.addsteps!(integrator)
             Θ = (curt - integrator.tprev) / integrator.dt
             val = ode_interpolant(Θ, integrator, integrator.opts.save_idxs, Val{0}) # out of place, but no force copy later
             copyat_or_push!(integrator.sol.t, integrator.saveiter, curt)
             save_val = val
-            copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, Val{false})
+            copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, false)
             if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                                 integrator.cache.current)
@@ -83,7 +84,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
             else
                 copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                                integrator.u[integrator.opts.save_idxs], Val{false})
+                                integrator.u[integrator.opts.save_idxs], false)
             end
             if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
                 integrator.saveiter_dense += 1
@@ -94,7 +95,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                     else
                         copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
                                         [k[integrator.opts.save_idxs] for k in integrator.k],
-                                        Val{false})
+                                        false)
                     end
                 end
             end
@@ -112,7 +113,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
         else
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                            integrator.u[integrator.opts.save_idxs], Val{false})
+                            integrator.u[integrator.opts.save_idxs], false)
         end
         copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
         if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
@@ -124,7 +125,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 else
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
                                     [k[integrator.opts.save_idxs] for k in integrator.k],
-                                    Val{false})
+                                    false)
                 end
             end
         end
@@ -171,7 +172,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
             copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
         else
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                            integrator.u[integrator.opts.save_idxs], Val{false})
+                            integrator.u[integrator.opts.save_idxs], false)
         end
         if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
             integrator.saveiter_dense += 1
@@ -182,7 +183,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
                 else
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
                                     [k[integrator.opts.save_idxs] for k in integrator.k],
-                                    Val{false})
+                                    false)
                 end
             end
         end
@@ -220,7 +221,7 @@ function _loopfooter!(integrator)
                                  (integrator.opts.force_dtmin &&
                                   abs(integrator.dt) <= timedepentdtmin(integrator))
         if integrator.accept_step # Accept
-            integrator.destats.naccept += 1
+            integrator.stats.naccept += 1
             integrator.last_stepfail = false
             dtnew = DiffEqBase.value(step_accept_controller!(integrator, integrator.alg, q)) *
                     oneunit(integrator.dt)
@@ -240,10 +241,10 @@ function _loopfooter!(integrator)
             calc_dt_propose!(integrator, dtnew)
             handle_callbacks!(integrator)
         else # Reject
-            integrator.destats.nreject += 1
+            integrator.stats.nreject += 1
         end
     elseif !integrator.opts.adaptive #Not adaptive
-        integrator.destats.naccept += 1
+        integrator.stats.naccept += 1
         integrator.tprev = integrator.t
         integrator.t = if has_tstop(integrator)
             tstop = integrator.tdir * first_tstop(integrator)
@@ -275,8 +276,8 @@ function _loopfooter!(integrator)
     if integrator.cache isa CompositeCache
         cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),
                                                      integrator.t)
-        cur_eigen_est > integrator.destats.maxeig &&
-            (integrator.destats.maxeig = cur_eigen_est)
+        cur_eigen_est > integrator.stats.maxeig &&
+            (integrator.stats.maxeig = cur_eigen_est)
     end
     nothing
 end
@@ -440,7 +441,7 @@ end
 
 function reset_fsal!(integrator)
     # Under these condtions, these algorithms are not FSAL anymore
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.sol.prob isa DAEProblem
         DiffEqBase.initialize_dae!(integrator)

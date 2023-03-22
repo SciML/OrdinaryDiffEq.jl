@@ -53,8 +53,8 @@ end
 function diffdir(integrator::DiffEqBase.DEIntegrator)
     difference = maximum(abs, integrator.uprev) * sqrt(eps(typeof(integrator.t)))
     dir = integrator.tdir > zero(integrator.tdir) ?
-          integrator.t > integrator.sol.prob.tspan[2] - difference ? -true : true :
-          integrator.t < integrator.sol.prob.tspan[2] + difference ? true : -true
+          integrator.t > integrator.sol.prob.tspan[2] - difference ? -1 : 1 :
+          integrator.t < integrator.sol.prob.tspan[2] + difference ? 1 : -1
 end
 
 abstract type AbstractThreadingOption end
@@ -98,49 +98,73 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
                           solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
-        _weight = weight === nothing ?
-                  (linsolve.Pr isa Diagonal ? linsolve.Pr.diag : linsolve.Pr.inner.diag) :
-                  weight
-        Pl, Pr = wrapprecs(_Pl, _Pr, _weight)
-        linsolve = LinearSolve.set_prec(linsolve, Pl, Pr)
+        __Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
+        __Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
+        linsolve = LinearSolve.set_prec(linsolve, __Pl, __Pr)
     end
 
-    linres = if reltol === nothing
-        solve(linsolve; reltol)
-    else
-        solve(linsolve; reltol)
-    end
+    linres = solve(linsolve; reltol)
 
     # TODO: this ignores the add of the `f` count for add_steps!
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
        !LinearSolve.needs_concrete_A(_alg.linsolve) &&
        linsolve.A isa WOperator && linsolve.A.J isa SparseDiffTools.JacVec
         if alg_autodiff(_alg)
-            integrator.destats.nf += linres.iters
+            integrator.stats.nf += linres.iters
         else
-            integrator.destats.nf += 2 * linres.iters
+            integrator.stats.nf += 2 * linres.iters
         end
     end
 
     return linres
 end
 
-function wrapprecs(_Pl, _Pr, weight)
-    if _Pl !== nothing
-        Pl = LinearSolve.ComposePreconditioner(LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
-                                               _Pl)
-    else
-        Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
-    end
+function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight)
+    Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
+    Pr = Diagonal(_vec(weight))
+    Pl, Pr
+end
 
-    if _Pr !== nothing
-        Pr = LinearSolve.ComposePreconditioner(Diagonal(_vec(weight)), _Pr)
-    else
-        Pr = Diagonal(_vec(weight))
-    end
+function wrapprecs(_Pl, _Pr, weight)
+    Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
+    Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
     Pl, Pr
 end
 
 issuccess_W(W::LinearAlgebra.Factorization) = LinearAlgebra.issuccess(W)
 issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
+
+macro OnDemandTableauExtract(S_T, T, T2)
+    S = getproperty(__module__, S_T)
+    s = gensym(:s)
+    q = quote
+        $s = $S($T, $T2)
+    end
+    fn = fieldnames(S)
+    for n in fn
+        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
+    end
+    return esc(q)
+end
+macro OnDemandTableauExtract(S_T, T)
+    S = getproperty(__module__, S_T)
+    s = gensym(:s)
+    q = quote
+        $s = $S($T)
+    end
+    fn = fieldnames(S)
+    for n in fn
+        push!(q.args, Expr(:(=), n, Expr(:call, :getfield, s, QuoteNode(n))))
+    end
+    return esc(q)
+end
+
+macro fold(arg)
+    # https://github.com/JuliaLang/julia/pull/43852
+    if VERSION < v"1.8.0-DEV.1484"
+        esc(:(@generated $arg))
+    else
+        esc(:(Base.@assume_effects :foldable $arg))
+    end
+end

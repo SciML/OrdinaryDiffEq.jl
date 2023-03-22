@@ -15,7 +15,7 @@ end
 function initialize!(integrator, cache::ExpRKConstantCache)
     # Pre-start fsal
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
 
     # Initialize interpolation derivatives
@@ -28,7 +28,7 @@ function initialize!(integrator, cache::ExpRKCache)
     # Pre-start fsal
     integrator.fsalfirst = zero(cache.rtmp)
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = zero(integrator.fsalfirst)
 
     # Initialize interpolation derivatives
@@ -47,9 +47,9 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step 
 
     nl = _compute_nl(f, uprev, p, t, A)
     if isa(f, SplitFunction)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
     else
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
     @muladd v = uprev + dt * nl
     if alg.krylov
@@ -62,7 +62,7 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step 
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -76,9 +76,9 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
 
     _compute_nl!(G, f, uprev, p, t, A, rtmp)
     if isa(f, SplitFunction)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
     else
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
     @muladd @.. broadcast=false tmp=uprev + dt * G
     if alg.krylov
@@ -92,7 +92,7 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -112,7 +112,7 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -138,7 +138,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step = false
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -154,9 +154,9 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step = fal
         U2 = uprev + dt * w1[:, 2]
         F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 1
+            integrator.stats.nf2 += 1
         else
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
         end
         w2 = phiv(dt, A, F2, 2; m = min(alg.m, size(A, 1)),
                   opnorm = integrator.opts.internalopnorm, iop = alg.iop)
@@ -165,17 +165,17 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step = fal
         phi1, phi2 = cache.ops
         # The caching version uses a special formula to save computation
         G1 = f.f2(uprev, p, t)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         F1 = integrator.fsalfirst
         U2 = uprev + dt * (phi1 * F1)
         G2 = f.f2(U2, p, t + dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         u = U2 + dt * (phi2 * (G2 - G1))
     end
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -199,9 +199,9 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
         @muladd @.. broadcast=false tmp=uprev + dt * @view(w1[:, 2])
         _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 1
+            integrator.stats.nf2 += 1
         else
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
         end
         F2 .+= mul!(rtmp, A, uprev)
         arnoldi!(Ks, A, F2; m = min(alg.m, size(A, 1)),
@@ -221,9 +221,9 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
         @muladd @.. broadcast=false tmp=uprev + dt * rtmp # tmp is U2
         # Compute G2 - G1, storing result in the cache F2
         f.f2(rtmp, uprev, p, t)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         f.f2(F2, tmp, p, t + dt)
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         F2 .-= rtmp # "F2" is G2 - G1
         # Update u
         u .= tmp
@@ -232,7 +232,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -257,9 +257,9 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step = fal
         U3 = uprev + dt * (2w2[:, 2] - w1[:, 2])
         F3 = _compute_nl(f, U3, p, t + dt, A) + Au
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 2
+            integrator.stats.nf2 += 2
         else
-            integrator.destats.nf += 2
+            integrator.stats.nf += 2
         end
         # Krylov on F3 (third column)
         w3 = phiv(dt, A, F3, 3; kwargs...)
@@ -274,18 +274,18 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step = fal
         # stage 2
         U2 = uprev + dt * (A21 * F1)
         F2 = f.f2(U2, p, t + dt / 2) + Au
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         # stage 3
         U3 = uprev + dt * (A3 * (2F2 - F1))
         F3 = f.f2(U3, p, t + dt) + Au
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         # update u
         u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3)
     end
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -319,9 +319,9 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
         _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp)
         F3 .+= Au
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 2
+            integrator.stats.nf2 += 2
         else
-            integrator.destats.nf += 2
+            integrator.stats.nf += 2
         end
         # Krylov for F3 (third column)
         arnoldi!(Ks, A, F3; kwargs...)
@@ -338,14 +338,14 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
         @muladd @.. broadcast=false tmp=uprev + dt * rtmp # tmp is U2
         f.f2(F2, tmp, p, t + halfdt)
         F2 .+= Au
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         # stage 3
         @muladd @.. broadcast=false F3=2 * F2 - F1 # use F3 temporarily as cache
         mul!(rtmp, A3, F3)
         @muladd @.. broadcast=false tmp=uprev + dt * rtmp # tmp is U3
         f.f2(F3, tmp, p, t + dt)
         F3 .+= Au
-        integrator.destats.nf2 += 1
+        integrator.stats.nf2 += 1
         # update u
         u .= uprev
         axpy!(dt, mul!(rtmp, B1, F1), u)
@@ -355,7 +355,7 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -390,9 +390,9 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step = fal
         U4 = U2 + halfdt * wtmp[:, 2]
         F4 = _compute_nl(f, U4, p, t + dt, A) + Au
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 3
+            integrator.stats.nf2 += 3
         else
-            integrator.destats.nf += 3
+            integrator.stats.nf += 3
         end
         # Krylov on F4 (fourth column)
         w4 = phiv(dt, A, F4, 3; kwargs...)
@@ -412,14 +412,14 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step = fal
         # stage 4
         U4 = uprev + dt * (A41 * F1 + A43 * F3)
         F4 = f.f2(U4, p, t + dt) + Au
-        integrator.destats.nf2 += 3
+        integrator.stats.nf2 += 3
         # update u
         u = uprev + dt * (B1 * F1 + B2 * (F2 + F3) + B4 * F4) # B3 = B2
     end
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -467,9 +467,9 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
         _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp)
         F4 .+= Au
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 3
+            integrator.stats.nf2 += 3
         else
-            integrator.destats.nf += 3
+            integrator.stats.nf += 3
         end
         # Krylov for F4 (fourth column)
         arnoldi!(Ks, A, F4; kwargs...)
@@ -498,7 +498,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
         axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
         f.f2(F4, tmp, p, t + dt)
         F4 .+= Au
-        integrator.destats.nf2 += 3
+        integrator.stats.nf2 += 3
         # update u
         u .= uprev
         axpy!(dt, mul!(rtmp, B1, F1), u)
@@ -509,7 +509,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -554,9 +554,9 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = f
               w4[:, 4] - 0.25w4[:, 3] - 0.25w4_half[:, 3] + 0.5w4_half[:, 4])
         F5 = _compute_nl(f, U5, p, t + halfdt, A) + Au
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 4
+            integrator.stats.nf2 += 4
         else
-            integrator.destats.nf += 4
+            integrator.stats.nf += 4
         end
         # Krylov on F5 (fifth column)
         w5 = phiv(dt, A, F5, 3; kwargs...)
@@ -579,14 +579,14 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step = f
         # stage 5
         U5 = uprev + dt * (A51 * F1 + A52 * (F2 + F3) + A54 * F4)
         F5 = f.f2(U5, p, t + halfdt) + Au
-        integrator.destats.nf2 += 4
+        integrator.stats.nf2 += 4
         # update u
         u = uprev + dt * (B1 * F1 + B4 * F4 + B5 * F5)
     end
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -649,9 +649,9 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         _compute_nl!(F5, f, tmp, p, t + dt, A, rtmp)
         F5 .+= Au
         if isa(f, SplitFunction)
-            integrator.destats.nf2 += 4
+            integrator.stats.nf2 += 4
         else
-            integrator.destats.nf += 4
+            integrator.stats.nf += 4
         end
         # Krylov on F5 (fifth column)
         arnoldi!(Ks, A, F5; kwargs...)
@@ -693,7 +693,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
         @muladd @.. broadcast=false tmp=uprev + dt * rtmp # tmp is U5
         f.f2(F5, tmp, p, t + halfdt)
         F5 .+= Au
-        integrator.destats.nf2 += 4
+        integrator.stats.nf2 += 4
         # update u
         mul!(rtmp, B1, F1)
         mul!(rtmp2, B4, F4)
@@ -705,7 +705,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -731,7 +731,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
     w4 = K1 * [-7 / 300, 97 / 150, -37 / 300]
     u4 = uprev + dt * w4
     d4 = f(u4, p, t + dt) - f0 - dt * (J * w4) # TODO: what should be the time?
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # Krylov for the first remainder d4
     B2 = [zero(d4) d4]
     K2 = phiv_timestep(ts, J, B2; kwargs...)
@@ -741,7 +741,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
     w7 = K1 * [59 / 300, -7 / 75, 269 / 300] + K2 * [2 / 3, 2 / 3, 2 / 3]
     u7 = uprev + dt * w7
     d7 = f(u7, p, t + dt) - f0 - dt * (J * w7)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # Krylov for the second remainder d7
     B3 = [zero(d7) d7]
     k7 = phiv_timestep(ts[1], J, B3; kwargs...)
@@ -751,7 +751,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step = false
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -779,7 +779,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
     @muladd @.. broadcast=false tmp=uprev + dt * rtmp # tmp is now u4
     mul!(rtmp2, J, rtmp)
     f(rtmp, tmp, p, t + dt) # TODO: what should be the time?
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @muladd @.. broadcast=false @view(B[:, 2])=rtmp - f0 - dt * rtmp2 # B[:,2] is now d4
     # Partially update entities that use k1, k2, k3
     mul!(rtmp, K, [59 / 300, -7 / 75, 269 / 300]) # rtmp is now w7
@@ -794,7 +794,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
     @muladd @.. broadcast=false tmp=uprev + dt * rtmp # tmp is now u7
     mul!(rtmp2, J, rtmp)
     f(rtmp, tmp, p, t + dt) # TODO: what should be the time?
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @muladd @.. broadcast=false @view(B[:, 2])=rtmp - f0 - dt * rtmp2 # B[:,2] is now d7
     # Partially update entities that use k4, k5, k6
     mul!(rtmp, K, [1.0, -4 / 3, 1.0])
@@ -807,7 +807,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -827,7 +827,7 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step = 
     U3 = uprev + K[:, 2]
     R2 = f(U2, p, t + dt / 2) - f0 - J * K[:, 1] # remainder of U2
     R3 = f(U3, p, t + 2dt / 3) - f0 - J * K[:, 2] # remainder of U3
-    integrator.destats.nf += 2
+    integrator.stats.nf += 2
 
     # Update u (horizontally)
     B = zeros(eltype(f0), length(f0), 5)
@@ -838,7 +838,7 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step = 
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -872,7 +872,7 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R3
     B[:, 4] .-= (13.5 / dt^2) * rtmp
     B[:, 5] .+= (81 / dt^3) * rtmp
-    integrator.destats.nf += 2
+    integrator.stats.nf += 2
 
     # Update u
     du = @view(K[:, 1])
@@ -881,7 +881,7 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -903,7 +903,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step = 
     U3 = uprev + K[:, 2]
     R2 = f(U2, p, t + dt / 2) - f0 - J * K[:, 1] # remainder of U2
     R3 = f(U3, p, t + 3dt / 4) - f0 - J * K[:, 2] # remainder of U3
-    integrator.destats.nf += 2
+    integrator.stats.nf += 2
 
     # Update u (horizontally)
     B = zeros(eltype(f0), length(f0), 5)
@@ -914,7 +914,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step = 
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -951,7 +951,7 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R3
     B[:, 4] .-= (16 / dt^2) * rtmp
     B[:, 5] .+= (144 / dt^3) * rtmp
-    integrator.destats.nf += 2
+    integrator.stats.nf += 2
 
     # Update u
     fill!(@view(B[:, 3]), zero(eltype(B)))
@@ -962,7 +962,7 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -983,7 +983,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step = f
     k = phiv_timestep(48dt / 55, J, B; kwargs...)
     U2 = uprev + k
     R2 = f(U2, p, t + 48dt / 55) - f0 - J * k # remainder of U2
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Compute U3 horizontally
     B[:, 2] = (53 / 5) * f0
@@ -992,7 +992,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step = f
     k = phiv_timestep(4dt / 9, J, B; kwargs...)
     U3 = uprev + k
     R3 = f(U3, p, t + 4dt / 9) - f0 - J * k # remainder of U3
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Update u (horizontally)
     B = fill(zero(eltype(f0)), length(f0), 5)
@@ -1003,7 +1003,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step = f
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -1029,7 +1029,7 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
     @.. broadcast=false tmp=uprev + k # tmp is now U2
     f(rtmp, tmp, p, t + 48dt / 55)
     mul!(rtmp2, J, k)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R2
 
     # Compute U3 horizontally
@@ -1046,7 +1046,7 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
     @.. broadcast=false tmp=uprev + k # tmp is now U3
     f(rtmp, tmp, p, t + 4dt / 9)
     mul!(rtmp2, J, k)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R3
     B[:, 4] .+= (2187 / (106 * dt^2)) .* rtmp
     B[:, 5] .-= (2187 / (106 * dt^3)) .* rtmp
@@ -1057,7 +1057,7 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1076,7 +1076,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step = 
     K = phiv_timestep([dt / 2, 9dt / 10], J, B; kwargs...)
     U2 = uprev + K[:, 1]
     R2 = f(U2, p, t + dt / 2) - f0 - J * K[:, 1] # remainder of U2
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     U3 = uprev + K[:, 2] # partially
 
     # Compute the second group for U3
@@ -1084,7 +1084,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step = 
     K = phiv_timestep([dt / 2, 9dt / 10], J, B; kwargs...)
     U3 .+= 216 / (25 * dt^2) .* K[:, 1] + 8 / dt^2 .* K[:, 2]
     R3 = f(U3, p, t + 9dt / 10) - f0 - J * (U3 - uprev) # remainder of U3
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Compute the third group for u
     B = fill(zero(eltype(f0)), length(f0), 5)
@@ -1095,7 +1095,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step = 
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -1119,7 +1119,7 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
     @.. broadcast=false tmp=uprev + @view(K[:, 1]) # tmp is now U2
     f(rtmp, tmp, p, t + dt / 2)
     mul!(rtmp2, J, @view(K[:, 1]))
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R2
     @.. broadcast=false tmp=uprev + @view(K[:, 2]) # tmp is now U3 (partially)
 
@@ -1134,7 +1134,7 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
     ## U3 and R3
     @views tmp .+= 216 / (25 * dt^2) .* K[:, 1] + 8 / dt^2 .* K[:, 2] # tmp is now U3
     f(rtmp, tmp, p, t + 9dt / 10)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     tmp .-= uprev
     mul!(rtmp2, J, tmp)
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R3
@@ -1149,7 +1149,7 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1179,7 +1179,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step = f
     ## U1 and R1
     U1 = uprev + K1[:, 1]
     R1 = f(U1, p, t + g11) - f0 - J * K1[:, 1] # remainder of U1
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Compute the second column (R1)
     B = [zero(R1) R1]
@@ -1187,7 +1187,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step = f
     ## U2 and R2
     U2 = uprev + K1[:, 2] + a22 * k2
     R2 = f(U2, p, t + g21) - f0 - J * (U2 - uprev) # remainder of U2
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Compute the third column (dR = R2 - 2R1)
     B = fill(zero(eltype(f0)), length(f0), 4)
@@ -1198,7 +1198,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step = f
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -1232,7 +1232,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
     @.. broadcast=false tmp=uprev + @view(K[:, 1]) # tmp is now U1
     f(rtmp, tmp, p, t + g11)
     mul!(rtmp2, J, @view(K[:, 1]))
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R1
     @.. broadcast=false tmp=uprev + @view(K[:, 2]) # partially update U2 (stored tmp)
     @.. broadcast=false u=uprev + @view(K[:, 3]) # partially update u
@@ -1245,7 +1245,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
     ## U2 and R2
     axpy!(a22, k, tmp) # tmp is now U2
     f(rtmp, tmp, p, t + g21)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     tmp .-= uprev
     mul!(rtmp2, J, tmp)
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R2
@@ -1259,7 +1259,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1291,7 +1291,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step = f
     ## U1 and R1
     U1 = uprev + K1[:, 1]
     R1 = f(U1, p, t + g11) - f0 - J * K1[:, 1] # remainder of U1
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Compute the second column (R1)
     B = [zero(R1) zero(R1) R1]
@@ -1299,7 +1299,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step = f
     ## U2 and R2
     U2 = uprev + K1[:, 2] + a22 * k2
     R2 = f(U2, p, t + g21) - f0 - J * (U2 - uprev) # remainder of U2
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Compute the third column (dR = R2 - 2R1)
     dR = R2 - 2R1
@@ -1310,7 +1310,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step = f
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -1346,7 +1346,7 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
     @.. broadcast=false tmp=uprev + @view(K[:, 1]) # tmp is now U1
     f(rtmp, tmp, p, t + g11)
     mul!(rtmp2, J, @view(K[:, 1]))
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R1
     @.. broadcast=false tmp=uprev + @view(K[:, 2]) # partially update U2 (stored in tmp)
     @.. broadcast=false u=uprev + @view(K[:, 3]) # partially update u
@@ -1360,7 +1360,7 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
     ## U2 and R2
     axpy!(a22, k, tmp) # tmp is now U2
     f(rtmp, tmp, p, t + g21)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     tmp .-= uprev
     mul!(rtmp2, J, tmp)
     @.. broadcast=false rtmp=rtmp - f0 - rtmp2 # rtmp is now R2
@@ -1376,7 +1376,7 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1392,7 +1392,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = fa
               opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     U2 = uprev + dt * w1[:, 2]
     F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     w2 = phiv(dt, A, F2, 3; m = min(alg.m, size(A, 1)),
               opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     u = uprev + dt * (w1[:, 2] - 2w1[:, 4] + 2w2[:, 4])
@@ -1406,7 +1406,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step = fa
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -1428,7 +1428,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     # Krylov for F2
     @muladd @.. broadcast=false tmp=uprev + dt * @view(w1[:, 2])
     _compute_nl!(F2, f, tmp, p, t + dt, J, rtmp)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     F2 .+= mul!(rtmp, J, uprev)
     arnoldi!(Ks, J, F2; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
              iop = alg.iop)
@@ -1448,7 +1448,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1467,12 +1467,12 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
     w1 = phiv(dt, Ks, 4)
     U2 = uprev + dt / 2 * w1_half[:, 2]
     F2 = _compute_nl(f, U2, p, t + dt / 2, A) + Au
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # Krylov on F2 (second column)
     w2 = phiv(dt, A, F2, 4; kwargs...)
     U3 = uprev + dt * w2[:, 2]
     F3 = _compute_nl(f, U3, p, t + dt, A) + Au
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # Krylov on F3 (third column)
     w3 = phiv(dt, A, F3, 4; kwargs...)
     u = uprev +
@@ -1488,7 +1488,7 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step = fa
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
@@ -1514,14 +1514,14 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
     @muladd @.. broadcast=false @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
     _compute_nl!(F2, f, tmp, p, t + halfdt, J, rtmp)
     F2 .+= Au
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # Krylov for F2
     arnoldi!(Ks, J, F2; kwargs...)
     phiv!(w2, dt, Ks, 4; cache = phiv_cache)
     @muladd @.. broadcast=false @views tmp = uprev + dt * w2[:, 2] # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + dt, J, rtmp)
     F3 .+= Au
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # Krylov for F3 (third column)
     arnoldi!(Ks, J, F3; kwargs...)
     phiv!(w3, dt, Ks, 4; cache = phiv_cache)
@@ -1539,7 +1539,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step = false)
 
     # Update integrator state
     f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     # integrator.k is automatically set due to aliasing
 end
 
@@ -1552,8 +1552,8 @@ function initialize!(integrator, cache::ETD2ConstantCache)
     # Pre-start fsal
     lin = integrator.f.f1(integrator.uprev, integrator.p, integrator.t)
     nl = integrator.f.f2(integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
     nlprev = zero(nl) # to be computed in the first iteration via ETD1
     integrator.fsalfirst = ETD2Fsal(lin, nl, nlprev)
 
@@ -1581,10 +1581,12 @@ function perform_step!(integrator, cache::ETD2ConstantCache, repeat_step = false
     nlprev = nl
     lin = f.f1(u, p, t + dt)
     nl = f.f2(u, p, t + dt)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
     integrator.k[2] = lin + nl
-    @pack! integrator.fsallast = lin, nl, nlprev
+    integrator.fsallast.lin = lin
+    integrator.fsallast.nl = nl
+    integrator.fsallast.nlprev = nlprev
 end
 
 function initialize!(integrator, cache::ETD2Cache)
@@ -1597,8 +1599,8 @@ function initialize!(integrator, cache::ETD2Cache)
     @unpack lin, nl = integrator.fsalfirst
     integrator.f.f1(lin, integrator.uprev, integrator.p, integrator.t)
     integrator.f.f2(nl, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = ETD2Fsal(rate_prototype)
@@ -1628,7 +1630,7 @@ function perform_step!(integrator, cache::ETD2Cache, repeat_step = false)
     fsallast.nlprev .= nl
     f.f1(fsallast.lin, u, p, t + dt)
     f.f2(fsallast.nl, u, p, t + dt)
-    integrator.destats.nf += 1
-    integrator.destats.nf2 += 1
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
     @.. broadcast=false integrator.k[2]=fsallast.lin + fsallast.nl
 end

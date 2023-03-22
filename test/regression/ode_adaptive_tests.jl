@@ -86,3 +86,42 @@ for alg in [
     sol = solve(prob, alg)
     @test sol.retcode == ReturnCode.Success
 end
+
+# test problems with zero-length vectors
+ode = ODEProblem((du, u, semi, t) -> du .= u, Float64[], (0.0, 1.0))
+@test_nowarn solve(ode, Tsit5())
+
+# test if the early exit in ode_determine_initdt doesn't hit in the case of
+# zero-length vectors, see https://github.com/SciML/OrdinaryDiffEq.jl/pull/1865
+integrator = init(ode, Tsit5())
+@test integrator.dt ≈ 1.0e-6
+
+# Adaptivity regression tests for ESDIRK
+
+prob_linear = prob_ode_linear
+
+prob_lorenz = ODEProblem{true}(lorenz, u0, tspan)
+
+# ESDIRK436L2SA2
+
+sol_linear = solve(prob_linear, ESDIRK436L2SA2())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK436L2SA2())
+@test length(sol_lorenz.u) < 1500
+
+# ESDIRK437L2SA
+
+sol_linear = solve(prob_linear, ESDIRK437L2SA())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK437L2SA())
+@test length(sol_lorenz.u) < 1000
+
+# ESDIRK547L2SA2
+
+sol_linear = solve(prob_linear, ESDIRK547L2SA2())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK547L2SA2())
+@test length(sol_lorenz.u) < 1000

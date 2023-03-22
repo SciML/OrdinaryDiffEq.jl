@@ -132,14 +132,14 @@ function calc_Lagrange_interp(k, weights, t, ts, u_history, u)
     vc = _vec(u)
     if t in ts
         i = searchsortedfirst(ts, t, rev = true)
-        @.. broadcast=false @views vc = u_history[:, i]
-        return u
+        return reshape(u_history[:, i], size(u))
     else
         for i in 1:(k + 1)
-            @.. broadcast=false @views vc += weights[i] / (t - ts[i]) * u_history[:, i]
+            vc += @.. broadcast=false weights[i] / (t - ts[i])*u_history[:, i]
+            u = reshape(vc, size(u))
         end
         for i in 1:(k + 1)
-            @.. broadcast=false u*=t - ts[i]
+            u *= @.. broadcast=false t-ts[i]
         end
     end
     u
@@ -261,9 +261,10 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_ord
         vc = _vec(terk)
         for i in 2:k
             #@show vc
-            @.. broadcast=false @views vc += fd_weights[i, k] * u_history[:, i - 1]
+            vc += @.. broadcast=false fd_weights[i, k]*u_history[:, i - 1]
             #@show vc ,fd_weights[i,k] * u_history[:,i-1]
         end
+        terk = reshape(vc, size(terk))
         terk *= abs(dt^(k - 1))
     end
     return terk

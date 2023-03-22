@@ -51,15 +51,17 @@ end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII" || GROUP == "Interface")
         @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
-        @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
+        @time @safetestset "stats Tests" begin include("interface/stats_tests.jl") end
         @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
         @time @safetestset "Events + DAE addsteps Tests" begin include("interface/event_dae_addsteps.jl") end
         @time @safetestset "No Jac Tests" begin include("interface/nojac.jl") end
         @time @safetestset "Preconditioner Tests" begin include("interface/preconditioners.jl") end
         @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
+        @time @safetestset "Non-Full Diagonal Sparsity Tests" begin include("interface/nonfulldiagonal_sparse.jl") end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
+        @time @safetestset "Autodiff Error Tests" begin include("interface/autodiff_error_tests.jl") end
         @time @safetestset "Ambiguity Tests" begin include("interface/ambiguity_tests.jl") end
         @time @safetestset "Second Order with First Order Solver Tests" begin include("interface/second_order_with_first_order_solvers.jl") end
     end

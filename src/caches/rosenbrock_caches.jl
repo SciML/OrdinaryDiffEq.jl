@@ -34,6 +34,8 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
     algebraic_vars::AV
 end
 
+TruncatedStacktraces.@truncate_stacktrace Rosenbrock23Cache 1
+
 @cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
                                         TabType, TFType, UFType, F, JCType, GCType,
                                         RTolType, A, AV} <: RosenbrockMutableCache
@@ -94,7 +96,8 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
 
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2, Val(false))
@@ -137,7 +140,8 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2, Val(false))
     algebraic_vars = f.mass_matrix === I ? nothing :
@@ -159,7 +163,7 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqCo
     autodiff::Bool
 end
 
-function Rosenbrock23ConstantCache(T::Type, tf, uf, J, W, linsolve, autodiff)
+function Rosenbrock23ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
     tab = Rosenbrock23Tableau(T)
     Rosenbrock23ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
@@ -188,7 +192,7 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqCo
     autodiff::Bool
 end
 
-function Rosenbrock32ConstantCache(T::Type, tf, uf, J, W, linsolve, autodiff)
+function Rosenbrock32ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
     tab = Rosenbrock32Tableau(T)
     Rosenbrock32ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
@@ -279,7 +283,8 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rosenbrock33Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
@@ -360,7 +365,8 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rosenbrock34Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
@@ -488,7 +494,8 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
@@ -496,6 +503,8 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
                 fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
                 linsolve, jac_config, grad_config, reltol, alg)
 end
+
+TruncatedStacktraces.@truncate_stacktrace Rodas4Cache 1
 
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -545,7 +554,8 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
@@ -602,7 +612,8 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
@@ -659,7 +670,8 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
@@ -734,6 +746,8 @@ end
     alg::A
 end
 
+TruncatedStacktraces.@truncate_stacktrace Rosenbrock5Cache 1
+
 function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
@@ -770,7 +784,8 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rosenbrock5Cache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4,
@@ -830,7 +845,8 @@ function alg_cache(alg::Rodas5P, u, rate_prototype, ::Type{uEltypeNoUnits},
     Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
                                  nothing)..., weight)
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    Pl = Pl, Pr = Pr)
+                    Pl = Pl, Pr = Pr,
+                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rosenbrock5Cache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4,

@@ -555,7 +555,7 @@ function bdf_step_reject_controller!(integrator, EEst1)
     F = inv(z)
     if z <= 10
         hₖ = F * h
-    elseif z > 10
+    else # z > 10
         hₖ = 0.1 * h
     end
     hₙ = hₖ
@@ -665,7 +665,8 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
                     @.. broadcast=false @views vc += fd_weights[i, k - 2] *
                                                      u_history[:, i - 1]
                 end
-                @.. broadcast=false terk_tmp*=abs(dt^(k - 2))
+                terk_tmp = reshape(vc, size(terk_tmp))
+                terk_tmp *= @.. broadcast=false abs(dt^(k - 2))
             end
             atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u),
                                        integrator.opts.abstol, integrator.opts.reltol,

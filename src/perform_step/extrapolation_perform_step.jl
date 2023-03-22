@@ -7,7 +7,7 @@ function initialize!(integrator, cache::AitkenNevilleCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     cache.step_no = 1
     alg = unwrap_alg(integrator, false)
@@ -28,11 +28,11 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             # Solve using Euler method
             @muladd @.. broadcast=false u=uprev + dt_temp * fsalfirst
             f(k, u, p, t + dt_temp)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             for j in 2:(2^(i - 1))
                 @muladd @.. broadcast=false u=u + dt_temp * k
                 f(k, u, p, t + j * dt_temp)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
             end
             @.. broadcast=false T[i, 1]=u
         end
@@ -65,7 +65,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
                 end
             end
         end
-        integrator.destats.nf += 2^max_order - 1
+        integrator.stats.nf += 2^max_order - 1
     end
 
     # Richardson extrapolation
@@ -121,14 +121,14 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
     @.. broadcast=false u=T[cache.cur_order, cache.cur_order]
     cache.step_no = cache.step_no + 1
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::AitkenNevilleConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -153,12 +153,12 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             # Solve using Euler method with dt_temp = dt/n_{i}
             @muladd u = @.. broadcast=false uprev+dt_temp * integrator.fsalfirst
             k = f(u, p, t + dt_temp)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
 
             for j in 2:(2^(i - 1))
                 @muladd u = @.. broadcast=false u+dt_temp * k
                 k = f(u, p, t + j * dt_temp)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
             end
             T[i, 1] = u
         end
@@ -185,7 +185,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             end
         end
 
-        integrator.destats.nf += 2^max_order - 1
+        integrator.stats.nf += 2^max_order - 1
     end
 
     # Richardson extrapolation
@@ -243,7 +243,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
     integrator.u = T[cache.cur_order, cache.cur_order]
 
     k = f(integrator.u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -258,7 +258,7 @@ function initialize!(integrator, cache::ImplicitEulerExtrapolationCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     cache.step_no = 1
     #alg = unwrap_alg(integrator, true)
@@ -295,7 +295,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
         for index in 1:(n_curr + 1)
             dt_temp = dt / sequence[index]
             jacobian2W!(W[1], integrator.f.mass_matrix, dt_temp, J, false)
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             @.. broadcast=false k_tmps[1]=integrator.fsalfirst
             @.. broadcast=false u_tmps[1]=uprev
 
@@ -314,7 +314,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                 cache.linsolve[1] = linres.cache
 
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 @.. broadcast=false k_tmps[1]=-k_tmps[1]
                 @.. broadcast=false u_tmps2[1]=u_tmps[1]
                 @.. broadcast=false u_tmps[1]=u_tmps[1] + k_tmps[1]
@@ -332,7 +332,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                 @.. broadcast=false diff1[1]=u_tmps[1] - u_tmps2[1]
 
                 f(k_tmps[1], u_tmps[1], p, t + j * dt_temp)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
             end
 
             @.. broadcast=false T[index, 1]=u_tmps[1]
@@ -403,9 +403,9 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
         end
 
         nevals = sum(sequence[1:(n_curr + 1)]) - 1
-        integrator.destats.nw += n_curr + 1
-        integrator.destats.nf += nevals
-        integrator.destats.nsolve += nevals
+        integrator.stats.nw += n_curr + 1
+        integrator.stats.nf += nevals
+        integrator.stats.nsolve += nevals
     end
 
     if integrator.force_stepfail
@@ -452,7 +452,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                 dt_temp = dt / sequence[n_curr + 1]
                 jacobian2W!(W[1], integrator.f.mass_matrix, dt_temp, J, false)
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 @.. broadcast=false k_tmps[1]=integrator.fsalfirst
                 @.. broadcast=false u_tmps[1]=uprev
 
@@ -473,11 +473,11 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                     cache.linsolve[1] = linres.cache
 
-                    integrator.destats.nsolve += 1
+                    integrator.stats.nsolve += 1
                     @.. broadcast=false k_tmps[1]=-k_tmps[1]
                     @.. broadcast=false u_tmps[1]=u_tmps[1] + k_tmps[1]
                     f(k_tmps[1], u_tmps[1], p, t + j * dt_temp)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                 end
 
                 @.. broadcast=false T[n_curr + 1, 1]=u_tmps[1]
@@ -510,7 +510,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
     cache.step_no = cache.step_no + 1
     f(integrator.fsallast, integrator.u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::ImplicitEulerExtrapolationConstantCache)
@@ -551,13 +551,13 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
         for index in 1:(n_curr + 1)
             dt_temp = dt / sequence[index]
             W = dt_temp * J - integrator.f.mass_matrix
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             k_copy = integrator.fsalfirst
             u_tmp = uprev
             diff1 = zero(u_tmp)
             for j in 1:sequence[index]
                 k = _reshape(W \ -_vec(dt_temp * k_copy), axes(uprev))
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 u_tmp2 = u_tmp
                 u_tmp = u_tmp + k
                 if index <= 2 && j >= 2
@@ -573,7 +573,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
                 end
                 diff1 = u_tmp - u_tmp2
                 k_copy = f(u_tmp, p, t + j * dt_temp)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
             end
 
             T[index, 1] = u_tmp
@@ -622,9 +622,9 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
         end
 
         nevals = sum(sequence[1:(n_curr + 1)]) - 1
-        integrator.destats.nw += n_curr + 1
-        integrator.destats.nf += nevals
-        integrator.destats.nsolve += nevals
+        integrator.stats.nw += n_curr + 1
+        integrator.stats.nf += nevals
+        integrator.stats.nsolve += nevals
     end
 
     # Richardson extrapolation
@@ -670,16 +670,16 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
                 # Update T
                 dt_temp = dt / sequence[n_curr + 1]
                 W = dt_temp * J - integrator.f.mass_matrix
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 k_copy = integrator.fsalfirst
                 u_tmp = uprev
 
                 for j in 1:sequence[n_curr + 1]
                     k = _reshape(W \ -_vec(dt_temp * k_copy), axes(uprev))
-                    integrator.destats.nsolve += 1
+                    integrator.stats.nsolve += 1
                     u_tmp = u_tmp + k
                     k_copy = f(u_tmp, p, t + j * dt_temp)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                 end
 
                 T[n_curr + 1, 1] = u_tmp
@@ -712,7 +712,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
     # Use extrapolated value of u
     integrator.u = T[n_curr + 1, n_curr + 1]
     k_temp = f(integrator.u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = k_temp
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -769,7 +769,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
             @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
             for j in 2:j_int
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 @.. broadcast=false T[i + 1]=u_temp2 + 2 * dt_int * k # Explicit Midpoint rule
                 @.. broadcast=false u_temp2=u_temp1
                 @.. broadcast=false u_temp1=T[i + 1]
@@ -839,7 +839,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
             end
         end
         nevals = cache.stage_number[n_curr - alg.min_order + 1] - 1
-        integrator.destats.nf += nevals
+        integrator.stats.nf += nevals
     end
 
     if integrator.opts.adaptive
@@ -888,7 +888,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                 @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     @.. broadcast=false T[n_curr + 1]=u_temp2 + 2 * dt_int * k
                     @.. broadcast=false u_temp2=u_temp1
                     @.. broadcast=false u_temp1=T[n_curr + 1]
@@ -932,7 +932,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCache)
@@ -989,7 +989,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
             u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
             for j in 2:j_int
                 T[i + 1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j - 1) * dt_int) # Explicit Midpoint rule
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 u_temp2 = u_temp1
                 u_temp1 = T[i + 1]
             end
@@ -1050,7 +1050,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
             end
         end
         nevals = cache.stage_number[n_curr - alg.min_order + 1] - 1
-        integrator.destats.nf += nevals
+        integrator.stats.nf += nevals
     end
 
     if integrator.opts.adaptive
@@ -1091,7 +1091,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
                 for j in 2:j_int
                     T[n_curr + 1] = u_temp2 +
                                     2 * dt_int * f(u_temp1, p, t + (j - 1) * dt_int)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     u_temp2 = u_temp1
                     u_temp1 = T[n_curr + 1]
                 end
@@ -1178,7 +1178,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
             j_int = 4 * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             @.. broadcast=false u_temp2=uprev
             @.. broadcast=false linsolve_tmps[1]=dt_int * fsalfirst
 
@@ -1194,13 +1194,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
             cache.linsolve[1] = linres.cache
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             @.. broadcast=false k=-k
             @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
             @.. broadcast=false diff1[1]=u_temp1 - u_temp2
             for j in 2:j_int
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 @.. broadcast=false linsolve_tmps[1]=dt_int * k - (u_temp1 - u_temp2)
 
                 linsolve = cache.linsolve[1]
@@ -1214,7 +1214,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 end
                 cache.linsolve[1] = linres.cache
 
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 @.. broadcast=false k=-k
                 @.. broadcast=false T[i + 1]=2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
                 @.. broadcast=false u_temp2=u_temp1
@@ -1462,7 +1462,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 j_int = 4 * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 @.. broadcast=false u_temp2=uprev
                 @.. broadcast=false linsolve_tmps[1]=dt_int * fsalfirst
 
@@ -1471,12 +1471,12 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                     linu = _vec(k))
                 cache.linsolve[1] = linres.cache
 
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 @.. broadcast=false k=-k
                 @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     @.. broadcast=false linsolve_tmps[1]=dt_int * k - (u_temp1 - u_temp2)
 
                     linsolve = cache.linsolve[1]
@@ -1484,7 +1484,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                         linu = _vec(k))
                     cache.linsolve[1] = linres.cache
 
-                    integrator.destats.nsolve += 1
+                    integrator.stats.nsolve += 1
                     @.. broadcast=false k=-k
                     @.. broadcast=false T[n_curr + 1]=2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
                     @.. broadcast=false u_temp2=u_temp1
@@ -1529,7 +1529,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCache)
@@ -1582,7 +1582,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
             j_int = 4 * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int * J - integrator.f.mass_matrix
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             u_temp2 = uprev
             u_temp1 = u_temp2 +
                       _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
@@ -1592,7 +1592,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                            2 * _reshape(W \
                                     -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int) -
                                           (u_temp1 - u_temp2)), axes(uprev))
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 u_temp2 = u_temp1
                 u_temp1 = T[i + 1]
                 if (i <= 1)
@@ -1626,7 +1626,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                         j_int = 4 * subdividing_sequence[index + 1]
                         dt_int = dt / j_int # Stepsize of the ith internal discretisation
                         W = dt_int * J - integrator.f.mass_matrix
-                        integrator.destats.nw += 1
+                        integrator.stats.nw += 1
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
@@ -1638,7 +1638,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                                                     -_vec(dt_int * f(u_temp3, p,
                                                             t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
-                            integrator.destats.nf += 1
+                            integrator.stats.nf += 1
                             u_temp4 = u_temp3
                             u_temp3 = T[index + 1]
                             if (index <= 1)
@@ -1669,7 +1669,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                         j_int = 4 * subdividing_sequence[index + 1]
                         dt_int = dt / j_int # Stepsize of the ith internal discretisation
                         W = dt_int * J - integrator.f.mass_matrix
-                        integrator.destats.nw += 1
+                        integrator.stats.nw += 1
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
@@ -1681,7 +1681,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                                                     -_vec(dt_int * f(u_temp3, p,
                                                             t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
-                            integrator.destats.nf += 1
+                            integrator.stats.nf += 1
                             u_temp4 = u_temp3
                             u_temp3 = T[index + 1]
                             if (index <= 1)
@@ -1741,7 +1741,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                 j_int = 4 * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 W = dt_int * J - integrator.f.mass_matrix
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 u_temp2 = uprev
                 u_temp1 = u_temp2 +
                           _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
@@ -1751,7 +1751,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                                              -_vec(dt_int *
                                                    f(u_temp1, p, t + (j - 1) * dt_int) -
                                                    (u_temp1 - u_temp2)), axes(uprev))
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     u_temp2 = u_temp1
                     u_temp1 = T[n_curr + 1]
                 end
@@ -1787,7 +1787,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
     integrator.fsallast = f(u, p, t + dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerCache)
@@ -1843,7 +1843,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
             for j in 2:j_int
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 @.. broadcast=false T[i + 1]=u_temp2 + 2 * dt_int * k # Explicit Midpoint rule
                 @.. broadcast=false u_temp2=u_temp1
                 @.. broadcast=false u_temp1=T[i + 1]
@@ -1912,7 +1912,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             end
         end
         nevals = cache.stage_number[n_curr + 1] - 1
-        integrator.destats.nf += nevals
+        integrator.stats.nf += nevals
     end
 
     if integrator.opts.adaptive
@@ -1963,7 +1963,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                 @.. broadcast=false u_temp1=u_temp2 + dt_int * fsalfirst # Euler starting step
                 for j in 2:j_int
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     @.. broadcast=false T[n_curr + 1]=u_temp2 + 2 * dt_int * k
                     @.. broadcast=false u_temp2=u_temp1
                     @.. broadcast=false u_temp1=T[n_curr + 1]
@@ -2007,7 +2007,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache)
@@ -2066,7 +2066,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
             for j in 2:j_int
                 T[i + 1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j - 1) * dt_int) # Explicit Midpoint rule
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 u_temp2 = u_temp1
                 u_temp1 = T[i + 1]
             end
@@ -2125,7 +2125,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             end
         end
         nevals = cache.stage_number[n_curr + 1] - 1
-        integrator.destats.nf += nevals
+        integrator.stats.nf += nevals
     end
     if integrator.opts.adaptive
         # Compute all information relating to an extrapolation order ≦ win_min
@@ -2167,7 +2167,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
                 for j in 2:j_int
                     T[n_curr + 1] = u_temp2 +
                                     2 * dt_int * f(u_temp1, p, t + (j - 1) * dt_int)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     u_temp2 = u_temp1
                     u_temp1 = T[n_curr + 1]
                 end
@@ -2203,7 +2203,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     integrator.fsallast = f(u, p, t + dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache)
@@ -2259,7 +2259,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
             j_int = 4 * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int * J - integrator.f.mass_matrix
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             u_temp2 = uprev
             u_temp1 = u_temp2 +
                       _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
@@ -2269,7 +2269,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                            2 * _reshape(W \
                                     -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int) -
                                           (u_temp1 - u_temp2)), axes(uprev))
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 if (j == j_int + 1)
                     T[i + 1] = 0.5(T[i + 1] + u_temp2)
                 end
@@ -2307,7 +2307,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                         j_int = 4 * subdividing_sequence[index + 1]
                         dt_int = dt / j_int # Stepsize of the ith internal discretisation
                         W = dt_int * J - integrator.f.mass_matrix
-                        integrator.destats.nw += 1
+                        integrator.stats.nw += 1
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
@@ -2319,7 +2319,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                                                     -_vec(dt_int * f(u_temp3, p,
                                                             t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
-                            integrator.destats.nf += 1
+                            integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
                             end
@@ -2353,7 +2353,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                         j_int = 4 * subdividing_sequence[index + 1]
                         dt_int = dt / j_int # Stepsize of the ith internal discretisation
                         W = dt_int * J - integrator.f.mass_matrix
-                        integrator.destats.nw += 1
+                        integrator.stats.nw += 1
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
@@ -2365,7 +2365,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                                                     -_vec(dt_int * f(u_temp3, p,
                                                             t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
-                            integrator.destats.nf += 1
+                            integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
                             end
@@ -2430,7 +2430,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                 j_int = 4 * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 W = dt_int * J - integrator.f.mass_matrix
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 u_temp2 = uprev
                 u_temp1 = u_temp2 +
                           _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
@@ -2440,7 +2440,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                                              -_vec(dt_int *
                                                    f(u_temp1, p, t + (j - 1) * dt_int) -
                                                    (u_temp1 - u_temp2)), axes(uprev))
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     if (j == j_int + 1)
                         T[n_curr + 1] = 0.5(T[n_curr + 1] + u_temp2)
                     end
@@ -2533,7 +2533,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             j_int = 4 * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             @.. broadcast=false u_temp2=uprev
             @.. broadcast=false linsolve_tmps[1]=dt_int * fsalfirst
 
@@ -2547,13 +2547,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             end
             cache.linsolve[1] = linres.cache
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             @.. broadcast=false k=-k
             @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
             @.. broadcast=false diff1[1]=u_temp1 - u_temp2
             for j in 2:(j_int + 1)
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 @.. broadcast=false linsolve_tmps[1]=dt_int * k - (u_temp1 - u_temp2)
 
                 linsolve = cache.linsolve[1]
@@ -2567,7 +2567,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 end
                 cache.linsolve[1] = linres.cache
 
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 @.. broadcast=false k=-k
                 @.. broadcast=false T[i + 1]=2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
                 if (j == j_int + 1)
@@ -2817,7 +2817,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 j_int = 4 * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 @.. broadcast=false u_temp2=uprev
                 @.. broadcast=false linsolve_tmps[1]=dt_int * fsalfirst
 
@@ -2832,12 +2832,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 end
                 cache.linsolve[1] = linres.cache
 
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 @.. broadcast=false k=-k
                 @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
                 for j in 2:(j_int + 1)
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     @.. broadcast=false linsolve_tmps[1]=dt_int * k - (u_temp1 - u_temp2)
 
                     linsolve = cache.linsolve[1]
@@ -2851,7 +2851,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                     end
                     cache.linsolve[1] = linres.cache
 
-                    integrator.destats.nsolve += 1
+                    integrator.stats.nsolve += 1
                     @.. broadcast=false k=-k
                     @.. broadcast=false T[n_curr + 1]=2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
                     if (j == j_int + 1)
@@ -2899,7 +2899,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationConstantCache)
@@ -2957,7 +2957,7 @@ function perform_step!(integrator,
             j_int = sequence_factor * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             W = dt_int * J - integrator.f.mass_matrix
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             u_temp2 = uprev
             u_temp1 = u_temp2 +
                       _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
@@ -2966,7 +2966,7 @@ function perform_step!(integrator,
                 T[i + 1] = u_temp1 +
                            _reshape(W \ -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int)),
                                     axes(uprev))
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 if (j == j_int + 1)
                     T[i + 1] = 0.25(T[i + 1] + 2 * u_temp1 + u_temp2)
                 end
@@ -3004,7 +3004,7 @@ function perform_step!(integrator,
                         j_int = sequence_factor * subdividing_sequence[index + 1]
                         dt_int = dt / j_int # Stepsize of the ith internal discretisation
                         W = dt_int * J - integrator.f.mass_matrix
-                        integrator.destats.nw += 1
+                        integrator.stats.nw += 1
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
@@ -3015,7 +3015,7 @@ function perform_step!(integrator,
                                                     -_vec(dt_int * f(u_temp3, p,
                                                             t + (j - 1) * dt_int)),
                                                     axes(uprev))
-                            integrator.destats.nf += 1
+                            integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.25(T[index + 1] + 2 * u_temp3 + u_temp4)
                             end
@@ -3049,7 +3049,7 @@ function perform_step!(integrator,
                         j_int = sequence_factor * subdividing_sequence[index + 1]
                         dt_int = dt / j_int # Stepsize of the ith internal discretisation
                         W = dt_int * J - integrator.f.mass_matrix
-                        integrator.destats.nw += 1
+                        integrator.stats.nw += 1
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
@@ -3060,7 +3060,7 @@ function perform_step!(integrator,
                                                     -_vec(dt_int * f(u_temp3, p,
                                                             t + (j - 1) * dt_int)),
                                                     axes(uprev))
-                            integrator.destats.nf += 1
+                            integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.25(T[index + 1] + 2 * u_temp3 + u_temp4)
                             end
@@ -3125,7 +3125,7 @@ function perform_step!(integrator,
                 j_int = sequence_factor * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 W = dt_int * J - integrator.f.mass_matrix
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 u_temp2 = uprev
                 u_temp1 = u_temp2 +
                           _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
@@ -3134,7 +3134,7 @@ function perform_step!(integrator,
                                              -_vec(dt_int *
                                                    f(u_temp1, p, t + (j - 1) * dt_int)),
                                              axes(uprev))
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     if (j == j_int + 1)
                         T[n_curr + 1] = 0.25(T[n_curr + 1] + 2 * u_temp1 + u_temp2)
                     end
@@ -3228,7 +3228,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             j_int = sequence_factor * subdividing_sequence[i + 1]
             dt_int = dt / j_int # Stepsize of the ith internal discretisation
             jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
-            integrator.destats.nw += 1
+            integrator.stats.nw += 1
             @.. broadcast=false u_temp2=uprev
             @.. broadcast=false linsolve_tmps[1]=dt_int * fsalfirst
 
@@ -3243,13 +3243,13 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             end
             cache.linsolve[1] = linres.cache
 
-            integrator.destats.nsolve += 1
+            integrator.stats.nsolve += 1
             @.. broadcast=false k=-k
             @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
             @.. broadcast=false diff1[1]=u_temp1 - u_temp2
             for j in 2:(j_int + 1)
                 f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                integrator.destats.nf += 1
+                integrator.stats.nf += 1
                 @.. broadcast=false linsolve_tmps[1]=dt_int * k
 
                 linsolve = cache.linsolve[1]
@@ -3262,7 +3262,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 end
                 cache.linsolve[1] = linres.cache
 
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 @.. broadcast=false k=-k
                 @.. broadcast=false T[i + 1]=u_temp1 + k
                 if (j == j_int + 1)
@@ -3527,7 +3527,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 j_int = sequence_factor * subdividing_sequence[n_curr + 1]
                 dt_int = dt / j_int # Stepsize of the new internal discretisation
                 jacobian2W!(W[1], integrator.f.mass_matrix, dt_int, J, false)
-                integrator.destats.nw += 1
+                integrator.stats.nw += 1
                 @.. broadcast=false u_temp2=uprev
                 @.. broadcast=false linsolve_tmps[1]=dt_int * fsalfirst
 
@@ -3542,12 +3542,12 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 end
                 cache.linsolve[1] = linres.cache
 
-                integrator.destats.nsolve += 1
+                integrator.stats.nsolve += 1
                 @.. broadcast=false k=-k
                 @.. broadcast=false u_temp1=u_temp2 + k # Euler starting step
                 for j in 2:(j_int + 1)
                     f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
-                    integrator.destats.nf += 1
+                    integrator.stats.nf += 1
                     @.. broadcast=false linsolve_tmps[1]=dt_int * k
 
                     linsolve = cache.linsolve[1]
@@ -3555,7 +3555,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                         linu = _vec(k))
                     cache.linsolve[1] = linres.cache
 
-                    integrator.destats.nsolve += 1
+                    integrator.stats.nsolve += 1
                     @.. broadcast=false k=-k
                     @.. broadcast=false T[n_curr + 1]=u_temp1 + k # Explicit Midpoint rule
                     if (j == j_int + 1)
@@ -3604,5 +3604,5 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
     end
 
     f(cache.k, integrator.u, p, t + dt) # Update FSAL
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end

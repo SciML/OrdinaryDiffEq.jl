@@ -11,11 +11,11 @@ function perform_step!(integrator, cache::FunctionMapConstantCache, repeat_step 
          integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT)
         if FunctionMap_scale_by_time(alg)
             tmp = f(uprev, p, t + dt)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
             @muladd integrator.u = @.. broadcast=false uprev+dt * tmp
         else
             integrator.u = f(uprev, p, t + dt)
-            integrator.destats.nf += 1
+            integrator.stats.nf += 1
         end
     end
 end
@@ -38,7 +38,7 @@ function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
         else
             f(u, uprev, p, t + dt)
         end
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 end
 
@@ -46,7 +46,7 @@ function initialize!(integrator, cache::EulerConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -58,7 +58,7 @@ function perform_step!(integrator, cache::EulerConstantCache, repeat_step = fals
     @unpack t, dt, uprev, f, p = integrator
     @muladd u = @.. broadcast=false uprev+dt * integrator.fsalfirst
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -74,21 +74,21 @@ function initialize!(integrator, cache::EulerCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::EulerCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @muladd @.. broadcast=false u=uprev + dt * integrator.fsalfirst
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::Union{HeunConstantCache, RalstonConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -113,7 +113,7 @@ end
 
     tmp = @.. broadcast=false uprev+a₁ * fsalfirst
     k2 = f(tmp, p, t + a₁)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if typeof(cache) <: HeunConstantCache
         u = @.. broadcast=false uprev+a₂ * (fsalfirst + k2)
@@ -133,7 +133,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     k = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.fsallast = k
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -149,13 +149,13 @@ function initialize!(integrator, cache::Union{HeunCache, RalstonCache})
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Union{HeunCache, RalstonCache},
                                repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack fsalfirst, k, tmp, atmp = cache
+    @unpack fsalfirst, k, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
 
     # precalculations
     if typeof(cache) <: HeunCache
@@ -167,34 +167,35 @@ end
         a₃ = 3 * a₂
     end
 
-    @.. broadcast=false tmp=uprev + a₁ * fsalfirst
+    @.. broadcast=false thread=thread tmp=uprev + a₁ * fsalfirst
     f(k, tmp, p, t + a₁)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if typeof(cache) <: HeunCache
-        @.. broadcast=false u=uprev + a₂ * (fsalfirst + k)
+        @.. broadcast=false thread=thread u=uprev + a₂ * (fsalfirst + k)
     else
-        @.. broadcast=false u=uprev + a₂ * fsalfirst + a₃ * k
+        @.. broadcast=false thread=thread u=uprev + a₂ * fsalfirst + a₃ * k
     end
 
     if integrator.opts.adaptive
         if typeof(cache) <: HeunCache
-            @.. broadcast=false tmp=a₂ * (k - fsalfirst)
+            @.. broadcast=false thread=thread tmp=a₂ * (k - fsalfirst)
         else
-            @.. broadcast=false tmp=a₃ * (k - fsalfirst)
+            @.. broadcast=false thread=thread tmp=a₃ * (k - fsalfirst)
         end
 
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MidpointConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -210,10 +211,10 @@ end
     halfdt = dt / 2
     tmp = @.. broadcast=false uprev+halfdt * integrator.fsalfirst
     k = f(tmp, p, t + halfdt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     u = @.. broadcast=false uprev+dt * k
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     if integrator.opts.adaptive
         utilde = @.. broadcast=false dt*(integrator.fsalfirst - k)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
@@ -234,30 +235,31 @@ function initialize!(integrator, cache::MidpointCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::MidpointCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, k, fsalfirst, atmp = cache
+    @unpack tmp, k, fsalfirst, atmp, stage_limiter!, step_limiter!, thread = cache
     halfdt = dt / 2
-    @.. broadcast=false tmp=uprev + halfdt * fsalfirst
+    @.. broadcast=false thread=thread tmp=uprev + halfdt * fsalfirst
     f(k, tmp, p, t + halfdt)
-    integrator.destats.nf += 1
-    @.. broadcast=false u=uprev + dt * k
+    integrator.stats.nf += 1
+    @.. broadcast=false thread=thread u=uprev + dt * k
     if integrator.opts.adaptive
-        @.. broadcast=false tmp=dt * (fsalfirst - k)
+        @.. broadcast=false thread=thread tmp=dt * (fsalfirst - k)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::RK4ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -277,7 +279,7 @@ end
     k₄ = f(uprev + dt * k₃, p, t + dt)
     u = uprev + (dt / 6) * (2 * (k₂ + k₃) + (k₁ + k₄))
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 4
+    integrator.stats.nf += 4
     if integrator.opts.adaptive
         # Shampine Solving ODEs and DDEs with Residual Control Estimate
         k₅ = integrator.fsallast
@@ -305,7 +307,7 @@ end
                                                               integrator.opts.reltol,
                                                               integrator.opts.internalnorm,
                                                               t), t)
-        integrator.destats.nf += 2
+        integrator.stats.nf += 2
         integrator.EEst = 2.1342 * max(e1, e2)
     end
     integrator.k[1] = integrator.fsalfirst
@@ -322,24 +324,24 @@ function initialize!(integrator, cache::RK4Cache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # pre-start FSAL
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::RK4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, fsalfirst, k₂, k₃, k₄, k, atmp = cache
+    @unpack tmp, fsalfirst, k₂, k₃, k₄, k, atmp, stage_limiter!, step_limiter!, thread = cache
     k₁ = fsalfirst
     halfdt = dt / 2
     ttmp = t + halfdt
-    @.. broadcast=false tmp=uprev + halfdt * k₁
+    @.. broadcast=false thread=thread tmp=uprev + halfdt * k₁
     f(k₂, tmp, p, ttmp)
-    @.. broadcast=false tmp=uprev + halfdt * k₂
+    @.. broadcast=false thread=thread tmp=uprev + halfdt * k₂
     f(k₃, tmp, p, ttmp)
-    @.. broadcast=false tmp=uprev + dt * k₃
+    @.. broadcast=false thread=thread tmp=uprev + dt * k₃
     f(k₄, tmp, p, t + dt)
-    @.. broadcast=false u=uprev + (dt / 6) * (2 * (k₂ + k₃) + (k₁ + k₄))
+    @.. broadcast=false thread=thread u=uprev + (dt / 6) * (2 * (k₂ + k₃) + (k₁ + k₄))
     f(k, u, p, t + dt)
-    integrator.destats.nf += 4
+    integrator.stats.nf += 4
     if integrator.opts.adaptive
         # Shampine Solving ODEs and DDEs with Residual Control Estimate
         k₅ = k
@@ -347,40 +349,50 @@ end
         pprime = k₃ # Alias some cache arrays
         σ₁ = 1 / 2 - sqrt(3) / 6
         σ₂ = 1 / 2 + sqrt(3) / 6
-        @.. broadcast=false tmp=(1 - σ₁) * uprev + σ₁ * u +
-                                σ₁ * (σ₁ - 1) *
-                                ((1 - 2σ₁) * (u - uprev) + (σ₁ - 1) * dt * k₁ +
-                                 σ₁ * dt * k₅)
-        @.. broadcast=false pprime=k₁ +
-                                   σ₁ * (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
-                                    σ₁ * (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev - 6 * u) +
-                                    6 * u) / dt
+        @.. broadcast=false thread=thread tmp=(1 - σ₁) * uprev + σ₁ * u +
+                                              σ₁ * (σ₁ - 1) *
+                                              ((1 - 2σ₁) * (u - uprev) +
+                                               (σ₁ - 1) * dt * k₁ +
+                                               σ₁ * dt * k₅)
+        @.. broadcast=false thread=thread pprime=k₁ +
+                                                 σ₁ *
+                                                 (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
+                                                  σ₁ *
+                                                  (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev -
+                                                   6 * u) +
+                                                  6 * u) / dt
         f(_p, tmp, p, t + σ₁ * dt)
-        @.. broadcast=false tmp=dt * (_p - pprime)
+        @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         e1 = integrator.opts.internalnorm(atmp, t)
-        @.. broadcast=false tmp=(1 - σ₂) * uprev + σ₂ * u +
-                                σ₂ * (σ₂ - 1) *
-                                ((1 - 2σ₂) * (u - uprev) + (σ₂ - 1) * dt * k₁ +
-                                 σ₂ * dt * k₅)
-        @.. broadcast=false pprime=k₁ +
-                                   σ₂ * (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
-                                    σ₂ * (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev - 6 * u) +
-                                    6 * u) / dt
+        @.. broadcast=false thread=thread tmp=(1 - σ₂) * uprev + σ₂ * u +
+                                              σ₂ * (σ₂ - 1) *
+                                              ((1 - 2σ₂) * (u - uprev) +
+                                               (σ₂ - 1) * dt * k₁ +
+                                               σ₂ * dt * k₅)
+        @.. broadcast=false thread=thread pprime=k₁ +
+                                                 σ₂ *
+                                                 (-4 * dt * k₁ - 2 * dt * k₅ - 6 * uprev +
+                                                  σ₂ *
+                                                  (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev -
+                                                   6 * u) +
+                                                  6 * u) / dt
         f(_p, tmp, p, t + σ₂ * dt)
-        @.. broadcast=false tmp=dt * (_p - pprime)
+        @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         e2 = integrator.opts.internalnorm(atmp, t)
         integrator.EEst = 2.1342 * max(e1, e2)
-        integrator.destats.nf += 2
+        integrator.stats.nf += 2
     end
 end
 
 function initialize!(integrator, cache::RK46NLConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -413,7 +425,7 @@ end
     u = u + β6 * tmp
 
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.destats.nf += 6
+    integrator.stats.nf += 6
     integrator.k[1] = integrator.fsalfirst
     integrator.u = u
 end
@@ -426,47 +438,47 @@ function initialize!(integrator, cache::RK46NLCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::RK46NLCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, tmp = cache
+    @unpack k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread = cache
     @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6 = cache.tab
 
     # u1
-    @.. broadcast=false tmp=dt * fsalfirst
-    @.. broadcast=false u=uprev + β1 * tmp
+    @.. broadcast=false thread=thread tmp=dt * fsalfirst
+    @.. broadcast=false thread=thread u=uprev + β1 * tmp
     # u2
     f(k, u, p, t + c2 * dt)
-    @.. broadcast=false tmp=α2 * tmp + dt * k
-    @.. broadcast=false u=u + β2 * tmp
+    @.. broadcast=false thread=thread tmp=α2 * tmp + dt * k
+    @.. broadcast=false thread=thread u=u + β2 * tmp
     # u3
     f(k, u, p, t + c3 * dt)
-    @.. broadcast=false tmp=α3 * tmp + dt * k
-    @.. broadcast=false u=u + β3 * tmp
+    @.. broadcast=false thread=thread tmp=α3 * tmp + dt * k
+    @.. broadcast=false thread=thread u=u + β3 * tmp
     # u4
     f(k, u, p, t + c4 * dt)
-    @.. broadcast=false tmp=α4 * tmp + dt * k
-    @.. broadcast=false u=u + β4 * tmp
+    @.. broadcast=false thread=thread tmp=α4 * tmp + dt * k
+    @.. broadcast=false thread=thread u=u + β4 * tmp
     # u5 = u
     f(k, u, p, t + c5 * dt)
-    @.. broadcast=false tmp=α5 * tmp + dt * k
-    @.. broadcast=false u=u + β5 * tmp
+    @.. broadcast=false thread=thread tmp=α5 * tmp + dt * k
+    @.. broadcast=false thread=thread u=u + β5 * tmp
 
     f(k, u, p, t + c6 * dt)
-    @.. broadcast=false tmp=α6 * tmp + dt * k
-    @.. broadcast=false u=u + β6 * tmp
+    @.. broadcast=false thread=thread tmp=α6 * tmp + dt * k
+    @.. broadcast=false thread=thread u=u + β6 * tmp
 
     f(k, u, p, t + dt)
-    integrator.destats.nf += 6
+    integrator.stats.nf += 6
 end
 
 function initialize!(integrator, cache::Anas5ConstantCache)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     # Avoid undefined entries if k is an array of arrays
     integrator.fsallast = zero(integrator.fsalfirst)
@@ -501,7 +513,7 @@ end
     u = uprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5 + b6 * k6)
     k7 = f(u, p, t + dt)
     integrator.fsallast = k7
-    integrator.destats.nf += 6
+    integrator.stats.nf += 6
     integrator.k[1] = k1
     integrator.k[2] = k2
     integrator.k[3] = k3
@@ -525,7 +537,7 @@ function initialize!(integrator, cache::Anas5Cache)
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k7  # setup pointers
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Anas5Cache, repeat_step = false)
@@ -572,5 +584,5 @@ end
                          (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i] + b6 * k6[i])
     end
     f(k7, u, p, t + dt)
-    integrator.destats.nf += 6
+    integrator.stats.nf += 6
 end

@@ -2,7 +2,7 @@
 # 2N low storage methods
 function initialize!(integrator, cache::LowStorageRK2NConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -23,12 +23,12 @@ end
     # other stages
     for i in eachindex(A2end)
         k = f(u, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         tmp = A2end[i] * tmp + dt * k
         u = u + B2end[i] * tmp
     end
 
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.fsalfirst = f(u, p, t + dt) # For interpolation, then FSAL'd
     integrator.u = u
@@ -42,7 +42,7 @@ function initialize!(integrator, cache::LowStorageRK2NCache)
     integrator.fsalfirst = k # used for get_du
     integrator.fsallast = k
     integrator.f(k, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK2NCache, repeat_step = false)
@@ -52,7 +52,7 @@ end
 
     # u1
     f(k, u, p, t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @.. broadcast=false thread=thread tmp=dt * k
     @.. broadcast=false thread=thread u=u + B1 * tmp
     # other stages
@@ -66,7 +66,7 @@ end
             @.. broadcast=false thread=thread tmp=tmp + dt * k
             @.. broadcast=false thread=thread u=u + B2end[i] * tmp
         end
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
@@ -75,7 +75,7 @@ end
 # 2C low storage methods
 function initialize!(integrator, cache::LowStorageRK2CConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -92,14 +92,14 @@ end
     # u1
     k = integrator.fsalfirst = f(u, p, t)
     integrator.k[1] = integrator.fsalfirst
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     u = u + B1 * dt * k
 
     # other stages
     for i in eachindex(A2end)
         tmp = u + A2end[i] * dt * k
         k = f(tmp, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         u = u + B2end[i] * dt * k
     end
 
@@ -114,34 +114,34 @@ function initialize!(integrator, cache::LowStorageRK2CCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK2CCache, repeat_step = false)
     @unpack t, dt, u, f, p = integrator
-    @unpack k, fsalfirst, tmp = cache
+    @unpack k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread = cache
     @unpack A2end, B1, B2end, c2end = cache.tab
 
     # u1
-    @.. broadcast=false k=integrator.fsalfirst
-    @.. broadcast=false u=u + B1 * dt * k
+    @.. broadcast=false thread=thread k=integrator.fsalfirst
+    @.. broadcast=false thread=thread u=u + B1 * dt * k
 
     # other stages
     for i in eachindex(A2end)
-        @.. broadcast=false tmp=u + A2end[i] * dt * k
+        @.. broadcast=false thread=thread tmp=u + A2end[i] * dt * k
         f(k, tmp, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
-        @.. broadcast=false u=u + B2end[i] * dt * k
+        integrator.stats.nf += 1
+        @.. broadcast=false thread=thread u=u + B2end[i] * dt * k
     end
 
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 # 3S low storage methods
 function initialize!(integrator, cache::LowStorageRK3SConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -162,13 +162,13 @@ end
     # other stages
     for i in eachindex(γ12end)
         k = f(u, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         tmp = tmp + δ2end[i] * u
         u = γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev + β2end[i] * dt * k
     end
 
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.u = u
 end
@@ -181,35 +181,36 @@ function initialize!(integrator, cache::LowStorageRK3SCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3SCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, tmp = cache
+    @unpack k, fsalfirst, tmp, stage_limiter!, step_limiter!, thread = cache
     @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end = cache.tab
 
     # u1
-    @.. broadcast=false tmp=u
-    @.. broadcast=false u=tmp + β1 * dt * integrator.fsalfirst
+    @.. broadcast=false thread=thread tmp=u
+    @.. broadcast=false thread=thread u=tmp + β1 * dt * integrator.fsalfirst
 
     # other stages
     for i in eachindex(γ12end)
         f(k, u, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
-        @.. broadcast=false tmp=tmp + δ2end[i] * u
-        @.. broadcast=false u=γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev +
-                              β2end[i] * dt * k
+        integrator.stats.nf += 1
+        @.. broadcast=false thread=thread tmp=tmp + δ2end[i] * u
+        @.. broadcast=false thread=thread u=γ12end[i] * u + γ22end[i] * tmp +
+                                            γ32end[i] * uprev +
+                                            β2end[i] * dt * k
     end
 
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 # 3S+ low storage methods: 3S methods adding another memory location for the embedded method (non-FSAL version)
 function initialize!(integrator, cache::LowStorageRK3SpConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -225,7 +226,7 @@ end
 
     # u1
     integrator.fsalfirst = f(uprev, p, t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     tmp = uprev
     u = tmp + β1 * dt * integrator.fsalfirst
@@ -236,7 +237,7 @@ end
     # other stages
     for i in eachindex(γ12end)
         k = f(u, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         tmp = tmp + δ2end[i] * u
         u = γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev + β2end[i] * dt * k
         if integrator.opts.adaptive
@@ -269,7 +270,7 @@ end
 
     # u1
     f(integrator.fsalfirst, uprev, p, t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     @.. broadcast=false thread=thread tmp=uprev
     @.. broadcast=false thread=thread u=tmp + β1 * dt * integrator.fsalfirst
     if integrator.opts.adaptive
@@ -280,7 +281,7 @@ end
     for i in eachindex(γ12end)
         stage_limiter!(u, integrator, p, t + c2end[i] * dt)
         f(k, u, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         @.. broadcast=false thread=thread tmp=tmp + δ2end[i] * u
         @.. broadcast=false thread=thread u=γ12end[i] * u + γ22end[i] * tmp +
                                             γ32end[i] * uprev + β2end[i] * dt * k
@@ -303,7 +304,7 @@ end
 # 3S+ FSAL low storage methods: 3S methods adding another memory location for the embedded method (FSAL version)
 function initialize!(integrator, cache::LowStorageRK3SpFSALConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -328,7 +329,7 @@ end
     # other stages
     for i in eachindex(γ12end)
         k = f(u, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         tmp = tmp + δ2end[i] * u
         u = γ12end[i] * u + γ22end[i] * tmp + γ32end[i] * uprev + β2end[i] * dt * k
         if integrator.opts.adaptive
@@ -338,7 +339,7 @@ end
 
     # FSAL
     integrator.fsallast = f(u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.opts.adaptive
         utilde = utilde + bhatfsal * dt * integrator.fsallast
@@ -361,7 +362,7 @@ function initialize!(integrator, cache::LowStorageRK3SpFSALCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3SpFSALCache,
@@ -381,7 +382,7 @@ end
     for i in eachindex(γ12end)
         stage_limiter!(u, integrator, p, t + c2end[i] * dt)
         f(k, u, p, t + c2end[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
         @.. broadcast=false thread=thread tmp=tmp + δ2end[i] * u
         @.. broadcast=false thread=thread u=γ12end[i] * u + γ22end[i] * tmp +
                                             γ32end[i] * uprev + β2end[i] * dt * k
@@ -395,7 +396,7 @@ end
 
     # FSAL
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=utilde + bhatfsal * dt * k
@@ -409,7 +410,7 @@ end
 # 2R+ low storage methods
 function initialize!(integrator, cache::LowStorageRK2RPConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -432,7 +433,7 @@ end
         gprev = u + Aᵢ[i] * dt * k
         u = u + Bᵢ[i] * dt * k
         k = f(gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
@@ -448,7 +449,7 @@ end
 
     integrator.k[1] = integrator.fsalfirst
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.u = u
 end
 
@@ -460,46 +461,48 @@ function initialize!(integrator, cache::LowStorageRK2RPCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK2RPCache, repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
-    @unpack k, gprev, tmp, atmp = cache
+    @unpack k, gprev, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache.tab
 
-    @.. broadcast=false k=fsalfirst
+    @.. broadcast=false thread=thread k=fsalfirst
     integrator.opts.adaptive && (@.. broadcast=false tmp=zero(uprev))
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ)
         integrator.opts.adaptive &&
-            (@.. broadcast=false tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
-        @.. broadcast=false gprev=u + Aᵢ[i] * dt * k
-        @.. broadcast=false u=u + Bᵢ[i] * dt * k
+            (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast=false thread=thread gprev=u + Aᵢ[i] * dt * k
+        @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
         f(k, gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
-    @.. broadcast=false u=u + Bₗ * dt * k
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 # 3R+ low storage methods
 function initialize!(integrator, cache::LowStorageRK3RPConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -528,7 +531,7 @@ end
         uᵢ₋₂ = uᵢ₋₁
         uᵢ₋₁ = u
         k = f(gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
@@ -544,7 +547,7 @@ end
 
     integrator.k[1] = integrator.fsalfirst
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.u = u
 end
 
@@ -556,52 +559,54 @@ function initialize!(integrator, cache::LowStorageRK3RPCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3RPCache, repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
-    @unpack k, uᵢ₋₁, uᵢ₋₂, gprev, fᵢ₋₂, tmp, atmp = cache
+    @unpack k, uᵢ₋₁, uᵢ₋₂, gprev, fᵢ₋₂, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache.tab
 
-    @.. broadcast=false fᵢ₋₂=zero(fsalfirst)
-    @.. broadcast=false k=fsalfirst
-    integrator.opts.adaptive && (@.. broadcast=false tmp=zero(uprev))
-    @.. broadcast=false uᵢ₋₁=uprev
-    @.. broadcast=false uᵢ₋₂=uprev
+    @.. broadcast=false thread=thread fᵢ₋₂=zero(fsalfirst)
+    @.. broadcast=false thread=thread k=fsalfirst
+    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=zero(uprev))
+    @.. broadcast=false thread=thread uᵢ₋₁=uprev
+    @.. broadcast=false thread=thread uᵢ₋₂=uprev
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
         integrator.opts.adaptive &&
-            (@.. broadcast=false tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
-        @.. broadcast=false gprev=uᵢ₋₂ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂) * dt
-        @.. broadcast=false u=u + Bᵢ[i] * dt * k
-        @.. broadcast=false fᵢ₋₂=k
-        @.. broadcast=false uᵢ₋₂=uᵢ₋₁
-        @.. broadcast=false uᵢ₋₁=u
+            (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast=false thread=thread gprev=uᵢ₋₂ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂) * dt
+        @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
+        @.. broadcast=false thread=thread fᵢ₋₂=k
+        @.. broadcast=false thread=thread uᵢ₋₂=uᵢ₋₁
+        @.. broadcast=false thread=thread uᵢ₋₁=u
         f(k, gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
-    @.. broadcast=false u=u + Bₗ * dt * k
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 # 4R+ low storage methods
 function initialize!(integrator, cache::LowStorageRK4RPConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -634,7 +639,7 @@ end
         uᵢ₋₂ = uᵢ₋₁
         uᵢ₋₁ = u
         k = f(gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
@@ -650,7 +655,7 @@ end
 
     integrator.k[1] = integrator.fsalfirst
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.u = u
 end
 
@@ -662,56 +667,60 @@ function initialize!(integrator, cache::LowStorageRK4RPCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK4RPCache, repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
-    @unpack k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, gprev, fᵢ₋₂, fᵢ₋₃, tmp, atmp = cache
+    @unpack k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, gprev, fᵢ₋₂, fᵢ₋₃, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache.tab
 
-    @.. broadcast=false fᵢ₋₂=zero(fsalfirst)
-    @.. broadcast=false fᵢ₋₃=zero(fsalfirst)
-    @.. broadcast=false k=fsalfirst
-    integrator.opts.adaptive && (@.. broadcast=false tmp=zero(uprev))
-    @.. broadcast=false uᵢ₋₁=uprev
-    @.. broadcast=false uᵢ₋₂=uprev
-    @.. broadcast=false uᵢ₋₃=uprev
+    @.. broadcast=false thread=thread fᵢ₋₂=zero(fsalfirst)
+    @.. broadcast=false thread=thread fᵢ₋₃=zero(fsalfirst)
+    @.. broadcast=false thread=thread k=fsalfirst
+    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=zero(uprev))
+    @.. broadcast=false thread=thread uᵢ₋₁=uprev
+    @.. broadcast=false thread=thread uᵢ₋₂=uprev
+    @.. broadcast=false thread=thread uᵢ₋₃=uprev
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
         integrator.opts.adaptive &&
-            (@.. broadcast=false tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
-        @.. broadcast=false gprev=uᵢ₋₃ + (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) * dt
-        @.. broadcast=false u=u + Bᵢ[i] * dt * k
-        @.. broadcast=false fᵢ₋₃=fᵢ₋₂
-        @.. broadcast=false fᵢ₋₂=k
-        @.. broadcast=false uᵢ₋₃=uᵢ₋₂
-        @.. broadcast=false uᵢ₋₂=uᵢ₋₁
-        @.. broadcast=false uᵢ₋₁=u
+            (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast=false thread=thread gprev=uᵢ₋₃ +
+                                                (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) *
+                                                dt
+        @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
+        @.. broadcast=false thread=thread fᵢ₋₃=fᵢ₋₂
+        @.. broadcast=false thread=thread fᵢ₋₂=k
+        @.. broadcast=false thread=thread uᵢ₋₃=uᵢ₋₂
+        @.. broadcast=false thread=thread uᵢ₋₂=uᵢ₋₁
+        @.. broadcast=false thread=thread uᵢ₋₁=u
         f(k, gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
-    @.. broadcast=false u=u + Bₗ * dt * k
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 # 5R+ low storage methods
 function initialize!(integrator, cache::LowStorageRK5RPConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.kshortsize = 1
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -748,7 +757,7 @@ end
         uᵢ₋₂ = uᵢ₋₁
         uᵢ₋₁ = u
         k = f(gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
@@ -764,7 +773,7 @@ end
 
     integrator.k[1] = integrator.fsalfirst
     integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
     integrator.u = u
 end
 
@@ -776,54 +785,57 @@ function initialize!(integrator, cache::LowStorageRK5RPCache)
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK5RPCache, repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
-    @unpack k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, gprev, fᵢ₋₂, fᵢ₋₃, fᵢ₋₄, tmp, atmp = cache
+    @unpack k, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, gprev, fᵢ₋₂, fᵢ₋₃, fᵢ₋₄, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache.tab
 
-    @.. broadcast=false fᵢ₋₂=zero(fsalfirst)
-    @.. broadcast=false fᵢ₋₃=zero(fsalfirst)
-    @.. broadcast=false fᵢ₋₄=zero(fsalfirst)
-    @.. broadcast=false k=fsalfirst
-    integrator.opts.adaptive && (@.. broadcast=false tmp=zero(uprev))
-    @.. broadcast=false uᵢ₋₁=uprev
-    @.. broadcast=false uᵢ₋₂=uprev
-    @.. broadcast=false uᵢ₋₃=uprev
-    @.. broadcast=false uᵢ₋₄=uprev
+    @.. broadcast=false thread=thread fᵢ₋₂=zero(fsalfirst)
+    @.. broadcast=false thread=thread fᵢ₋₃=zero(fsalfirst)
+    @.. broadcast=false thread=thread fᵢ₋₄=zero(fsalfirst)
+    @.. broadcast=false thread=thread k=fsalfirst
+    integrator.opts.adaptive && (@.. broadcast=false thread=thread tmp=zero(uprev))
+    @.. broadcast=false thread=thread uᵢ₋₁=uprev
+    @.. broadcast=false thread=thread uᵢ₋₂=uprev
+    @.. broadcast=false thread=thread uᵢ₋₃=uprev
+    @.. broadcast=false thread=thread uᵢ₋₄=uprev
 
     #stages 1 to s-1
     for i in eachindex(Aᵢ₁)
         integrator.opts.adaptive &&
-            (@.. broadcast=false tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
-        @.. broadcast=false gprev=uᵢ₋₄ +
-                                  (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃ +
-                                   Aᵢ₄[i] * fᵢ₋₄) * dt
-        @.. broadcast=false u=u + Bᵢ[i] * dt * k
-        @.. broadcast=false fᵢ₋₄=fᵢ₋₃
-        @.. broadcast=false fᵢ₋₃=fᵢ₋₂
-        @.. broadcast=false fᵢ₋₂=k
-        @.. broadcast=false uᵢ₋₄=uᵢ₋₃
-        @.. broadcast=false uᵢ₋₃=uᵢ₋₂
-        @.. broadcast=false uᵢ₋₂=uᵢ₋₁
-        @.. broadcast=false uᵢ₋₁=u
+            (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
+        @.. broadcast=false thread=thread gprev=uᵢ₋₄ +
+                                                (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ +
+                                                 Aᵢ₃[i] * fᵢ₋₃ +
+                                                 Aᵢ₄[i] * fᵢ₋₄) * dt
+        @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
+        @.. broadcast=false thread=thread fᵢ₋₄=fᵢ₋₃
+        @.. broadcast=false thread=thread fᵢ₋₃=fᵢ₋₂
+        @.. broadcast=false thread=thread fᵢ₋₂=k
+        @.. broadcast=false thread=thread uᵢ₋₄=uᵢ₋₃
+        @.. broadcast=false thread=thread uᵢ₋₃=uᵢ₋₂
+        @.. broadcast=false thread=thread uᵢ₋₂=uᵢ₋₁
+        @.. broadcast=false thread=thread uᵢ₋₁=u
         f(k, gprev, p, t + Cᵢ[i] * dt)
-        integrator.destats.nf += 1
+        integrator.stats.nf += 1
     end
 
     #last stage
-    integrator.opts.adaptive && (@.. broadcast=false tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
-    @.. broadcast=false u=u + Bₗ * dt * k
+    integrator.opts.adaptive &&
+        (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
+    @.. broadcast=false thread=thread u=u + Bₗ * dt * k
 
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
     f(k, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end

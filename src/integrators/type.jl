@@ -47,6 +47,8 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     stop_at_next_tstop::Bool
 end
 
+TruncatedStacktraces.@truncate_stacktrace DEOptions
+
 """
     ODEIntegrator
 Fundamental `struct` allowing interactively stepping through the numerical solving of a differential equation.
@@ -126,7 +128,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
     reinitialize::Bool
     isdae::Bool
     opts::O
-    destats::DiffEqBase.DEStats
+    stats::DiffEqBase.Stats
     initializealg::IA
     fsalfirst::FSALType
     fsallast::FSALType
@@ -148,7 +150,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
                                               last_event_error,
                                               accept_step, isout, reeval_fsal, u_modified,
                                               reinitialize, isdae,
-                                              opts, destats,
+                                              opts, stats,
                                               initializealg) where {algType, IIP, uType,
                                                                     duType, tType, pType,
                                                                     eigenType, EEstT,
@@ -170,8 +172,22 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
               do_error_check,
               event_last_time, vector_event_last_time, last_event_error,
               accept_step, isout, reeval_fsal, u_modified, reinitialize, isdae,
-              opts, destats, initializealg) # Leave off fsalfirst and last
+              opts, stats, initializealg) # Leave off fsalfirst and last
     end
 end
 
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
+    Base.Experimental.silence!(ODEIntegrator)
+end
 # When this is changed, DelayDiffEq.jl must be changed as well!
+
+TruncatedStacktraces.@truncate_stacktrace ODEIntegrator 2 1 3 4
+
+function Base.getproperty(integ::ODEIntegrator, s::Symbol)
+    if s === :destats
+        @warn "destats has been deprecated for stats"
+        getfield(integ,:stats)
+    else
+        getfield(integ,s)
+    end
+end

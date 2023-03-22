@@ -216,6 +216,8 @@ end
     tab::Tab
 end
 
+TruncatedStacktraces.@truncate_stacktrace KenCarp4Cache 1
+
 function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
                    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
@@ -441,6 +443,7 @@ end
     nlsolver::N
     tab::Tab
 end
+TruncatedStacktraces.@truncate_stacktrace KenCarp47Cache 1
 
 function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
@@ -526,6 +529,8 @@ end
     nlsolver::N
     tab::Tab
 end
+
+TruncatedStacktraces.@truncate_stacktrace KenCarp58Cache 1
 
 function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},

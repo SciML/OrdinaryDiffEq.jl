@@ -57,7 +57,12 @@
     #tmp = cache[2]
 
     if u0 isa Array
-        tmp = similar(u0, typeof(u0[1] / sk[1]))
+        if length(u0) > 0
+            T = typeof(u0[1] / sk[1])
+        else
+            T = promote_type(eltype(u0), eltype(sk))
+        end
+        tmp = similar(u0, T)
         @inbounds @simd ivdep for i in eachindex(u0)
             tmp[i] = u0[i] / sk[i]
         end
@@ -127,11 +132,11 @@
         return tdir * dtmin
     end
 
-    dt₀ = OrdinaryDiffEq.ArrayInterface.IfElse.ifelse((d₀ < 1 // 10^(5)) |
-                                                      (d₁ < 1 // 10^(5)), smalldt,
-                                                      convert(_tType,
-                                                              oneunit_tType * (d₀ / d₁) /
-                                                              100))
+    dt₀ = IfElse.ifelse((d₀ < 1 // 10^(5)) |
+                        (d₁ < 1 // 10^(5)), smalldt,
+                        convert(_tType,
+                                oneunit_tType * (d₀ / d₁) /
+                                100))
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
     # else
@@ -168,7 +173,7 @@
     # Constant zone before callback
     # Just return first guess
     # Avoids AD issues
-    f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
+    length(u0) > 0 && f₀ == f₁ && return tdir * max(dtmin, 100dt₀)
 
     if u0 isa Array
         @inbounds @simd ivdep for i in eachindex(u0)
