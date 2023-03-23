@@ -69,8 +69,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     dz = relax(dz, nlsolver, integrator, f)
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nsolve += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nsolve += 1
     end
 
     atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -189,8 +189,8 @@ end
 
     cache.linsolve = linres.cache
 
-    if DiffEqBase.has_destats(integrator)
-        integrator.destats.nsolve += 1
+    if DiffEqBase.has_stats(integrator)
+        integrator.stats.nsolve += 1
     end
 
     # relaxed Newton
@@ -394,15 +394,16 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         @unpack ustep, atmp = cache
         function resid(z)
             # recompute residual (rhs)
-            b, ustep = _compute_rhs!(nlsolver, integrator, f, z)
-            calculate_residuals!(atmp, b, uprev, ustep, opts.abstol, opts.reltol,
+            b, ustep2 = _compute_rhs!(nlsolver, integrator, f, z)
+            calculate_residuals!(atmp, b, uprev, ustep2, opts.abstol, opts.reltol,
                                  opts.internalnorm, t)
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
         function ϕ(α)
-            z = @.. atmp = nlsolver.z - dz * α
-            return resid(z)
+            local z = @.. atmp = nlsolver.z - dz * α
+            res = resid(z)
+            return res
         end
         function dϕ(α)
             ϵ = sqrt(eps())
@@ -412,10 +413,10 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
             ϵ = sqrt(eps())
             ϕ_1 = ϕ(α)
             ϕ_2 = ϕ(α + ϵ)
-            dϕ = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, dϕ
+            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
+            return ϕ_1, ∂ϕ∂α
         end
-        α0 = one(eltype(dz))
+        α0 = one(eltype(ustep))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
         α, _ = linesearch(ϕ, dϕ, ϕdϕ, α0, ϕ0, dϕ0)
         @.. dz = dz * α
@@ -443,14 +444,14 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         @unpack z, tmp, ztmp, γ, iter, cache = nlsolver
         function resid(z)
             # recompute residual (rhs)
-            b, ustep = _compute_rhs(nlsolver, integrator, f, z)
-            atmp = calculate_residuals(b, uprev, ustep, opts.abstol, opts.reltol,
+            b, ustep2 = _compute_rhs(nlsolver, integrator, f, z)
+            atmp = calculate_residuals(b, uprev, ustep2, opts.abstol, opts.reltol,
                                        opts.internalnorm, t)
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
         function ϕ(α)
-            z = @.. nlsolver.z - dz * α
+            local z = @.. nlsolver.z - dz * α
             return resid(z)
         end
         function dϕ(α)
@@ -461,8 +462,8 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
             ϵ = sqrt(eps())
             ϕ_1 = ϕ(α)
             ϕ_2 = ϕ(α + ϵ)
-            dϕ = (ϕ_2 - ϕ_1) / ϵ
-            return ϕ_1, dϕ
+            ∂ϕ∂α = (ϕ_2 - ϕ_1) / ϵ
+            return ϕ_1, ∂ϕ∂α
         end
         α0 = one(eltype(dz))
         ϕ0, dϕ0 = ϕdϕ(zero(α0))
