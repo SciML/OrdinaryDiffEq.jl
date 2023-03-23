@@ -6794,17 +6794,9 @@ for Alg in [
                  typeof(precs), diff_type, _unwrap_val(standardtag),
                  _unwrap_val(concrete_jac)}(linsolve, precs)
         end
-
-        function Base.show(io::IO,
-                           t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P,
-                                                                            FDT, ST, CJ}
-            if TruncatedStacktraces.VERBOSE[]
-                invoke(show, Tuple{IO, Type}, io, t)
-            else
-                print(io, $Alg, "{$CS,$AD,…}")
-            end
-        end
     end
+
+    @eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
 end
 
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
