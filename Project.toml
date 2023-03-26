@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "6.49.3"
+version = "6.49.4"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -69,7 +69,7 @@ SciMLNLSolve = "0.1"
 SimpleNonlinearSolve = "0.1.4"
 SimpleUnPack = "1"
 SnoopPrecompile = "1"
-SparseDiffTools = "1.26.2, 2"
+SparseDiffTools = "1.26.2"
 StaticArrayInterface = "1.2"
 StaticArrays = "0.11, 0.12, 1.0"
 TruncatedStacktraces = "1.2"
