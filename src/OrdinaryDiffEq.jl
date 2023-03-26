@@ -38,6 +38,8 @@ using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
 
 using DiffEqBase: DEIntegrator
 
+import SciMLBase: update_coefficients!
+
 import RecursiveArrayTools: chain, recursivecopy!
 
 using SimpleUnPack, ForwardDiff, RecursiveArrayTools,

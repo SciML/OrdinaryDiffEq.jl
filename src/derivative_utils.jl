@@ -294,17 +294,11 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-function DiffEqBase.update_coefficients!(W::WOperator, u, p, t)
+function update_coefficients!(W::WOperator, u, p, t)
     update_coefficients!(W.J, u, p, t)
     update_coefficients!(W.mass_matrix, u, p, t)
     W.jacvec !== nothing && update_coefficients!(W.jacvec, u, p, t)
     W
-end
-
-function DiffEqBase.update_coefficients!(J::SparseDiffTools.JacVec, u, p, t)
-    copyto!(J.x, u)
-    J.f.t = t
-    J.f.p = p
 end
 
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where {IIP}
@@ -678,8 +672,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         isnewton(nlsolver) || DiffEqBase.update_coefficients!(W, uprev, p, t) # we will call `update_coefficients!` in NLNewton
         W.transform = W_transform
         set_gamma!(W, dtgamma)
-        if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec) &&
-           !(W.J isa AbstractSciMLOperator)
+        if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
             (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
