@@ -128,19 +128,12 @@ sol_lorenz = solve(prob_lorenz, ESDIRK547L2SA2())
 
 # Adaptivity tests for Alshina2, 3
 
-function lorenz!(du,u,p,t)
-    du[1] = 10.0(u[2]-u[1])
-    du[2] = u[1]*(28.0-u[3]) - u[2]
-    du[3] = u[1]*u[2] - (8/3)*u[3]
+for prob in [prob_ode_2Dlinear, prob_ode_linear]
+    sol = solve(prob, Alshina2())
+    val= maximum(abs.(sol.u[end] - sol.u_analytic[end]))
+    @test val<1e-6
+    
+    sol = solve(prob, Alshina3())
+    val= maximum(abs.(sol.u[end] - sol.u_analytic[end]))
+    @test val<1e-6
 end
-u0 = [1.0;0.0;0.0]
-tspan = (0.0,1.0)
-prob_lorenz = ODEProblem(lorenz!,u0,tspan)
-
-sol_linear = solve(prob_linear, Alshina2())
-sol_lorenz = solve(prob_lorenz, Alshina2())
-@test length(sol_linear.u) < length(sol_lorenz.u)
-
-sol_linear = solve(prob_linear, Alshina3())
-sol_lorenz = solve(prob_lorenz, Alshina3())
-@test length(sol_linear.u) < length(sol_lorenz.u)
