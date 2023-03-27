@@ -35,7 +35,7 @@ for i in 1:2
     for i in 1:3
         step!(integrator)
     end
-    # in perform_step, after swaping array using pointer, ϕstar_nm1 points to ϕstar_n
+    # in perform_step, after swapping array using pointer, ϕstar_nm1 points to ϕstar_n
     @test integrator.cache.ϕstar_nm1 == fixed_step_ϕstar(integrator.sol.k)
     step!(integrator)
     @test integrator.cache.ϕstar_nm1 == fixed_step_ϕstar(integrator.sol.k)

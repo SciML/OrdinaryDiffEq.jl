@@ -73,7 +73,7 @@ function rober(du, u, p, t)
     k₁, k₂, k₃, check = p
     if check && eltype(u) <: ForwardDiff.Dual && ForwardDiff.npartials(u[1]) != chunksize
         @show ForwardDiff.npartials(u[1]), chunksize
-        error("chunk_size is not as specifed")
+        error("chunk_size is not as specified")
     end
 
     du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
