@@ -30,7 +30,7 @@ for iip in (true, false)
     @test length(solve(remake(vanstiff, p = 1e10), RadauIIA5())) < 190
 end
 
-##Tests fot RadauIIA3
+##Tests for RadauIIA3
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     dts = 1 ./ 2 .^ (8:-1:1)
     sim = test_convergence(dts, prob, RadauIIA3())

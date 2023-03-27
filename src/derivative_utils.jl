@@ -850,7 +850,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             !LinearSolve.needs_concrete_A(alg.linsolve))
         # If the user has chosen GMRES but no sparse Jacobian, assume that the dense
         # Jacobian is a bad idea and create a fully matrix-free solver. This can
-        # be overriden with concrete_jac.
+        # be overridden with concrete_jac.
 
         _f = islin ? (isode ? f.f : f.f1.f) : f
         jacvec = SparseDiffTools.JacVec(UJacobianWrapper(_f, t, p), copy(u),

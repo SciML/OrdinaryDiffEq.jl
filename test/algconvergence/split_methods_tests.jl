@@ -3,7 +3,7 @@ testTol = 0.2
 
 Random.seed!(100)
 
-# Test that the infrustructure works
+# Test that the infrastructure works
 
 f1 = (u, p, t) -> 2u
 f2 = (u, p, t) -> 2u
