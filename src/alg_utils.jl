@@ -316,19 +316,33 @@ function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
     CompositeAlgorithm(algs, alg.choice_function)
 end
 
-function alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
+# Extract AD type parameter from algorithm, returning as Val to ensure type stability for boolean options.
+function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
 end
-alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = AD
-alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = AD
-alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = AD
-function alg_autodiff(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
+_alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
+_alg_autodiff(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
+_alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
+function _alg_autodiff(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
                                  OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}}) where {
                                                                                              CS,
                                                                                              AD
                                                                                              }
-    AD
+    Val{AD}()
 end
+
+function alg_autodiff(alg)
+    autodiff = _alg_autodiff(alg)
+    if autodiff == Val(false)
+        return AutoFiniteDiff()
+    elseif autodiff == Val(true)
+        return AutoForwardDiff()
+    else
+        return _unwrap_val(autodiff)
+    end
+end
+
+# end
 
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)

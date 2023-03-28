@@ -92,6 +92,7 @@ import SparseDiffTools
 import SparseDiffTools: matrix_colors, forwarddiff_color_jacobian!,
                         forwarddiff_color_jacobian, ForwardColorJacCache,
                         default_chunk_size, getsize
+using ADTypes
 
 import Polyester
 using MacroTools, Adapt
