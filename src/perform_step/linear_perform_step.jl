@@ -220,6 +220,47 @@ function perform_step!(integrator, cache::CG2Cache, repeat_step = false)
     integrator.stats.nf += 1
 end
 
+function initialize!(integrator, cache::CG4aCache)
+    integrator.kshortsize = 2
+    integrator.fsalfirst = cache.fsalfirst
+    integrator.fsallast = cache.k
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+    integrator.destats.nf += 1
+end
+
+function perform_step!(integrator, cache::CG4aCache, repeat_step = false)
+    @unpack t, dt, uprev, u, p, alg = integrator
+    @unpack W, k, tmp = cache
+    mass_matrix = integrator.f.mass_matrix
+
+    L = integrator.f.f
+    update_coefficients!(L, uprev, p, t)
+    A = Matrix(deepcopy(L))
+    v2 = exp((0.8177227988124852) * dt * A) * uprev
+    update_coefficients!(L, v2, p, t + (0.8177227988124852 * dt))
+    B = Matrix(deepcopy(L))
+    v3 = exp((0.3199876375476427) * dt * B) * exp((0.0659864263556022) * dt * A) * uprev
+    update_coefficients!(L, v3, p, t + (0.3859740639032449 * dt))
+    C = Matrix(deepcopy(L))
+    v4 = exp((0.9214417194464946) * dt * C) * exp((0.4997857776773573) * dt * B) *
+         exp((-1.0969984448371582) * dt * A) * uprev
+    update_coefficients!(L, v4, p, t + (0.3242290522866937 * dt))
+    D = Matrix(deepcopy(L))
+    v5 = exp((0.3552358559023322) * dt * D) * exp((0.2390958372307326) * dt * C) *
+         exp((1.3918565724203246) * dt * B) * exp((-1.1092979392113465) * dt * A) * uprev
+    update_coefficients!(L, v5, p, t + (0.8768903263420429 * dt))
+    E = Matrix(deepcopy(L))
+    u .= (exp(dt * (0.3322195591068374) * E) * exp(dt * (-0.1907142565505889) * D) *
+          exp(dt * (0.7397813985370780) * C) * exp(dt * (-0.0183698531564020) * B) *
+          exp(dt * (0.1370831520630755) * A)) * uprev
+
+    integrator.f(integrator.fsallast, u, p, t + dt)
+    integrator.destats.nf += 1
+end
+
 function initialize!(integrator, cache::MagnusAdapt4Cache)
     integrator.kshortsize = 2
     integrator.fsalfirst = cache.fsalfirst

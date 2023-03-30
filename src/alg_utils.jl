@@ -595,6 +595,7 @@ alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
 alg_order(alg::CG2) = 2
 alg_order(alg::CG3) = 3
+alg_order(alg::CG4a) = 4
 alg_order(alg::MagnusMidpoint) = 2
 alg_order(alg::MagnusGauss4) = 4
 alg_order(alg::MagnusNC6) = 6
