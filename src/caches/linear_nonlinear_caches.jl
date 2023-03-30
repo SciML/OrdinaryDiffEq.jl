@@ -746,7 +746,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm, u,
                          ::Type{uEltypeNoUnits}, uprev, f, t, p, du1, tmp, dz,
                          plist) where {uEltypeNoUnits}
     if f isa SplitFunction
-        error("Algorithm $alg cannnot be used for split problems. Consider reformat to a regular `ODEProblem`")
+        error("Algorithm $alg cannot be used for split problems. Consider reformat to a regular `ODEProblem`")
     end
     n = length(u)
     T = eltype(u)

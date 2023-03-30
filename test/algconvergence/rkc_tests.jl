@@ -59,7 +59,7 @@ end
         #default ROCK2
         sim = test_convergence(dts, prob, ROCK2())
         @test sim.𝒪est[:l∞]≈2 atol=testTol
-        #testing ROCK2 for different minimum stages to insure that the constatns are right
+        #testing ROCK2 for different minimum stages to insure that the constants are right
         sim = test_convergence(dts, prob, ROCK2(min_stages = 5))
         @test sim.𝒪est[:l∞]≈2 atol=testTol
         sim = test_convergence(dts, prob, ROCK2(min_stages = 10))
@@ -70,7 +70,7 @@ end
         println("ROCK4")
         sim = test_convergence(dts, prob, ROCK4())
         @test sim.𝒪est[:l∞]≈4 atol=testTol
-        #testing ROCK4 for different minimum stages to insure that the constatns are right
+        #testing ROCK4 for different minimum stages to insure that the constants are right
         sim = test_convergence(dts, prob, ROCK4(min_stages = 6))
         @test sim.𝒪est[:l∞]≈4 atol=testTol
         sim = test_convergence(dts, prob, ROCK4(min_stages = 10))

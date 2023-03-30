@@ -431,7 +431,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                                  integrator.opts.abstol, integrator.opts.reltol,
                                  integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -648,7 +648,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
                                       integrator.opts.reltol, integrator.opts.internalnorm,
                                       t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -864,7 +864,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                                  integrator.opts.abstol, integrator.opts.reltol,
                                  integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -1066,7 +1066,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
                                       integrator.opts.reltol, integrator.opts.internalnorm,
                                       t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -1439,7 +1439,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                  integrator.opts.abstol, integrator.opts.reltol,
                                  integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -1719,7 +1719,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                                       integrator.opts.reltol, integrator.opts.internalnorm,
                                       t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -1937,7 +1937,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                                  integrator.opts.abstol, integrator.opts.reltol,
                                  integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -2140,7 +2140,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
                                       integrator.opts.reltol, integrator.opts.internalnorm,
                                       t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -2407,7 +2407,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                                       integrator.opts.reltol, integrator.opts.internalnorm,
                                       t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -2792,7 +2792,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                                  integrator.opts.abstol, integrator.opts.reltol,
                                  integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -3102,7 +3102,7 @@ function perform_step!(integrator,
                                       integrator.opts.reltol, integrator.opts.internalnorm,
                                       t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
@@ -3500,7 +3500,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                  integrator.opts.abstol, integrator.opts.reltol,
                                  integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
-            cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+            cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
         end
 
