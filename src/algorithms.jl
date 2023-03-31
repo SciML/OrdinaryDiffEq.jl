@@ -5802,6 +5802,7 @@ for Alg in [
     :LieRK4,
     :CG2,
     :CG3,
+    :CG4a,
 ]
     @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
         krylov::Bool
