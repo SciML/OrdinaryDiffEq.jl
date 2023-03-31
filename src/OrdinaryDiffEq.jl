@@ -442,6 +442,8 @@ export SBDF2, SBDF3, SBDF4
 
 export MEBDF2
 
+export Alshina2, Alshina3, Alshina6
+
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
 

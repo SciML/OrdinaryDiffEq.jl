@@ -1385,3 +1385,97 @@ function alg_cache(alg::SIR54, u, rate_prototype, ::Type{uEltypeNoUnits},
     SIR54Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, utilde, tmp, atmp, tab,
                alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
+
+@cache struct Alshina2Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    utilde::uType
+    k1::rateType
+    k2::rateType
+    atmp::uNoUnitsType
+    tmp::uType 
+    tab::TabType 
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+  end
+
+  function alg_cache(alg::Alshina2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    return Alshina2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+  end
+  
+  function alg_cache(alg::Alshina2,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    utilde = zero(u)
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tab = Alshina2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+    Alshina2Cache(u, uprev, utilde, k1, k2, atmp , tmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+  end
+
+@cache struct Alshina3Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    utilde::uType
+    k1::rateType
+    k2::rateType
+    k3::rateType
+    atmp::uNoUnitsType
+    tmp::uType 
+    tab::TabType 
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+  end
+
+function alg_cache(alg::Alshina3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    return Alshina3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+  
+function alg_cache(alg::Alshina3,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    utilde = zero(u)
+    tmp = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tab = Alshina3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+    Alshina3Cache(u, uprev, utilde, k1, k2, k3, atmp, tmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+@cache struct Alshina6Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k1::rateType
+    k2::rateType
+    k3::rateType
+    k4::rateType
+    k5::rateType
+    k6::rateType
+    k7::rateType
+    tmp::uType 
+    tab::TabType 
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(alg::Alshina6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    return Alshina6ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+end
+  
+function alg_cache(alg::Alshina6,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    k4 = zero(rate_prototype)
+    k5 = zero(rate_prototype)
+    k6 = zero(rate_prototype)
+    k7 = zero(rate_prototype)
+    tmp = zero(u)
+    tab = Alshina6ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+    Alshina6Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp, tab, alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
