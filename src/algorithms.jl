@@ -4080,7 +4080,6 @@ function Base.show(io::IO, alg::OwrenZen5)
           ", thread = ", alg.thread, ")")
 end
 
-
 """
     Alshina2(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
@@ -4113,23 +4112,22 @@ Julia is started with multiple threads.
 }
 """
 struct Alshina2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function Alshina2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-                   thread = False())
+                  thread = False())
     Alshina2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-                                                                             step_limiter!,
-                                                                             thread)
+                                                                            step_limiter!,
+                                                                            thread)
 end
-
 
 function Alshina2(stage_limiter!, step_limiter! = trivial_limiter!)
     Alshina2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-                                                                    step_limiter!,
-                                                                    False())
+                                                                   step_limiter!,
+                                                                   False())
 end
 
 function Base.show(io::IO, alg::Alshina2)
@@ -4170,23 +4168,22 @@ Julia is started with multiple threads.
 }
 """
 struct Alshina3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function Alshina3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-                   thread = False())
+                  thread = False())
     Alshina3{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-                                                                             step_limiter!,
-                                                                             thread)
+                                                                            step_limiter!,
+                                                                            thread)
 end
-
 
 function Alshina3(stage_limiter!, step_limiter! = trivial_limiter!)
     Alshina3{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-                                                                    step_limiter!,
-                                                                    False())
+                                                                   step_limiter!,
+                                                                   False())
 end
 
 function Base.show(io::IO, alg::Alshina3)
@@ -4227,23 +4224,22 @@ Julia is started with multiple threads.
 }
 """
 struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  thread::Thread
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function Alshina6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-                   thread = False())
+                  thread = False())
     Alshina6{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-                                                                             step_limiter!,
-                                                                             thread)
+                                                                            step_limiter!,
+                                                                            thread)
 end
-
 
 function Alshina6(stage_limiter!, step_limiter! = trivial_limiter!)
     Alshina6{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-                                                                    step_limiter!,
-                                                                    False())
+                                                                   step_limiter!,
+                                                                   False())
 end
 
 function Base.show(io::IO, alg::Alshina6)
