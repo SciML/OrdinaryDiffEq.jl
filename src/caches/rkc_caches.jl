@@ -27,7 +27,8 @@ function alg_cache(alg::ROCK2, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ROCK2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits),
+    constantcache = ROCK2ConstantCache(constvalue(uBottomEltypeNoUnits),
+                                       constvalue(tTypeNoUnits),
                                        u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -78,7 +79,8 @@ function alg_cache(alg::ROCK4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ROCK4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits),
+    constantcache = ROCK4ConstantCache(constvalue(uBottomEltypeNoUnits),
+                                       constvalue(tTypeNoUnits),
                                        u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
