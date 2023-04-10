@@ -31,6 +31,7 @@ import DiffEqBase: solve!, step!, initialize!, isadaptive
 import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
                    ODE_DEFAULT_UNSTABLE_CHECK
 
+# TODO: adjust all uses of the below two
 using DiffEqBase: DiffEqArrayOperator, DEFAULT_UPDATE_FUNC
 
 using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,

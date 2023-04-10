@@ -80,7 +80,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
                      integrator, grad_config)
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivtive for all elements in gradient
-    if alg_autodiff(alg)
+    if alg_autodiff(alg) isa AutoForwardDiff
         T = if standardtag(alg)
             typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
         else
@@ -102,7 +102,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
 
         df .= first.(ForwardDiff.partials.(grad_config))
         integrator.stats.nf += 1
-    else
+    elseif alg_autodiff(alg) isa AutoFiniteDiff
         FiniteDiff.finite_difference_gradient!(df, f, x, grad_config,
                                                dir = diffdir(integrator))
         fdtype = alg_difftype(alg)
@@ -113,6 +113,8 @@ function derivative!(df::AbstractArray{<:Number}, f,
             end
         end
         integrator.stats.nf += tmp
+    else
+        error("$alg_autodiff not yet supported in derivative! function")
     end
     nothing
 end
@@ -122,7 +124,7 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
     local d
     tmp = length(x) # We calculate derivtive for all elements in gradient
     alg = unwrap_alg(integrator, true)
-    if alg_autodiff(alg)
+    if alg_autodiff(alg) isa AutoForwardDiff
         integrator.stats.nf += 1
         if integrator.iter == 1
             try
@@ -133,7 +135,7 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
         else
             d = ForwardDiff.derivative(f, x)
         end
-    else
+    elseif alg_autodiff(alg) isa AutoFiniteDiff
         d = FiniteDiff.finite_difference_derivative(f, x, alg_difftype(alg),
                                                     dir = diffdir(integrator))
         if alg_difftype(alg) === Val{:central} || alg_difftype(alg) === Val{:forward}
@@ -141,6 +143,8 @@ function derivative(f, x::Union{Number, AbstractArray{<:Number}},
         end
         integrator.stats.nf += tmp
         d
+    else
+        error("$alg_autodiff not yet supported in derivative function")
     end
 end
 
@@ -186,7 +190,7 @@ end
 function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
     local tmp
-    if alg_autodiff(alg)
+    if alg_autodiff(alg) isa AutoForwardDiff
         if integrator.iter == 1
             try
                 J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
@@ -196,12 +200,14 @@ function jacobian(f, x, integrator)
         else
             J, tmp = jacobian_autodiff(f, x, integrator.f, alg)
         end
-    else
+    elseif alg_autodiff(alg) isa AutoFiniteDiff
         jac_prototype = integrator.f.jac_prototype
         sparsity, colorvec = sparsity_colorvec(integrator.f, x)
         dir = diffdir(integrator)
         J, tmp = jacobian_finitediff(f, x, alg_difftype(alg), dir, colorvec, sparsity,
                                      jac_prototype)
+    else
+        bleh
     end
     integrator.stats.nf += tmp
     J
@@ -222,7 +228,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
                    fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
                    jac_config)
     alg = unwrap_alg(integrator, true)
-    if alg_autodiff(alg)
+    if alg_autodiff(alg) isa AutoForwardDiff 
         if integrator.iter == 1
             try
                 forwarddiff_color_jacobian!(J, f, x, jac_config)
@@ -233,7 +239,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
             forwarddiff_color_jacobian!(J, f, x, jac_config)
         end
         integrator.stats.nf += 1
-    else
+    elseif alg_autodiff(alg) isa AutoFiniteDiff 
         isforward = alg_difftype(alg) === Val{:forward}
         if isforward
             forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
@@ -245,6 +251,8 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
             tmp = jacobian_finitediff!(J, f, x, jac_config, integrator)
         end
         integrator.stats.nf += tmp
+    else 
+        error("$alg_autodiff not yet supported in jacobian! function")
     end
     nothing
 end
@@ -272,7 +280,8 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
         end
 
         sparsity, colorvec = sparsity_colorvec(f, u)
-        if alg_autodiff(alg)
+        # TODO: more generc, do we need this?
+        if alg_autodiff(alg) isa AutoForwardDiff
             _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
 
             T = if standardtag(alg)
@@ -282,7 +291,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
             end
             jac_config = ForwardColorJacCache(uf, uprev, _chunksize; colorvec = colorvec,
                                               sparsity = sparsity, tag = T)
-        else
+        elseif alg_autodiff(alg) isa AutoFiniteDiff
             if alg_difftype(alg) !== Val{:complex}
                 jac_config = FiniteDiff.JacobianCache(tmp, du1, du2, alg_difftype(alg),
                                                       colorvec = colorvec,
@@ -294,6 +303,8 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
                                                       colorvec = colorvec,
                                                       sparsity = sparsity)
             end
+        else 
+            error("$alg_autodiff not yet supported in build_jac_config function")
         end
     else
         jac_config = nothing
@@ -343,7 +354,7 @@ end
 
 function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
-        if alg_autodiff(alg)
+        if alg_autodiff(alg) isa AutoForwardDiff
             T = if standardtag(alg)
                 typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(du1)))
             else
@@ -362,8 +373,10 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
                                                                  (ForwardDiff.Partials((one(eltype(du1)),)),)) .*
                                                          false)
             end
-        else
+        elseif alg_autodiff(alg) isa AutoFiniteDiff
             grad_config = FiniteDiff.GradientCache(du1, t, alg_difftype(alg))
+        else 
+            error("$alg_autodiff not yet supported in build_grad_config function")
         end
     else
         grad_config = nothing

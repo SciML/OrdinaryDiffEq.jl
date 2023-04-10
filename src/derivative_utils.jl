@@ -301,6 +301,12 @@ function update_coefficients!(W::WOperator, u, p, t)
     W
 end
 
+function DiffEqBase.update_coefficients!(J::FunctionOperator{UJacobianWrapper}, u, p, t)
+    copyto!(J.x, u)
+    J.f.t = t
+    J.f.p = p
+end
+
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where {IIP}
     if !IIP
         # Allocating
@@ -445,6 +451,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     mm = integrator.f.mass_matrix
+    # TODO: adjust 
     is_varying_mm = mm isa DiffEqArrayOperator &&
                     mm.update_func !== SciMLBase.DEFAULT_UPDATE_FUNC
     if isfreshJ

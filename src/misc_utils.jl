@@ -109,10 +109,12 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
        !LinearSolve.needs_concrete_A(_alg.linsolve) &&
        linsolve.A isa WOperator && linsolve.A.J isa AbstractSciMLOperator 
-        if alg_autodiff(_alg)
+        if alg_autodiff(_alg) isa AutoForwardDiff
             integrator.stats.nf += linres.iters
-        else
+        elseif alg_autodiff(_alg) isa AutoFiniteDiff
             integrator.stats.nf += 2 * linres.iters
+        else
+            error("$alg_autodiff not yet supported in dolinsolve function")
         end
     end
 

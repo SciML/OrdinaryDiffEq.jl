@@ -778,6 +778,7 @@ function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step 
         A = f.f
     end
 
+    # TODO: this is not in place, think about this
     L = update_coefficients(A, uprev, p, t)
     V = cay(L * dt)
     u = V * uprev * transpose(V)
