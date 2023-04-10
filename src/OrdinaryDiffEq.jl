@@ -409,7 +409,7 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
-       MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3
+       MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3, CG4a
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P,
@@ -445,6 +445,8 @@ export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF
 export SBDF2, SBDF3, SBDF4
 
 export MEBDF2
+
+export Alshina2, Alshina3, Alshina6
 
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9

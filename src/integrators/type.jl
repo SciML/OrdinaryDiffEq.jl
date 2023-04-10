@@ -186,8 +186,8 @@ TruncatedStacktraces.@truncate_stacktrace ODEIntegrator 2 1 3 4
 function Base.getproperty(integ::ODEIntegrator, s::Symbol)
     if s === :destats
         @warn "destats has been deprecated for stats"
-        getfield(integ,:stats)
+        getfield(integ, :stats)
     else
-        getfield(integ,s)
+        getfield(integ, s)
     end
 end

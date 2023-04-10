@@ -12,7 +12,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                3. Defining analytical Jacobians and time gradients. More details can be
                                   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction
 
-                               Note 1: this failure occured inside of the time gradient function. These
+                               Note 1: this failure occurred inside of the time gradient function. These
                                time gradients are only required by Rosenbrock methods (`Rosenbrock23`,
                                `Rodas4`, etc.) are are done by automatic differentiation w.r.t. the
                                argument `t`. If your function is compatible with automatic differentiation
@@ -122,7 +122,7 @@ end
 function derivative(f, x::Union{Number, AbstractArray{<:Number}},
                     integrator)
     local d
-    tmp = length(x) # We calculate derivtive for all elements in gradient
+    tmp = length(x) # We calculate derivative for all elements in gradient
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg) isa AutoForwardDiff
         integrator.stats.nf += 1

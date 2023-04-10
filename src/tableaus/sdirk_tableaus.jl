@@ -95,7 +95,7 @@ Coefficient on y₁-y₀:
 
 6θ*(1-θ)/dt - (- (6 + 4.5sqrt(2)))  # - (6 + 4.5sqrt(2)) given by Shampine
 
-# Write only in terms of z primatives
+# Write only in terms of z primitives
 y₀ = uprev
 y₁ = uprev + γ*z₁ + γ*z₂
 y₁-y₀ = γ*z₁ + γ*z₂
@@ -337,7 +337,7 @@ Coefficient on z₂:
 Coefficient on y₁-y₀:
 (6θ*(1-θ)/dt)
 
-# Write only in terms of z primatives
+# Write only in terms of z primitives
 y₁ = uprev + a21*z₁ + γ*z₂
 y₀ = uprev + γ*z₁
 y₁-y₀ = (a21-γ)*z₁ + γ*z₂

@@ -440,7 +440,7 @@ function handle_tstop!(integrator)
 end
 
 function reset_fsal!(integrator)
-    # Under these condtions, these algorithms are not FSAL anymore
+    # Under these conditions, these algorithms are not FSAL anymore
     integrator.stats.nf += 1
 
     if integrator.sol.prob isa DAEProblem

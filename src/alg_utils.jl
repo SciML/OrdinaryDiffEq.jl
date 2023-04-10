@@ -609,6 +609,7 @@ alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
 alg_order(alg::CG2) = 2
 alg_order(alg::CG3) = 3
+alg_order(alg::CG4a) = 4
 alg_order(alg::MagnusMidpoint) = 2
 alg_order(alg::MagnusGauss4) = 4
 alg_order(alg::MagnusNC6) = 6
@@ -720,6 +721,10 @@ alg_order(alg::PDIRK44) = 4
 alg_order(alg::DImplicitEuler) = 1
 alg_order(alg::DABDF2) = 2
 alg_order(alg::DFBDF) = 1#dummy value
+
+alg_order(alg::Alshina2) = 2
+alg_order(alg::Alshina3) = 3
+alg_order(alg::Alshina6) = 6
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)

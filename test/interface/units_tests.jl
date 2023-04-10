@@ -65,7 +65,7 @@ end
 
     @testset "Without ArrayPartition" begin
         # coordinate: u = [position, momentum]
-        # parameters: p = [mass, force constanst]
+        # parameters: p = [mass, force constant]
         function f_harmonic!(du, u, p, t)
             du[1] = u[2] / p[1]
             du[2] = -p[2] * u[1]
