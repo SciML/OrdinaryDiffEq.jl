@@ -126,6 +126,14 @@ sol_linear = solve(prob_linear, ESDIRK547L2SA2())
 sol_lorenz = solve(prob_lorenz, ESDIRK547L2SA2())
 @test length(sol_lorenz.u) < 1000
 
+# ESDIRK659L2SA
+
+sol_linear = solve(prob_linear, ESDIRK659L2SA())
+@test length(sol_linear.u) < 10
+
+sol_lorenz = solve(prob_lorenz, ESDIRK659L2SA())
+@test length(sol_lorenz.u) < 1000
+
 # Adaptivity tests for Alshina2, 3
 
 for prob in [prob_ode_2Dlinear, prob_ode_linear]

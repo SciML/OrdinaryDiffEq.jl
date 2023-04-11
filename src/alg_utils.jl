@@ -619,6 +619,7 @@ alg_order(alg::ESDIRK54I8L2SA) = 5
 alg_order(alg::ESDIRK436L2SA2) = 4
 alg_order(alg::ESDIRK437L2SA) = 4
 alg_order(alg::ESDIRK547L2SA2) = 5
+alg_order(alg::ESDIRK659L2SA) = 6
 alg_order(alg::KenCarp3) = 3
 alg_order(alg::CFNLIRK3) = 3
 alg_order(alg::KenCarp4) = 4
@@ -1036,7 +1037,7 @@ isesdirk(alg::TRBDF2) = true
 function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
                              Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
                              ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
-                             CFNLIRK3})
+                             ESDIRK659L2SA, CFNLIRK3})
     true
 end
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
