@@ -212,148 +212,150 @@ include("composite_algs.jl")
 
 import SnoopPrecompile
 
-SnoopPrecompile.@precompile_all_calls begin
-    function lorenz(du, u, p, t)
-        du[1] = 10.0(u[2] - u[1])
-        du[2] = u[1] * (28.0 - u[3]) - u[2]
-        du[3] = u[1] * u[2] - (8 / 3) * u[3]
+SnoopPrecompile.@precompile_setup let
+    SnoopPrecompile.@precompile_all_calls let
+        function lorenz(du, u, p, t)
+            du[1] = 10.0(u[2] - u[1])
+            du[2] = u[1] * (28.0 - u[3]) - u[2]
+            du[3] = u[1] * u[2] - (8 / 3) * u[3]
+        end
+
+        function lorenz_oop(u, p, t)
+            [10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
+        end
+
+        nonstiff = [
+            BS3(), Tsit5(), Vern7(), Vern9(),
+        ]
+
+        stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
+            #Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
+
+            Rodas4(), Rodas4(autodiff = false),
+            #Rodas4(chunk_size = 1), Rodas4(chunk_size = Val{1}()),
+
+            Rodas5(), Rodas5(autodiff = false),
+            #Rodas5(chunk_size = 1), Rodas5(chunk_size = Val{1}()),
+
+            Rodas5P(), Rodas5P(autodiff = false),
+            #Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
+
+            TRBDF2(), TRBDF2(autodiff = false),
+            #TRBDF2(chunk_size = 1), TRBDF2(chunk_size = Val{1}()),
+
+            KenCarp4(), KenCarp4(autodiff = false),
+            #KenCarp4(chunk_size = 1), KenCarp4(chunk_size = Val{1}()),
+
+            QNDF(), QNDF(autodiff = false),
+            #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
+        ]
+
+        autoswitch = [
+            AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff = false)),
+            #AutoTsit5(Rosenbrock23(chunk_size = 1)),
+            #AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
+
+            AutoTsit5(TRBDF2()), AutoTsit5(TRBDF2(autodiff = false)),
+            #AutoTsit5(TRBDF2(chunk_size = 1)),
+            #AutoTsit5(TRBDF2(chunk_size = Val{1}())),
+
+            AutoVern9(KenCarp47()), AutoVern9(KenCarp47(autodiff = false)),
+            #AutoVern9(KenCarp47(chunk_size = 1)),
+            #AutoVern9(KenCarp47(chunk_size = Val{1}())),
+
+            AutoVern9(Rodas5()), AutoVern9(Rodas5(autodiff = false)),
+            #AutoVern9(Rodas5(chunk_size = 1)),
+            #AutoVern9(Rodas5(chunk_size = Val{1}())),
+
+            AutoVern9(Rodas5P()), AutoVern9(Rodas5P(autodiff = false)),
+            #AutoVern9(Rodas5P(chunk_size = 1)),
+            #AutoVern9(Rodas5P(chunk_size = Val{1}())),
+
+            AutoVern7(Rodas4()), AutoVern7(Rodas4(autodiff = false)),
+            #AutoVern7(Rodas4(chunk_size = 1)),
+            #AutoVern7(Rodas4(chunk_size = Val{1}())),
+
+            #AutoVern7(Rodas5P()), AutoVern7(Rodas5P(autodiff=false)),
+            #AutoVern7(Rodas5P(chunk_size = 1)),
+            #AutoVern7(Rodas5P(chunk_size = Val{1}())),
+
+            AutoVern7(TRBDF2()), AutoVern7(TRBDF2(autodiff = false)),
+            #AutoVern7(TRBDF2(chunk_size = 1)),
+            #AutoVern7(TRBDF2(chunk_size = Val{1}())),
+        ]
+
+        low_storage = [
+            SSPRK43(), RDPK3SpFSAL35(), RDPK3SpFSAL49(),
+        ]
+
+        low_storage_nonadaptive = [
+            CarpenterKennedy2N54(williamson_condition = false),
+        ]
+
+        solver_list = []
+        solver_list_nonadaptive = []
+
+        if Preferences.@load_preference("PrecompileNonStiff", true)
+            append!(solver_list, nonstiff)
+        end
+
+        if Preferences.@load_preference("PrecompileStiff", true)
+            append!(solver_list, stiff)
+        end
+
+        if Preferences.@load_preference("PrecompileAutoSwitch", true)
+            append!(solver_list, autoswitch)
+        end
+
+        if Preferences.@load_preference("PrecompileLowStorage", false)
+            append!(solver_list, low_storage)
+            append!(solver_list_nonadaptive, low_storage_nonadaptive)
+        end
+
+        prob_list = []
+
+        if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
+            push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+            push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+        end
+
+        if Preferences.@load_preference("PrecompileAutoSpecialize", false)
+            push!(prob_list,
+                  ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                             (0.0, 1.0)))
+            push!(prob_list,
+                  ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                             (0.0, 1.0), Float64[]))
+        end
+
+        if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
+            push!(prob_list,
+                  ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                                        (0.0, 1.0)))
+            push!(prob_list,
+                  ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                                        (0.0, 1.0), Float64[]))
+        end
+
+        if Preferences.@load_preference("PrecompileNoSpecialize", false)
+            push!(prob_list,
+                  ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+            push!(prob_list,
+                  ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                                                           Float64[]))
+        end
+
+        for prob in prob_list, solver in solver_list
+            solve(prob, solver)(5.0)
+        end
+
+        for prob in prob_list, solver in solver_list_nonadaptive
+            solve(prob, solver; dt = 0.5)(5.0)
+        end
+
+        prob_list = nothing
+        solver_list = nothing
     end
-
-    function lorenz_oop(u, p, t)
-        [10.0(u[2] - u[1]), u[1] * (28.0 - u[3]) - u[2], u[1] * u[2] - (8 / 3) * u[3]]
-    end
-
-    nonstiff = [
-        BS3(), Tsit5(), Vern7(), Vern9(),
-    ]
-
-    stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
-        #Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
-
-        Rodas4(), Rodas4(autodiff = false),
-        #Rodas4(chunk_size = 1), Rodas4(chunk_size = Val{1}()),
-
-        Rodas5(), Rodas5(autodiff = false),
-        #Rodas5(chunk_size = 1), Rodas5(chunk_size = Val{1}()),
-
-        Rodas5P(), Rodas5P(autodiff = false),
-        #Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
-
-        TRBDF2(), TRBDF2(autodiff = false),
-        #TRBDF2(chunk_size = 1), TRBDF2(chunk_size = Val{1}()),
-
-        KenCarp4(), KenCarp4(autodiff = false),
-        #KenCarp4(chunk_size = 1), KenCarp4(chunk_size = Val{1}()),
-
-        QNDF(), QNDF(autodiff = false),
-        #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
-    ]
-
-    autoswitch = [
-        AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff = false)),
-        #AutoTsit5(Rosenbrock23(chunk_size = 1)),
-        #AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
-
-        AutoTsit5(TRBDF2()), AutoTsit5(TRBDF2(autodiff = false)),
-        #AutoTsit5(TRBDF2(chunk_size = 1)),
-        #AutoTsit5(TRBDF2(chunk_size = Val{1}())),
-
-        AutoVern9(KenCarp47()), AutoVern9(KenCarp47(autodiff = false)),
-        #AutoVern9(KenCarp47(chunk_size = 1)),
-        #AutoVern9(KenCarp47(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5()), AutoVern9(Rodas5(autodiff = false)),
-        #AutoVern9(Rodas5(chunk_size = 1)),
-        #AutoVern9(Rodas5(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5P()), AutoVern9(Rodas5P(autodiff = false)),
-        #AutoVern9(Rodas5P(chunk_size = 1)),
-        #AutoVern9(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(Rodas4()), AutoVern7(Rodas4(autodiff = false)),
-        #AutoVern7(Rodas4(chunk_size = 1)),
-        #AutoVern7(Rodas4(chunk_size = Val{1}())),
-
-        #AutoVern7(Rodas5P()), AutoVern7(Rodas5P(autodiff=false)),
-        #AutoVern7(Rodas5P(chunk_size = 1)),
-        #AutoVern7(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(TRBDF2()), AutoVern7(TRBDF2(autodiff = false)),
-        #AutoVern7(TRBDF2(chunk_size = 1)),
-        #AutoVern7(TRBDF2(chunk_size = Val{1}())),
-    ]
-
-    low_storage = [
-        SSPRK43(), RDPK3SpFSAL35(), RDPK3SpFSAL49(),
-    ]
-
-    low_storage_nonadaptive = [
-        CarpenterKennedy2N54(williamson_condition = false),
-    ]
-
-    solver_list = []
-    solver_list_nonadaptive = []
-
-    if Preferences.@load_preference("PrecompileNonStiff", true)
-        append!(solver_list, nonstiff)
-    end
-
-    if Preferences.@load_preference("PrecompileStiff", true)
-        append!(solver_list, stiff)
-    end
-
-    if Preferences.@load_preference("PrecompileAutoSwitch", true)
-        append!(solver_list, autoswitch)
-    end
-
-    if Preferences.@load_preference("PrecompileLowStorage", false)
-        append!(solver_list, low_storage)
-        append!(solver_list_nonadaptive, low_storage_nonadaptive)
-    end
-
-    prob_list = []
-
-    if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
-        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
-        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
-    end
-
-    if Preferences.@load_preference("PrecompileAutoSpecialize", false)
-        push!(prob_list,
-              ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                                                         (0.0, 1.0)))
-        push!(prob_list,
-              ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                                                         (0.0, 1.0), Float64[]))
-    end
-
-    if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
-        push!(prob_list,
-              ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                                                                    (0.0, 1.0)))
-        push!(prob_list,
-              ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                                                                    (0.0, 1.0), Float64[]))
-    end
-
-    if Preferences.@load_preference("PrecompileNoSpecialize", false)
-        push!(prob_list,
-              ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
-        push!(prob_list,
-              ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
-                                                       Float64[]))
-    end
-
-    for prob in prob_list, solver in solver_list
-        solve(prob, solver)(5.0)
-    end
-
-    for prob in prob_list, solver in solver_list_nonadaptive
-        solve(prob, solver; dt = 0.5)(5.0)
-    end
-
-    prob_list = nothing
-    solver_list = nothing
 end
 
 const DEPRECATED_ADDSTEPS = true
