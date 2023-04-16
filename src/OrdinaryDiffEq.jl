@@ -330,18 +330,23 @@ SnoopPrecompile.@precompile_setup let
 
         if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
             push!(prob_list,
-                  ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                  ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz,
+                                                                        [1.0; 0.0; 0.0],
                                                                         (0.0, 1.0)))
             push!(prob_list,
-                  ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                                                                        (0.0, 1.0), Float64[]))
+                  ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz,
+                                                                        [1.0; 0.0; 0.0],
+                                                                        (0.0, 1.0),
+                                                                        Float64[]))
         end
 
         if Preferences.@load_preference("PrecompileNoSpecialize", false)
             push!(prob_list,
-                  ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+                  ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                           (0.0, 1.0)))
             push!(prob_list,
-                  ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                  ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                                                           (0.0, 1.0),
                                                            Float64[]))
         end
 
