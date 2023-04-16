@@ -2968,8 +2968,6 @@ end
     z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    u = nlsolver.tmp + γ * z₇
-
     ################################## Solve Step 8
     nlsolver.z = z₈ = zero(z₇)
 
@@ -2978,13 +2976,11 @@ end
     z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    u = nlsolver.tmp + γ * z₈
-
     ################################## Solve Step 9
     nlsolver.z = z₉ = zero(z₈)
 
     nlsolver.tmp = uprev + a94 * z₄ + a95 * z₅ + a96 * z₆ + a97 * z₇ + a98 * z₈
-    nlsolver.c = c8
+    nlsolver.c = c9
     z₉ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
@@ -2993,12 +2989,13 @@ end
     ################################### Finalize
 
     if integrator.opts.adaptive
-    est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
-    btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
-    atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
+               btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
+        atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
+                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
+
     integrator.fsallast = z₉ ./ dt
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -3089,8 +3086,6 @@ end
     z₇ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
 
-    @.. broadcast=false u=tmp + γ * z₇
-
     ################################## Solve Step 8
 
     nlsolver.z = fill!(z₈, zero(eltype(u)))
@@ -3100,8 +3095,6 @@ end
     nlsolver.c = c8
     z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
-
-    @.. broadcast=false u=tmp + γ * z₈
 
     ################################## Solve Step 9
 
@@ -3116,9 +3109,8 @@ end
     ################################### Finalize
 
     if integrator.opts.adaptive
-        @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ +
-                                btilde5 * z₅ + btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ +
-                                btilde9 * z₉
+        @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
+                                btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
