@@ -6884,6 +6884,9 @@ end
   year={2019},
   volume={146},
   pages={221-244}
+
+  Currently has STABILITY ISSUES, causing it to fail the adaptive tests.
+  Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more details.
 }
 """
 struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
