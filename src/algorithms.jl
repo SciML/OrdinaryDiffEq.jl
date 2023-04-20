@@ -5336,7 +5336,8 @@ struct DPRKN6 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 """
 6th order explicit Runge-Kutta-Nyström method. The second order ODE should not depend on the first derivative.
 
-Compared to DPRKN6, this method has smaller truncation error coefficients which leads to performance gain when only the main solution points are considered.
+Compared to [`DPRKN6`](@ref), this method has smaller truncation error coefficients which leads to performance gain
+when only the main solution points are considered.
 
 ## References
 @article{Dormand1987FamiliesOR,
