@@ -5296,7 +5296,6 @@ struct Nystrom5VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 """
     DPRKN4
 
-
 4th order explicit Runge-Kutta-Nyström methods. The second order ODE should not depend on the first derivative.
 
 ## References
