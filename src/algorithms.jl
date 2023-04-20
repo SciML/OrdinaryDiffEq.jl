@@ -5247,7 +5247,7 @@ struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 """
 A 4th order explicit Runkge-Kutta-Nyström method. Used directly on second order ODEs, where the acceleration is independent from velocity (ODE Problem is not dependent on the first derivative).
 
-More efficient then Nystrom4 on velocity independent Problems, since less evaluations are needed.
+More efficient then [`Nystrom4`](@ref) on velocity independent problems, since less evaluations are needed.
 
 Fixed time steps only.
 
