@@ -5222,7 +5222,7 @@ struct SofSpa10 <: OrdinaryDiffEqPartitionedAlgorithm end
 """
 Improved Runge-Kutta-Nyström method of order three, which minimizes the amount of evaluated functions in each step. Fixed time steps only..
 
-Second order ODE problem should not depend on the first derivative.
+Second order ODE should not depend on the first derivative.
 
 ## References
 @article{rabiei2012numerical,
@@ -5261,6 +5261,8 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 Improves Runge-Kutta-Nyström method of order four, which minimizes the amount of evaluated functions in each step. Fixed time steps only.
+
+Second order ODE should not be dependent on the first derivative.
 
 Recommended for smooth problems with expensive functions to evaluate.
 
