@@ -5412,7 +5412,7 @@ Most efficient when high accuracy is needed.
 struct DPRKN12 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
-    ERNK4
+    ERKN4
 
 Embedded 4(3) pair of explicit Runge-Kutta-Nyström methods. Integrates the periodic properties of the harmonic oscillator exactly.
 
@@ -5434,7 +5434,7 @@ Uses adaptive step size control. This method is extra efficient on periodic prob
 struct ERKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
-    ERNK5
+    ERKN5
 
 Embedded 5(4) pair of explicit Runge-Kutta-Nyström methods. Integrates the periodic properties of the harmonic oscillator exactly.
 
@@ -5457,7 +5457,7 @@ Uses adaptive step size control. This method is extra efficient on periodic prob
 struct ERKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
-    ERNK7
+    ERKN7
 
 Embedded pair of explicit Runge-Kutta-Nyström methods. Integrates the periodic properties of the harmonic oscillator exactly.
 
