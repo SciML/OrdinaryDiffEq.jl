@@ -398,7 +398,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
-    nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
+                  reltol = integrator.opts.reltol)
     alg_u .= nlsol
 
     recursivecopy!(integrator.uprev, integrator.u)
@@ -526,7 +527,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u), p)
-    nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol, reltol = integrator.opts.reltol)
+    nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
+                  reltol = integrator.opts.reltol)
 
     @. du = ifelse(differential_vars, nlsol.u, du)
     @. u = ifelse(differential_vars, u, nlsol.u)
@@ -548,7 +550,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
-    if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t), t) <= integrator.opts.abstol
+    if integrator.opts.internalnorm(f(integrator.du, integrator.u, p, t), t) <=
+       integrator.opts.abstol
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
