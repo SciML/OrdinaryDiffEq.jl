@@ -5216,7 +5216,9 @@ struct SofSpa10 <: OrdinaryDiffEqPartitionedAlgorithm end
 # Nyström methods
 
 """
-Improved Runge-Kutta-Nyström method of order three, which minimizes the amount of evaluated functions in each step. Fixed time steps only..
+    IRKN3
+
+Improved Runge-Kutta-Nyström method of order three, which minimizes the amount of evaluated functions in each step. Fixed time steps only.
 
 Second order ODE should not depend on the first derivative.
 
