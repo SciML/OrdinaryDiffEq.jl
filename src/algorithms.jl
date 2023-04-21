@@ -5216,6 +5216,13 @@ struct SofSpa10 <: OrdinaryDiffEqPartitionedAlgorithm end
 # Nyström methods
 
 """
+    IRKN3
+
+Improved Runge-Kutta-Nyström method of order three, which minimizes the amount of evaluated functions in each step. Fixed time steps only.
+
+Second order ODE should not depend on the first derivative.
+
+## References
 @article{rabiei2012numerical,
   title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
   author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
@@ -5225,6 +5232,14 @@ struct SofSpa10 <: OrdinaryDiffEqPartitionedAlgorithm end
 struct IRKN3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
+    Nystrom4
+
+A 4th order explicit Runge-Kutta-Nyström method which can be applied directly on second order ODEs. Can only be used with fixed time steps.
+
+In case the ODE Problem is not dependent on the first derivative consider using 
+[`Nystrom4VelocityIndependent`](@ref) to increase performance.
+
+## References
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
   Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
   Springer-Verlag.
@@ -5232,6 +5247,15 @@ E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equatio
 struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
+    Nystrom4VelocityIdependent
+
+A 4th order explicit Runkge-Kutta-Nyström method. Used directly on second order ODEs, where the acceleration is independent from velocity (ODE Problem is not dependent on the first derivative).
+
+More efficient then [`Nystrom4`](@ref) on velocity independent problems, since less evaluations are needed.
+
+Fixed time steps only.
+
+## References
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
   Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
   Springer-Verlag.
@@ -5239,6 +5263,15 @@ E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equatio
 struct Nystrom4VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
+    IRKN4
+
+Improves Runge-Kutta-Nyström method of order four, which minimizes the amount of evaluated functions in each step. Fixed time steps only.
+
+Second order ODE should not be dependent on the first derivative.
+
+Recommended for smooth problems with expensive functions to evaluate.
+
+## References
 @article{rabiei2012numerical,
   title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
   author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
@@ -5248,6 +5281,12 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 struct IRKN4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
+    Nystrom5VelocityIndependent
+
+A 5th order explicit Runkge-Kutta-Nyström method. Used directly on second order ODEs, where the acceleration is independent from velocity (ODE Problem is not dependent on the first derivative).
+Fixed time steps only.
+
+## References
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
   Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
   Springer-Verlag.
@@ -5255,6 +5294,11 @@ E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equatio
 struct Nystrom5VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
+    DPRKN4
+
+4th order explicit Runge-Kutta-Nyström methods. The second order ODE should not depend on the first derivative.
+
+## References
 @article{Dormand1987FamiliesOR,
   title={Families of Runge-Kutta-Nystrom Formulae},
   author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
@@ -5267,6 +5311,11 @@ struct Nystrom5VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 struct DPRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    DPRKN5
+
+5th order explicit Runge-Kutta-Nyström mehod. The second order ODE should not depend on the first derivative.
+
+## References
 @article{Bettis1973ARN,
   title={A Runge-Kutta Nystrom algorithm},
   author={Dale G. Bettis},
@@ -5280,6 +5329,11 @@ struct DPRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 struct DPRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    DPRKN6
+
+6th order explicit Runge-Kutta-Nyström method. The second order ODE should not depend on the first derivative. Free 6th order interpolant.
+
+## References
 @article{dormand1987runge,
   title={Runge-kutta-nystrom triples},
   author={Dormand, JR and Prince, PJ},
@@ -5294,6 +5348,14 @@ struct DPRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 struct DPRKN6 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    DPRKN6FM
+
+6th order explicit Runge-Kutta-Nyström method. The second order ODE should not depend on the first derivative.
+
+Compared to [`DPRKN6`](@ref), this method has smaller truncation error coefficients which leads to performance gain
+when only the main solution points are considered.
+
+## References
 @article{Dormand1987FamiliesOR,
   title={Families of Runge-Kutta-Nystrom Formulae},
   author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
@@ -5306,6 +5368,14 @@ struct DPRKN6 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 struct DPRKN6FM <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    DPRKN8
+
+8th order explicit Runge-Kutta-Nyström method. The second order ODE should not depend on the first derivative.
+
+Not as efficient as [`DPRKN12`](@ref) when high accuracy is needed, however this solver is competitive with
+[`DPRKN6`](@ref) at lax tolerances and, depending on the problem, might be a good option between performance and accuracy.
+
+## References
 @article{dormand1987high,
   title={High-order embedded Runge-Kutta-Nystrom formulae},
   author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
@@ -5320,6 +5390,13 @@ struct DPRKN6FM <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 struct DPRKN8 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    DPRKN12
+
+12th order explicit Rugne-Kutta-Nyström method. The second order ODE should not depend on the first derivative.
+
+Most efficient when high accuracy is needed.
+
+## References
 @article{dormand1987high,
   title={High-order embedded Runge-Kutta-Nystrom formulae},
   author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
@@ -5334,6 +5411,15 @@ struct DPRKN8 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 struct DPRKN12 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    ERKN4
+
+Embedded 4(3) pair of explicit Runge-Kutta-Nyström methods. Integrates the periodic properties of the harmonic oscillator exactly.
+
+The second order ODE should not depend on the first derivative.
+
+Uses adaptive step size control. This method is extra efficient on periodic problems.
+
+## References
 @article{demba2017embedded,
   title={An Embedded 4 (3) Pair of Explicit Trigonometrically-Fitted Runge-Kutta-Nystr{\"o}m Method for Solving Periodic Initial Value Problems},
   author={Demba, MA and Senu, N and Ismail, F},
@@ -5347,6 +5433,15 @@ struct DPRKN12 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 struct ERKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    ERKN5
+
+Embedded 5(4) pair of explicit Runge-Kutta-Nyström methods. Integrates the periodic properties of the harmonic oscillator exactly.
+
+The second order ODE should not depend on the first derivative.
+
+Uses adaptive step size control. This method is extra efficient on periodic problems.
+
+## References
 @article{demba20165,
   title={A 5 (4) Embedded Pair of Explicit Trigonometrically-Fitted Runge--Kutta--Nystr{\"o}m Methods for the Numerical Solution of Oscillatory Initial Value Problems},
   author={Demba, Musa A and Senu, Norazak and Ismail, Fudziah},
@@ -5361,6 +5456,15 @@ struct ERKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 struct ERKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
+    ERKN7
+
+Embedded pair of explicit Runge-Kutta-Nyström methods. Integrates the periodic properties of the harmonic oscillator exactly.
+
+The second order ODE should not depend on the first derivative.
+
+Uses adaptive step size control. This method is extra efficient on periodic Problems.
+
+## References
 @article{SimosOnHO,
   title={On high order Runge-Kutta-Nystr{\"o}m pairs},
   author={Theodore E. Simos and Ch. Tsitouras},
