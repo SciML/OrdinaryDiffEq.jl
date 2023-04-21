@@ -68,6 +68,7 @@ end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
+        @time @safetestset "Newton Tests" begin include("interface/newton_tests.jl") end
         @time @safetestset "DAE Initialize Integration" begin include("interface/dae_initialize_integration.jl") end
     end
 
