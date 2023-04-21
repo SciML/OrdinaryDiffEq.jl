@@ -27,7 +27,8 @@ function alg_cache(alg::ROCK2, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ROCK2ConstantCache(constvalue(uEltypeNoUnits), constvalue(tTypeNoUnits),
+    constantcache = ROCK2ConstantCache(constvalue(uBottomEltypeNoUnits),
+                                       constvalue(tTypeNoUnits),
                                        u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -43,7 +44,7 @@ function alg_cache(alg::ROCK2, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    ROCK2ConstantCache(uEltypeNoUnits, uEltypeNoUnits, u)
+    ROCK2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), u)
 end
 
 mutable struct ROCK4ConstantCache{T, T2, T3, T4, zType} <: OrdinaryDiffEqConstantCache
@@ -78,7 +79,8 @@ function alg_cache(alg::ROCK4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    constantcache = ROCK4ConstantCache(constvalue(uEltypeNoUnits), constvalue(tTypeNoUnits),
+    constantcache = ROCK4ConstantCache(constvalue(uBottomEltypeNoUnits),
+                                       constvalue(tTypeNoUnits),
                                        u)
     uᵢ₋₁ = zero(u)
     uᵢ₋₂ = zero(u)
@@ -95,7 +97,7 @@ function alg_cache(alg::ROCK4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    ROCK4ConstantCache(constvalue(uEltypeNoUnits), constvalue(uEltypeNoUnits), u)
+    ROCK4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits), u)
 end
 
 mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache
