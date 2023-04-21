@@ -563,7 +563,7 @@ end
     Ros4dummyTableau()
 
 Generate a dummy tableau for ROS4 methods. It can be considered as performing elementwise OR to the masks
-of those sepecific tableaus: `Ros4dummyTableau()==_masktab(RosShamp4Tableau()) OR _masktab(Veldd4Tableau()) OR ...`
+of those specific tableaus: `Ros4dummyTableau()==_masktab(RosShamp4Tableau()) OR _masktab(Veldd4Tableau()) OR ...`
 ROS4 methods have the property of a4j==a3j so a is a 3*3 matrix instead of a 4*4 matrix and c is a 1*3 vector instead of a 1*4 vector.
 """
 function Ros4dummyTableau()#create a tabmask for all ROS4 methods where false->0,true->non-0

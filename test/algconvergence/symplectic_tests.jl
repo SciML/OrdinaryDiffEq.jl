@@ -2,7 +2,7 @@
 using Test, LinearAlgebra
 using OrdinaryDiffEq, DiffEqBase
 
-# algoritm, dq(p) != p, convergence order
+# algorithm, dq(p) != p, convergence order
 const ALGOS = ((SymplecticEuler, true, 1),
                (VelocityVerlet, false, 2),
                (VerletLeapfrog, true, 2),

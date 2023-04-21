@@ -4081,6 +4081,174 @@ function Base.show(io::IO, alg::OwrenZen5)
 end
 
 """
+    Alshina2(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+
+2nd order, 2-stage Explicit Runge-Kutta Method with optimal parameters.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## Reference
+@article{Alshina2008,
+  doi = {10.1134/s0965542508030068},
+  url = {https://doi.org/10.1134/s0965542508030068},
+  year = {2008},
+  month = mar,
+  publisher = {Pleiades Publishing Ltd},
+  volume = {48},
+  number = {3},
+  pages = {395--405},
+  author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
+  title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
+  journal = {Computational Mathematics and Mathematical Physics}
+}
+"""
+struct Alshina2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function Alshina2(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+                  thread = False())
+    Alshina2{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                            step_limiter!,
+                                                                            thread)
+end
+
+function Alshina2(stage_limiter!, step_limiter! = trivial_limiter!)
+    Alshina2{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                   step_limiter!,
+                                                                   False())
+end
+
+function Base.show(io::IO, alg::Alshina2)
+    print(io, "Alshina2(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+end
+
+"""
+    Alshina3(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+
+3rd order, 3-stage Explicit Runge-Kutta Method with optimal parameters.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## Reference
+@article{Alshina2008,
+  doi = {10.1134/s0965542508030068},
+  url = {https://doi.org/10.1134/s0965542508030068},
+  year = {2008},
+  month = mar,
+  publisher = {Pleiades Publishing Ltd},
+  volume = {48},
+  number = {3},
+  pages = {395--405},
+  author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
+  title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
+  journal = {Computational Mathematics and Mathematical Physics}
+}
+"""
+struct Alshina3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function Alshina3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+                  thread = False())
+    Alshina3{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                            step_limiter!,
+                                                                            thread)
+end
+
+function Alshina3(stage_limiter!, step_limiter! = trivial_limiter!)
+    Alshina3{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                   step_limiter!,
+                                                                   False())
+end
+
+function Base.show(io::IO, alg::Alshina3)
+    print(io, "Alshina3(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+end
+
+"""
+    Alshina6(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+             thread = OrdinaryDiffEq.False())
+
+6th order, 7-stage Explicit Runge-Kutta Method with optimal parameters.
+
+Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
+and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
+of the form `limiter!(u, integrator, p, t)`.
+
+The argument `thread` determines whether internal broadcasting on
+appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
+default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
+Julia is started with multiple threads.
+
+## Reference
+@article{Alshina2008,
+  doi = {10.1134/s0965542508030068},
+  url = {https://doi.org/10.1134/s0965542508030068},
+  year = {2008},
+  month = mar,
+  publisher = {Pleiades Publishing Ltd},
+  volume = {48},
+  number = {3},
+  pages = {395--405},
+  author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
+  title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
+  journal = {Computational Mathematics and Mathematical Physics}
+}
+"""
+struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function Alshina6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+                  thread = False())
+    Alshina6{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                            step_limiter!,
+                                                                            thread)
+end
+
+function Alshina6(stage_limiter!, step_limiter! = trivial_limiter!)
+    Alshina6{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                   step_limiter!,
+                                                                   False())
+end
+
+function Base.show(io::IO, alg::Alshina6)
+    print(io, "Alshina6(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+end
+
+"""
     BS3(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
           step_limiter! = OrdinaryDiffEq.trivial_limiter!,
           thread = OrdinaryDiffEq.False())
@@ -5802,6 +5970,7 @@ for Alg in [
     :LieRK4,
     :CG2,
     :CG3,
+    :CG4a,
 ]
     @eval struct $Alg <: OrdinaryDiffEqLinearExponentialAlgorithm
         krylov::Bool
@@ -6707,6 +6876,38 @@ function ESDIRK547L2SA2(; chunk_size = Val{0}(), autodiff = Val{true}(),
                                               controller)
 end
 
+"""
+@article{Kennedy2019DiagonallyIR,
+  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+  author={Christopher A. Kennedy and Mark H. Carpenter},
+  journal={Applied Numerical Mathematics},
+  year={2019},
+  volume={146},
+  pages={221-244}
+
+  Currently has STABILITY ISSUES, causing it to fail the adaptive tests.
+  Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more details.
+}
+"""
+struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
+       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+    linsolve::F
+    nlsolve::F2
+    precs::P
+    extrapolant::Symbol
+    controller::Symbol
+end
+function ESDIRK659L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
+                        standardtag = Val{true}(), concrete_jac = nothing,
+                        diff_type = Val{:forward},
+                        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+                        extrapolant = :linear, controller = :PI)
+    ESDIRK659L2SA{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+                   typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+                   _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
+                                              controller)
+end
+
 ################################################################################
 
 # Rosenbrock Methods
@@ -6794,17 +6995,9 @@ for Alg in [
                  typeof(precs), diff_type, _unwrap_val(standardtag),
                  _unwrap_val(concrete_jac)}(linsolve, precs)
         end
-
-        function Base.show(io::IO,
-                           t::Type{$Alg{CS, AD, F, P, FDT, ST, CJ}}) where {CS, AD, F, P,
-                                                                            FDT, ST, CJ}
-            if TruncatedStacktraces.VERBOSE[]
-                invoke(show, Tuple{IO, Type}, io, t)
-            else
-                print(io, $Alg, "{$CS,$AD,…}")
-            end
-        end
     end
+
+    @eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
 end
 
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:

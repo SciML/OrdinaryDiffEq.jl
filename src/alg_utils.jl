@@ -595,6 +595,7 @@ alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
 alg_order(alg::CG2) = 2
 alg_order(alg::CG3) = 3
+alg_order(alg::CG4a) = 4
 alg_order(alg::MagnusMidpoint) = 2
 alg_order(alg::MagnusGauss4) = 4
 alg_order(alg::MagnusNC6) = 6
@@ -618,6 +619,7 @@ alg_order(alg::ESDIRK54I8L2SA) = 5
 alg_order(alg::ESDIRK436L2SA2) = 4
 alg_order(alg::ESDIRK437L2SA) = 4
 alg_order(alg::ESDIRK547L2SA2) = 5
+alg_order(alg::ESDIRK659L2SA) = 6
 alg_order(alg::KenCarp3) = 3
 alg_order(alg::CFNLIRK3) = 3
 alg_order(alg::KenCarp4) = 4
@@ -706,6 +708,10 @@ alg_order(alg::PDIRK44) = 4
 alg_order(alg::DImplicitEuler) = 1
 alg_order(alg::DABDF2) = 2
 alg_order(alg::DFBDF) = 1#dummy value
+
+alg_order(alg::Alshina2) = 2
+alg_order(alg::Alshina3) = 3
+alg_order(alg::Alshina6) = 6
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
@@ -1031,7 +1037,7 @@ isesdirk(alg::TRBDF2) = true
 function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
                              Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
                              ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
-                             CFNLIRK3})
+                             ESDIRK659L2SA, CFNLIRK3})
     true
 end
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
