@@ -2888,7 +2888,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK659L2SAConstantCache,
-    repeat_step = false)
+                               repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2971,7 +2971,8 @@ end
     ################################## Solve Step 8
     nlsolver.z = z₈ = zero(z₇)
 
-    nlsolver.tmp = uprev + a81 * z₁ + a82 * z₂ + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ + a87 * z₇
+    nlsolver.tmp = uprev + a81 * z₁ + a82 * z₂ + a83 * z₃ + a84 * z₄ + a85 * z₅ + a86 * z₆ +
+                   a87 * z₇
     nlsolver.c = c8
     z₈ = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
@@ -2990,7 +2991,7 @@ end
 
     if integrator.opts.adaptive
         est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
-               btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
+              btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
                                    integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -3109,7 +3110,8 @@ end
     ################################### Finalize
 
     if integrator.opts.adaptive
-        @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
+        @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ +
+                                btilde5 * z₅ +
                                 btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                              integrator.opts.reltol, integrator.opts.internalnorm, t)

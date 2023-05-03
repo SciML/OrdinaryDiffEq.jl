@@ -963,7 +963,8 @@ function alg_cache(alg::ESDIRK547L2SA2, u, rate_prototype, ::Type{uEltypeNoUnits
     ESDIRK547L2SA2ConstantCache(nlsolver, tab)
 end
 
-@cache mutable struct ESDIRK659L2SACache{uType, rateType, uNoUnitsType, Tab, N} <: SDIRKMutableCache
+@cache mutable struct ESDIRK659L2SACache{uType, rateType, uNoUnitsType, Tab, N} <:
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -982,8 +983,10 @@ end
 end
 
 function alg_cache(alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
-                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol,
-                   p, calck, ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+                   ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+                   dt, reltol,
+                   p, calck,
+                   ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = ESDIRK659L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
@@ -1002,7 +1005,8 @@ function alg_cache(alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits}
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    ESDIRK659L2SACache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, z₉, atmp, nlsolver, tab)
+    ESDIRK659L2SACache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, z₉, atmp,
+                       nlsolver, tab)
 end
 
 mutable struct ESDIRK659L2SAConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
@@ -1012,7 +1016,8 @@ end
 
 function alg_cache(alg::ESDIRK659L2SA, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-                   uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{false}) where
+                   uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Val{false}) where
     {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tab = ESDIRK659L2SATableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     γ, c = tab.γ, tab.γ

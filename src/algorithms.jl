@@ -7002,14 +7002,14 @@ struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
     controller::Symbol
 end
 function ESDIRK659L2SA(; chunk_size = Val{0}(), autodiff = Val{true}(),
-                        standardtag = Val{true}(), concrete_jac = nothing,
-                        diff_type = Val{:forward},
-                        linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-                        extrapolant = :linear, controller = :PI)
+                       standardtag = Val{true}(), concrete_jac = nothing,
+                       diff_type = Val{:forward},
+                       linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
+                       extrapolant = :linear, controller = :PI)
     ESDIRK659L2SA{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
-                   typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-                   _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
-                                              controller)
+                  typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
+                  _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, extrapolant,
+                                             controller)
 end
 
 ################################################################################
