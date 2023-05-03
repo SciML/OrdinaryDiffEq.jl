@@ -696,7 +696,7 @@ end
     mass_matrix = integrator.f.mass_matrix
     # Time derivative
     tf.u = uprev
-    dT = ForwardDiff.derivative(tf, t)
+    dT = calc_tderivative(integrator, cache)
 
     W = calc_W(integrator, cache, dtgamma, repeat_step, true)
     if !issuccess_W(W)
@@ -926,7 +926,7 @@ end
 
     # Time derivative
     tf.u = uprev
-    dT = ForwardDiff.derivative(tf, t)
+    dT = calc_tderivative(integrator, cache)
 
     W = calc_W(integrator, cache, dtgamma, repeat_step, true)
     if !issuccess_W(W)
