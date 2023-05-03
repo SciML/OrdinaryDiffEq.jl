@@ -45,15 +45,25 @@ end
 ## Test that nothing is using duals when autodiff=false
 ## https://discourse.julialang.org/t/rodas4-using-dual-number-for-time-with-autodiff-false/98256
 
-for alg in [Rosenbrock23(autodiff=false), Rodas4(autodiff=false), Rodas5(autodiff=false), QNDF(autodiff=false), TRBDF2(autodiff=false), KenCarp4(autodiff=false)]
+for alg in [Rosenbrock23(autodiff=false), Rodas4(autodiff=false), Rodas5(autodiff=false), QNDF(autodiff=false), TRBDF2(autodiff=false), KenCarp4(autodiff=false), FBDF(autodiff=false)]
     u = [0.0, 0.0]
-    function du(u,p,t)
+    function f1(u,p,t)
         #display(typeof(t))
         du = zeros(2)
         du[1] = 0.1*u[1] + 0.2*u[2]
         du[2] = 0.1*t
         return du
     end
-    prob = ODEProblem(du,u,(0.0,1.0))
+    prob = ODEProblem(f1,u,(0.0,1.0))
+    sol = solve(prob,alg)
+
+    function f2(du,u,p,t)
+        #display(typeof(t))
+        du2 = zeros(2)
+        du2[1] = 0.1*u[1] + 0.2*u[2]
+        du2[2] = 0.1*t
+        du .= du2
+    end
+    prob = ODEProblem(f2,u,(0.0,1.0))
     sol = solve(prob,alg)
 end
