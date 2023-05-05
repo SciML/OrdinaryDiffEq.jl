@@ -63,6 +63,7 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIV" || GROUP == "Interface")
         @time @safetestset "Autodiff Error Tests" begin include("interface/autodiff_error_tests.jl") end
         @time @safetestset "Ambiguity Tests" begin include("interface/ambiguity_tests.jl") end
+        @time @safetestset "Sized Matrix Tests" begin include("interface/sized_matrix_tests.jl") end
         @time @safetestset "Second Order with First Order Solver Tests" begin include("interface/second_order_with_first_order_solvers.jl") end
     end
 
