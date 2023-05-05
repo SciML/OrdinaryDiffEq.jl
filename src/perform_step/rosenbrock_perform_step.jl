@@ -1081,7 +1081,7 @@ end
                             solverdata = (; gamma = dtgamma))
     end
 
-    @.. broadcast=false k1=-linres.u
+    @.. broadcast=false $(_vec(k1))=-linres.u
 
     integrator.stats.nsolve += 1
 
@@ -1098,7 +1098,7 @@ end
     end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false k2=-linres.u
+    @.. broadcast=false $(_vec(k2))=-linres.u
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
@@ -1114,7 +1114,7 @@ end
     end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false k3=-linres.u
+    @.. broadcast=false $(_vec(k3))=-linres.u
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
@@ -1131,7 +1131,7 @@ end
     end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false k4=-linres.u
+    @.. broadcast=false $(_vec(k4))=-linres.u
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
@@ -1148,7 +1148,7 @@ end
     end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false k5=-linres.u
+    @.. broadcast=false $(_vec(k5))=-linres.u
     integrator.stats.nsolve += 1
 
     u .+= k5
@@ -1166,7 +1166,7 @@ end
     end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false k6=-linres.u
+    @.. broadcast=false $(_vec(k6))=-linres.u
     integrator.stats.nsolve += 1
 
     u .+= k6
