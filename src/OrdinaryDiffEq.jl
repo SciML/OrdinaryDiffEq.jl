@@ -24,6 +24,8 @@ import StaticArrayInterface
 
 using LinearSolve, SimpleNonlinearSolve
 
+using LineSearches
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 
@@ -213,9 +215,9 @@ include("initdt.jl")
 include("interp_func.jl")
 include("composite_algs.jl")
 
-import SnoopPrecompile
+import PrecompileTools
 
-SnoopPrecompile.@precompile_all_calls begin
+PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
         du[1] = 10.0(u[2] - u[1])
         du[2] = u[1] * (28.0 - u[3]) - u[2]
@@ -404,7 +406,7 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
        SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
        SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
-       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2
+       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,

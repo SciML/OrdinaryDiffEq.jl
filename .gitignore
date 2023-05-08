@@ -7,3 +7,4 @@ Manifest.toml
 .vscode
 profile.pb.gz
 .*.swp
+LocalPreferences.toml
