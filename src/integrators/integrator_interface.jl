@@ -241,7 +241,6 @@ function resize_J_W!(cache, integrator, i)
                 J = MatrixOperator(J; update_func! = f.jac)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
-                # TODO: resize! will need to be implemented upstream to handle previously handled cases 
                 resize!(cache.W.jacvec, i)
             end
             cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,

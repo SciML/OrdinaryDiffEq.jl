@@ -75,6 +75,7 @@ using FastBroadcast: @.., True, False
 
 using IfElse
 
+using SciMLBase
 using SciMLBase: NoInit, _unwrap_val
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
@@ -87,7 +88,7 @@ else
     struct OrdinaryDiffEqTag end
 end
 
-import SparseDiffTools
+using SparseDiffTools
 import SparseDiffTools: matrix_colors, forwarddiff_color_jacobian!,
                         forwarddiff_color_jacobian, ForwardColorJacCache,
                         default_chunk_size, getsize

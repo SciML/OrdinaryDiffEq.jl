@@ -1,6 +1,6 @@
 const ROSENBROCK_INV_CUTOFF = 7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
 
-struct StaticWOperator{isinv, T}
+struct StaticWOperator{isinv, T} <: AbstractSciMLOperator{T}
     W::T
     function StaticWOperator(W::T, callinv = true) where {T}
         isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
@@ -294,14 +294,14 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-function update_coefficients!(W::WOperator, u, p, t)
+function SciMLOperators.update_coefficients!(W::WOperator, u, p, t)
     update_coefficients!(W.J, u, p, t)
     update_coefficients!(W.mass_matrix, u, p, t)
-    W.jacvec !== nothing && update_coefficients!(W.jacvec, u, p, t)
+    !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
     W
 end
 
-function DiffEqBase.update_coefficients!(J::FunctionOperator{UJacobianWrapper}, u, p, t)
+function SciMLOperators.update_coefficients!(J::FunctionOperator{UJacobianWrapper}, u, p, t)
     copyto!(J.x, u)
     J.f.t = t
     J.f.p = p
@@ -451,7 +451,6 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     mm = integrator.f.mass_matrix
-    # TODO: adjust 
     is_varying_mm = isconstant(mm)
     if isfreshJ
         jbad = false
@@ -675,7 +674,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
 
     # calculate W
     if W isa WOperator
-        isnewton(nlsolver) || DiffEqBase.update_coefficients!(W, uprev, p, t) # we will call `update_coefficients!` in NLNewton
+        isnewton(nlsolver) || update_coefficients!(W, uprev, p, t) # we will call `update_coefficients!` in NLNewton
         W.transform = W_transform
         set_gamma!(W, dtgamma)
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
@@ -766,7 +765,7 @@ end
         end
     end
     (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) &&
-        (W = DiffEqBase.update_coefficients!(W, uprev, p, t)) # we will call `update_coefficients!` in NLNewton
+        (W = update_coefficients!(W, uprev, p, t)) # we will call `update_coefficients!` in NLNewton
     is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) :
                             integrator.opts.internalnorm(J, t))
     return W
@@ -852,8 +851,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # be overridden with concrete_jac.
 
         _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = SparseDiffTools.JacVec(UJacobianWrapper(_f, t, p), copy(u),
-                                        p, t; autodiff = alg_autodiff(alg))
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u),
+                        p, t; autodiff = alg_autodiff(alg))
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
@@ -868,8 +867,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        jacvec = SparseDiffTools.JacVec(UJacobianWrapper(_f, t, p), copy(u),
-                                        p, t; autodiff = alg_autodiff(alg))
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u),
+                        p, t; autodiff = alg_autodiff(alg))
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
     elseif islin || (!IIP && DiffEqBase.has_jac(f))
