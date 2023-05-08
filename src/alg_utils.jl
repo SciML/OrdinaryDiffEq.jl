@@ -250,7 +250,7 @@ function DiffEqBase.prepare_alg(alg::Union{
                  !(typeof(prob.f.jac_prototype) <: AbstractSciMLOperator)))
             linsolve = LinearSolve.defaultalg(prob.f.jac_prototype, u0)
         else
-            # If mm is a sparse matrix and A is a DiffEqArrayOperator, then let linear
+            # If mm is a sparse matrix and A is a MatrixOperator, then let linear
             # solver choose things later
             linsolve = nothing
         end

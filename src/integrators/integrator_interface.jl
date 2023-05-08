@@ -238,7 +238,7 @@ function resize_J_W!(cache, integrator, i)
                 resize!(cache.J, i)
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
-                J = DiffEqArrayOperator(J; update_func = f.jac)
+                J = MatrixOperator(J; update_func! = f.jac)
             end
             if cache.W.jacvec isa AbstractSciMLOperator
                 # TODO: resize! will need to be implemented upstream to handle previously handled cases 

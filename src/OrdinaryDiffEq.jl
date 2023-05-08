@@ -31,15 +31,13 @@ import DiffEqBase: solve!, step!, initialize!, isadaptive
 import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
                    ODE_DEFAULT_UNSTABLE_CHECK
 
-# TODO: adjust all uses of the below two
-using DiffEqBase: DiffEqArrayOperator, DEFAULT_UPDATE_FUNC
+using SciMLOperators
+using SciMLOperators: AbstractSciMLOperator, DEFAULT_UPDATE_FUNC
 
 using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
 
 using DiffEqBase: DEIntegrator
-
-import SciMLBase: update_coefficients!
 
 import RecursiveArrayTools: chain, recursivecopy!
 
@@ -77,7 +75,7 @@ using FastBroadcast: @.., True, False
 
 using IfElse
 
-using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator
+using SciMLBase: NoInit, _unwrap_val
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,

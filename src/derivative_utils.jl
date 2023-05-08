@@ -210,9 +210,9 @@ mutable struct WOperator{IIP, T,
             end
             _func_cache = nothing
         else
-            AJ = J isa DiffEqArrayOperator ? convert(AbstractMatrix, J) : J
+            AJ = J isa MatrixOperator ? convert(AbstractMatrix, J) : J
             if AJ isa AbstractMatrix
-                mm = mass_matrix isa DiffEqArrayOperator ?
+                mm = mass_matrix isa MatrixOperator ?
                      convert(AbstractMatrix, mass_matrix) : mass_matrix
                 if AJ isa AbstractSparseMatrix
 
@@ -223,7 +223,7 @@ mutable struct WOperator{IIP, T,
                     #
                     # Constant operators never refactorize so always use the correct values there
                     # as well
-                    if gamma == 0 && !(J isa DiffEqArrayOperator && SciMLBase.isconstant(J))
+                    if gamma == 0 && !(J isa MatrixOperator && SciMLBase.isconstant(J))
                         # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
                         # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
                         # Then `one` is required since gamma is zero
@@ -285,7 +285,7 @@ function WOperator{IIP}(f, u, gamma; transform = false) where {IIP}
     J = deepcopy(f.jac_prototype)
     if J isa AbstractMatrix
         @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
-        J = DiffEqArrayOperator(J; update_func = f.jac)
+        J = MatrixOperator(J; update_func! = f.jac)
     end
     return WOperator{IIP}(mass_matrix, gamma, J, u; transform = transform)
 end
@@ -452,8 +452,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     mm = integrator.f.mass_matrix
     # TODO: adjust 
-    is_varying_mm = mm isa DiffEqArrayOperator &&
-                    mm.update_func !== SciMLBase.DEFAULT_UPDATE_FUNC
+    is_varying_mm = isconstant(mm)
     if isfreshJ
         jbad = false
         smallstepchange = true
@@ -740,7 +739,7 @@ end
         else
             if !isa(J, AbstractSciMLOperator) && (!isnewton(nlsolver) ||
                 nlsolver.cache.W.J isa AbstractSciMLOperator)
-                J = DiffEqArrayOperator(J)
+                J = MatrixOperator(J)
             end
             W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec;
                                  transform = W_transform)
@@ -876,7 +875,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     elseif islin || (!IIP && DiffEqBase.has_jac(f))
         J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
         if !isa(J, AbstractSciMLOperator)
-            J = DiffEqArrayOperator(J)
+            J = MatrixOperator(J)
         end
         W = WOperator{IIP}(f.mass_matrix, dt, J, u)
     else
