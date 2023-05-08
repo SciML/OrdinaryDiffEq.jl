@@ -169,7 +169,7 @@ end
     b, ustep = _compute_rhs!(nlsolver, integrator, f, z)
 
     # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    if W isa AbstractSciMLOperator
         update_coefficients!(W, ustep, p, tstep)
     end
 
