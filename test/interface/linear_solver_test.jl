@@ -5,8 +5,8 @@ using LinearAlgebra, Random
 N = 30
 AA = sprand(MersenneTwister(12), N, N, 0.5)
 mm = sprand(MersenneTwister(123), N, N, 0.5)
-A = DiffEqArrayOperator(AA)
-M = DiffEqArrayOperator(mm'mm)
+A = MatrixOperator(AA)
+M = MatrixOperator(mm'mm)
 u0 = ones(N)
 prob = ODEProblem(ODEFunction(A; mass_matrix = M), u0, (0.0, 1.0))
 

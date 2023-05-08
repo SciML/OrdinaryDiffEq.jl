@@ -37,7 +37,7 @@ end
     μ = 1.01
     u0 = rand(2)
     A = [2.0 -1.0; -1.0 2.0]
-    linnonlin_f1 = DiffEqArrayOperator(A)
+    linnonlin_f1 = MatrixOperator(A)
     linnonlin_f2 = (du, u, p, t) -> du .= μ .* u
     linnonlin_fun_iip = SplitFunction(linnonlin_f1, linnonlin_f2;
                                       analytic = (u0, p, t) -> exp((A + μ * I) * t) * u0)
@@ -102,8 +102,8 @@ end
     # Setup nonlinear problem
     A = [-2.0 1.0; 1.0 -2.0]
     f = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
-    jac_update = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
-    jac_prototype = DiffEqArrayOperator(zeros(2, 2); update_func = jac_update)
+    jac_update! = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
+    jac_prototype = MatrixOperator(zeros(2, 2); update_func! = jac_update!)
     fun = ODEFunction(f; jac_prototype = jac_prototype)
     Random.seed!(0)
     u0 = rand(2)
@@ -181,8 +181,8 @@ end
     # Setup nonlinear problem
     A = [-2.0 1.0; 1.0 -2.0]
     f = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
-    jac_update = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
-    jac_prototype = DiffEqArrayOperator(zeros(2, 2); update_func = jac_update)
+    jac_update! = (J, u, p, t) -> (copyto!(J, A); J[1, 1] -= 3u[1]^2; J[2, 2] -= 3u[2]^2)
+    jac_prototype = MatrixOperator(zeros(2, 2); update_func! = jac_update!)
     fun = ODEFunction(f; jac_prototype = jac_prototype)
     Random.seed!(0)
     u0 = rand(2)

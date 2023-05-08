@@ -422,7 +422,7 @@ step!(integrator, 1e-5, true)
     cb = SavingCallback(save_func, saved_values, saveat = t_l)
 
     u0 = normalize(rand(ComplexF64, 100))
-    A = DiffEqArrayOperator(-1im * A)
+    A = MatrixOperator(-1im * A)
     prob = ODEProblem(A, u0, (0, 1.0))
     solve(prob, LinearExponential(), dt = t_l[2] - t_l[1], callback = cb)
     @test length(saved_values.saveval) == length(t_l)
