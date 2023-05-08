@@ -74,7 +74,7 @@ mutable struct DAEResidualJacobianWrapper{AD, F, pType, duType, uType, alphaType
     t::tType
     function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
         isautodiff = alg_autodiff(alg)
-        if isautodiff
+        if isautodiff isa AutoForwardDiff
             tmp_du = PreallocationTools.dualcache(uprev)
             tmp_u = PreallocationTools.dualcache(uprev)
         else
