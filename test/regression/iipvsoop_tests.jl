@@ -109,8 +109,13 @@ end
     sol_ip = solve(prob_ip, alg, dt = 0.0125)
     sol_scalar = solve(prob_scalar, alg, dt = 0.0125)
 
-    @test_broken sol_ip(ts, idxs = 1) ≈ sol_scalar(ts)
-    @test_broken sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
+    if alg isa Kvaerno4
+        @test_broken sol_ip(ts, idxs = 1) ≈ sol_scalar(ts)
+        @test_broken sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
+    else
+        @test sol_ip(ts, idxs = 1) ≈ sol_scalar(ts)
+        @test sol_ip.t ≈ sol_scalar.t && sol_ip[1, :] ≈ sol_scalar.u
+    end
 end
 
 working_rosenbrock_algs = [Rosenbrock23(), ROS3P(), Rodas3(),
