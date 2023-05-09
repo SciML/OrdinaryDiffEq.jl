@@ -35,7 +35,8 @@ import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG
 
 import SciMLOperators: SciMLOperators, AbstractSciMLOperator,
                        MatrixOperator, FunctionOperator,
-                       update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC
+                       update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
+                       isconstant
 
 using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper

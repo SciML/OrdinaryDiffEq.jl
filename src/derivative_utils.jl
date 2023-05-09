@@ -202,7 +202,7 @@ mutable struct WOperator{IIP, T,
                             transform = false) where {IIP}
         # TODO: there is definitely a missing interface.
         # Tentative interface: `has_concrete` and `concertize(A)`
-        if J isa Union{Number, DiffEqScalar}
+        if J isa Union{Number, ScalarOperator}
             if transform
                 _concrete_form = -mass_matrix / gamma + convert(Number, J)
             else
@@ -223,7 +223,7 @@ mutable struct WOperator{IIP, T,
                     #
                     # Constant operators never refactorize so always use the correct values there
                     # as well
-                    if gamma == 0 && !(J isa MatrixOperator && SciMLBase.isconstant(J))
+                    if gamma == 0 && !(J isa MatrixOperator && isconstant(J))
                         # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
                         # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
                         # Then `one` is required since gamma is zero
@@ -451,7 +451,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     mm = integrator.f.mass_matrix
-    is_varying_mm = isconstant(mm)
+    is_varying_mm = !isconstant(mm)
     if isfreshJ
         jbad = false
         smallstepchange = true
