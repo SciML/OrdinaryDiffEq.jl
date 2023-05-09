@@ -4,7 +4,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                with automatic differentiation. Methods to fix this include:
 
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
-                                  Rosenbrock23(autodiff=false)). More details can befound at
+                                  Rosenbrock23(autodiff=false)). More details can be found at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
                                2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
                                   differentiation (using tools like PreallocationTools.jl). More details
