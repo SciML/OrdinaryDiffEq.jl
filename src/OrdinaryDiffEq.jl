@@ -90,7 +90,7 @@ else
     struct OrdinaryDiffEqTag end
 end
 
-import SparseDiffTools: matrix_colors, forwarddiff_color_jacobian!,
+import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
                         forwarddiff_color_jacobian, ForwardColorJacCache,
                         default_chunk_size, getsize, JacVec
 
