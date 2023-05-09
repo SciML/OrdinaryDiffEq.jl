@@ -273,9 +273,9 @@ mutable struct WOperator{IIP, T,
     end
 end
 function WOperator{IIP}(f, u, gamma; transform = false) where {IIP}
-    if isa(f, Union{SplitFunction, DynamicalODEFunction})
-        error("WOperator does not support $(typeof(f)) yet")
-    end
+    # if isa(f, Union{SplitFunction, DynamicalODEFunction})
+    #     error("WOperator does not support $(typeof(f)) yet")
+    # end
     mass_matrix = f.mass_matrix
     # TODO: does this play nicely with time-state dependent mass matrix?
     if !isa(mass_matrix, Union{AbstractMatrix, UniformScaling})
