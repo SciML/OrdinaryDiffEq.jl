@@ -252,10 +252,10 @@ end
         else
             ustep = @. tmp + γ * z
             if mass_matrix === I
-                ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+                ztmp = (dt * f(ustep, p, tstep) - z) * invγdt
             else
                 update_coefficients!(mass_matrix, ustep, p, tstep)
-                ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+                ztmp = (dt * f(ustep, p, tstep) - mass_matrix * z) * invγdt
             end
         end
     end
