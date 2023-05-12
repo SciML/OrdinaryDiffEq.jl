@@ -222,13 +222,17 @@ function B(y::AbstractMatrix)
     return b
 end
 
+function update_func(A, u, p, t)
+    B(u)
+end
+
 function update_func!(A, u, p, t)
     A .= B(u)
     return nothing
 end
 
 η = diagm([1.0, 2, 3, 4, 5])
-A = MatrixOperator(Matrix{eltype(η)}(I(size(η, 1))), update_func! = update_func!)
+A = MatrixOperator(Matrix{eltype(η)}(I(size(η, 1))), update_func = update_func, update_func! = update_func!)
 dts = 1 ./ 2 .^ (10:-1:2)
 tspan = (0.0, 20.0)
 
