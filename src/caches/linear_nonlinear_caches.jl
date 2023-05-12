@@ -841,13 +841,16 @@ mutable struct ETD2Fsal{rateType}
     nlprev::rateType
 
     function ETD2Fsal(lin, nl, nlprev)
-        lin = convert(Number, lin)
-        nl  = convert(Number, nl)
-        nlprev  = convert(Number, nlprev)
+        if size(lin) == ()
+            # convert to same type if Number or AbstractSciMLScalarOperator
+            T = promote_type(eltype.((lin, nl, nlprev))...)
 
-        T = promote_type(eltype.((lin, nl, nlprev))...)
+            lin = convert(T, lin)
+            nl  = convert(T, nl)
+            nlprev  = convert(T, nlprev)
+        end
 
-        new{typeof(lin)}(T(lin), T(nl), T(nlprev))
+        new{typeof(lin)}(lin, nl, nlprev)
     end
 end
 function ETD2Fsal(rate_prototype)
