@@ -851,8 +851,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # be overridden with concrete_jac.
 
         _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u),
-                        p, t; autodiff = alg_autodiff(alg))
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+                        autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
@@ -867,8 +867,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u),
-                        p, t; autodiff = alg_autodiff(alg))
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+                        autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
     elseif islin || (!IIP && DiffEqBase.has_jac(f))
