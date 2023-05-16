@@ -13,6 +13,10 @@ limit(a, N) = a == N + 1 ? 1 : a == 0 ? N : a
 const iter = Ref(0)
 function brusselator_2d_loop(du, u, p, t)
     global iter[] += 1
+
+    u = reshape(u, N, N, 2)
+    du = reshape(u, N, N, 2)
+
     A, B, alpha, dx = p
     alpha = alpha / dx^2
     @inbounds for I in CartesianIndices((N, N))
@@ -28,6 +32,8 @@ function brusselator_2d_loop(du, u, p, t)
                        4u[i, j, 2]) +
                       A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
     end
+
+    vec(du)
 end
 p = (3.4, 1.0, 10.0, step(xyd_brusselator))
 
@@ -42,7 +48,7 @@ function init_brusselator_2d(xyd)
     end
     u
 end
-u0 = init_brusselator_2d(xyd_brusselator)
+u0 = init_brusselator_2d(xyd_brusselator) |> vec
 prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop,
                                      u0, (0.0, 11.5), p)
 
