@@ -13,10 +13,10 @@ p_giesekus = [η0, τ, α]
 σ0 = SizedMatrix{3, 3}([1.0 0.0 0.0; 0.0 2.0 0.0; 3.0 0.0 0.0])
 
 prob_giesekus = ODEProblem(dudt!, σ0, (0.0, 2.0), p_giesekus)
-solve_giesekus = solve(prob_giesekus, Rodas4(), saveat = 0.2, abstol = 1e-14,
-                       reltol = 1e-14)
 
 if VERSION >= v"1.9"
+    solve_giesekus = solve(prob_giesekus, Rodas4(), saveat = 0.2, abstol = 1e-14,
+                        reltol = 1e-14)
     for alg in [
         Rosenbrock23(),
         Rodas4(),
