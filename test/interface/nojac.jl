@@ -6,7 +6,7 @@ brusselator_f(x, y, t) = (((x - 0.3)^2 + (y - 0.6)^2) <= 0.1^2) * (t >= 1.1) * 5
 limit(a, N) = a == N + 1 ? 1 : a == 0 ? N : a
 function brusselator_2d_loop(du, u, p, t)
     u = reshape(u, N, N, 2)
-    du = reshape(u, N, N, 2)
+    du = reshape(du, N, N, 2)
 
     A, B, alpha, dx = p
     alpha = alpha / dx^2

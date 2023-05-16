@@ -15,7 +15,7 @@ function brusselator_2d_loop(du, u, p, t)
     global iter[] += 1
 
     u = reshape(u, N, N, 2)
-    du = reshape(u, N, N, 2)
+    du = reshape(du, N, N, 2)
 
     A, B, alpha, dx = p
     alpha = alpha / dx^2
@@ -49,8 +49,7 @@ function init_brusselator_2d(xyd)
     u
 end
 u0 = init_brusselator_2d(xyd_brusselator) |> vec
-prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop,
-                                     u0, (0.0, 11.5), p)
+prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop, u0, (0.0, 11.5), p)
 
 du0 = copy(u0)
 jac = ModelingToolkit.Symbolics.jacobian_sparsity((du, u) -> brusselator_2d_loop(du, u, p,
@@ -115,6 +114,11 @@ sol4 = solve(prob_ode_brusselator_2d_sparse,
 iter4 = iter[];
 iter[] = 0;
 
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test sol3.retcode === ReturnCode.Success
+@test sol4.retcode === ReturnCode.Success
+
 @test iter2 < iter1
 @test iter3 < iter1
 @test iter4 < iter1
@@ -138,6 +142,11 @@ sol4 = solve(prob_ode_brusselator_2d_sparse,
                           concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
+
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test sol3.retcode === ReturnCode.Success
+@test sol4.retcode === ReturnCode.Success
 
 @test iter2 < iter1
 @test iter3 < iter1
@@ -163,6 +172,11 @@ sol4 = solve(prob_ode_brusselator_2d_sparse,
 iter4 = iter[];
 iter[] = 0;
 
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test sol3.retcode === ReturnCode.Success
+@test sol4.retcode === ReturnCode.Success
+
 @test iter2 < iter1
 @test iter3 < iter1
 @test iter4 < iter1
@@ -186,6 +200,11 @@ sol4 = solve(prob_ode_brusselator_2d_sparse,
                     concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
+
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test sol3.retcode === ReturnCode.Success
+@test sol4.retcode === ReturnCode.Success
 
 @test iter2 < iter1
 @test iter3 < iter1
@@ -211,6 +230,11 @@ sol4 = solve(prob_ode_brusselator_2d_sparse,
 iter4 = iter[];
 iter[] = 0;
 
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test sol3.retcode === ReturnCode.Success
+@test sol4.retcode === ReturnCode.Success
+
 @test iter2 < iter1
 @test iter3 < iter1
 @test iter4 < iter1
@@ -234,6 +258,11 @@ sol4 = solve(prob_ode_brusselator_2d_sparse,
                     concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
+
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test sol3.retcode === ReturnCode.Success
+@test sol4.retcode === ReturnCode.Success
 
 @test iter2 < iter1
 @test iter3 < iter1
