@@ -9,15 +9,15 @@
 Commit 8e630552924 (2023-05-07 11:25 UTC)
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 2 × Intel(R) Xeon(R) Platinum 8272CL CPU @ 2.60GHz
+  CPU: 2 × Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
   WORD_SIZE: 64
   LIBM: libopenlibm
-  LLVM: libLLVM-14.0.6 (ORCJIT, skylake-avx512)
+  LLVM: libLLVM-14.0.6 (ORCJIT, icelake-server)
   Threads: 1 on 2 virtual cores</code></pre></details><details><summary>A more complete overview of all dependencies and their versions is also provided.</summary><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Status `~/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl/docs/Manifest.toml`
   [a4c015fc] ANSIColoredPrinters v0.0.1
-  [79e6a3ab] Adapt v3.6.1
+  [79e6a3ab] Adapt v3.6.2
   [ec485272] ArnoldiMethod v0.2.0
-  [4fba245c] ArrayInterface v7.4.3
+  [4fba245c] ArrayInterface v7.4.4
   [30b0a656] ArrayInterfaceCore v0.1.29
   [62783981] BitTwiddlingConvenienceFunctions v0.1.5
   [2a0fbf3d] CPUSummary v0.2.2
@@ -28,10 +28,10 @@ Platform Info:
   [34da2185] Compat v4.6.1
   [187b0558] ConstructionBase v1.5.2
   [adafc99b] CpuId v0.3.1
-  [9a962f9c] DataAPI v1.14.0
+  [9a962f9c] DataAPI v1.15.0
   [864edb3b] DataStructures v0.18.13
   [e2d170a0] DataValueInterfaces v1.0.0
-  [2b5f629d] DiffEqBase v6.124.0
+  [2b5f629d] DiffEqBase v6.124.1
   [163ba53b] DiffResults v1.1.0
   [b552c78f] DiffRules v1.13.0
   [b4f34e82] Distances v0.10.8
@@ -60,14 +60,14 @@ Platform Info:
   [692b3bcd] JLLWrappers v1.4.1
   [682c06a0] JSON v0.21.4
   [ef3ab10e] KLU v0.4.0
-  [ba0b0d4f] Krylov v0.9.0
+  [ba0b0d4f] Krylov v0.9.1
   [0b1a1467] KrylovKit v0.6.0
   [10f19ff3] LayoutPointers v0.1.14
   [50d2b5c4] Lazy v0.15.1
   [d3d80556] LineSearches v7.2.0
   [7ed4a6bd] LinearSolve v1.42.0
   [2ab3a3ac] LogExpFunctions v0.3.23
-  [bdcacae8] LoopVectorization v0.12.158
+  [bdcacae8] LoopVectorization v0.12.159
   [1914dd2f] MacroTools v0.5.10
   [d125e4d3] ManualMemory v0.1.8
   [46d2c3a1] MuladdMacro v0.2.4
@@ -79,23 +79,23 @@ Platform Info:
   [bac558e1] OrderedCollections v1.6.0
   [1dea7af3] OrdinaryDiffEq v6.51.1 `~/work/OrdinaryDiffEq.jl/OrdinaryDiffEq.jl`
   [d96e819e] Parameters v0.12.3
-  [69de0a69] Parsers v2.5.8
+  [69de0a69] Parsers v2.5.10
   [f517fe37] Polyester v0.7.3
   [1d0040c9] PolyesterWeave v0.2.1
   [d236fae5] PreallocationTools v0.4.12
   [aea7be01] PrecompileTools v1.1.1
   [21216c6a] Preferences v1.4.0
   [3cdcf5f2] RecipesBase v1.3.4
-  [731186ca] RecursiveArrayTools v2.38.4
+  [731186ca] RecursiveArrayTools v2.38.5
   [f2c3362d] RecursiveFactorization v0.2.18
   [189a3867] Reexport v1.2.2
   [ae029012] Requires v1.3.0
   [7e49a35a] RuntimeGeneratedFunctions v0.5.7
   [94e857df] SIMDTypes v0.1.0
   [476501e8] SLEEFPirates v0.6.38
-  [0bca4576] SciMLBase v1.91.7
+  [0bca4576] SciMLBase v1.92.0
   [e9a6253c] SciMLNLSolve v0.1.6
-  [c0aeaf25] SciMLOperators v0.2.3
+  [c0aeaf25] SciMLOperators v0.2.8
   [efcf1570] Setfield v1.1.1
   [727e6d20] SimpleNonlinearSolve v0.1.14
   [699a6c99] SimpleTraits v0.9.4
@@ -104,12 +104,12 @@ Platform Info:
 ⌅ [47a9eef4] SparseDiffTools v1.31.0
   [e56a9233] Sparspak v0.3.9
   [276daf66] SpecialFunctions v2.2.0
-  [aedffcd0] Static v0.8.6
+  [aedffcd0] Static v0.8.7
   [0d7ed370] StaticArrayInterface v1.4.0
-  [90137ffa] StaticArrays v1.5.24
+  [90137ffa] StaticArrays v1.5.25
   [1e83bf80] StaticArraysCore v1.4.0
   [82ae8749] StatsAPI v1.6.0
-  [7792a7ef] StrideArraysCore v0.4.13
+  [7792a7ef] StrideArraysCore v0.4.14
   [2efcf032] SymbolicIndexingInterface v0.2.2
   [3783bdb8] TableTraits v1.0.1
   [bd369af6] Tables v1.10.1
@@ -169,4 +169,4 @@ Platform Info:
   [3f19e933] p7zip_jll v17.4.0+0
 Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated -m`</code></pre></details>You can also download the 
 <a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v6.51.1/assets/Manifest.toml">manifest</a> file and the
-<a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v6.51.1/assets/Project.toml">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="usage/">Usage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 9 May 2023 09:28">Tuesday 9 May 2023</span>. Using Julia version 1.9.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<a href="https://github.com/SciML/OrdinaryDiffEq.jl/tree/gh-pages/v6.51.1/assets/Project.toml">project</a> file.</article><nav class="docs-footer"><a class="docs-footer-nextpage" href="usage/">Usage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 16 May 2023 15:16">Tuesday 16 May 2023</span>. Using Julia version 1.9.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
