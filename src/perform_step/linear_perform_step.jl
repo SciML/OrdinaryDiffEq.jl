@@ -820,7 +820,6 @@ function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step 
         A = f.f
     end
 
-    # OOP update_coefficients()
     L = update_coefficients(A, uprev, p, t)
     L = convert(AbstractMatrix, L)
 
@@ -858,8 +857,6 @@ function perform_step!(integrator, cache::CayleyEulerCache, repeat_step = false)
     end
 
     update_coefficients!(L, uprev, p, t)
-
-    # TODO CayleyEuler cache. even if we store and cache cay(L * dt), we dont know how to apply inv(AddedOperator)
     L = convert(AbstractMatrix, L)
 
     cay!(V, L * dt)
