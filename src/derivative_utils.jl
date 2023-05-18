@@ -301,10 +301,9 @@ function SciMLOperators.update_coefficients!(W::WOperator, u, p, t)
     W
 end
 
-function SciMLOperators.update_coefficients!(J::FunctionOperator{UJacobianWrapper}, u, p, t)
-    copyto!(J.x, u)
-    J.f.t = t
-    J.f.p = p
+function SciMLOperators.update_coefficients!(J::UJacobianWrapper, u, p, t)
+    J.p = p
+    J.t = t
 end
 
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where {IIP}
