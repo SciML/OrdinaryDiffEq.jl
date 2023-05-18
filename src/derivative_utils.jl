@@ -135,12 +135,6 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         else
             @unpack du1, uf, jac_config = cache
 
-            if isfsal(integrator.alg)
-                copyto!(du1, integrator.fsalfirst)
-            end
-            # Otherwise du1 is assumed to be correct
-            # i.e. Rosenbrock differntiation corrects it.
-
             uf.f = nlsolve_f(f, alg)
             uf.t = t
             if !(p isa DiffEqBase.NullParameters)
@@ -627,7 +621,7 @@ end
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
                  repeat_step, W_transform = false, newJW = nothing)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, alg = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
     if next_step
@@ -694,7 +688,14 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     else # concrete W using jacobian from `calc_J!`
         islin, isode = islinearfunction(integrator)
         islin ? (J = isode ? f.f : f.f1.f) :
-        (new_jac && (calc_J!(J, integrator, lcache, next_step)))
+        if new_jac 
+            # Otherwise du1 is assumed to be correct or is re-calculated
+            # i.e. Rosenbrock differntiation corrects it.
+            if isfsal(alg) && isnewton(nlsolver) && !alg_autodiff(alg) && alg_difftype(alg) === Val{:forward}
+                copyto!(nlsolver.cache.du1, integrator.fsalfirst)
+            end
+            calc_J!(J, integrator, lcache, next_step)
+        end
         update_coefficients!(W, uprev, p, t)
         new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
     end
