@@ -437,7 +437,7 @@ import LinearSolve
     @test_nowarn solve(prob, Rosenbrock23(autodiff = false))
 end
 
-@testset "Convergence with time-dependent matrix-free Jacobian"
+@testset "Convergence with time-dependent matrix-free Jacobian" begin
     time_derivative(du, u, p, t) = (du[1] = t * u[1])
     time_derivative_analytic(u0, p, t) = u0 * exp(t^2 / 2)
     ff_time_derivative = ODEFunction(time_derivative, analytic=time_derivative_analytic)
