@@ -280,7 +280,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
         end
 
         sparsity, colorvec = sparsity_colorvec(f, u)
-        # TODO: more generc, do we need this?
+
         if alg_autodiff(alg) isa AutoForwardDiff
             _chunksize = get_chunksize(alg) === Val(0) ? nothing : get_chunksize(alg) # SparseDiffEq uses different convection...
 
