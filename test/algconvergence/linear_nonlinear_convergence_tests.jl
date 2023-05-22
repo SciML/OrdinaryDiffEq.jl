@@ -20,8 +20,8 @@ using OrdinaryDiffEq: alg_order
         ETDRK4,
         HochOst4,
         ETD2,
-        # KenCarp3, # WOperator doesn't support split problems
-        # CFNLIRK3, # WOperator doesn't support split problems
+        KenCarp3,
+        CFNLIRK3,
     ]
         @info "$Alg"
         sim = test_convergence(dts, prob, Alg())
