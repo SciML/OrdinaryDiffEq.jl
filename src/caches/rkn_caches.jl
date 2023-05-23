@@ -51,8 +51,6 @@ end
     tmp::uType
 end
 
-# struct Nystrom5ConstantCache <: OrdinaryDiffEqConstantCache end
-
 function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
@@ -69,8 +67,6 @@ function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
     tmp = zero(u)
     Nystrom5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, tmp)
 end
-
-struct Nystrom5ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

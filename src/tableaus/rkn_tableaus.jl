@@ -1,3 +1,205 @@
+struct Nystrom5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+    c7::T2
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a72::T
+    a73::T
+    a74::T
+    a75::T
+    a76::T
+    abar21::T
+    abar31::T
+    abar32::T
+    abar41::T
+    abar42::T
+    abar43::T
+    abar51::T
+    abar52::T
+    abar53::T
+    abar54::T
+    abar61::T
+    abar62::T
+    abar63::T
+    abar64::T
+    abar65::T
+    abar71::T
+    abar72::T
+    abar73::T
+    abar74::T
+    abar75::T
+    abar76::T
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+    b5::T
+    b6::T
+    b7::T
+    bbar1::T
+    bbar2::T
+    bbar3::T
+    bbar4::T
+    bbar5::T
+    bbar6::T
+    bbar7::T
+end
+
+function Nystrom5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
+    c1 = convert(T2, \\ )
+    c2 = convert(T2, \\ )
+    c3 = convert(T2, \\ )
+    c4 = convert(T2, \\ )
+    c5 = convert(T2, \\ )
+    c6 = convert(T2, \\ )
+    c7 = convert(T2, \\ )
+    a21 = convert(T, \\ )
+    a31 = convert(T, \\ )
+    a32 = convert(T, \\ )
+    a41 = convert(T, \\ )
+    a42 = convert(T, \\ )
+    a43 = convert(T, \\ )
+    a51 = convert(T, \\ )
+    a52 = convert(T, \\ )
+    a53 = convert(T, \\ )
+    a54 = convert(T, \\ )
+    a61 = convert(T, \\ )
+    a62 = convert(T, \\ )
+    a63 = convert(T, \\ )
+    a64 = convert(T, \\ )
+    a65 = convert(T, \\ )
+    a71 = convert(T, \\ )
+    a72 = convert(T, \\ )
+    a73 = convert(T, \\ )
+    a74 = convert(T, \\ )
+    a75 = convert(T, \\ )
+    a76 = convert(T, \\ )
+    abar21 = convert(T, \\ )
+    abar31 = convert(T, \\ )
+    abar32 = convert(T, \\ )
+    abar41 = convert(T, \\ )
+    abar42 = convert(T, \\ )
+    abar43 = convert(T, \\ )
+    abar51 = convert(T, \\ )
+    abar52 = convert(T, \\ )
+    abar53 = convert(T, \\ )
+    abar54 = convert(T, \\ )
+    abar61 = convert(T, \\ )
+    abar62 = convert(T, \\ )
+    abar63 = convert(T, \\ )
+    abar64 = convert(T, \\ )
+    abar65 = convert(T, \\ )
+    abar71 = convert(T, \\ )
+    abar72 = convert(T, \\ )
+    abar73 = convert(T, \\ )
+    abar74 = convert(T, \\ )
+    abar75 = convert(T, \\ )
+    abar76 = convert(T, \\ )
+    b1 = convert(T, \\ )
+    b2 = convert(T, \\ )
+    b3 = convert(T, \\ )
+    b4 = convert(T, \\ )
+    b5 = convert(T, \\ )
+    b6 = convert(T, \\ )
+    b7 = convert(T, \\ )
+    bbar1 = convert(T, \\ )
+    bbar2 = convert(T, \\ )
+    bbar3 = convert(T, \\ )
+    bbar4 = convert(T, \\ )
+    bbar5 = convert(T, \\ )
+    bbar6 = convert(T, \\ )
+    bbar7 = convert(T, \\ )
+    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar72, abar73, abar74, abar75, abar76, b1, b2, b3, b4, b5, b6, b7, bbar1, bbar2, bbar3, bbar4, bbar5, bbar6, bbar7)
+end
+
+function Nystrom5ConstantCache(T::Type, T2::Type)
+    c1 = convert(T2, \\ )
+    c2 = convert(T2, \\ )
+    c3 = convert(T2, \\ )
+    c4 = convert(T2, \\ )
+    c5 = convert(T2, \\ )
+    c6 = convert(T2, \\ )
+    c7 = convert(T2, \\ )
+    a21 = convert(T, \\ )
+    a31 = convert(T, \\ )
+    a32 = convert(T, \\ )
+    a41 = convert(T, \\ )
+    a42 = convert(T, \\ )
+    a43 = convert(T, \\ )
+    a51 = convert(T, \\ )
+    a52 = convert(T, \\ )
+    a53 = convert(T, \\ )
+    a54 = convert(T, \\ )
+    a61 = convert(T, \\ )
+    a62 = convert(T, \\ )
+    a63 = convert(T, \\ )
+    a64 = convert(T, \\ )
+    a65 = convert(T, \\ )
+    a71 = convert(T, \\ )
+    a72 = convert(T, \\ )
+    a73 = convert(T, \\ )
+    a74 = convert(T, \\ )
+    a75 = convert(T, \\ )
+    a76 = convert(T, \\ )
+    abar21 = convert(T, \\ )
+    abar31 = convert(T, \\ )
+    abar32 = convert(T, \\ )
+    abar41 = convert(T, \\ )
+    abar42 = convert(T, \\ )
+    abar43 = convert(T, \\ )
+    abar51 = convert(T, \\ )
+    abar52 = convert(T, \\ )
+    abar53 = convert(T, \\ )
+    abar54 = convert(T, \\ )
+    abar61 = convert(T, \\ )
+    abar62 = convert(T, \\ )
+    abar63 = convert(T, \\ )
+    abar64 = convert(T, \\ )
+    abar65 = convert(T, \\ )
+    abar71 = convert(T, \\ )
+    abar72 = convert(T, \\ )
+    abar73 = convert(T, \\ )
+    abar74 = convert(T, \\ )
+    abar75 = convert(T, \\ )
+    abar76 = convert(T, \\ )
+    b1 = convert(T, \\ )
+    b2 = convert(T, \\ )
+    b3 = convert(T, \\ )
+    b4 = convert(T, \\ )
+    b5 = convert(T, \\ )
+    b6 = convert(T, \\ )
+    b7 = convert(T, \\ )
+    bbar1 = convert(T, \\ )
+    bbar2 = convert(T, \\ )
+    bbar3 = convert(T, \\ )
+    bbar4 = convert(T, \\ )
+    bbar5 = convert(T, \\ )
+    bbar6 = convert(T, \\ )
+    bbar7 = convert(T, \\ )
+    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar72, abar73, abar74, abar75, abar76, b1, b2, b3, b4, b5, b6, b7, bbar1, bbar2, bbar3, bbar4, bbar5, bbar6, bbar7)
+end
+
+#################################################################################
+
 struct IRKN3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     bconst1::T
     bconst2::T
