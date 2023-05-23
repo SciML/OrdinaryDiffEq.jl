@@ -23,7 +23,6 @@ using OrdinaryDiffEq: alg_order
         KenCarp3,
         CFNLIRK3,
     ]
-        @info "$Alg"
         sim = test_convergence(dts, prob, Alg())
         @test sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.2
     end
