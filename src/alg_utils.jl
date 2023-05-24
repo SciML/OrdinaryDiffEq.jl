@@ -17,7 +17,7 @@ function SciMLBase.forwarddiffs_model(alg::Union{OrdinaryDiffEqAdaptiveImplicitA
                                                  DAEAlgorithm,
                                                  OrdinaryDiffEqImplicitAlgorithm,
                                                  ExponentialAlgorithm})
-    alg_autodiff(alg)
+    alg_autodiff(alg) isa AutoForwardDiff
 end
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 
