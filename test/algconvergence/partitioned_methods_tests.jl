@@ -115,6 +115,9 @@ dts = 1 .// 2 .^ (9:-1:6)
 sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, Nystrom5(), dense_errors = true)
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈5 rtol=1e-1
 sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -285,6 +288,9 @@ sim = test_convergence(dts, prob, KahanLi8(), dense_errors = true)
 # Nyström method
 dts = 1 .// 2 .^ (9:-1:6)
 sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, Nystrom5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = true)

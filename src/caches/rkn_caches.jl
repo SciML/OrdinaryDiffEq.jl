@@ -34,13 +34,13 @@ function alg_cache(alg::Nystrom4, u, rate_prototype, ::Type{uEltypeNoUnits},
     Nystrom4ConstantCache()
 end
 
-
 # alg_cache(alg::Nystrom4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Nystrom4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
-@cache struct Nystrom5Cache{uType, rateType, reducedRateType} <: OrdinaryDiffEqMutableCache
+@cache struct Nystrom5Cache{uType, rateType, reducedRateType, TabType} <: OrdinaryDiffEqMutableCache  
     u::uType
     uprev::uType
     fsalfirst::rateType
+    #k1::rateType
     k2::reducedRateType
     k3::reducedRateType
     k4::reducedRateType
@@ -49,6 +49,7 @@ end
     k7::reducedRateType
     k::rateType
     tmp::uType
+    tab::TabType
 end
 
 function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -56,6 +57,7 @@ function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    dt, reltol, p, calck,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     reduced_rate_prototype = rate_prototype.x[2]
+    tab = Nystrom5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
     k1 = zero(rate_prototype)
     k2 = zero(reduced_rate_prototype)
     k3 = zero(reduced_rate_prototype)
@@ -65,14 +67,14 @@ function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
     k7 = zero(reduced_rate_prototype)
     k = zero(rate_prototype)
     tmp = zero(u)
-    Nystrom5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, tmp)
+    Nystrom5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, tmp, tab)
 end
 
 function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    Nystrom5ConstantCache()
+	Nystrom5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 
