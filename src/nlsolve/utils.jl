@@ -61,7 +61,8 @@ function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     end
 end
 
-mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaType, gammaType,
+mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaType,
+                                          gammaType,
                                           tmpType, uprevType, tType} <: Function
     f::F
     p::pType

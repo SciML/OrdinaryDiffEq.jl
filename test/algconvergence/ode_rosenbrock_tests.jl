@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
-                            prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
+                          prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 import LinearSolve
 
 @testset "Rosenbrock Tests" begin
@@ -440,13 +440,13 @@ end
 @testset "Convergence with time-dependent matrix-free Jacobian" begin
     time_derivative(du, u, p, t) = (du[1] = t * u[1])
     time_derivative_analytic(u0, p, t) = u0 * exp(t^2 / 2)
-    ff_time_derivative = ODEFunction(time_derivative, analytic=time_derivative_analytic)
+    ff_time_derivative = ODEFunction(time_derivative, analytic = time_derivative_analytic)
     prob = ODEProblem(ff_time_derivative, [1.0], (0.0, 1.0))
 
     dts = (1 / 2) .^ (6:-1:3)
     testTol = 0.2
     # Check convergence of Rodas3 with time-dependent matrix-free Jacobian.
     # Primarily to check that the Jacobian is being updated correctly as t changes.
-    sim = test_convergence(dts, prob, Rodas3(linsolve=LinearSolve.KrylovJL()));
+    sim = test_convergence(dts, prob, Rodas3(linsolve = LinearSolve.KrylovJL()))
     @test sim.𝒪est[:final]≈3 atol=testTol
 end

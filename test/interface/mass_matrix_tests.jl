@@ -73,8 +73,10 @@ end
 
 almost_I = Matrix{Float64}(1.01I, 3, 3)
 mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
-dependent_M1 = MatrixOperator(ones(3, 3), update_func = update_func1, update_func! = update_func1!)
-dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2, update_func! = update_func2!)
+dependent_M1 = MatrixOperator(ones(3, 3), update_func = update_func1,
+                              update_func! = update_func1!)
+dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
+                              update_func! = update_func2!)
 
 @testset "Mass Matrix Accuracy Tests" for mm in (almost_I, mm_A)
     # test each method for exactness

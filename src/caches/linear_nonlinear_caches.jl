@@ -846,8 +846,8 @@ mutable struct ETD2Fsal{rateType}
             T = promote_type(eltype.((lin, nl, nlprev))...)
 
             lin = convert(T, lin)
-            nl  = convert(T, nl)
-            nlprev  = convert(T, nlprev)
+            nl = convert(T, nl)
+            nlprev = convert(T, nlprev)
         end
 
         new{typeof(lin)}(lin, nl, nlprev)

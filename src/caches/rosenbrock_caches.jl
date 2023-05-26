@@ -152,7 +152,8 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
                       grad_config, reltol, alg, algebraic_vars)
 end
 
-struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
+       OrdinaryDiffEqConstantCache
     c₃₂::T
     d::T
     tf::TF
@@ -181,7 +182,8 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
                               alg_autodiff(alg))
 end
 
-struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
+       OrdinaryDiffEqConstantCache
     c₃₂::T
     d::T
     tf::TF

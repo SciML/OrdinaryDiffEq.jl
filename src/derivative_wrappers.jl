@@ -228,7 +228,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
                    fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
                    jac_config)
     alg = unwrap_alg(integrator, true)
-    if alg_autodiff(alg) isa AutoForwardDiff 
+    if alg_autodiff(alg) isa AutoForwardDiff
         if integrator.iter == 1
             try
                 forwarddiff_color_jacobian!(J, f, x, jac_config)
@@ -239,7 +239,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
             forwarddiff_color_jacobian!(J, f, x, jac_config)
         end
         integrator.stats.nf += 1
-    elseif alg_autodiff(alg) isa AutoFiniteDiff 
+    elseif alg_autodiff(alg) isa AutoFiniteDiff
         isforward = alg_difftype(alg) === Val{:forward}
         if isforward
             forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
@@ -251,7 +251,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
             tmp = jacobian_finitediff!(J, f, x, jac_config, integrator)
         end
         integrator.stats.nf += tmp
-    else 
+    else
         error("$alg_autodiff not yet supported in jacobian! function")
     end
     nothing
@@ -303,7 +303,7 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
                                                       colorvec = colorvec,
                                                       sparsity = sparsity)
             end
-        else 
+        else
             error("$alg_autodiff not yet supported in build_jac_config function")
         end
     else
@@ -375,7 +375,7 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
             end
         elseif alg_autodiff(alg) isa AutoFiniteDiff
             grad_config = FiniteDiff.GradientCache(du1, t, alg_difftype(alg))
-        else 
+        else
             error("$alg_autodiff not yet supported in build_grad_config function")
         end
     else

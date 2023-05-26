@@ -56,7 +56,9 @@ end
     fun2 = ODEFunction(_f; mass_matrix = mm, jac = (u, p, t) -> t * A)
     fun1_ip = ODEFunction(_f_ip; mass_matrix = mm)
     fun2_ip = ODEFunction(_f_ip; mass_matrix = mm,
-                          jac_prototype = MatrixOperator(similar(A); update_func! = (J, u, p, t) -> J .= t .* A))
+                          jac_prototype = MatrixOperator(similar(A);
+                                                         update_func! = (J, u, p, t) -> J .= t .*
+                                                                                             A))
 
     for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
         println(Alg)
