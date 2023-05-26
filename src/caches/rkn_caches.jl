@@ -36,7 +36,8 @@ end
 
 # alg_cache(alg::Nystrom4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Nystrom4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
-@cache struct Nystrom5Cache{uType, rateType, reducedRateType, TabType} <: OrdinaryDiffEqMutableCache  
+@cache struct Nystrom5Cache{uType, rateType, reducedRateType, TabType} <:
+              OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -74,10 +75,8 @@ function alg_cache(alg::Nystrom5, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
                    dt, reltol, p, calck,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-	Nystrom5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    Nystrom5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
-
-
 
 @cache struct Nystrom4VelocityIndependentCache{uType, rateType, reducedRateType} <:
               OrdinaryDiffEqMutableCache
