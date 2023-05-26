@@ -10,7 +10,7 @@ struct Nystrom5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     a31::T
     a32::T
     a41::T
-    a42::T
+    #a42::T
     a43::T
     a51::T
     a52::T
@@ -20,13 +20,13 @@ struct Nystrom5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     a62::T
     a63::T
     a64::T
-    a65::T
+    #a65::T
     a71::T
-    a72::T
+    #a72::T
     a73::T
     a74::T
     a75::T
-    a76::T
+    #a76::T
     abar21::T
     abar31::T
     abar32::T
@@ -43,40 +43,40 @@ struct Nystrom5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     abar64::T
     abar65::T
     abar71::T
-    abar72::T
+    #abar72::T
     abar73::T
     abar74::T
     abar75::T
     abar76::T
     b1::T
-    b2::T
+    #b2::T
     b3::T
     b4::T
     b5::T
-    b6::T
-    b7::T
+    #b6::T
+    #b7::T
     bbar1::T
-    bbar2::T
+    #bbar2::T
     bbar3::T
     bbar4::T
     bbar5::T
     bbar6::T
-    bbar7::T
+    #bbar7::T
 end
 
 function Nystrom5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     c1 = convert(T2, 1.0)
     c2 = convert(T2, 0.2051282051282051)
-    c3 = convert(T2, 0.3076923076923077)
+    c3 = convert(T2, 0.307692307692308)
     c4 = convert(T2, 0.8333333333333334)
     c5 = convert(T2, 0.9148936170212766)
-    c6 = convert(T2, 0.9999725756910926)
+    c6 = convert(T2, 1.0)
     c7 = convert(T2, 1.0)
     a21 = convert(T, 0.0210387902695595)
     a31 = convert(T, 0.0236686390532544)
     a32 = convert(T, 0.0236686390532544)
     a41 = convert(T, 0.0337577160493827)
-    a42 = convert(T, 0.0)
+    #a42 = convert(T, 0.0)
     a43 = convert(T, 0.31346450617284)
     a51 = convert(T, -0.060954498687391)
     a52 = convert(T, 0.145802190676171)
@@ -86,13 +86,13 @@ function Nystrom5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     a62 = convert(T, 0.352968246663599)
     a63 = convert(T, 0.268963798128547)
     a64 = convert(T, 0.0138057984353428)
-    a65 = convert(T, 0.0)
+    #a65 = convert(T, 0.0)
     a71 = convert(T, 0.0933527131782946)
-    a72 = convert(T, 0.0)
+    #a72 = convert(T, 0.0)
     a73 = convert(T, 0.319562323318651)
     a74 = convert(T, 0.138960763520679)
     a75 = convert(T, -0.0518758000176242)
-    a76 = convert(T, 0.0)
+    #a76 = convert(T, 0.0)
     abar21 = convert(T, 0.205128205128205)
     abar31 = convert(T, 0.0769230769230769)
     abar32 = convert(T, 0.230769230769231)
@@ -109,31 +109,31 @@ function Nystrom5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFlo
     abar64 = convert(T, 0.162068068588807)
     abar65 = convert(T, -0.234909283098676)
     abar71 = convert(T, 0.0933527131782946)
-    abar72 = convert(T, 0.0)
+    #abar72 = convert(T, 0.0)
     abar73 = convert(T, 0.461590022571385)
     abar74 = convert(T, 0.833764581124072)
     abar75 = convert(T, -0.609540650207085)
     abar76 = convert(T, 0.220833333333333)
     b1 = convert(T, 0.0933527131782946)
-    b2 = convert(T, 0.0)
+    #b2 = convert(T, 0.0)
     b3 = convert(T, 0.319562323318651)
     b4 = convert(T, 0.138960763520679)
     b5 = convert(T, -0.0518758000176242)
-    b6 = convert(T, 0.0)
-    b7 = convert(T, 0.0)
+    #b6 = convert(T, 0.0)
+    #b7 = convert(T, 0.0)
     bbar1 = convert(T, 0.0933527131782946)
     bbar2 = convert(T, 0.0)
     bbar3 = convert(T, 0.461590022571385)
     bbar4 = convert(T, 0.833764581124072)
     bbar5 = convert(T, -0.609540650207085)
     bbar6 = convert(T, 0.220833333333333)
-    bbar7 = convert(T, 0.0)
-    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a42, a43, a51,
-                          a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75,
-                          a76, abar21, abar31, abar32, abar41, abar42, abar43, abar51,
+    #bbar7 = convert(T, 0.0)
+    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
+                          a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75,
+                          abar21, abar31, abar32, abar41, abar42, abar43, abar51,
                           abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65,
-                          abar71, abar72, abar73, abar74, abar75, abar76, b1, b2, b3, b4,
-                          b5, b6, b7, bbar1, bbar2, bbar3, bbar4, bbar5, bbar6, bbar7)
+                          abar71, abar73, abar74, abar75, abar76, b1, b3, b4,
+                          b5, bbar1, bbar3, bbar4, bbar5, bbar6)
 end
 
 function Nystrom5ConstantCache(T::Type, T2::Type)
@@ -142,13 +142,13 @@ function Nystrom5ConstantCache(T::Type, T2::Type)
     c3 = convert(T2, 4 // 13)
     c4 = convert(T2, 5 // 6)
     c5 = convert(T2, 43 // 47)
-    c6 = convert(T2, 36463 // 36464)
+    c6 = convert(T2, 1 // 1) # 36463 // 36464
     c7 = convert(T2, 1 // 1)
     a21 = convert(T, 32 // 1521)
     a31 = convert(T, 4 // 169)
     a32 = convert(T, 4 // 169)
     a41 = convert(T, 175 // 5184)
-    a42 = convert(T, 0 // 1)
+    #a42 = convert(T, 0 // 1)
     a43 = convert(T, 1625 // 5184)
     a51 = convert(T, -342497279 // 5618900760)
     a52 = convert(T, 6827067 // 46824173)
@@ -158,13 +158,13 @@ function Nystrom5ConstantCache(T::Type, T2::Type)
     a62 = convert(T, 767 // 2173)
     a63 = convert(T, 14027 // 52152)
     a64 = convert(T, 30 // 2173)
-    a65 = convert(T, 0 // 1)
+    #a65 = convert(T, 0 // 1)
     a71 = convert(T, 4817 // 51600)
-    a72 = convert(T, 0 // 1)
+    #a72 = convert(T, 0 // 1)
     a73 = convert(T, 388869 // 1216880)
     a74 = convert(T, 3276 // 23575)
     a75 = convert(T, -1142053 // 22015140)
-    a76 = convert(T, 0 // 1)
+    #a76 = convert(T, 0 // 1)
     abar21 = convert(T, 8 // 39)
     abar31 = convert(T, 1 // 13)
     abar32 = convert(T, 3 // 13)
@@ -181,31 +181,31 @@ function Nystrom5ConstantCache(T::Type, T2::Type)
     abar64 = convert(T, 8100 // 49979)
     abar65 = convert(T, -4568212 // 19446707)
     abar71 = convert(T, 4817 // 51600)
-    abar72 = convert(T, 0 // 1)
+    #abar72 = convert(T, 0 // 1)
     abar73 = convert(T, 1685099 // 3650640)
     abar74 = convert(T, 19656 // 23575)
     abar75 = convert(T, -53676491 // 88060560)
     abar76 = convert(T, 53 // 240)
     b1 = convert(T, 4817 // 51600)
-    b2 = convert(T, 0 // 1)
+    #b2 = convert(T, 0 // 1)
     b3 = convert(T, 388869 // 1216880)
     b4 = convert(T, 3276 // 23575)
     b5 = convert(T, -1142053 // 22015140)
-    b6 = convert(T, 0 // 1)
-    b7 = convert(T, 0 // 1)
+    #b6 = convert(T, 0 // 1)
+    #b7 = convert(T, 0 // 1)
     bbar1 = convert(T, 4817 // 51600)
-    bbar2 = convert(T, 0 // 1)
+    #bbar2 = convert(T, 0 // 1)
     bbar3 = convert(T, 1685099 // 3650640)
     bbar4 = convert(T, 19656 // 23575)
     bbar5 = convert(T, -53676491 // 88060560)
     bbar6 = convert(T, 53 // 240)
-    bbar7 = convert(T, 0 // 1)
-    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a42, a43, a51,
-                          a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75,
-                          a76, abar21, abar31, abar32, abar41, abar42, abar43, abar51,
+    #bbar7 = convert(T, 0 // 1)
+    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
+                          a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75,
+                          abar21, abar31, abar32, abar41, abar42, abar43, abar51,
                           abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65,
-                          abar71, abar72, abar73, abar74, abar75, abar76, b1, b2, b3, b4,
-                          b5, b6, b7, bbar1, bbar2, bbar3, bbar4, bbar5, bbar6, bbar7)
+                          abar71, abar73, abar74, abar75, abar76, b1, b3, b4,
+                          b5, bbar1, bbar3, bbar4, bbar5, bbar6)
 end
 
 struct IRKN3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache

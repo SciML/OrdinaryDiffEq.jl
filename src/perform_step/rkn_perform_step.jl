@@ -126,7 +126,7 @@ end
                                repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
-    @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar72, abar73, abar74, abar75, abar76, b1, b3, b4, b5, b6, b7, bbar1, bbar3, bbar4, bbar5, bbar6, bbar7 = cache
+    @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6 = cache
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + (c2 * dt * duprev) + (dt^2 * a21 * k1)
@@ -137,7 +137,7 @@ end
     kdu = duprev + dt * (abar31 * k1 + abar32 * k2)
 
     k3 = f.f1(kdu, ku, p, t + dt * c3)
-    ku = uprev + dt * (c4 * duprev + dt * (a41 * k1 + a42 * k2 + a43 * k3))
+    ku = uprev + dt * (c4 * duprev + dt * (a41 * k1 + a43 * k3)) # a42 = 0
     kdu = duprev + dt * (abar41 * k1 + abar42 * k2 + abar43 * k3)
 
     k4 = f.f1(kdu, ku, p, t + dt * c4)
@@ -146,17 +146,17 @@ end
 
     k5 = f.f1(duprev, ku, p, t + dt * c5)
     ku = uprev +
-         dt * (c6 * duprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5))
+         dt * (c6 * duprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4)) # a65 = 0
     kdu = duprev +
           dt * (abar61 * k1 + abar62 * k2 + abar63 * k3 + abar64 * k4 + abar65 * k5)
 
     k6 = f.f1(duprev, ku, p, t + dt * c6)
     ku = uprev +
          dt * (c7 * duprev +
-          dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6))
+               dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5)) # a72 = a76 = 0
     kdu = duprev +
-          dt * (abar71 * k1 + abar72 * k2 + abar73 * k3 + abar74 * k4 + abar75 * k5 +
-           abar76 * k6)
+          dt * (abar71 * k1 + abar73 * k3 + abar74 * k4 + abar75 * k5 +
+                abar76 * k6) # abar72 = 0
 
     k7 = f.f1(duprev, ku, p, t + dt * c7)
     u = uprev + dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)) # no b6, b7 
@@ -175,7 +175,7 @@ end
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
     @unpack tmp, fsalfirst, k2, k3, k4, k5, k6, k7, k = cache
-    @unpack c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar72, abar73, abar74, abar75, abar76, b1, b3, b4, b5, b6, b7, bbar1, bbar3, bbar4, bbar5, bbar6, bbar7 = cache.tab #cache.tab?
+    @unpack c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6 = cache.tab
 
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k1 = integrator.fsalfirst.x[1]
@@ -189,7 +189,7 @@ end
 
     f.f1(k3, kdu, ku, p, t + dt * c3)
     @.. broadcast=false ku=uprev +
-                           dt * (c4 * duprev + dt * (a41 * k1 + a42 * k2 + a43 * k3))
+                           dt * (c4 * duprev + dt * (a41 * k1 + a43 * k3)) # a42 = 0
     @.. broadcast=false kdu=duprev + dt * (abar41 * k1 + abar42 * k2 + abar43 * k3)
 
     f.f1(k4, kdu, ku, p, t + dt * c4)
@@ -202,7 +202,7 @@ end
     f.f1(k5, kdu, ku, p, t + dt * c5)
     @.. broadcast=false ku=uprev +
                            dt * (c6 * duprev +
-                            dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5))
+                            dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4)) # a65 = 0
     @.. broadcast=false kdu=duprev +
                             dt * (abar61 * k1 + abar62 * k2 + abar63 * k3 + abar64 * k4 +
                              abar65 * k5)
@@ -210,11 +210,11 @@ end
     f.f1(k6, kdu, ku, p, t + dt * c6)
     @.. broadcast=false ku=uprev +
                            dt * (c7 * duprev +
-                            dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 +
-                             a76 * k6))
+                            dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5)) # a72 = a76 = 0
+
     @.. broadcast=false kdu=duprev +
-                            dt * (abar71 * k1 + abar72 * k2 + abar73 * k3 + abar74 * k4 +
-                             abar75 * k5 + abar76 * k6)
+                            dt * (abar71 * k1 + abar73 * k3 + abar74 * k4 +
+                             abar75 * k5 + abar76 * k6) # abar72 = 0
 
     f.f1(k7, kdu, ku, p, t + dt * c7)
     @.. broadcast=false u=uprev +
