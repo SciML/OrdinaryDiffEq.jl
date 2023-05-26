@@ -142,8 +142,8 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         failed = nlsolvefail(nlsolver)
         @.. broadcast=false integrator.u=integrator.uprev + z
     else
-        isad = alg_autodiff(integrator.alg)
-        if isad
+        isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+        if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
             _tmp = PreallocationTools.dualcache(tmp, chunk)
         else
@@ -153,7 +153,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         nlequation! = @closure (out, u, p) -> begin
             update_coefficients!(M, u, p, t)
             #M * (u-u0)/dt - f(u,p,t)
-            tmp = isad ? PreallocationTools.get_tmp(_tmp, u) : _tmp
+            tmp = isAD ? PreallocationTools.get_tmp(_tmp, u) : _tmp
             @. tmp = (u - u0) / dt
             mul!(_vec(out), M, _vec(tmp))
             f(tmp, u, p, t)
@@ -161,7 +161,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             nothing
         end
 
-        nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isad)
+        nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
 
         nlfunc = NonlinearFunction(nlequation!;
                                    jac_prototype = f.jac_prototype)
@@ -265,8 +265,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     f(resid, integrator.du, u0, p, t)
     integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
 
-    isad = alg_autodiff(integrator.alg)
-    if isad
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
     else
@@ -274,14 +274,14 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation! = @closure (out, u, p) -> begin
-        tmp = isad ? PreallocationTools.get_tmp(_tmp, u) : _tmp
+        tmp = isAD ? PreallocationTools.get_tmp(_tmp, u) : _tmp
         #M * (u-u0)/dt - f(u,p,t)
         @. tmp = (u - u0) / dt
         f(out, tmp, u, p, t)
         nothing
     end
 
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isad)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0, p)
@@ -372,8 +372,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     integrator.opts.internalnorm(tmp, t) <= alg.abstol && return
     alg_u = @view u[algebraic_vars]
 
-    isad = alg_autodiff(integrator.alg)
-    if isad
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    if isAD
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
         _du_tmp = PreallocationTools.dualcache(similar(tmp), chunk)
@@ -382,8 +382,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        uu = isad ? PreallocationTools.get_tmp(_tmp, x) : _tmp
-        du_tmp = isad ? PreallocationTools.get_tmp(_du_tmp, x) : _du_tmp
+        uu = isAD ? PreallocationTools.get_tmp(_tmp, x) : _tmp
+        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, x) : _du_tmp
         copyto!(uu, integrator.u)
         alg_uu = @view uu[algebraic_vars]
         alg_uu .= x
@@ -394,7 +394,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
 
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, isad)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, isAD)
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
@@ -429,8 +429,8 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     integrator.opts.internalnorm(resid, t) <= alg.abstol && return
 
-    isad = alg_autodiff(integrator.alg)
-    if isad
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    if isAD
         chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
         _tmp = PreallocationTools.dualcache(similar(u0), chunk)
     else
@@ -445,7 +445,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation = @closure (x, _) -> begin
-        uu = isad ? PreallocationTools.get_tmp(_tmp, x) : _tmp
+        uu = isAD ? PreallocationTools.get_tmp(_tmp, x) : _tmp
         copyto!(uu, integrator.u)
         alg_u = @view uu[algebraic_vars]
         alg_u .= x
@@ -455,7 +455,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
 
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isad)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
@@ -499,8 +499,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
     end
 
-    isad = alg_autodiff(integrator.alg)
-    if isad
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
         _du_tmp = PreallocationTools.dualcache(du_tmp, chunk)
@@ -509,8 +509,8 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        du_tmp = isad ? PreallocationTools.get_tmp(_du_tmp, x) : _du_tmp
-        uu = isad ? PreallocationTools.get_tmp(_tmp, x) : _tmp
+        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, x) : _du_tmp
+        uu = isAD ? PreallocationTools.get_tmp(_tmp, x) : _tmp
 
         @. du_tmp = ifelse(differential_vars, x, du)
         @. uu = ifelse(differential_vars, u, x)
@@ -521,7 +521,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     if alg.nlsolve !== nothing
         nlsolve = alg.nlsolve
     else
-        nlsolve = NewtonRaphson(autodiff = isad)
+        nlsolve = NewtonRaphson(autodiff = isAD)
     end
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)

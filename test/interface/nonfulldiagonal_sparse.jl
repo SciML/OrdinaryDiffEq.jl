@@ -19,7 +19,7 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         lower[1] = -1.0
         upper[end] = 1.0
         M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
-        DiffEqArrayOperator(1 / dx * M)
+        MatrixOperator(1 / dx * M)
     end
 
     function second_deriv(N)
@@ -32,7 +32,7 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         lower[1] = 1.0
         upper[end] = 1.0
         M = hcat(lower, sparse(diagm(-1 => du, 0 => diag, 1 => du2)), upper)
-        DiffEqArrayOperator(1 / dx^2 * M)
+        MatrixOperator(1 / dx^2 * M)
     end
 
     function extender(N)
@@ -45,7 +45,7 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         M = vcat(transpose(lower),
                  sparse(diagm(diag)),
                  transpose(upper))
-        DiffEqArrayOperator(1 / dx^2 * M)
+        MatrixOperator(1 / dx^2 * M)
     end
 
     bc_handler = extender(N)

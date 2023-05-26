@@ -152,7 +152,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
                       grad_config, reltol, alg, algebraic_vars)
 end
 
-struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
     c₃₂::T
     d::T
     tf::TF
@@ -160,7 +160,7 @@ struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqCo
     J::JType
     W::WType
     linsolve::F
-    autodiff::Bool
+    autodiff::AD
 end
 
 function Rosenbrock23ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
@@ -181,7 +181,7 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
                               alg_autodiff(alg))
 end
 
-struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
     c₃₂::T
     d::T
     tf::TF
@@ -189,7 +189,7 @@ struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F} <: OrdinaryDiffEqCo
     J::JType
     W::WType
     linsolve::F
-    autodiff::Bool
+    autodiff::AD
 end
 
 function Rosenbrock32ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
@@ -416,14 +416,14 @@ jac_cache(c::Rosenbrock4Cache) = (c.J, c.W)
 
 ### Rodas methods
 
-struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqConstantCache
+struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
     tf::TF
     uf::UF
     tab::Tab
     J::JType
     W::WType
     linsolve::F
-    autodiff::Bool
+    autodiff::AD
 end
 
 @cache mutable struct Rodas4Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,

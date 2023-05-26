@@ -12,8 +12,8 @@ tspan = (0.0, 1.0)
 M1 = 2ones(n) |> Diagonal #|> Array
 M2 = 2ones(n) |> Diagonal #|> Array
 
-f1 = M1 |> DiffEqArrayOperator
-f2 = M2 |> DiffEqArrayOperator
+f1 = M1 |> MatrixOperator
+f2 = M2 |> MatrixOperator
 prob = SplitODEProblem(f1, f2, u0, tspan)
 
 for algname in (:SBDF2,

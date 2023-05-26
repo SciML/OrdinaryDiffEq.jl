@@ -61,7 +61,7 @@ function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
     end
 end
 
-mutable struct DAEResidualJacobianWrapper{AD, F, pType, duType, uType, alphaType, gammaType,
+mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaType, gammaType,
                                           tmpType, uprevType, tType} <: Function
     f::F
     p::pType
@@ -73,7 +73,7 @@ mutable struct DAEResidualJacobianWrapper{AD, F, pType, duType, uType, alphaType
     uprev::uprevType
     t::tType
     function DAEResidualJacobianWrapper(alg, f, p, α, invγdt, tmp, uprev, t)
-        isautodiff = alg_autodiff(alg)
+        isautodiff = alg_autodiff(alg) isa AutoForwardDiff
         if isautodiff
             tmp_du = PreallocationTools.dualcache(uprev)
             tmp_u = PreallocationTools.dualcache(uprev)
@@ -87,7 +87,7 @@ mutable struct DAEResidualJacobianWrapper{AD, F, pType, duType, uType, alphaType
     end
 end
 
-is_autodiff(m::DAEResidualJacobianWrapper{AD}) where {AD} = AD
+is_autodiff(m::DAEResidualJacobianWrapper{isAD}) where {isAD} = isAD
 
 function (m::DAEResidualJacobianWrapper)(out, x)
     if is_autodiff(m)

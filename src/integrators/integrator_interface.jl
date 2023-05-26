@@ -234,20 +234,14 @@ function resize_J_W!(cache, integrator, i)
         nf = nlsolve_f(f, integrator.alg)
         islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
         if !islin
-            if isa(cache.J, AbstractSciMLOperator)
+            if cache.J isa AbstractSciMLOperator
                 resize!(cache.J, i)
             elseif f.jac_prototype !== nothing
                 J = similar(f.jac_prototype, i, i)
-                J = DiffEqArrayOperator(J; update_func = f.jac)
-            elseif cache.J isa SparseDiffTools.JacVec
-                resize!(cache.J.cache1, i)
-                resize!(cache.J.cache2, i)
-                resize!(cache.J.x, i)
+                J = MatrixOperator(J; update_func! = f.jac)
             end
-            if cache.W.jacvec !== nothing
-                resize!(cache.W.jacvec.cache1, i)
-                resize!(cache.W.jacvec.cache2, i)
-                resize!(cache.W.jacvec.x, i)
+            if cache.W.jacvec isa AbstractSciMLOperator
+                resize!(cache.W.jacvec, i)
             end
             cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
                                                                            integrator.dt,
