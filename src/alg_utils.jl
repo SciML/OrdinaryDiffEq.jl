@@ -487,7 +487,7 @@ alg_order(alg::SofSpa10) = 10
 
 alg_order(alg::IRKN3) = 3
 alg_order(alg::Nystrom4) = 4
-alg_order(alg::Nystrom4) = 5
+alg_order(alg::FineRKN5) = 5
 alg_order(alg::Nystrom4VelocityIndependent) = 4
 alg_order(alg::IRKN4) = 4
 alg_order(alg::Nystrom5VelocityIndependent) = 5

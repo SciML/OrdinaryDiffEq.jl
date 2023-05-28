@@ -4,7 +4,7 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
-const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, Nystrom5ConstantCache,
+const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN5ConstantCache,
                                              Nystrom4VelocityIndependentConstantCache,
                                              Nystrom5VelocityIndependentConstantCache,
                                              IRKN3ConstantCache, IRKN4ConstantCache,
@@ -25,7 +25,7 @@ function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.fsalfirst = ArrayPartition((kdu, ku))
 end
 
-const NystromDefaultInitialization = Union{Nystrom4Cache, Nystrom5Cache,
+const NystromDefaultInitialization = Union{Nystrom4Cache, FineRKN5Cache,
                                            Nystrom4VelocityIndependentCache,
                                            Nystrom5VelocityIndependentCache,
                                            IRKN3Cache, IRKN4Cache,
@@ -122,7 +122,7 @@ end
     integrator.stats.nf2 += 1
 end
 
-@muladd function perform_step!(integrator, cache::Nystrom5ConstantCache,
+@muladd function perform_step!(integrator, cache::FineRKN5ConstantCache,
                                repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
@@ -170,7 +170,7 @@ end
     integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator, cache::Nystrom5Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::FineRKN5Cache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
