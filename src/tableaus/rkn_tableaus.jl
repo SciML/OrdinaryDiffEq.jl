@@ -1,4 +1,4 @@
-struct Nystrom5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+struct FineRKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c1::T2
     c2::T2
     c3::T2
@@ -64,79 +64,8 @@ struct Nystrom5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     #bbar7::T
 end
 
-function Nystrom5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
-    c1 = convert(T2, 1.0)
-    c2 = convert(T2, 0.2051282051282051)
-    c3 = convert(T2, 0.307692307692308)
-    c4 = convert(T2, 0.8333333333333334)
-    c5 = convert(T2, 0.9148936170212766)
-    c6 = convert(T2, 1.0)
-    c7 = convert(T2, 1.0)
-    a21 = convert(T, 0.0210387902695595)
-    a31 = convert(T, 0.0236686390532544)
-    a32 = convert(T, 0.0236686390532544)
-    a41 = convert(T, 0.0337577160493827)
-    #a42 = convert(T, 0.0)
-    a43 = convert(T, 0.31346450617284)
-    a51 = convert(T, -0.060954498687391)
-    a52 = convert(T, 0.145802190676171)
-    a53 = convert(T, 0.34307079575472)
-    a54 = convert(T, -0.0094033225103623)
-    a61 = convert(T, -0.135737843227489)
-    a62 = convert(T, 0.352968246663599)
-    a63 = convert(T, 0.268963798128547)
-    a64 = convert(T, 0.0138057984353428)
-    #a65 = convert(T, 0.0)
-    a71 = convert(T, 0.0933527131782946)
-    #a72 = convert(T, 0.0)
-    a73 = convert(T, 0.319562323318651)
-    a74 = convert(T, 0.138960763520679)
-    a75 = convert(T, -0.0518758000176242)
-    #a76 = convert(T, 0.0)
-    abar21 = convert(T, 0.205128205128205)
-    abar31 = convert(T, 0.0769230769230769)
-    abar32 = convert(T, 0.230769230769231)
-    abar41 = convert(T, 1.06843171296296)
-    abar42 = convert(T, -4.09071180555556)
-    abar43 = convert(T, 3.85561342592593)
-    abar51 = convert(T, 2.44433442449694)
-    abar52 = convert(T, -9.53630178503099)
-    abar53 = convert(T, 8.17612078274186)
-    abar54 = convert(T, -0.169259805186522)
-    abar61 = convert(T, 2.9748519087319)
-    abar62 = convert(T, -11.3596698113208)
-    abar63 = convert(T, 9.45765911709872)
-    abar64 = convert(T, 0.162068068588807)
-    abar65 = convert(T, -0.234909283098676)
-    abar71 = convert(T, 0.0933527131782946)
-    #abar72 = convert(T, 0.0)
-    abar73 = convert(T, 0.461590022571385)
-    abar74 = convert(T, 0.833764581124072)
-    abar75 = convert(T, -0.609540650207085)
-    abar76 = convert(T, 0.220833333333333)
-    b1 = convert(T, 0.0933527131782946)
-    #b2 = convert(T, 0.0)
-    b3 = convert(T, 0.319562323318651)
-    b4 = convert(T, 0.138960763520679)
-    b5 = convert(T, -0.0518758000176242)
-    #b6 = convert(T, 0.0)
-    #b7 = convert(T, 0.0)
-    bbar1 = convert(T, 0.0933527131782946)
-    bbar2 = convert(T, 0.0)
-    bbar3 = convert(T, 0.461590022571385)
-    bbar4 = convert(T, 0.833764581124072)
-    bbar5 = convert(T, -0.609540650207085)
-    bbar6 = convert(T, 0.220833333333333)
-    #bbar7 = convert(T, 0.0)
-    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
-                          a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75,
-                          abar21, abar31, abar32, abar41, abar42, abar43, abar51,
-                          abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65,
-                          abar71, abar73, abar74, abar75, abar76, b1, b3, b4,
-                          b5, bbar1, bbar3, bbar4, bbar5, bbar6)
-end
 
-function Nystrom5ConstantCache(T::Type, T2::Type)
+function FineRKN5ConstantCache(T::Type, T2::Type)
     c1 = convert(T2, 1 // 1)
     c2 = convert(T2, 8 // 39)
     c3 = convert(T2, 4 // 13)
@@ -200,7 +129,7 @@ function Nystrom5ConstantCache(T::Type, T2::Type)
     bbar5 = convert(T, -53676491 // 88060560)
     bbar6 = convert(T, 53 // 240)
     #bbar7 = convert(T, 0 // 1)
-    Nystrom5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
+    FineRKN5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
                           a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75,
                           abar21, abar31, abar32, abar41, abar42, abar43, abar51,
                           abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65,
