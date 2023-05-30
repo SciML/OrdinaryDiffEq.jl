@@ -169,7 +169,7 @@ end
     b, ustep = _compute_rhs!(nlsolver, integrator, f, z)
 
     # update W
-    if W isa DiffEqBase.AbstractDiffEqLinearOperator
+    if W isa AbstractSciMLOperator
         update_coefficients!(W, ustep, p, tstep)
     end
 
@@ -252,10 +252,10 @@ end
         else
             ustep = @. tmp + γ * z
             if mass_matrix === I
-                ztmp = (dt .* f(ustep, p, tstep) .- z) .* invγdt
+                ztmp = (dt * f(ustep, p, tstep) - z) * invγdt
             else
                 update_coefficients!(mass_matrix, ustep, p, tstep)
-                ztmp = (dt .* f(ustep, p, tstep) .- mass_matrix * z) .* invγdt
+                ztmp = (dt * f(ustep, p, tstep) - mass_matrix * z) * invγdt
             end
         end
     end

@@ -14,14 +14,19 @@ function lorenz(du, u, p, t)
 end
 lorenzprob = ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[])
 
-t1 = @elapsed sol = solve(lorenzprob, Rosenbrock23())
-t2 = @elapsed sol = solve(lorenzprob, Rosenbrock23(autodiff = false))
+t1 = @elapsed sol1 = solve(lorenzprob, Rosenbrock23())
+t2 = @elapsed sol2 = solve(lorenzprob, Rosenbrock23(autodiff = false))
 
 lorenzprob2 = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz, [1.0; 0.0; 0.0],
                                                          (0.0, 1.0), Float64[])
 
-t3 = @elapsed sol = solve(lorenzprob2, Rosenbrock23())
-t4 = @elapsed sol = solve(lorenzprob2, Rosenbrock23(autodiff = false))
+t3 = @elapsed sol3 = solve(lorenzprob2, Rosenbrock23())
+t4 = @elapsed sol4 = solve(lorenzprob2, Rosenbrock23(autodiff = false))
+
+@test sol1.retcode === ReturnCode.Success
+@test sol2.retcode === ReturnCode.Success
+@test sol3.retcode === ReturnCode.Success
+@test sol4.retcode === ReturnCode.Success
 
 if VERSION >= v"1.8"
     @test t1 < t3

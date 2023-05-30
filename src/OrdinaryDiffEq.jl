@@ -33,7 +33,10 @@ import DiffEqBase: solve!, step!, initialize!, isadaptive
 import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
                    ODE_DEFAULT_UNSTABLE_CHECK
 
-using DiffEqBase: DiffEqArrayOperator, DEFAULT_UPDATE_FUNC
+import SciMLOperators: SciMLOperators, AbstractSciMLOperator, AbstractSciMLScalarOperator,
+                       MatrixOperator, FunctionOperator,
+                       update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
+                       isconstant
 
 using DiffEqBase: TimeGradientWrapper, UJacobianWrapper, TimeDerivativeWrapper,
                   UDerivativeWrapper
@@ -76,7 +79,7 @@ using FastBroadcast: @.., True, False
 
 using IfElse
 
-using SciMLBase: NoInit, _unwrap_val, AbstractSciMLOperator
+using SciMLBase: NoInit, _unwrap_val
 
 import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,
@@ -88,10 +91,12 @@ else
     struct OrdinaryDiffEqTag end
 end
 
-import SparseDiffTools
-import SparseDiffTools: matrix_colors, forwarddiff_color_jacobian!,
+import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
                         forwarddiff_color_jacobian, ForwardColorJacCache,
-                        default_chunk_size, getsize
+                        default_chunk_size, getsize, JacVec
+
+import ADTypes: AbstractADType, AutoFiniteDiff, AutoForwardDiff, AutoReverseDiff,
+                AutoTracker, AutoZygote, AutoEnzyme
 
 import Polyester
 using MacroTools, Adapt

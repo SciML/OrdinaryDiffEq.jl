@@ -206,7 +206,7 @@ end
     if typeof(integrator.f) <: SplitFunction
         # Explicit tableau is not FSAL
         # Make this not compute on repeat
-        z₁ = dt .* f(uprev, p, t)
+        z₁ = dt * f(uprev, p, t)
     else
         # FSAL Step 1
         z₁ = dt * integrator.fsalfirst

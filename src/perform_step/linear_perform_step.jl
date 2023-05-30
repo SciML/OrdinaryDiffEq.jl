@@ -795,6 +795,7 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
 end
 
 cay!(tmp, A) = mul!(tmp, inv(I - 1 / 2 * A), (I + 1 / 2 * A))
+cay!(tmp, A::AbstractSciMLOperator) = @error "cannot multiply two SciMLOperators with mul!"
 cay(A) = inv(I - 1 / 2 * A) * (I + 1 / 2 * A)
 
 function initialize!(integrator, cache::CayleyEulerConstantCache)
@@ -820,8 +821,10 @@ function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step 
     end
 
     L = update_coefficients(A, uprev, p, t)
+    L = convert(AbstractMatrix, L)
+
     V = cay(L * dt)
-    u = V * uprev * transpose(V)
+    u = (V * uprev) * transpose(V)
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
@@ -854,6 +857,7 @@ function perform_step!(integrator, cache::CayleyEulerCache, repeat_step = false)
     end
 
     update_coefficients!(L, uprev, p, t)
+    L = convert(AbstractMatrix, L)
 
     cay!(V, L * dt)
     mul!(tmp, uprev, transpose(V))

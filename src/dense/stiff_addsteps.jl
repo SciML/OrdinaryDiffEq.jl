@@ -7,7 +7,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         @unpack tf, uf, d = cache
         γ = dt * d
         tf.u = uprev
-        if cache.autodiff
+        if cache.autodiff isa AutoForwardDiff
             dT = ForwardDiff.derivative(tf, t)
         else
             dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
@@ -180,7 +180,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
 
         # Time derivative
         tf.u = uprev
-        if cache.autodiff
+        if cache.autodiff isa AutoForwardDiff
             dT = ForwardDiff.derivative(tf, t)
         else
             dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))
@@ -566,7 +566,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
 
         # Time derivative
         tf.u = uprev
-        #    if cache.autodiff
+        #    if cache.autodiff isa AutoForwardDiff
         #      dT = ForwardDiff.derivative(tf, t)
         #    else
         dT = FiniteDiff.finite_difference_derivative(tf, t, dir = sign(dt))

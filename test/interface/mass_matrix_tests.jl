@@ -35,7 +35,7 @@ function _norm_dsol(alg, prob, prob2, dt = 1 / 10)
     norm(sol .- sol2)
 end
 
-function update_func1(A, u, p, t)
+function update_func1!(A, u, p, t)
     A[1, 1] = cos(t)
     A[2, 1] = sin(t) * u[1]
     A[3, 1] = t^2
@@ -47,7 +47,13 @@ function update_func1(A, u, p, t)
     A[3, 3] = t * cos(t) + 1
 end
 
-function update_func2(A, u, p, t)
+function update_func1(A, u, p, t)
+    A = copy(A)
+    update_func1!(A, u, p, t)
+    A
+end
+
+function update_func2!(A, u, p, t)
     A[1, 1] = cos(t)
     A[2, 1] = sin(t)
     A[3, 1] = t^2
@@ -59,10 +65,18 @@ function update_func2(A, u, p, t)
     A[3, 3] = t * cos(t) + 1
 end
 
+function update_func2(A, u, p, t)
+    A = copy(A)
+    update_func2!(A, u, p, t)
+    A
+end
+
 almost_I = Matrix{Float64}(1.01I, 3, 3)
 mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
-dependent_M1 = DiffEqArrayOperator(ones(3, 3), update_func = update_func1)
-dependent_M2 = DiffEqArrayOperator(ones(3, 3), update_func = update_func2)
+dependent_M1 = MatrixOperator(ones(3, 3), update_func = update_func1,
+                              update_func! = update_func1!)
+dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
+                              update_func! = update_func2!)
 
 @testset "Mass Matrix Accuracy Tests" for mm in (almost_I, mm_A)
     # test each method for exactness

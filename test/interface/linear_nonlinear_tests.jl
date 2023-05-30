@@ -36,35 +36,35 @@ end
 sol = @test_nowarn solve(prob, TRBDF2(autodiff = false));
 @test length(sol.t) < 20
 sol = @test_nowarn solve(prob,
-                         TRBDF2(autodiff = false, linsolve = IterativeSolversJL_GMRES()));
+                         TRBDF2(autodiff = false, linsolve = KrylovJL_GMRES()));
 @test length(sol.t) < 20
 solref = @test_nowarn solve(prob,
-                            TRBDF2(autodiff = false, linsolve = IterativeSolversJL_GMRES(),
+                            TRBDF2(autodiff = false, linsolve = KrylovJL_GMRES(),
                                    smooth_est = false));
 @test length(sol.t) < 20
 sol = @test_nowarn solve(prob,
-                         TRBDF2(autodiff = false, linsolve = IterativeSolversJL_GMRES(),
+                         TRBDF2(autodiff = false, linsolve = KrylovJL_GMRES(),
                                 precs = precsl, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
 sol = @test_nowarn solve(prob,
-                         TRBDF2(autodiff = false, linsolve = IterativeSolversJL_GMRES(),
+                         TRBDF2(autodiff = false, linsolve = KrylovJL_GMRES(),
                                 precs = precsr, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
 sol = @test_nowarn solve(prob,
-                         TRBDF2(autodiff = false, linsolve = IterativeSolversJL_GMRES(),
+                         TRBDF2(autodiff = false, linsolve = KrylovJL_GMRES(),
                                 precs = precslr, smooth_est = false, concrete_jac = true));
 @test length(sol.t) < 20
 sol = @test_nowarn solve(prob,
-                         QNDF(autodiff = false, linsolve = IterativeSolversJL_GMRES(),
+                         QNDF(autodiff = false, linsolve = KrylovJL_GMRES(),
                               concrete_jac = true));
 @test length(sol.t) < 25
 sol = @test_nowarn solve(prob,
                          Rosenbrock23(autodiff = false,
-                                      linsolve = IterativeSolversJL_GMRES(),
+                                      linsolve = KrylovJL_GMRES(),
                                       precs = precslr, concrete_jac = true));
 @test length(sol.t) < 20
 sol = @test_nowarn solve(prob,
-                         Rodas4(autodiff = false, linsolve = IterativeSolversJL_GMRES(),
+                         Rodas4(autodiff = false, linsolve = KrylovJL_GMRES(),
                                 precs = precslr, concrete_jac = true));
 @test length(sol.t) < 20
 
