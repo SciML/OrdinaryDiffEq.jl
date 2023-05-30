@@ -41,7 +41,6 @@ end
     u::uType
     uprev::uType
     fsalfirst::rateType
-    #k1::rateType
     k2::reducedRateType
     k3::reducedRateType
     k4::reducedRateType
