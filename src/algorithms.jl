@@ -6037,7 +6037,6 @@ for Alg in [:ESERK4, :ESERK5, :RKC]
     end
 end
 
-
 """
 B. P. Sommeijer, L. F. Shampine, J. G. Verwer. RKC: An Explicit Solver for Parabolic PDEs,
   Journal of Computational and Applied Mathematics, 88(2), pp 315-326, 1998. doi:
