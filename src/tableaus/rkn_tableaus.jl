@@ -64,7 +64,6 @@ struct FineRKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     #bbar7::T
 end
 
-
 function FineRKN5ConstantCache(T::Type, T2::Type)
     c1 = convert(T2, 1 // 1)
     c2 = convert(T2, 8 // 39)
