@@ -6028,6 +6028,16 @@ end
 
 # SERK methods
 
+for Alg in [:ESERK4, :ESERK5, :RKC]
+    @eval begin
+        struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
+            eigen_est::E
+        end
+        $Alg(; eigen_est = nothing) = $Alg(eigen_est)
+    end
+end
+
+
 """
 B. P. Sommeijer, L. F. Shampine, J. G. Verwer. RKC: An Explicit Solver for Parabolic PDEs,
   Journal of Computational and Applied Mathematics, 88(2), pp 315-326, 1998. doi:
@@ -6082,14 +6092,6 @@ If `eigen_est` is not provided, `upper_bound` will be estimated using the power 
 """
 function ESERK5 end
 
-for Alg in [:ESERK4, :ESERK5, :RKC]
-    @eval begin
-        struct $Alg{E} <: OrdinaryDiffEqAdaptiveAlgorithm
-            eigen_est::E
-        end
-        $Alg(; eigen_est = nothing) = $Alg(eigen_est)
-    end
-end
 struct SERK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     controller::Symbol
     eigen_est::E
