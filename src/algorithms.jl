@@ -6058,6 +6058,8 @@ is not provided, `upper_bound` will be estimated using the power iteration.
 function RKC end
 
 """
+    ESERK4(; eigen_est = nothing)
+
 J. Martín-Vaquero, B. Kleefeld. Extrapolated stabilized explicit Runge-Kutta methods, 
   Journal of Computational Physics, 326, pp 141-155, 2016. doi:
   https://doi.org/10.1016/j.jcp.2016.08.042.
@@ -6076,6 +6078,8 @@ If `eigen_est` is not provided, `upper_bound` will be estimated using the power 
 function ESERK4 end
 
 """
+    ESERK5(; eigen_est = nothing)
+
 J. Martín-Vaquero, A. Kleefeld. ESERK5: A fifth-order extrapolated stabilized explicit Runge-Kutta method,
   Journal of Computational and Applied Mathematics, 356, pp 22-36, 2019. doi:
   https://doi.org/10.1016/j.cam.2019.01.040.
