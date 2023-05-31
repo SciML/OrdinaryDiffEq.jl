@@ -6038,6 +6038,8 @@ for Alg in [:ESERK4, :ESERK5, :RKC]
 end
 
 """
+    RKC(; eigen_est = nothing)
+
 B. P. Sommeijer, L. F. Shampine, J. G. Verwer. RKC: An Explicit Solver for Parabolic PDEs,
   Journal of Computational and Applied Mathematics, 88(2), pp 315-326, 1998. doi:
   https://doi.org/10.1016/S0377-0427(97)00219-7
