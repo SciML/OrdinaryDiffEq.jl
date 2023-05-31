@@ -6000,6 +6000,8 @@ function ROCK2(; min_stages = 0, max_stages = 200, eigen_est = nothing)
 end
 
 """
+    ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing)
+    
 Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
 Industrial and Applied Mathematics Journal on Scientific Computing, 23(6), pp 2041-2054, 2001.
 doi: https://doi.org/10.1137/S1064827500379549
