@@ -5975,7 +5975,7 @@ JVODE_BDF(; kwargs...) = JVODE(:BDF; kwargs...)
 
 """
 Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
-Numerische Mathematik, 90 (1, pp 1-18, 2001. doi: https://dx.doi.org/10.1007/s002110100292
+Numerische Mathematik, 90 (1), pp 1-18, 2001. doi: https://dx.doi.org/10.1007/s002110100292
 
 ROCK2: Stabilized Explicit Method.
   Second order stabilized Runge-Kutta method.
