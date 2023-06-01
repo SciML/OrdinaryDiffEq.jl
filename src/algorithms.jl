@@ -5247,7 +5247,7 @@ E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equatio
 struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
-    FineRKN5
+    FineRKN5()
 
 A 5th order explicit Runge-Kutta-Nyström method which can be applied directly on second order ODEs. Can only be used with fixed time steps.
 
