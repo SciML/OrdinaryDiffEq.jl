@@ -5256,8 +5256,9 @@ In case the ODE does not depend on the first derivative, consider using
 [`Nystrom5VelocityIndependent`](@ref) to increase performance.
 
 ## References
+```
 @article{fine1987low,
-  title={Low order practical Runge-Kutta-Nystr{\"o}m methods},
+  title={Low order practical {R}unge-{K}utta-{N}ystr{\"o}m methods},
   author={Fine, Jerry Michael},
   journal={Computing},
   volume={38},
@@ -5266,6 +5267,7 @@ In case the ODE does not depend on the first derivative, consider using
   year={1987},
   publisher={Springer}
 }
+```
 """
 struct FineRKN5 <: OrdinaryDiffEqPartitionedAlgorithm end
 
