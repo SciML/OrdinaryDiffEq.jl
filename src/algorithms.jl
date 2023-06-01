@@ -5249,7 +5249,8 @@ struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 """
     FineRKN5()
 
-A 5th order explicit Runge-Kutta-Nyström method which can be applied directly on second order ODEs. Can only be used with fixed time steps.
+A 5th order explicit Runge-Kutta-Nyström method which can be applied directly to second order ODEs. 
+Can only be used with fixed time steps.
 
 In case the ODE does not depend on the first derivative, consider using 
 [`Nystrom5VelocityIndependent`](@ref) to increase performance.
