@@ -84,9 +84,9 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
                     du = nothing, u = nothing, p = nothing, t = nothing,
                     weight = nothing, solverdata = nothing,
                     reltol = integrator === nothing ? nothing : integrator.opts.reltol)
-    A !== nothing && (linsolve = LinearSolve.set_A(linsolve, A))
-    b !== nothing && (linsolve = LinearSolve.set_b(linsolve, b))
-    linu !== nothing && (linsolve = LinearSolve.set_u(linsolve, linu))
+    A !== nothing && (linsolve.A = A)
+    b !== nothing && (linsolve.b = b)
+    linu !== nothing && (linsolve.u = linu)
 
     Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer :
              linsolve.Pl
@@ -100,10 +100,11 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     if (_Pl !== nothing || _Pr !== nothing)
         __Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
         __Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
-        linsolve = LinearSolve.set_prec(linsolve, __Pl, __Pr)
+        linsolve.Pl = __Pl
+        linsolve.Pr = __Pr
     end
 
-    linres = solve(linsolve; reltol)
+    linres = solve!(linsolve; reltol)
 
     # TODO: this ignores the add of the `f` count for add_steps!
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
