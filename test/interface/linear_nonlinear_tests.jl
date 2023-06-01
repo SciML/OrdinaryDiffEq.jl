@@ -2,7 +2,9 @@ using OrdinaryDiffEq, Test, Random, LinearAlgebra, LinearSolve
 Random.seed!(123)
 
 A = 0.01 * rand(3, 3)
-rn = (du, u, p, t) -> begin mul!(du, A, u) end
+rn = (du, u, p, t) -> begin
+    mul!(du, A, u)
+end
 u0 = rand(3)
 prob = ODEProblem(rn, u0, (0, 50.0))
 

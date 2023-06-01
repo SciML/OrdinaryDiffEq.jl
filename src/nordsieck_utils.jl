@@ -302,41 +302,41 @@ function nordsieck_adjust_order!(cache::T, dorder) where {T}
     # WIP: uncomment when finished
     #@inbound begin
     begin
-    # Adams order increase
-    if dorder == 1
-        if isconstcache
-            cache.z[order + 2] = zero(cache.z[order + 2])
-        else
-            cache.z[order + 2] .= 0
-        end
-    else
-        # Adams order decrease
-        # One needs to rescale the Nordsieck vector on an order decrease
-        cache.l .= 0
-        cache.l[2] = 1
-        dt = dts[1]
-        hsum = zero(eltype(cache.dts))
-        for j in 1:(order - 2)
-            hsum += cache.dts[j + 1]
-            # TODO: `hscale`?
-            ξ = hsum / dt
-            for i in (j + 1):-1:1
-                cache.l[i + 1] = cache.l[i + 1] * ξ + cache.l[i]
-            end # for i
-        end # for j
-
-        for j in 2:(order - 1)
-            cache.l[j + 1] = order * cache.l[j] / j
-        end
-        for j in 3:order
+        # Adams order increase
+        if dorder == 1
             if isconstcache
-                cache.z[j] = muladd.(-cache.l[j], cache.z[order + 1], cache.z[j])
+                cache.z[order + 2] = zero(cache.z[order + 2])
             else
-                @.. broadcast=false cache.z[j]=muladd(-cache.l[j], cache.z[order + 1],
-                                                      cache.z[j])
+                cache.z[order + 2] .= 0
             end
-        end # for j
-    end # else
+        else
+            # Adams order decrease
+            # One needs to rescale the Nordsieck vector on an order decrease
+            cache.l .= 0
+            cache.l[2] = 1
+            dt = dts[1]
+            hsum = zero(eltype(cache.dts))
+            for j in 1:(order - 2)
+                hsum += cache.dts[j + 1]
+                # TODO: `hscale`?
+                ξ = hsum / dt
+                for i in (j + 1):-1:1
+                    cache.l[i + 1] = cache.l[i + 1] * ξ + cache.l[i]
+                end # for i
+            end # for j
+
+            for j in 2:(order - 1)
+                cache.l[j + 1] = order * cache.l[j] / j
+            end
+            for j in 3:order
+                if isconstcache
+                    cache.z[j] = muladd.(-cache.l[j], cache.z[order + 1], cache.z[j])
+                else
+                    @.. broadcast=false cache.z[j]=muladd(-cache.l[j], cache.z[order + 1],
+                                                          cache.z[j])
+                end
+            end # for j
+        end # else
     end # @inbound
 end
 

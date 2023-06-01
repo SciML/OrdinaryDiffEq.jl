@@ -309,7 +309,9 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
 
-    nlequation_oop = u -> begin f((u - u0) / dt, u, p, t) end
+    nlequation_oop = u -> begin
+        f((u - u0) / dt, u, p, t)
+    end
 
     nlequation = (u, _) -> nlequation_oop(u)
 

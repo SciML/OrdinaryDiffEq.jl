@@ -1,11 +1,13 @@
 """
 From MATLAB ODE Suite by Shampine
 """
-@def rosenbrock2332unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    d = cache.tab.d
-else
-    d = cache.d
-end end
+@def rosenbrock2332unpack begin
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+        d = cache.tab.d
+    else
+        d = cache.d
+    end
+end
 
 @def rosenbrock2332pre0 begin
     @rosenbrock2332unpack

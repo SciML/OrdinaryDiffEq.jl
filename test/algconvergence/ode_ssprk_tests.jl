@@ -29,7 +29,9 @@ test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
 test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 
-f_ssp = (u, p, t) -> begin sin(10t) * u * (1 - u) end
+f_ssp = (u, p, t) -> begin
+    sin(10t) * u * (1 - u)
+end
 test_problem_ssp = ODEProblem(f_ssp, 0.1, (0.0, 8.0))
 test_problem_ssp_long = ODEProblem(f_ssp, 0.1, (0.0, 1.e3))
 
