@@ -98,8 +98,8 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
                           solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
-        __Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
-        __Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
+        __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
+        __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
         linsolve.Pl = __Pl
         linsolve.Pr = __Pr
     end
@@ -129,8 +129,8 @@ function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight)
 end
 
 function wrapprecs(_Pl, _Pr, weight)
-    Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
-    Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
+    Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
+    Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
     Pl, Pr
 end
 
