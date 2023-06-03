@@ -129,8 +129,8 @@ function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight)
 end
 
 function wrapprecs(_Pl, _Pr, weight)
-    Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
-    Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
+    Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(weight)) : _Pl
+    Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(weight)) : _Pr
     Pl, Pr
 end
 

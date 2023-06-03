@@ -43,11 +43,11 @@ prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop,
                                      u0, (0.0, 5.0), p)
 
 integ1 = init(prob_ode_brusselator_2d, TRBDF2(), save_everystep = false)
-integ2 = init(prob_ode_brusselator_2d, TRBDF2(linsolve = IterativeSolversJL_GMRES()),
+integ2 = init(prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
               save_everystep = false)
 
 nojac = @allocated init(prob_ode_brusselator_2d,
-                        TRBDF2(linsolve = IterativeSolversJL_GMRES()),
+                        TRBDF2(linsolve = KrylovJL_GMRES()),
                         save_everystep = false)
 jac = @allocated init(prob_ode_brusselator_2d, TRBDF2(), save_everystep = false)
 @test jac / nojac > 50
