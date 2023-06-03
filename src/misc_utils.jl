@@ -122,15 +122,15 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     return linres
 end
 
-function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight)
+function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight, u)
     Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
     Pr = Diagonal(_vec(weight))
     Pl, Pr
 end
 
-function wrapprecs(_Pl, _Pr, weight)
-    Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(weight)) : _Pl
-    Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(weight)) : _Pr
+function wrapprecs(_Pl, _Pr, weight, u)
+    Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
+    Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
     Pl, Pr
 end
 

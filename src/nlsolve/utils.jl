@@ -192,7 +192,7 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         end
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
         Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-                                     nothing)..., weight)
+                                     nothing)..., weight, dz)
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
                         Pl = Pl, Pr = Pr,
                         assumptions = LinearSolve.OperatorAssumptions(true))
