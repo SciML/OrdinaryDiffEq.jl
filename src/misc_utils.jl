@@ -98,8 +98,8 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
                           solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
-        __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
-        __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
+        __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
+        __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
         linsolve.Pl = __Pl
         linsolve.Pr = __Pr
     end
