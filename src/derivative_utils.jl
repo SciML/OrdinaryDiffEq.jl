@@ -912,7 +912,7 @@ function LinearSolve.init_cacheval(alg::LinearSolve.DefaultLinearSolver, A::WOpe
     assumptions::OperatorAssumptions)
 end
 
-for alg in Main.subtypes(OrdinaryDiffEq.LinearSolve.AbstractFactorization)
+for alg in InteractiveUtils.subtypes(OrdinaryDiffEq.LinearSolve.AbstractFactorization)
     @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
         maxiters::Int, abstol, reltol, verbose::Bool,
         assumptions::OperatorAssumptions)

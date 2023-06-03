@@ -22,6 +22,8 @@ using LoopVectorization
 
 import StaticArrayInterface
 
+import InteractiveUtils
+
 using LinearSolve, SimpleNonlinearSolve
 
 using LineSearches
