@@ -239,10 +239,10 @@ function DiffEqBase.prepare_alg(alg::Union{
         elseif (prob.f isa SplitFunction &&
                 prob.f.f1.f isa AbstractSciMLOperator)
             linsolve = LinearSolve.defaultalg(prob.f.f1.f, u0)
-            if (linsolve === nothing) | (linsolve isa LinearSolve.AbstractFactorization)
+            if (linsolve === nothing) || (linsolve isa LinearSolve.DefaultLinearSolver && linsolve.alg !== LinearSolve.DefaultAlgorithmChoice.KrylovJL_GMRES)
                 msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
                 @warn msg
-                linsolve = KrylovJL()
+                linsolve = KrylovJL_GMRES()
             end
         elseif (prob isa ODEProblem || prob isa DDEProblem) &&
                (prob.f.mass_matrix === nothing ||
