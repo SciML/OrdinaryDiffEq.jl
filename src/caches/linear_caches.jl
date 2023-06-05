@@ -10,7 +10,7 @@ end
 
 function alg_cache(alg::MagnusMidpoint, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -23,7 +23,7 @@ end
 
 function alg_cache(alg::MagnusMidpoint, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusMidpointConstantCache()
 end
@@ -40,7 +40,7 @@ end
 
 function alg_cache(alg::RKMK2, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -53,7 +53,7 @@ end
 
 function alg_cache(alg::RKMK2, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     RKMK2ConstantCache()
 end
@@ -70,7 +70,7 @@ end
 
 function alg_cache(alg::LieRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -83,7 +83,7 @@ end
 
 function alg_cache(alg::LieRK4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     LieRK4ConstantCache()
 end
@@ -100,7 +100,7 @@ end
 
 function alg_cache(alg::CG3, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -113,7 +113,7 @@ end
 
 function alg_cache(alg::CG3, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     CG3ConstantCache()
 end
@@ -130,7 +130,7 @@ end
 
 function alg_cache(alg::CG2, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -143,7 +143,7 @@ end
 
 function alg_cache(alg::CG2, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     CG2ConstantCache()
 end
@@ -186,7 +186,7 @@ end
 
 function alg_cache(alg::RKMK4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -199,7 +199,7 @@ end
 
 function alg_cache(alg::RKMK4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     RKMK4ConstantCache()
 end
@@ -219,7 +219,7 @@ end
 
 function alg_cache(alg::MagnusAdapt4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -236,7 +236,7 @@ end
 
 function alg_cache(alg::MagnusAdapt4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusAdapt4ConstantCache()
 end
@@ -253,7 +253,7 @@ end
 
 function alg_cache(alg::MagnusNC8, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -266,7 +266,7 @@ end
 
 function alg_cache(alg::MagnusNC8, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusNC8ConstantCache()
 end
@@ -283,7 +283,7 @@ end
 
 function alg_cache(alg::MagnusGL4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -296,7 +296,7 @@ end
 
 function alg_cache(alg::MagnusGL4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusGL4ConstantCache()
 end
@@ -313,7 +313,7 @@ end
 
 function alg_cache(alg::MagnusGL8, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -326,7 +326,7 @@ end
 
 function alg_cache(alg::MagnusGL8, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusGL8ConstantCache()
 end
@@ -343,7 +343,7 @@ end
 
 function alg_cache(alg::MagnusNC6, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -356,7 +356,7 @@ end
 
 function alg_cache(alg::MagnusNC6, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusNC6ConstantCache()
 end
@@ -373,7 +373,7 @@ end
 
 function alg_cache(alg::MagnusGL6, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -386,7 +386,7 @@ end
 
 function alg_cache(alg::MagnusGL6, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusGL6ConstantCache()
 end
@@ -402,7 +402,7 @@ end
 
 function alg_cache(alg::MagnusGauss4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -415,7 +415,7 @@ end
 
 function alg_cache(alg::MagnusGauss4, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusGauss4ConstantCache()
 end
@@ -432,7 +432,7 @@ end
 
 function alg_cache(alg::LieEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -445,7 +445,7 @@ end
 
 function alg_cache(alg::LieEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     LieEulerConstantCache()
 end
@@ -461,7 +461,7 @@ end
 
 function alg_cache(alg::CayleyEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -473,7 +473,7 @@ end
 
 function alg_cache(alg::CayleyEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     CayleyEulerConstantCache()
 end
@@ -490,7 +490,7 @@ end
 
 function alg_cache(alg::MagnusLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
@@ -503,7 +503,7 @@ end
 
 function alg_cache(alg::MagnusLeapfrog, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     MagnusLeapfrogConstantCache()
 end
@@ -512,7 +512,7 @@ struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::LinearExponential, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     LinearExponentialConstantCache()
 end
@@ -527,7 +527,7 @@ end
 
 function alg_cache(alg::LinearExponential, u, rate_prototype, ::Type{uEltypeNoUnits},
                    ::Type{uBottomEltypeNoUnits},
-                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+                   ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck, verbose,
                    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     rtmp = zero(rate_prototype)

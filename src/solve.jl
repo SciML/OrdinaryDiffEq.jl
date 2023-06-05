@@ -317,11 +317,11 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     if prob isa DAEProblem
         cache = alg_cache(_alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
                           uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-                          reltol_internal, p, calck, Val(isinplace(prob)))
+                          reltol_internal, p, calck, verbose, Val(isinplace(prob)))
     else
         cache = alg_cache(_alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
                           tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
-                          Val(isinplace(prob)))
+                          verbose, Val(isinplace(prob)))
     end
 
     # Setting up the step size controller

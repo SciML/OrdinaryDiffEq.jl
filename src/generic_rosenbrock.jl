@@ -224,13 +224,13 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     end
 
     quote
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,verbose,::Val{false})
             tf = TimeDerivativeWrapper(f,u,p)
             uf = UDerivativeWrapper(f,t,p)
             J,W = build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,Val(false))
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,nothing)
         end
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,verbose,::Val{true})
             du = zero(rate_prototype)
             du1 = zero(rate_prototype)
             du2 = zero(rate_prototype)
@@ -248,7 +248,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             uf = UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
             linprob = LinearProblem(W,_vec(linsolve_tmp); u0=_vec(tmp))
-            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,
+            linsolve = init(linprob,alg.linsolve,alias_A=true,alias_b=true,verbose=verbose,
                             Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
                             Pr = Diagonal(_vec(weight)))
             grad_config = build_grad_config(alg,f,tf,du1,t)
