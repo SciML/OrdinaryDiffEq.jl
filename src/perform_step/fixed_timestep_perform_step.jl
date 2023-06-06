@@ -283,8 +283,8 @@ end
     if integrator.opts.adaptive
         # Shampine Solving ODEs and DDEs with Residual Control Estimate
         k₅ = integrator.fsallast
-        σ₁ = 1 / 2 - sqrt(3) / 6
-        σ₂ = 1 / 2 + sqrt(3) / 6
+        σ₁ = convert(typeof(t), 1 // 2) - sqrt(convert(typeof(t),3)) / 6
+        σ₂ = convert(typeof(t), 1 // 2) + sqrt(convert(typeof(t),3)) / 6
         p1 = (1 - σ₁) * uprev + σ₁ * u +
              σ₁ * (σ₁ - 1) * ((1 - 2σ₁) * (u - uprev) + (σ₁ - 1) * dt * k₁ + σ₁ * dt * k₅)
         p2 = (1 - σ₂) * uprev + σ₂ * u +
@@ -308,7 +308,7 @@ end
                                                               integrator.opts.internalnorm,
                                                               t), t)
         integrator.stats.nf += 2
-        integrator.EEst = 2.1342 * max(e1, e2)
+        integrator.EEst = convert(typeof(t),2.1342) * max(e1, e2)
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -347,8 +347,8 @@ end
         k₅ = k
         _p = k₂
         pprime = k₃ # Alias some cache arrays
-        σ₁ = 1 / 2 - sqrt(3) / 6
-        σ₂ = 1 / 2 + sqrt(3) / 6
+        σ₁ = convert(typeof(t), 1 // 2) - sqrt(convert(typeof(t),3)) / 6
+        σ₂ = convert(typeof(t), 1 // 2) + sqrt(convert(typeof(t),3)) / 6
         @.. broadcast=false thread=thread tmp=(1 - σ₁) * uprev + σ₁ * u +
                                               σ₁ * (σ₁ - 1) *
                                               ((1 - 2σ₁) * (u - uprev) +
@@ -385,7 +385,7 @@ end
                              integrator.opts.reltol, integrator.opts.internalnorm, t,
                              thread)
         e2 = integrator.opts.internalnorm(atmp, t)
-        integrator.EEst = 2.1342 * max(e1, e2)
+        integrator.EEst = convert(typeof(t),2.1342) * max(e1, e2)
         integrator.stats.nf += 2
     end
 end
