@@ -178,7 +178,9 @@ end
     out
 end
 
-@def dp5pre4 begin b40diff4invdt3 = 24 * inv(dt)^3 end
+@def dp5pre4 begin
+    b40diff4invdt3 = 24 * inv(dt)^3
+end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
                                   cache::Union{DP5ConstantCache, DP5Cache}, idxs::Nothing,
@@ -704,11 +706,13 @@ end
 """
 
 """
-@def owrenzen3unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r13, r12, r23, r22, r33, r32 = cache.tab
-else
-    @unpack r13, r12, r23, r22, r33, r32 = cache
-end end
+@def owrenzen3unpack begin
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+        @unpack r13, r12, r23, r22, r33, r32 = cache.tab
+    else
+        @unpack r13, r12, r23, r22, r33, r32 = cache
+    end
+end
 
 @def owrenzen3pre0 begin
     @owrenzen3unpack
@@ -887,11 +891,13 @@ end
 """
 
 """
-@def owrenzen4unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache.tab
-else
-    @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache
-end end
+@def owrenzen4unpack begin
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+        @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache.tab
+    else
+        @unpack r14, r13, r12, r34, r33, r32, r44, r43, r42, r54, r53, r52, r64, r63, r62 = cache
+    end
+end
 
 @def owrenzen4pre0 begin
     @owrenzen4unpack
@@ -1138,11 +1144,13 @@ end
 """
 
 """
-@def owrenzen5unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache.tab
-else
-    @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache
-end end
+@def owrenzen5unpack begin
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+        @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache.tab
+    else
+        @unpack r15, r14, r13, r12, r35, r34, r33, r32, r45, r44, r43, r42, r55, r54, r53, r52, r65, r64, r63, r62, r75, r74, r73, r72, r85, r84, r83, r82 = cache
+    end
+end
 
 @def owrenzen5pre0 begin
     @owrenzen5unpack
@@ -1507,11 +1515,13 @@ end
 """
 Coefficients taken from RKSuite
 """
-@def bs5unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache.tab
-else
-    @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache
-end end
+@def bs5unpack begin
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+        @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache.tab
+    else
+        @unpack r016, r015, r014, r013, r012, r036, r035, r034, r033, r032, r046, r045, r044, r043, r042, r056, r055, r054, r053, r052, r066, r065, r064, r063, r062, r076, r075, r074, r073, r072, r086, r085, r084, r083, r082, r096, r095, r094, r093, r106, r105, r104, r103, r102, r116, r115, r114, r113, r112 = cache
+    end
+end
 
 @def bs5pre0 begin
     @bs5unpack
@@ -2833,11 +2843,13 @@ end
 """
 
 """
-@def dprkn6unpack begin if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache.tab
-else
-    @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache
-end end
+@def dprkn6unpack begin
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+        @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache.tab
+    else
+        @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache
+    end
+end
 
 @def dprkn6pre0 begin
     @dprkn6unpack

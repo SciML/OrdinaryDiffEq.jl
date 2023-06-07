@@ -29,136 +29,98 @@ testTol = 0.2
     # Test AitkenNeville
     println("Testing AitkenNeville")
     @testset "Testing AitkenNeville" begin
-        @testset "Testing sequential AitkenNeville" begin for prob in problem_array
-            global dts
+        @testset "Testing sequential AitkenNeville" begin
+            for prob in problem_array
+                global dts
 
-            #  Convergence test
-            for j in 1:4
-                sim = test_convergence(dts, prob,
-                                       AitkenNeville(max_order = j,
-                                                     min_order = j, init_order = j,
-                                                     threading = false))
-                @test sim.𝒪est[:final]≈j atol=testTol
+                #  Convergence test
+                for j in 1:4
+                    sim = test_convergence(dts, prob,
+                                           AitkenNeville(max_order = j,
+                                                         min_order = j, init_order = j,
+                                                         threading = false))
+                    @test sim.𝒪est[:final]≈j atol=testTol
+                end
+
+                # Regression test
+                sol = solve(prob,
+                            AitkenNeville(max_order = 9, min_order = 1,
+                                          init_order = 9, threading = false), reltol = 1e-3)
+                @test length(sol.u) < 15
+                sol = solve(prob,
+                            AitkenNeville(max_order = 9, min_order = 1,
+                                          init_order = 9, threading = false), reltol = 1e-6)
+                @test length(sol.u) < 18
             end
-
-            # Regression test
-            sol = solve(prob,
-                        AitkenNeville(max_order = 9, min_order = 1,
-                                      init_order = 9, threading = false), reltol = 1e-3)
-            @test length(sol.u) < 15
-            sol = solve(prob,
-                        AitkenNeville(max_order = 9, min_order = 1,
-                                      init_order = 9, threading = false), reltol = 1e-6)
-            @test length(sol.u) < 18
-        end end
+        end
     end # AitkenNeville
 
     # Define the subdividing sequences
     sequence_array = [:harmonic, :romberg, :bulirsch]
 
     println("Testing ImplicitEulerExtrapolation")
-    @testset "Testing ImplicitEulerExtrapolation" begin for prob in problem_array,
-                                                            seq in sequence_array
+    @testset "Testing ImplicitEulerExtrapolation" begin
+        for prob in problem_array,
+            seq in sequence_array
 
-        global dts
+            global dts
 
-        newTol = 0.35
-        #  Convergence test
-        for j in 1:4
-            alg = ImplicitEulerExtrapolation(min_order = j,
-                                             init_order = j, max_order = j,
-                                             sequence = seq, threading = false)
-            sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈alg.init_order + 1.1 atol=newTol #Superconvergence
-        end
-        # Regression test
-        sol = solve(prob,
-                    ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
-                                               init_order = 9, sequence = seq,
-                                               threading = false), reltol = 1e-3)
-        @test length(sol.u) < 15
-    end end
-
-    println("Testing ImplicitEulerBarycentricExtrapolation")
-    @testset "Testing ImplicitEulerBarycentricExtrapolation" begin for prob in problem_array,
-                                                                       seq in sequence_array
-
-        global dts
-
-        newTol = 0.35
-        #  Convergence test
-        for j in 1:4
-            alg = ImplicitEulerBarycentricExtrapolation(min_order = j,
-                                                        init_order = j, max_order = j,
-                                                        sequence = seq, threading = false)
-            sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈alg.init_order + 0.5 atol=newTol #Superconvergence
-        end
-        # Regression test
-        sol = solve(prob,
-                    ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
-                                                          init_order = 9, sequence = seq,
-                                                          threading = false), reltol = 1e-3)
-        @test length(sol.u) < 15
-    end end
-
-    println("Testing ImplicitDeuflhardExtrapolation")
-    @testset "Testing ImplicitDeuflhardExtrapolation" begin for prob in problem_array,
-                                                                seq in sequence_array
-
-        global dts
-
-        # Convergence test
-        for j in 1:6
-            alg = ImplicitDeuflhardExtrapolation(min_order = j,
+            newTol = 0.35
+            #  Convergence test
+            for j in 1:4
+                alg = ImplicitEulerExtrapolation(min_order = j,
                                                  init_order = j, max_order = j,
                                                  sequence = seq, threading = false)
-            sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
+                sim = test_convergence(dts, prob, alg)
+                @test sim.𝒪est[:final]≈alg.init_order + 1.1 atol=newTol #Superconvergence
+            end
+            # Regression test
+            sol = solve(prob,
+                        ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
+                                                   init_order = 9, sequence = seq,
+                                                   threading = false), reltol = 1e-3)
+            @test length(sol.u) < 15
         end
+    end
 
-        # Regression test
-        alg = ImplicitDeuflhardExtrapolation(max_order = 9, min_order = 1,
-                                             init_order = 9, sequence = seq,
-                                             threading = false)
-        sol = solve(prob, alg, reltol = 1e-3)
-        @test length(sol.u) < 10
-    end end
+    println("Testing ImplicitEulerBarycentricExtrapolation")
+    @testset "Testing ImplicitEulerBarycentricExtrapolation" begin
+        for prob in problem_array,
+            seq in sequence_array
 
-    println("Testing ImplicitHairerWannerExtrapolation")
-    @testset "Testing ImplicitHairerWannerExtrapolation" begin for prob in problem_array,
-                                                                   seq in sequence_array
+            global dts
 
-        global dts
-
-        # Convergence test
-        for j in 1:6
-            alg = ImplicitHairerWannerExtrapolation(min_order = j,
-                                                    init_order = j, max_order = j,
-                                                    sequence = seq, threading = false)
-            sim = test_convergence(dts, prob, alg)
-            @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) - 1 atol=testTol
+            newTol = 0.35
+            #  Convergence test
+            for j in 1:4
+                alg = ImplicitEulerBarycentricExtrapolation(min_order = j,
+                                                            init_order = j, max_order = j,
+                                                            sequence = seq,
+                                                            threading = false)
+                sim = test_convergence(dts, prob, alg)
+                @test sim.𝒪est[:final]≈alg.init_order + 0.5 atol=newTol #Superconvergence
+            end
+            # Regression test
+            sol = solve(prob,
+                        ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
+                                                              init_order = 9,
+                                                              sequence = seq,
+                                                              threading = false),
+                        reltol = 1e-3)
+            @test length(sol.u) < 15
         end
+    end
 
-        alg = ImplicitHairerWannerExtrapolation(max_order = 9, min_order = 1,
-                                                init_order = 9, sequence = seq,
-                                                threading = false)
-        sol = solve(prob, alg, reltol = 1e-3)
-        @test length(sol.u) < 10
-    end end
-
-    # Test ExtrapolationMidpointDeuflhard
-
-    println("Testing ExtrapolationMidpointDeuflhard")
-    @testset "Testing ExtrapolationMidpointDeuflhard" begin
-        @testset "Testing sequential ExtrapolationMidpointDeuflhard" begin for prob in problem_array,
-                                                                               seq in sequence_array
+    println("Testing ImplicitDeuflhardExtrapolation")
+    @testset "Testing ImplicitDeuflhardExtrapolation" begin
+        for prob in problem_array,
+            seq in sequence_array
 
             global dts
 
             # Convergence test
             for j in 1:6
-                alg = ExtrapolationMidpointDeuflhard(min_order = j,
+                alg = ImplicitDeuflhardExtrapolation(min_order = j,
                                                      init_order = j, max_order = j,
                                                      sequence = seq, threading = false)
                 sim = test_convergence(dts, prob, alg)
@@ -166,38 +128,94 @@ testTol = 0.2
             end
 
             # Regression test
-            alg = ExtrapolationMidpointDeuflhard(max_order = 9, min_order = 1,
+            alg = ImplicitDeuflhardExtrapolation(max_order = 9, min_order = 1,
                                                  init_order = 9, sequence = seq,
                                                  threading = false)
             sol = solve(prob, alg, reltol = 1e-3)
             @test length(sol.u) < 10
-        end end
-    end # ExtrapolationMidpointDeuflhard
+        end
+    end
 
-    # Test ExtrapolationMidpointHairerWanner
-    println("Testing ExtrapolationMidpointHairerWanner")
-    @testset "Testing ExtrapolationMidpointHairerWanner" begin
-        @testset "Testing sequential ExtrapolationMidpointHairerWanner" begin for prob in problem_array,
-                                                                                  seq in sequence_array
+    println("Testing ImplicitHairerWannerExtrapolation")
+    @testset "Testing ImplicitHairerWannerExtrapolation" begin
+        for prob in problem_array,
+            seq in sequence_array
 
             global dts
 
             # Convergence test
             for j in 1:6
-                alg = ExtrapolationMidpointHairerWanner(min_order = j,
+                alg = ImplicitHairerWannerExtrapolation(min_order = j,
                                                         init_order = j, max_order = j,
                                                         sequence = seq, threading = false)
                 sim = test_convergence(dts, prob, alg)
-                @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
+                @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) - 1 atol=testTol
             end
 
-            # Regression test
-            alg = ExtrapolationMidpointHairerWanner(max_order = 9, min_order = 2,
+            alg = ImplicitHairerWannerExtrapolation(max_order = 9, min_order = 1,
                                                     init_order = 9, sequence = seq,
                                                     threading = false)
             sol = solve(prob, alg, reltol = 1e-3)
             @test length(sol.u) < 10
-        end end
+        end
+    end
+
+    # Test ExtrapolationMidpointDeuflhard
+
+    println("Testing ExtrapolationMidpointDeuflhard")
+    @testset "Testing ExtrapolationMidpointDeuflhard" begin
+        @testset "Testing sequential ExtrapolationMidpointDeuflhard" begin
+            for prob in problem_array,
+                seq in sequence_array
+
+                global dts
+
+                # Convergence test
+                for j in 1:6
+                    alg = ExtrapolationMidpointDeuflhard(min_order = j,
+                                                         init_order = j, max_order = j,
+                                                         sequence = seq, threading = false)
+                    sim = test_convergence(dts, prob, alg)
+                    @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
+                end
+
+                # Regression test
+                alg = ExtrapolationMidpointDeuflhard(max_order = 9, min_order = 1,
+                                                     init_order = 9, sequence = seq,
+                                                     threading = false)
+                sol = solve(prob, alg, reltol = 1e-3)
+                @test length(sol.u) < 10
+            end
+        end
+    end # ExtrapolationMidpointDeuflhard
+
+    # Test ExtrapolationMidpointHairerWanner
+    println("Testing ExtrapolationMidpointHairerWanner")
+    @testset "Testing ExtrapolationMidpointHairerWanner" begin
+        @testset "Testing sequential ExtrapolationMidpointHairerWanner" begin
+            for prob in problem_array,
+                seq in sequence_array
+
+                global dts
+
+                # Convergence test
+                for j in 1:6
+                    alg = ExtrapolationMidpointHairerWanner(min_order = j,
+                                                            init_order = j, max_order = j,
+                                                            sequence = seq,
+                                                            threading = false)
+                    sim = test_convergence(dts, prob, alg)
+                    @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
+                end
+
+                # Regression test
+                alg = ExtrapolationMidpointHairerWanner(max_order = 9, min_order = 2,
+                                                        init_order = 9, sequence = seq,
+                                                        threading = false)
+                sol = solve(prob, alg, reltol = 1e-3)
+                @test length(sol.u) < 10
+            end
+        end
     end # ExtrapolationMidpointHairerWanner
 
     println("Regression Test Float32 and Float64 Fallbacks")
