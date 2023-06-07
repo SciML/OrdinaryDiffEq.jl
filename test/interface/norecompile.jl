@@ -18,7 +18,7 @@ t1 = @elapsed sol1 = solve(lorenzprob, Rosenbrock23())
 t2 = @elapsed sol2 = solve(lorenzprob, Rosenbrock23(autodiff = false))
 
 lorenzprob2 = ODEProblem{true, SciMLBase.FullSpecialize}(lorenz, [1.0; 0.0; 0.0],
-                                                         (0.0, 1.0), Float64[])
+    (0.0, 1.0), Float64[])
 
 t3 = @elapsed sol3 = solve(lorenzprob2, Rosenbrock23())
 t4 = @elapsed sol4 = solve(lorenzprob2, Rosenbrock23(autodiff = false))

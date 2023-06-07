@@ -11,7 +11,7 @@ function initialize!(integrator, cache::ExplicitRKConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, false)
     @unpack A, c, α, αEEst, stages = cache
@@ -60,7 +60,7 @@ end
             utilde = utilde + αEEst[i] * kk[i]
         end
         atmp = calculate_residuals(dt * utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -86,7 +86,7 @@ function initialize!(integrator, cache::ExplicitRKCache)
 end
 
 @generated function accumulate_explicit_stages!(out, A, uprev, kk, dt, ::Val{s},
-                                                ::Val{r} = Val(s)) where {s, r}
+    ::Val{r} = Val(s)) where {s, r}
     if s == 1
         return :(@muladd @.. broadcast=false out=uprev + dt * kk[1])
     elseif s == 2
@@ -125,7 +125,7 @@ function accumulate_EEst!(out, αEEst, utilde, kk, dt, stages)
 end
 
 @muladd function compute_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
-                                 stages::Integer) where {F}
+    stages::Integer) where {F}
     # Middle
     for i in 2:(stages - 1)
         @.. broadcast=false utilde=zero(kk[1][1])
@@ -147,7 +147,7 @@ end
 end
 
 @generated function compute_stages!(f::F, A, c, u, tmp, uprev, kk, p, t, dt,
-                                    ::Val{s}) where {F, s}
+    ::Val{s}) where {F, s}
     quote
         Base.@nexprs $(s - 2) i′->begin
             i = i′ + 1
@@ -160,20 +160,20 @@ end
 end
 
 function runtime_split_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
-                               stages::Integer) where {F}
+    stages::Integer) where {F}
     Base.@nif 17 (s->(s == stages)) (s->compute_stages!(f, A, c, u, tmp, uprev, kk, p, t,
-                                                        dt, Val(s))) (s->compute_stages!(f,
-                                                                                         A,
-                                                                                         c,
-                                                                                         utilde,
-                                                                                         u,
-                                                                                         tmp,
-                                                                                         uprev,
-                                                                                         kk,
-                                                                                         p,
-                                                                                         t,
-                                                                                         dt,
-                                                                                         stages))
+        dt, Val(s))) (s->compute_stages!(f,
+        A,
+        c,
+        utilde,
+        u,
+        tmp,
+        uprev,
+        kk,
+        p,
+        t,
+        dt,
+        stages))
 end
 
 function accumulate_fsal!(u, α, utilde, uprev, kk, dt, stages)
@@ -186,22 +186,22 @@ end
 
 function runtime_split_fsal!(out, A, utilde, uprev, kk, dt, stages)
     Base.@nif 17 (s->(s == stages)) (s->accumulate_explicit_stages!(out, A, uprev, kk, dt,
-                                                                    Val(s + 1), Val(1))) (s->accumulate_fsal!(out,
-                                                                                                              A,
-                                                                                                              utilde,
-                                                                                                              uprev,
-                                                                                                              kk,
-                                                                                                              dt,
-                                                                                                              stages))
+        Val(s + 1), Val(1))) (s->accumulate_fsal!(out,
+        A,
+        utilde,
+        uprev,
+        kk,
+        dt,
+        stages))
 end
 
 function runtime_split_EEst!(tmp, αEEst, utilde, kk, dt, stages)
     Base.@nif 17 (s->(s == stages)) (s->accumulate_EEst!(tmp, αEEst, kk, dt, Val(s))) (s->accumulate_EEst!(tmp,
-                                                                                                           αEEst,
-                                                                                                           utilde,
-                                                                                                           kk,
-                                                                                                           dt,
-                                                                                                           stages))
+        αEEst,
+        utilde,
+        kk,
+        dt,
+        stages))
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step = false)
@@ -231,8 +231,8 @@ end
     if integrator.opts.adaptive
         runtime_split_EEst!(tmp, αEEst, utilde, kk, dt, stages)
         calculate_residuals!(atmp, tmp, uprev, u,
-                             integrator.opts.abstol, integrator.opts.reltol,
-                             integrator.opts.internalnorm, t)
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 

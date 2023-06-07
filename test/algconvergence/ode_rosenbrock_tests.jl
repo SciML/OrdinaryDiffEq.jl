@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
-import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
-                          prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
+import ODEProblemLibrary: prob_ode_linear,
+    prob_ode_2Dlinear,
+    prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 import LinearSolve
 
 @testset "Rosenbrock Tests" begin
@@ -343,8 +344,8 @@ import LinearSolve
     @test length(sol) < 20
 
     sim = test_convergence(dts, prob, Rodas4(autodiff = false,
-                                             diff_type = Val{:forward}),
-                           dense_errors = true)
+            diff_type = Val{:forward}),
+        dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
     @test sim.𝒪est[:L2]≈4 atol=testTol
 
@@ -352,8 +353,8 @@ import LinearSolve
     @test length(sol) < 20
 
     sim = test_convergence(dts, prob, Rodas4(autodiff = false,
-                                             diff_type = Val{:complex}),
-                           dense_errors = true)
+            diff_type = Val{:complex}),
+        dense_errors = true)
     @test sim.𝒪est[:final]≈4 atol=testTol
     @test sim.𝒪est[:L2]≈4 atol=testTol
 

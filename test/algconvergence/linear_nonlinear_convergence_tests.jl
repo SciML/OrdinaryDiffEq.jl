@@ -7,7 +7,7 @@ using OrdinaryDiffEq: alg_order
     linnonlin_f2 = (u, p, t) -> μ * u
     linnonlin_f1 = ScalarOperator(μ)
     linnonlin_fun = SplitFunction(linnonlin_f1, linnonlin_f2;
-                                  analytic = (u0, p, t) -> u0 .* exp.(2μ * t))
+        analytic = (u0, p, t) -> u0 .* exp.(2μ * t))
     prob = SplitODEProblem(linnonlin_fun, 1 / 2, (0.0, 1.0))
 
     Random.seed!(100)
@@ -40,7 +40,7 @@ end
     linnonlin_f1 = MatrixOperator(A)
     linnonlin_f2 = (du, u, p, t) -> du .= μ .* u
     linnonlin_fun_iip = SplitFunction(linnonlin_f1, linnonlin_f2;
-                                      analytic = (u0, p, t) -> exp((A + μ * I) * t) * u0)
+        analytic = (u0, p, t) -> exp((A + μ * I) * t) * u0)
     prob = SplitODEProblem(linnonlin_fun_iip, u0, (0.0, 1.0))
 
     dts = 1 ./ 2 .^ (8:-1:4)
@@ -88,7 +88,7 @@ end
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2]
     for Alg in Algs
         sim = analyticless_test_convergence(dts, prob, Alg(adaptive_krylov = false),
-                                            test_setup)
+            test_setup)
         if Alg == EPIRK5s3
             @test_broken sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
         else
@@ -116,7 +116,7 @@ end
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2]
     for Alg in Algs
         sim = analyticless_test_convergence(dts, prob, Alg(adaptive_krylov = false),
-                                            test_setup)
+            test_setup)
         if Alg == EPIRK5s3
             @test_broken sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.1
         else
@@ -147,10 +147,10 @@ end
     sim = analyticless_test_convergence(dts, prob_ip, HochOst4(krylov = true), test_setup)
     @test sim.𝒪est[:l2]≈4 atol=0.1
     sim = analyticless_test_convergence(dts, prob, EPIRK5P1(adaptive_krylov = false),
-                                        test_setup)
+        test_setup)
     @test sim.𝒪est[:l2]≈5 atol=0.1
     sim = analyticless_test_convergence(dts, prob_ip, EPIRK5P1(adaptive_krylov = false),
-                                        test_setup)
+        test_setup)
     @test sim.𝒪est[:l2]≈5 atol=0.1
 end
 

@@ -1,10 +1,10 @@
 function initialize!(integrator,
-                     cache::Union{AB3ConstantCache,
-                                  AB4ConstantCache,
-                                  AB5ConstantCache,
-                                  ABM32ConstantCache,
-                                  ABM43ConstantCache,
-                                  ABM54ConstantCache})
+    cache::Union{AB3ConstantCache,
+        AB4ConstantCache,
+        AB5ConstantCache,
+        ABM32ConstantCache,
+        ABM43ConstantCache,
+        ABM54ConstantCache})
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     integrator.stats.nf += 1
     integrator.kshortsize = 2
@@ -17,12 +17,12 @@ function initialize!(integrator,
 end
 
 function initialize!(integrator,
-                     cache::Union{AB3Cache,
-                                  AB4Cache,
-                                  AB5Cache,
-                                  ABM32Cache,
-                                  ABM43Cache,
-                                  ABM54Cache})
+    cache::Union{AB3Cache,
+        AB4Cache,
+        AB5Cache,
+        ABM32Cache,
+        ABM43Cache,
+        ABM54Cache})
     @unpack fsalfirst, k = cache
     integrator.fsalfirst = fsalfirst
     integrator.fsallast = k
@@ -146,10 +146,10 @@ end
     else
         if cnt == 2
             perform_step!(integrator,
-                          AB3Cache(u, uprev, fsalfirst, copy(k2), k3, ralk2, k, tmp, cnt))  #Here passing copy of k2, otherwise it will change in AB3()
+                AB3Cache(u, uprev, fsalfirst, copy(k2), k3, ralk2, k, tmp, cnt))  #Here passing copy of k2, otherwise it will change in AB3()
         else
             perform_step!(integrator,
-                          AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, cnt))
+                AB3Cache(u, uprev, fsalfirst, k2, k3, ralk2, k, tmp, cnt))
         end
         k = integrator.fsallast
         @.. broadcast=false u=uprev + (dt / 12) * (5 * k + 8 * k1 - k2)
@@ -301,8 +301,8 @@ end
         t3 .= k3
         t4 .= k4
         perform_step!(integrator,
-                      AB4Cache(u, uprev, fsalfirst, t2, t3, t4, ralk2, k, tmp, t5, t6, t7,
-                               cnt))
+            AB4Cache(u, uprev, fsalfirst, t2, t3, t4, ralk2, k, tmp, t5, t6, t7,
+                cnt))
         k = integrator.fsallast
         @.. broadcast=false u=uprev + (dt / 24) * (9 * k + 19 * k1 - 5 * k2 + k3)
         cache.k4, cache.k3 = k3, k4
@@ -468,8 +468,8 @@ end
         t4 .= k4
         t5 .= k5
         perform_step!(integrator,
-                      AB5Cache(u, uprev, fsalfirst, t2, t3, t4, t5, k, tmp, t6, t7, t8,
-                               cnt))
+            AB5Cache(u, uprev, fsalfirst, t2, t3, t4, t5, k, tmp, t6, t7, t8,
+                cnt))
         k = integrator.fsallast
         @.. broadcast=false u=uprev +
                               (dt / 720) *
@@ -529,8 +529,8 @@ end
         if integrator.opts.adaptive
             utilde = g[k] * ϕstar_n[k]      # Using lower order AB from subset of coefficients
             atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -596,7 +596,7 @@ end
         if integrator.opts.adaptive
             @.. broadcast=false utilde=g[k] * ϕstar_n[k]    # Using lower order AB from subset of coefficients
             calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -663,8 +663,8 @@ end
         if integrator.opts.adaptive
             utilde = g[k] * ϕstar_n[k]
             atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -736,7 +736,7 @@ end
         if integrator.opts.adaptive
             @.. broadcast=false utilde=g[k] * ϕstar_n[k]
             calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -812,8 +812,8 @@ end
         if integrator.opts.adaptive
             utilde = g[k] * ϕstar_n[k]
             atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:4
@@ -892,7 +892,7 @@ end
         if integrator.opts.adaptive
             @.. broadcast=false utilde=g[k] * ϕstar_n[k]
             calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:4
@@ -959,8 +959,8 @@ end
         if integrator.opts.adaptive
             utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
             atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -1030,7 +1030,7 @@ end
         if integrator.opts.adaptive
             @.. broadcast=false utilde=(g[end] - g[end - 1]) * ϕ_np1[end]
             calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:2
@@ -1103,8 +1103,8 @@ end
         if integrator.opts.adaptive
             utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
             atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -1180,7 +1180,7 @@ end
         if integrator.opts.adaptive
             @.. broadcast=false utilde=(g[end] - g[end - 1]) * ϕ_np1[end]
             calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:3
@@ -1260,8 +1260,8 @@ end
         if integrator.opts.adaptive
             utilde = (g[end] - g[end - 1]) * ϕ_np1[end]
             atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:4
@@ -1345,8 +1345,8 @@ end
             if integrator.opts.adaptive
                 @.. broadcast=false utilde=(g[6] - g[6 - 1]) * ϕ_np1[end]
                 calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                     integrator.opts.reltol, integrator.opts.internalnorm,
-                                     t)
+                    integrator.opts.reltol, integrator.opts.internalnorm,
+                    t)
                 integrator.EEst = integrator.opts.internalnorm(atmp, t)
                 if integrator.EEst > one(integrator.EEst)
                     dts[1] = dts[2]
@@ -1407,8 +1407,8 @@ end
         if integrator.opts.adaptive
             utilde = (g[k + 1] - g[k]) * ϕ_np1[k + 1]
             atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:12
@@ -1430,14 +1430,14 @@ end
                 ϕ_np1!(cache, integrator.fsallast, k + 2)
                 utildep1 = dt * γstar[(k + 1) + 1] * ϕ_np1[k + 2]
                 atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol,
-                                             integrator.opts.reltol,
-                                             integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol,
-                                             integrator.opts.reltol,
-                                             integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol,
-                                             integrator.opts.reltol,
-                                             integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)
@@ -1495,7 +1495,7 @@ end
         if integrator.opts.adaptive
             @.. broadcast=false utilde=(g[k + 1] - g[k]) * ϕ_np1[k + 1]
             calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:12
@@ -1517,14 +1517,14 @@ end
                 ϕ_np1!(cache, k4, k + 2)
                 @.. broadcast=false utildep1=dt * γstar[(k + 1) + 1] * ϕ_np1[k + 2]
                 calculate_residuals!(atmpm2, utildem2, uprev, u, integrator.opts.abstol,
-                                     integrator.opts.reltol, integrator.opts.internalnorm,
-                                     t)
+                    integrator.opts.reltol, integrator.opts.internalnorm,
+                    t)
                 calculate_residuals!(atmpm1, utildem1, uprev, u, integrator.opts.abstol,
-                                     integrator.opts.reltol, integrator.opts.internalnorm,
-                                     t)
+                    integrator.opts.reltol, integrator.opts.internalnorm,
+                    t)
                 calculate_residuals!(atmpp1, utildep1, uprev, u, integrator.opts.abstol,
-                                     integrator.opts.reltol, integrator.opts.internalnorm,
-                                     t)
+                    integrator.opts.reltol, integrator.opts.internalnorm,
+                    t)
                 errm2 = integrator.opts.internalnorm(atmpm2, t)
                 errm1 = integrator.opts.internalnorm(atmpm1, t)
                 errp1 = integrator.opts.internalnorm(atmpp1, t)

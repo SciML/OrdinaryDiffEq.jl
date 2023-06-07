@@ -28,11 +28,11 @@ end
         z[1] = integrator.uprev
         z[2] = integrator.k[1] * dt
         z[3] = ode_interpolant(t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
-                               Val{2}) * dt^2 / 2
+            Val{2}) * dt^2 / 2
         z[4] = ode_interpolant(t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
-                               Val{3}) * dt^3 / 6
+            Val{3}) * dt^3 / 6
         z[5] = ode_interpolant(t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
-                               Val{4}) * dt^4 / 24
+            Val{4}) * dt^4 / 24
         z[6] = zero(cache.z[6])
         fill!(dts, dt)
         perform_predict!(cache)
@@ -65,8 +65,8 @@ end
 
         if integrator.opts.adaptive
             atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:5
@@ -120,11 +120,11 @@ end
         @.. broadcast=false z[1]=integrator.uprev
         @.. broadcast=false z[2]=integrator.k[1] * dt
         ode_interpolant!(z[3], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
-                         Val{2})
+            Val{2})
         ode_interpolant!(z[4], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
-                         Val{3})
+            Val{3})
         ode_interpolant!(z[5], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
-                         Val{4})
+            Val{4})
         @.. broadcast=false z[3]=z[3] * dt^2 / 2
         @.. broadcast=false z[4]=z[4] * dt^3 / 6
         @.. broadcast=false z[5]=z[5] * dt^4 / 24
@@ -161,7 +161,7 @@ end
 
         if integrator.opts.adaptive
             calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
             if integrator.EEst > one(integrator.EEst)
                 for i in 1:5
@@ -230,7 +230,7 @@ end
     ################################### Error estimation
     if integrator.opts.adaptive
         atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
         if integrator.EEst > one(integrator.EEst)
             for i in 1:12
@@ -301,7 +301,7 @@ end
 
     if integrator.opts.adaptive
         calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
         if integrator.EEst > one(integrator.EEst)
             for i in 1:12

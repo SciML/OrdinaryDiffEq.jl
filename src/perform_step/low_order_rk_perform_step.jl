@@ -25,7 +25,7 @@ end
     if integrator.opts.adaptive
         utilde = dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = integrator.fsalfirst
@@ -67,8 +67,8 @@ end
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
                                                   btilde3 * k3 + btilde4 * k4)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
@@ -89,7 +89,7 @@ function initialize!(integrator, cache::OwrenZen3ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::OwrenZen3ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack a21, a31, a32, a41, a42, a43, c1, c2, btilde1, btilde2, btilde3 = cache
     k1 = integrator.fsalfirst
@@ -104,7 +104,7 @@ end
     if integrator.opts.adaptive
         utilde = dt * (btilde1 * k1 + btilde2 * k2 + btilde3 * k3)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = k1
@@ -143,8 +143,8 @@ end
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
                                                   btilde3 * k3)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
@@ -165,7 +165,7 @@ function initialize!(integrator, cache::OwrenZen4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::OwrenZen4ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4, btilde1, btilde3, btilde4, btilde5 = cache
     k1 = integrator.fsalfirst
@@ -181,7 +181,7 @@ end
     if integrator.opts.adaptive
         utilde = dt * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = k1
@@ -231,8 +231,8 @@ end
                                                   btilde4 * k4 +
                                                   btilde5 * k5)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
@@ -292,7 +292,7 @@ function initialize!(integrator, cache::OwrenZen5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::OwrenZen5ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7 = cache
     k1 = integrator.fsalfirst
@@ -302,9 +302,9 @@ end
     k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + k3), p, t + c3 * dt)
     k5 = f(uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4), p, t + c4 * dt)
     k6 = f(uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5), p,
-           t + c5 * dt)
+        t + c5 * dt)
     k7 = f(uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6),
-           p, t + c6 * dt)
+        p, t + c6 * dt)
     u = uprev + dt * (a81 * k1 + a83 * k3 + a84 * k4 + a85 * k5 + a86 * k6 + a87 * k7)
     k8 = f(u, p, t + dt)
     integrator.fsallast = k8
@@ -314,7 +314,7 @@ end
                  (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 +
                   btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = k1
@@ -380,8 +380,8 @@ end
                                                   btilde5 * k5 + btilde6 * k6 +
                                                   btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
@@ -465,9 +465,9 @@ end
     k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3), p, t + c3 * dt)
     k5 = f(uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4), p, t + c4 * dt)
     k6 = f(uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5), p,
-           t + c5 * dt)
+        t + c5 * dt)
     k7 = f(uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6),
-           p, t + dt)
+        p, t + dt)
     integrator.stats.nf += 6
     u = uprev + dt * (a81 * k1 + a83 * k3 + a84 * k4 + a85 * k5 + a86 * k6 + a87 * k7)
     integrator.fsallast = f(u, p, t + dt)
@@ -479,10 +479,10 @@ end
                  (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 +
                   btilde7 * k7 + btilde8 * k8)
         atmp = calculate_residuals(uhat, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         EEst1 = integrator.opts.internalnorm(atmp, t)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         EEst2 = integrator.opts.internalnorm(atmp, t)
         integrator.EEst = max(EEst1, EEst2)
     end
@@ -512,7 +512,7 @@ end
                   dt *
                   (a111 * k[1] + a112 * k[2] + a113 * k[3] + a114 * k[4] + a115 * k[5] +
                    a116 * k[6] + a117 * k[7] + a118 * k[8] + a119 * k[9] + a1110 * k[10]),
-                  p, t + c8 * dt)
+            p, t + c8 * dt)
         integrator.stats.nf += 3
     end
 end
@@ -577,8 +577,8 @@ end
                                                   bhat5 * k5 +
                                                   bhat6 * k6)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         EEst1 = integrator.opts.internalnorm(atmp, t)
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 +
                                                   btilde4 * k4 +
@@ -586,8 +586,8 @@ end
                                                   btilde7 * k7 +
                                                   btilde8 * k8)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         EEst2 = integrator.opts.internalnorm(atmp, t)
         integrator.EEst = max(EEst1, EEst2)
     end
@@ -737,7 +737,7 @@ end
                  (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 +
                   btilde6 * k6 + btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = k1
@@ -815,8 +815,8 @@ end
                                                   btilde5 * k5 + btilde6 * k6 +
                                                   btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
@@ -864,7 +864,7 @@ end
                  (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 +
                   btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = update
@@ -929,8 +929,8 @@ end
                                                   btilde5 * k5 + btilde6 * k6 +
                                                   btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     if integrator.opts.calck
@@ -1023,7 +1023,7 @@ function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache
     u_1 = α_10 * uprev + dt * β_10 * integrator.fsalfirst
@@ -1052,7 +1052,7 @@ function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_Cache)
 end
 
 @muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_Cache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack k, fsalfirst, u_1, u_2, kk_1, kk_2, stage_limiter!, step_limiter!, thread = cache
     @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache.tab
@@ -1095,9 +1095,9 @@ end
     k3 = f(uprev + α31 * dt * k1 + α32 * dt * k2, p, t + c3 * dt)
     k4 = f(uprev + α41 * dt * k1 + α42 * dt * k2 + α43 * dt * k3, p, t + c4 * dt)
     k5 = f(uprev + α51 * dt * k1 + α52 * dt * k2 + α53 * dt * k3 + α54 * dt * k4, p,
-           t + c5 * dt)
+        t + c5 * dt)
     k6 = f(uprev + α62 * dt * k2 + α63 * dt * k3 + α64 * dt * k4 + α65 * dt * k5, p,
-           t + c6 * dt)
+        t + c6 * dt)
     u = uprev + dt * (β2 * k2 + β3 * k3 + β4 * k4 + β5 * k5 + β6 * k6)
 
     integrator.fsallast = f(u, p, t + dt)  # For interpolation, then FSAL'd
@@ -1202,7 +1202,7 @@ end
     k4 = f(uprev + α41 * dt * k1 + α43 * dt * k3, p, t + c4 * dt)
     k5 = f(uprev + α51 * dt * k1 + α53 * dt * k3 + α54 * dt * k4, p, t + c5 * dt)
     k6 = f(uprev + α61 * dt * k1 + α63 * dt * k3 + α64 * dt * k4 + α65 * dt * k5, p,
-           t + c6 * dt)
+        t + c6 * dt)
     k7 = f(uprev + α71 * dt * k1 + α73 * dt * k3 + α74 * dt * k4 + α75 * dt * k5 +
            α76 * dt * k6, p, t + c7 * dt)
     k8 = f(uprev + α81 * dt * k1 + α83 * dt * k3 + α84 * dt * k4 + α85 * dt * k5 +
@@ -1215,7 +1215,7 @@ end
                  (β1tilde * k1 + β4tilde * k4 + β5tilde * k5 + β6tilde * k6 + β7tilde * k7 +
                   β8tilde * k8 + β9tilde * k9)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.stats.nf += 8
@@ -1303,8 +1303,8 @@ end
                                                   β8tilde * k8 +
                                                   β9tilde * k9)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
@@ -1639,8 +1639,8 @@ function perform_step!(integrator, cache::Stepanov5ConstantCache, repeat_step = 
                                                   btilde5 * k5 + btilde6 * k6 +
                                                   btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1700,7 +1700,7 @@ function perform_step!(integrator, cache::Stepanov5Cache, repeat_step = false)
                   btilde6 * k6 +
                   btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1748,7 +1748,7 @@ function perform_step!(integrator, cache::SIR54ConstantCache, repeat_step = fals
                   btilde5 * k5 + btilde6 * k6 +
                   btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1820,8 +1820,8 @@ function perform_step!(integrator, cache::SIR54Cache, repeat_step = false)
                                                   btilde5 * k5 + btilde6 * k6 +
                                                   btilde7 * k7)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1850,7 +1850,7 @@ function perform_step!(integrator, cache::Alshina2ConstantCache, repeat_step = f
     if integrator.opts.adaptive
         utilde = dt * (b1tilde * k1)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1891,8 +1891,8 @@ function perform_step!(integrator, cache::Alshina2Cache, repeat_step = false)
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (b1tilde * k1)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.stats.nf += 2
@@ -1926,7 +1926,7 @@ function perform_step!(integrator, cache::Alshina3ConstantCache, repeat_step = f
     if integrator.opts.adaptive
         utilde = dt * (b2tilde * k2)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1969,8 +1969,8 @@ function perform_step!(integrator, cache::Alshina3Cache, repeat_step = false)
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (b2tilde * k2)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 

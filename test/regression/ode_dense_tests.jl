@@ -1,7 +1,8 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using ForwardDiff, Printf
-import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
-                          prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
+import ODEProblemLibrary: prob_ode_linear,
+    prob_ode_2Dlinear,
+    prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 # use `PRINT_TESTS = true` to print the tests, including results
 const PRINT_TESTS = false
 print_results(x) =
@@ -12,9 +13,9 @@ print_results(x) =
 # points and storage arrays used in the interpolation tests
 const interpolation_points = 0:(1 // 2^(4)):1
 const interpolation_results_1d = fill(zero(prob_ode_linear.u0),
-                                      length(interpolation_points))
+    length(interpolation_points))
 const interpolation_results_2d = Vector{typeof(prob_ode_2Dlinear.u0)}(undef,
-                                                                      length(interpolation_points))
+    length(interpolation_points))
 for idx in eachindex(interpolation_results_2d)
     interpolation_results_2d[idx] = zero(prob_ode_2Dlinear.u0)
 end
@@ -23,10 +24,10 @@ f_linear_inplace = (du, u, p, t) -> begin
     @. du = 1.01 * u
 end
 prob_ode_linear_inplace = ODEProblem(ODEFunction(f_linear_inplace;
-                                                 analytic = (u0, p, t) -> exp(1.01 * t) * u0),
-                                     [0.5], (0.0, 1.0))
+        analytic = (u0, p, t) -> exp(1.01 * t) * u0),
+    [0.5], (0.0, 1.0))
 const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(undef,
-                                                                                    length(interpolation_points))
+    length(interpolation_points))
 for idx in eachindex(interpolation_results_1d_inplace)
     interpolation_results_1d_inplace[idx] = zero(prob_ode_linear_inplace.u0)
 end
@@ -38,7 +39,7 @@ const deriv_test_points = range(0, stop = 1, length = 5)
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
 function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false,
-                         nth_der = 1, dertol = 1e-6)
+    nth_der = 1, dertol = 1e-6)
     println("\n")
     show(stdout, alg)
     println()
@@ -457,7 +458,7 @@ regression_test(Feagin10(), 6e-4, 9e-4)
 @test BS5() == BS5(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(BS5(), 4e-8, 6e-8; test_diff1 = true, nth_der = 1, dertol = 1e-12)
 regression_test(BS5(lazy = false), 4e-8, 6e-8; test_diff1 = true, nth_der = 1,
-                dertol = 1e-12)
+    dertol = 1e-12)
 
 prob = prob_ode_linear
 sol = solve(prob, BS5(), dt = 1 // 2^(1), dense = true, adaptive = false)
@@ -481,7 +482,7 @@ println("Verns")
 @test Vern6() == Vern6(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true, nth_der = 1, dertol = 1e-9)
 regression_test(Vern6(lazy = false), 7e-8, 7e-8; test_diff1 = true, nth_der = 1,
-                dertol = 1e-9)
+    dertol = 1e-9)
 
 prob = remake(prob_ode_bigfloatlinear; u0 = big(0.5))
 
@@ -491,7 +492,7 @@ sol2 = solve(prob, Vern6(), dt = 1 // 2^(7), dense = true, adaptive = false)
 print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2[:] - interpd_1d_big)) < 5e-8)
 
 prob_ode_bigfloatveclinear = ODEProblem((u, p, t) -> p * u, [big(0.5)], (0.0, 1.0),
-                                        big(1.01))
+    big(1.01))
 prob = prob_ode_bigfloatveclinear
 sol = solve(prob, Vern6(), dt = 1 // 2^(2), dense = true)
 interpd_big = sol(0:(1 // 2^(4)):1)
@@ -501,19 +502,19 @@ print_results(@test maximum(map((x) -> maximum(abs.(x)), sol2 - interpd_big)) < 
 # Vern7
 regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true, nth_der = 1, dertol = 1e-10)
 regression_test(Vern7(lazy = false), 3e-9, 5e-9; test_diff1 = true, nth_der = 1,
-                dertol = 1e-10)
+    dertol = 1e-10)
 
 # Vern8
 @test Vern8() == Vern8(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true, nth_der = 1, dertol = 1e-7)
 regression_test(Vern8(lazy = false), 3e-8, 5e-8; test_diff1 = true, nth_der = 1,
-                dertol = 1e-7)
+    dertol = 1e-7)
 
 # Vern9
 @test Vern9() == Vern9(OrdinaryDiffEq.trivial_limiter!) # old non-kwarg constructor
 regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der = 4, dertol = 5e-2)
 regression_test(Vern9(lazy = false), 1e-9, 2e-9; test_diff1 = true, nth_der = 4,
-                dertol = 5e-2)
+    dertol = 5e-2)
 
 println("Rosenbrocks")
 

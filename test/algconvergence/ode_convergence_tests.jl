@@ -14,7 +14,7 @@ testTol = 0.2
 
 @testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
     prob = (ODEProblemLibrary.prob_ode_linear,
-            ODEProblemLibrary.prob_ode_2Dlinear)[i]
+        ODEProblemLibrary.prob_ode_2Dlinear)[i]
     dts = 1 .// 2 .^ (8:-1:4)
     @info "Very low order"
     sim = test_convergence(dts, prob, Euler())
@@ -101,7 +101,7 @@ end
 
 @testset "Implicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
     prob = (ODEProblemLibrary.prob_ode_linear,
-            ODEProblemLibrary.prob_ode_2Dlinear)[i]
+        ODEProblemLibrary.prob_ode_2Dlinear)[i]
     dts = 1 .// 2 .^ (9:-1:5)
 
     @show "Very low order"
@@ -110,11 +110,11 @@ end
     @test sim11.𝒪est[:final]≈1 atol=testTol
 
     sim112 = test_convergence(dts, prob, ImplicitEuler(nlsolve = NLFunctional()),
-                              reltol = 1e-2)
+        reltol = 1e-2)
     @test sim112.𝒪est[:final]≈1 atol=testTol
 
     sim113 = test_convergence(dts, prob, ImplicitEuler(nlsolve = NLAnderson()),
-                              reltol = 1e-2)
+        reltol = 1e-2)
     @test sim113.𝒪est[:final]≈1 atol=testTol
 
     sim13 = test_convergence(dts, prob, ImplicitMidpoint())

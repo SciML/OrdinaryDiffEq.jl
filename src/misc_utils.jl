@@ -81,12 +81,12 @@ macro threaded(option, ex)
 end
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-                    du = nothing, u = nothing, p = nothing, t = nothing,
-                    weight = nothing, solverdata = nothing,
-                    reltol = integrator === nothing ? nothing : integrator.opts.reltol)
-    A !== nothing && (linsolve = LinearSolve.set_A(linsolve, A))
-    b !== nothing && (linsolve = LinearSolve.set_b(linsolve, b))
-    linu !== nothing && (linsolve = LinearSolve.set_u(linsolve, linu))
+    du = nothing, u = nothing, p = nothing, t = nothing,
+    weight = nothing, solverdata = nothing,
+    reltol = integrator === nothing ? nothing : integrator.opts.reltol)
+    A !== nothing && (linsolve.A = A)
+    b !== nothing && (linsolve.b = b)
+    linu !== nothing && (linsolve.u = linu)
 
     Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer :
              linsolve.Pl
@@ -96,14 +96,15 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     _alg = unwrap_alg(integrator, true)
 
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
-                          solverdata)
+        solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
-        __Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
-        __Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
-        linsolve = LinearSolve.set_prec(linsolve, __Pl, __Pr)
+        __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
+        __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
+        linsolve.Pl = __Pl
+        linsolve.Pr = __Pr
     end
 
-    linres = solve(linsolve; reltol)
+    linres = solve!(linsolve; reltol)
 
     # TODO: this ignores the add of the `f` count for add_steps!
     if integrator isa SciMLBase.DEIntegrator && _alg.linsolve !== nothing &&
@@ -121,15 +122,15 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     return linres
 end
 
-function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight)
+function wrapprecs(_Pl::Nothing, _Pr::Nothing, weight, u)
     Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight)))
     Pr = Diagonal(_vec(weight))
     Pl, Pr
 end
 
-function wrapprecs(_Pl, _Pr, weight)
-    Pl = _Pl === nothing ? LinearSolve.Identity() : _Pl
-    Pr = _Pr === nothing ? LinearSolve.Identity() : _Pr
+function wrapprecs(_Pl, _Pr, weight, u)
+    Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pl
+    Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
     Pl, Pr
 end
 

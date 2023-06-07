@@ -4,22 +4,22 @@ using OrdinaryDiffEq, DiffEqBase
 
 # algorithm, dq(p) != p, convergence order
 const ALGOS = ((SymplecticEuler, true, 1),
-               (VelocityVerlet, false, 2),
-               (VerletLeapfrog, true, 2),
-               (PseudoVerletLeapfrog, true, 2),
-               (McAte2, true, 2),
-               (Ruth3, true, 3),
-               (McAte3, true, 3),
-               (CandyRoz4, true, 4),
-               (McAte4, true, 4),
-               (CalvoSanz4, true, 4),
-               (McAte42, true, 1), # known to be broken
-               (McAte5, true, 5),
-               (Yoshida6, true, 6),
-               (KahanLi6, true, 6),
-               (McAte8, true, 8),
-               (KahanLi8, true, 8),
-               (SofSpa10, true, 10))
+    (VelocityVerlet, false, 2),
+    (VerletLeapfrog, true, 2),
+    (PseudoVerletLeapfrog, true, 2),
+    (McAte2, true, 2),
+    (Ruth3, true, 3),
+    (McAte3, true, 3),
+    (CandyRoz4, true, 4),
+    (McAte4, true, 4),
+    (CalvoSanz4, true, 4),
+    (McAte42, true, 1), # known to be broken
+    (McAte5, true, 5),
+    (Yoshida6, true, 6),
+    (KahanLi6, true, 6),
+    (McAte8, true, 8),
+    (KahanLi8, true, 8),
+    (SofSpa10, true, 10))
 
 function dp(p, q, pa, t)
     0q .+ pa[2]

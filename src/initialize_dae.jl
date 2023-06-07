@@ -45,52 +45,52 @@ variable, then the system is not Index 1!
 ## Expansion
 
 function DiffEqBase.initialize_dae!(integrator::ODEIntegrator,
-                                    initializealg = integrator.initializealg)
+    initializealg = integrator.initializealg)
     _initialize_dae!(integrator, integrator.sol.prob,
-                     initializealg,
-                     Val(DiffEqBase.isinplace(integrator.sol.prob)))
+        initializealg,
+        Val(DiffEqBase.isinplace(integrator.sol.prob)))
 end
 
 ## Default algorithms
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-                          alg::DefaultInit, x::Val{true})
+    alg::DefaultInit, x::Val{true})
     _initialize_dae!(integrator, prob,
-                     BrownFullBasicInit(integrator.opts.abstol), x)
+        BrownFullBasicInit(integrator.opts.abstol), x)
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-                          alg::DefaultInit, x::Val{false})
+    alg::DefaultInit, x::Val{false})
     _initialize_dae!(integrator, prob,
-                     BrownFullBasicInit(integrator.opts.abstol), x)
+        BrownFullBasicInit(integrator.opts.abstol), x)
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::DefaultInit, x::Val{false})
+    alg::DefaultInit, x::Val{false})
     if prob.differential_vars === nothing
         _initialize_dae!(integrator, prob,
-                         ShampineCollocationInit(), x)
+            ShampineCollocationInit(), x)
     else
         _initialize_dae!(integrator, prob,
-                         BrownFullBasicInit(integrator.opts.abstol), x)
+            BrownFullBasicInit(integrator.opts.abstol), x)
     end
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::DefaultInit, x::Val{true})
+    alg::DefaultInit, x::Val{true})
     if prob.differential_vars === nothing
         _initialize_dae!(integrator, prob,
-                         ShampineCollocationInit(), x)
+            ShampineCollocationInit(), x)
     else
         _initialize_dae!(integrator, prob,
-                         BrownFullBasicInit(integrator.opts.abstol), x)
+            BrownFullBasicInit(integrator.opts.abstol), x)
     end
 end
 
 ## NoInit
 
 function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
-                          alg::NoInit, x::Union{Val{true}, Val{false}})
+    alg::NoInit, x::Union{Val{true}, Val{false}})
 end
 
 ## ShampineCollocationInit
@@ -104,7 +104,7 @@ Solve for `u`
 =#
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
-                          isinplace::Val{true})
+    isinplace::Val{true})
     @unpack p, t, f = integrator
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
@@ -131,14 +131,14 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         # backward Euler
         nlsolver = integrator.cache.nlsolver
         oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
-                                       integrator.dt
+        integrator.dt
         nlsolver.tmp .= integrator.uprev
         nlsolver.γ, nlsolver.c = 1, 1
         nlsolver.method = DIRK
         integrator.dt = dt
         z = nlsolve!(nlsolver, integrator, integrator.cache)
         nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
-                                                                 olddt
+        olddt
         failed = nlsolvefail(nlsolver)
         @.. broadcast=false integrator.u=integrator.uprev + z
     else
@@ -164,10 +164,10 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
 
         nlfunc = NonlinearFunction(nlequation!;
-                                   jac_prototype = f.jac_prototype)
+            jac_prototype = f.jac_prototype)
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-                      reltol = integrator.opts.reltol)
+            reltol = integrator.opts.reltol)
         integrator.u .= nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
@@ -179,13 +179,13 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     if failed
         @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
-                          isinplace::Val{false})
+    isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
     M = integrator.f.mass_matrix
@@ -211,14 +211,14 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         # backward Euler
         nlsolver = integrator.cache.nlsolver
         oldγ, oldc, oldmethod, olddt = nlsolver.γ, nlsolver.c, nlsolver.method,
-                                       integrator.dt
+        integrator.dt
         nlsolver.tmp .= integrator.uprev
         nlsolver.γ, nlsolver.c = 1, 1
         nlsolver.method = DIRK
         integrator.dt = dt
         z = nlsolve!(nlsolver, integrator, integrator.cache)
         nlsolver.γ, nlsolver.c, nlsolver.method, integrator.dt = oldγ, oldc, oldmethod,
-                                                                 olddt
+        olddt
         failed = nlsolvefail(nlsolver)
         @.. broadcast=false integrator.u=integrator.uprev + z
     else
@@ -230,10 +230,10 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
 
         nlfunc = NonlinearFunction(nlequation_oop;
-                                   jac_prototype = f.jac_prototype)
+            jac_prototype = f.jac_prototype)
         nlprob = NonlinearProblem(nlfunc, u0)
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-                      reltol = integrator.opts.reltol)
+            reltol = integrator.opts.reltol)
         integrator.u = nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
@@ -246,13 +246,13 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
     if failed
         @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::ShampineCollocationInit, isinplace::Val{true})
+    alg::ShampineCollocationInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u0 = integrator.u
 
@@ -286,7 +286,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0, p)
     nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-                  reltol = integrator.opts.reltol)
+        reltol = integrator.opts.reltol)
 
     integrator.u = nlsol.u
     recursivecopy!(integrator.uprev, integrator.u)
@@ -296,20 +296,22 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     if nlsol.retcode != ReturnCode.Success
         @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::ShampineCollocationInit, isinplace::Val{false})
+    alg::ShampineCollocationInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
     dtmax = integrator.opts.dtmax
 
     dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
 
-    nlequation_oop = u -> begin f((u - u0) / dt, u, p, t) end
+    nlequation_oop = u -> begin
+        f((u - u0) / dt, u, p, t)
+    end
 
     nlequation = (u, _) -> nlequation_oop(u)
 
@@ -321,7 +323,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0)
     nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-                  reltol = integrator.opts.reltol)
+        reltol = integrator.opts.reltol)
 
     integrator.u = nlsol.u
 
@@ -332,7 +334,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     if nlsol.retcode != ReturnCode.Success
         @warn "ShampineCollocationInit DAE initialization algorithm failed with dt=$dt. Try to adjust initdt like `ShampineCollocationInit(initdt)`."
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end
@@ -349,12 +351,12 @@ Solve for the algebraic variables
 
 algebraic_jacobian(::Nothing, algebraic_eqs, algebraic_vars) = nothing
 function algebraic_jacobian(jac_prototype::T, algebraic_eqs,
-                            algebraic_vars) where {T <: AbstractMatrix}
+    algebraic_vars) where {T <: AbstractMatrix}
     jac_prototype[algebraic_eqs, algebraic_vars]
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-                          alg::BrownFullBasicInit, isinplace::Val{true})
+    alg::BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
@@ -408,13 +410,13 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-                          alg::BrownFullBasicInit, isinplace::Val{false})
+    alg::BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
 
     u0 = integrator.u
@@ -477,13 +479,13 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::BrownFullBasicInit, isinplace::Val{true})
+    alg::BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
@@ -538,13 +540,13 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-                          alg::BrownFullBasicInit, isinplace::Val{false})
+    alg::BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 
@@ -595,7 +597,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
-                                                        ReturnCode.InitialFailure)
+            ReturnCode.InitialFailure)
     end
     return
 end

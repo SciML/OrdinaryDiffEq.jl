@@ -24,7 +24,7 @@ for alg in SPECIAL_INTERPS
     @show alg
     sol = solve(prob, alg, dt = 0.0033, abstol = 1e-14, reltol = 1e-14)
     soloop = solve(proboop, alg, adaptive = false, tstops = sol.t, abstol = 1e-14,
-                   reltol = 1e-14)
+        reltol = 1e-14)
     @test maximum(norm(soloop(t) - sol(t)) for t in 0:0.001:10) < 1e-10
     @test maximum(norm(soloop(y1, t) - sol(y2, t)) for t in 0:0.001:10) < 1e-10
 end

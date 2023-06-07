@@ -126,7 +126,7 @@ function initialize!(integrator, cache::SHLDDRK52ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SHLDDRK52ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5 = cache
 
@@ -204,7 +204,7 @@ function initialize!(integrator, cache::SHLDDRK_2NConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SHLDDRK_2NConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack α21, α31, α41, α51, β11, β21, β31, β41, β51, c21, c31, c41, c51, α22, α32, α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32, c42, c52, c62 = cache
 
@@ -473,7 +473,7 @@ function initialize!(integrator, cache::SSPRK53_2N1ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRK53_2N1ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack α40, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4 = cache
     #stores in u for all intermediate stages
@@ -549,7 +549,7 @@ function initialize!(integrator, cache::SSPRK53_2N2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRK53_2N2ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack α30, α32, α50, α54, β10, β21, β32, β43, β54, c1, c2, c3, c4 = cache
     #stores in u for all intermediate stages
@@ -623,7 +623,7 @@ function initialize!(integrator, cache::SSPRK53_HConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRK53_HConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack α30, α32, α40, α41, α43, β10, β21, β32, β43, β54, c1, c2, c3, c4 = cache
     #stores in u for all intermediate stages
@@ -988,7 +988,7 @@ end
     if integrator.opts.adaptive
         utilde = half_u * (utilde - u) # corresponds to bhat = (1/4, 1/4, 1/4, 1/4)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.u = u
@@ -1035,8 +1035,8 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=half_u * (utilde - u) # corresponds to bhat = (1/4, 1/4, 1/4, 1/4)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.stats.nf += 4
@@ -1054,7 +1054,7 @@ function initialize!(integrator, cache::SSPRK432ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRK432ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     dt_2 = dt / 2
 
@@ -1080,7 +1080,7 @@ end
     if integrator.opts.adaptive
         utilde = utilde - u
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.u = u
@@ -1126,8 +1126,8 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=utilde - u
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.stats.nf += 4
@@ -1145,7 +1145,7 @@ function initialize!(integrator, cache::SSPRKMSVS32ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRKMSVS32ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack u_1, u_2, dts, dtf, μ, v_n = cache
 
@@ -1274,7 +1274,7 @@ function initialize!(integrator, cache::SSPRKMSVS43ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRKMSVS43ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack u_1, u_2, u_3, k1, k2, k3 = cache
 
@@ -1385,7 +1385,7 @@ function initialize!(integrator, cache::SSPRK932ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRK932ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     dt_6 = dt / 6
     dt_3 = dt / 3
@@ -1432,7 +1432,7 @@ end
     if integrator.opts.adaptive
         utilde = utilde - u
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.u = u
@@ -1506,8 +1506,8 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=utilde - u
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
@@ -1599,7 +1599,7 @@ function initialize!(integrator, cache::SSPRK104ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPRK104ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     dt_6 = dt / 6
     dt_3 = dt / 3

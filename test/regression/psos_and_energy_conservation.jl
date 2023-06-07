@@ -38,7 +38,7 @@ for i in 1:Ntraj
     rng = MersenneTwister(rand(UInt))
     # Tweaking tolerances and dtmax also is not reliable
     sol = solve(prob, DP5(), save_everystep = true, callback = cb,
-                abstol = 1e-8, reltol = 1e-6, dtmax = 10)
+        abstol = 1e-8, reltol = 1e-6, dtmax = 10)
     push!(sol_tot, sol)
 end
 
@@ -94,7 +94,7 @@ cb = ManifoldProjection(ghh, nlopts = Dict(:ftol => 1e-13), save = false)
 
 # Callback for Poincare surface of section
 function psos_callback(j, direction = +1, offset::Real = 0,
-                       callback_kwargs = Dict{Symbol, Any}(:abstol => 1e-9))
+    callback_kwargs = Dict{Symbol, Any}(:abstol => 1e-9))
 
     # Prepare callback:
     s = sign(direction)
@@ -102,7 +102,7 @@ function psos_callback(j, direction = +1, offset::Real = 0,
     affect! = (integrator) -> nothing
 
     cb = DiffEqBase.ContinuousCallback(cond, nothing, affect!; callback_kwargs...,
-                                       save_positions = (true, false), idxs = j)
+        save_positions = (true, false), idxs = j)
 end
 
 # with this callback, the saved values of variable 1 should be zero

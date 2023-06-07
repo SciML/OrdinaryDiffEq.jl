@@ -12,7 +12,7 @@ function initialize!(integrator, cache::LowStorageRK2NConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK2NConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, u, f, p = integrator
     @unpack A2end, B1, B2end, c2end = cache
 
@@ -85,7 +85,7 @@ function initialize!(integrator, cache::LowStorageRK2CConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK2CConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, u, f, p = integrator
     @unpack A2end, B1, B2end, c2end = cache
 
@@ -151,7 +151,7 @@ function initialize!(integrator, cache::LowStorageRK3SConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3SConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end = cache
 
@@ -220,7 +220,7 @@ function initialize!(integrator, cache::LowStorageRK3SpConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3SpConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end = cache
 
@@ -247,7 +247,7 @@ end
 
     if integrator.opts.adaptive
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -295,8 +295,8 @@ end
 
     if integrator.opts.adaptive
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
@@ -315,7 +315,7 @@ function initialize!(integrator, cache::LowStorageRK3SpFSALConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3SpFSALConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal = cache
 
@@ -344,7 +344,7 @@ end
     if integrator.opts.adaptive
         utilde = utilde + bhatfsal * dt * integrator.fsallast
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -366,7 +366,7 @@ function initialize!(integrator, cache::LowStorageRK3SpFSALCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3SpFSALCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack k, tmp, utilde, atmp, stage_limiter!, step_limiter!, thread = cache
     @unpack γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end, bhat1, bhat2end, bhatfsal = cache.tab
@@ -401,8 +401,8 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=utilde + bhatfsal * dt * k
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
@@ -420,7 +420,7 @@ function initialize!(integrator, cache::LowStorageRK2RPConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK2RPConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
     @unpack Aᵢ, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache
 
@@ -443,7 +443,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -490,8 +490,8 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -512,7 +512,7 @@ function initialize!(integrator, cache::LowStorageRK3RPConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK3RPConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
     @unpack Aᵢ₁, Aᵢ₂, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache
 
@@ -541,7 +541,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -594,8 +594,8 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -616,7 +616,7 @@ function initialize!(integrator, cache::LowStorageRK4RPConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK4RPConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
     @unpack Aᵢ₁, Aᵢ₂, Aᵢ₃, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache
 
@@ -649,7 +649,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -688,7 +688,8 @@ end
         integrator.opts.adaptive &&
             (@.. broadcast=false thread=thread tmp=tmp + (Bᵢ[i] - B̂ᵢ[i]) * dt * k)
         @.. broadcast=false thread=thread gprev=uᵢ₋₃ +
-                                                (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ + Aᵢ₃[i] * fᵢ₋₃) *
+                                                (Aᵢ₁[i] * k + Aᵢ₂[i] * fᵢ₋₂ +
+                                                 Aᵢ₃[i] * fᵢ₋₃) *
                                                 dt
         @.. broadcast=false thread=thread u=u + Bᵢ[i] * dt * k
         @.. broadcast=false thread=thread fᵢ₋₃=fᵢ₋₂
@@ -708,8 +709,8 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -730,7 +731,7 @@ function initialize!(integrator, cache::LowStorageRK5RPConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::LowStorageRK5RPConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, u, uprev, f, fsalfirst, p = integrator
     @unpack Aᵢ₁, Aᵢ₂, Aᵢ₃, Aᵢ₄, Bₗ, B̂ₗ, Bᵢ, B̂ᵢ, Cᵢ = cache
 
@@ -767,7 +768,7 @@ end
     #Error estimate
     if integrator.opts.adaptive
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -831,8 +832,8 @@ end
     #Error estimate
     if integrator.opts.adaptive
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 

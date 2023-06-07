@@ -14,7 +14,7 @@ function make_mm_probs(mm_A, ::Val{iip}) where {iip}
 
     # oop
     mm_f(u, p, t) = (update_coefficients!(mm_A, OrdinaryDiffEq.constvalue.(u), p, t);
-                     mm_A * (u .+ t))
+    mm_A * (u .+ t))
     mm_g(u, p, t) = u .+ t
 
     mm_analytic(u0, p, t) = @. 2 * u0 * exp(t) - t - 1
@@ -23,7 +23,7 @@ function make_mm_probs(mm_A, ::Val{iip}) where {iip}
     tspan = (0.0, 1.0)
 
     prob = ODEProblem(ODEFunction{iip, true}(mm_f, analytic = mm_analytic,
-                                             mass_matrix = mm_A), u0, tspan)
+            mass_matrix = mm_A), u0, tspan)
     prob2 = ODEProblem(ODEFunction{iip, true}(mm_g, analytic = mm_analytic), u0, tspan)
 
     prob, prob2
@@ -74,9 +74,9 @@ end
 almost_I = Matrix{Float64}(1.01I, 3, 3)
 mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
 dependent_M1 = MatrixOperator(ones(3, 3), update_func = update_func1,
-                              update_func! = update_func1!)
+    update_func! = update_func1!)
 dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
-                              update_func! = update_func2!)
+    update_func! = update_func2!)
 
 @testset "Mass Matrix Accuracy Tests" for mm in (almost_I, mm_A)
     # test each method for exactness
@@ -130,32 +130,32 @@ end
         prob, prob2 = make_mm_probs(mm, Val(iip))
 
         sol = solve(prob, ImplicitEuler(nlsolve = NLFunctional()), dt = 1 / 10,
-                    adaptive = false, reltol = 1e-7, abstol = 1e-10)
+            adaptive = false, reltol = 1e-7, abstol = 1e-10)
         sol2 = solve(prob2, ImplicitEuler(nlsolve = NLFunctional()), dt = 1 / 10,
-                     adaptive = false, reltol = 1e-7, abstol = 1e-10)
+            adaptive = false, reltol = 1e-7, abstol = 1e-10)
         @test norm(sol .- sol2)≈0 atol=1e-7
 
         sol = solve(prob,
-                    ImplicitMidpoint(extrapolant = :constant,
-                                     nlsolve = NLFunctional()), dt = 1 / 10, reltol = 1e-7,
-                    abstol = 1e-10)
+            ImplicitMidpoint(extrapolant = :constant,
+                nlsolve = NLFunctional()), dt = 1 / 10, reltol = 1e-7,
+            abstol = 1e-10)
         sol2 = solve(prob2,
-                     ImplicitMidpoint(extrapolant = :constant, nlsolve = NLFunctional()),
-                     dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
+            ImplicitMidpoint(extrapolant = :constant, nlsolve = NLFunctional()),
+            dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         @test norm(sol .- sol2)≈0 atol=1e-7
 
         sol = solve(prob, ImplicitEuler(nlsolve = NLAnderson()), dt = 1 / 10,
-                    adaptive = false)
+            adaptive = false)
         sol2 = solve(prob2, ImplicitEuler(nlsolve = NLAnderson()), dt = 1 / 10,
-                     adaptive = false)
+            adaptive = false)
         @test norm(sol .- sol2)≈0 atol=1e-7
         @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
 
         sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
-                    dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
+            dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         sol2 = solve(prob2,
-                     ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
-                     dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
+            ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
+            dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         @test norm(sol .- sol2)≈0 atol=1e-7
         @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
     end
@@ -180,7 +180,7 @@ end
     @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
 
     M = [0.637947 0.637947
-         0.637947 0.637947]
+        0.637947 0.637947]
 
     inv(M) # not caught as singular
 
@@ -199,7 +199,7 @@ end
     println("SDIRKs")
     sol4 = @test_nowarn solve(m_ode_prob, ImplicitEuler(), reltol = 1e-10, abstol = 1e-10)
     sol5 = @test_nowarn solve(m_ode_prob, ImplicitMidpoint(), dt = 1 / 1000, reltol = 1e-10,
-                              abstol = 1e-10)
+        abstol = 1e-10)
     sol6 = @test_nowarn solve(m_ode_prob, Trapezoid(), reltol = 1e-10, abstol = 1e-10)
     println("BDFs")
     sol7 = @test_nowarn solve(m_ode_prob, QNDF1(), reltol = 1e-10, abstol = 1e-10)
@@ -236,9 +236,9 @@ end
         prob, prob2 = make_mm_probs(mm, Val(iip))
         eulersol = solve(prob, ImplicitEuler(nlsolve = NLNewton(κ = 1e-10)), reltol = 1e-10)
         @test _norm_dsol2(ImplicitEuler(nlsolve = NLNewton(κ = 1e-10)), prob, prob2,
-                          reltol = 1e-10)≈0 atol=5e-4
+            reltol = 1e-10)≈0 atol=5e-4
         @test_skip _norm_dsol2(ImplicitMidpoint(nlsolve = NLNewton(κ = 1e-10)), prob, prob2,
-                               tstops = eulersol.t)≈0 atol=1e-6
+            tstops = eulersol.t)≈0 atol=1e-6
         @test_skip _norm_dsol(RadauIIA5(), prob, prob2)≈0 atol=1e-12
 
         @test_skip _norm_dsol(QNDF1(), prob, prob2)≈0 atol=1e-7
@@ -256,32 +256,32 @@ end
         prob, prob2 = make_mm_probs(mm, Val(iip))
 
         sol = solve(prob, ImplicitEuler(nlsolve = NLFunctional()), dt = 1 / 10,
-                    adaptive = false, reltol = 1e-7, abstol = 1e-10)
+            adaptive = false, reltol = 1e-7, abstol = 1e-10)
         sol2 = solve(prob2, ImplicitEuler(nlsolve = NLFunctional()), dt = 1 / 10,
-                     adaptive = false, reltol = 1e-7, abstol = 1e-10)
+            adaptive = false, reltol = 1e-7, abstol = 1e-10)
         @test_broken norm(sol .- sol2)≈0 atol=1e-7
 
         sol = solve(prob,
-                    ImplicitMidpoint(extrapolant = :constant,
-                                     nlsolve = NLFunctional()), dt = 1 / 10, reltol = 1e-7,
-                    abstol = 1e-10)
+            ImplicitMidpoint(extrapolant = :constant,
+                nlsolve = NLFunctional()), dt = 1 / 10, reltol = 1e-7,
+            abstol = 1e-10)
         sol2 = solve(prob2,
-                     ImplicitMidpoint(extrapolant = :constant, nlsolve = NLFunctional()),
-                     dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
+            ImplicitMidpoint(extrapolant = :constant, nlsolve = NLFunctional()),
+            dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         @test_broken norm(sol .- sol2)≈0 atol=1e-7
 
         sol = solve(prob, ImplicitEuler(nlsolve = NLAnderson()), dt = 1 / 10,
-                    adaptive = false)
+            adaptive = false)
         sol2 = solve(prob2, ImplicitEuler(nlsolve = NLAnderson()), dt = 1 / 10,
-                     adaptive = false)
+            adaptive = false)
         @test norm(sol .- sol2)≈0 atol=1e-7
         @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
 
         sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
-                    dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
+            dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         sol2 = solve(prob2,
-                     ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
-                     dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
+            ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
+            dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         @test norm(sol .- sol2)≈0 atol=1e-7
         @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
     end
