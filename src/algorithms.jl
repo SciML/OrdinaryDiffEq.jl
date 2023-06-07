@@ -5254,11 +5254,9 @@ struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 """
     FineRKN5()
 
-A 5th order explicit Runge-Kutta-Nyström method which can be applied directly to second order ODEs. 
+A 5th order explicit Runge-Kutta-Nyström method which can be applied directly to second order ODEs.
+In particular, this method allows the acceleration equation to depend on the velocity.
 Can only be used with fixed time steps.
-
-This method requires that the acceleration equation needs to be independent of the velocity
-otherwise it results in convergence order loss.
 
 ## References
 ```
