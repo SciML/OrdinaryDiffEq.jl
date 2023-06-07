@@ -163,7 +163,7 @@ end
         @time @safetestset "Simple GPU" begin
             import OrdinaryDiffEq
             include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..",
-                             "test/gpu/simple_gpu.jl"))
+                "test/gpu/simple_gpu.jl"))
         end
         @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
         @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")

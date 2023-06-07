@@ -11,19 +11,19 @@ prob_ode_sin = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> sin(t)), 0.0, 
 
 f = (du, u, p, t) -> du[1] = cos(t)
 prob_ode_sin_inplace = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> [sin(t)]), [0.0],
-                                  (0.0, 1.0))
+    (0.0, 1.0))
 
 f = (u, p, t) -> sin(u)
 prob_ode_nonlinear = ODEProblem(ODEFunction(f;
-                                            analytic = (u0, p, t) -> 2 * acot(exp(-t) *
-                                                                          cot(0.5))), 1.0,
-                                (0.0, 0.5))
+        analytic = (u0, p, t) -> 2 * acot(exp(-t) *
+                                          cot(0.5))), 1.0,
+    (0.0, 0.5))
 
 f = (du, u, p, t) -> du[1] = sin(u[1])
 prob_ode_nonlinear_inplace = ODEProblem(ODEFunction(f;
-                                                    analytic = (u0, p, t) -> [
-                                                        2 * acot(exp(-t) * cot(0.5)),
-                                                    ]), [1.0], (0.0, 0.5))
+        analytic = (u0, p, t) -> [
+            2 * acot(exp(-t) * cot(0.5)),
+        ]), [1.0], (0.0, 0.5))
 
 test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
@@ -49,10 +49,10 @@ prob_ode_large = ODEProblem((du, u, p, t) -> du .= u, u0_large, (0.0, 1.0))
 # test SSP coefficient for explicit Euler
 alg = Euler()
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg) + 1.e-3,
-            dense = false)
+    dense = false)
 @test any(sol.u .< 0)
 
 println("SSPRK22")
@@ -71,21 +71,21 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt = 1.0)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 sol = solve(test_problem_ssp_inplace, alg, dt = 1.0)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 println("KYKSSPRK42")
@@ -104,7 +104,7 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 
 println("SHLDDRK52")
@@ -158,21 +158,21 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt = 1.0)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 sol = solve(test_problem_ssp_inplace, alg, dt = 1.0)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 println("SSPRK53")
@@ -191,14 +191,14 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 println("SSPRK53_2N1")
@@ -217,14 +217,14 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 # for SSPRK53_2N2 to be in asymptotic range
@@ -245,14 +245,14 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 
 dts = 1 .// 2 .^ (9:-1:5)
@@ -272,14 +272,14 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 #reverting back to original dts
@@ -300,7 +300,7 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 
 println("SSPRK73")
@@ -319,7 +319,7 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 
 println("SSPRK83")
@@ -338,7 +338,7 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 
 println("SSPRK43")
@@ -358,21 +358,21 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt = 8 / 5, adaptive = false)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 sol = solve(test_problem_ssp_inplace, alg, dt = 8 / 5, adaptive = false)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 println("SSPRK432")
@@ -392,21 +392,21 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt = 8 / 5, adaptive = false)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 sol = solve(test_problem_ssp_inplace, alg, dt = 8 / 5, adaptive = false)
 @test mapreduce(t -> all(0 .<= sol(t) .<= 1), (u, v) -> u && v,
-                range(0, stop = 8, length = 50), init = true)
+    range(0, stop = 8, length = 50), init = true)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 alg = SSPRKMSVS32()
@@ -454,14 +454,14 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false, maxiters = 1e7)
+    dense = false, maxiters = 1e7)
 @test all(sol.u .>= 0)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 println("SSPRK54")
@@ -482,7 +482,7 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 
 println("SSPRK104")
@@ -501,14 +501,14 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)
 # test storage
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false)
+    save_everystep = false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = false,
-             save_everystep = false, alias_u0 = true)
+    save_everystep = false, alias_u0 = true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 println("KYK2014DGSSPRK_3S2")
@@ -527,5 +527,5 @@ for prob in test_problems_nonlinear
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-            dense = false)
+    dense = false)
 @test all(sol.u .>= 0)

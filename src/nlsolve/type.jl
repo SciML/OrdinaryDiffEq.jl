@@ -40,7 +40,7 @@ struct NLAnderson{K, D, C} <: AbstractNLSolverAlgorithm
 end
 
 function NLAnderson(; κ = 1 // 100, max_iter = 10, max_history::Int = 5, aa_start::Int = 1,
-                    droptol = nothing, fast_convergence_cutoff = 1 // 5)
+    droptol = nothing, fast_convergence_cutoff = 1 // 5)
     NLAnderson(κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol)
 end
 
@@ -55,14 +55,14 @@ struct NLNewton{K, C1, C2, R} <: AbstractNLSolverAlgorithm
 end
 
 function NLNewton(; κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
-                  new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
-                  relax = 0 // 1)
+    new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true,
+    relax = 0 // 1)
     if relax isa Number && !(0 <= relax < 1)
         throw(ArgumentError("The relaxation parameter must be in [0, 1), got `relax = $relax`"))
     end
 
     NLNewton(κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
-             relax)
+        relax)
 end
 
 # solver
@@ -70,7 +70,7 @@ end
 abstract type AbstractNLSolver{algType, iip} end
 
 mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
-                        C <: AbstractNLSolverCache} <: AbstractNLSolver{algType, iip}
+    C <: AbstractNLSolverCache} <: AbstractNLSolver{algType, iip}
     z::uType
     tmp::uType # DIRK and multistep methods only use tmp
     tmp2::tmpType # for GLM if neccssary
@@ -92,36 +92,45 @@ end
 
 # default to DIRK
 function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold,
-                              iter, maxiters, status, cache, method = DIRK, tmp2 = nothing,
-                              nfails::Int = 0) where {iip, tType}
+    iter, maxiters, status, cache, method = DIRK, tmp2 = nothing,
+    nfails::Int = 0) where {iip, tType}
     NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache)}(z,
-                                                                                         tmp,
-                                                                                         tmp2,
-                                                                                         ztmp,
-                                                                                         γ,
-                                                                                         convert(tType,
-                                                                                                 c),
-                                                                                         convert(tType,
-                                                                                                 α),
-                                                                                         alg,
-                                                                                         convert(tType,
-                                                                                                 κ),
-                                                                                         convert(tType,
-                                                                                                 fast_convergence_cutoff),
-                                                                                         convert(tType,
-                                                                                                 ηold),
-                                                                                         iter,
-                                                                                         maxiters,
-                                                                                         status,
-                                                                                         cache,
-                                                                                         method,
-                                                                                         nfails)
+        tmp,
+        tmp2,
+        ztmp,
+        γ,
+        convert(tType,
+            c),
+        convert(tType,
+            α),
+        alg,
+        convert(tType,
+            κ),
+        convert(tType,
+            fast_convergence_cutoff),
+        convert(tType,
+            ηold),
+        iter,
+        maxiters,
+        status,
+        cache,
+        method,
+        nfails)
 end
 
 # caches
 
-mutable struct NLNewtonCache{uType, tType, tType2, rateType, J, W, ufType, jcType, lsType
-                             } <: AbstractNLSolverCache
+mutable struct NLNewtonCache{
+    uType,
+    tType,
+    tType2,
+    rateType,
+    J,
+    W,
+    ufType,
+    jcType,
+    lsType,
+} <: AbstractNLSolverCache
     ustep::uType
     tstep::tType
     k::rateType

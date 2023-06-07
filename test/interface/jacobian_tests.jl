@@ -18,9 +18,9 @@ p = (1.0, 2.0, 3.0)
 u0 = [1.0]
 tspan = (0.0, 10.0)
 prob = ODEProblem(ODEFunction(d_alembert,
-                              jac = d_alembert_jac,
-                              analytic = d_alembert_analytic),
-                  u0, tspan, p)
+        jac = d_alembert_jac,
+        analytic = d_alembert_analytic),
+    u0, tspan, p)
 
 sol = solve(prob, Tsit5(), abstol = 1e-10, reltol = 1e-10)
 @test sol.errors[:l2] < 1e-7
@@ -60,10 +60,13 @@ prob2 = remake(prob, f = ODEFunction(de; jac = true))
 sol = solve(prob, TRBDF2())
 
 for Alg in [Rodas5, Rosenbrock23, TRBDF2, KenCarp4]
-    @test Array(solve(prob2, Alg(), tstops = sol.t, adaptive = false))≈Array(solve(prob,
-                                                                                   Alg(),
-                                                                                   tstops = sol.t,
-                                                                                   adaptive = false)) atol=1e-4
+    @test Array(solve(prob2,
+        Alg(),
+        tstops = sol.t,
+        adaptive = false))≈Array(solve(prob,
+        Alg(),
+        tstops = sol.t,
+        adaptive = false)) atol=1e-4
 end
 
 ## check chunk_size handling in ForwardDiff Jacobians

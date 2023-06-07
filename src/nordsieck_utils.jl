@@ -333,7 +333,7 @@ function nordsieck_adjust_order!(cache::T, dorder) where {T}
                     cache.z[j] = muladd.(-cache.l[j], cache.z[order + 1], cache.z[j])
                 else
                     @.. broadcast=false cache.z[j]=muladd(-cache.l[j], cache.z[order + 1],
-                                                          cache.z[j])
+                        cache.z[j])
                 end
             end # for j
         end # else
@@ -409,12 +409,12 @@ function stepsize_η₊₁!(integrator, cache::T, order) where {T}
         if isconstcache
             atmp = muladd.(-cquot, z[end], cache.Δ)
             atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
         else
             @.. broadcast=false ratetmp=muladd(-cquot, z[end], cache.Δ)
             calculate_residuals!(atmp, ratetmp, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
         end
         dup = integrator.opts.internalnorm(atmp, t) * c_LTE₊₁
         cache.η₊₁ = inv((bias3 * dup)^inv(L + 1) + addon)
@@ -433,11 +433,11 @@ function stepsize_η₋₁!(integrator, cache::T, order) where {T}
     if order > 1
         if isconstcache
             atmp = calculate_residuals(z[order + 1], uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
         else
             calculate_residuals!(atmp, z[order + 1], uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
         end
         approx = integrator.opts.internalnorm(atmp, t) * c_LTE₋₁
         cache.η₋₁ = inv((bias1 * approx)^inv(order) + addon)

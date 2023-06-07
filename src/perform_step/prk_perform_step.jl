@@ -10,7 +10,7 @@ function initialize!(integrator, cache::KuttaPRK2p5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, false)
     @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache
@@ -27,11 +27,11 @@ end
         k5_6[1] = f(uprev +
                     dt *
                     (α5_6[1, 1] * k1 + α5_6[1, 2] * k2 + α5_6[1, 3] * k3 + α5_6[1, 4] * k4),
-                    p, t + c5_6[1] * dt)
+            p, t + c5_6[1] * dt)
         k5_6[2] = f(uprev +
                     dt *
                     (α5_6[2, 1] * k1 + α5_6[2, 2] * k2 + α5_6[2, 3] * k3 + α5_6[2, 4] * k4),
-                    p, t + c5_6[2] * dt)
+            p, t + c5_6[2] * dt)
     else
         let
             @threaded alg.threading for i in [1, 2]

@@ -27,7 +27,7 @@ function test_fun(tstop)
     DualT = typeof(tstop)
     prob = ODEProblem((u, p, t) -> p * u, DualT(u0), DualT.(tspan), DualT(p))
     sol = solve(prob, Tsit5(), callback = stopping_cb(tstop), tstops = [tstop],
-                adaptive = false, dt = 0.01)
+        adaptive = false, dt = 0.01)
     sol(1.0)
 end
 

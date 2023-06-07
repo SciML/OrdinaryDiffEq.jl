@@ -22,7 +22,7 @@ using LinearAlgebra, Test
     @testset "2D units" begin
         f(dy, y, p, t) = (dy .= 0.5 .* y ./ 3.0u"s")
         u0 = [1.0u"N" 2.0u"N"
-              3.0u"N" 1.0u"N"]
+            3.0u"N" 1.0u"N"]
         prob = ODEProblem(f, u0, (0.0u"s", 1.0u"s"))
 
         for alg in algs

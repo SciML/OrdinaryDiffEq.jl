@@ -13,7 +13,7 @@ for x in 0:0.001:5
     end
     function test_f(p)
         cb = ContinuousCallback((u, t, i) -> u[1],
-                                (integrator) -> (called = true; integrator.p[2] = zero(integrator.p[2])))
+            (integrator) -> (called = true; integrator.p[2] = zero(integrator.p[2])))
         prob = ODEProblem(f, eltype(p).([1.0, 0.0]), eltype(p).((0.0, 1.0)), copy(p))
         integrator = init(prob, Tsit5(), abstol = 1e-14, reltol = 1e-14, callback = cb)
         step!(integrator)
@@ -41,7 +41,7 @@ for x in 2.1:0.001:5
     end
     function test_f2(p)
         cb = ContinuousCallback((u, t, i) -> u[1],
-                                (integrator) -> (called = true; integrator.p[2] = zero(integrator.p[2])))
+            (integrator) -> (called = true; integrator.p[2] = zero(integrator.p[2])))
         prob = ODEProblem(f2, eltype(p).([1.0, 0.0]), eltype(p).((0.0, 1.0)), copy(p))
         integrator = init(prob, Tsit5(), abstol = 1e-12, reltol = 1e-12, callback = cb)
         step!(integrator)
@@ -98,9 +98,9 @@ for x in 1.0:0.001:2.5
     called = false
     function test_lotka(p)
         cb = ContinuousCallback((u, t, i) -> u[1] - 2.5,
-                                (integrator) -> (called = true; integrator.p[4] = 1.5))
+            (integrator) -> (called = true; integrator.p[4] = 1.5))
         prob = ODEProblem(lotka_volterra, eltype(p).([1.0, 1.0]), eltype(p).((0.0, 10.0)),
-                          copy(p))
+            copy(p))
         integrator = init(prob, Tsit5(), abstol = 1e-12, reltol = 1e-12, callback = cb)
         step!(integrator)
         solve!(integrator).u[end]
@@ -211,27 +211,27 @@ end
 
 @test !iszero(ForwardDiff.gradient(t -> of_a(t), [1.0]))
 @test ForwardDiff.gradient(t -> of_a(t),
-                           [1.0])≈FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol=1e-5
+    [1.0])≈FiniteDiff.finite_difference_gradient(t -> of_a(t), [1.0]) rtol=1e-5
 
 SOLVERS_FOR_AD = ((BS3, 1e-12),
-                  (Tsit5, 1e-12),
-                  (KenCarp4, 1e-11),
-                  (KenCarp47, 1e-11),
-                  (KenCarp5, 1e-11),
-                  (KenCarp58, 1e-12),
-                  (TRBDF2, 1e-07),
-                  (Rodas4, 1e-12),
-                  (Rodas5, 1e-12),
-                  (Rosenbrock23, 1e-10),
-                  (Rosenbrock32, 1e-11),
-                  (Vern6, 1e-11),
-                  (Vern7, 1e-11),
-                  (RadauIIA3, 1e-04),
-                  (RadauIIA5, 1e-12))
+    (Tsit5, 1e-12),
+    (KenCarp4, 1e-11),
+    (KenCarp47, 1e-11),
+    (KenCarp5, 1e-11),
+    (KenCarp58, 1e-12),
+    (TRBDF2, 1e-07),
+    (Rodas4, 1e-12),
+    (Rodas5, 1e-12),
+    (Rosenbrock23, 1e-10),
+    (Rosenbrock32, 1e-11),
+    (Vern6, 1e-11),
+    (Vern7, 1e-11),
+    (RadauIIA3, 1e-04),
+    (RadauIIA5, 1e-12))
 
 @testset "$alg can handle ForwardDiff.Dual in u0 with rtol=$rtol when iip=$iip" for (alg, rtol) in SOLVERS_FOR_AD,
-                                                                                    iip in (true,
-                                                                                            false)
+    iip in (true,
+        false)
 
     if iip
         f = (du, u, p, t) -> du .= -0.5 * u
@@ -242,16 +242,16 @@ SOLVERS_FOR_AD = ((BS3, 1e-12),
     g = u0 -> begin
         tspan = (0.0, 1.0)
         prob = ODEProblem(f,
-                          u0,
-                          tspan)
+            u0,
+            tspan)
         solve(prob, alg(), abstol = 1e-14, reltol = 1e-14)(last(tspan))[1]
     end
     @test ForwardDiff.gradient(g, [10.0])[1]≈exp(-0.5) rtol=rtol
 end
 
 @testset "$alg can handle ForwardDiff.Dual in t0 with rtol=$rtol when iip=$iip" for (alg, rtol) in SOLVERS_FOR_AD,
-                                                                                    iip in (true,
-                                                                                            false)
+    iip in (true,
+        false)
 
     if iip
         f = (du, u, p, t) -> du .= -0.5 * u
@@ -264,8 +264,8 @@ end
         tspan = (t0, 1.0)
         u0 = typeof(t0)[_u0]
         prob = ODEProblem(f,
-                          u0,
-                          tspan)
+            u0,
+            tspan)
         solve(prob, alg(), abstol = 1e-14, reltol = 1e-14)(last(tspan))[1]
     end
     @test ForwardDiff.derivative(g, 0.0)≈_u0 / 2 * exp(-0.5) rtol=rtol

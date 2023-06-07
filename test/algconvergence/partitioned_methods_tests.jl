@@ -137,7 +137,7 @@ sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
 # Methods need BigFloat to test convergence rate
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic, [big"1.0", big"1.0"],
-                               [big"0.0", big"0.0"], (big"0.", big"70."))
+    [big"0.0", big"0.0"], (big"0.", big"70."))
 sim = test_convergence(dts, prob_big, DPRKN4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -212,7 +212,7 @@ function f2_harmonic_nip(v, u, p, t)
 end
 
 ff_harmonic_nip = DynamicalODEFunction(f1_harmonic_nip, f2_harmonic_nip;
-                                       analytic = harmonic_analytic)
+    analytic = harmonic_analytic)
 prob = DynamicalODEProblem(ff_harmonic_nip, v0, u0, (0.0, 5.0))
 
 sol = solve(prob, SymplecticEuler(), dt = 1 / 10)
@@ -309,7 +309,7 @@ sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
 # Methods need BigFloat to test convergence rate
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic_nip, big"1.0", big"0.0",
-                               (big"0.", big"70."))
+    (big"0.", big"70."))
 sim = test_convergence(dts, prob_big, DPRKN4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1

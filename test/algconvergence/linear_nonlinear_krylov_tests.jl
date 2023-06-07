@@ -116,8 +116,8 @@ end
     A = spdiagm(-1 => du, 0 => dd, 1 => du)
     f = (u, p, t) -> A * u
     exp_fun = ODEFunction(f;
-                          jac = (u, p, t) -> A,
-                          analytic = (u, p, t) -> exp(t * Matrix(A)) * u)
+        jac = (u, p, t) -> A,
+        analytic = (u, p, t) -> exp(t * Matrix(A)) * u)
     prob = ODEProblem(exp_fun, u0, (0.0, 1.0))
     sol = solve(prob, LawsonEuler(krylov = true, m = N); dt = 0.1)
     @test sol(1.0) ≈ exp_fun.analytic(u0, nothing, 1.0)

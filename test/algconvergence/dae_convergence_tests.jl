@@ -8,8 +8,8 @@ testTol = 0.2
 f_dae_linear = (res, du, u, p, t) -> (@. res = du - u)
 f_dae_linear_analytic = (du0, u0, p, t) -> @. u0 * exp(t)
 prob_dae_linear_iip = DAEProblem(DAEFunction(f_dae_linear;
-                                             analytic = f_dae_linear_analytic),
-                                 [1.0, 1.0], [1.0, 1.0], (0.0, 1.0))
+        analytic = f_dae_linear_analytic),
+    [1.0, 1.0], [1.0, 1.0], (0.0, 1.0))
 
 @testset "DAE Solver Convergence Tests (in-place)" begin
     prob = prob_dae_linear_iip
@@ -32,8 +32,8 @@ end
 f_dae_linear = (du, u, p, t) -> (@. du - u)
 f_dae_linear_analytic = (du0, u0, p, t) -> @. u0 * exp(t)
 prob_dae_linear_oop = DAEProblem(DAEFunction(f_dae_linear;
-                                             analytic = f_dae_linear_analytic),
-                                 1.0, 1.0, (0.0, 1.0))
+        analytic = f_dae_linear_analytic),
+    1.0, 1.0, (0.0, 1.0))
 
 @testset "DAE Solver Convergence Tests (out-of-place)" begin
     prob = prob_dae_linear_oop

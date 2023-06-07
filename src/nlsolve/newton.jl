@@ -1,7 +1,7 @@
 ## initialize!
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
-                             integrator::DiffEqBase.DEIntegrator)
+    integrator::DiffEqBase.DEIntegrator)
     @unpack dt = integrator
     @unpack cache = nlsolver
 
@@ -12,7 +12,7 @@
 end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
-                             integrator::DiffEqBase.DEIntegrator)
+    integrator::DiffEqBase.DEIntegrator)
     @unpack u, uprev, t, dt, opts = integrator
     @unpack cache = nlsolver
     @unpack weight = cache
@@ -20,7 +20,7 @@ end
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, u,
-                         opts.abstol, opts.reltol, opts.internalnorm, t)
+        opts.abstol, opts.reltol, opts.internalnorm, t)
 
     nothing
 end
@@ -74,7 +74,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
 
     atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol,
-                               opts.internalnorm, t)
+        opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -115,10 +115,10 @@ end
 
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-                            reltol = reltol)
+            reltol = reltol)
     else
         linres = dolinsolve(integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-                            reltol = reltol)
+            reltol = reltol)
     end
 
     cache.linsolve = linres.cache
@@ -141,7 +141,7 @@ end
     relax!(dz, nlsolver, integrator, f)
 
     calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
-                         opts.internalnorm, t)
+        opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -181,10 +181,10 @@ end
 
     if is_always_new(nlsolver) || (iter == 1 && new_W)
         linres = dolinsolve(integrator, linsolve; A = W, b = _vec(b), linu = _vec(dz),
-                            reltol = reltol)
+            reltol = reltol)
     else
         linres = dolinsolve(integrator, linsolve; A = nothing, b = _vec(b), linu = _vec(dz),
-                            reltol = reltol)
+            reltol = reltol)
     end
 
     cache.linsolve = linres.cache
@@ -207,7 +207,7 @@ end
     relax!(dz, nlsolver, integrator, f)
 
     calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
-                         opts.internalnorm, t)
+        opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -224,7 +224,7 @@ end
 end
 
 @inline function _compute_rhs(nlsolver::NLSolver{<:NLNewton, false}, integrator, f::TF,
-                              z) where {TF}
+    z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack tstep, invγdt = cache
@@ -263,7 +263,7 @@ end
 end
 
 @inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true}, integrator, f::TF,
-                               z) where {TF}
+    z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, invγdt = cache
@@ -307,7 +307,7 @@ end
 end
 
 @inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator,
-                               f::TF, z) where {TF}
+    f::TF, z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, invγdt = cache
@@ -375,14 +375,14 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) 
     relax(dz, nlsolver, integrator, f, relax(nlsolver))
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-                r::Number) where {TF}
+    r::Number) where {TF}
     if !iszero(r)
         rmul!(dz, 1 - r)
     end
 end
 
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-                linesearch) where {TF}
+    linesearch) where {TF}
     let dz = dz,
         integrator = integrator,
         nlsolver = nlsolver,
@@ -396,7 +396,7 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
             # recompute residual (rhs)
             b, ustep2 = _compute_rhs!(nlsolver, integrator, f, z)
             calculate_residuals!(atmp, b, uprev, ustep2, opts.abstol, opts.reltol,
-                                 opts.internalnorm, t)
+                opts.internalnorm, t)
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end
@@ -425,7 +425,7 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
 end
 
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-               r::Number) where {TF}
+    r::Number) where {TF}
     if !iszero(r)
         dz = (1 - r) * dz
     end
@@ -433,7 +433,7 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
 end
 
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-               linesearch) where {TF}
+    linesearch) where {TF}
     let dz = dz,
         integrator = integrator,
         nlsolver = nlsolver,
@@ -446,7 +446,7 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
             # recompute residual (rhs)
             b, ustep2 = _compute_rhs(nlsolver, integrator, f, z)
             atmp = calculate_residuals(b, uprev, ustep2, opts.abstol, opts.reltol,
-                                       opts.internalnorm, t)
+                opts.internalnorm, t)
             ndz = opts.internalnorm(atmp, t)
             return ndz
         end

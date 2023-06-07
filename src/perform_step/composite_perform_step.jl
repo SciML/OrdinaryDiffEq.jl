@@ -66,7 +66,7 @@ function perform_step!(integrator, cache::CompositeCache, repeat_step = false)
 end
 
 function perform_step!(integrator, cache::CompositeCache{Tuple{T1, T2}, F},
-                       repeat_step = false) where {T1, T2, F}
+    repeat_step = false) where {T1, T2, F}
     if cache.current == 1
         perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
     elseif cache.current == 2
@@ -77,7 +77,7 @@ end
 choose_algorithm!(integrator, cache::OrdinaryDiffEqCache) = nothing
 
 function choose_algorithm!(integrator,
-                           cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
+    cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
     new_current = cache.choice_function(integrator)
     @inbounds if new_current != cache.current
         if new_current == 1
@@ -87,14 +87,14 @@ function choose_algorithm!(integrator,
         end
         if cache.current == 1 && new_current == 2
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[1],
-                                      integrator.alg.algs[2])
+                integrator.alg.algs[2])
             transfer_cache!(integrator, integrator.cache.caches[1],
-                            integrator.cache.caches[2])
+                integrator.cache.caches[2])
         elseif cache.current == 2 && new_current == 1
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[2],
-                                      integrator.alg.algs[1])
+                integrator.alg.algs[1])
             transfer_cache!(integrator, integrator.cache.caches[2],
-                            integrator.cache.caches[1])
+                integrator.cache.caches[1])
         end
         cache.current = new_current
     end
@@ -112,19 +112,19 @@ function choose_algorithm!(integrator, cache::CompositeCache)
         end
         if cache.current == 1 && new_current == 2
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[1],
-                                      integrator.alg.algs[2])
+                integrator.alg.algs[2])
             transfer_cache!(integrator, integrator.cache.caches[1],
-                            integrator.cache.caches[2])
+                integrator.cache.caches[2])
         elseif cache.current == 2 && new_current == 1
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[2],
-                                      integrator.alg.algs[1])
+                integrator.alg.algs[1])
             transfer_cache!(integrator, integrator.cache.caches[2],
-                            integrator.cache.caches[1])
+                integrator.cache.caches[1])
         else
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[cache.current],
-                                      integrator.alg.algs[new_current])
+                integrator.alg.algs[new_current])
             transfer_cache!(integrator, integrator.cache.caches[cache.current],
-                            integrator.cache.caches[new_current])
+                integrator.cache.caches[new_current])
         end
         cache.current = new_current
     end

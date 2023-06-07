@@ -62,8 +62,8 @@ function du_alias_or_new(nlsolver::AbstractNLSolver, rate_prototype)
 end
 
 mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaType,
-                                          gammaType,
-                                          tmpType, uprevType, tType} <: Function
+    gammaType,
+    tmpType, uprevType, tType} <: Function
     f::F
     p::pType
     tmp_du::duType
@@ -84,7 +84,7 @@ mutable struct DAEResidualJacobianWrapper{isAD, F, pType, duType, uType, alphaTy
         end
         new{isautodiff, typeof(f), typeof(p), typeof(tmp_du), typeof(tmp_u), typeof(α),
             typeof(invγdt), typeof(tmp), typeof(uprev), typeof(t)}(f, p, tmp_du, tmp_u, α,
-                                                                   invγdt, tmp, uprev, t)
+            invγdt, tmp, uprev, t)
     end
 end
 
@@ -104,7 +104,7 @@ function (m::DAEResidualJacobianWrapper)(out, x)
 end
 
 mutable struct DAEResidualDerivativeWrapper{F, pType, alphaType, gammaType, tmpType,
-                                            uprevType, tType} <: Function
+    uprevType, tType} <: Function
     f::F
     p::pType
     α::alphaType
@@ -129,29 +129,29 @@ DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f
 DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, ::Type{uEltypeNoUnits},
-                        ::Type{uBottomEltypeNoUnits},
-                        ::Type{tTypeNoUnits}, γ, c,
-                        iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    ::Type{uBottomEltypeNoUnits},
+    ::Type{tTypeNoUnits}, γ, c,
+    iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-                   uBottomEltypeNoUnits,
-                   tTypeNoUnits, γ, c, 1, iip)
+        uBottomEltypeNoUnits,
+        tTypeNoUnits, γ, c, 1, iip)
 end
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, ::Type{uEltypeNoUnits},
-                        ::Type{uBottomEltypeNoUnits},
-                        ::Type{tTypeNoUnits}, γ, c, α,
-                        iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    ::Type{uBottomEltypeNoUnits},
+    ::Type{tTypeNoUnits}, γ, c, α,
+    iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-                   uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
 end
 
 function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
-                        t, dt,
-                        f, rate_prototype, ::Type{uEltypeNoUnits},
-                        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-                        γ, c, α,
-                        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
-                                            tTypeNoUnits}
+    t, dt,
+    f, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+    γ, c, α,
+    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
+    tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
     # define unitless type
@@ -192,17 +192,17 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         end
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
         Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-                                     nothing)..., weight, dz)
+                nothing)..., weight, dz)
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                        Pl = Pl, Pr = Pr,
-                        assumptions = LinearSolve.OperatorAssumptions(true))
+            Pl = Pl, Pr = Pr,
+            assumptions = LinearSolve.OperatorAssumptions(true))
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
         nlcache = NLNewtonCache(ustep, tstep, k, atmp, dz, J, W, true, true, true,
-                                tType(dt), du1, uf, jac_config,
-                                linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t)
+            tType(dt), du1, uf, jac_config,
+            linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t)
     elseif nlalg isa NLFunctional
         nlcache = NLFunctionalCache(ustep, tstep, k, atmp, dz)
     elseif nlalg isa NLAnderson
@@ -216,26 +216,26 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         z₊old = zero(z)
 
         nlcache = NLAndersonCache(ustep, tstep, atmp, k, dz, dzold, z₊old, Δz₊s, Q, R, γs,
-                                  0,
-                                  nlalg.aa_start, nlalg.droptol)
+            0,
+            nlalg.aa_start, nlalg.droptol)
     end
 
     # build non-linear solver
     ηold = one(t)
 
     NLSolver{true, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
-                                 nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
-                                 Divergence,
-                                 nlcache)
+        nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
+        Divergence,
+        nlcache)
 end
 
 function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
-                        t, dt,
-                        f, rate_prototype, ::Type{uEltypeNoUnits},
-                        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-                        γ, c, α,
-                        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
-                                             tTypeNoUnits}
+    t, dt,
+    f, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+    γ, c, α,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
+    tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
     # define unitless type
@@ -264,7 +264,7 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
 
         nlcache = NLNewtonConstantCache(tstep, J, W, true, true, true, tType(dt), uf,
-                                        invγdt, tType(nlalg.new_W_dt_cutoff), t)
+            invγdt, tType(nlalg.new_W_dt_cutoff), t)
     elseif nlalg isa NLFunctional
         nlcache = NLFunctionalConstantCache(tstep)
     elseif nlalg isa NLAnderson
@@ -279,15 +279,15 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         z₊old = u
 
         nlcache = NLAndersonConstantCache(tstep, dz, dzold, z₊old, Δz₊s, Q, R, γs, 0,
-                                          nlalg.aa_start, nlalg.droptol)
+            nlalg.aa_start, nlalg.droptol)
     end
 
     # build non-linear solver
     ηold = one(tTypeNoUnits)
     NLSolver{false, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
-                                  nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
-                                  Divergence,
-                                  nlcache)
+        nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
+        Divergence,
+        nlcache)
 end
 
 ## Anderson acceleration
@@ -338,7 +338,7 @@ acceleration based on the current iterate `z` and the settings and history in th
             qrdelete!(Q, R, history)
             history -= 1
             Qcur, Rcur = view(Q, :, 1:history),
-                         UpperTriangular(view(R, 1:history, 1:history))
+            UpperTriangular(view(R, 1:history, 1:history))
         end
     end
 
@@ -406,7 +406,7 @@ by performing Anderson acceleration based on the settings and history in the `ca
             qrdelete!(Q, R, history)
             history -= 1
             Qcur, Rcur = view(Q, :, 1:history),
-                         UpperTriangular(view(R, 1:history, 1:history))
+            UpperTriangular(view(R, 1:history, 1:history))
         end
     end
 

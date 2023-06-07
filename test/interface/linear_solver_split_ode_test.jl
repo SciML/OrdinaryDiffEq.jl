@@ -17,8 +17,8 @@ f2 = M2 |> MatrixOperator
 prob = SplitODEProblem(f1, f2, u0, tspan)
 
 for algname in (:SBDF2,
-                :SBDF3,
-                :KenCarp47)
+    :SBDF3,
+    :KenCarp47)
     @testset "$algname" begin
         alg0 = @eval $algname()
         alg1 = @eval $algname(linsolve = GenericFactorization())

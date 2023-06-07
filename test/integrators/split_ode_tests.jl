@@ -48,10 +48,10 @@ r = [r[2]; r[1]; r; r[end]; r[end]]
 boundaries = @. (r[1:(end - 1)] + r[2:end]) / 2
 
 jac_proto = spdiagm(0 => ones(N), -1 => ones(N - 1), 1 => ones(N - 1), -2 => ones(N - 2),
-                    2 => ones(N - 2))
+    2 => ones(N - 2))
 
 fun = ODEFunction((dh, h, p, t) -> capillary_leveling(dh, h, dr, r, boundaries),
-                  jac_prototype = jac_proto)
+    jac_prototype = jac_proto)
 prob = ODEProblem(fun, h0, tspan)
 
 #Should be functionally equivalent to above, explicit_fun does nothing

@@ -3,7 +3,7 @@ using OrdinaryDiffEq, DiffEqDevTools, Test
 function nonauto1(u, p, t)
     x, _ = u
     [t * x
-     0]
+        0]
 end
 
 function nonauto2(u, p, t)
@@ -27,19 +27,19 @@ u0 = [1.1, 2.2]
 tspan = (0.0, 1.0)
 prob1 = ODEProblem(ODEFunction{true}((du, u, p, t) -> du .= nonauto1(u, p, t) .+
                                                             nonauto2(u, p, t),
-                                     analytic = analytic),
-                   u0, tspan)
+        analytic = analytic),
+    u0, tspan)
 prob2 = ODEProblem(ODEFunction{false}((u, p, t) -> nonauto1(u, p, t) .+ nonauto2(u, p, t),
-                                      analytic = analytic),
-                   u0, tspan)
+        analytic = analytic),
+    u0, tspan)
 prob3 = SplitODEProblem(SplitFunction{true}((du, u, p, t) -> du .= nonauto1(u, p, t),
-                                            (du, u, p, t) -> du .= nonauto2(u, p, t),
-                                            analytic = analytic),
-                        u0, tspan)
+        (du, u, p, t) -> du .= nonauto2(u, p, t),
+        analytic = analytic),
+    u0, tspan)
 prob4 = SplitODEProblem(SplitFunction{false}(nonauto1,
-                                             nonauto2,
-                                             analytic = analytic),
-                        u0, tspan)
+        nonauto2,
+        analytic = analytic),
+    u0, tspan)
 
 testTol = 0.2
 

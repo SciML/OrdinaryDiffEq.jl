@@ -11,14 +11,14 @@ function rober_oop(u, p, t)
     [du1, du2, du3]
 end
 M = [1.0 0 0
-     0 1.0 0
-     0 0 0]
+    0 1.0 0
+    0 0 0]
 f_oop = ODEFunction(rober_oop, mass_matrix = M)
 prob_mm = ODEProblem(f_oop, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 sol = solve(prob_mm, Rosenbrock23(autodiff = false), reltol = 1e-8, abstol = 1e-8)
 @test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 sol = solve(prob_mm, Rosenbrock23(), reltol = 1e-8, abstol = 1e-8,
-            initializealg = ShampineCollocationInit())
+    initializealg = ShampineCollocationInit())
 @test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 
 prob_mm = ODEProblem(f_oop, [1.0, 0.0, 0.2], (0.0, 1e5), (0.04, 3e7, 1e4))
@@ -28,7 +28,7 @@ sol = solve(prob_mm, Rosenbrock23(), reltol = 1e-8, abstol = 1e-8)
 for alg in [Rosenbrock23(autodiff = false), Trapezoid()]
     local sol
     sol = solve(prob_mm, alg, reltol = 1e-8, abstol = 1e-8,
-                initializealg = ShampineCollocationInit())
+        initializealg = ShampineCollocationInit())
     @test sum(sol[1]) ≈ 1
 end
 
@@ -41,14 +41,14 @@ function rober(du, u, p, t)
     nothing
 end
 M = [1.0 0 0
-     0 1.0 0
-     0 0 0]
+    0 1.0 0
+    0 0 0]
 f = ODEFunction(rober, mass_matrix = M)
 prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 sol = solve(prob_mm, Rodas5(autodiff = false), reltol = 1e-8, abstol = 1e-8)
 @test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 sol = solve(prob_mm, Rodas5(), reltol = 1e-8, abstol = 1e-8,
-            initializealg = ShampineCollocationInit())
+    initializealg = ShampineCollocationInit())
 @test sol[1] == [1.0, 0.0, 0.0] # Ensure initialization is unchanged if it works at the start!
 
 prob_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5), (0.04, 3e7, 1e4))
@@ -59,7 +59,7 @@ sol = solve(prob_mm, Rodas5(), reltol = 1e-8, abstol = 1e-8)
 for alg in [Rodas5(autodiff = false), Trapezoid()]
     local sol
     sol = solve(prob_mm, alg, reltol = 1e-8, abstol = 1e-8,
-                initializealg = ShampineCollocationInit())
+        initializealg = ShampineCollocationInit())
     @test sum(sol[1]) ≈ 1
 end
 
@@ -202,11 +202,11 @@ struct BrokenNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
     BrokenNLSolve(; kwargs...) = new()
 end
 function SciMLBase.__solve(prob::NonlinearProblem,
-                           alg::BrokenNLSolve, args...;
-                           kwargs...)
+    alg::BrokenNLSolve, args...;
+    kwargs...)
     u = fill(reinterpret(Float64, 0xDEADBEEFDEADBEEF), 3)
     SciMLBase.build_solution(prob, alg, u, copy(u);
-                             retcode = ReturnCode.Success)
+        retcode = ReturnCode.Success)
 end
 function f2(u, p, t)
     u
@@ -214,5 +214,5 @@ end
 f = ODEFunction(f2, mass_matrix = Diagonal([1.0, 1.0, 0.0]))
 prob = ODEProblem(f, ones(3), (0.0, 1.0))
 integrator = init(prob, Rodas5P(),
-                  initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
+    initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
 @test all(isequal(reinterpret(Float64, 0xDEADBEEFDEADBEEF)), integrator.u)

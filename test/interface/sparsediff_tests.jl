@@ -57,13 +57,13 @@ for f in [f_oop, f_ip]
                 sol_std = solve(prob_std, Solver(autodiff = ad), reltol = tol, abstol = tol)
                 @test sol_std.retcode == ReturnCode.Success
                 for (i, prob) in enumerate(map(f -> ODEProblem(f, u0, tspan),
-                                               [
-                                                   ODEFunction(f, colorvec = colors,
-                                                               jac_prototype = jac_sp),
-                                                   ODEFunction(f, jac_prototype = jac_sp),
-                                                   ODEFunction(f, colorvec = colors,
-                                                               sparsity = jac_sp),
-                                               ]))
+                    [
+                        ODEFunction(f, colorvec = colors,
+                            jac_prototype = jac_sp),
+                        ODEFunction(f, jac_prototype = jac_sp),
+                        ODEFunction(f, colorvec = colors,
+                            sparsity = jac_sp),
+                    ]))
                     sol = solve(prob, Solver(autodiff = ad), reltol = tol, abstol = tol)
                     @test sol.retcode == ReturnCode.Success
                     if tol != nothing

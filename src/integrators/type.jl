@@ -1,6 +1,6 @@
 mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
-                         F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-                         disccache}
+    F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
+    disccache}
     maxiters::MI
     save_everystep::Bool
     adaptive::Bool
@@ -80,9 +80,9 @@ integrator.opts.abstol = 1e-9
 For more info see the linked documentation page.
 """
 mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, IIP,
-                             uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
-                             ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
-                             CallbackCacheType, IA} <:
+    uType, duType, tType, pType, eigenType, EEstT, QT, tdirType,
+    ksEltype, SolType, F, CacheType, O, FSALType, EventErrorType,
+    CallbackCacheType, IA} <:
                DiffEqBase.AbstractODEIntegrator{algType, IIP, uType, tType}
     sol::SolType
     u::uType
@@ -134,45 +134,45 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
     fsallast::FSALType
 
     function ODEIntegrator{algType, IIP, uType, duType, tType, pType, eigenType, EEstT,
-                           tTypeNoUnits, tdirType, ksEltype, SolType,
-                           F, CacheType, O, FSALType, EventErrorType, CallbackCacheType,
-                           InitializeAlgType}(sol, u, du, k, t, dt, f, p, uprev, uprev2,
-                                              duprev, tprev,
-                                              alg, dtcache, dtchangeable, dtpropose, tdir,
-                                              eigen_est, EEst, qold, q11, erracc, dtacc,
-                                              success_iter,
-                                              iter, saveiter, saveiter_dense, cache,
-                                              callback_cache,
-                                              kshortsize, force_stepfail, last_stepfail,
-                                              just_hit_tstop,
-                                              do_error_check,
-                                              event_last_time, vector_event_last_time,
-                                              last_event_error,
-                                              accept_step, isout, reeval_fsal, u_modified,
-                                              reinitialize, isdae,
-                                              opts, stats,
-                                              initializealg) where {algType, IIP, uType,
-                                                                    duType, tType, pType,
-                                                                    eigenType, EEstT,
-                                                                    tTypeNoUnits, tdirType,
-                                                                    ksEltype, SolType, F,
-                                                                    CacheType, O,
-                                                                    FSALType,
-                                                                    EventErrorType,
-                                                                    CallbackCacheType,
-                                                                    InitializeAlgType}
+        tTypeNoUnits, tdirType, ksEltype, SolType,
+        F, CacheType, O, FSALType, EventErrorType, CallbackCacheType,
+        InitializeAlgType}(sol, u, du, k, t, dt, f, p, uprev, uprev2,
+        duprev, tprev,
+        alg, dtcache, dtchangeable, dtpropose, tdir,
+        eigen_est, EEst, qold, q11, erracc, dtacc,
+        success_iter,
+        iter, saveiter, saveiter_dense, cache,
+        callback_cache,
+        kshortsize, force_stepfail, last_stepfail,
+        just_hit_tstop,
+        do_error_check,
+        event_last_time, vector_event_last_time,
+        last_event_error,
+        accept_step, isout, reeval_fsal, u_modified,
+        reinitialize, isdae,
+        opts, stats,
+        initializealg) where {algType, IIP, uType,
+        duType, tType, pType,
+        eigenType, EEstT,
+        tTypeNoUnits, tdirType,
+        ksEltype, SolType, F,
+        CacheType, O,
+        FSALType,
+        EventErrorType,
+        CallbackCacheType,
+        InitializeAlgType}
         new{algType, IIP, uType, duType, tType, pType, eigenType, EEstT, tTypeNoUnits,
             tdirType, ksEltype, SolType,
-            F, CacheType, O, FSALType, EventErrorType, CallbackCacheType, InitializeAlgType
-            }(sol, u, du, k, t, dt, f, p, uprev, uprev2, duprev, tprev,
-              alg, dtcache, dtchangeable, dtpropose, tdir,
-              eigen_est, EEst, qold, q11, erracc, dtacc, success_iter,
-              iter, saveiter, saveiter_dense, cache, callback_cache,
-              kshortsize, force_stepfail, last_stepfail, just_hit_tstop,
-              do_error_check,
-              event_last_time, vector_event_last_time, last_event_error,
-              accept_step, isout, reeval_fsal, u_modified, reinitialize, isdae,
-              opts, stats, initializealg) # Leave off fsalfirst and last
+            F, CacheType, O, FSALType, EventErrorType, CallbackCacheType, InitializeAlgType,
+        }(sol, u, du, k, t, dt, f, p, uprev, uprev2, duprev, tprev,
+            alg, dtcache, dtchangeable, dtpropose, tdir,
+            eigen_est, EEst, qold, q11, erracc, dtacc, success_iter,
+            iter, saveiter, saveiter_dense, cache, callback_cache,
+            kshortsize, force_stepfail, last_stepfail, just_hit_tstop,
+            do_error_check,
+            event_last_time, vector_event_last_time, last_event_error,
+            accept_step, isout, reeval_fsal, u_modified, reinitialize, isdae,
+            opts, stats, initializealg) # Leave off fsalfirst and last
     end
 end
 

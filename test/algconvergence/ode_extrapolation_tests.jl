@@ -8,14 +8,14 @@ using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 linear = (u, p, t) -> (p * u)
 linear_analytic = (u0, p, t) -> u0 * exp(p * t)
 prob_ode_bigfloatlinear = ODEProblem(ODEFunction(linear, analytic = linear_analytic),
-                                     big"0.5", (big"0.0", big"1.0"), big"1.01")
+    big"0.5", (big"0.0", big"1.0"), big"1.01")
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 f_2dlinear_analytic = (u0, p, t) -> @. u0 * exp(p * t)
 prob_ode_bigfloat2Dlinear = ODEProblem(ODEFunction(f_2dlinear,
-                                                   analytic = f_2dlinear_analytic),
-                                       rand(BigFloat, (4, 2)), (big"0.0", big"1.0"),
-                                       big"1.01")
+        analytic = f_2dlinear_analytic),
+    rand(BigFloat, (4, 2)), (big"0.0", big"1.0"),
+    big"1.01")
 
 # Prepare tests
 Random.seed!(100)
@@ -36,20 +36,20 @@ testTol = 0.2
                 #  Convergence test
                 for j in 1:4
                     sim = test_convergence(dts, prob,
-                                           AitkenNeville(max_order = j,
-                                                         min_order = j, init_order = j,
-                                                         threading = false))
+                        AitkenNeville(max_order = j,
+                            min_order = j, init_order = j,
+                            threading = false))
                     @test sim.𝒪est[:final]≈j atol=testTol
                 end
 
                 # Regression test
                 sol = solve(prob,
-                            AitkenNeville(max_order = 9, min_order = 1,
-                                          init_order = 9, threading = false), reltol = 1e-3)
+                    AitkenNeville(max_order = 9, min_order = 1,
+                        init_order = 9, threading = false), reltol = 1e-3)
                 @test length(sol.u) < 15
                 sol = solve(prob,
-                            AitkenNeville(max_order = 9, min_order = 1,
-                                          init_order = 9, threading = false), reltol = 1e-6)
+                    AitkenNeville(max_order = 9, min_order = 1,
+                        init_order = 9, threading = false), reltol = 1e-6)
                 @test length(sol.u) < 18
             end
         end
@@ -69,16 +69,16 @@ testTol = 0.2
             #  Convergence test
             for j in 1:4
                 alg = ImplicitEulerExtrapolation(min_order = j,
-                                                 init_order = j, max_order = j,
-                                                 sequence = seq, threading = false)
+                    init_order = j, max_order = j,
+                    sequence = seq, threading = false)
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final]≈alg.init_order + 1.1 atol=newTol #Superconvergence
             end
             # Regression test
             sol = solve(prob,
-                        ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
-                                                   init_order = 9, sequence = seq,
-                                                   threading = false), reltol = 1e-3)
+                ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
+                    init_order = 9, sequence = seq,
+                    threading = false), reltol = 1e-3)
             @test length(sol.u) < 15
         end
     end
@@ -94,19 +94,19 @@ testTol = 0.2
             #  Convergence test
             for j in 1:4
                 alg = ImplicitEulerBarycentricExtrapolation(min_order = j,
-                                                            init_order = j, max_order = j,
-                                                            sequence = seq,
-                                                            threading = false)
+                    init_order = j, max_order = j,
+                    sequence = seq,
+                    threading = false)
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final]≈alg.init_order + 0.5 atol=newTol #Superconvergence
             end
             # Regression test
             sol = solve(prob,
-                        ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
-                                                              init_order = 9,
-                                                              sequence = seq,
-                                                              threading = false),
-                        reltol = 1e-3)
+                ImplicitEulerBarycentricExtrapolation(max_order = 9, min_order = 1,
+                    init_order = 9,
+                    sequence = seq,
+                    threading = false),
+                reltol = 1e-3)
             @test length(sol.u) < 15
         end
     end
@@ -121,16 +121,16 @@ testTol = 0.2
             # Convergence test
             for j in 1:6
                 alg = ImplicitDeuflhardExtrapolation(min_order = j,
-                                                     init_order = j, max_order = j,
-                                                     sequence = seq, threading = false)
+                    init_order = j, max_order = j,
+                    sequence = seq, threading = false)
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
             end
 
             # Regression test
             alg = ImplicitDeuflhardExtrapolation(max_order = 9, min_order = 1,
-                                                 init_order = 9, sequence = seq,
-                                                 threading = false)
+                init_order = 9, sequence = seq,
+                threading = false)
             sol = solve(prob, alg, reltol = 1e-3)
             @test length(sol.u) < 10
         end
@@ -146,15 +146,15 @@ testTol = 0.2
             # Convergence test
             for j in 1:6
                 alg = ImplicitHairerWannerExtrapolation(min_order = j,
-                                                        init_order = j, max_order = j,
-                                                        sequence = seq, threading = false)
+                    init_order = j, max_order = j,
+                    sequence = seq, threading = false)
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) - 1 atol=testTol
             end
 
             alg = ImplicitHairerWannerExtrapolation(max_order = 9, min_order = 1,
-                                                    init_order = 9, sequence = seq,
-                                                    threading = false)
+                init_order = 9, sequence = seq,
+                threading = false)
             sol = solve(prob, alg, reltol = 1e-3)
             @test length(sol.u) < 10
         end
@@ -173,16 +173,16 @@ testTol = 0.2
                 # Convergence test
                 for j in 1:6
                     alg = ExtrapolationMidpointDeuflhard(min_order = j,
-                                                         init_order = j, max_order = j,
-                                                         sequence = seq, threading = false)
+                        init_order = j, max_order = j,
+                        sequence = seq, threading = false)
                     sim = test_convergence(dts, prob, alg)
                     @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
                 end
 
                 # Regression test
                 alg = ExtrapolationMidpointDeuflhard(max_order = 9, min_order = 1,
-                                                     init_order = 9, sequence = seq,
-                                                     threading = false)
+                    init_order = 9, sequence = seq,
+                    threading = false)
                 sol = solve(prob, alg, reltol = 1e-3)
                 @test length(sol.u) < 10
             end
@@ -201,17 +201,17 @@ testTol = 0.2
                 # Convergence test
                 for j in 1:6
                     alg = ExtrapolationMidpointHairerWanner(min_order = j,
-                                                            init_order = j, max_order = j,
-                                                            sequence = seq,
-                                                            threading = false)
+                        init_order = j, max_order = j,
+                        sequence = seq,
+                        threading = false)
                     sim = test_convergence(dts, prob, alg)
                     @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
                 end
 
                 # Regression test
                 alg = ExtrapolationMidpointHairerWanner(max_order = 9, min_order = 2,
-                                                        init_order = 9, sequence = seq,
-                                                        threading = false)
+                    init_order = 9, sequence = seq,
+                    threading = false)
                 sol = solve(prob, alg, reltol = 1e-3)
                 @test length(sol.u) < 10
             end
@@ -221,17 +221,17 @@ testTol = 0.2
     println("Regression Test Float32 and Float64 Fallbacks")
     @testset "Regression Test Float32 and Float64 Fallbacks" begin
         prob_ode_2Dlinear = ODEProblem(ODEFunction(f_2dlinear,
-                                                   analytic = f_2dlinear_analytic),
-                                       Float64.(prob_ode_bigfloat2Dlinear.u0), (0.0, 1.0),
-                                       1.01)
+                analytic = f_2dlinear_analytic),
+            Float64.(prob_ode_bigfloat2Dlinear.u0), (0.0, 1.0),
+            1.01)
         s1 = solve(prob_ode_bigfloat2Dlinear, ExtrapolationMidpointDeuflhard())
         s2 = solve(prob_ode_2Dlinear, ExtrapolationMidpointDeuflhard())
         @test all(all(s1[i] - s2[i] .< 5e-14) for i in 1:length(s1))
 
         prob_ode_2Dlinear = ODEProblem(ODEFunction(f_2dlinear,
-                                                   analytic = f_2dlinear_analytic),
-                                       Float32.(prob_ode_bigfloat2Dlinear.u0),
-                                       (0.0f0, 1.0f0), 1.01f0)
+                analytic = f_2dlinear_analytic),
+            Float32.(prob_ode_bigfloat2Dlinear.u0),
+            (0.0f0, 1.0f0), 1.01f0)
         s1 = solve(prob_ode_bigfloat2Dlinear, ExtrapolationMidpointDeuflhard())
         s2 = solve(prob_ode_2Dlinear, ExtrapolationMidpointDeuflhard())
         @test all(all(s1[i] - s2[i] .< 5e-6) for i in 1:length(s1))

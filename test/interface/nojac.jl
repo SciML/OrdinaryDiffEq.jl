@@ -14,7 +14,7 @@ function brusselator_2d_loop(du, u, p, t)
         i, j = Tuple(I)
         x, y = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
         ip1, im1, jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
-                             limit(j - 1, N)
+        limit(j - 1, N)
         du[i, j, 1] = alpha * (u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] -
                        4u[i, j, 1]) +
                       B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] +
@@ -40,15 +40,15 @@ function init_brusselator_2d(xyd)
 end
 u0 = init_brusselator_2d(xyd_brusselator) |> vec
 prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop,
-                                     u0, (0.0, 5.0), p)
+    u0, (0.0, 5.0), p)
 
 integ1 = init(prob_ode_brusselator_2d, TRBDF2(), save_everystep = false)
 integ2 = init(prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
-              save_everystep = false)
+    save_everystep = false)
 
 nojac = @allocated init(prob_ode_brusselator_2d,
-                        TRBDF2(linsolve = KrylovJL_GMRES()),
-                        save_everystep = false)
+    TRBDF2(linsolve = KrylovJL_GMRES()),
+    save_everystep = false)
 jac = @allocated init(prob_ode_brusselator_2d, TRBDF2(), save_everystep = false)
 @test jac / nojac > 50
 @test integ1.cache.nlsolver.cache.jac_config !== nothing
@@ -251,11 +251,11 @@ prob = ODEProblem(ODEFunction(pollu, jac = fjac), u0, (0.0, 60.0))
 integ = init(prob, Rosenbrock23(), abstol = 1e-6, reltol = 1e-6)
 @test integ.cache.jac_config === nothing
 integ = init(prob, Rosenbrock23(linsolve = SimpleLUFactorization()), abstol = 1e-6,
-             reltol = 1e-6)
+    reltol = 1e-6)
 @test integ.cache.jac_config === nothing
 integ = init(prob, Rosenbrock23(linsolve = GenericLUFactorization()), abstol = 1e-6,
-             reltol = 1e-6)
+    reltol = 1e-6)
 @test integ.cache.jac_config === nothing
 integ = init(prob, Rosenbrock23(linsolve = RFLUFactorization(), chunk_size = Val{3}()),
-             abstol = 1e-6, reltol = 1e-6)
+    abstol = 1e-6, reltol = 1e-6)
 @test integ.cache.jac_config === nothing

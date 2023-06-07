@@ -13,22 +13,22 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
 
     # Out-of-place
     fun = ODEFunction((u, p, t) -> A * u;
-                      mass_matrix = mm,
-                      jac = (u, p, t) -> A)
+        mass_matrix = mm,
+        jac = (u, p, t) -> A)
     integrator = init(ODEProblem(fun, u0, tspan), ImplicitEuler(); adaptive = false,
-                      dt = dt)
+        dt = dt)
     W = calc_W(integrator, integrator.cache.nlsolver, dtgamma, false)
     @test convert(AbstractMatrix, W) == concrete_W
     @test W \ u0 ≈ concrete_W \ u0
 
     # In-place
     fun = ODEFunction((du, u, p, t) -> mul!(du, A, u);
-                      mass_matrix = mm,
-                      jac_prototype = MatrixOperator(A))
+        mass_matrix = mm,
+        jac_prototype = MatrixOperator(A))
     integrator = init(ODEProblem(fun, u0, tspan), ImplicitEuler(); adaptive = false,
-                      dt = dt)
+        dt = dt)
     calc_W!(integrator.cache.nlsolver.cache.W, integrator, integrator.cache.nlsolver,
-            integrator.cache, dtgamma, false)
+        integrator.cache, dtgamma, false)
 
     # Did not update because it's an array operator
     # We don't want to build Jacobians when we have operators!
@@ -38,7 +38,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
 
     # But jacobian2W! will update the cache
     OrdinaryDiffEq.jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
-                               dtgamma, integrator.cache.nlsolver.cache.W.J.A, false)
+        dtgamma, integrator.cache.nlsolver.cache.W.J.A, false)
     @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
     ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
     @test tmp == concrete_W \ u0
@@ -56,9 +56,9 @@ end
     fun2 = ODEFunction(_f; mass_matrix = mm, jac = (u, p, t) -> t * A)
     fun1_ip = ODEFunction(_f_ip; mass_matrix = mm)
     fun2_ip = ODEFunction(_f_ip; mass_matrix = mm,
-                          jac_prototype = MatrixOperator(similar(A);
-                                                         update_func! = (J, u, p, t) -> J .= t .*
-                                                                                             A))
+        jac_prototype = MatrixOperator(similar(A);
+            update_func! = (J, u, p, t) -> J .= t .*
+                                                A))
 
     for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
         println(Alg)

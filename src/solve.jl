@@ -1,75 +1,75 @@
 function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,
-                                        DiffEqBase.AbstractDAEProblem},
-                            alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
-                            kwargs...)
+        DiffEqBase.AbstractDAEProblem},
+    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
+    kwargs...)
     integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
     solve!(integrator)
     integrator.sol
 end
 
 function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
-                                       DiffEqBase.AbstractDAEProblem},
-                           alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
-                           timeseries_init = (),
-                           ts_init = (),
-                           ks_init = (),
-                           recompile::Type{Val{recompile_flag}} = Val{true};
-                           saveat = (),
-                           tstops = (),
-                           d_discontinuities = (),
-                           save_idxs = nothing,
-                           save_everystep = isempty(saveat),
-                           save_on = true,
-                           save_start = save_everystep || isempty(saveat) ||
-                                            saveat isa Number || prob.tspan[1] in saveat,
-                           save_end = nothing,
-                           callback = nothing,
-                           dense = save_everystep &&
-                                       !(typeof(alg) <: Union{DAEAlgorithm, FunctionMap}) &&
-                                       isempty(saveat),
-                           calck = (callback !== nothing && callback !== CallbackSet()) ||
-                                       (dense) || !isempty(saveat), # and no dense output
-                           dt = alg isa FunctionMap && isempty(tstops) ?
-                                eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-                           dtmin = nothing,
-                           dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
-                           force_dtmin = false,
-                           adaptive = isadaptive(alg),
-                           gamma = gamma_default(alg),
-                           abstol = nothing,
-                           reltol = nothing,
-                           qmin = qmin_default(alg),
-                           qmax = qmax_default(alg),
-                           qsteady_min = qsteady_min_default(alg),
-                           qsteady_max = qsteady_max_default(alg),
-                           beta1 = nothing,
-                           beta2 = nothing,
-                           qoldinit = isadaptive(alg) ? 1 // 10^4 : 0,
-                           controller = nothing,
-                           fullnormalize = true,
-                           failfactor = 2,
-                           maxiters = adaptive ? 1000000 : typemax(Int),
-                           internalnorm = ODE_DEFAULT_NORM,
-                           internalopnorm = LinearAlgebra.opnorm,
-                           isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
-                           unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-                           verbose = true,
-                           timeseries_errors = true,
-                           dense_errors = false,
-                           advance_to_tstop = false,
-                           stop_at_next_tstop = false,
-                           initialize_save = true,
-                           progress = false,
-                           progress_steps = 1000,
-                           progress_name = "ODE",
-                           progress_message = ODE_DEFAULT_PROG_MESSAGE,
-                           userdata = nothing,
-                           allow_extrapolation = alg_extrapolates(alg),
-                           initialize_integrator = true,
-                           alias_u0 = false,
-                           alias_du0 = false,
-                           initializealg = DefaultInit(),
-                           kwargs...) where {recompile_flag}
+        DiffEqBase.AbstractDAEProblem},
+    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
+    timeseries_init = (),
+    ts_init = (),
+    ks_init = (),
+    recompile::Type{Val{recompile_flag}} = Val{true};
+    saveat = (),
+    tstops = (),
+    d_discontinuities = (),
+    save_idxs = nothing,
+    save_everystep = isempty(saveat),
+    save_on = true,
+    save_start = save_everystep || isempty(saveat) ||
+                     saveat isa Number || prob.tspan[1] in saveat,
+    save_end = nothing,
+    callback = nothing,
+    dense = save_everystep &&
+                !(typeof(alg) <: Union{DAEAlgorithm, FunctionMap}) &&
+                isempty(saveat),
+    calck = (callback !== nothing && callback !== CallbackSet()) ||
+                (dense) || !isempty(saveat), # and no dense output
+    dt = alg isa FunctionMap && isempty(tstops) ?
+         eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+    dtmin = nothing,
+    dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
+    force_dtmin = false,
+    adaptive = isadaptive(alg),
+    gamma = gamma_default(alg),
+    abstol = nothing,
+    reltol = nothing,
+    qmin = qmin_default(alg),
+    qmax = qmax_default(alg),
+    qsteady_min = qsteady_min_default(alg),
+    qsteady_max = qsteady_max_default(alg),
+    beta1 = nothing,
+    beta2 = nothing,
+    qoldinit = isadaptive(alg) ? 1 // 10^4 : 0,
+    controller = nothing,
+    fullnormalize = true,
+    failfactor = 2,
+    maxiters = adaptive ? 1000000 : typemax(Int),
+    internalnorm = ODE_DEFAULT_NORM,
+    internalopnorm = LinearAlgebra.opnorm,
+    isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
+    unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
+    verbose = true,
+    timeseries_errors = true,
+    dense_errors = false,
+    advance_to_tstop = false,
+    stop_at_next_tstop = false,
+    initialize_save = true,
+    progress = false,
+    progress_steps = 1000,
+    progress_name = "ODE",
+    progress_message = ODE_DEFAULT_PROG_MESSAGE,
+    userdata = nothing,
+    allow_extrapolation = alg_extrapolates(alg),
+    initialize_integrator = true,
+    alias_u0 = false,
+    alias_du0 = false,
+    initializealg = DefaultInit(),
+    kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end
@@ -121,17 +121,17 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
         _alg = CompositeAlgorithm(alg.algs,
-                                  AutoSwitchCache(0, 0,
-                                                  auto.nonstiffalg,
-                                                  auto.stiffalg,
-                                                  auto.stiffalgfirst,
-                                                  auto.maxstiffstep,
-                                                  auto.maxnonstiffstep,
-                                                  auto.nonstifftol,
-                                                  auto.stifftol,
-                                                  auto.dtfac,
-                                                  auto.stiffalgfirst,
-                                                  auto.switch_max))
+            AutoSwitchCache(0, 0,
+                auto.nonstiffalg,
+                auto.stiffalg,
+                auto.stiffalgfirst,
+                auto.maxstiffstep,
+                auto.maxnonstiffstep,
+                auto.nonstifftol,
+                auto.stifftol,
+                auto.dtfac,
+                auto.stiffalgfirst,
+                auto.switch_max))
     else
         _alg = alg
     end
@@ -170,8 +170,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
             abstol_internal = ForwardDiff.value(real(convert(uBottomEltype,
-                                                             oneunit(uBottomEltype) *
-                                                             1 // 10^6)))
+                oneunit(uBottomEltype) *
+                1 // 10^6)))
         else
             abstol_internal = ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^6))
         end
@@ -184,7 +184,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
             reltol_internal = real(convert(uBottomEltype,
-                                           oneunit(uBottomEltype) * 1 // 10^3))
+                oneunit(uBottomEltype) * 1 // 10^3))
         else
             reltol_internal = real.(oneunit.(u) .* 1 // 10^3)
         end
@@ -222,7 +222,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     tstops_internal = initialize_tstops(tType, tstops, d_discontinuities, tspan)
     saveat_internal = initialize_saveat(tType, saveat, tspan)
     d_discontinuities_internal = initialize_d_discontinuities(tType, d_discontinuities,
-                                                              tspan)
+        tspan)
 
     callbacks_internal = CallbackSet(callback)
 
@@ -231,10 +231,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         uBottomEltypeReal = real(uBottomEltype)
         if isinplace(prob)
             callback_cache = DiffEqBase.CallbackCache(u, max_len_cb, uBottomEltypeReal,
-                                                      uBottomEltypeReal)
+                uBottomEltypeReal)
         else
             callback_cache = DiffEqBase.CallbackCache(max_len_cb, uBottomEltypeReal,
-                                                      uBottomEltypeReal)
+                uBottomEltypeReal)
         end
     else
         callback_cache = nothing
@@ -316,12 +316,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     if prob isa DAEProblem
         cache = alg_cache(_alg, du, u, res_prototype, rate_prototype, uEltypeNoUnits,
-                          uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
-                          reltol_internal, p, calck, Val(isinplace(prob)))
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+            reltol_internal, p, calck, Val(isinplace(prob)))
     else
         cache = alg_cache(_alg, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-                          tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
-                          Val(isinplace(prob)))
+            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol_internal, p, calck,
+            Val(isinplace(prob)))
     end
 
     # Setting up the step size controller
@@ -347,62 +347,62 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                prob.tspan[2] in saveat : save_end
 
     opts = DEOptions{typeof(abstol_internal), typeof(reltol_internal),
-                     QT, tType, typeof(controller),
-                     typeof(internalnorm), typeof(internalopnorm),
-                     typeof(save_end_user),
-                     typeof(callbacks_internal),
-                     typeof(isoutofdomain),
-                     typeof(progress_message), typeof(unstable_check),
-                     typeof(tstops_internal),
-                     typeof(d_discontinuities_internal), typeof(userdata),
-                     typeof(save_idxs),
-                     typeof(maxiters), typeof(tstops),
-                     typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
-                                                                adaptive, abstol_internal,
-                                                                reltol_internal,
-                                                                QT(gamma), QT(qmax),
-                                                                QT(qmin),
-                                                                QT(qsteady_max),
-                                                                QT(qsteady_min),
-                                                                QT(qoldinit),
-                                                                QT(failfactor),
-                                                                tType(dtmax), tType(dtmin),
-                                                                controller,
-                                                                internalnorm,
-                                                                internalopnorm,
-                                                                save_idxs, tstops_internal,
-                                                                saveat_internal,
-                                                                d_discontinuities_internal,
-                                                                tstops, saveat,
-                                                                d_discontinuities,
-                                                                userdata, progress,
-                                                                progress_steps,
-                                                                progress_name,
-                                                                progress_message,
-                                                                timeseries_errors,
-                                                                dense_errors, dense,
-                                                                save_on, save_start,
-                                                                save_end, save_end_user,
-                                                                callbacks_internal,
-                                                                isoutofdomain,
-                                                                unstable_check,
-                                                                verbose, calck, force_dtmin,
-                                                                advance_to_tstop,
-                                                                stop_at_next_tstop)
+        QT, tType, typeof(controller),
+        typeof(internalnorm), typeof(internalopnorm),
+        typeof(save_end_user),
+        typeof(callbacks_internal),
+        typeof(isoutofdomain),
+        typeof(progress_message), typeof(unstable_check),
+        typeof(tstops_internal),
+        typeof(d_discontinuities_internal), typeof(userdata),
+        typeof(save_idxs),
+        typeof(maxiters), typeof(tstops),
+        typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
+        adaptive, abstol_internal,
+        reltol_internal,
+        QT(gamma), QT(qmax),
+        QT(qmin),
+        QT(qsteady_max),
+        QT(qsteady_min),
+        QT(qoldinit),
+        QT(failfactor),
+        tType(dtmax), tType(dtmin),
+        controller,
+        internalnorm,
+        internalopnorm,
+        save_idxs, tstops_internal,
+        saveat_internal,
+        d_discontinuities_internal,
+        tstops, saveat,
+        d_discontinuities,
+        userdata, progress,
+        progress_steps,
+        progress_name,
+        progress_message,
+        timeseries_errors,
+        dense_errors, dense,
+        save_on, save_start,
+        save_end, save_end_user,
+        callbacks_internal,
+        isoutofdomain,
+        unstable_check,
+        verbose, calck, force_dtmin,
+        advance_to_tstop,
+        stop_at_next_tstop)
 
     stats = DiffEqBase.Stats(0)
 
     if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
         id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-                                        dense = dense, k = ks, interp = id,
-                                        alg_choice = alg_choice,
-                                        calculate_error = false, stats = stats)
+            dense = dense, k = ks, interp = id,
+            alg_choice = alg_choice,
+            calculate_error = false, stats = stats)
     else
         id = InterpolationData(f, timeseries, ts, ks, dense, cache)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-                                        dense = dense, k = ks, interp = id,
-                                        calculate_error = false, stats = stats)
+            dense = dense, k = ks, interp = id,
+            calculate_error = false, stats = stats)
     end
 
     if recompile_flag == true
@@ -450,29 +450,29 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     saveiter_dense = 0
 
     integrator = ODEIntegrator{typeof(_alg), isinplace(prob), uType, typeof(du),
-                               tType, typeof(p),
-                               typeof(eigen_est), typeof(EEst),
-                               QT, typeof(tdir), typeof(k), SolType,
-                               FType, cacheType,
-                               typeof(opts), fsal_typeof(_alg, rate_prototype),
-                               typeof(last_event_error), typeof(callback_cache),
-                               typeof(initializealg)}(sol, u, du, k, t, tType(dt), f, p,
-                                                      uprev, uprev2, duprev, tprev,
-                                                      _alg, dtcache, dtchangeable,
-                                                      dtpropose, tdir, eigen_est, EEst,
-                                                      QT(qoldinit), q11,
-                                                      erracc, dtacc, success_iter,
-                                                      iter, saveiter, saveiter_dense, cache,
-                                                      callback_cache,
-                                                      kshortsize, force_stepfail,
-                                                      last_stepfail,
-                                                      just_hit_tstop, do_error_check,
-                                                      event_last_time,
-                                                      vector_event_last_time,
-                                                      last_event_error, accept_step,
-                                                      isout, reeval_fsal,
-                                                      u_modified, reinitiailize, isdae,
-                                                      opts, stats, initializealg)
+        tType, typeof(p),
+        typeof(eigen_est), typeof(EEst),
+        QT, typeof(tdir), typeof(k), SolType,
+        FType, cacheType,
+        typeof(opts), fsal_typeof(_alg, rate_prototype),
+        typeof(last_event_error), typeof(callback_cache),
+        typeof(initializealg)}(sol, u, du, k, t, tType(dt), f, p,
+        uprev, uprev2, duprev, tprev,
+        _alg, dtcache, dtchangeable,
+        dtpropose, tdir, eigen_est, EEst,
+        QT(qoldinit), q11,
+        erracc, dtacc, success_iter,
+        iter, saveiter, saveiter_dense, cache,
+        callback_cache,
+        kshortsize, force_stepfail,
+        last_stepfail,
+        just_hit_tstop, do_error_check,
+        event_last_time,
+        vector_event_last_time,
+        last_event_error, accept_step,
+        isout, reeval_fsal,
+        u_modified, reinitiailize, isdae,
+        opts, stats, initializealg)
 
     if initialize_integrator
         if isdae
@@ -531,8 +531,8 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
 
     if DiffEqBase.has_analytic(f)
         DiffEqBase.calculate_solution_errors!(integrator.sol;
-                                              timeseries_errors = integrator.opts.timeseries_errors,
-                                              dense_errors = integrator.opts.dense_errors)
+            timeseries_errors = integrator.opts.timeseries_errors,
+            dense_errors = integrator.opts.dense_errors)
     end
     if integrator.sol.retcode != ReturnCode.Default
         return integrator.sol

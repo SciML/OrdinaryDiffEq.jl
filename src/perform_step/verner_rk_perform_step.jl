@@ -31,7 +31,7 @@ end
     k5 = f(uprev + dt * (a51 * k1 + a53 * k3 + a54 * k4), p, t + c4 * dt)
     k6 = f(uprev + dt * (a61 * k1 + a63 * k3 + a64 * k4 + a65 * k5), p, t + c5 * dt)
     k7 = f(uprev + dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6), p,
-           t + c6 * dt)
+        t + c6 * dt)
     g8 = uprev + dt * (a81 * k1 + a83 * k3 + a84 * k4 + a85 * k5 + a86 * k6 + a87 * k7)
     k8 = f(g8, p, t + dt)
     u = uprev + dt * (a91 * k1 + a94 * k4 + a95 * k5 + a96 * k6 + a97 * k7 + a98 * k8)
@@ -49,7 +49,7 @@ end
                  (btilde1 * k1 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 + btilde7 * k7 +
                   btilde8 * k8 + btilde9 * k9)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = k1
@@ -73,7 +73,7 @@ end
         k[11] = f(uprev +
                   dt * (a1101 * k[1] + a1104 * k[4] + a1105 * k[5] + a1106 * k[6] +
                    a1107 * k[7] + a1108 * k[8] + a1109 * k[9] + a1110 * k[10]), p,
-                  t + c11 * dt)
+            t + c11 * dt)
         k[12] = f(uprev +
                   dt * (a1201 * k[1] + a1204 * k[4] + a1205 * k[5] + a1206 * k[6] +
                    a1207 * k[7] + a1208 * k[8] + a1209 * k[9] + a1210 * k[10] +
@@ -159,8 +159,8 @@ end
                                                   btilde8 * k8 +
                                                   btilde9 * k9)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -219,10 +219,10 @@ end
     k5 = f(uprev + dt * (a051 * k1 + a053 * k3 + a054 * k4), p, t + c5 * dt)
     k6 = f(uprev + dt * (a061 * k1 + a063 * k3 + a064 * k4 + a065 * k5), p, t + c6 * dt)
     k7 = f(uprev + dt * (a071 * k1 + a073 * k3 + a074 * k4 + a075 * k5 + a076 * k6), p,
-           t + c7 * dt)
+        t + c7 * dt)
     k8 = f(uprev +
            dt * (a081 * k1 + a083 * k3 + a084 * k4 + a085 * k5 + a086 * k6 + a087 * k7), p,
-           t + c8 * dt)
+        t + c8 * dt)
     g9 = uprev +
          dt *
          (a091 * k1 + a093 * k3 + a094 * k4 + a095 * k5 + a096 * k6 + a097 * k7 + a098 * k8)
@@ -242,7 +242,7 @@ end
                  (btilde1 * k1 + btilde4 * k4 + btilde5 * k5 + btilde6 * k6 + btilde7 * k7 +
                   btilde8 * k8 + btilde9 * k9 + btilde10 * k10)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = k1
@@ -268,7 +268,7 @@ end
         k[12] = f(uprev +
                   dt * (a1201 * k[1] + a1204 * k[4] + a1205 * k[5] + a1206 * k[6] +
                    a1207 * k[7] + a1208 * k[8] + a1209 * k[9] + a1211 * k[11]), p,
-                  t + c12 * dt)
+            t + c12 * dt)
         k[13] = f(uprev +
                   dt * (a1301 * k[1] + a1304 * k[4] + a1305 * k[5] + a1306 * k[6] +
                    a1307 * k[7] + a1308 * k[8] + a1309 * k[9] + a1311 * k[11] +
@@ -381,8 +381,8 @@ end
                                                   btilde8 * k8 +
                                                   btilde9 * k9 + btilde10 * k10)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     alg = unwrap_alg(integrator, false)
@@ -463,11 +463,11 @@ end
     k6 = f(uprev + dt * (a0601 * k1 + a0604 * k4 + a0605 * k5), p, t + c6 * dt)
     k7 = f(uprev + dt * (a0701 * k1 + a0704 * k4 + a0705 * k5 + a0706 * k6), p, t + c7 * dt)
     k8 = f(uprev + dt * (a0801 * k1 + a0804 * k4 + a0805 * k5 + a0806 * k6 + a0807 * k7), p,
-           t + c8 * dt)
+        t + c8 * dt)
     k9 = f(uprev +
            dt *
            (a0901 * k1 + a0904 * k4 + a0905 * k5 + a0906 * k6 + a0907 * k7 + a0908 * k8), p,
-           t + c9 * dt)
+        t + c9 * dt)
     k10 = f(uprev +
             dt *
             (a1001 * k1 + a1004 * k4 + a1005 * k5 + a1006 * k6 + a1007 * k7 + a1008 * k8 +
@@ -500,7 +500,7 @@ end
                  (btilde1 * k1 + btilde6 * k6 + btilde7 * k7 + btilde8 * k8 + btilde9 * k9 +
                   btilde10 * k10 + btilde11 * k11 + btilde12 * k12 + btilde13 * k13)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = k1
@@ -526,7 +526,7 @@ end
         k[14] = f(uprev +
                   dt * (a1401 * k[1] + a1406 * k[6] + a1407 * k[7] + a1408 * k[8] +
                    a1409 * k[9] + a1410 * k[10] + a1411 * k[11] + a1412 * k[12]), p,
-                  t + c14 * dt)
+            t + c14 * dt)
         k[15] = f(uprev +
                   dt * (a1501 * k[1] + a1506 * k[6] + a1507 * k[7] + a1508 * k[8] +
                    a1509 * k[9] + a1510 * k[10] + a1511 * k[11] + a1512 * k[12] +
@@ -543,22 +543,22 @@ end
                   dt * (a1801 * k[1] + a1806 * k[6] + a1807 * k[7] + a1808 * k[8] +
                    a1809 * k[9] + a1810 * k[10] + a1811 * k[11] + a1812 * k[12] +
                    a1814 * k[14] + a1815 * k[15] + a1816 * k[16] + a1817 * k[17]), p,
-                  t + c18 * dt)
+            t + c18 * dt)
         k[19] = f(uprev +
                   dt * (a1901 * k[1] + a1906 * k[6] + a1907 * k[7] + a1908 * k[8] +
                    a1909 * k[9] + a1910 * k[10] + a1911 * k[11] + a1912 * k[12] +
                    a1914 * k[14] + a1915 * k[15] + a1916 * k[16] + a1917 * k[17]), p,
-                  t + c19 * dt)
+            t + c19 * dt)
         k[20] = f(uprev +
                   dt * (a2001 * k[1] + a2006 * k[6] + a2007 * k[7] + a2008 * k[8] +
                    a2009 * k[9] + a2010 * k[10] + a2011 * k[11] + a2012 * k[12] +
                    a2014 * k[14] + a2015 * k[15] + a2016 * k[16] + a2017 * k[17]), p,
-                  t + c20 * dt)
+            t + c20 * dt)
         k[21] = f(uprev +
                   dt * (a2101 * k[1] + a2106 * k[6] + a2107 * k[7] + a2108 * k[8] +
                    a2109 * k[9] + a2110 * k[10] + a2111 * k[11] + a2112 * k[12] +
                    a2114 * k[14] + a2115 * k[15] + a2116 * k[16] + a2117 * k[17]), p,
-                  t + c21 * dt)
+            t + c21 * dt)
         integrator.stats.nf += 8
     end
 end
@@ -670,8 +670,8 @@ end
                                                   btilde11 * k11 + btilde12 * k12 +
                                                   btilde13 * k13)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -788,11 +788,11 @@ end
     k8 = f(uprev + dt * (a0801 * k1 + a0806 * k6 + a0807 * k7), p, t + c7 * dt)
     k9 = f(uprev + dt * (a0901 * k1 + a0906 * k6 + a0907 * k7 + a0908 * k8), p, t + c8 * dt)
     k10 = f(uprev + dt * (a1001 * k1 + a1006 * k6 + a1007 * k7 + a1008 * k8 + a1009 * k9),
-            p, t + c9 * dt)
+        p, t + c9 * dt)
     k11 = f(uprev +
             dt *
             (a1101 * k1 + a1106 * k6 + a1107 * k7 + a1108 * k8 + a1109 * k9 + a1110 * k10),
-            p, t + c10 * dt)
+        p, t + c10 * dt)
     k12 = f(uprev +
             dt *
             (a1201 * k1 + a1206 * k6 + a1207 * k7 + a1208 * k8 + a1209 * k9 + a1210 * k10 +
@@ -829,7 +829,7 @@ end
                   btilde11 * k11 + btilde12 * k12 + btilde13 * k13 + btilde14 * k14 +
                   btilde15 * k15 + btilde16 * k16)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
@@ -853,8 +853,9 @@ end
         @OnDemandTableauExtract Vern9ExtraStages T T2
         k[11] = f(uprev +
                   dt * (a1701 * k[1] + a1708 * k[2] + a1709 * k[3] + a1710 * k[4] +
-                   a1711 * k[5] + a1712 * k[6] + a1713 * k[7] + a1714 * k[8] + a1715 * k[9]),
-                  p, t + c17 * dt)
+                   a1711 * k[5] + a1712 * k[6] + a1713 * k[7] + a1714 * k[8] +
+                   a1715 * k[9]),
+            p, t + c17 * dt)
         k[12] = f(uprev +
                   dt * (a1801 * k[1] + a1808 * k[2] + a1809 * k[3] + a1810 * k[4] +
                    a1811 * k[5] + a1812 * k[6] + a1813 * k[7] + a1814 * k[8] +
@@ -867,7 +868,7 @@ end
                   dt * (a2001 * k[1] + a2008 * k[2] + a2009 * k[3] + a2010 * k[4] +
                    a2011 * k[5] + a2012 * k[6] + a2013 * k[7] + a2014 * k[8] +
                    a2015 * k[9] + a2017 * k[11] + a2018 * k[12] + a2019 * k[13]), p,
-                  t + c20 * dt)
+            t + c20 * dt)
         k[15] = f(uprev +
                   dt * (a2101 * k[1] + a2108 * k[2] + a2109 * k[3] + a2110 * k[4] +
                    a2111 * k[5] + a2112 * k[6] + a2113 * k[7] + a2114 * k[8] +
@@ -1026,8 +1027,8 @@ end
                                                   btilde15 * k15 +
                                                   btilde16 * k16)
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 

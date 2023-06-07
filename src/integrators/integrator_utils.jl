@@ -1,5 +1,5 @@
 function save_idxsinitialize(integrator, cache::OrdinaryDiffEqCache,
-                             ::Type{uType}) where {uType}
+    ::Type{uType}) where {uType}
     error("This algorithm does not have an initialization function")
 end
 
@@ -75,7 +75,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, false)
             if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
-                                integrator.cache.current)
+                    integrator.cache.current)
             end
         else # ==t, just save
             savedexactly = true
@@ -84,24 +84,24 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
             else
                 copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                                integrator.u[integrator.opts.save_idxs], false)
+                    integrator.u[integrator.opts.save_idxs], false)
             end
             if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
                 integrator.saveiter_dense += 1
                 if integrator.opts.dense
                     if integrator.opts.save_idxs === nothing
                         copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
-                                        integrator.k)
+                            integrator.k)
                     else
                         copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
-                                        [k[integrator.opts.save_idxs] for k in integrator.k],
-                                        false)
+                            [k[integrator.opts.save_idxs] for k in integrator.k],
+                            false)
                     end
                 end
             end
             if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
-                                integrator.cache.current)
+                    integrator.cache.current)
             end
         end
     end
@@ -113,7 +113,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
         else
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                            integrator.u[integrator.opts.save_idxs], false)
+                integrator.u[integrator.opts.save_idxs], false)
         end
         copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
         if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
@@ -121,17 +121,17 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
-                                    integrator.k)
+                        integrator.k)
                 else
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
-                                    [k[integrator.opts.save_idxs] for k in integrator.k],
-                                    false)
+                        [k[integrator.opts.save_idxs] for k in integrator.k],
+                        false)
                 end
             end
         end
         if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
             copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
-                            integrator.cache.current)
+                integrator.cache.current)
         end
     end
     reduce_size && resize!(integrator.k, integrator.kshortsize)
@@ -150,11 +150,11 @@ function _postamble!(integrator)
     end
     if integrator.opts.progress
         @logmsg(LogLevel(-1),
-                integrator.opts.progress_name,
-                _id=:OrdinaryDiffEq,
-                message=integrator.opts.progress_message(integrator.dt, integrator.u,
-                                                         integrator.p, integrator.t),
-                progress="done")
+            integrator.opts.progress_name,
+            _id=:OrdinaryDiffEq,
+            message=integrator.opts.progress_message(integrator.dt, integrator.u,
+                integrator.p, integrator.t),
+            progress="done")
     end
 end
 
@@ -172,24 +172,24 @@ function solution_endpoint_match_cur_integrator!(integrator)
             copyat_or_push!(integrator.sol.u, integrator.saveiter, integrator.u)
         else
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
-                            integrator.u[integrator.opts.save_idxs], false)
+                integrator.u[integrator.opts.save_idxs], false)
         end
         if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
-                                    integrator.k)
+                        integrator.k)
                 else
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
-                                    [k[integrator.opts.save_idxs] for k in integrator.k],
-                                    false)
+                        [k[integrator.opts.save_idxs] for k in integrator.k],
+                        false)
                 end
             end
         end
         if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
             copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
-                            integrator.cache.current)
+                integrator.cache.current)
         end
     end
 end
@@ -216,14 +216,17 @@ function _loopfooter!(integrator)
     elseif integrator.opts.adaptive
         q = stepsize_controller!(integrator, integrator.alg)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
-        integrator.accept_step = (!integrator.isout && accept_step_controller(integrator,
-                                                         integrator.opts.controller)) ||
+        integrator.accept_step = (!integrator.isout &&
+                                  accept_step_controller(integrator,
+            integrator.opts.controller)) ||
                                  (integrator.opts.force_dtmin &&
                                   abs(integrator.dt) <= timedepentdtmin(integrator))
         if integrator.accept_step # Accept
             integrator.stats.naccept += 1
             integrator.last_stepfail = false
-            dtnew = DiffEqBase.value(step_accept_controller!(integrator, integrator.alg, q)) *
+            dtnew = DiffEqBase.value(step_accept_controller!(integrator,
+                integrator.alg,
+                q)) *
                     oneunit(integrator.dt)
             integrator.tprev = integrator.t
             integrator.t = if has_tstop(integrator)
@@ -265,17 +268,17 @@ function _loopfooter!(integrator)
     if integrator.opts.progress && integrator.iter % integrator.opts.progress_steps == 0
         t1, t2 = integrator.sol.prob.tspan
         @logmsg(LogLevel(-1),
-                integrator.opts.progress_name,
-                _id=:OrdinaryDiffEq,
-                message=integrator.opts.progress_message(integrator.dt, integrator.u,
-                                                         integrator.p, integrator.t),
-                progress=(integrator.t - t1) / (t2 - t1))
+            integrator.opts.progress_name,
+            _id=:OrdinaryDiffEq,
+            message=integrator.opts.progress_message(integrator.dt, integrator.u,
+                integrator.p, integrator.t),
+            progress=(integrator.t - t1) / (t2 - t1))
     end
 
     # Take value because if t is dual then maxeig can be dual
     if integrator.cache isa CompositeCache
         cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),
-                                                     integrator.t)
+            integrator.t)
         cur_eigen_est > integrator.stats.maxeig &&
             (integrator.stats.maxeig = cur_eigen_est)
     end
@@ -292,14 +295,14 @@ function handle_callbacks!(integrator)
     saved_in_cb = false
     if !(typeof(continuous_callbacks) <: Tuple{})
         time, upcrossing, event_occurred, event_idx, idx, counter = DiffEqBase.find_first_continuous_callback(integrator,
-                                                                                                              continuous_callbacks...)
+            continuous_callbacks...)
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
             continuous_modified, saved_in_cb = DiffEqBase.apply_callback!(integrator,
-                                                                          continuous_callbacks[idx],
-                                                                          time, upcrossing,
-                                                                          event_idx)
+                continuous_callbacks[idx],
+                time, upcrossing,
+                event_idx)
         else
             integrator.event_last_time = 0
             integrator.vector_event_last_time = 1
@@ -307,7 +310,7 @@ function handle_callbacks!(integrator)
     end
     if !integrator.force_stepfail && !(typeof(discrete_callbacks) <: Tuple{})
         discrete_modified, saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
-                                                                             discrete_callbacks...)
+            discrete_callbacks...)
     end
     if !saved_in_cb
         savevalues!(integrator)
@@ -386,12 +389,13 @@ function calc_dt_propose!(integrator, dtnew)
     if (typeof(integrator.alg) <: Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5}) &&
        integrator.opts.adaptive && (integrator.iter >= 1)
         (integrator.alg isa ROCK2) && (dtnew = min(dtnew,
-                     typeof(dtnew)((((min(integrator.alg.max_stages, 200)^2.0) * 0.811 -
-                                     1.5) / integrator.eigen_est))))
+            typeof(dtnew)((((min(integrator.alg.max_stages, 200)^2.0) * 0.811 -
+                            1.5) / integrator.eigen_est))))
         (integrator.alg isa ROCK4) && (dtnew = min(dtnew,
-                     typeof(dtnew)((((min(integrator.alg.max_stages, 152)^2.0) * 0.353 - 3) / integrator.eigen_est))))
+            typeof(dtnew)((((min(integrator.alg.max_stages, 152)^2.0) * 0.353 - 3) /
+                           integrator.eigen_est))))
         (integrator.alg isa SERK2) && (dtnew = min(dtnew,
-                     typeof(dtnew)((0.8 * 250 * 250 / (integrator.eigen_est + 1.0)))))
+            typeof(dtnew)((0.8 * 250 * 250 / (integrator.eigen_est + 1.0)))))
         (integrator.alg isa ESERK4) &&
             (dtnew = min(dtnew, typeof(dtnew)((0.98 * 4000 * 4000 / integrator.eigen_est))))
         (integrator.alg isa ESERK5) &&
@@ -429,8 +433,8 @@ function handle_tstop!(integrator)
         elseif tdir_t > tdir_tstop
             if !integrator.dtchangeable
                 DiffEqBase.change_t_via_interpolation!(integrator,
-                                                       integrator.tdir *
-                                                       pop_tstop!(integrator), Val{true})
+                    integrator.tdir *
+                    pop_tstop!(integrator), Val{true})
                 integrator.just_hit_tstop = true
             else
                 error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")
@@ -467,12 +471,12 @@ function nlsolve_f(integrator::ODEIntegrator)
 end
 
 function (integrator::ODEIntegrator)(t, ::Type{deriv} = Val{0};
-                                     idxs = nothing) where {deriv}
+    idxs = nothing) where {deriv}
     current_interpolant(t, integrator, idxs, deriv)
 end
 
 function (integrator::ODEIntegrator)(val::AbstractArray, t::Union{Number, AbstractArray},
-                                     ::Type{deriv} = Val{0}; idxs = nothing) where {deriv}
+    ::Type{deriv} = Val{0}; idxs = nothing) where {deriv}
     current_interpolant!(val, t, integrator, idxs, deriv)
 end
 

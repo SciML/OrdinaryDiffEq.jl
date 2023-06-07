@@ -97,8 +97,8 @@ function initialize!(integrator, cache::Union{HeunConstantCache, RalstonConstant
 end
 
 @muladd function perform_step!(integrator,
-                               cache::Union{HeunConstantCache, RalstonConstantCache},
-                               repeat_step = false)
+    cache::Union{HeunConstantCache, RalstonConstantCache},
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
 
     # precalculations
@@ -129,7 +129,7 @@ end
         end
 
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     k = f(u, p, t + dt)
@@ -153,7 +153,7 @@ function initialize!(integrator, cache::Union{HeunCache, RalstonCache})
 end
 
 @muladd function perform_step!(integrator, cache::Union{HeunCache, RalstonCache},
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack fsalfirst, k, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
 
@@ -185,8 +185,8 @@ end
         end
 
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
@@ -206,7 +206,7 @@ function initialize!(integrator, cache::MidpointConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::MidpointConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     halfdt = dt / 2
     tmp = @.. broadcast=false uprev+halfdt * integrator.fsalfirst
@@ -218,7 +218,7 @@ end
     if integrator.opts.adaptive
         utilde = @.. broadcast=false dt*(integrator.fsalfirst - k)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = integrator.fsalfirst
@@ -249,8 +249,8 @@ end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread tmp=dt * (fsalfirst - k)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
@@ -297,16 +297,16 @@ end
                    σ₂ * (3 * dt * k₁ + 3 * dt * k₅ + 6 * uprev - 6 * u) + 6 * u) / dt
         e1 = integrator.opts.internalnorm(calculate_residuals(dt * (f(p1, p, t + σ₁ * dt) -
                                                                pprime1), uprev, u,
-                                                              integrator.opts.abstol,
-                                                              integrator.opts.reltol,
-                                                              integrator.opts.internalnorm,
-                                                              t), t)
+                integrator.opts.abstol,
+                integrator.opts.reltol,
+                integrator.opts.internalnorm,
+                t), t)
         e2 = integrator.opts.internalnorm(calculate_residuals(dt * (f(p2, p, t + σ₂ * dt) -
                                                                pprime2), uprev, u,
-                                                              integrator.opts.abstol,
-                                                              integrator.opts.reltol,
-                                                              integrator.opts.internalnorm,
-                                                              t), t)
+                integrator.opts.abstol,
+                integrator.opts.reltol,
+                integrator.opts.internalnorm,
+                t), t)
         integrator.stats.nf += 2
         integrator.EEst = 2.1342 * max(e1, e2)
     end
@@ -364,8 +364,8 @@ end
         f(_p, tmp, p, t + σ₁ * dt)
         @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         e1 = integrator.opts.internalnorm(atmp, t)
         @.. broadcast=false thread=thread tmp=(1 - σ₂) * uprev + σ₂ * u +
                                               σ₂ * (σ₂ - 1) *
@@ -382,8 +382,8 @@ end
         f(_p, tmp, p, t + σ₂ * dt)
         @.. broadcast=false thread=thread tmp=dt * (_p - pprime)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t,
-                             thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
         e2 = integrator.opts.internalnorm(atmp, t)
         integrator.EEst = 2.1342 * max(e1, e2)
         integrator.stats.nf += 2
@@ -509,7 +509,7 @@ end
     k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + 2 * k3), p, t + c4 * dt)
     k5 = f(uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4), p, t + c5 * dt)
     k6 = f(uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5), p,
-           t + c6 * dt)
+        t + c6 * dt)
     u = uprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5 + b6 * k6)
     k7 = f(u, p, t + dt)
     integrator.fsallast = k7

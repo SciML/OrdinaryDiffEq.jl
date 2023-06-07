@@ -43,8 +43,8 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
         lower[1] = 1.0
         upper[end] = 1.0
         M = vcat(transpose(lower),
-                 sparse(diagm(diag)),
-                 transpose(upper))
+            sparse(diagm(diag)),
+            transpose(upper))
         MatrixOperator(1 / dx^2 * M)
     end
 
@@ -97,42 +97,42 @@ function enclosethetimedifferential(parameters::NamedTuple)::Function
 end
 
 prior = ComponentArray(;
-                       α = 0.2,
-                       D = 0.46,
-                       v = 0.0,
-                       k_p = 0.0,
-                       V_c = 18,
-                       Q_l = 20,
-                       Q_r = 3.6,
-                       V_b = 1490,
-                       S = 52,
-                       Lm = 0.05,
-                       Dm = 0.046,
-                       V_v = 18.0)
+    α = 0.2,
+    D = 0.46,
+    v = 0.0,
+    k_p = 0.0,
+    V_c = 18,
+    Q_l = 20,
+    Q_r = 3.6,
+    V_b = 1490,
+    S = 52,
+    Lm = 0.05,
+    Dm = 0.046,
+    V_v = 18.0)
 
 r_space = collect(range(0.0, 2.0, length = 15))
 computeparams = (Δr = r_space[2],
-                 r_space = r_space,
-                 countorderapprox = 2)
+    r_space = r_space,
+    countorderapprox = 2)
 parameters = (prior = prior,
-              compute = computeparams)
+    compute = computeparams)
 
 dudt = enclosethetimedifferential(parameters)
 IC = ones(length(r_space) + 3)
 odeprob = ODEProblem(dudt,
-                     IC,
-                     (0, 2.1),
-                     parameters.prior);
+    IC,
+    (0, 2.1),
+    parameters.prior);
 du0 = copy(odeprob.u0);
 jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> dudt(du, u, parameters.prior, 0.0),
-                                           du0,
-                                           odeprob.u0);
+    du0,
+    odeprob.u0);
 f = ODEFunction(dudt;
-                jac_prototype = float.(jac_sparsity));
+    jac_prototype = float.(jac_sparsity));
 sparseodeprob = ODEProblem(f,
-                           odeprob.u0,
-                           (0, 2.1),
-                           parameters.prior);
+    odeprob.u0,
+    (0, 2.1),
+    parameters.prior);
 
 solve(odeprob, TRBDF2());
 solve(sparseodeprob, TRBDF2());
