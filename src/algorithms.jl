@@ -4367,7 +4367,7 @@ end
             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
             thread = OrdinaryDiffEq.False())
 
-A fourth-order, five-stage explicit Runge-Kutta method with embedded error
+A fifth-order explicit Runge-Kutta method with embedded error
 estimator of Tsitouras. Free 4th order interpolant.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
