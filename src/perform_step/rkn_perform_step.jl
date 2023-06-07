@@ -4,14 +4,14 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
-const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache,
-    Nystrom4VelocityIndependentConstantCache,
-    Nystrom5VelocityIndependentConstantCache,
-    IRKN3ConstantCache, IRKN4ConstantCache,
-    DPRKN4ConstantCache, DPRKN5ConstantCache,
-    DPRKN6FMConstantCache, DPRKN8ConstantCache,
-    DPRKN12ConstantCache, ERKN4ConstantCache,
-    ERKN5ConstantCache, ERKN7ConstantCache}
+const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN5ConstantCache,
+   Nystrom4VelocityIndependentConstantCache,
+   Nystrom5VelocityIndependentConstantCache,
+   IRKN3ConstantCache, IRKN4ConstantCache,
+   DPRKN4ConstantCache, DPRKN5ConstantCache,
+   DPRKN6FMConstantCache, DPRKN8ConstantCache,
+   DPRKN12ConstantCache, ERKN4ConstantCache,
+   ERKN5ConstantCache, ERKN7ConstantCache}
 
 function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.kshortsize = 2
@@ -25,14 +25,14 @@ function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.fsalfirst = ArrayPartition((kdu, ku))
 end
 
-const NystromDefaultInitialization = Union{Nystrom4Cache,
-    Nystrom4VelocityIndependentCache,
-    Nystrom5VelocityIndependentCache,
-    IRKN3Cache, IRKN4Cache,
-    DPRKN4Cache, DPRKN5Cache,
-    DPRKN6FMCache, DPRKN8Cache,
-    DPRKN12Cache, ERKN4Cache,
-    ERKN5Cache, ERKN7Cache}
+const NystromDefaultInitialization = Union{Nystrom4Cache, FineRKN5Cache,
+   Nystrom4VelocityIndependentCache,
+   Nystrom5VelocityIndependentCache,
+   IRKN3Cache, IRKN4Cache,
+   DPRKN4Cache, DPRKN5Cache,
+   DPRKN6FMCache, DPRKN8Cache,
+   DPRKN12Cache, ERKN4Cache,
+   ERKN5Cache, ERKN7Cache}
 
 function initialize!(integrator, cache::NystromDefaultInitialization)
     @unpack fsalfirst, k = cache
@@ -115,6 +115,113 @@ end
     f.f1(k₄, kdu, ku, p, t + dt)
     @.. broadcast=false u=uprev + (dtsq / 6) * (k₁ + k₂ + k₃) + dt * duprev
     @.. broadcast=false du=duprev + (dt / 6) * (k₁ + k₄ + 2 * (k₂ + k₃))
+
+    f.f1(k.x[1], du, u, p, t + dt)
+    f.f2(k.x[2], du, u, p, t + dt)
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
+end
+
+@muladd function perform_step!(integrator, cache::FineRKN5ConstantCache,
+                               repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev = integrator.uprev.x
+    @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6 = cache
+    k1 = integrator.fsalfirst.x[1]
+
+    ku = uprev + (c2 * dt * duprev) + (dt^2 * a21 * k1)
+    kdu = duprev + dt * (abar21 * k1)
+
+    k2 = f.f1(kdu, ku, p, t + dt * c2)
+    ku = uprev + dt * (c3 * duprev + dt * (a31 * k1 + a32 * k2))
+    kdu = duprev + dt * (abar31 * k1 + abar32 * k2)
+
+    k3 = f.f1(kdu, ku, p, t + dt * c3)
+    ku = uprev + dt * (c4 * duprev + dt * (a41 * k1 + a43 * k3)) # a42 = 0
+    kdu = duprev + dt * (abar41 * k1 + abar42 * k2 + abar43 * k3)
+
+    k4 = f.f1(kdu, ku, p, t + dt * c4)
+    ku = uprev + dt * (c5 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
+    kdu = duprev + dt * (abar51 * k1 + abar52 * k2 + abar53 * k3 + abar54 * k4)
+
+    k5 = f.f1(duprev, ku, p, t + dt * c5)
+    ku = uprev +
+         dt * (c6 * duprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4)) # a65 = 0
+    kdu = duprev +
+          dt * (abar61 * k1 + abar62 * k2 + abar63 * k3 + abar64 * k4 + abar65 * k5)
+
+    k6 = f.f1(duprev, ku, p, t + dt * c6)
+    ku = uprev +
+         dt * (c7 * duprev +
+               dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5)) # a72 = a76 = 0
+    kdu = duprev +
+          dt * (abar71 * k1 + abar73 * k3 + abar74 * k4 + abar75 * k5 +
+                abar76 * k6) # abar72 = 0
+
+    k7 = f.f1(duprev, ku, p, t + dt * c7)
+    u = uprev + dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)) # no b6, b7 
+    du = duprev + dt * (bbar1 * k1 + bbar3 * k3 + bbar4 * k4 + bbar5 * k5 + bbar6 * k6) # no b2, b7
+
+    integrator.u = ArrayPartition((du, u))
+    integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::FineRKN5Cache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    du, u = integrator.u.x
+    duprev, uprev = integrator.uprev.x
+    @unpack tmp, fsalfirst, k2, k3, k4, k5, k6, k7, k = cache
+    @unpack c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6 = cache.tab
+
+    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+    k1 = integrator.fsalfirst.x[1]
+
+    @.. broadcast=false ku=uprev + dt * (c2 * duprev + dt * (a21 * k1))
+    @.. broadcast=false kdu=duprev + dt * (abar21 * k1)
+
+    f.f1(k2, kdu, ku, p, t + dt * c2)
+    @.. broadcast=false ku=uprev + dt * (c3 * duprev + dt * (a31 * k1 + a32 * k2))
+    @.. broadcast=false kdu=duprev + dt * (abar31 * k1 + abar32 * k2)
+
+    f.f1(k3, kdu, ku, p, t + dt * c3)
+    @.. broadcast=false ku=uprev +
+                           dt * (c4 * duprev + dt * (a41 * k1 + a43 * k3)) # a42 = 0
+    @.. broadcast=false kdu=duprev + dt * (abar41 * k1 + abar42 * k2 + abar43 * k3)
+
+    f.f1(k4, kdu, ku, p, t + dt * c4)
+    @.. broadcast=false ku=uprev +
+                           dt *
+                           (c5 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
+    @.. broadcast=false kdu=duprev +
+                            dt * (abar51 * k1 + abar52 * k2 + abar53 * k3 + abar54 * k4)
+
+    f.f1(k5, kdu, ku, p, t + dt * c5)
+    @.. broadcast=false ku=uprev +
+                           dt * (c6 * duprev +
+                            dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4)) # a65 = 0
+    @.. broadcast=false kdu=duprev +
+                            dt * (abar61 * k1 + abar62 * k2 + abar63 * k3 + abar64 * k4 +
+                             abar65 * k5)
+
+    f.f1(k6, kdu, ku, p, t + dt * c6)
+    @.. broadcast=false ku=uprev +
+                           dt * (c7 * duprev +
+                            dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5)) # a72 = a76 = 0
+
+    @.. broadcast=false kdu=duprev +
+                            dt * (abar71 * k1 + abar73 * k3 + abar74 * k4 +
+                             abar75 * k5 + abar76 * k6) # abar72 = 0
+
+    f.f1(k7, kdu, ku, p, t + dt * c7)
+    @.. broadcast=false u=uprev +
+                          dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5))
+    @.. broadcast=false du=duprev +
+                           dt *
+                           (bbar1 * k1 + bbar3 * k3 + bbar4 * k4 + bbar5 * k5 + bbar6 * k6)
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)

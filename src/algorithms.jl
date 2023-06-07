@@ -5252,6 +5252,31 @@ E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equatio
 struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
+    FineRKN5()
+
+A 5th order explicit Runge-Kutta-Nyström method which can be applied directly to second order ODEs. 
+Can only be used with fixed time steps.
+
+This method requires that the acceleration equation needs to be independent of the velocity
+otherwise it results in convergence order loss.
+
+## References
+```
+@article{fine1987low,
+  title={Low order practical {R}unge-{K}utta-{N}ystr{\"o}m methods},
+  author={Fine, Jerry Michael},
+  journal={Computing},
+  volume={38},
+  number={4},
+  pages={281--297},
+  year={1987},
+  publisher={Springer}
+}
+```
+"""
+struct FineRKN5 <: OrdinaryDiffEqPartitionedAlgorithm end
+
+"""
     Nystrom4VelocityIdependent
 
 A 4th order explicit Runkge-Kutta-Nyström method. Used directly on second order ODEs, where the acceleration is independent from velocity (ODE Problem is not dependent on the first derivative).
