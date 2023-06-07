@@ -239,22 +239,22 @@ iter[] = 0;
 @test iter3 < iter1
 @test iter4 < iter1
 
-sol1 = solve(prob_ode_brusselator_2d, TRBDF2(linsolve = IterativeSolversJL_GMRES()),
+sol1 = solve(prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
              save_everystep = false);
 iter1 = iter[];
 iter[] = 0;
 sol2 = solve(prob_ode_brusselator_2d_sparse,
-             TRBDF2(linsolve = IterativeSolversJL_GMRES(), precs = incompletelu,
+             TRBDF2(linsolve = KrylovJL_GMRES(), precs = incompletelu,
                     concrete_jac = true), save_everystep = false);
 iter2 = iter[];
 iter[] = 0;
 sol3 = solve(prob_ode_brusselator_2d_sparse,
-             TRBDF2(linsolve = IterativeSolversJL_GMRES(), precs = algebraicmultigrid,
+             TRBDF2(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
                     concrete_jac = true), save_everystep = false);
 iter3 = iter[];
 iter[] = 0;
 sol4 = solve(prob_ode_brusselator_2d_sparse,
-             TRBDF2(linsolve = IterativeSolversJL_GMRES(), precs = algebraicmultigrid2,
+             TRBDF2(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
                     concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;

@@ -105,7 +105,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     linprob = LinearProblem(W1, _vec(cubuff); u0 = _vec(dw12))
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                    assumptions = LinearSolve.OperatorAssumptions(Val(true)))
+                    assumptions = LinearSolve.OperatorAssumptions(true))
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
@@ -246,12 +246,12 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
     linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                     assumptions = LinearSolve.OperatorAssumptions(Val(true)))
+                     assumptions = LinearSolve.OperatorAssumptions(true))
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
     linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
     linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-                     assumptions = LinearSolve.OperatorAssumptions(Val(true)))
+                     assumptions = LinearSolve.OperatorAssumptions(true))
     #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
     #Pr = Diagonal(_vec(weight)))
 
