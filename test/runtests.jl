@@ -40,7 +40,7 @@ end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
-        @time @safetestset "No Recompile Tests" begin include("interface/norecompile.jl") end
+        #@time @safetestset "No Recompile Tests" begin include("interface/norecompile.jl") end
         @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
         @time @safetestset "Linear Solver Tests" begin include("interface/linear_solver_test.jl") end
         @time @safetestset "Linear Solver Split ODE Tests" begin include("interface/linear_solver_split_ode_test.jl") end

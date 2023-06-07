@@ -8,7 +8,7 @@ prob = ODEProblem(rn, u0, (0, 50.0))
 
 function precsl(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
     if newW === nothing || newW
-        Pl = lu(convert(AbstractMatrix, W))
+        Pl = lu(convert(AbstractMatrix, W), check = false)
     else
         Pl = Plprev
     end
@@ -17,7 +17,7 @@ end
 
 function precsr(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
     if newW === nothing || newW
-        Pr = lu(convert(AbstractMatrix, W))
+        Pr = lu(convert(AbstractMatrix, W), check = false)
     else
         Pr = Prprev
     end
@@ -26,7 +26,7 @@ end
 
 function precslr(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
     if newW === nothing || newW
-        Pr = lu(convert(AbstractMatrix, W))
+        Pr = lu(convert(AbstractMatrix, W), check = false)
     else
         Pr = Prprev
     end

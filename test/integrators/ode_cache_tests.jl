@@ -65,7 +65,7 @@ sol = solve(prob, KenCarp4(), callback = callback, dt = 1 / 2)
 @test length(sol[end]) > 1
 sol = solve(prob, TRBDF2(), callback = callback, dt = 1 / 2)
 @test length(sol[end]) > 1
-sol = solve(prob, TRBDF2(linsolve = LinearSolve.IterativeSolversJL_GMRES()),
+sol = solve(prob, TRBDF2(linsolve = LinearSolve.KrylovJL_GMRES()),
             callback = callback)
 @test length(sol[end]) > 1
 
