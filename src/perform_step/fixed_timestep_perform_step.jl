@@ -283,8 +283,10 @@ end
     if integrator.opts.adaptive
         # Shampine Solving ODEs and DDEs with Residual Control Estimate
         k₅ = integrator.fsallast
-        σ₁ = convert(typeof(t), 1 // 2) - sqrt(convert(typeof(t), 3)) / 6
-        σ₂ = convert(typeof(t), 1 // 2) + sqrt(convert(typeof(t), 3)) / 6
+
+        # one(t) so that types are correct but unitless
+        σ₁ = one(t) * (1 // 2) - sqrt(one(t) * 3) / 6
+        σ₂ = one(t) * (1 // 2) + sqrt(one(t) * 3) / 6
         p1 = (1 - σ₁) * uprev + σ₁ * u +
              σ₁ * (σ₁ - 1) * ((1 - 2σ₁) * (u - uprev) + (σ₁ - 1) * dt * k₁ + σ₁ * dt * k₅)
         p2 = (1 - σ₂) * uprev + σ₂ * u +
