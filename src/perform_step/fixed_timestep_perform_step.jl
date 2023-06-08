@@ -349,8 +349,9 @@ end
         k₅ = k
         _p = k₂
         pprime = k₃ # Alias some cache arrays
-        σ₁ = convert(typeof(t), 1 // 2) - sqrt(convert(typeof(t), 3)) / 6
-        σ₂ = convert(typeof(t), 1 // 2) + sqrt(convert(typeof(t), 3)) / 6
+        # one(t) so that types are correct but unitless
+        σ₁ = one(t) * (1 // 2) - sqrt(one(t) * 3) / 6
+        σ₂ = one(t) * (1 // 2) + sqrt(one(t) * 3) / 6
         @.. broadcast=false thread=thread tmp=(1 - σ₁) * uprev + σ₁ * u +
                                               σ₁ * (σ₁ - 1) *
                                               ((1 - 2σ₁) * (u - uprev) +
