@@ -23,13 +23,13 @@ let N = 20
     prob_ip = ODEProblem(f_ip, u0, (0.0, 1.0))
 
     @testset "Classical ExpRK - Low Order" begin
-        dt = 0.01
+        dt = 0.001
         tol = 1e-3
         Algs = [LawsonEuler, NorsettEuler, ETDRK2]
         for Alg in Algs
             sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
-            @test_skip isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+            @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
             sol = solve(prob_ip, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
@@ -40,13 +40,13 @@ let N = 20
     end
 
     @testset "Classical ExpRK - High Order" begin
-        dt = 0.05
+        dt = 0.005
         tol = 1e-5
         Algs = [ETDRK3, ETDRK4, HochOst4]
         for Alg in Algs
             sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
-            @test_skip isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+            @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
             sol = solve(prob_ip, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
@@ -57,13 +57,13 @@ let N = 20
     end
 
     @testset "EPIRK" begin
-        dt = 0.05
+        dt = 0.005
         tol = 1e-5
         Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
         for Alg in Algs
             sol = solve(prob, Alg(); dt = dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
-            @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+            @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
             sol = solve(prob_ip, Alg(); dt = dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
@@ -73,11 +73,11 @@ let N = 20
 
         sol = solve(prob, EPIRK5s3(); dt = dt, reltol = tol)
         sol_ref = solve(prob, Tsit5(); reltol = tol)
-        @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+        @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
         sol = solve(prob_ip, EPIRK5s3(); dt = dt, reltol = tol)
         sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
-        @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+        @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
         println(EPIRK5s3) # prevent Travis hanging
     end
 
