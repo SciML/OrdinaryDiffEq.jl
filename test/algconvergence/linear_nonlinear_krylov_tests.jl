@@ -57,7 +57,7 @@ let N = 20
     end
 
     @testset "EPIRK" begin
-        dt = 0.005
+        dt = 0.001
         tol = 1e-5
         Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
         for Alg in Algs
