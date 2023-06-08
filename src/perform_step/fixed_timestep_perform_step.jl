@@ -310,7 +310,7 @@ end
                 integrator.opts.internalnorm,
                 t), t)
         integrator.stats.nf += 2
-        integrator.EEst = convert(typeof(t), 2.1342) * max(e1, e2)
+        integrator.EEst = convert(typeof(one(t)), 2.1342) * max(e1, e2)
     end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -388,7 +388,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t,
             thread)
         e2 = integrator.opts.internalnorm(atmp, t)
-        integrator.EEst = convert(typeof(t), 2.1342) * max(e1, e2)
+        integrator.EEst = convert(typeof(one(t)), 2.1342) * max(e1, e2)
         integrator.stats.nf += 2
     end
 end
