@@ -29,7 +29,7 @@ let N = 20
         for Alg in Algs
             sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
-            @test_skip isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+            @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
             sol = solve(prob_ip, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
@@ -46,7 +46,7 @@ let N = 20
         for Alg in Algs
             sol = solve(prob, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
-            @test_skip isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+            @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
             sol = solve(prob_ip, Alg(krylov = true, m = 20); dt = dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
@@ -63,7 +63,7 @@ let N = 20
         for Alg in Algs
             sol = solve(prob, Alg(); dt = dt, reltol = tol)
             sol_ref = solve(prob, Tsit5(); reltol = tol)
-            @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
+            @test isapprox(sol(1.0), sol_ref(1.0); rtol = tol)
 
             sol = solve(prob_ip, Alg(); dt = dt, reltol = tol)
             sol_ref = solve(prob_ip, Tsit5(); reltol = tol)
@@ -91,7 +91,7 @@ let N = 20
             sol2 = solve(prob, alg, dt = 1 / 16, dense = true, adaptive = false)
             for i in eachindex(sol2)
                 err = maximum(abs.(sol2[i] - interp_results[i]))
-                @test_skip err < tol
+                @test err < tol
             end
         end
 
