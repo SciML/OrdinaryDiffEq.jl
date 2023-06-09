@@ -7,7 +7,7 @@ let N = 20
     A = diagm(-1 => du, 0 => dd, 1 => du)
     _f = (u, p, t) -> A * u - u .^ 3
     _f_ip = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
-    _jac = (A, u, p, t) -> A - 3 * diagm(0 => u .^ 2)
+    _jac = (J, u, p, t) -> A - 3 * diagm(0 => u .^ 2)
     _jac_ip! = (J, u, p, t) -> begin
         copyto!(J, A)
         @inbounds for i in 1:N
