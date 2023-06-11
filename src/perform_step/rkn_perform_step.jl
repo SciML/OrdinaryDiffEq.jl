@@ -5,13 +5,13 @@
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
 const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN5ConstantCache,
-   Nystrom4VelocityIndependentConstantCache,
-   Nystrom5VelocityIndependentConstantCache,
-   IRKN3ConstantCache, IRKN4ConstantCache,
-   DPRKN4ConstantCache, DPRKN5ConstantCache,
-   DPRKN6FMConstantCache, DPRKN8ConstantCache,
-   DPRKN12ConstantCache, ERKN4ConstantCache,
-   ERKN5ConstantCache, ERKN7ConstantCache}
+    Nystrom4VelocityIndependentConstantCache,
+    Nystrom5VelocityIndependentConstantCache,
+    IRKN3ConstantCache, IRKN4ConstantCache,
+    DPRKN4ConstantCache, DPRKN5ConstantCache,
+    DPRKN6FMConstantCache, DPRKN8ConstantCache,
+    DPRKN12ConstantCache, ERKN4ConstantCache,
+    ERKN5ConstantCache, ERKN7ConstantCache}
 
 function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.kshortsize = 2
@@ -26,13 +26,13 @@ function initialize!(integrator, cache::NystromCCDefaultInitialization)
 end
 
 const NystromDefaultInitialization = Union{Nystrom4Cache, FineRKN5Cache,
-   Nystrom4VelocityIndependentCache,
-   Nystrom5VelocityIndependentCache,
-   IRKN3Cache, IRKN4Cache,
-   DPRKN4Cache, DPRKN5Cache,
-   DPRKN6FMCache, DPRKN8Cache,
-   DPRKN12Cache, ERKN4Cache,
-   ERKN5Cache, ERKN7Cache}
+    Nystrom4VelocityIndependentCache,
+    Nystrom5VelocityIndependentCache,
+    IRKN3Cache, IRKN4Cache,
+    DPRKN4Cache, DPRKN5Cache,
+    DPRKN6FMCache, DPRKN8Cache,
+    DPRKN12Cache, ERKN4Cache,
+    ERKN5Cache, ERKN7Cache}
 
 function initialize!(integrator, cache::NystromDefaultInitialization)
     @unpack fsalfirst, k = cache
@@ -123,7 +123,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::FineRKN5ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
     @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6 = cache
