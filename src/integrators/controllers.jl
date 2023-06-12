@@ -232,8 +232,8 @@ struct PIDController{QT, Limiter} <: AbstractController
 end
 
 function PIDController(beta1, beta2, beta3 = zero(beta1);
-                       limiter = default_dt_factor_limiter,
-                       accept_safety = 0.81)
+    limiter = default_dt_factor_limiter,
+    accept_safety = 0.81)
     beta = MVector(map(float, promote(beta1, beta2, beta3))...)
     QT = eltype(beta)
     err = MVector{3, QT}(true, true, true)
@@ -242,9 +242,9 @@ end
 
 function Base.show(io::IO, controller::PIDController)
     print(io, "PIDController(beta=", controller.beta,
-          ", accept_safety=", controller.accept_safety,
-          ", limiter=", controller.limiter,
-          ")")
+        ", accept_safety=", controller.accept_safety,
+        ", limiter=", controller.limiter,
+        ")")
 end
 
 @inline default_dt_factor_limiter(x) = one(x) + atan(x - one(x))
@@ -599,8 +599,8 @@ function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
 end
 
 function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
-                       cache::OrdinaryDiffEqMutableCache,
-                       ::Val{max_order}) where {max_order}
+    cache::OrdinaryDiffEqMutableCache,
+    ::Val{max_order}) where {max_order}
     @unpack t, dt, u, cache, uprev = integrator
     @unpack atmp, ts_tmp, terkm2, terkm1, terk, terkp1, terk_tmp, u_history = cache
     k = cache.order
@@ -617,7 +617,7 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
             terk = terkm1
             terkm1 = terkm2
             fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
-                                                        Val(max_order))
+                Val(max_order))
             terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
             vc = _vec(terk_tmp)
             for i in 2:(k - 2)
@@ -625,8 +625,8 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
             end
             @.. broadcast=false terk_tmp*=abs(dt^(k - 2))
             calculate_residuals!(atmp, _vec(terk_tmp), _vec(uprev), _vec(u),
-                                 integrator.opts.abstol, integrator.opts.reltol,
-                                 integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             terkm2 = integrator.opts.internalnorm(atmp, t)
             k -= 1
         end
@@ -635,8 +635,8 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
 end
 
 function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
-                       cache::OrdinaryDiffEqConstantCache,
-                       ::Val{max_order}) where {max_order}
+    cache::OrdinaryDiffEqConstantCache,
+    ::Val{max_order}) where {max_order}
     @unpack t, dt, u, cache, uprev = integrator
     @unpack ts_tmp, terkm2, terkm1, terk, terkp1, u_history = cache
     k = cache.order
@@ -652,7 +652,7 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
             terk = terkm1
             terkm1 = terkm2
             fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
-                                                        Val(max_order))
+                Val(max_order))
             terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
             if typeof(u) <: Number
                 for i in 2:(k - 2)
@@ -669,8 +669,8 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
                 terk_tmp *= @.. broadcast=false abs(dt^(k - 2))
             end
             atmp = calculate_residuals(_vec(terk_tmp), _vec(uprev), _vec(u),
-                                       integrator.opts.abstol, integrator.opts.reltol,
-                                       integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             terkm2 = integrator.opts.internalnorm(atmp, t)
             k -= 1
         end
@@ -679,9 +679,9 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
 end
 
 function stepsize_controller!(integrator,
-                              alg::Union{FBDF{max_order}, DFBDF{max_order}}) where {
-                                                                                    max_order
-                                                                                    }
+    alg::Union{FBDF{max_order}, DFBDF{max_order}}) where {
+    max_order,
+}
     @unpack cache = integrator
     cache.prev_order = cache.order
     k, terk = choose_order!(alg, integrator, cache, Val(max_order))
@@ -699,7 +699,7 @@ function stepsize_controller!(integrator,
 end
 
 function step_accept_controller!(integrator, alg::Union{FBDF{max_order}, DFBDF{max_order}},
-                                 q) where {max_order}
+    q) where {max_order}
     integrator.cache.consfailcnt = 0
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
         q = one(q)
@@ -721,8 +721,8 @@ function reset_alg_dependent_opts!(controller::ExtrapolationController, alg1, al
 end
 
 @inline function stepsize_controller!(integrator,
-                                      alg::Union{ExtrapolationMidpointDeuflhard,
-                                                 ImplicitDeuflhardExtrapolation})
+    alg::Union{ExtrapolationMidpointDeuflhard,
+        ImplicitDeuflhardExtrapolation})
     # Dummy function
     # ExtrapolationMidpointDeuflhard's stepsize scaling is stored in the cache;
     # it is computed by  stepsize_controller_internal! (in perfom_step!) resp. stepsize_predictor!
@@ -731,8 +731,8 @@ end
 end
 
 function stepsize_controller_internal!(integrator,
-                                       alg::Union{ExtrapolationMidpointDeuflhard,
-                                                  ImplicitDeuflhardExtrapolation})
+    alg::Union{ExtrapolationMidpointDeuflhard,
+        ImplicitDeuflhardExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
     @unpack controller = integrator.opts
@@ -743,7 +743,7 @@ function stepsize_controller_internal!(integrator,
         # Update gamma and beta1
         controller.beta1 = typeof(controller.beta1)(1 // (2integrator.cache.n_curr + 1))
         integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(1 // 4),
-                                                   controller.beta1)
+            controller.beta1)
         # Compute new stepsize scaling
         qtmp = DiffEqBase.fastpow(integrator.EEst, controller.beta1) / integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
@@ -752,8 +752,8 @@ function stepsize_controller_internal!(integrator,
 end
 
 function stepsize_predictor!(integrator,
-                             alg::Union{ExtrapolationMidpointDeuflhard,
-                                        ImplicitDeuflhardExtrapolation}, n_new::Int)
+    alg::Union{ExtrapolationMidpointDeuflhard,
+        ImplicitDeuflhardExtrapolation}, n_new::Int)
     # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
     @unpack controller = integrator.opts
 
@@ -769,18 +769,18 @@ function stepsize_predictor!(integrator,
         # Update gamma and beta1
         controller.beta1 = typeof(controller.beta1)(1 // (2integrator.cache.n_curr + 1))
         integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(1 // 4),
-                                                   controller.beta1)
+            controller.beta1)
         # Compute new stepsize scaling
         qtmp = EEst * DiffEqBase.fastpow(DiffEqBase.fastpow(tol, (1.0 - s_curr / s_new)),
-                                  controller.beta1) / integrator.opts.gamma
+            controller.beta1) / integrator.opts.gamma
         @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
     end
     integrator.cache.Q[n_new - alg.min_order + 1] = q
 end
 
 function step_accept_controller!(integrator,
-                                 alg::Union{ExtrapolationMidpointDeuflhard,
-                                            ImplicitDeuflhardExtrapolation}, q)
+    alg::Union{ExtrapolationMidpointDeuflhard,
+        ImplicitDeuflhardExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
     @unpack min_order, max_order = alg
     @unpack n_curr, n_old, Q = integrator.cache
@@ -792,7 +792,7 @@ function step_accept_controller!(integrator,
     dt_new[1:(end - 1)] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
     dtmin = timedepentdtmin(integrator)
     dt_new[1:(end - 1)] = max.(dtmin,
-                               min.(abs(integrator.opts.dtmax), abs.(dt_new[1:(end - 1)]))) # Safety scaling
+        min.(abs(integrator.opts.dtmax), abs.(dt_new[1:(end - 1)]))) # Safety scaling
 
     # n_new is the most efficient order of the last step
     work = s[tmp] ./ dt_new[1:(end - 1)]
@@ -818,8 +818,8 @@ function step_accept_controller!(integrator,
 end
 
 function step_reject_controller!(integrator,
-                                 alg::Union{ExtrapolationMidpointDeuflhard,
-                                            ImplicitDeuflhardExtrapolation})
+    alg::Union{ExtrapolationMidpointDeuflhard,
+        ImplicitDeuflhardExtrapolation})
     # Compute and save reduced stepsize dt_red of order n_old
     # Use the latest error estimate to predict dt_red if an estimate of order n_old is not available
     if integrator.cache.n_curr < integrator.cache.n_old
@@ -834,10 +834,10 @@ function step_reject_controller!(integrator,
 end
 
 @inline function stepsize_controller!(integrator,
-                                      alg::Union{ExtrapolationMidpointHairerWanner,
-                                                 ImplicitHairerWannerExtrapolation,
-                                                 ImplicitEulerExtrapolation,
-                                                 ImplicitEulerBarycentricExtrapolation})
+    alg::Union{ExtrapolationMidpointHairerWanner,
+        ImplicitHairerWannerExtrapolation,
+        ImplicitEulerExtrapolation,
+        ImplicitEulerBarycentricExtrapolation})
     # Dummy function
     # ExtrapolationMidpointHairerWanner's stepsize scaling is stored in the cache;
     # it is computed by  stepsize_controller_internal! (in perfom_step!), step_accept_controller! or step_reject_controller!
@@ -845,17 +845,17 @@ end
 end
 
 function stepsize_controller_internal!(integrator,
-                                       alg::Union{ExtrapolationMidpointHairerWanner,
-                                                  ImplicitHairerWannerExtrapolation,
-                                                  ImplicitEulerExtrapolation,
-                                                  ImplicitEulerBarycentricExtrapolation})
+    alg::Union{ExtrapolationMidpointHairerWanner,
+        ImplicitHairerWannerExtrapolation,
+        ImplicitEulerExtrapolation,
+        ImplicitEulerBarycentricExtrapolation})
     # Standard step size controller
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
     @unpack controller = integrator.opts
 
     if typeof(alg) <:
        Union{ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation,
-             ImplicitHairerWannerExtrapolation}
+        ImplicitHairerWannerExtrapolation}
         if iszero(integrator.EEst)
             q = inv(integrator.opts.qmax)
         else
@@ -871,12 +871,12 @@ function stepsize_controller_internal!(integrator,
             end
             integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(65 //
                                                                                      100),
-                                                       controller.beta1)
+                controller.beta1)
             # Compute new stepsize scaling
             qtmp = DiffEqBase.fastpow(integrator.EEst, controller.beta1) /
                    (integrator.opts.gamma)
             @fastmath q = max(inv(integrator.opts.qmax),
-                              min(inv(integrator.opts.qmin), qtmp))
+                min(inv(integrator.opts.qmin), qtmp))
         end
         integrator.cache.Q[integrator.cache.n_curr + 1] = q
     else
@@ -887,22 +887,22 @@ function stepsize_controller_internal!(integrator,
             controller.beta1 = typeof(controller.beta1)(1 // (2integrator.cache.n_curr + 1))
             integrator.opts.gamma = DiffEqBase.fastpow(typeof(integrator.opts.gamma)(65 //
                                                                                      100),
-                                                       controller.beta1)
+                controller.beta1)
             # Compute new stepsize scaling
             qtmp = DiffEqBase.fastpow(integrator.EEst, controller.beta1) /
                    integrator.opts.gamma
             @fastmath q = max(inv(integrator.opts.qmax),
-                              min(inv(integrator.opts.qmin), qtmp))
+                min(inv(integrator.opts.qmin), qtmp))
         end
         integrator.cache.Q[integrator.cache.n_curr + 1] = q
     end
 end
 
 function step_accept_controller!(integrator,
-                                 alg::Union{ExtrapolationMidpointHairerWanner,
-                                            ImplicitHairerWannerExtrapolation,
-                                            ImplicitEulerExtrapolation,
-                                            ImplicitEulerBarycentricExtrapolation}, q)
+    alg::Union{ExtrapolationMidpointHairerWanner,
+        ImplicitHairerWannerExtrapolation,
+        ImplicitEulerExtrapolation,
+        ImplicitEulerBarycentricExtrapolation}, q)
     # Compute new order and stepsize, return new stepsize
     @unpack min_order, max_order = alg
     @unpack n_curr, n_old, Q, sigma, work, dt_new = integrator.cache
@@ -949,16 +949,16 @@ function step_accept_controller!(integrator,
         # Compute the new stepsize of order n_new based on the optimal stepsize of order n_curr
         dt_new[n_new + 1] = s[n_curr + 2] / s[n_curr + 1] * dt_new[n_curr + 1]
         dt_new[n_new + 1] = max(dtmin,
-                                min(abs(integrator.opts.dtmax), abs(dt_new[n_new + 1])))
+            min(abs(integrator.opts.dtmax), abs(dt_new[n_new + 1])))
     end
     dt_new[n_new + 1]
 end
 
 function step_reject_controller!(integrator,
-                                 alg::Union{ExtrapolationMidpointHairerWanner,
-                                            ImplicitHairerWannerExtrapolation,
-                                            ImplicitEulerExtrapolation,
-                                            ImplicitEulerBarycentricExtrapolation})
+    alg::Union{ExtrapolationMidpointHairerWanner,
+        ImplicitHairerWannerExtrapolation,
+        ImplicitEulerExtrapolation,
+        ImplicitEulerBarycentricExtrapolation})
     # Compute and save order and stepsize for redoing the current step
     @unpack n_old, n_curr, Q = integrator.cache
 

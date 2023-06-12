@@ -31,8 +31,8 @@ function RadauIIA3Tableau(T, T2)
     e1 = T(1 / 4)
     e2 = T(-1 / 4)
     RadauIIA3Tableau{T, T2}(T11, T12, T21, T22,
-                            TI11, TI12, TI21, TI22,
-                            c1, c2, α, β, e1, e2)
+        TI11, TI12, TI21, TI22,
+        c1, c2, α, β, e1, e2)
 end
 
 struct RadauIIA5Tableau{T, T2}
@@ -105,8 +105,8 @@ function RadauIIA5Tableau(T, T2)
     e2 = convert(T, (-13 + 7 * sqrt6) / 3)
     e3 = convert(T, -1 / 3)
     RadauIIA5Tableau{T, T2}(T11, T12, T13, T21, T22, T23, T31, #= T33 = 0 =#
-                            TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33,
-                            c1, c2, #= c3 = 1 =#
-                            γ, α, β,
-                            e1, e2, e3)
+        TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33,
+        c1, c2, #= c3 = 1 =#
+        γ, α, β,
+        e1, e2, e3)
 end

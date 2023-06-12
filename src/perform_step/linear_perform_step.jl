@@ -20,7 +20,7 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = fal
 
     if alg.krylov
         u .= expv(dt, L, u; m = min(alg.m, size(L, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
         u .= exp(dt * L) * u
@@ -72,8 +72,8 @@ function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
 
     if alg.krylov
         u .= expv((1 / 12), (-k1 + 2 * k2 + 2 * k3 + 3 * k4), y1_2;
-                  m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
-                  iop = alg.iop)
+            m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop)
     else
         u .= exp((1 / 12) * (-k1 + 2 * k2 + 2 * k3 + 3 * k4)) * y1_2
     end
@@ -114,8 +114,8 @@ function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
     k4 = dt * D
     if alg.krylov
         u .= expv(1 / 6, (k1 + 2 * k2 + 2 * k3 + k4 - (k1 * k4 - k4 * k1) / 2), uprev;
-                  m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
-                  iop = alg.iop)
+            m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop)
     else
         u .= exp((1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4 - (k1 * k4 - k4 * k1) / 2)) * uprev
     end
@@ -150,7 +150,7 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
     k2 = dt * B
     if alg.krylov
         u .= expv(1 / 2, (k1 + k2), uprev; m = min(alg.m, size(L, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         u .= exp((1 / 2) * (k1 + k2)) * uprev
     end
@@ -324,7 +324,7 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false
     if integrator.opts.adaptive
         utilde = u - exp(y6) * uprev
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 end
@@ -396,7 +396,7 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
     Ω3_4_5_6 = (dt^3) * (Q3 + Q4) + (dt^4) * (Q5 + Q6) + (dt^5) * Q7
     if alg.krylov
         u .= expv(1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L1, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
     end
@@ -430,7 +430,7 @@ function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
 
     if alg.krylov
         u .= expv(1.0, Ω, uprev; m = min(alg.m, size(L1, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         u .= exp(Ω) * uprev
     end
@@ -499,7 +499,7 @@ function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
     Ω3_4_5_6 = (dt^3) * (Q3 + Q4) + (dt^4) * (Q5 + Q6) + (dt^5) * Q7
     if alg.krylov
         u .= expv(1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L1, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
     end
@@ -549,7 +549,7 @@ function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
            (3 * dt / 5) * (B1 * Ω2 - Ω2 * B1)
     if alg.krylov
         u .= expv(1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L1, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
     end
@@ -593,7 +593,7 @@ function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
            (3 * dt / 5) * (B1 * Ω2 - Ω2 * B1)
     if alg.krylov
         u .= expv(1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L1, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
     end
@@ -625,8 +625,8 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false
     B = Matrix(L2)
     if alg.krylov
         u .= expv(dt, (A + B) ./ 2 + (dt * sqrt(3)) .* (B * A - A * B) ./ 12, u;
-                  m = min(alg.m, size(L1, 1)), opnorm = integrator.opts.internalopnorm,
-                  iop = alg.iop)
+            m = min(alg.m, size(L1, 1)), opnorm = integrator.opts.internalopnorm,
+            iop = alg.iop)
     else
         u .= exp((dt / 2) .* (A + B) + ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B)) * uprev
     end
@@ -656,7 +656,7 @@ function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
 
     if alg.krylov
         u .= expv(dt, L, u; m = min(alg.m, size(L, 1)),
-                  opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
         u .= exp(dt * L) * u
@@ -678,7 +678,7 @@ function initialize!(integrator, cache::MagnusLeapfrogCache)
 end
 
 function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = false,
-                       alg_extrapolates = true, iter = 1)
+    alg_extrapolates = true, iter = 1)
     @unpack t, dt, uprev, uprev2, u, p, iter = integrator
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp = cache
@@ -689,7 +689,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
         update_coefficients!(L, u, p, t + dt / 2)
         if alg.krylov
             u .= expv(dt, L, u; m = min(alg.m, size(L, 1)),
-                      opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+                opnorm = integrator.opts.internalopnorm, iop = alg.iop)
         else
             A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
             u .= exp(dt * L) * u
@@ -703,7 +703,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
         update_coefficients!(L, u, p, t)
         if alg.krylov
             u .= expv(2 * dt, L, uprev2; m = min(alg.m, size(L, 1)),
-                      opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+                opnorm = integrator.opts.internalopnorm, iop = alg.iop)
         else
             A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
             u .= exp(2 * dt * L) * uprev2
@@ -728,7 +728,7 @@ function initialize!(integrator, cache::LinearExponentialConstantCache)
 end
 
 function perform_step!(integrator, cache::LinearExponentialConstantCache,
-                       repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
     A = f.f # assume f to be an ODEFunction wrapped around a linear operator
@@ -737,11 +737,11 @@ function perform_step!(integrator, cache::LinearExponentialConstantCache,
         u = exp(dt * Matrix(f)) * integrator.u
     elseif alg.krylov == :simple
         u = expv(dt, A, integrator.u; m = min(alg.m, size(A, 1)),
-                 opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         u = expv_timestep(dt, A, integrator.u; m = min(alg.m, size(A, 1)), iop = alg.iop,
-                          opnorm = integrator.opts.internalopnorm,
-                          tol = integrator.opts.reltol)
+            opnorm = integrator.opts.internalopnorm,
+            tol = integrator.opts.reltol)
     end
 
     # Update integrator state
@@ -778,13 +778,13 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
     elseif alg.krylov == :simple
         Ks, expv_cache = KsCache
         arnoldi!(Ks, A, u; m = min(alg.m, size(A, 1)),
-                 opnorm = integrator.opts.internalopnorm, iop = alg.iop)
+            opnorm = integrator.opts.internalopnorm, iop = alg.iop)
         expv!(tmp, dt, Ks; cache = expv_cache)
     else
         expv_timestep!(tmp, dt, A, u; adaptive = true, caches = KsCache,
-                       m = min(alg.m, size(A, 1)), iop = alg.iop,
-                       opnorm = integrator.opts.internalopnorm,
-                       tol = integrator.opts.reltol)
+            m = min(alg.m, size(A, 1)), iop = alg.iop,
+            opnorm = integrator.opts.internalopnorm,
+            tol = integrator.opts.reltol)
     end
 
     # Update integrator state
@@ -795,6 +795,7 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
 end
 
 cay!(tmp, A) = mul!(tmp, inv(I - 1 / 2 * A), (I + 1 / 2 * A))
+cay!(tmp, A::AbstractSciMLOperator) = @error "cannot multiply two SciMLOperators with mul!"
 cay(A) = inv(I - 1 / 2 * A) * (I + 1 / 2 * A)
 
 function initialize!(integrator, cache::CayleyEulerConstantCache)
@@ -820,8 +821,10 @@ function perform_step!(integrator, cache::CayleyEulerConstantCache, repeat_step 
     end
 
     L = update_coefficients(A, uprev, p, t)
+    L = convert(AbstractMatrix, L)
+
     V = cay(L * dt)
-    u = V * uprev * transpose(V)
+    u = (V * uprev) * transpose(V)
 
     # Update integrator state
     integrator.fsallast = f(u, p, t + dt)
@@ -854,6 +857,7 @@ function perform_step!(integrator, cache::CayleyEulerCache, repeat_step = false)
     end
 
     update_coefficients!(L, uprev, p, t)
+    L = convert(AbstractMatrix, L)
 
     cay!(V, L * dt)
     mul!(tmp, uprev, transpose(V))

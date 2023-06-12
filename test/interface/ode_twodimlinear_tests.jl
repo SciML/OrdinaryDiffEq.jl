@@ -9,7 +9,7 @@ solve!(integrator)
 
 sol = solve(prob, Euler(); dt = 1 // 2^(4), maxiters = Inf)
 sol = solve(prob, Tsit5(); dt = 1 // 2^(20), progress = true, adaptive = false,
-            maxiters = Inf)
+    maxiters = Inf)
 
 # plot(sol,plot_analytic=true)
 

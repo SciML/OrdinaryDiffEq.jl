@@ -24,7 +24,7 @@ prob = ODEProblem(f, eltype(p).([1.0, 0.0]), eltype(p).((0.0, 1.0)), copy(p))
 function test_f(p)
     _prob = remake(prob, p = p)
     solve(_prob, Tsit5(), abstol = 1e-14, reltol = 1e-14, callback = cb,
-          save_everystep = false)[end]
+        save_everystep = false)[end]
 end
 findiff = Calculus.finite_difference_jacobian(test_f, p)
 findiff
@@ -36,10 +36,10 @@ ad
 @test ad ≈ findiff
 
 function test_f2(p, sensealg = ForwardDiffSensitivity(), controller = nothing,
-                 alg = Tsit5())
+    alg = Tsit5())
     _prob = remake(prob, p = p)
     u = solve(_prob, alg, sensealg = sensealg, controller = controller,
-              abstol = 1e-14, reltol = 1e-14, callback = cb, save_everystep = false)
+        abstol = 1e-14, reltol = 1e-14, callback = cb, save_everystep = false)
     u[end][end]
 end
 
@@ -49,15 +49,15 @@ g1 = Zygote.gradient(θ -> test_f2(θ, ForwardDiffSensitivity()), p)
 g2 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint()), p)
 g3 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), IController()), p)
 g4 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), PIController(7 // 50, 2 // 25)),
-                     p)
+    p)
 @test_broken g5 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(),
-                                               PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)),
-                                  p)
+        PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)),
+    p)
 g6 = Zygote.gradient(θ -> test_f2(θ, ForwardDiffSensitivity(),
-                                  OrdinaryDiffEq.PredictiveController(), TRBDF2()), p)
+        OrdinaryDiffEq.PredictiveController(), TRBDF2()), p)
 @test_broken g7 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(),
-                                               OrdinaryDiffEq.PredictiveController(),
-                                               TRBDF2()), p)
+        OrdinaryDiffEq.PredictiveController(),
+        TRBDF2()), p)
 
 @test g1[1] ≈ findiff[2, 1:2]
 @test g2[1] ≈ findiff[2, 1:2]

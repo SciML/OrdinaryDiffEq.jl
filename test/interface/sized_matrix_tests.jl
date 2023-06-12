@@ -16,7 +16,7 @@ prob_giesekus = ODEProblem(dudt!, σ0, (0.0, 2.0), p_giesekus)
 
 if VERSION >= v"1.9"
     solve_giesekus = solve(prob_giesekus, Rodas4(), saveat = 0.2, abstol = 1e-14,
-                        reltol = 1e-14)
+        reltol = 1e-14)
     for alg in [
         Rosenbrock23(),
         Rodas4(),

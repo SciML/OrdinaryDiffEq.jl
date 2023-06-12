@@ -1,7 +1,7 @@
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-                                      prob::DiffEqBase.AbstractODEProblem{uType, tType, true
-                                                                          },
-                                      integrator) where {tType, uType}
+    prob::DiffEqBase.AbstractODEProblem{uType, tType, true
+    },
+    integrator) where {tType, uType}
     _tType = eltype(tType)
     f = prob.f
     p = integrator.p
@@ -134,9 +134,9 @@
 
     dt₀ = IfElse.ifelse((d₀ < 1 // 10^(5)) |
                         (d₁ < 1 // 10^(5)), smalldt,
-                        convert(_tType,
-                                oneunit_tType * (d₀ / d₁) /
-                                100))
+        convert(_tType,
+            oneunit_tType * (d₀ / d₁) /
+            100))
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
     # else
@@ -191,9 +191,9 @@
         dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
     else
         dt₁ = convert(_tType,
-                      oneunit_tType *
-                      10.0^(-(2 + log10(max_d₁d₂)) /
-                            get_current_alg_order(integrator.alg, integrator.cache)))
+            oneunit_tType *
+            10.0^(-(2 + log10(max_d₁d₂)) /
+                  get_current_alg_order(integrator.alg, integrator.cache)))
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
@@ -225,9 +225,9 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-                                      prob::DiffEqBase.AbstractODEProblem{uType, tType,
-                                                                          false},
-                                      integrator) where {uType, tType}
+    prob::DiffEqBase.AbstractODEProblem{uType, tType,
+        false},
+    integrator) where {uType, tType}
     _tType = eltype(tType)
     f = prob.f
     p = prob.p
@@ -251,7 +251,7 @@ end
 
     if Base.promote_op(/, typeof(u0), typeof(oneunit(t))) !== typeof(f₀)
         throw(TypeNotConstantError(Base.promote_op(/, typeof(u0), typeof(oneunit(t))),
-                                   typeof(f₀)))
+            typeof(f₀)))
     end
 
     d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
@@ -286,9 +286,9 @@ end
 end
 
 @inline function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-                                      prob::DiffEqBase.AbstractDAEProblem{duType, uType,
-                                                                          tType},
-                                      integrator) where {duType, uType, tType}
+    prob::DiffEqBase.AbstractDAEProblem{duType, uType,
+        tType},
+    integrator) where {duType, uType, tType}
     _tType = eltype(tType)
     tspan = prob.tspan
     init_dt = abs(tspan[2] - tspan[1])

@@ -7,16 +7,16 @@ let N = 20
     A = diagm(-1 => du, 0 => dd, 1 => du)
     _f = (u, p, t) -> A * u - u .^ 3
     _f_ip = (du, u, p, t) -> (mul!(du, A, u); du .-= u .^ 3)
-    _jac = (u, p, t) -> A - 3 * diagm(0 => u .^ 2)
-    _jac_ip = (J, u, p, t) -> begin
+    _jac = (J, u, p, t) -> A - 3 * diagm(0 => u .^ 2)
+    _jac_ip! = (J, u, p, t) -> begin
         copyto!(J, A)
         @inbounds for i in 1:N
             J[i, i] -= 3 * u[i]^2
         end
     end
     # f = ODEFunction(_f; jac=_jac)
-    # f_ip = ODEFunction(_f_ip; jac=_jac_ip, jac_prototype=zeros(N,N))
-    jac_prototype = DiffEqArrayOperator(zeros(N, N); update_func = _jac_ip)
+    # f_ip = ODEFunction(_f_ip; jac=_jac_ip!, jac_prototype=zeros(N,N))
+    jac_prototype = MatrixOperator(zeros(N, N); update_func! = _jac_ip!, update_func = _jac)
     f = ODEFunction(_f; jac_prototype = jac_prototype)
     f_ip = ODEFunction(_f_ip; jac_prototype = jac_prototype)
     prob = ODEProblem(f, u0, (0.0, 1.0))
@@ -116,8 +116,8 @@ end
     A = spdiagm(-1 => du, 0 => dd, 1 => du)
     f = (u, p, t) -> A * u
     exp_fun = ODEFunction(f;
-                          jac = (u, p, t) -> A,
-                          analytic = (u, p, t) -> exp(t * Matrix(A)) * u)
+        jac = (u, p, t) -> A,
+        analytic = (u, p, t) -> exp(t * Matrix(A)) * u)
     prob = ODEProblem(exp_fun, u0, (0.0, 1.0))
     sol = solve(prob, LawsonEuler(krylov = true, m = N); dt = 0.1)
     @test sol(1.0) ≈ exp_fun.analytic(u0, nothing, 1.0)

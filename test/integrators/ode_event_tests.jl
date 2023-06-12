@@ -1,6 +1,7 @@
-using OrdinaryDiffEq, RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks,
-      SparseArrays,
-      LinearAlgebra
+using OrdinaryDiffEq,
+    RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks,
+    SparseArrays,
+    LinearAlgebra
 
 f = function (u, p, t)
     -u + sin(-t)
@@ -114,7 +115,7 @@ affect_neg! = function (integrator)
 end
 
 callback_single = ContinuousCallback(condition_single, affect!, affect_neg!,
-                                     interp_points = 100, idxs = 1)
+    interp_points = 100, idxs = 1)
 
 u0 = [50.0, 0.0]
 tspan = (0.0, 15.0)
@@ -145,7 +146,7 @@ affect_neg! = function (integrator, idx)
 end
 
 callback_single = VectorContinuousCallback(condition_single, affect!, affect_neg!, 1,
-                                           interp_points = 100)
+    interp_points = 100)
 
 sol = solve(prob, Tsit5(), callback = callback_single, adaptive = false, dt = 1 / 4)
 sol = solve(prob, Tsit5(), callback = callback_single, save_everystep = false)
@@ -171,7 +172,8 @@ bounced = ODEProblem(f, sol[8], (0.0, 1.0))
 sol_bounced = solve(bounced, Vern6(), callback = callback, dt = sol.t[9] - sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
-@test maximum(maximum.(map((i) -> sol.k[9][i] - sol_bounced.k[2][i], 1:length(sol.k[9])))) ==
+@test maximum(maximum.(map((i) -> sol.k[9][i] - sol_bounced.k[2][i],
+    1:length(sol.k[9])))) ==
       0
 
 sol2 = solve(prob, Vern6(), callback = callback, adaptive = false, dt = 1 / 2^4)
@@ -234,12 +236,12 @@ end
 
 terminate_callback = ContinuousCallback(condition, affect!)
 custom_retcode_callback = ContinuousCallback(condition,
-                                             x -> affect!(x, ReturnCode.MaxIters))
+    x -> affect!(x, ReturnCode.MaxIters))
 vterminate_callback = VectorContinuousCallback(vcondition, vaffect!, 1)
 vcustom_retcode_callback = VectorContinuousCallback(vcondition,
-                                                    (x, idx) -> vaffect!(x, idx,
-                                                                         ReturnCode.MaxIters),
-                                                    1)
+    (x, idx) -> vaffect!(x, idx,
+        ReturnCode.MaxIters),
+    1)
 
 tspan2 = (0.0, Inf)
 prob2 = ODEProblem(f, u0, tspan2)
@@ -280,7 +282,7 @@ end
 
 terminate_callback2 = ContinuousCallback(condition, nothing, affect2!, interp_points = 100)
 vterminate_callback2 = VectorContinuousCallback(vcondition, nothing, vaffect2!, 1,
-                                                interp_points = 100)
+    interp_points = 100)
 
 sol5 = solve(prob2, Vern7(), callback = terminate_callback2)
 
@@ -422,7 +424,7 @@ step!(integrator, 1e-5, true)
     cb = SavingCallback(save_func, saved_values, saveat = t_l)
 
     u0 = normalize(rand(ComplexF64, 100))
-    A = DiffEqArrayOperator(-1im * A)
+    A = MatrixOperator(-1im * A)
     prob = ODEProblem(A, u0, (0, 1.0))
     solve(prob, LinearExponential(), dt = t_l[2] - t_l[1], callback = cb)
     @test length(saved_values.saveval) == length(t_l)

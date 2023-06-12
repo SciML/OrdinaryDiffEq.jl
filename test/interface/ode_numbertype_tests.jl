@@ -9,7 +9,7 @@ prob = ODEProblem(f, 1 / 2, (0.0, 1.0))
 sol3 = solve(prob, RK4(), dt = 1 / 2^(6), abstol = 1, reltol = 0)
 
 prob = ODEProblem(f, BigInt(1) // BigInt(2),
-                  (BigInt(0) // BigInt(1), BigInt(1) // BigInt(1)))
+    (BigInt(0) // BigInt(1), BigInt(1) // BigInt(1)))
 
 integrator = init(prob, RK4(), dt = BigInt(1) // BigInt(2)^(6), abstol = 1, reltol = 0)
 
@@ -30,9 +30,9 @@ sol4 = solve(prob, DP5(), dt = BigInt(1) // BigInt(2)^(3), adaptive = false)
 tabalg = ExplicitRK(tableau = constructDormandPrince(Rational{BigInt}))
 
 integrator = init(prob, tabalg, dt = BigInt(1) // BigInt(2)^(3), abstol = 1, reltol = 0,
-                  adaptive = false)
+    adaptive = false)
 sol5 = solve(prob, tabalg, dt = BigInt(1) // BigInt(2)^(3), abstol = 1, reltol = 0,
-             adaptive = false)
+    adaptive = false)
 
 @test typeof(sol5.u[end]) == Rational{BigInt}
 

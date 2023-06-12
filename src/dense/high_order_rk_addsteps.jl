@@ -1,6 +1,6 @@
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::DP8ConstantCache,
-                                always_calc_begin = false, allow_calc_end = true,
-                                force_calc_end = false)
+    always_calc_begin = false, allow_calc_end = true,
+    force_calc_end = false)
     if length(k) < 7 || always_calc_begin
         @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache
         @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache
@@ -12,14 +12,15 @@
         k5 = f(uprev + dt * (a0501 * k1 + a0503 * k3 + a0504 * k4), p, t + c5 * dt)
         k6 = f(uprev + dt * (a0601 * k1 + a0604 * k4 + a0605 * k5), p, t + c6 * dt)
         k7 = f(uprev + dt * (a0701 * k1 + a0704 * k4 + a0705 * k5 + a0706 * k6), p,
-               t + c7 * dt)
+            t + c7 * dt)
         k8 = f(uprev +
                dt * (a0801 * k1 + a0804 * k4 + a0805 * k5 + a0806 * k6 + a0807 * k7), p,
-               t + c8 * dt)
+            t + c8 * dt)
         k9 = f(uprev +
                dt *
-               (a0901 * k1 + a0904 * k4 + a0905 * k5 + a0906 * k6 + a0907 * k7 + a0908 * k8),
-               p, t + c9 * dt)
+               (a0901 * k1 + a0904 * k4 + a0905 * k5 + a0906 * k6 + a0907 * k7 +
+                a0908 * k8),
+            p, t + c9 * dt)
         k10 = f(uprev +
                 dt * (a1001 * k1 + a1004 * k4 + a1005 * k5 + a1006 * k6 + a1007 * k7 +
                  a1008 * k8 + a1009 * k9), p, t + c10 * dt)
@@ -48,27 +49,27 @@
         copyat_or_push!(k, 2, bspl)
         copyat_or_push!(k, 3, udiff - k13 - bspl)
         copyat_or_push!(k, 4,
-                        (d401 * k1 + d406 * k6 + d407 * k7 + d408 * k8 + d409 * k9 +
-                         d410 * k10 + d411 * k11 + d412 * k12 + d413 * k13 + d414 * k14 +
-                         d415 * k15 + d416 * k16))
+            (d401 * k1 + d406 * k6 + d407 * k7 + d408 * k8 + d409 * k9 +
+             d410 * k10 + d411 * k11 + d412 * k12 + d413 * k13 + d414 * k14 +
+             d415 * k15 + d416 * k16))
         copyat_or_push!(k, 5,
-                        (d501 * k1 + d506 * k6 + d507 * k7 + d508 * k8 + d509 * k9 +
-                         d510 * k10 + d511 * k11 + d512 * k12 + d513 * k13 + d514 * k14 +
-                         d515 * k15 + d516 * k16))
+            (d501 * k1 + d506 * k6 + d507 * k7 + d508 * k8 + d509 * k9 +
+             d510 * k10 + d511 * k11 + d512 * k12 + d513 * k13 + d514 * k14 +
+             d515 * k15 + d516 * k16))
         copyat_or_push!(k, 6,
-                        (d601 * k1 + d606 * k6 + d607 * k7 + d608 * k8 + d609 * k9 +
-                         d610 * k10 + d611 * k11 + d612 * k12 + d613 * k13 + d614 * k14 +
-                         d615 * k15 + d616 * k16))
+            (d601 * k1 + d606 * k6 + d607 * k7 + d608 * k8 + d609 * k9 +
+             d610 * k10 + d611 * k11 + d612 * k12 + d613 * k13 + d614 * k14 +
+             d615 * k15 + d616 * k16))
         copyat_or_push!(k, 7,
-                        (d701 * k1 + d706 * k6 + d707 * k7 + d708 * k8 + d709 * k9 +
-                         d710 * k10 + d711 * k11 + d712 * k12 + d713 * k13 + d714 * k14 +
-                         d715 * k15 + d716 * k16))
+            (d701 * k1 + d706 * k6 + d707 * k7 + d708 * k8 + d709 * k9 +
+             d710 * k10 + d711 * k11 + d712 * k12 + d713 * k13 + d714 * k14 +
+             d715 * k15 + d716 * k16))
     end
 end
 
 @muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::DP8Cache,
-                                always_calc_begin = false, allow_calc_end = true,
-                                force_calc_end = false)
+    always_calc_begin = false, allow_calc_end = true,
+    force_calc_end = false)
     if length(k) < 7 || always_calc_begin
         @unpack c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11, b12, a0201, a0301, a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701, a0704, a0705, a0706, a0801, a0804, a0805, a0806, a0807, a0901, a0904, a0905, a0906, a0907, a0908, a1001, a1004, a1005, a1006, a1007, a1008, a1009, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab
         @unpack c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = cache.tab

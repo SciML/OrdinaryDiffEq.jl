@@ -19,8 +19,8 @@ val3 = maximum(abs.(sol3.u[end] - sol3.u_analytic[end]))
 
 function lorenz(u, p, t)
     [10.0(u[2] - u[1])
-     u[1] * (28.0 - u[3]) - u[2]
-     u[1] * u[2] - (8 / 3) * u[3]]
+        u[1] * (28.0 - u[3]) - u[2]
+        u[1] * u[2] - (8 / 3) * u[3]]
 end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 100.0)
@@ -58,8 +58,8 @@ sol = solve(prob, DFBDF())
 
 function lorenz(du, u, p, t)
     [10.0(u[2] - u[1]) - du[1]
-     u[1] * (28.0 - u[3]) - u[2] - du[2]
-     u[1] * u[2] - (8 / 3) * u[3] - du[3]]
+        u[1] * (28.0 - u[3]) - u[2] - du[2]
+        u[1] * u[2] - (8 / 3) * u[3] - du[3]]
 end
 u0 = [1.0; 0.0; 0.0]
 du0 = [0.0; 0.0; 0.0]

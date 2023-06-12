@@ -1,14 +1,14 @@
 ## initialize!
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLFunctional},
-                             integrator::DiffEqBase.DEIntegrator)
+    integrator::DiffEqBase.DEIntegrator)
     nlsolver.cache.tstep = integrator.t + nlsolver.c * integrator.dt
 
     nothing
 end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLAnderson},
-                             integrator::DiffEqBase.DEIntegrator)
+    integrator::DiffEqBase.DEIntegrator)
     @unpack cache = nlsolver
 
     cache.history = 0
@@ -90,9 +90,9 @@ end
 end
 
 @muladd function compute_step_fixedpoint!(nlsolver::NLSolver{
-                                                             <:Union{NLFunctional,
-                                                                     NLAnderson}, false},
-                                          integrator)
+        <:Union{NLFunctional,
+            NLAnderson}, false},
+    integrator)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, γ, α, cache, tmp = nlsolver
     @unpack tstep = cache
@@ -137,7 +137,7 @@ end
 
     # compute norm of residuals
     atmp = calculate_residuals(dz, uprev, ustep, opts.abstol, opts.reltol,
-                               opts.internalnorm, t)
+        opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
 
     # cache results
@@ -150,9 +150,9 @@ end
 end
 
 @muladd function compute_step_fixedpoint!(nlsolver::NLSolver{
-                                                             <:Union{NLFunctional,
-                                                                     NLAnderson}, true},
-                                          integrator)
+        <:Union{NLFunctional,
+            NLAnderson}, true},
+    integrator)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, atmp, dz = cache
@@ -202,7 +202,7 @@ end
 
     # compute norm of residuals
     calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
-                         opts.internalnorm, t)
+        opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
 
     ndz
@@ -219,7 +219,7 @@ function Base.resize!(nlcache::NLFunctionalCache, i::Int)
 end
 
 function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson},
-                      integrator, i::Int)
+    integrator, i::Int)
     resize!(nlcache, nlsolver.alg, i)
 end
 

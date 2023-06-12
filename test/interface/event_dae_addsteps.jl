@@ -30,7 +30,7 @@ function zmax_affect_neg!(integrator)
 end
 
 cbs = CallbackSet(ContinuousCallback(zmin_cond, zmin_affect_neg!),
-                  ContinuousCallback(zmax_cond, zmax_affect_neg!))
+    ContinuousCallback(zmax_cond, zmax_affect_neg!))
 
 tf = 20.0
 tspan = (0.0, tf)

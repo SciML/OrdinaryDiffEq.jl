@@ -4,36 +4,36 @@ using NLsolve
 using Test
 
 p_inv = [500.0
-         0.084
-         4.69
-         2.0
-         400.0
-         20.0
-         0.2
-         1000.0
-         0.59
-         736.0
-         0.0
-         0.0
-         0.2
-         1.27
-         14.3
-         0.0
-         50.0
-         0.2
-         0.08
-         0.003
-         0.074
-         0.2
-         0.01 # Matt
-         1.0  # V_ref
-         1.0  # ω ref
-         0.7  # Pref
-         0    # Q_ref
-         0.5  #Xtrans
-         0.0  # Rtrans
-         1.01 #Vm
-         0.0] # Vθ
+    0.084
+    4.69
+    2.0
+    400.0
+    20.0
+    0.2
+    1000.0
+    0.59
+    736.0
+    0.0
+    0.0
+    0.2
+    1.27
+    14.3
+    0.0
+    50.0
+    0.2
+    0.08
+    0.003
+    0.074
+    0.2
+    0.01 # Matt
+    1.0  # V_ref
+    1.0  # ω ref
+    0.7  # Pref
+    0    # Q_ref
+    0.5  #Xtrans
+    0.0  # Rtrans
+    1.01 #Vm
+    0.0] # Vθ
 
 function vsm(dx, x, p, t)
     #PARAMETERS
@@ -216,13 +216,13 @@ cb = DiscreteCallback(condition, affect!)
 
 prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
 refsol = solve(prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-12,
-               abstol = 1e-18)
+    abstol = 1e-18)
 
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
     @show solver
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
     sol = solve(prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-12,
-                abstol = 1e-16)
+        abstol = 1e-16)
     @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 20.0
     @test maximum(sol - refsol) < 1e-11
@@ -262,7 +262,7 @@ function choice_function(integrator)
     (N_FAILS[] > 3) + 1
 end
 simple_implicit_euler = ImplicitEuler(nlsolve = NLNewton(check_div = false,
-                                                         always_new = true))
+    always_new = true))
 alg_switch = CompositeAlgorithm((ImplicitEuler(), simple_implicit_euler), choice_function)
 
 for prob in [prob1, prob2], alg in [simple_implicit_euler, alg_switch]

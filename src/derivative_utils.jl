@@ -1,6 +1,6 @@
 const ROSENBROCK_INV_CUTOFF = 7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
 
-struct StaticWOperator{isinv, T}
+struct StaticWOperator{isinv, T} <: AbstractSciMLOperator{T}
     W::T
     function StaticWOperator(W::T, callinv = true) where {T}
         isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
@@ -184,12 +184,12 @@ internal cache (can be specified in the constructor; default to regular `Vector`
 It supports all of `AbstractSciMLOperator`'s interface.
 """
 mutable struct WOperator{IIP, T,
-                         MType,
-                         GType,
-                         JType,
-                         F,
-                         C,
-                         JV} <: AbstractSciMLOperator{T}
+    MType,
+    GType,
+    JType,
+    F,
+    C,
+    JV} <: AbstractSciMLOperator{T}
     mass_matrix::MType
     gamma::GType
     J::JType
@@ -199,10 +199,10 @@ mutable struct WOperator{IIP, T,
     jacvec::JV
 
     function WOperator{IIP}(mass_matrix, gamma, J, u, jacvec = nothing;
-                            transform = false) where {IIP}
+        transform = false) where {IIP}
         # TODO: there is definitely a missing interface.
         # Tentative interface: `has_concrete` and `concertize(A)`
-        if J isa Union{Number, DiffEqScalar}
+        if J isa Union{Number, ScalarOperator}
             if transform
                 _concrete_form = -mass_matrix / gamma + convert(Number, J)
             else
@@ -210,9 +210,9 @@ mutable struct WOperator{IIP, T,
             end
             _func_cache = nothing
         else
-            AJ = J isa DiffEqArrayOperator ? convert(AbstractMatrix, J) : J
+            AJ = J isa MatrixOperator ? convert(AbstractMatrix, J) : J
             if AJ isa AbstractMatrix
-                mm = mass_matrix isa DiffEqArrayOperator ?
+                mm = mass_matrix isa MatrixOperator ?
                      convert(AbstractMatrix, mass_matrix) : mass_matrix
                 if AJ isa AbstractSparseMatrix
 
@@ -223,7 +223,7 @@ mutable struct WOperator{IIP, T,
                     #
                     # Constant operators never refactorize so always use the correct values there
                     # as well
-                    if gamma == 0 && !(J isa DiffEqArrayOperator && SciMLBase.isconstant(J))
+                    if gamma == 0 && !(J isa MatrixOperator && isconstant(J))
                         # Workaround https://github.com/JuliaSparse/SparseArrays.jl/issues/190
                         # Hopefully `rand()` does not match any value in the array (prob ~ 0, with a check)
                         # Then `one` is required since gamma is zero
@@ -268,8 +268,8 @@ mutable struct WOperator{IIP, T,
         C = typeof(_concrete_form)
         JV = typeof(jacvec)
         return new{IIP, T, MType, GType, JType, F, C, JV}(mass_matrix, gamma, J, transform,
-                                                          _func_cache, _concrete_form,
-                                                          jacvec)
+            _func_cache, _concrete_form,
+            jacvec)
     end
 end
 function WOperator{IIP}(f, u, gamma; transform = false) where {IIP}
@@ -285,7 +285,7 @@ function WOperator{IIP}(f, u, gamma; transform = false) where {IIP}
     J = deepcopy(f.jac_prototype)
     if J isa AbstractMatrix
         @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
-        J = DiffEqArrayOperator(J; update_func = f.jac)
+        J = MatrixOperator(J; update_func! = f.jac)
     end
     return WOperator{IIP}(mass_matrix, gamma, J, u; transform = transform)
 end
@@ -294,17 +294,16 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-function DiffEqBase.update_coefficients!(W::WOperator, u, p, t)
+function SciMLOperators.update_coefficients!(W::WOperator, u, p, t)
     update_coefficients!(W.J, u, p, t)
     update_coefficients!(W.mass_matrix, u, p, t)
-    W.jacvec !== nothing && update_coefficients!(W.jacvec, u, p, t)
+    !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
     W
 end
 
-function DiffEqBase.update_coefficients!(J::SparseDiffTools.JacVec, u, p, t)
-    copyto!(J.x, u)
-    J.f.t = t
-    J.f.p = p
+function SciMLOperators.update_coefficients!(J::UJacobianWrapper, u, p, t)
+    J.p = p
+    J.t = t
 end
 
 function Base.convert(::Type{AbstractMatrix}, W::WOperator{IIP}) where {IIP}
@@ -451,8 +450,7 @@ function do_newJW(integrator, alg, nlsolver, repeat_step)::NTuple{2, Bool}
     isfreshJ = isJcurrent(nlsolver, integrator) && !integrator.u_modified
     iszero(nlsolver.fast_convergence_cutoff) && return isfs && !isfreshJ, isfs
     mm = integrator.f.mass_matrix
-    is_varying_mm = mm isa DiffEqArrayOperator &&
-                    mm.update_func !== SciMLBase.DEFAULT_UPDATE_FUNC
+    is_varying_mm = !isconstant(mm)
     if isfreshJ
         jbad = false
         smallstepchange = true
@@ -475,7 +473,7 @@ end
 end
 
 function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
-                     W_transform::Bool)::Nothing where {MT}
+    W_transform::Bool)::Nothing where {MT}
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -557,7 +555,7 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
 end
 
 function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix,
-                     W_transform::Bool)::Nothing where {MT}
+    W_transform::Bool)::Nothing where {MT}
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -597,7 +595,7 @@ function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix,
 end
 
 function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
-                    W_transform::Bool)::Nothing where {MT}
+    W_transform::Bool)::Nothing where {MT}
     # check size and dimension
     mass_matrix isa UniformScaling ||
         @boundscheck axes(mass_matrix) == axes(J) || _throwJMerror(J, mass_matrix)
@@ -621,7 +619,7 @@ function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
 end
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
-                 repeat_step, W_transform = false, newJW = nothing)
+    repeat_step, W_transform = false, newJW = nothing)
     @unpack t, dt, uprev, u, f, p = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
@@ -675,11 +673,10 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
 
     # calculate W
     if W isa WOperator
-        isnewton(nlsolver) || DiffEqBase.update_coefficients!(W, uprev, p, t) # we will call `update_coefficients!` in NLNewton
+        isnewton(nlsolver) || update_coefficients!(W, uprev, p, t) # we will call `update_coefficients!` in NLNewton
         W.transform = W_transform
         set_gamma!(W, dtgamma)
-        if W.J !== nothing && !(W.J isa SparseDiffTools.JacVec) &&
-           !(W.J isa AbstractSciMLOperator)
+        if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
             (new_jac && (calc_J!(W.J, integrator, lcache, next_step)))
@@ -740,10 +737,10 @@ end
         else
             if !isa(J, AbstractSciMLOperator) && (!isnewton(nlsolver) ||
                 nlsolver.cache.W.J isa AbstractSciMLOperator)
-                J = DiffEqArrayOperator(J)
+                J = MatrixOperator(J)
             end
             W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec;
-                                 transform = W_transform)
+                transform = W_transform)
         end
         integrator.stats.nw += 1
     else
@@ -767,20 +764,20 @@ end
         end
     end
     (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) &&
-        (W = DiffEqBase.update_coefficients!(W, uprev, p, t)) # we will call `update_coefficients!` in NLNewton
+        (W = update_coefficients!(W, uprev, p, t)) # we will call `update_coefficients!` in NLNewton
     is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) :
                             integrator.opts.internalnorm(J, t))
     return W
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step,
-                                          W_transform)
+    W_transform)
     nlsolver = nothing
     # we need to skip calculating `J` and `W` when a step is repeated
     new_jac = new_W = false
     if !repeat_step
         new_jac, new_W = calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step,
-                                 W_transform)
+            W_transform)
     end
     # If the Jacobian is not updated, we won't have to update ∂/∂t either.
     calc_tderivative!(integrator, cache, dtd1, repeat_step || !new_jac)
@@ -793,18 +790,18 @@ function update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
 end
 
 function update_W!(nlsolver::AbstractNLSolver,
-                   integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
-                   repeat_step::Bool, newJW = nothing)
+    integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
+    repeat_step::Bool, newJW = nothing)
     if isnewton(nlsolver)
         calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true,
-                newJW)
+            newJW)
     end
     nothing
 end
 
 function update_W!(nlsolver::AbstractNLSolver,
-                   integrator::SciMLBase.DEIntegrator{<:Any, false}, cache, dtgamma,
-                   repeat_step::Bool, newJW = nothing)
+    integrator::SciMLBase.DEIntegrator{<:Any, false}, cache, dtgamma,
+    repeat_step::Bool, newJW = nothing)
     if isnewton(nlsolver)
         isdae = integrator.alg isa DAEAlgorithm
         new_jac, new_W = true, true
@@ -829,7 +826,7 @@ function update_W!(nlsolver::AbstractNLSolver,
 end
 
 function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
-                   ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
+    ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
@@ -853,8 +850,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # be overridden with concrete_jac.
 
         _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = SparseDiffTools.JacVec(UJacobianWrapper(_f, t, p), copy(u),
-                                        OrdinaryDiffEqTag(), autodiff = alg_autodiff(alg))
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+            autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
@@ -869,14 +866,14 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        jacvec = SparseDiffTools.JacVec(UJacobianWrapper(_f, t, p), copy(u),
-                                        OrdinaryDiffEqTag(), autodiff = alg_autodiff(alg))
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+            autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
     elseif islin || (!IIP && DiffEqBase.has_jac(f))
         J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
         if !isa(J, AbstractSciMLOperator)
-            J = DiffEqArrayOperator(J)
+            J = MatrixOperator(J)
         end
         W = WOperator{IIP}(f.mass_matrix, dt, J, u)
     else
@@ -906,3 +903,22 @@ end
 
 build_uf(alg, nf, t, p, ::Val{true}) = UJacobianWrapper(nf, t, p)
 build_uf(alg, nf, t, p, ::Val{false}) = UDerivativeWrapper(nf, t, p)
+
+function LinearSolve.init_cacheval(alg::LinearSolve.DefaultLinearSolver, A::WOperator, b, u,
+    Pl, Pr,
+    maxiters::Int, abstol, reltol, verbose::Bool,
+    assumptions::OperatorAssumptions)
+    LinearSolve.init_cacheval(alg, A.J, b, u, Pl, Pr,
+        maxiters::Int, abstol, reltol, verbose::Bool,
+        assumptions::OperatorAssumptions)
+end
+
+for alg in InteractiveUtils.subtypes(OrdinaryDiffEq.LinearSolve.AbstractFactorization)
+    @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
+        maxiters::Int, abstol, reltol, verbose::Bool,
+        assumptions::OperatorAssumptions)
+        LinearSolve.init_cacheval(alg, A.J, b, u, Pl, Pr,
+            maxiters::Int, abstol, reltol, verbose::Bool,
+            assumptions::OperatorAssumptions)
+    end
+end

@@ -18,7 +18,7 @@ const Y = reshape([j for i in 1:N for j in 1:N], N, N)
 const α₁ = 1.0 .* (X .>= 4 * N / 5)
 
 const Mx = Tridiagonal([1.0 for i in 1:(N - 1)], [-2.0 for i in 1:N],
-                       [1.0 for i in 1:(N - 1)])
+    [1.0 for i in 1:(N - 1)])
 const My = copy(Mx)
 Mx[2, 1] = 2.0
 Mx[end - 1, end] = 2.0
@@ -57,7 +57,7 @@ println("BS3")
 @time sol = solve(prob, BS3(), progress = true, save_everystep = false, save_start = false)
 println("ROCK2")
 @time sol = solve(prob, ROCK2(), progress = true, save_everystep = false,
-                  save_start = false)
+    save_start = false)
 
 using CUDA
 gu0 = CuArray(Float32.(u0))
@@ -95,4 +95,4 @@ println("BS3")
 @time sol = solve(prob2, BS3(), progress = true, save_everystep = false, save_start = false)
 println("ROCK2")
 @time sol = solve(prob2, ROCK2(), progress = true, save_everystep = false,
-                  save_start = false)
+    save_start = false)

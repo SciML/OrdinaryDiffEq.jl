@@ -53,13 +53,13 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
                                                                            dt_temp *
                                                                            fsalfirst
                     f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
-                      t + dt_temp)
+                        t + dt_temp)
                     for j in 2:(2^(index - 1))
                         @muladd @.. broadcast=false u_tmps[Threads.threadid()]=u_tmps[Threads.threadid()] +
                                                                                dt_temp *
                                                                                k_tmps[Threads.threadid()]
                         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
-                          t + j * dt_temp)
+                            t + j * dt_temp)
                     end
                     @.. broadcast=false T[index, 1]=u_tmps[Threads.threadid()]
                 end
@@ -89,8 +89,8 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             A = 2^(i - 1)
             @.. broadcast=false utilde=T[i, i] - T[i, i - 1]
             atmp = calculate_residuals(utilde, uprev, T[i, i], integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             EEst = integrator.opts.internalnorm(atmp, t)
 
             beta1 = integrator.opts.controller.beta1
@@ -100,7 +100,7 @@ function perform_step!(integrator, cache::AitkenNevilleCache, repeat_step = fals
             integrator.opts.controller.beta1 = 1 / (i + 1)
             integrator.EEst = EEst
             dtpropose = step_accept_controller!(integrator, alg,
-                                                stepsize_controller!(integrator, alg))
+                stepsize_controller!(integrator, alg))
             integrator.EEst = e
             integrator.opts.controller.beta1 = beta1
             integrator.qold = qold
@@ -209,8 +209,8 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             A = 2^(i - 1)
             utilde = T[i, i] - T[i, i - 1]
             atmp = calculate_residuals(utilde, uprev, T[i, i], integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             EEst = integrator.opts.internalnorm(atmp, t)
 
             beta1 = integrator.opts.controller.beta1
@@ -220,7 +220,7 @@ function perform_step!(integrator, cache::AitkenNevilleConstantCache, repeat_ste
             integrator.opts.controller.beta1 = 1 / (i + 1)
             integrator.EEst = EEst
             dtpropose = step_accept_controller!(integrator, alg,
-                                                stepsize_controller!(integrator, alg))
+                stepsize_controller!(integrator, alg))
             integrator.EEst = e
             integrator.opts.controller.beta1 = beta1
             integrator.qold = qold
@@ -266,7 +266,7 @@ function initialize!(integrator, cache::ImplicitEulerExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
-                       repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, true)
     @unpack T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2 = cache
@@ -306,10 +306,10 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                 if !repeat_step && j == 1
                     linres = dolinsolve(integrator, linsolve; A = W[1],
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k_tmps[1]))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k_tmps[1]))
                 else
                     linres = dolinsolve(integrator, linsolve; A = nothing,
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k_tmps[1]))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k_tmps[1]))
                 end
 
                 cache.linsolve[1] = linres.cache
@@ -350,7 +350,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                 for index in startIndex:endIndex
                     dt_temp = dt / sequence[index]
                     jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_temp, J,
-                                false)
+                        false)
                     @.. broadcast=false k_tmps[Threads.threadid()]=integrator.fsalfirst
                     @.. broadcast=false u_tmps[Threads.threadid()]=uprev
                     for j in 1:sequence[index]
@@ -361,13 +361,13 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                         if !repeat_step && j == 1
                             linres = dolinsolve(integrator, linsolve;
-                                                A = W[Threads.threadid()],
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                A = W[Threads.threadid()],
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         else
                             linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         end
 
                         cache.linsolve[Threads.threadid()] = linres.cache
@@ -393,7 +393,7 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                         @.. broadcast=false diff1[Threads.threadid()]=u_tmps[Threads.threadid()] -
                                                                       u_tmps2[Threads.threadid()]
                         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p,
-                          t + j * dt_temp)
+                            t + j * dt_temp)
                     end
 
                     @.. broadcast=false T[index, 1]=u_tmps[Threads.threadid()]
@@ -428,8 +428,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
             @.. broadcast=false cache.utilde=T[i + 1, i]
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                 integrator.opts.abstol, integrator.opts.reltol,
-                                 integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -463,12 +463,12 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
 
                     if !repeat_step && j == 1
                         linres = dolinsolve(integrator, linsolve; A = W[1],
-                                            b = _vec(linsolve_tmps[1]),
-                                            linu = _vec(k_tmps[1]))
+                            b = _vec(linsolve_tmps[1]),
+                            linu = _vec(k_tmps[1]))
                     else
                         linres = dolinsolve(integrator, linsolve; A = nothing,
-                                            b = _vec(linsolve_tmps[1]),
-                                            linu = _vec(k_tmps[1]))
+                            b = _vec(linsolve_tmps[1]),
+                            linu = _vec(k_tmps[1]))
                     end
 
                     cache.linsolve[1] = linres.cache
@@ -495,8 +495,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                 @.. broadcast=false cache.utilde=T[n_curr + 1, n_curr]
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                     integrator.opts.abstol, integrator.opts.reltol,
-                                     integrator.opts.internalnorm, t)
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(cache.res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -525,7 +525,7 @@ function initialize!(integrator, cache::ImplicitEulerExtrapolationConstantCache)
 end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCache,
-                       repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, true)
     @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
@@ -632,7 +632,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
     for j in 2:(n_curr + 1)
         tmp *= 2
         for i in j:(n_curr + 1)
-            T[i, j] = ((sequence[i] / sequence[i - j + 1]) * T[i, j - 1] - T[i - 1, j - 1]) /
+            T[i, j] = ((sequence[i] / sequence[i - j + 1]) * T[i, j - 1] -
+                       T[i - 1, j - 1]) /
                       ((sequence[i] / sequence[i - j + 1]) - 1)
         end
     end
@@ -645,8 +646,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
             u = T[i + 1, i + 1]
             utilde = T[i + 1, i]
             res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                      integrator.opts.reltol, integrator.opts.internalnorm,
-                                      t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -696,8 +697,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCach
                 u = T[n_curr + 1, n_curr + 1]
                 utilde = T[n_curr + 1, n_curr]
                 res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                          integrator.opts.reltol,
-                                          integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -731,7 +732,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardCache)
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -798,7 +799,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                                                                         fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
                                                              2 * dt_int_temp *
                                                              k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -824,7 +825,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                                                                         fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p,
-                              t + (j - 1) * dt_int_temp)
+                                t + (j - 1) * dt_int_temp)
                             @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
                                                              2 * dt_int_temp *
                                                              k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -861,8 +862,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
             @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                 integrator.opts.abstol, integrator.opts.reltol,
-                                 integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -912,8 +913,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                 @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                     integrator.opts.abstol, integrator.opts.reltol,
-                                     integrator.opts.internalnorm, t)
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(cache.res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -948,7 +949,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCa
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -1058,13 +1059,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
         for i in (alg.min_order):n_curr
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
                 sum(broadcast(*, T[1:(i + 1)],
-                              eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
+                eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
             utilde = eltype(uprev).(extrapolation_scalars_2[i]) *
                      sum(broadcast(*, T[2:(i + 1)],
-                                   eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
+                eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
             res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                      integrator.opts.reltol, integrator.opts.internalnorm,
-                                      t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -1099,15 +1100,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
                 # Update u, integrator.EEst and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(broadcast(*, T[1:(n_curr + 1)],
-                                  eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                                       (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+                    eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                        (n_curr + 1)]))) # Approximation of extrapolation order n_curr
                 utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) *
                          sum(broadcast(*, T[2:(n_curr + 1)],
-                                       eltype(uprev).(extrapolation_weights_2[1:n_curr,
-                                                                              n_curr]))) # and its internal counterpart
+                    eltype(uprev).(extrapolation_weights_2[1:n_curr,
+                        n_curr]))) # and its internal counterpart
                 res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                          integrator.opts.reltol,
-                                          integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -1118,8 +1119,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstant
     else
         u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
             sum(broadcast(*, T[1:(n_curr + 1)],
-                          eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                               (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+            eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                (n_curr + 1)]))) # Approximation of extrapolation order n_curr
     end
 
     # Save the latest approximation and update FSAL
@@ -1142,7 +1143,7 @@ function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -1186,10 +1187,10 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
             if !repeat_step
                 linres = dolinsolve(integrator, linsolve; A = W[1],
-                                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
             else
                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
             end
 
             cache.linsolve[1] = linres.cache
@@ -1207,10 +1208,10 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
                 if !repeat_step && j == 1
                     linres = dolinsolve(integrator, linsolve; A = W[1],
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 else
                     linres = dolinsolve(integrator, linsolve; A = nothing,
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 end
                 cache.linsolve[1] = linres.cache
 
@@ -1250,7 +1251,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                         j_int_temp = 4 * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix,
-                                    dt_int_temp, J, false)
+                            dt_int_temp, J, false)
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
                         @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                               fsalfirst
@@ -1259,13 +1260,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
                         if !repeat_step
                             linres = dolinsolve(integrator, linsolve;
-                                                A = W[Threads.threadid()],
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                A = W[Threads.threadid()],
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         else
                             linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -1276,7 +1277,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()] -
                                                                                   (u_temp3[Threads.threadid()] -
@@ -1286,13 +1287,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
                             if !repeat_step && j == 1
                                 linres = dolinsolve(integrator, linsolve;
-                                                    A = W[Threads.threadid()],
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    A = W[Threads.threadid()],
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             else
                                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -1311,9 +1312,9 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                                                               (diff2[Threads.threadid()] -
                                                                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
-                                                                 t) <
+                                    t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
-                                                                 t))
+                                    t))
                                     # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                                     integrator.force_stepfail = true
                                     return
@@ -1336,7 +1337,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                         j_int_temp = 4 * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix,
-                                    dt_int_temp, J, false)
+                            dt_int_temp, J, false)
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
                         @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                               fsalfirst
@@ -1345,13 +1346,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
                         if !repeat_step
                             linres = dolinsolve(integrator, linsolve;
-                                                A = W[Threads.threadid()],
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                A = W[Threads.threadid()],
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         else
                             linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -1362,7 +1363,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()] -
                                                                                   (u_temp3[Threads.threadid()] -
@@ -1372,13 +1373,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
                             if !repeat_step && j == 1
                                 linres = dolinsolve(integrator, linsolve;
-                                                    A = W[Threads.threadid()],
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    A = W[Threads.threadid()],
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             else
                                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -1397,9 +1398,9 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                                                                               (diff2[Threads.threadid()] -
                                                                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
-                                                                 t) <
+                                    t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
-                                                                 t))
+                                    t))
                                     # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                                     integrator.force_stepfail = true
                                     return
@@ -1436,8 +1437,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
             @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                 integrator.opts.abstol, integrator.opts.reltol,
-                                 integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -1468,7 +1469,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
                 linsolve = cache.linsolve[1]
                 linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]),
-                                    linu = _vec(k))
+                    linu = _vec(k))
                 cache.linsolve[1] = linres.cache
 
                 integrator.stats.nsolve += 1
@@ -1481,7 +1482,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
 
                     linsolve = cache.linsolve[1]
                     linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]),
-                                        linu = _vec(k))
+                        linu = _vec(k))
                     cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
@@ -1509,8 +1510,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                 @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                     integrator.opts.abstol, integrator.opts.reltol,
-                                     integrator.opts.internalnorm, t)
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(cache.res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -1545,7 +1546,7 @@ function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCa
 end
 
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -1630,13 +1631,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
-                                           axes(uprev)) # Euler starting step
+                            axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:j_int
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
                                            2 * _reshape(W \
                                                     -_vec(dt_int * f(u_temp3, p,
-                                                            t + (j - 1) * dt_int) -
+                                    t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
                             integrator.stats.nf += 1
                             u_temp4 = u_temp3
@@ -1673,13 +1674,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
-                                           axes(uprev)) # Euler starting step
+                            axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:j_int
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
                                            2 * _reshape(W \
                                                     -_vec(dt_int * f(u_temp3, p,
-                                                            t + (j - 1) * dt_int) -
+                                    t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
                             integrator.stats.nf += 1
                             u_temp4 = u_temp3
@@ -1711,13 +1712,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
         for i in (alg.min_order):n_curr
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
                 sum(broadcast(*, T[1:(i + 1)],
-                              eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
+                eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
             utilde = eltype(uprev).(extrapolation_scalars_2[i]) *
                      sum(broadcast(*, T[2:(i + 1)],
-                                   eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
+                eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
             res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                      integrator.opts.reltol, integrator.opts.internalnorm,
-                                      t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -1759,15 +1760,15 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                 # Update u, integrator.EEst and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(broadcast(*, T[1:(n_curr + 1)],
-                                  eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                                       (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+                    eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                        (n_curr + 1)]))) # Approximation of extrapolation order n_curr
                 utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) *
                          sum(broadcast(*, T[2:(n_curr + 1)],
-                                       eltype(uprev).(extrapolation_weights_2[1:n_curr,
-                                                                              n_curr]))) # and its internal counterpart
+                    eltype(uprev).(extrapolation_weights_2[1:n_curr,
+                        n_curr]))) # and its internal counterpart
                 res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                          integrator.opts.reltol,
-                                          integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -1778,8 +1779,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
     else
         u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
             sum(broadcast(*, T[1:(n_curr + 1)],
-                          eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                               (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+            eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                (n_curr + 1)]))) # Approximation of extrapolation order n_curr
     end
 
     # Save the latest approximation and update FSAL
@@ -1803,7 +1804,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerCache)
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -1873,7 +1874,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                                                                         fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
                                                              2 * dt_int_temp *
                                                              k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -1900,7 +1901,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                                                                         fsalfirst # Euler starting step
                         for j in 2:j_int_temp
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
                                                              2 * dt_int_temp *
                                                              k_tmps[Threads.threadid()] # Explicit Midpoint rule
@@ -1934,8 +1935,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                 integrator.opts.abstol, integrator.opts.reltol,
-                                 integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -1987,8 +1988,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                 @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                     integrator.opts.abstol, integrator.opts.reltol,
-                                     integrator.opts.internalnorm, t)
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(cache.res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -2023,7 +2024,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerConstan
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -2132,13 +2133,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
         for i in (win_min - 1):win_min
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
                 sum(broadcast(*, T[1:(i + 1)],
-                              eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
+                eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
             utilde = eltype(uprev).(extrapolation_scalars_2[i]) *
                      sum(broadcast(*, T[2:(i + 1)],
-                                   eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
+                eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
             res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                      integrator.opts.reltol, integrator.opts.internalnorm,
-                                      t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -2175,15 +2176,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
                 # Update u, integrator.EEst and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(broadcast(*, T[1:(n_curr + 1)],
-                                  eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                                       (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+                    eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                        (n_curr + 1)]))) # Approximation of extrapolation order n_curr
                 utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) *
                          sum(broadcast(*, T[2:(n_curr + 1)],
-                                       eltype(uprev).(extrapolation_weights_2[1:n_curr,
-                                                                              n_curr]))) # and its internal counterpart
+                    eltype(uprev).(extrapolation_weights_2[1:n_curr,
+                        n_curr]))) # and its internal counterpart
                 res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                          integrator.opts.reltol,
-                                          integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -2194,8 +2195,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     else
         u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
             sum(broadcast(*, T[1:(n_curr + 1)],
-                          eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                               (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+            eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                (n_curr + 1)]))) # Approximation of extrapolation order n_curr
     end
 
     # Save the latest approximation and update FSAL
@@ -2219,7 +2220,7 @@ function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationConstan
 end
 
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2311,13 +2312,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
-                                           axes(uprev)) # Euler starting step
+                            axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
                                            2 * _reshape(W \
                                                     -_vec(dt_int * f(u_temp3, p,
-                                                            t + (j - 1) * dt_int) -
+                                    t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
                             integrator.stats.nf += 1
                             if (j == j_int + 1)
@@ -2357,13 +2358,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
-                                           axes(uprev)) # Euler starting step
+                            axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
                                            2 * _reshape(W \
                                                     -_vec(dt_int * f(u_temp3, p,
-                                                            t + (j - 1) * dt_int) -
+                                    t + (j - 1) * dt_int) -
                                                           (u_temp3 - u_temp4)), axes(uprev))
                             integrator.stats.nf += 1
                             if (j == j_int + 1)
@@ -2399,13 +2400,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         for i in (win_min - 1):win_min
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
                 sum(broadcast(*, T[1:(i + 1)],
-                              eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
+                eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
             utilde = eltype(uprev).(extrapolation_scalars_2[i]) *
                      sum(broadcast(*, T[2:(i + 1)],
-                                   eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
+                eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
             res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                      integrator.opts.reltol, integrator.opts.internalnorm,
-                                      t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -2451,15 +2452,15 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                 # Update u, integrator.EEst and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(broadcast(*, T[1:(n_curr + 1)],
-                                  eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                                       (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+                    eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                        (n_curr + 1)]))) # Approximation of extrapolation order n_curr
                 utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) *
                          sum(broadcast(*, T[2:(n_curr + 1)],
-                                       eltype(uprev).(extrapolation_weights_2[1:n_curr,
-                                                                              n_curr]))) # and its internal counterpart
+                    eltype(uprev).(extrapolation_weights_2[1:n_curr,
+                        n_curr]))) # and its internal counterpart
                 res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                          integrator.opts.reltol,
-                                          integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -2470,8 +2471,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
     else
         u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
             sum(broadcast(*, T[1:(n_curr + 1)],
-                          eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                               (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+            eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                (n_curr + 1)]))) # Approximation of extrapolation order n_curr
     end
 
     # Save the latest approximation and update FSAL
@@ -2494,7 +2495,7 @@ function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2540,10 +2541,10 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             linsolve = cache.linsolve[1]
             if !repeat_step
                 linres = dolinsolve(integrator, linsolve; A = W[1],
-                                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
             else
                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
             end
             cache.linsolve[1] = linres.cache
 
@@ -2560,10 +2561,10 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
                 if !repeat_step && j == 1
                     linres = dolinsolve(integrator, linsolve; A = W[1],
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 else
                     linres = dolinsolve(integrator, linsolve; A = nothing,
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 end
                 cache.linsolve[1] = linres.cache
 
@@ -2608,7 +2609,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                         j_int_temp = 4 * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix,
-                                    dt_int_temp, J, false)
+                            dt_int_temp, J, false)
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
                         @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                               fsalfirst
@@ -2617,13 +2618,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
                         if !repeat_step
                             linres = dolinsolve(integrator, linsolve;
-                                                A = W[Threads.threadid()],
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                A = W[Threads.threadid()],
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         else
                             linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -2634,7 +2635,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()] -
                                                                                   (u_temp3[Threads.threadid()] -
@@ -2643,13 +2644,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                             linsolve = cache.linsolve[Threads.threadid()]
                             if !repeat_step && j == 1
                                 linres = dolinsolve(integrator, linsolve;
-                                                    A = W[Threads.threadid()],
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    A = W[Threads.threadid()],
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             else
                                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -2672,9 +2673,9 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                                                                               (diff2[Threads.threadid()] -
                                                                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
-                                                                 t) <
+                                    t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
-                                                                 t))
+                                    t))
                                     # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                                     integrator.force_stepfail = true
                                     return
@@ -2708,10 +2709,10 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                         linsolve = cache.linsolve[tid]
                         if !repeat_step
                             linres = dolinsolve(integrator, linsolve; A = W[tid],
-                                                b = _vec(linsolvetmp), linu = _vec(ktmp))
+                                b = _vec(linsolvetmp), linu = _vec(ktmp))
                         else
                             linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                b = _vec(linsolvetmp), linu = _vec(ktmp))
+                                b = _vec(linsolvetmp), linu = _vec(ktmp))
                         end
                         cache.linsolve[tid] = linres.cache
 
@@ -2727,12 +2728,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
                             if (!repeat_step && j == 1)
                                 linres = dolinsolve(integrator, linsolve; A = W[tid],
-                                                    b = _vec(linsolvetmp),
-                                                    linu = _vec(ktmp))
+                                    b = _vec(linsolvetmp),
+                                    linu = _vec(ktmp))
                             else
                                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                    b = _vec(linsolvetmp),
-                                                    linu = _vec(ktmp))
+                                    b = _vec(linsolvetmp),
+                                    linu = _vec(ktmp))
                             end
                             cache.linsolve[tid] = linres.cache
 
@@ -2789,8 +2790,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
             @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                 integrator.opts.abstol, integrator.opts.reltol,
-                                 integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -2825,10 +2826,10 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
                 if !repeat_step
                     linres = dolinsolve(integrator, linsolve; A = W[1],
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 else
                     linres = dolinsolve(integrator, linsolve; A = nothing,
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 end
                 cache.linsolve[1] = linres.cache
 
@@ -2844,10 +2845,10 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
 
                     if !repeat_step && j == 1
                         linres = dolinsolve(integrator, linsolve; A = W[1],
-                                            b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                            b = _vec(linsolve_tmps[1]), linu = _vec(k))
                     else
                         linres = dolinsolve(integrator, linsolve; A = nothing,
-                                            b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                            b = _vec(linsolve_tmps[1]), linu = _vec(k))
                     end
                     cache.linsolve[1] = linres.cache
 
@@ -2879,8 +2880,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                 @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                     integrator.opts.abstol, integrator.opts.reltol,
-                                     integrator.opts.internalnorm, t)
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(cache.res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -2915,8 +2916,8 @@ function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCon
 end
 
 function perform_step!(integrator,
-                       cache::ImplicitEulerBarycentricExtrapolationConstantCache,
-                       repeat_step = false)
+    cache::ImplicitEulerBarycentricExtrapolationConstantCache,
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2965,7 +2966,7 @@ function perform_step!(integrator,
             for j in 2:(j_int + 1)
                 T[i + 1] = u_temp1 +
                            _reshape(W \ -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int)),
-                                    axes(uprev))
+                    axes(uprev))
                 integrator.stats.nf += 1
                 if (j == j_int + 1)
                     T[i + 1] = 0.25(T[i + 1] + 2 * u_temp1 + u_temp2)
@@ -3008,13 +3009,13 @@ function perform_step!(integrator,
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
-                                           axes(uprev)) # Euler starting step
+                            axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
                             T[index + 1] = u_temp3 + _reshape(W \
                                                     -_vec(dt_int * f(u_temp3, p,
-                                                            t + (j - 1) * dt_int)),
-                                                    axes(uprev))
+                                    t + (j - 1) * dt_int)),
+                                axes(uprev))
                             integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.25(T[index + 1] + 2 * u_temp3 + u_temp4)
@@ -3053,13 +3054,13 @@ function perform_step!(integrator,
                         u_temp4 = uprev
                         u_temp3 = u_temp4 +
                                   _reshape(W \ -_vec(dt_int * integrator.fsalfirst),
-                                           axes(uprev)) # Euler starting step
+                            axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
                             T[index + 1] = u_temp3 + _reshape(W \
                                                     -_vec(dt_int * f(u_temp3, p,
-                                                            t + (j - 1) * dt_int)),
-                                                    axes(uprev))
+                                    t + (j - 1) * dt_int)),
+                                axes(uprev))
                             integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.25(T[index + 1] + 2 * u_temp3 + u_temp4)
@@ -3094,13 +3095,13 @@ function perform_step!(integrator,
         for i in (win_min - 1):win_min
             u = eltype(uprev).(extrapolation_scalars[i + 1]) *
                 sum(broadcast(*, T[1:(i + 1)],
-                              eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
+                eltype(uprev).(extrapolation_weights[1:(i + 1), (i + 1)]))) # Approximation of extrapolation order i
             utilde = eltype(uprev).(extrapolation_scalars_2[i]) *
                      sum(broadcast(*, T[2:(i + 1)],
-                                   eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
+                eltype(uprev).(extrapolation_weights_2[1:i, i]))) # and its internal counterpart
             res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                      integrator.opts.reltol, integrator.opts.internalnorm,
-                                      t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -3133,7 +3134,7 @@ function perform_step!(integrator,
                     T[n_curr + 1] = u_temp1 + _reshape(W \
                                              -_vec(dt_int *
                                                    f(u_temp1, p, t + (j - 1) * dt_int)),
-                                             axes(uprev))
+                        axes(uprev))
                     integrator.stats.nf += 1
                     if (j == j_int + 1)
                         T[n_curr + 1] = 0.25(T[n_curr + 1] + 2 * u_temp1 + u_temp2)
@@ -3145,15 +3146,15 @@ function perform_step!(integrator,
                 # Update u, integrator.EEst and cache.Q
                 u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
                     sum(broadcast(*, T[1:(n_curr + 1)],
-                                  eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                                       (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+                    eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                        (n_curr + 1)]))) # Approximation of extrapolation order n_curr
                 utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) *
                          sum(broadcast(*, T[2:(n_curr + 1)],
-                                       eltype(uprev).(extrapolation_weights_2[1:n_curr,
-                                                                              n_curr]))) # and its internal counterpart
+                    eltype(uprev).(extrapolation_weights_2[1:n_curr,
+                        n_curr]))) # and its internal counterpart
                 res = calculate_residuals(u, utilde, integrator.opts.abstol,
-                                          integrator.opts.reltol,
-                                          integrator.opts.internalnorm, t)
+                    integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else
@@ -3164,8 +3165,8 @@ function perform_step!(integrator,
     else
         u = eltype(uprev).(extrapolation_scalars[n_curr + 1]) *
             sum(broadcast(*, T[1:(n_curr + 1)],
-                          eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
-                                                               (n_curr + 1)]))) # Approximation of extrapolation order n_curr
+            eltype(uprev).(extrapolation_weights[1:(n_curr + 1),
+                (n_curr + 1)]))) # Approximation of extrapolation order n_curr
     end
 
     # Save the latest approximation and update FSAL
@@ -3188,7 +3189,7 @@ function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCac
 end
 
 function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache,
-                       repeat_step = false)
+    repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -3236,10 +3237,10 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
             if !repeat_step
                 linres = dolinsolve(integrator, linsolve; A = W[1],
-                                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
             else
                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                    b = _vec(linsolve_tmps[1]), linu = _vec(k))
             end
             cache.linsolve[1] = linres.cache
 
@@ -3255,10 +3256,10 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 linsolve = cache.linsolve[1]
                 if !repeat_step && j == 1
                     linres = dolinsolve(integrator, linsolve; A = W[1],
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 else
                     linres = dolinsolve(integrator, linsolve; A = nothing,
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 end
                 cache.linsolve[1] = linres.cache
 
@@ -3303,7 +3304,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix,
-                                    dt_int_temp, J, false)
+                            dt_int_temp, J, false)
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
                         @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                               fsalfirst
@@ -3312,13 +3313,13 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
                         if !repeat_step
                             linres = dolinsolve(integrator, linsolve;
-                                                A = W[Threads.threadid()],
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                A = W[Threads.threadid()],
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         else
                             linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -3329,7 +3330,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()]
 
@@ -3337,13 +3338,13 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
                             if !repeat_step && j == 1
                                 linres = dolinsolve(integrator, linsolve;
-                                                    A = W[Threads.threadid()],
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    A = W[Threads.threadid()],
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             else
                                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -3366,9 +3367,9 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                                                               (diff2[Threads.threadid()] -
                                                                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
-                                                                 t) <
+                                    t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
-                                                                 t))
+                                    t))
                                     # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                                     integrator.force_stepfail = true
                                     return
@@ -3393,7 +3394,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         j_int_temp = sequence_factor * subdividing_sequence[index + 1]
                         dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
                         jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix,
-                                    dt_int_temp, J, false)
+                            dt_int_temp, J, false)
                         @.. broadcast=false u_temp4[Threads.threadid()]=uprev
                         @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                               fsalfirst
@@ -3402,13 +3403,13 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
                         if !repeat_step
                             linres = dolinsolve(integrator, linsolve;
-                                                A = W[Threads.threadid()],
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                A = W[Threads.threadid()],
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         else
                             linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                linu = _vec(k_tmps[Threads.threadid()]))
+                                b = _vec(linsolve_tmps[Threads.threadid()]),
+                                linu = _vec(k_tmps[Threads.threadid()]))
                         end
                         cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -3419,7 +3420,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
                             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
-                              p, t + (j - 1) * dt_int_temp)
+                                p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()]
 
@@ -3427,13 +3428,13 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
                             if (!repeat_step && j == 1)
                                 linres = dolinsolve(integrator, linsolve;
-                                                    A = W[Threads.threadid()],
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    A = W[Threads.threadid()],
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             else
                                 linres = dolinsolve(integrator, linsolve; A = nothing,
-                                                    b = _vec(linsolve_tmps[Threads.threadid()]),
-                                                    linu = _vec(k_tmps[Threads.threadid()]))
+                                    b = _vec(linsolve_tmps[Threads.threadid()]),
+                                    linu = _vec(k_tmps[Threads.threadid()]))
                             end
                             cache.linsolve[Threads.threadid()] = linres.cache
 
@@ -3456,9 +3457,9 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                                                                               (diff2[Threads.threadid()] -
                                                                                diff1[Threads.threadid()])
                                 if (integrator.opts.internalnorm(diff1[Threads.threadid()],
-                                                                 t) <
+                                    t) <
                                     integrator.opts.internalnorm(diff2[Threads.threadid()],
-                                                                 t))
+                                    t))
                                     # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                                     integrator.force_stepfail = true
                                     return
@@ -3497,8 +3498,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
             @.. broadcast=false cache.utilde=extrapolation_scalars_2[i] * u_temp2
 
             calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                 integrator.opts.abstol, integrator.opts.reltol,
-                                 integrator.opts.internalnorm, t)
+                integrator.opts.abstol, integrator.opts.reltol,
+                integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(cache.res, t)
             cache.n_curr = i # Update cache's n_curr for stepsize_controller_internal!
             stepsize_controller_internal!(integrator, alg) # Update cache.Q
@@ -3535,10 +3536,10 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
                 if !repeat_step
                     linres = dolinsolve(integrator, linsolve; A = W[1],
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 else
                     linres = dolinsolve(integrator, linsolve; A = nothing,
-                                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
+                        b = _vec(linsolve_tmps[1]), linu = _vec(k))
                 end
                 cache.linsolve[1] = linres.cache
 
@@ -3552,7 +3553,7 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
 
                     linsolve = cache.linsolve[1]
                     linres = dolinsolve(integrator, linsolve; b = _vec(linsolve_tmps[1]),
-                                        linu = _vec(k))
+                        linu = _vec(k))
                     cache.linsolve[1] = linres.cache
 
                     integrator.stats.nsolve += 1
@@ -3584,8 +3585,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                 @.. broadcast=false cache.utilde=extrapolation_scalars_2[n_curr] * u_temp2
 
                 calculate_residuals!(cache.res, integrator.u, cache.utilde,
-                                     integrator.opts.abstol, integrator.opts.reltol,
-                                     integrator.opts.internalnorm, t)
+                    integrator.opts.abstol, integrator.opts.reltol,
+                    integrator.opts.internalnorm, t)
                 integrator.EEst = integrator.opts.internalnorm(cache.res, t)
                 stepsize_controller_internal!(integrator, alg) # Update cache.Q
             else

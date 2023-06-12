@@ -46,7 +46,7 @@ probArr[2] = prob_ode_2Dlinear
         A = A - 1e2I
         test_f1 = !iip ? (u, p, t) -> A * u : (du, u, p, t) -> mul!(du, A, u)
         prob = SplitODEProblem{iip}(SplitFunction{iip}(test_f1, test_f2), ones(20),
-                                    (0.0, 1.0))
+            (0.0, 1.0))
         @test_nowarn solve(prob, alg)
     end
 end

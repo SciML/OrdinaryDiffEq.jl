@@ -11,7 +11,7 @@ function initialize!(integrator, cache::Feagin10ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Feagin10ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack adaptiveConst, a0100, a0200, a0201, a0300, a0302, a0400, a0402, a0403, a0500, a0503, a0504, a0600, a0603, a0604, a0605, a0700, a0704, a0705, a0706, a0800, a0805, a0806, a0807, a0900, a0905, a0906, a0907, a0908, a1000, a1005, a1006, a1007, a1008, a1009, a1100, a1105, a1106, a1107, a1108, a1109, a1110, a1200, a1203, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211, a1300, a1302, a1303, a1305, a1306, a1307, a1308, a1309, a1310, a1311, a1312, a1400, a1401, a1404, a1406, a1412, a1413, a1500, a1502, a1514, a1600, a1601, a1602, a1604, a1605, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1613, a1614, a1615, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16 = cache
     k1 = integrator.fsalfirst
@@ -25,11 +25,11 @@ end
     k8 = f(uprev + dt * (a0700 * k1 + a0704 * k5 + a0705 * k6 + a0706 * k7), p, t + c7 * dt)
     k9 = f(uprev + dt * (a0800 * k1 + a0805 * k6 + a0806 * k7 + a0807 * k8), p, t + c8 * dt)
     k10 = f(uprev + dt * (a0900 * k1 + a0905 * k6 + a0906 * k7 + a0907 * k8 + a0908 * k9),
-            p, t + c9 * dt)
+        p, t + c9 * dt)
     k11 = f(uprev +
             dt *
             (a1000 * k1 + a1005 * k6 + a1006 * k7 + a1007 * k8 + a1008 * k9 + a1009 * k10),
-            p, t + c10 * dt)
+        p, t + c10 * dt)
     k12 = f(uprev +
             dt *
             (a1100 * k1 + a1105 * k6 + a1106 * k7 + a1107 * k8 + a1108 * k9 + a1109 * k10 +
@@ -42,11 +42,11 @@ end
             dt *
             (a1300 * k1 + a1302 * k3 + a1303 * k4 + a1305 * k6 + a1306 * k7 + a1307 * k8 +
              a1308 * k9 + a1309 * k10 + a1310 * k11 + a1311 * k12 + a1312 * k13), p,
-            t + c13 * dt)
+        t + c13 * dt)
     k15 = f(uprev +
             dt *
             (a1400 * k1 + a1401 * k2 + a1404 * k5 + a1406 * k7 + a1412 * k13 + a1413 * k14),
-            p, t + c14 * dt)
+        p, t + c14 * dt)
     k16 = f(uprev + dt * (a1500 * k1 + a1502 * k3 + a1514 * k15), p, t + c15 * dt)
     k17 = f(uprev +
             dt *
@@ -61,7 +61,7 @@ end
     if integrator.opts.adaptive
         utilde = @.. broadcast=false dt*(k2-k16)*adaptiveConst
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
@@ -249,7 +249,7 @@ end
             @inbounds tmp[i] = dt * (k2[i] - k16[i]) * adaptiveConst
         end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point
@@ -269,7 +269,7 @@ function initialize!(integrator, cache::Feagin12ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Feagin12ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack adaptiveConst, a0100, a0200, a0201, a0300, a0302, a0400, a0402, a0403, a0500, a0503, a0504, a0600, a0603, a0604, a0605, a0700, a0704, a0705, a0706, a0800, a0805, a0806, a0807, a0900, a0905, a0906, a0907, a0908, a1000, a1005, a1006, a1007, a1008, a1009, a1100, a1105, a1106, a1107, a1108, a1109, a1110, a1200, a1208, a1209, a1210, a1211, a1300, a1308, a1309, a1310, a1311, a1312, a1400, a1408, a1409, a1410, a1411, a1412, a1413, a1500, a1508, a1509, a1510, a1511, a1512, a1513, a1514, a1600, a1608, a1609, a1610, a1611, a1612, a1613, a1614, a1615, a1700, a1705, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1713, a1714, a1715, a1716, a1800, a1805, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1813, a1814, a1815, a1816, a1817, a1900, a1904, a1905, a1906, a1908, a1909, a1910, a1911, a1912, a1913, a1914, a1915, a1916, a1917, a1918, a2000, a2003, a2004, a2005, a2007, a2009, a2010, a2017, a2018, a2019, a2100, a2102, a2103, a2106, a2107, a2109, a2110, a2117, a2118, a2119, a2120, a2200, a2201, a2204, a2206, a2220, a2221, a2300, a2302, a2322, a2400, a2401, a2402, a2404, a2406, a2407, a2408, a2409, a2410, a2411, a2412, a2413, a2414, a2415, a2416, a2417, a2418, a2419, a2420, a2421, a2422, a2423, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17, c18, c19, c20, c21, c22, c23, c24, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25 = cache
     k1 = integrator.fsalfirst
@@ -283,18 +283,18 @@ end
     k8 = f(uprev + dt * (a0700 * k1 + a0704 * k5 + a0705 * k6 + a0706 * k7), p, t + c7 * dt)
     k9 = f(uprev + dt * (a0800 * k1 + a0805 * k6 + a0806 * k7 + a0807 * k8), p, t + c8 * dt)
     k10 = f(uprev + dt * (a0900 * k1 + a0905 * k6 + a0906 * k7 + a0907 * k8 + a0908 * k9),
-            p, t + c9 * dt)
+        p, t + c9 * dt)
     k11 = f(uprev +
             dt *
             (a1000 * k1 + a1005 * k6 + a1006 * k7 + a1007 * k8 + a1008 * k9 + a1009 * k10),
-            p, t + c10 * dt)
+        p, t + c10 * dt)
     k12 = f(uprev +
             dt *
             (a1100 * k1 + a1105 * k6 + a1106 * k7 + a1107 * k8 + a1108 * k9 + a1109 * k10 +
              a1110 * k11), p, t + c11 * dt)
     k13 = f(uprev +
             dt * (a1200 * k1 + a1208 * k9 + a1209 * k10 + a1210 * k11 + a1211 * k12), p,
-            t + c12 * dt)
+        t + c12 * dt)
     k14 = f(uprev +
             dt * (a1300 * k1 + a1308 * k9 + a1309 * k10 + a1310 * k11 + a1311 * k12 +
              a1312 * k13), p, t + c13 * dt)
@@ -355,7 +355,7 @@ end
     if integrator.opts.adaptive
         utilde = @.. broadcast=false dt*(k2-k24)*adaptiveConst
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     integrator.k[1] = integrator.fsalfirst
@@ -598,7 +598,8 @@ end
     @tight_loop_macros for i in uidx
         @inbounds tmp[i] = uprev[i] +
                            dt * ((a2400 * k1[i] + a2401 * k2[i] + a2402 * k3[i]) +
-                            (a2404 * k5[i] + a2406 * k7[i] + a2407 * k8[i] + a2408 * k9[i]) +
+                            (a2404 * k5[i] + a2406 * k7[i] + a2407 * k8[i] +
+                             a2408 * k9[i]) +
                             (a2409 * k10[i] + a2410 * k11[i] + a2411 * k12[i] +
                              a2412 * k13[i]) +
                             (a2413 * k14[i] + a2414 * k15[i] + a2415 * k16[i] +
@@ -623,7 +624,7 @@ end
             @inbounds tmp[i] = dt * (k2[i] - k24[i]) * adaptiveConst
         end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(k, u, p, t + dt)
@@ -643,7 +644,7 @@ function initialize!(integrator, cache::Feagin14ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Feagin14ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack adaptiveConst, a0100, a0200, a0201, a0300, a0302, a0400, a0402, a0403, a0500, a0503, a0504, a0600, a0603, a0604, a0605, a0700, a0704, a0705, a0706, a0800, a0805, a0806, a0807, a0900, a0905, a0906, a0907, a0908, a1000, a1005, a1006, a1007, a1008, a1009, a1100, a1105, a1106, a1107, a1108, a1109, a1110, a1200, a1208, a1209, a1210, a1211, a1300, a1308, a1309, a1310, a1311, a1312, a1400, a1408, a1409, a1410, a1411, a1412, a1413, a1500, a1508, a1509, a1510, a1511, a1512, a1513, a1514, a1600, a1608, a1609, a1610, a1611, a1612, a1613, a1614, a1615, a1700, a1712, a1713, a1714, a1715, a1716, a1800, a1812, a1813, a1814, a1815, a1816, a1817, a1900, a1912, a1913, a1914, a1915, a1916, a1917, a1918, a2000, a2012, a2013, a2014, a2015, a2016, a2017, a2018, a2019, a2100, a2112, a2113, a2114, a2115, a2116, a2117, a2118, a2119, a2120, a2200, a2212, a2213, a2214, a2215, a2216, a2217, a2218, a2219, a2220, a2221, a2300, a2308, a2309, a2310, a2311, a2312, a2313, a2314, a2315, a2316, a2317, a2318, a2319, a2320, a2321, a2322, a2400, a2408, a2409, a2410, a2411, a2412, a2413, a2414, a2415, a2416, a2417, a2418, a2419, a2420, a2421, a2422, a2423, a2500, a2508, a2509, a2510, a2511, a2512, a2513, a2514, a2515, a2516, a2517, a2518, a2519, a2520, a2521, a2522, a2523, a2524, a2600, a2605, a2606, a2607, a2608, a2609, a2610, a2612, a2613, a2614, a2615, a2616, a2617, a2618, a2619, a2620, a2621, a2622, a2623, a2624, a2625, a2700, a2705, a2706, a2707, a2708, a2709, a2711, a2712, a2713, a2714, a2715, a2716, a2717, a2718, a2719, a2720, a2721, a2722, a2723, a2724, a2725, a2726, a2800, a2805, a2806, a2807, a2808, a2810, a2811, a2813, a2814, a2815, a2823, a2824, a2825, a2826, a2827, a2900, a2904, a2905, a2906, a2909, a2910, a2911, a2913, a2914, a2915, a2923, a2924, a2925, a2926, a2927, a2928, a3000, a3003, a3004, a3005, a3007, a3009, a3010, a3013, a3014, a3015, a3023, a3024, a3025, a3027, a3028, a3029, a3100, a3102, a3103, a3106, a3107, a3109, a3110, a3113, a3114, a3115, a3123, a3124, a3125, a3127, a3128, a3129, a3130, a3200, a3201, a3204, a3206, a3230, a3231, a3300, a3302, a3332, a3400, a3401, a3402, a3404, a3406, a3407, a3409, a3410, a3411, a3412, a3413, a3414, a3415, a3416, a3417, a3418, a3419, a3420, a3421, a3422, a3423, a3424, a3425, a3426, a3427, a3428, a3429, a3430, a3431, a3432, a3433, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17, c18, c19, c20, c21, c22, c23, c24, c25, c26, c27, c28, c29, c30, c31, c32, c33, c34, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35 = cache
     k1 = integrator.fsalfirst
@@ -657,18 +658,18 @@ end
     k8 = f(uprev + dt * (a0700 * k1 + a0704 * k5 + a0705 * k6 + a0706 * k7), p, t + c7 * dt)
     k9 = f(uprev + dt * (a0800 * k1 + a0805 * k6 + a0806 * k7 + a0807 * k8), p, t + c8 * dt)
     k10 = f(uprev + dt * (a0900 * k1 + a0905 * k6 + a0906 * k7 + a0907 * k8 + a0908 * k9),
-            p, t + c9 * dt)
+        p, t + c9 * dt)
     k11 = f(uprev +
             dt *
             (a1000 * k1 + a1005 * k6 + a1006 * k7 + a1007 * k8 + a1008 * k9 + a1009 * k10),
-            p, t + c10 * dt)
+        p, t + c10 * dt)
     k12 = f(uprev +
             dt *
             (a1100 * k1 + a1105 * k6 + a1106 * k7 + a1107 * k8 + a1108 * k9 + a1109 * k10 +
              a1110 * k11), p, t + c11 * dt)
     k13 = f(uprev +
             dt * (a1200 * k1 + a1208 * k9 + a1209 * k10 + a1210 * k11 + a1211 * k12), p,
-            t + c12 * dt)
+        t + c12 * dt)
     k14 = f(uprev +
             dt * (a1300 * k1 + a1308 * k9 + a1309 * k10 + a1310 * k11 + a1311 * k12 +
              a1312 * k13), p, t + c13 * dt)
@@ -696,7 +697,7 @@ end
     k22 = f(uprev +
             dt * (a2100 * k1 + a2112 * k13 + a2113 * k14 + a2114 * k15 + a2115 * k16 +
              a2116 * k17 + a2117 * k18 + a2118 * k19 + a2119 * k20 + a2120 * k21), p,
-            t + c21 * dt)
+        t + c21 * dt)
     k23 = f(uprev +
             dt * (a2200 * k1 + a2212 * k13 + a2213 * k14 + a2214 * k15 + a2215 * k16 +
              a2216 * k17 + a2217 * k18 + a2218 * k19 + a2219 * k20 + a2220 * k21 +
@@ -722,7 +723,7 @@ end
              a2610 * k11 + a2612 * k13 + a2613 * k14 + a2614 * k15 + a2615 * k16 +
              a2616 * k17 + a2617 * k18 + a2618 * k19 + a2619 * k20 + a2620 * k21 +
              a2621 * k22 + a2622 * k23 + a2623 * k24 + a2624 * k25 + a2625 * k26), p,
-            t + c26 * dt)
+        t + c26 * dt)
     k28 = f(uprev +
             dt *
             (a2700 * k1 + a2705 * k6 + a2706 * k7 + a2707 * k8 + a2708 * k9 + a2709 * k10 +
@@ -740,13 +741,13 @@ end
             (a2900 * k1 + a2904 * k5 + a2905 * k6 + a2906 * k7 + a2909 * k10 + a2910 * k11 +
              a2911 * k12 + a2913 * k14 + a2914 * k15 + a2915 * k16 + a2923 * k24 +
              a2924 * k25 + a2925 * k26 + a2926 * k27 + a2927 * k28 + a2928 * k29), p,
-            t + c29 * dt)
+        t + c29 * dt)
     k31 = f(uprev +
             dt *
             (a3000 * k1 + a3003 * k4 + a3004 * k5 + a3005 * k6 + a3007 * k8 + a3009 * k10 +
              a3010 * k11 + a3013 * k14 + a3014 * k15 + a3015 * k16 + a3023 * k24 +
              a3024 * k25 + a3025 * k26 + a3027 * k28 + a3028 * k29 + a3029 * k30), p,
-            t + c30 * dt)
+        t + c30 * dt)
     k32 = f(uprev +
             dt *
             (a3100 * k1 + a3102 * k3 + a3103 * k4 + a3106 * k7 + a3107 * k8 + a3109 * k10 +
@@ -756,7 +757,7 @@ end
     k33 = f(uprev +
             dt *
             (a3200 * k1 + a3201 * k2 + a3204 * k5 + a3206 * k7 + a3230 * k31 + a3231 * k32),
-            p, t + c32 * dt)
+        p, t + c32 * dt)
     k34 = f(uprev + dt * (a3300 * k1 + a3302 * k3 + a3332 * k33), p, t + c33 * dt)
     k35 = f(uprev +
             dt *
@@ -766,7 +767,7 @@ end
              a3419 * k20 + a3420 * k21 + a3421 * k22 + a3422 * k23 + a3423 * k24 +
              a3424 * k25 + a3425 * k26 + a3426 * k27 + a3427 * k28 + a3428 * k29 +
              a3429 * k30 + a3430 * k31 + a3431 * k32 + a3432 * k33 + a3433 * k34), p,
-            t + c34 * dt)
+        t + c34 * dt)
     integrator.stats.nf += 34
     u = uprev +
         dt *
@@ -778,7 +779,7 @@ end
     if integrator.opts.adaptive
         utilde = @.. broadcast=false dt*(k2-k34)*adaptiveConst
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     k = f(u, p, t + dt) # For the interpolation, needs k at the updated point
@@ -1167,7 +1168,7 @@ end
             @inbounds tmp[i] = dt * (k2[i] - k34[i]) * adaptiveConst
         end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     f(integrator.fsallast, u, p, t + dt) # For the interpolation, needs k at the updated point

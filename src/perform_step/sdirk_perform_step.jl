@@ -1,23 +1,23 @@
 function initialize!(integrator,
-                     cache::Union{ImplicitEulerConstantCache,
-                                  ImplicitMidpointConstantCache,
-                                  TrapezoidConstantCache,
-                                  TRBDF2ConstantCache,
-                                  SDIRK2ConstantCache,
-                                  SDIRK22ConstantCache,
-                                  SSPSDIRK2ConstantCache,
-                                  Cash4ConstantCache,
-                                  Hairer4ConstantCache,
-                                  ESDIRK54I8L2SAConstantCache,
-                                  ESDIRK436L2SA2ConstantCache,
-                                  ESDIRK437L2SAConstantCache,
-                                  ESDIRK547L2SA2ConstantCache,
-                                  ESDIRK659L2SAConstantCache,
-                                  SFSDIRK4ConstantCache,
-                                  SFSDIRK5ConstantCache,
-                                  SFSDIRK6ConstantCache,
-                                  SFSDIRK7ConstantCache,
-                                  SFSDIRK8ConstantCache})
+    cache::Union{ImplicitEulerConstantCache,
+        ImplicitMidpointConstantCache,
+        TrapezoidConstantCache,
+        TRBDF2ConstantCache,
+        SDIRK2ConstantCache,
+        SDIRK22ConstantCache,
+        SSPSDIRK2ConstantCache,
+        Cash4ConstantCache,
+        Hairer4ConstantCache,
+        ESDIRK54I8L2SAConstantCache,
+        ESDIRK436L2SA2ConstantCache,
+        ESDIRK437L2SAConstantCache,
+        ESDIRK547L2SA2ConstantCache,
+        ESDIRK659L2SAConstantCache,
+        SFSDIRK4ConstantCache,
+        SFSDIRK5ConstantCache,
+        SFSDIRK6ConstantCache,
+        SFSDIRK7ConstantCache,
+        SFSDIRK8ConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -30,25 +30,25 @@ function initialize!(integrator,
 end
 
 function initialize!(integrator,
-                     cache::Union{ImplicitEulerCache,
-                                  ImplicitMidpointCache,
-                                  TrapezoidCache,
-                                  TRBDF2Cache,
-                                  SDIRK2Cache,
-                                  SDIRK22Cache,
-                                  SSPSDIRK2Cache,
-                                  Cash4Cache,
-                                  Hairer4Cache,
-                                  ESDIRK54I8L2SACache,
-                                  ESDIRK436L2SA2Cache,
-                                  ESDIRK437L2SACache,
-                                  ESDIRK547L2SA2Cache,
-                                  ESDIRK659L2SACache,
-                                  SFSDIRK4Cache,
-                                  SFSDIRK5Cache,
-                                  SFSDIRK6Cache,
-                                  SFSDIRK7Cache,
-                                  SFSDIRK8Cache})
+    cache::Union{ImplicitEulerCache,
+        ImplicitMidpointCache,
+        TrapezoidCache,
+        TRBDF2Cache,
+        SDIRK2Cache,
+        SDIRK22Cache,
+        SSPSDIRK2Cache,
+        Cash4Cache,
+        Hairer4Cache,
+        ESDIRK54I8L2SACache,
+        ESDIRK436L2SA2Cache,
+        ESDIRK437L2SACache,
+        ESDIRK547L2SA2Cache,
+        ESDIRK659L2SACache,
+        SFSDIRK4Cache,
+        SFSDIRK5Cache,
+        SFSDIRK6Cache,
+        SFSDIRK7Cache,
+        SFSDIRK8Cache})
     integrator.kshortsize = 2
     integrator.fsalfirst = cache.fsalfirst
     integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
@@ -60,7 +60,7 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -95,7 +95,7 @@ end
         tmp = r *
               integrator.opts.internalnorm.((u - uprev) / dt1 - (uprev - uprev2) / dt2, t)
         atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     else
         integrator.EEst = 1
@@ -144,7 +144,7 @@ end
         @.. broadcast=false tmp=r * integrator.opts.internalnorm((u - uprev) / dt1 -
                                                              (uprev - uprev2) / dt2, t)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     else
         integrator.EEst = 1
@@ -154,7 +154,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -181,7 +181,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack nlsolver = cache
     @unpack z, tmp = nlsolver
@@ -207,7 +207,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -254,8 +254,8 @@ end
             DD30 = (uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4
             tmp = r * integrator.opts.internalnorm((DD31 - DD30) / dt5, t)
             atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst <= 1
                 cache.uprev3 = uprev2
@@ -329,10 +329,11 @@ end
                                                                    (uprev - uprev2) / dt2) #DD31
                                                                   -
                                                                   ((uprev - uprev2) / dt3 -
-                                                                   (uprev2 - uprev3) / dt4)) /
+                                                                   (uprev2 - uprev3) /
+                                                                   dt4)) /
                                                                  dt5, t)
             calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst <= 1
                 copyto!(cache.uprev3, uprev2)
@@ -396,7 +397,7 @@ end
             est = tmp
         end
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -448,14 +449,14 @@ end
         if alg.smooth_est && isnewton(nlsolver) # From Shampine
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
-                                linu = _vec(est))
+                linu = _vec(est))
 
             integrator.stats.nsolve += 1
         else
             est = tmp
         end
         calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -517,14 +518,14 @@ end
             est = nlsolver.cache.dz
 
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
-                                linu = _vec(est))
+                linu = _vec(est))
 
             integrator.stats.nsolve += 1
         else
             est = tmp
         end
         calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -574,7 +575,7 @@ end
             est = tmp
         end
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -630,13 +631,13 @@ end
         if alg.smooth_est && isnewton(nlsolver) # From Shampine
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
-                                linu = _vec(est))
+                linu = _vec(est))
             integrator.stats.nsolve += 1
         else
             est = tmp
         end
         calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -697,8 +698,8 @@ end
             DD30 = (uprev - uprev2) / dt3 - (uprev2 - uprev3) / dt4
             tmp = r * abs((DD31 - DD30) / dt5)
             atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-                                       integrator.opts.reltol, integrator.opts.internalnorm,
-                                       t)
+                integrator.opts.reltol, integrator.opts.internalnorm,
+                t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst <= 1
                 cache.uprev3 = uprev2
@@ -773,7 +774,7 @@ end
                 tmp[i] = r * abs((DD31 - DD30) / dt5)
             end
             calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
             if integrator.EEst <= 1
                 copyto!(cache.uprev3, uprev2)
@@ -793,7 +794,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -984,7 +985,7 @@ end
             est = tmp
         end
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1084,13 +1085,13 @@ end
         if alg.smooth_est && isnewton(nlsolver) # From Shampine
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
-                                linu = _vec(est))
+                linu = _vec(est))
             integrator.stats.nsolve += 1
         else
             est = tmp
         end
         calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -1098,7 +1099,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK4ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     nlsolver = cache.nlsolver
@@ -1220,7 +1221,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK5ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, c2, c3, c4, c5 = cache.tab
     nlsolver = cache.nlsolver
@@ -1363,7 +1364,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK6ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, c2, c3, c4, c5, c6 = cache.tab
     nlsolver = cache.nlsolver
@@ -1530,7 +1531,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK7ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, c2, c3, c4, c5, c6, c7 = cache.tab
     nlsolver = cache.nlsolver
@@ -1720,7 +1721,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK8ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a92, a93, a94, a95, a96, a97, a98, c2, c3, c4, c5, c6, c7, c8 = cache.tab
     nlsolver = cache.nlsolver
@@ -2003,7 +2004,7 @@ end
             est = tmp
         end
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2092,14 +2093,14 @@ end
         if alg.smooth_est && isnewton(nlsolver) # From Shampine
             est = nlsolver.cache.dz
             linres = dolinsolve(integrator, nlsolver.cache.linsolve; b = _vec(tmp),
-                                linu = _vec(est))
+                linu = _vec(est))
 
             integrator.stats.nsolve += 1
         else
             est = tmp
         end
         calculate_residuals!(atmp, est, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2107,7 +2108,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK54I8L2SAConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2204,7 +2205,7 @@ end
         est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
               btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2315,7 +2316,7 @@ end
         @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ +
                                 btilde5 * z₅ + btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2324,7 +2325,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK436L2SA2ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2400,7 +2401,7 @@ end
         est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
               btilde6 * z₆
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2489,7 +2490,7 @@ end
         @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ +
                                 btilde5 * z₅ + btilde6 * z₆
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2498,7 +2499,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK437L2SAConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2584,7 +2585,7 @@ end
         est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
               btilde6 * z₆ + btilde7 * z₇
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2684,7 +2685,7 @@ end
         @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ +
                                 btilde5 * z₅ + btilde6 * z₆ + btilde7 * z₇
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2693,7 +2694,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK547L2SA2ConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2779,7 +2780,7 @@ end
         est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
               btilde6 * z₆ + btilde7 * z₇
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2879,7 +2880,7 @@ end
         @.. broadcast=false tmp=btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ +
                                 btilde5 * z₅ + btilde6 * z₆ + btilde7 * z₇
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -2888,7 +2889,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK659L2SAConstantCache,
-                               repeat_step = false)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2993,7 +2994,7 @@ end
         est = btilde1 * z₁ + btilde2 * z₂ + btilde3 * z₃ + btilde4 * z₄ + btilde5 * z₅ +
               btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
         atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
@@ -3114,7 +3115,7 @@ end
                                 btilde5 * z₅ +
                                 btilde6 * z₆ + btilde7 * z₇ + btilde8 * z₈ + btilde9 * z₉
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                             integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
