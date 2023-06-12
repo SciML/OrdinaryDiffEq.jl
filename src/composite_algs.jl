@@ -45,8 +45,8 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
         integrator.alg.choice_function.successive_switches = 0
     end
 
-    integrator.do_error_check = integrator.alg.choice_function.successive_switches >
-                                integrator.alg.choice_function.switch_max || !bool
+    integrator.do_error_check = (integrator.alg.choice_function.successive_switches >
+                                integrator.alg.choice_function.switch_max || !bool) || is_stiffalg
     bool
 end
 
