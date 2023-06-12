@@ -36,7 +36,7 @@ end
 
 # alg_cache(alg::Nystrom4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Nystrom4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
-@cache struct FineRKN5Cache{uType, rateType, reducedRateType, TabType} <:
+@cache struct FineRKN5Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -48,7 +48,9 @@ end
     k6::reducedRateType
     k7::reducedRateType
     k::rateType
+    utilde::uType
     tmp::uType
+    atmp::uNoUnitsType
     tab::TabType
 end
 
@@ -66,8 +68,11 @@ function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
     k6 = zero(reduced_rate_prototype)
     k7 = zero(reduced_rate_prototype)
     k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
     tmp = zero(u)
-    FineRKN5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, tmp, tab)
+    FineRKN5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, utilde, tmp, atmp, tab)
 end
 
 function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},

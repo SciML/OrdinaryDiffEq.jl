@@ -5266,7 +5266,7 @@ In case the ODE Problem is not dependent on the first derivative consider using
   publisher={Springer}
 }
 """
-struct FineRKN5 <: OrdinaryDiffEqPartitionedAlgorithm end
+struct FineRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
     Nystrom4VelocityIdependent
