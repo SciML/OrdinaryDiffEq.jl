@@ -179,7 +179,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
         nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
-                      reltol = integrator.opts.reltol)
+            reltol = integrator.opts.reltol)
         integrator.u .= nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
@@ -243,7 +243,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             f.jac
         else
             @closure (u, p) -> begin
-                return M * (u.-u0) ./ dt .- f.jac(u, p, t)
+                return M * (u .- u0) ./ dt .- f.jac(u, p, t)
             end
         end
 
@@ -357,7 +357,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         end
     end
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype,
-                                           jac = jac)
+        jac = jac)
     nlprob = NonlinearProblem(nlfunc, u0)
     nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
 
