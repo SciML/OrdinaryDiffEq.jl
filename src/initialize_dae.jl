@@ -154,7 +154,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             update_coefficients!(M, u, p, t)
             # f(u,p,t) + M * (u0 - u)/dt
             tmp = isAD ? PreallocationTools.get_tmp(_tmp, u) : _tmp
-            tmp .= (u0 .- u) .* inv(dt)
+            @. tmp = (u0 - u) / dt
             mul!(_vec(out), M, _vec(tmp))
             f(tmp, u, p, t)
             out .-= tmp
