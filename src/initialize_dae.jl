@@ -157,7 +157,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             @. tmp = (u0 - u) / dt
             mul!(_vec(out), M, _vec(tmp))
             f(tmp, u, p, t)
-            out .-= tmp
+            out .+= tmp
             nothing
         end
 
