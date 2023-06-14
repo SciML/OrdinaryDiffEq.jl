@@ -286,7 +286,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     f(resid, integrator.du, u0, p, t)
     integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
 
-    isAD = alg_autodiff(integrator.alg)
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
