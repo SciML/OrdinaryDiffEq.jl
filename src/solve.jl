@@ -483,11 +483,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             integrator.saveiter += 1 # Starts at 1 so first save is at 2
             integrator.saveiter_dense += 1
             copyat_or_push!(ts, 1, t)
+            # N.B.: integrator.u can be modified by initialized_dae!
             if save_idxs === nothing
                 copyat_or_push!(timeseries, 1, integrator.u)
                 copyat_or_push!(ks, 1, [rate_prototype])
             else
-                copyat_or_push!(timeseries, 1, u_initial, Val{false})
+                copyat_or_push!(timeseries, 1, integrator.u[save_idxs], Val{false})
                 copyat_or_push!(ks, 1, [ks_prototype])
             end
         else
