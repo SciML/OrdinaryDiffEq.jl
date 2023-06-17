@@ -4,7 +4,7 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
-const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN5ConstantCache,
+const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN4ConstantCache, FineRKN5ConstantCache,
     Nystrom4VelocityIndependentConstantCache,
     Nystrom5VelocityIndependentConstantCache,
     IRKN3ConstantCache, IRKN4ConstantCache,
@@ -25,7 +25,7 @@ function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.fsalfirst = ArrayPartition((kdu, ku))
 end
 
-const NystromDefaultInitialization = Union{Nystrom4Cache, FineRKN5Cache,
+const NystromDefaultInitialization = Union{Nystrom4Cache, FineRKN4Cache, FineRKN5Cache,
     Nystrom4VelocityIndependentCache,
     Nystrom5VelocityIndependentCache,
     IRKN3Cache, IRKN4Cache,
@@ -120,6 +120,116 @@ end
     f.f2(k.x[2], du, u, p, t + dt)
     integrator.stats.nf += 1
     integrator.stats.nf2 += 1
+end
+
+@muladd function perform_step!(integrator, cache::FineRKN4ConstantCache,
+    repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev = integrator.uprev.x
+    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
+        a52, a53, a54, abar21, abar31, abar32, abar41, abar42, abar43, abar51,
+        abar52, abar53, abar54, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, btilde1, btilde3, btilde4, btilde5, bptilde1,
+        bptilde3, bptilde4, bptilde5 = cache
+    k1 = integrator.fsalfirst.x[1]
+
+    ku = uprev + dt * (c2 * duprev + dt * (a21 * k1))
+    kdu = duprev + dt * (abar21 * k1)
+
+    k2 = f.f1(kdu, ku, p, t + dt * c2)
+    ku = uprev + dt * (c3 * duprev + dt * (a31 * k1 + a32 * k2))
+    kdu = duprev + dt * (abar31 * k1 + abar32 * k2)
+
+    k3 = f.f1(kdu, ku, p, t + dt * c3)
+    ku = uprev + dt * (c4 * duprev + dt * (a41 * k1 + a43 * k3)) # a42 = 0
+    kdu = duprev + dt * (abar41 * k1 + abar42 * k2 + abar43 * k3)
+
+    k4 = f.f1(kdu, ku, p, t + dt * c4)
+    ku = uprev + dt * (c5 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
+    kdu = duprev + dt * (abar51 * k1 + abar52 * k2 + abar53 * k3 + abar54 * k4)
+
+    k5 = f.f1(duprev, ku, p, t + dt * c5)
+
+    u = uprev + dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)) # b2 = 0
+    du = duprev + dt * (bbar1 * k1 + bbar3 * k3 + bbar4 * k4 + bbar5 * k5) # bbar2 = 0
+
+    integrator.u = ArrayPartition((du, u))
+    integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
+    integrator.stats.nf += 4
+    integrator.stats.nf2 += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+
+    if integrator.opts.adaptive
+        dtsq = dt^2
+        uhat = dtsq * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5) # btilde2 = 0
+        duhat = dt * (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 + bptilde5 * k5) # bptilde2 = 0
+        utilde = ArrayPartition((duhat, uhat))
+        atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+end
+
+@muladd function perform_step!(integrator, cache::FineRKN4Cache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    du, u = integrator.u.x
+    duprev, uprev = integrator.uprev.x
+    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k, utilde = cache
+    @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
+        a52, a53, a54, abar21, abar31, abar32, abar41, abar42, abar43, abar51,
+        abar52, abar53, abar54, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, btilde1, btilde3, btilde4, btilde5, bptilde1,
+        bptilde3, bptilde4, bptilde5 = cache.tab
+    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+    uidx = eachindex(integrator.uprev.x[2])
+    k1 = integrator.fsalfirst.x[1]
+
+    @.. broadcast=false ku=uprev + dt * (c2 * duprev + dt * (a21 * k1))
+    @.. broadcast=false kdu=duprev + dt * (abar21 * k1)
+
+    f.f1(k2, kdu, ku, p, t + dt * c2)
+    @.. broadcast=false ku=uprev + dt * (c3 * duprev + dt * (a31 * k1 + a32 * k2))
+    @.. broadcast=false kdu=duprev + dt * (abar31 * k1 + abar32 * k2)
+
+    f.f1(k3, kdu, ku, p, t + dt * c3)
+    @.. broadcast=false ku=uprev +
+                           dt * (c4 * duprev + dt * (a41 * k1 + a43 * k3)) # a42 = 0
+    @.. broadcast=false kdu=duprev + dt * (abar41 * k1 + abar42 * k2 + abar43 * k3)
+
+    f.f1(k4, kdu, ku, p, t + dt * c4)
+    @.. broadcast=false ku=uprev +
+                           dt *
+                           (c5 * duprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4))
+    @.. broadcast=false kdu=duprev +
+                            dt * (abar51 * k1 + abar52 * k2 + abar53 * k3 + abar54 * k4)
+
+    f.f1(k5, kdu, ku, p, t + dt * c5)
+    @.. broadcast=false u=uprev +
+                          dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)) # b2 = 0
+    @.. broadcast=false du=duprev +
+                           dt *
+                           (bbar1 * k1 + bbar3 * k3 + bbar4 * k4 + bbar5 * k5) # bbar2 = 0
+
+    f.f1(k.x[1], du, u, p, t + dt)
+    f.f2(k.x[2], du, u, p, t + dt)
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
+    if integrator.opts.adaptive
+        duhat, uhat = utilde.x
+        dtsq = dt^2
+        @tight_loop_macros for i in uidx
+            @inbounds uhat[i] = dtsq *
+                                (btilde1 * k1[i] + btilde3 * k3[i] + btilde4 * k4[i] +
+                                 btilde5 * k5[i]) # btilde2 = 0
+            @inbounds duhat[i] = dt *
+                                 (bptilde1 * k1[i] + bptilde3 * k3[i] + bptilde4 * k4[i] +
+				  bptilde5 * k5[i]) # bptilde2 = 0
+        end
+        calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
 end
 
 @muladd function perform_step!(integrator, cache::FineRKN5ConstantCache,
