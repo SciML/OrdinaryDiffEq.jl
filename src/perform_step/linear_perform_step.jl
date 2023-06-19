@@ -228,7 +228,7 @@ function initialize!(integrator, cache::CG4aCache)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function perform_step!(integrator, cache::CG4aCache, repeat_step = false)
@@ -258,7 +258,7 @@ function perform_step!(integrator, cache::CG4aCache, repeat_step = false)
           exp(dt * (0.1370831520630755) * A)) * uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.stats.nf += 1
 end
 
 function initialize!(integrator, cache::MagnusAdapt4Cache)
