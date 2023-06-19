@@ -118,7 +118,7 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.stats.nf += 1
+    integrator.stats.nf += 4
     integrator.stats.nf2 += 1
 end
 
@@ -164,7 +164,7 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.stats.nf += 4
+    integrator.stats.nf += 7
     integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -224,7 +224,7 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.stats.nf += 1
+    integrator.stats.nf += 7
     integrator.stats.nf2 += 1
 end
 
