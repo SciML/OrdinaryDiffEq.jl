@@ -453,6 +453,11 @@ end
         sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test_broken sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_i.destats.nf
+        @test sol_i.destats.nf2 == sol_i.destats.nf2
+        @test sol_i.destats.naccept == sol_i.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 6 * sol_i.destats.naccept) < 4
         # adaptive time step
         sol_i = solve(ode_i, alg)
         sol_o = solve(ode_o, alg)
