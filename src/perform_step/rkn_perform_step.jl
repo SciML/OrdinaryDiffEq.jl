@@ -237,7 +237,7 @@ end
     repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
-    @unpack c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7 = cache
+    @unpack c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6 = cache
     k1 = integrator.fsalfirst.x[1]
 
     ku = uprev + dt * (c2 * duprev + dt * (a21 * k1))
@@ -279,26 +279,14 @@ end
     integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
-
-    if integrator.opts.adaptive
-        dtsq = dt^2
-        uhat = dtsq * (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5)
-        duhat = dt * (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 + bptilde5 * k5 +
-                 bptilde6 * k6 + bptilde7 * k7)
-        utilde = ArrayPartition((duhat, uhat))
-        atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
-            integrator.opts.abstol, integrator.opts.reltol,
-            integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
 end
 
 @muladd function perform_step!(integrator, cache::FineRKN5Cache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     du, u = integrator.u.x
     duprev, uprev = integrator.uprev.x
-    @unpack tmp, atmp, fsalfirst, k2, k3, k4, k5, k6, k7, k, utilde = cache
-    @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6, btilde1, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7 = cache.tab
+    @unpack tmp, fsalfirst, k2, k3, k4, k5, k6, k7, k = cache
+    @unpack c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75, abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65, abar71, abar73, abar74, abar75, abar76, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, bbar6 = cache.tab
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     uidx = eachindex(integrator.uprev.x[2])
     k1 = integrator.fsalfirst.x[1]
@@ -350,22 +338,6 @@ end
     f.f2(k.x[2], du, u, p, t + dt)
     integrator.stats.nf += 7
     integrator.stats.nf2 += 1
-    if integrator.opts.adaptive
-        duhat, uhat = utilde.x
-        dtsq = dt^2
-        @tight_loop_macros for i in uidx
-            @inbounds uhat[i] = dtsq *
-                                (btilde1 * k1[i] + btilde3 * k3[i] + btilde4 * k4[i] +
-                                 btilde5 * k5[i])
-            @inbounds duhat[i] = dt *
-                                 (bptilde1 * k1[i] + bptilde3 * k3[i] + bptilde4 * k4[i] +
-                                  bptilde5 * k5[i] + bptilde6 * k6[i] + bptilde7 * k7[i])
-        end
-        calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
-            integrator.opts.abstol, integrator.opts.reltol,
-            integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
 end
 
 @muladd function perform_step!(integrator, cache::Nystrom4VelocityIndependentConstantCache,

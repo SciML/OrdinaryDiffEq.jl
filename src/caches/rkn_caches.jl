@@ -90,9 +90,7 @@ end
     k6::reducedRateType
     k7::reducedRateType
     k::rateType
-    utilde::uType
     tmp::uType
-    atmp::uNoUnitsType
     tab::TabType
 end
 
@@ -110,11 +108,8 @@ function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
     k6 = zero(reduced_rate_prototype)
     k7 = zero(reduced_rate_prototype)
     k = zero(rate_prototype)
-    utilde = zero(u)
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
     tmp = zero(u)
-    FineRKN5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, utilde, tmp, atmp, tab)
+    FineRKN5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k, tmp, tab)
 end
 
 function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
