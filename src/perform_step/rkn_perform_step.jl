@@ -248,7 +248,7 @@ end
      @.. broadcast=false duhat = dt *
                                  (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 +
                                   bptilde5 * k5 + bptilde6 * k6 + bptilde7 * k7)
-        end
+
         calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t)
