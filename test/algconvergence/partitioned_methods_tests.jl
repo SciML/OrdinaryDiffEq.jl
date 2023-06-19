@@ -469,4 +469,19 @@ end
         @test_broken sol_i.t ≈ sol_o.t
         @test_broken sol_i.u ≈ sol_o.u
     end
+
+    @testset "DPRKN12" begin
+        alg = DPRKN12()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
+    end
 end
