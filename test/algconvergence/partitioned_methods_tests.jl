@@ -385,6 +385,16 @@ end
         (0.0, 10.0)
     )
 
+    @testset "Nystrom4" begin
+        alg = Nystrom4()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, dt = dt)
+        sol_o = solve(ode_o, alg, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+    end
+
     @testset "FineRKN5" begin
         alg = FineRKN5()
         dt = 0.5
