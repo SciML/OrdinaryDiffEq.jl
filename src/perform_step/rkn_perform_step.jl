@@ -218,14 +218,13 @@ end
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
-        @tight_loop_macros for i in uidx
-            @inbounds uhat[i] = dtsq *
-                                (btilde1 * k1[i] + btilde3 * k3[i] + btilde4 * k4[i] +
-                                 btilde5 * k5[i]) # btilde2 = 0
-            @inbounds duhat[i] = dt *
-                                 (bptilde1 * k1[i] + bptilde3 * k3[i] + bptilde4 * k4[i] +
-                                  bptilde5 * k5[i]) # bptilde2 = 0
-        end
+        @.. broadcast=false uhat = dtsq *
+                                (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
+                                 btilde5 * k5) # btilde2 = 0
+        @.. broadcast=false duhat = dt *
+                                 (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 +
+                                  bptilde5 * k5) # bptilde2 = 0
+        
         calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,
             integrator.opts.internalnorm, t)
