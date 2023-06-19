@@ -363,3 +363,26 @@ sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
+
+
+@testset "in-place vs. out-of-place" begin
+    ode_i = SecondOrderODEProblem(
+        (ddu, du, u, p, t) -> @.(ddu = -u - 0.5 * du),
+        [0.0], [1.0],
+        (0.0, 10.0)
+    )
+    ode_o = SecondOrderODEProblem(
+        (du, u, p, t) -> -u - 0.5 * du,
+        [0.0], [1.0],
+        (0.0, 10.0)
+    )
+
+    @testset "FineRKN5" begin
+        alg = FineRKN5()
+        dt = 0.1
+        sol_i = solve(ode_i, alg, dt = dt)
+        sol_o = solve(ode_o, alg, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+    end
+end
