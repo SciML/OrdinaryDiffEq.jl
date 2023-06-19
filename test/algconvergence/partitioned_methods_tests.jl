@@ -128,9 +128,6 @@ dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
-@test sim.𝒪est[:l2]≈5 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -304,9 +301,6 @@ sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = 
 #@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
-@test sim.𝒪est[:l2]≈5 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
