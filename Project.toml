@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "6.53.1"
+version = "6.53.2"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -73,7 +73,7 @@ RecursiveArrayTools = "2.36"
 Reexport = "0.2, 1.0"
 SciMLBase = "1.90"
 SciMLNLSolve = "0.1"
-SciMLOperators = "0.2.12"
+SciMLOperators = "0.2.12, 0.3"
 SimpleNonlinearSolve = "0.1.4"
 SimpleUnPack = "1"
 SparseDiffTools = "2.3"
