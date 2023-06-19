@@ -5294,7 +5294,7 @@ Can only be used with fixed time steps.
 }
 ```
 """
-struct FineRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
+struct FineRKN5 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
     Nystrom4VelocityIdependent
