@@ -364,7 +364,6 @@ sol = solve(prob, ERKN5(), reltol = 1e-8)
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
 
-
 # Compare in-place and out-of-place versions
 function damped_oscillator(du, u, p, t)
     return -u - 0.5 * du
@@ -374,16 +373,12 @@ function damped_oscillator!(ddu, du, u, p, t)
     return nothing
 end
 @testset "in-place vs. out-of-place" begin
-    ode_i = SecondOrderODEProblem(
-        damped_oscillator!,
+    ode_i = SecondOrderODEProblem(damped_oscillator!,
         [0.0], [1.0],
-        (0.0, 10.0)
-    )
-    ode_o = SecondOrderODEProblem(
-        damped_oscillator,
+        (0.0, 10.0))
+    ode_o = SecondOrderODEProblem(damped_oscillator,
         [0.0], [1.0],
-        (0.0, 10.0)
-    )
+        (0.0, 10.0))
 
     @testset "Nystrom4" begin
         alg = Nystrom4()
