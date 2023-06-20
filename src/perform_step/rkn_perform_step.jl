@@ -241,12 +241,12 @@ end
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
-     @.. broadcast=false uhat = dtsq *
-                                (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
-                                 btilde5 * k5)
-     @.. broadcast=false duhat = dt *
-                                 (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 +
-                                  bptilde5 * k5 + bptilde6 * k6 + bptilde7 * k7)
+        @.. broadcast=false uhat=dtsq *
+                                 (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
+                                  btilde5 * k5)
+        @.. broadcast=false duhat=dt *
+                                  (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 +
+                                   bptilde5 * k5 + bptilde6 * k6 + bptilde7 * k7)
 
         calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,
