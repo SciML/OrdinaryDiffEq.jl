@@ -62,6 +62,20 @@ struct FineRKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     bbar5::T
     bbar6::T
     #bbar7::T
+    btilde1::T
+    #btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    #btilde6::T
+    #btilde7::T
+    bptilde1::T
+    #bptilde2::T
+    bptilde3::T
+    bptilde4::T
+    bptilde5::T
+    bptilde6::T
+    bptilde7::T
 end
 
 function FineRKN5ConstantCache(T::Type, T2::Type)
@@ -128,12 +142,27 @@ function FineRKN5ConstantCache(T::Type, T2::Type)
     bbar5 = convert(T, -53676491 // 88060560)
     bbar6 = convert(T, 53 // 240)
     #bbar7 = convert(T, 0 // 1)
+    btilde1 = convert(T, 8151 // 2633750)
+    #btilde2 = convert(T, 0 // 1) 
+    btilde3 = convert(T, -1377519 // 186334750)
+    btilde4 = convert(T, 586872 // 28879375)
+    btilde5 = convert(T, -36011118 // 2247378875)
+    #btilde6 = convert(T, 0 // 1) 
+    #btilde7 = convert(T, 0 // 1) 
+    bptilde1 = convert(T, 8151 // 2633750)
+    #bptilde2 = convert(T, 0 // 1) 
+    bptilde3 = convert(T, -5969249 // 559004250)
+    bptilde4 = convert(T, 3521232 // 28879375)
+    bptilde5 = convert(T, -846261273 // 4494757750)
+    bptilde6 = convert(T, 4187 // 36750)
+    bptilde7 = convert(T, -1 // 25)
     FineRKN5ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51,
         a52, a53, a54, a61, a62, a63, a64, a71, a73, a74, a75,
         abar21, abar31, abar32, abar41, abar42, abar43, abar51,
         abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65,
         abar71, abar73, abar74, abar75, abar76, b1, b3, b4,
-        b5, bbar1, bbar3, bbar4, bbar5, bbar6)
+        b5, bbar1, bbar3, bbar4, bbar5, bbar6, btilde1, btilde3, btilde4, btilde5, bptilde1,
+        bptilde3, bptilde4, bptilde5, bptilde6, bptilde7)
 end
 
 struct IRKN3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
