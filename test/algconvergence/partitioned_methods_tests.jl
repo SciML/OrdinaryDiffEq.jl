@@ -367,3 +367,175 @@ sol = solve(prob, ERKN5(), reltol = 1e-8)
 @test length(sol.u) < 34
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
+
+# Compare in-place and out-of-place versions
+function damped_oscillator(du, u, p, t)
+    return -u - 0.5 * du
+end
+function damped_oscillator!(ddu, du, u, p, t)
+    @. ddu = -u - 0.5 * du
+    return nothing
+end
+@testset "in-place vs. out-of-place" begin
+    ode_i = SecondOrderODEProblem(damped_oscillator!,
+        [0.0], [1.0],
+        (0.0, 10.0))
+    ode_o = SecondOrderODEProblem(damped_oscillator,
+        [0.0], [1.0],
+        (0.0, 10.0))
+
+    @testset "Nystrom4" begin
+        alg = Nystrom4()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, dt = dt)
+        sol_o = solve(ode_o, alg, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
+    end
+
+    @testset "FineRKN5" begin
+        alg = FineRKN5()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 7 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
+    end
+
+    @testset "DPRKN4" begin
+        alg = DPRKN4()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+    end
+
+    @testset "DPRKN5" begin
+        alg = DPRKN5()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 6 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+    end
+
+    @testset "DPRKN6" begin
+        alg = DPRKN6()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 6 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
+    end
+
+    @testset "DPRKN6FM" begin
+        alg = DPRKN6FM()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 6 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
+    end
+
+    @testset "DPRKN8" begin
+        alg = DPRKN8()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 9 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
+    end
+
+    @testset "DPRKN12" begin
+        alg = DPRKN12()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 17 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test_broken sol_i.t ≈ sol_o.t
+        @test_broken sol_i.u ≈ sol_o.u
+    end
+end

@@ -118,7 +118,7 @@ end
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
-    integrator.stats.nf += 1
+    integrator.stats.nf += 4
     integrator.stats.nf2 += 1
 end
 
@@ -159,7 +159,7 @@ end
                 abar76 * k6) # abar72 = 0
 
     k7 = f.f1(kdu, ku, p, t + dt * c7)
-    u = uprev + dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)) # no b6, b7 
+    u = uprev + dt * (duprev + dt * (b1 * k1 + b3 * k3 + b4 * k4 + b5 * k5)) # no b6, b7
     du = duprev + dt * (bbar1 * k1 + bbar3 * k3 + bbar4 * k4 + bbar5 * k5 + bbar6 * k6) # no b2, b7
 
     integrator.u = ArrayPartition((du, u))
@@ -223,7 +223,6 @@ end
     @.. broadcast=false ku=uprev +
                            dt * (c7 * duprev +
                             dt * (a71 * k1 + a73 * k3 + a74 * k4 + a75 * k5)) # a72 = a76 = 0
-
     @.. broadcast=false kdu=duprev +
                             dt * (abar71 * k1 + abar73 * k3 + abar74 * k4 +
                              abar75 * k5 + abar76 * k6) # abar72 = 0
@@ -242,12 +241,12 @@ end
     if integrator.opts.adaptive
         duhat, uhat = utilde.x
         dtsq = dt^2
-     @.. broadcast=false uhat = dtsq *
-                                (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
-                                 btilde5 * k5)
-     @.. broadcast=false duhat = dt *
-                                 (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 +
-                                  bptilde5 * k5 + bptilde6 * k6 + bptilde7 * k7)
+        @.. broadcast=false uhat=dtsq *
+                                 (btilde1 * k1 + btilde3 * k3 + btilde4 * k4 +
+                                  btilde5 * k5)
+        @.. broadcast=false duhat=dt *
+                                  (bptilde1 * k1 + bptilde3 * k3 + bptilde4 * k4 +
+                                   bptilde5 * k5 + bptilde6 * k6 + bptilde7 * k7)
 
         calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u,
             integrator.opts.abstol, integrator.opts.reltol,
