@@ -5256,7 +5256,6 @@ struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 A 5th order explicit Runge-Kutta-Nyström method which can be applied directly to second order ODEs.
 In particular, this method allows the acceleration equation to depend on the velocity.
-Can only be used with fixed time steps.
 
 ## References
 ```
@@ -5272,7 +5271,7 @@ Can only be used with fixed time steps.
 }
 ```
 """
-struct FineRKN5 <: OrdinaryDiffEqPartitionedAlgorithm end
+struct FineRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
     Nystrom4VelocityIdependent
