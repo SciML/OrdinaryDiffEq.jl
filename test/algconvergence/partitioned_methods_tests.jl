@@ -378,6 +378,75 @@ sol = solve(prob, ERKN5(), reltol = 1e-8)
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
 
+# Testing generalized Runge-Kutte-Nyström methods on velocity dependend ODEs with the damped oscillator
+println("In Place")
+
+# Damped oscillator
+prob = ODEProblem(DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
+        (du, u, p, t) -> du,
+        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition([
+                exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
+                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4)),
+            ], # du
+            [
+                exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
+                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4)),
+            ])),
+    OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
+    (0.0, 10.0), # tspan
+    DiffEqBase.NullParameters(), # p
+    SecondOrderODEProblem{false}())
+dts = 1.0 ./ 2.0 .^ (5:-1:0)
+sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true);
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true);
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true);
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+
+# Adaptive methods regression test
+sol = solve(prob, FineRKN4())
+@test length(sol.u) < 28
+sol = solve(prob, FineRKN5())
+@test length(sol.u) < 20
+
+println("Out of Place")
+# Damped oscillator
+prob = ODEProblem(DynamicalODEFunction{true}((d_du, du, u, p, t) -> @.(d_du=-u - 0.5 * du),
+        (d_u, du, u, p, t) -> d_u .= du,
+        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition([
+                exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
+                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4)),
+            ], # du
+            [
+                exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
+                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4)),
+            ])),
+    OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
+    (0.0, 10.0), # tspan
+    DiffEqBase.NullParameters(), # p
+    SecondOrderODEProblem{false}())
+
+dts = 1.0 ./ 2.0 .^ (5:-1:0)
+sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true);
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true);
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true);
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+
+# Adaptive methods regression test
+sol = solve(prob, FineRKN4())
+@test length(sol.u) < 28
+sol = solve(prob, FineRKN5())
+@test length(sol.u) < 20
+
 # Compare in-place and out-of-place versions
 function damped_oscillator(du, u, p, t)
     return -u - 0.5 * du
@@ -409,6 +478,26 @@ end
         @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
     end
 
+    @testset "FineRKN4" begin
+        alg = FineRKN4()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt);
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt);
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 5 * sol_i.destats.naccept) < 4
+        # adaptive time step
+        sol_i = solve(ode_i, alg)
+        sol_o = solve(ode_o, alg)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+    end
+    
     @testset "FineRKN5" begin
         alg = FineRKN5()
         dt = 0.5
