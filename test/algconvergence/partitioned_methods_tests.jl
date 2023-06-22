@@ -396,15 +396,15 @@ prob = ODEProblem(DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
     (0.0, 10.0), # tspan
     DiffEqBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
-    
+
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
-sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true);
+sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true);
+sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true);
+sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
@@ -432,13 +432,13 @@ prob = ODEProblem(DynamicalODEFunction{true}((d_du, du, u, p, t) -> @.(d_du=-u -
     SecondOrderODEProblem{false}())
 
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
-sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true);
+sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true);
+sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true);
+sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
@@ -483,8 +483,8 @@ end
         alg = FineRKN4()
         dt = 0.5
         # fixed time step
-        sol_i = solve(ode_i, alg, adaptive = false, dt = dt);
-        sol_o = solve(ode_o, alg, adaptive = false, dt = dt);
+        sol_i = solve(ode_i, alg, adaptive = false, dt = dt)
+        sol_o = solve(ode_o, alg, adaptive = false, dt = dt)
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
         @test sol_i.destats.nf == sol_o.destats.nf
