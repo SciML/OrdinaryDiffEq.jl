@@ -128,6 +128,9 @@ dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -170,6 +173,8 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, FineRKN4())
+@test length(sol.u) < 16
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
 sol = solve(prob, DPRKN4())
@@ -305,6 +310,9 @@ dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -347,6 +355,8 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, FineRKN4())
+@test length(sol.u) < 16
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 14
 sol = solve(prob, DPRKN4())
