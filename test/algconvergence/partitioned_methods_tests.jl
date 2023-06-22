@@ -396,6 +396,7 @@ prob = ODEProblem(DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
     (0.0, 10.0), # tspan
     DiffEqBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
+    
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true);
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
