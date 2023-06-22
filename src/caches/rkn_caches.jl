@@ -78,8 +78,7 @@ function alg_cache(alg::FineRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
     FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct FineRKN5Cache{uType, rateType, reducedRateType, TabType} <:
-              OrdinaryDiffEqMutableCache
+@cache struct FineRKN5Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
