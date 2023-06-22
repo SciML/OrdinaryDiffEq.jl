@@ -498,7 +498,7 @@ end
         @test sol_i.t ≈ sol_o.t
         @test sol_i.u ≈ sol_o.u
     end
-    
+
     @testset "FineRKN5" begin
         alg = FineRKN5()
         dt = 0.5
