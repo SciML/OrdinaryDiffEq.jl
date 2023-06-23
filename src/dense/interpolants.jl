@@ -14,11 +14,10 @@ end
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
 @def dp5pre0 begin
-    Θ² = Θ * Θ
     b10 = Θ
     b20 = Θ * @evalpoly(Θ, 1, -1)
-    b30 = Θ² * @evalpoly(Θ, 1, -1)
-    b40 = Θ² * @evalpoly(Θ, 1, -2, 1)
+    b30 = Θ * b20
+    b40 = b20^2
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::DP5ConstantCache, idxs::Nothing,
