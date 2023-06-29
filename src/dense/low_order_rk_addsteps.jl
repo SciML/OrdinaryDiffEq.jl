@@ -180,6 +180,44 @@ end
     nothing
 end
 
+
+
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Tsit5TestCache,
+                                always_calc_begin = false, allow_calc_end = true,
+                                force_calc_end = false)
+    if length(k) < 7 || always_calc_begin
+        T = constvalue(recursive_unitless_bottom_eltype(u))
+        T2 = constvalue(typeof(one(t)))
+        @OnDemandTableauExtract Tsit5TestConstantCacheActual2 T T2
+        @unpack k1, k2, k3, k4, k5, k6, k7, tmp = cache
+        @.. broadcast=false tmp=uprev + dt * (a21 * k1)
+        f(k2, tmp, p, t + c1 * dt)
+        @.. broadcast=false tmp=uprev + dt * (a31 * k1 + a32 * k2)
+        f(k3, tmp, p, t + c2 * dt)
+        @.. broadcast=false tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+        f(k4, tmp, p, t + c3 * dt)
+        @.. broadcast=false tmp=uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+        f(k5, tmp, p, t + c4 * dt)
+        @.. broadcast=false tmp=uprev +
+          dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
+        f(k6, tmp, p, t + dt)
+        @.. broadcast=false tmp=uprev +
+          dt *
+          (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 +
+          a76 * k6)
+        f(k7, tmp, p, t + dt)
+        copyat_or_push!(k, 1, k1)
+        copyat_or_push!(k, 2, k2)
+        copyat_or_push!(k, 3, k3)
+        copyat_or_push!(k, 4, k4)
+        copyat_or_push!(k, 5, k5)
+        copyat_or_push!(k, 6, k6)
+        copyat_or_push!(k, 7, k7)
+    end
+    nothing
+end
+
+
 """
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
@@ -546,6 +584,37 @@ end
     end
     nothing
 end
+
+
+@muladd function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Tsit5TestConstantCache,
+                                always_calc_begin = false, allow_calc_end = true,
+                                force_calc_end = false)
+    if length(k) < 7 || always_calc_begin
+        T = constvalue(recursive_unitless_bottom_eltype(u))
+        T2 = constvalue(typeof(one(t)))
+        @OnDemandTableauExtract Tsit5TestConstantCacheActual2 T T2
+        copyat_or_push!(k, 1, f(uprev, p, t))
+        copyat_or_push!(k, 2, f(uprev + dt * (a21 * k[1]), p, t + c1 * dt))
+        copyat_or_push!(k, 3, f(uprev + dt * (a31 * k[1] + a32 * k[2]), p, t + c2 * dt))
+        copyat_or_push!(k, 4,
+                        f(uprev + dt * (a41 * k[1] + a42 * k[2] + a43 * k[3]), p,
+                          t + c3 * dt))
+        copyat_or_push!(k, 5,
+                        f(uprev + dt * (a51 * k[1] + a52 * k[2] + a53 * k[3] + a54 * k[4]),
+                          p, t + c4 * dt))
+        copyat_or_push!(k, 6,
+                        f(uprev +
+                        dt *
+                        (a61 * k[1] + a62 * k[2] + a63 * k[3] + a64 * k[4] + a65 * k[5]),
+                        p, t + dt))
+        utmp = uprev +
+              dt *
+              (a71 * k[1] + a72 * k[2] + a73 * k[3] + a74 * k[4] + a75 * k[5] + a76 * k[6])
+        copyat_or_push!(k, 7, f(utmp, p, t + dt))
+    end
+   nothing
+end
+
 
 #=
 @muladd function _ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
