@@ -822,6 +822,137 @@ end
     return nothing
 end
 
+
+function initialize!(integrator, cache::Tsit5TestConstantCache)
+    integrator.kshortsize = 7
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    @inbounds for i in 2:(integrator.kshortsize - 1)
+        integrator.k[i] = zero(integrator.fsalfirst)
+    end
+    integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::Tsit5TestConstantCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    @OnDemandTableauExtract Tsit5TestConstantCacheActual2 T T2
+    k1 = integrator.fsalfirst
+    a = dt * a21
+    k2 = f(uprev + a * k1, p, t + c1 * dt)
+    k3 = f(uprev + dt * (a31 * k1 + a32 * k2), p, t + c2 * dt)
+    k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3), p, t + c3 * dt)
+    k5 = f(uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4), p, t + c4 * dt)
+    g6 = uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
+    k6 = f(g6, p, t + dt)
+    u = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
+    integrator.fsallast = f(u, p, t + dt)
+    k7 = integrator.fsallast
+    integrator.stats.nf += 6
+    if typeof(integrator.alg) <: CompositeAlgorithm
+        g7 = u
+        # Hairer II, page 22
+        integrator.eigen_est = integrator.opts.internalnorm(k7 - k6, t) /
+                               integrator.opts.internalnorm(g7 - g6, t)
+    end
+    if integrator.opts.adaptive
+        utilde = dt *
+                 (btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4 + btilde5 * k5 +
+                  btilde6 * k6 + btilde7 * k7)
+        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    integrator.k[1] = k1
+    integrator.k[2] = k2
+    integrator.k[3] = k3
+    integrator.k[4] = k4
+    integrator.k[5] = k5
+    integrator.k[6] = k6
+    integrator.k[7] = k7
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::Tsit5TestCache)
+    integrator.kshortsize = 7
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k7 # setup pointers
+    resize!(integrator.k, integrator.kshortsize)
+    # Setup k pointers
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2
+    integrator.k[3] = cache.k3
+    integrator.k[4] = cache.k4
+    integrator.k[5] = cache.k5
+    integrator.k[6] = cache.k6
+    integrator.k[7] = cache.k7
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+end
+
+@muladd function perform_step!(integrator, cache::Tsit5TestCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    @OnDemandTableauExtract Tsit5TestConstantCacheActual2 T T2
+    @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
+    a = dt * a21
+    @.. broadcast=false thread=thread tmp=uprev + a * k1
+    stage_limiter!(tmp, f, p, t + c1 * dt)
+    f(k2, tmp, p, t + c1 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    stage_limiter!(tmp, f, p, t + c2 * dt)
+    f(k3, tmp, p, t + c2 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    stage_limiter!(tmp, f, p, t + c3 * dt)
+    f(k4, tmp, p, t + c3 * dt)
+    @.. broadcast=false thread=thread tmp=uprev +
+                                          dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    stage_limiter!(tmp, f, p, t + c4 * dt)
+    f(k5, tmp, p, t + c4 * dt)
+    @.. broadcast=false thread=thread tmp=uprev +
+                                          dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 +
+                                           a65 * k5)
+    stage_limiter!(tmp, f, p, t + dt)
+    f(k6, tmp, p, t + dt)
+    @.. broadcast=false thread=thread u=uprev +
+                                        dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 +
+                                         a75 * k5 + a76 * k6)
+    stage_limiter!(u, f, p, t + dt)
+    step_limiter!(u, f, p, t + dt)
+    f(k7, u, p, t + dt)
+    integrator.stats.nf += 6
+    if integrator.alg isa CompositeAlgorithm
+        g7 = u
+        g6 = tmp
+        # Hairer II, page 22
+        @.. broadcast=false thread=thread utilde=k7 - k6
+        ϱu = integrator.opts.internalnorm(utilde, t)
+        @.. broadcast=false thread=thread utilde=g7 - g6
+        ϱd = integrator.opts.internalnorm(utilde, t)
+        integrator.eigen_est = ϱu / ϱd
+    end
+    if integrator.opts.adaptive
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
+                                                  btilde3 * k3 + btilde4 * k4 +
+                                                  btilde5 * k5 + btilde6 * k6 +
+                                                  btilde7 * k7)
+        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+                             integrator.opts.reltol, integrator.opts.internalnorm, t,
+                             thread)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    return nothing
+end
+
+
+
 function initialize!(integrator, cache::DP5ConstantCache)
     integrator.kshortsize = 4
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
