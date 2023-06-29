@@ -4418,6 +4418,33 @@ function Base.show(io::IO, alg::Tsit5)
         ", thread = ", alg.thread, ")")
 end
 
+struct Tsit5Test{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+  end
+  
+  TruncatedStacktraces.@truncate_stacktrace Tsit5Test 3
+  
+  function Tsit5Test(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
+               thread = False())
+    Tsit5Test{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
+                                                                         step_limiter!,
+                                                                         thread)
+  end
+  
+  # for backwards compatibility
+  function Tsit5Test(stage_limiter!, step_limiter! = trivial_limiter!)
+    Tsit5Test{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+                                                                step_limiter!, False())
+  end
+  
+  function Base.show(io::IO, alg::Tsit5Test)
+    print(io, "Tsit5Test(stage_limiter! = ", alg.stage_limiter!,
+          ", step_limiter! = ", alg.step_limiter!,
+          ", thread = ", alg.thread, ")")
+  end
+
 """
     DP8(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
