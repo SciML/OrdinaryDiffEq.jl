@@ -83,7 +83,9 @@ using FastBroadcast: @.., True, False
 
 using IfElse
 
-using SciMLBase: NoInit, _unwrap_val, alg_order
+using SciMLBase: NoInit, _unwrap_val
+
+import SciMLBase: alg_order
 
 import DiffEqBase: calculate_residuals,
     calculate_residuals!, unwrap_cache,
