@@ -36,6 +36,48 @@ end
 
 # alg_cache(alg::Nystrom4,u,rate_prototype,::Type{uEltypeNoUnits},::Type{uBottomEltypeNoUnits},::Type{tTypeNoUnits},uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false}) where {uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits} = Nystrom4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
+@cache struct FineRKN4Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    k2::reducedRateType
+    k3::reducedRateType
+    k4::reducedRateType
+    k5::reducedRateType
+    k::rateType
+    utilde::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    tab::TabType
+end
+
+function alg_cache(alg::FineRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    reduced_rate_prototype = rate_prototype.x[2]
+    tab = FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    k1 = zero(rate_prototype)
+    k2 = zero(reduced_rate_prototype)
+    k3 = zero(reduced_rate_prototype)
+    k4 = zero(reduced_rate_prototype)
+    k5 = zero(reduced_rate_prototype)
+    k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tmp = zero(u)
+    FineRKN4Cache(u, uprev, k1, k2, k3, k4, k5, k, utilde, tmp, atmp, tab)
+end
+
+function alg_cache(alg::FineRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
 @cache struct FineRKN5Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
               OrdinaryDiffEqMutableCache
     u::uType

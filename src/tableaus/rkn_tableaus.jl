@@ -1,3 +1,104 @@
+struct FineRKN4ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    #a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    abar21::T
+    abar31::T
+    abar32::T
+    abar41::T
+    abar42::T
+    abar43::T
+    abar51::T
+    abar52::T
+    abar53::T
+    abar54::T
+    b1::T
+    #b2::T
+    b3::T
+    b4::T
+    b5::T
+    bbar1::T
+    #bbar2::T
+    bbar3::T
+    bbar4::T
+    bbar5::T
+    btilde1::T
+    #btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    bptilde1::T
+    #bptilde2::T
+    bptilde3::T
+    bptilde4::T
+    bptilde5::T
+end
+
+function FineRKN4ConstantCache(T::Type, T2::Type)
+    c1 = convert(T2, 1 // 1)
+    c2 = convert(T2, 2 // 9)
+    c3 = convert(T2, 1 // 3)
+    c4 = convert(T2, 3 // 4)
+    c5 = convert(T2, 1 // 1)
+    a21 = convert(T, 2 // 81)
+    a31 = convert(T, 1 // 36)
+    a32 = convert(T, 1 // 36)
+    a41 = convert(T, 9 // 128)
+    #a42 = convert(T, 0 // 1)
+    a43 = convert(T, 27 // 128)
+    a51 = convert(T, 11 // 60)
+    a52 = convert(T, -3 // 20)
+    a53 = convert(T, 9 // 25)
+    a54 = convert(T, 8 // 75)
+    abar21 = convert(T, 2 // 9)
+    abar31 = convert(T, 1 // 12)
+    abar32 = convert(T, 1 // 4)
+    abar41 = convert(T, 69 // 128)
+    abar42 = convert(T, -243 // 128)
+    abar43 = convert(T, 135 // 64)
+    abar51 = convert(T, -17 // 12)
+    abar52 = convert(T, 27 // 4)
+    abar53 = convert(T, -27 // 5)
+    abar54 = convert(T, 16 // 15)
+    b1 = convert(T, 19 // 180)
+    #b2 = convert(T, 0 // 1)
+    b3 = convert(T, 63 // 200)
+    b4 = convert(T, 16 // 225)
+    b5 = convert(T, 1 // 120)
+    bbar1 = convert(T, 1 // 9)
+    #bbar2 = convert(T, 0 // 1)
+    bbar3 = convert(T, 9 // 20)
+    bbar4 = convert(T, 16 // 45)
+    bbar5 = convert(T, 1 // 12)
+    btilde1 = convert(T, 25 // 1116)
+    #btilde2 = convert(T, 0 // 1) 
+    btilde3 = convert(T, -63 // 1240)
+    btilde4 = convert(T, 64 // 1395)
+    btilde5 = convert(T, -13 // 744)
+    bptilde1 = convert(T, 2 // 125)
+    #bptilde2 = convert(T, 0 // 1) 
+    bptilde3 = convert(T, -27 // 625)
+    bptilde4 = convert(T, 32 // 625)
+    bptilde5 = convert(T, -3 // 125)
+    FineRKN4ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a43, a51,
+        a52, a53, a54, abar21, abar31, abar32, abar41, abar42, abar43, abar51,
+        abar52, abar53, abar54, b1, b3, b4, b5, bbar1, bbar3, bbar4, bbar5, btilde1,
+        btilde3, btilde4, btilde5, bptilde1,
+        bptilde3, bptilde4, bptilde5)
+end
+
 struct FineRKN5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     c1::T2
     c2::T2

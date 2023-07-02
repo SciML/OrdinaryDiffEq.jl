@@ -439,7 +439,7 @@ export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
 
 export SplitEuler
 
-export Nystrom4, FineRKN5, Nystrom4VelocityIndependent,
+export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
     Nystrom5VelocityIndependent,
     IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7
 
