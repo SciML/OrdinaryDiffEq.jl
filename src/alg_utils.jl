@@ -259,11 +259,11 @@ function DiffEqBase.prepare_alg(alg::Union{
         linsolve = alg.linsolve
     end
 
-    # If norecompile mode or very large bitsize, like a dual number u0 already, then
+    # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
     # don't use a large chunksize as it will either error or not be beneficial
-    if (isbitstype(T) && sizeof(T) > 24) || (prob.f isa ODEFunction &&
-        prob.f.f isa
-        FunctionWrappersWrappers.FunctionWrappersWrapper)
+    if !(alg_autodiff(alg) isa AutoForwardDiff) ||
+       (isbitstype(T) && sizeof(T) > 24) ||
+       (prob.f isa ODEFunction && prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
         if alg isa OrdinaryDiffEqExponentialAlgorithm
             return remake(alg, chunk_size = Val{1}())
         else
