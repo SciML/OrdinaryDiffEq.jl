@@ -180,6 +180,9 @@ isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 isadaptive(alg::DFBDF) = true
 
+anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
+anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
+
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
