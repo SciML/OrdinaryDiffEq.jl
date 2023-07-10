@@ -34,7 +34,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     dtmin = nothing,
     dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
     force_dtmin = false,
-    adaptive = isadaptive(alg),
+    adaptive = anyadaptive(alg),
     gamma = gamma_default(alg),
     abstol = nothing,
     reltol = nothing,
@@ -44,7 +44,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     qsteady_max = qsteady_max_default(alg),
     beta1 = nothing,
     beta2 = nothing,
-    qoldinit = isadaptive(alg) ? 1 // 10^4 : 0,
+    qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
     controller = nothing,
     fullnormalize = true,
     failfactor = 2,
@@ -269,8 +269,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
             # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
             # to prevent infinite loops.
-            dtmin = DiffEqBase.prob2dtmin(prob)
-            abs(dt) < dtmin && throw(ArgumentError("Supplied dt is smaller than dtmin"))
+            abs(dt) < DiffEqBase.prob2dtmin(prob) &&
+                throw(ArgumentError("Supplied dt is smaller than dtmin"))
             steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
         end
         sizehint!(timeseries, steps + 1)
