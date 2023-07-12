@@ -48,7 +48,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     controller = nothing,
     fullnormalize = true,
     failfactor = 2,
-    maxiters = adaptive ? 1000000 : typemax(Int),
+    maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
     internalnorm = ODE_DEFAULT_NORM,
     internalopnorm = LinearAlgebra.opnorm,
     isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
@@ -109,7 +109,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) &&
           !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) &&
-          !(typeof(alg) <: DAEAlgorithm)) || !adaptive) && dt == tType(0) &&
+          !(typeof(alg) <: DAEAlgorithm)) || !isadaptive(alg)) && dt == tType(0) &&
         isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap, LinearExponential})
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
@@ -262,7 +262,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
     alg_choice = typeof(_alg) <: CompositeAlgorithm ? Int[] : ()
 
-    if !adaptive && save_everystep && tspan[2] - tspan[1] != Inf
+    if !isadaptive(alg) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
             steps = length(tstops)
         else

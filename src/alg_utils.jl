@@ -868,6 +868,7 @@ beta1_default(alg::ImplicitEulerBarycentricExtrapolation, beta2) = 1 // (alg.ini
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
 end
+gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 gamma_default(alg::RKC) = 8 // 10
 gamma_default(alg::IRKC) = 8 // 10
 function gamma_default(alg::ExtrapolationMidpointDeuflhard)
