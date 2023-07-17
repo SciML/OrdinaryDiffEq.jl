@@ -111,7 +111,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
           !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) &&
           !(typeof(alg) <: DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
         dt == tType(0) && isempty(tstops)) &&
-        !(typeof(alg) <: Union{FunctionMap, LinearExponential})
+       !(typeof(alg) <: Union{FunctionMap, LinearExponential})
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
 
