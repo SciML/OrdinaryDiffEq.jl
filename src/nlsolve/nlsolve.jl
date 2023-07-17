@@ -4,9 +4,11 @@
     nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
 Solve
+
 ```math
 dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
+
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator,

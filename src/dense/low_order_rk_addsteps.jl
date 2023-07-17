@@ -182,7 +182,7 @@ end
 
 """
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
- Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
+Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """
@@ -591,7 +591,7 @@ end
 
 """
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
- Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
+Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """

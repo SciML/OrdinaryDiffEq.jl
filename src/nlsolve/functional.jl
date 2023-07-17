@@ -29,9 +29,11 @@ end
     compute_step!(nlsolver::NLSolver{<:Union{NLFunctional,NLAnderson}}, integrator)
 
 Compute the next step of the fixed-point iteration
+
 ```math
 g(z) = dt⋅f(tmp + γ⋅z, p, t + c⋅dt),
 ```
+
 and return the norm of ``g(z) - z``.
 
 # References

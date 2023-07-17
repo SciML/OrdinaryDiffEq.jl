@@ -391,7 +391,7 @@ end
 
 """
 Cheap Error Estimation for Runge-Kutta methods, by Ch. Tsitouras and S.N. Papakostas,
- Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
+Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
 """
 function TsitPap8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     c1 = convert(T2, 0.06338028169014084)
@@ -500,7 +500,7 @@ end
 
 """
 Cheap Error Estimation for Runge-Kutta methods, by Ch. Tsitouras and S.N. Papakostas,
- Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
+Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
 """
 function TsitPap8ConstantCache(T::Type, T2::Type)
     c1 = convert(T2, 9 // 142)

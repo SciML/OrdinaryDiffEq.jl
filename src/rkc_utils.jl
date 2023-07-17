@@ -208,7 +208,7 @@ and `cache.start` (the start index of recurrence parameters for that
 degree), where `recf` are the `μ,κ` pairs
 for the `mdeg` degree method. The `κ` for `stage-1` for every degree
 is 0 therefore it's not included in `recf`
-  """
+"""
 function choosedeg!(cache::T) where {T}
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.constantcache)
