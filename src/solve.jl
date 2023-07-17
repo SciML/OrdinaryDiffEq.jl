@@ -109,8 +109,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) &&
           !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) &&
-          !(typeof(alg) <: DAEAlgorithm)) || !isadaptive(alg)) && dt == tType(0) &&
-        isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap, LinearExponential})
+          !(typeof(alg) <: DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
+        dt == tType(0) && isempty(tstops)) &&
+        !(typeof(alg) <: Union{FunctionMap, LinearExponential})
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
 
@@ -262,7 +263,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
     alg_choice = typeof(_alg) <: CompositeAlgorithm ? Int[] : ()
 
-    if !isadaptive(alg) && save_everystep && tspan[2] - tspan[1] != Inf
+    if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
             steps = length(tstops)
         else
@@ -498,10 +499,15 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         initialize_callbacks!(integrator, initialize_save)
         initialize!(integrator, integrator.cache)
 
-        if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm && save_start
-            # Loop to get all of the extra possible saves in callback initialization
-            for i in 1:(integrator.saveiter)
-                copyat_or_push!(alg_choice, i, integrator.cache.current)
+        if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
+            # in case user mixes adaptive and non-adaptive algorithms
+            ensure_behaving_adaptivity!(integrator, integrator.cache)
+
+            if save_start
+                # Loop to get all of the extra possible saves in callback initialization
+                for i in 1:(integrator.saveiter)
+                    copyat_or_push!(alg_choice, i, integrator.cache.current)
+                end
             end
         end
     end

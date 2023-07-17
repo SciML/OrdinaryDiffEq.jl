@@ -55,6 +55,19 @@ function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where 
     resize!(integrator.k, integrator.kshortsize)
 end
 
+"""
+If the user mixes adaptive and non-adaptive algorithms then, right after
+initialize!, make integrator.opts match the default adaptivity such that
+the behaviour is consistent.
+In particular, prevents dt ⟶ 0 if starting with non-adaptive alg and opts.adaptive=true,
+and dt=cst if starting with adaptive alg and opts.adaptive=false.
+"""
+function ensure_behaving_adaptivity!(integrator, cache::CompositeCache)
+    if anyadaptive(integrator.alg) && !isadaptive(integrator.alg)
+        integrator.opts.adaptive = isadaptive(integrator.alg.algs[cache.current])
+    end
+end
+
 function perform_step!(integrator, cache::CompositeCache, repeat_step = false)
     if cache.current == 1
         perform_step!(integrator, @inbounds(cache.caches[1]), repeat_step)
