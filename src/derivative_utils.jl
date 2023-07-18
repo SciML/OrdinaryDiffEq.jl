@@ -386,7 +386,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
         end
         # Compute J * B and add
         if W.jacvec !== nothing
-            mul!(_vec(W._func_cache), W.jacvec, _vec(B))
+            mul!(_vec(W._func_cache), W.jacvec, B)
         else
             mul!(_vec(W._func_cache), W.J, _vec(B))
         end
