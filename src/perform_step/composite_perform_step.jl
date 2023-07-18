@@ -39,8 +39,13 @@ function initialize!(integrator, cache::CompositeCache)
         initialize!(integrator, @inbounds(cache.caches[1]))
     elseif cache.current == 2
         initialize!(integrator, @inbounds(cache.caches[2]))
+        # the controller was initialized by default for integrator.alg.algs[1]
+        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[2])
     else
         initialize!(integrator, @inbounds(cache.caches[cache.current]))
+        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[cache.current])
     end
     resize!(integrator.k, integrator.kshortsize)
 end
@@ -51,6 +56,8 @@ function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where 
         initialize!(integrator, @inbounds(cache.caches[1]))
     elseif cache.current == 2
         initialize!(integrator, @inbounds(cache.caches[2]))
+        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[2])
     end
     resize!(integrator.k, integrator.kshortsize)
 end
