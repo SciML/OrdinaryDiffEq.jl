@@ -155,7 +155,7 @@ end
 """
 If no user default, then this will change the default to the defaults
 for the second algorithm.
-Except is the user default turns out to be the default for the first alg,
+Except if the user default turns out to be the default for the current alg,
 then it will change anyway and keep changing afterwards (e.g. adaptive).
 """
 function reset_alg_dependent_opts!(integrator, alg1, alg2)
