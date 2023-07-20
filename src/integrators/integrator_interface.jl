@@ -208,6 +208,7 @@ function resize!(integrator::ODEIntegrator, i::Int)
         # may be required for things like units
         c !== nothing && resize!(c, i)
     end
+    resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
     resize_non_user_cache!(integrator, cache, i)
@@ -219,10 +220,19 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     for c in full_cache(cache)
         resize!(c, i)
     end
+    resize_f!(integrator.f, i)
     # TODO the parts below need to be adapted for implicit methods
     isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
     resize_non_user_cache!(integrator, cache, i)
+end
+
+# default fallback
+resize_f!(f, i) = nothing
+
+function resize_f!(f::SplitFunction, i)
+    resize!(f.cache, i)
+    return nothing
 end
 
 function resize_J_W!(cache, integrator, i)
