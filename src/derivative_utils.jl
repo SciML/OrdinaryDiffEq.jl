@@ -293,11 +293,12 @@ end
 SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
-set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-function SciMLOperators.update_coefficients!(W::WOperator, u, p, t)
+function SciMLOperators.update_coefficients!(W::WOperator, u, p, t; dtgamma=nothing, transform=nothing)
     update_coefficients!(W.J, u, p, t)
     update_coefficients!(W.mass_matrix, u, p, t)
     !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
+    dtgamma !== nothing && (W.gamma = dtgamma)
+    transform !== nothing && (W.transform = transform)
     W
 end
 
@@ -673,9 +674,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
 
     # calculate W
     if W isa WOperator
-        isnewton(nlsolver) || update_coefficients!(W, uprev, p, t) # we will call `update_coefficients!` in NLNewton
-        W.transform = W_transform
-        set_gamma!(W, dtgamma)
+        isnewton(nlsolver) || update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma) # we will call `update_coefficients!` in NLNewton
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
