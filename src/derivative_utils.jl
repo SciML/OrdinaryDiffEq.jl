@@ -673,7 +673,9 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     end
 
     # calculate W
-    if W isa WOperator
+    if W isa AbstractSciMLOperator && !(W isa Union{WOperator, StaticWOperator})
+        update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma)
+    elseif W isa WOperator
         isnewton(nlsolver) || update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma) # we will call `update_coefficients!` in NLNewton
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
@@ -723,7 +725,10 @@ end
     islin, isode = islinearfunction(integrator)
     !isdae && update_coefficients!(mass_matrix, uprev, p, t)
 
-    if islin
+    if cache.W isa AbstractSciMLOperator && !(cache.W isa Union{WOperator, StaticWOperator})
+        J = update_coefficients(cache.J, uprev, p, t)
+        W = update_coefficients(cache.W, uprev, p, t; dtgamma, transform = W_transform)
+    elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
     elseif DiffEqBase.has_jac(f)
@@ -830,7 +835,14 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
     islin, isode = islinearfunction(f, alg)
-    if f.jac_prototype isa AbstractSciMLOperator
+    if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
+        # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
+        if !(f.jac_prototype isa AbstractSciMLOperator)
+            error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(jac_prototype))")
+        end
+        W = f.W_prototype
+        J = f.jac_prototype 
+    elseif f.jac_prototype isa AbstractSciMLOperator
         W = WOperator{IIP}(f, u, dt)
         J = W.J
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
