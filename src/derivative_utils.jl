@@ -837,7 +837,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
         # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
         if !(f.jac_prototype isa AbstractSciMLOperator)
-            error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(jac_prototype))")
+            error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(f.jac_prototype))")
         end
         W = f.W_prototype
         J = f.jac_prototype 
