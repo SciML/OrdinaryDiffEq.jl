@@ -688,7 +688,6 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         islin, isode = islinearfunction(integrator)
         islin ? (J = isode ? f.f : f.f1.f) :
         (new_jac && (calc_J!(J, integrator, lcache, next_step)))
-        update_coefficients!(W, uprev, p, t)
         new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
     end
     if isnewton(nlsolver)
