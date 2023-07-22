@@ -4,28 +4,37 @@ using OrdinaryDiffEq
 using LinearAlgebra
 using Setfield # TODO: not a depenedency
 using LinearSolve
+using Test
 
-prob = prob_ode_vanderpol_stiff
+for prob in (prob_ode_vanderpol_stiff,)
+    # Manually construct a custom W operator using the Jacobian 
+    N = length(prob.u0)
+    J_op = MatrixOperator(rand(N, N); update_func! = prob.f.jac)
+    gamma_op = ScalarOperator(0.0; update_func=(old_val, u, p, t; dtgamma) -> dtgamma, accepted_kwargs=(:dtgamma,))
+    transform_op = ScalarOperator(0.0; 
+                                update_func = (old_op, u, p, t; dtgamma, transform) -> transform ? inv(dtgamma) : one(dtgamma),
+                                accepted_kwargs=(:dtgamma, :transform))
+    W_op = -(I - gamma_op * J_op) * transform_op 
 
-sol1 = solve(prob, Rosenbrock23())
+    # Problem with custom MatrixOperator jac_prototype
+    f_J = prob.f
+    f_J = @set! f_J.jac_prototype = J_op
+    prob_J = remake(prob; f = f_J)
+    
+    # Problem with custom SciMLOperator W_prototype 
+    f_W = prob.f
+    f_W = @set! f_W.jac_prototype = J_op
+    f_W = @set! f_W.W_prototype = W_op
+    prob_W = remake(prob; f = f_W)
 
-# Manually construct a custom W operator using the Jacobian 
-J_op = MatrixOperator(rand(2, 2); update_func=prob.f.jac)
-gamma_op = ScalarOperator(0.0; update_func=(old_val, u, p, t; dtgamma) -> dtgamma, accepted_kwargs=(:dtgamma,))
-# make transform op
-transform_op = ScalarOperator(0.0; 
-                              update_func = (old_op, u, p, t; dtgamma, transform) -> transform ? inv(dtgamma) : one(dtgamma),
-                              accepted_kwargs=(:dtgamma, :transform))
-W = -(I - gamma_op * J_op) * transform_op 
-# TODO: need to concretize for fair comparison
+    # Ensure all solutions use the same linear solve for fair comparison.
+    # TODO: in future, ensure and test that polyalg chooses the best linear solve for all. 
+    sol = solve(prob, Rosenbrock23(linsolve=KrylovJL_GMRES()))
+    sol_J = solve(prob_J, Rosenbrock23(linsolve=KrylovJL_GMRES()))
+    sol_W = solve(prob_W, Rosenbrock23(linsolve=KrylovJL_GMRES()))
 
-begin
-f2 = prob.f
-f2 = @set! f2.W_prototype = W
-f2 = @set! f2.jac_prototype = J_op # TODO: this is slow, even without setting W_prototype (maybe LinearSolve uses wrong alg?)
-prob2 = remake(prob; f = f2)
+    @test all(isapprox.(sol_J.t, sol.t))
+    @test all(isapprox.(sol_J.u, sol.u))
+    @test all(isapprox.(sol_W.t, sol.t))
+    @test all(isapprox.(sol_W.u, sol.u))
 end
-sol2 = solve(prob2, Rosenbrock23())
-
-@test length(sol1.u) == length(sol2.u)
-@test sol1.u[end] ≈ sol2.u[end] 
