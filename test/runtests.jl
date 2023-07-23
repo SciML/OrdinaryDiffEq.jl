@@ -47,6 +47,7 @@ end
         @time @safetestset "Sparse Diff Tests" include("interface/sparsediff_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
         @time @safetestset "Mass Matrix Tests" include("interface/mass_matrix_tests.jl")
+        @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII" || GROUP == "Interface")
@@ -65,7 +66,6 @@ end
         @time @safetestset "Ambiguity Tests" include("interface/ambiguity_tests.jl")
         @time @safetestset "Sized Matrix Tests" include("interface/sized_matrix_tests.jl")
         @time @safetestset "Second Order with First Order Solver Tests" include("interface/second_order_with_first_order_solvers.jl")
-        @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
