@@ -293,10 +293,14 @@ end
 SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
-function SciMLOperators.update_coefficients!(W::WOperator, u, p, t; dtgamma=nothing, transform=nothing)
-    update_coefficients!(W.J, u, p, t)
-    update_coefficients!(W.mass_matrix, u, p, t)
-    !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
+# In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma/transform and don't update them in that case.
+# This helps support partial updating logic used with Newton solvers. 
+function SciMLOperators.update_coefficients!(W::WOperator, u=nothing, p=nothing, t=nothing; dtgamma=nothing, transform=nothing)
+    if (u !== nothing) && (p !== nothing) && (t !== nothing) 
+        update_coefficients!(W.J, u, p, t)
+        update_coefficients!(W.mass_matrix, u, p, t)
+        !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
+    end
     dtgamma !== nothing && (W.gamma = dtgamma)
     transform !== nothing && (W.transform = transform)
     W
@@ -676,7 +680,12 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     if W isa AbstractSciMLOperator && !(W isa Union{WOperator, StaticWOperator})
         update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma)
     elseif W isa WOperator
-        isnewton(nlsolver) || update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma) # we will call `update_coefficients!` in NLNewton
+        if isnewton(nlsolver) 
+            # we will call `update_coefficients!` for u/p/t in NLNewton
+            update_coefficients!(W; transform=W_transform, dtgamma) 
+        else
+            update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma) 
+        end
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
