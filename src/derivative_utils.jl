@@ -295,8 +295,13 @@ Base.eltype(W::WOperator) = eltype(W.J)
 
 # In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma/transform and don't update them in that case.
 # This helps support partial updating logic used with Newton solvers. 
-function SciMLOperators.update_coefficients!(W::WOperator, u=nothing, p=nothing, t=nothing; dtgamma=nothing, transform=nothing)
-    if (u !== nothing) && (p !== nothing) && (t !== nothing) 
+function SciMLOperators.update_coefficients!(W::WOperator,
+    u = nothing,
+    p = nothing,
+    t = nothing;
+    dtgamma = nothing,
+    transform = nothing)
+    if (u !== nothing) && (p !== nothing) && (t !== nothing)
         update_coefficients!(W.J, u, p, t)
         update_coefficients!(W.mass_matrix, u, p, t)
         !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
@@ -678,13 +683,13 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
 
     # calculate W
     if W isa AbstractSciMLOperator && !(W isa Union{WOperator, StaticWOperator})
-        update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma)
+        update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
     elseif W isa WOperator
-        if isnewton(nlsolver) 
+        if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
-            update_coefficients!(W; transform=W_transform, dtgamma) 
+            update_coefficients!(W; transform = W_transform, dtgamma)
         else
-            update_coefficients!(W, uprev, p, t; transform=W_transform, dtgamma) 
+            update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
         end
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
@@ -849,7 +854,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(f.jac_prototype))")
         end
         W = f.W_prototype
-        J = f.jac_prototype 
+        J = f.jac_prototype
     elseif f.jac_prototype isa AbstractSciMLOperator
         W = WOperator{IIP}(f, u, dt)
         J = W.J
