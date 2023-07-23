@@ -30,7 +30,7 @@ for prob in (prob_ode_vanderpol_stiff,)
     # Ensure all solutions use the same linear solve for fair comparison.
     # TODO: in future, ensure and test that polyalg chooses the best linear solve for all. 
     sol = solve(prob, Rosenbrock23(linsolve=KrylovJL_GMRES()))
-    sol_J = solve(prob_J, Rosenbrock23(linsolve=KrylovJL_GMRES()))
+    sol_J = solve(prob_J, Rosenbrock23(linsolve=KrylovJL_GMRES())) # note: direct linsolve in this case is broken, see #1998
     sol_W = solve(prob_W, Rosenbrock23(linsolve=KrylovJL_GMRES()))
 
     @test all(isapprox.(sol_J.t, sol.t))
