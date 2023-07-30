@@ -49,7 +49,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
 """
-@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, false}, integrator)
+@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, false}, integrator, γW)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, tmp, γ, α, cache = nlsolver
     @unpack tstep, W, invγdt = cache
@@ -63,8 +63,10 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
 
     # update W
-    if W isa AbstractSciMLOperator
-        W = update_coefficients!(W, ustep, p, tstep)
+    if W isa Union{WOperator, StaticWOperator}
+        update_coefficients!(W, ustep, p, tstep)
+    elseif W isa AbstractSciMLOperator
+        error("Non-concrete Jacobian not yet supported by out-of-place Newton solve.")
     end
 
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
@@ -88,7 +90,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     ndz
 end
 
-@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true}, integrator)
+@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true}, integrator, γW)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
     @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
@@ -103,8 +105,11 @@ end
     b, ustep = _compute_rhs!(nlsolver, integrator, f, z)
 
     # update W
-    if W isa AbstractSciMLOperator
+    if W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
+    elseif W isa AbstractSciMLOperator
+        # logic for generic AbstractSciMLOperator does not yet support partial state updates, so provide full state
+        update_coefficients!(W, ustep, p, tstep; dtgamma = γW, transform = true)
     end
 
     if integrator.opts.adaptive
@@ -155,7 +160,9 @@ end
     ndz
 end
 
-@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator)
+@muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true, <:Array},
+    integrator,
+    γW)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
     @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
@@ -169,8 +176,11 @@ end
     b, ustep = _compute_rhs!(nlsolver, integrator, f, z)
 
     # update W
-    if W isa AbstractSciMLOperator
+    if W isa Union{WOperator, StaticWOperator}
         update_coefficients!(W, ustep, p, tstep)
+    elseif W isa AbstractSciMLOperator
+        # logic for generic AbstractSciMLOperator does not yet support partial state updates, so provide full state
+        update_coefficients!(W, ustep, p, tstep; dtgamma = γW, transform = true)
     end
 
     if integrator.opts.adaptive
