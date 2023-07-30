@@ -492,8 +492,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                 copyat_or_push!(ks, 1, [ks_prototype])
             end
         else
-            saveiter = 0 # Starts at 0 so first save is at 1
-            saveiter_dense = 0
+            integrator.saveiter = 0 # Starts at 0 so first save is at 1
+            integrator.saveiter_dense = 0
         end
 
         initialize_callbacks!(integrator, initialize_save)
