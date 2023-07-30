@@ -22,8 +22,12 @@ function alg_cache(alg::CompositeAlgorithm{Tuple{T1, T2}, F}, u, rate_prototype,
     uprev2, f, t, dt, reltol, p, calck,
     ::Val{V}) where {T1, T2, F, V, uEltypeNoUnits, uBottomEltypeNoUnits,
     tTypeNoUnits}
-    caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
+    caches = (alg_cache(alg.algs[1], u, rate_prototype, uEltypeNoUnits,
+            uBottomEltypeNoUnits,
+            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)),
+        alg_cache(alg.algs[2], u, rate_prototype, uEltypeNoUnits,
+            uBottomEltypeNoUnits,
+            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)))
     CompositeCache(caches, alg.choice_function, 1)
 end
 
@@ -31,12 +35,8 @@ function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoU
     ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
     dt, reltol, p, calck,
     ::Val{V}) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    caches = (alg_cache(alg.algs[1], u, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)),
-        alg_cache(alg.algs[2], u, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)))
+    caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
     CompositeCache(caches, alg.choice_function, 1)
 end
 

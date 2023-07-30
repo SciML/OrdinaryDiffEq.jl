@@ -364,6 +364,12 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
     # start the search thinking it's in ts[1]-ts[2]
     i₋ = 1
     i₊ = 2
+    # if CompositeCache, have an inplace cache for lower allocations
+    # (expecting the same algorithms for large portions of ts)
+    if typeof(cache) <: OrdinaryDiffEq.CompositeCache
+        current_alg = id.alg_choice[i₊]
+        cache_i₊ = cache.caches[current_alg]
+    end
     @inbounds for j in idx
         t = tvals[j]
 
@@ -383,7 +389,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
         if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
-            if eltype(timeseries) <: AbstractArray
+            if eltype(vals) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
                     idxs, deriv)
             else
@@ -391,7 +397,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                     idxs, deriv)
             end
         elseif !id.dense
-            if eltype(timeseries) <: AbstractArray
+            if eltype(vals) <: AbstractArray
                 linear_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
                     deriv)
             else
@@ -399,19 +405,23 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                     deriv)
             end
         elseif typeof(cache) <: CompositeCache
+            if current_alg != id.alg_choice[i₊] # switched algorithm
+                current_alg = id.alg_choice[i₊]
+                @inbounds cache_i₊ = cache.caches[current_alg] # this alloc is costly
+            end
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-                cache.caches[id.alg_choice[i₊]]) # update the kcurrent
-            if eltype(timeseries) <: AbstractArray
+                cache_i₊) # update the kcurrent
+            if eltype(vals) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache.caches[id.alg_choice[i₊]], idxs, deriv)
+                    cache_i₊, idxs, deriv)
             else
                 vals[j] = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache.caches[id.alg_choice[i₊]], idxs, deriv)
+                    cache_i₊, idxs, deriv)
             end
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                 cache) # update the kcurrent
-            if eltype(vals[j]) <: AbstractArray
+            if eltype(vals) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
                     cache, idxs, deriv)
             else

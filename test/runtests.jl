@@ -37,6 +37,7 @@ end
         @time @safetestset "Export tests" include("interface/export_tests.jl")
         @time @safetestset "Type Handling Tests" include("interface/type_handling.jl")
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
+        @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")

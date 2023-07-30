@@ -180,6 +180,9 @@ isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 isadaptive(alg::DFBDF) = true
 
+anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
+anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
+
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
@@ -865,6 +868,7 @@ beta1_default(alg::ImplicitEulerBarycentricExtrapolation, beta2) = 1 // (alg.ini
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
 end
+gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 gamma_default(alg::RKC) = 8 // 10
 gamma_default(alg::IRKC) = 8 // 10
 function gamma_default(alg::ExtrapolationMidpointDeuflhard)

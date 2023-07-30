@@ -34,7 +34,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     dtmin = nothing,
     dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
     force_dtmin = false,
-    adaptive = isadaptive(alg),
+    adaptive = anyadaptive(alg),
     gamma = gamma_default(alg),
     abstol = nothing,
     reltol = nothing,
@@ -44,11 +44,11 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     qsteady_max = qsteady_max_default(alg),
     beta1 = nothing,
     beta2 = nothing,
-    qoldinit = isadaptive(alg) ? 1 // 10^4 : 0,
+    qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
     controller = nothing,
     fullnormalize = true,
     failfactor = 2,
-    maxiters = adaptive ? 1000000 : typemax(Int),
+    maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
     internalnorm = ODE_DEFAULT_NORM,
     internalopnorm = LinearAlgebra.opnorm,
     isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
@@ -109,8 +109,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) &&
           !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) &&
-          !(typeof(alg) <: DAEAlgorithm)) || !adaptive) && dt == tType(0) &&
-        isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap, LinearExponential})
+          !(typeof(alg) <: DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
+        dt == tType(0) && isempty(tstops)) &&
+       !(typeof(alg) <: Union{FunctionMap, LinearExponential})
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
 
@@ -262,15 +263,15 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
     alg_choice = typeof(_alg) <: CompositeAlgorithm ? Int[] : ()
 
-    if !adaptive && save_everystep && tspan[2] - tspan[1] != Inf
+    if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
             steps = length(tstops)
         else
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
             # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
             # to prevent infinite loops.
-            dtmin = DiffEqBase.prob2dtmin(prob)
-            abs(dt) < dtmin && throw(ArgumentError("Supplied dt is smaller than dtmin"))
+            abs(dt) < DiffEqBase.prob2dtmin(prob) &&
+                throw(ArgumentError("Supplied dt is smaller than dtmin"))
             steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
         end
         sizehint!(timeseries, steps + 1)
@@ -498,10 +499,15 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         initialize_callbacks!(integrator, initialize_save)
         initialize!(integrator, integrator.cache)
 
-        if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm && save_start
-            # Loop to get all of the extra possible saves in callback initialization
-            for i in 1:(integrator.saveiter)
-                copyat_or_push!(alg_choice, i, integrator.cache.current)
+        if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
+            # in case user mixes adaptive and non-adaptive algorithms
+            ensure_behaving_adaptivity!(integrator, integrator.cache)
+
+            if save_start
+                # Loop to get all of the extra possible saves in callback initialization
+                for i in 1:(integrator.saveiter)
+                    copyat_or_push!(alg_choice, i, integrator.cache.current)
+                end
             end
         end
     end
