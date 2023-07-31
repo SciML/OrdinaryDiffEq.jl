@@ -90,3 +90,4 @@ Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 ## Available Solvers
 
 For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](https://diffeq.sciml.ai/dev/solvers/ode_solve/), [Dynamical ODE Solvers](http://diffeq.sciml.ai/dev/solvers/dynamical_solve/), and the [Split ODE Solvers](http://diffeq.sciml.ai/dev/solvers/split_ode_solve/) pages.
+
