@@ -108,7 +108,8 @@ end
 for typ in (OrdinaryDiffEqAlgorithm, Union{RadauIIA3, RadauIIA5},
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-    Union{SSPRK22, SSPRK33, SSPRK53_2N1, SSPRK53_2N2, SSPRK43, SSPRK432, SSPRK932})
+    Union{SSPRK22, SSPRK33, SSPRK53_2N1, SSPRK53_2N2, SSPRK43, SSPRK432, SSPRK932},
+    DAEAlgorithm)
     @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
         cache::OrdinaryDiffEqConstantCache)
         nothing
