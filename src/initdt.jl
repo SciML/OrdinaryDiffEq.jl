@@ -1,6 +1,7 @@
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-    prob::DiffEqBase.AbstractODEProblem{uType, tType, true}, integrator) where {tType, uType}
+    prob, integrator)
 
+    iscomposite =  !(typeof(integrator.alg) <: CompositeAlgorithm)
     sk = if !(typeof(integrator.alg) <: CompositeAlgorithm)
         first(get_tmp_cache(integrator))
     else
@@ -12,7 +13,7 @@
     verbose = integrator.opts.verbose
     alg_order = get_current_alg_order(integrator.alg, integrator.cache)
 
-    linsolve = if haskey(integrator.alg, :linsolve)
+    linsolve = if hasproperty(integrator.alg, :linsolve)
         integrator.alg.linsolve
     else
         nothing
