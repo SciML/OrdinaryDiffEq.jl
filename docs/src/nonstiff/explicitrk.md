@@ -19,6 +19,7 @@ Midpoint
 RK4
 RKM
 MSRK5
+MSRK6
 Anas5
 RKO65
 OwrenZen3
@@ -35,6 +36,11 @@ Feagin12
 Feagin14
 FRK65
 PFRK87
+Stepanov5
+SIR54
+Alshina2
+Alshina3
+Alshina6
 ```
 
 ## Lazy Interpolation Explicit Runge-Kutta Methods

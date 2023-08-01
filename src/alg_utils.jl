@@ -266,7 +266,8 @@ function DiffEqBase.prepare_alg(alg::Union{
     # don't use a large chunksize as it will either error or not be beneficial
     if !(alg_autodiff(alg) isa AutoForwardDiff) ||
        (isbitstype(T) && sizeof(T) > 24) ||
-       (prob.f isa ODEFunction && prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+       (prob.f isa ODEFunction &&
+        prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
         if alg isa OrdinaryDiffEqExponentialAlgorithm
             return remake(alg, chunk_size = Val{1}())
         else

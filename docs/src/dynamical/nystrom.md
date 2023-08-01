@@ -2,15 +2,17 @@
 
 ```@docs
 IRKN3
+IRKN4
 Nystrom4
 Nystrom4VelocityIndependent
-IRKN4
+Nystrom5VelocityIndependent
 FineRKN4
 FineRKN5
-Nystrom5VelocityIndependent
 DPRKN6
+DPRKN6FM
 DPRKN8
 DPRKN12
 ERKN4
 ERKN5
+ERKN7
 ```

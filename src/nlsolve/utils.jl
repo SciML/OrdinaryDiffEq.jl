@@ -128,7 +128,8 @@ DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
 DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
 DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
-function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype, ::Type{uEltypeNoUnits},
+function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
+    ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits},
     ::Type{tTypeNoUnits}, γ, c,
     iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
@@ -137,7 +138,8 @@ function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype, ::Type{uE
         tTypeNoUnits, γ, c, 1, iip)
 end
 
-function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype, ::Type{uEltypeNoUnits},
+function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
+    ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits},
     ::Type{tTypeNoUnits}, γ, c, α,
     iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
