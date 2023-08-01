@@ -3,7 +3,12 @@
 
     iscomposite =  !(typeof(integrator.alg) <: CompositeAlgorithm)
     sk = if !(typeof(integrator.alg) <: CompositeAlgorithm)
-        first(get_tmp_cache(integrator))
+        tmpcache = get_tmp_cache(integrator)
+        if tmpcache === nothing
+            nothing
+        else
+            first(tmpcache)
+        end
     else
         nothing
     end
