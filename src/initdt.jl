@@ -2,7 +2,7 @@
     prob::DiffEqBase.AbstractODEProblem{uType, tType, true}, integrator) where {tType, uType}
 
     sk = if !(typeof(integrator.alg) <: CompositeAlgorithm)
-        first(get_tmp_cache(integrator)
+        first(get_tmp_cache(integrator))
     else
         nothing
     end
