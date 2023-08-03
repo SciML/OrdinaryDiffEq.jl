@@ -610,7 +610,15 @@ function alg_cache(alg::DP5, u, rate_prototype, ::Type{uEltypeNoUnits},
     DP5ConstantCache()
 end
 
-@cache struct Anas5Cache{uType, rateType, uNoUnitsType, TabType} <:
+@cache struct Anas5Cache{
+    uType,
+    rateType,
+    uNoUnitsType,
+    TabType,
+    StageLimiter,
+    StepLimiter,
+    Thread,
+} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -625,6 +633,9 @@ end
     tmp::uType
     atmp::uNoUnitsType
     tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
 end
 
 function alg_cache(alg::Anas5, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -643,7 +654,22 @@ function alg_cache(alg::Anas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    Anas5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, tab)
+    Anas5Cache(u,
+        uprev,
+        k1,
+        k2,
+        k3,
+        k4,
+        k5,
+        k6,
+        k7,
+        utilde,
+        tmp,
+        atmp,
+        tab,
+        alg.stage_limiter!,
+        alg.step_limiter!,
+        alg.thread)
 end
 
 function alg_cache(alg::Anas5, u, rate_prototype, ::Type{uEltypeNoUnits},
