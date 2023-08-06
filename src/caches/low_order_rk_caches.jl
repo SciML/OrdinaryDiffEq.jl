@@ -610,15 +610,7 @@ function alg_cache(alg::DP5, u, rate_prototype, ::Type{uEltypeNoUnits},
     DP5ConstantCache()
 end
 
-@cache struct Anas5Cache{
-    uType,
-    rateType,
-    uNoUnitsType,
-    TabType,
-    StageLimiter,
-    StepLimiter,
-    Thread,
-} <:
+@cache struct Anas5Cache{uType, rateType, uNoUnitsType, TabType, StageLimiter, StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
