@@ -86,7 +86,6 @@ TruncatedStacktraces.@truncate_stacktrace ExplicitRK
 
 @inline trivial_limiter!(u, integrator, p, t) = nothing
 
-
 """
 AitkenNeville: Parallelized Explicit Extrapolation Method
 Euler extrapolation using Aitken-Neville with the Romberg Sequence.
@@ -3495,7 +3494,6 @@ function Base.show(io::IO, alg::SSPRK104)
         ", step_limiter! = ", alg.step_limiter!,
         ", thread = ", alg.thread, ")")
 end
-
 
 """
     Alshina2(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
