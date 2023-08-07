@@ -3922,6 +3922,7 @@ A 4th order explicit Runge-Kutta-Nyström method which can be applied directly t
 In particular, this method allows the acceleration equation to depend on the velocity.
 
 ## References
+
 ```
 @article{fine1987low,
   title={Low order practical {R}unge-{K}utta-{N}ystr{\"o}m methods},
