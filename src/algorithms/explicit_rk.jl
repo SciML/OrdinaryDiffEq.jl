@@ -554,8 +554,8 @@ Base.@kwdef struct RK46NL{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAl
     thread::Thread = False()
 end
 # for backwards compatibility
-function RK46NL(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    RK46NL(stage_limiter!, step_limiter!, False(), lazy)
+function RK46NL(stage_limiter!, step_limiter! = trivial_limiter!)
+    RK46NL(stage_limiter!, step_limiter!, False())
 end
 
 @doc explicit_rk_docstring("A second-order, five-stage explicit Runge-Kutta method for wave propagation
