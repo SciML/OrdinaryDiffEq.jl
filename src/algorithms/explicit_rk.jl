@@ -1,16 +1,19 @@
 function Base.show(io::IO, alg::OrdinaryDiffEqAlgorithm)
-    print(io, String(typeof(alg).name.name), "(")
+    print(io, String(typeof(alg).name.name), "(;")
     for fieldname in fieldnames(typeof(alg))
-        print(io, fieldname, " = ", getfield(alg,fieldname), ", ")
+        print(io, " ", fieldname, " = ", getfield(alg, fieldname), ",")
     end
     print(io,")")
 end
-function explicit_rk_docstring(description::String, name::String; references::String = "", extra_keywords = "")
+function explicit_rk_docstring(description::String, name::String; references::String = "", extra_keyword_description = "", extra_keyword_default = "")
+    if !isempty(extra_keyword_default)
+        extra_keyword_default = "\n"*repeat(" ",8) * extra_keyword_default
+    end
     start_docstring = """
        ```julia
        $name(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-               thread = OrdinaryDiffEq.False())
+               thread = OrdinaryDiffEq.False(),$extra_keyword_default)
        ```
 
        Explicit Runge-Kutta Method.
@@ -26,7 +29,7 @@ function explicit_rk_docstring(description::String, name::String; references::St
             default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
             Julia is started with multiple threads.
         """
-    start_docstring * description * keyword_docstring * extra_keywords * "## References\n" * references
+    start_docstring * description * keyword_docstring * extra_keyword_description * "## References\n" * references
 end
 
 @doc explicit_rk_docstring("The second order Heun's method. Uses embedded Euler method for adaptivity.",
@@ -112,9 +115,10 @@ function MSRK5(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring("4th order Runge-Kutta method designed for periodic problems.","Anas5",
-extra_keywords = """- `w`: a periodicity estimate, which when accurate the method becomes 5th order
+extra_keyword_description = """- `w`: a periodicity estimate, which when accurate the method becomes 5th order
                           (and is otherwise 4th order with less error for better estimates).
-                """)
+                """,
+extra_keyword_default = "w = 1")
 @kwdef struct Anas5{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -343,9 +347,10 @@ Feagin's 14th-order Runge-Kutta method.
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 @doc explicit_rk_docstring("Zero Dissipation Runge-Kutta of 6th order.","FRK65",
-extra_keywords = """- `omega`: a periodicity phase estimate,
+extra_keyword_description = """- `omega`: a periodicity phase estimate,
                                when accurate this method results in zero numerical dissipation.
-                """)
+                """,
+extra_keyword_default = "omega = 0.0")
 @kwdef struct FRK65{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -359,9 +364,10 @@ function FRK65(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
 end
 
 @doc explicit_rk_docstring("Phase-fitted Runge-Kutta of 8th order.","PFRK87",
-extra_keywords = """- `omega`: a periodicity phase estimate,
+extra_keyword_description = """- `omega`: a periodicity phase estimate,
                                when accurate this method results in zero numerical dissipation.
-                """)
+                """,
+                extra_keyword_default = "omega = 0.0")
 @kwdef struct PFRK87{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -384,8 +390,9 @@ pages={15--28},
 year={1996},
 publisher={Elsevier}
 }",
-extra_keywords = """- `lazy`: determines if the lazy interpolant is used.
-                """)
+extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
+                """,
+extra_keyword_default = "lazy = true")
 @kwdef struct BS5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -408,8 +415,9 @@ pages={383--396},
 year={2010},
 publisher={Springer}
 }",
-extra_keywords = """- `lazy`: determines if the lazy interpolant is used.
-                """)
+extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
+                """,
+extra_keyword_default = "lazy = true")
 @kwdef struct Vern6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -433,8 +441,9 @@ pages={383--396},
 year={2010},
 publisher={Springer}
 }",
-extra_keywords = """- `lazy`: determines if the lazy interpolant is used.
-                """)
+extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
+                """,
+extra_keyword_default = "lazy = true")
 @kwdef struct Vern7{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -458,8 +467,9 @@ pages={383--396},
 year={2010},
 publisher={Springer}
 }",
-extra_keywords = """- `lazy`: determines if the lazy interpolant is used.
-                """)
+extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
+                """,
+extra_keyword_default = "lazy = true")
 @kwdef struct Vern8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -483,8 +493,8 @@ pages={383--396},
 year={2010},
 publisher={Springer}
 }",
-extra_keywords = """- `lazy`: determines if the lazy interpolant is used.
-                """)
+extra_keyword_description = """- `lazy`: determines if the lazy interpolant is used.
+                """,extra_keyword_default = "lazy = true")
 @kwdef struct Vern9{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -522,8 +532,9 @@ A General Strategy for the Optimization of Runge-Kutta Schemes for Wave
 Propagation Phenomena.
 Journal of Computational Physics, 228(11), pp 4182-4199, 2009.
 doi: https://doi.org/10.1016/j.jcp.2009.02.032",
-extra_keywords = """- `williamson_condition`: TBD.
-                """)
+extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
+                """,
+                extra_keyword_default = "williamson_condition = true")
 @kwdef struct ORK256{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
