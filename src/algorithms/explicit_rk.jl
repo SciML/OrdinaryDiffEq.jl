@@ -400,7 +400,7 @@ Base.@kwdef struct PFRK87{StageLimiter, StepLimiter, Thread, T} <:
 end
 # for backwards compatibility
 function PFRK87(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    FRK65(stage_limiter!, step_limiter!, False(), omega)
+    PFRK87(stage_limiter!, step_limiter!, False(), omega)
 end
 
 @doc explicit_rk_docstring("Bogacki-Shampine 5/4 Runge-Kutta method. (lazy 5th order interpolant).",
