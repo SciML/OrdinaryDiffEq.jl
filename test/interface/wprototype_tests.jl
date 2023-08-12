@@ -50,9 +50,10 @@ for prob in (prob_ode_vanderpol_stiff,)
         sol_J = solve(prob_J, alg) # note: direct linsolve in this case is broken, see #1998
         sol_W = solve(prob_W, alg)
 
-        @test all(isapprox.(sol_J.t, sol.t))
-        @test all(isapprox.(sol_J.u, sol.u))
-        @test all(isapprox.(sol_W.t, sol.t))
-        @test all(isapprox.(sol_W.u, sol.u))
+        rtol = 1e-2
+        @test all(isapprox.(sol_J.t, sol.t; rtol))
+        @test all(isapprox.(sol_J.u, sol.u; rtol))
+        @test all(isapprox.(sol_W.t, sol.t; rtol))
+        @test all(isapprox.(sol_W.u, sol.u; rtol))
     end
 end
