@@ -8,3 +8,5 @@ Manifest.toml
 profile.pb.gz
 .*.swp
 LocalPreferences.toml
+
+docs/build

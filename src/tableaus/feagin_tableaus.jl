@@ -123,7 +123,6 @@ end
 
 """
 constructFeagin10
-
 """
 function Feagin10ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     adaptiveConst = convert(T, 0.002777777777777778)
@@ -279,7 +278,6 @@ end
 
 """
 constructFeagin10
-
 """
 function Feagin10ConstantCache(T::Type, T2::Type)
     adaptiveConst = convert(T, 1 // 360)
@@ -669,7 +667,6 @@ end
 
 """
 constructFeagin12
-
 """
 function Feagin12ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     adaptiveConst = convert(T, 49 // 640)
@@ -944,7 +941,6 @@ end
 
 """
 constructFeagin12
-
 """
 function Feagin12ConstantCache(T::Type, T2::Type)
     adaptiveConst = convert(T, 49 // 640)
@@ -1648,7 +1644,6 @@ end
 
 """
 constructFeagin14
-
 """
 function Feagin14ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     adaptiveConst = convert(T, 1 // 1000)
@@ -2126,7 +2121,6 @@ end
 
 """
 constructFeagin14
-
 """
 function Feagin14ConstantCache(T::Type, T2::Type)
     adaptiveConst = convert(T, 1 // 1000)

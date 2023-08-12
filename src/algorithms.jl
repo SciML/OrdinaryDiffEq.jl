@@ -85,24 +85,10 @@ ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 TruncatedStacktraces.@truncate_stacktrace ExplicitRK
 
 @inline trivial_limiter!(u, integrator, p, t) = nothing
-"""
-Euler - The canonical forward Euler method. Fixed timestep only.
-"""
-struct Euler <: OrdinaryDiffEqAlgorithm end
-"""
-KuttaPRK2p5: Parallel Explicit Runge-Kutta Method
-  A 5 parallel, 2 processor explicit Runge-Kutta method of 5th order.
 
-  These methods utilize multithreading on the f calls to parallelize the problem.
-  This requires that simultaneous calls to f are thread-safe.
-"""
-struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
-    threading::TO
-end
-KuttaPRK2p5(; threading = true) = KuttaPRK2p5(threading)
 """
 AitkenNeville: Parallelized Explicit Extrapolation Method
-   Euler extrapolation using Aitken-Neville with the Romberg Sequence.
+Euler extrapolation using Aitken-Neville with the Romberg Sequence.
 """
 struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
     max_order::Int
@@ -115,8 +101,8 @@ function AitkenNeville(; max_order = 10, min_order = 1, init_order = 5, threadin
 end
 """
 ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
-   Extrapolation of implicit Euler method with Romberg sequence.
-   Similar to Hairer's SEULEX.
+Extrapolation of implicit Euler method with Romberg sequence.
+Similar to Hairer's SEULEX.
 """
 struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
@@ -171,7 +157,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 """
 ExtrapolationMidpointDeuflhard: Parallelized Explicit Extrapolation Method
-   Midpoint extrapolation using Barycentric coordinates
+Midpoint extrapolation using Barycentric coordinates
 """
 struct ExtrapolationMidpointDeuflhard{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
@@ -224,7 +210,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 """
 ImplicitDeuflhardExtrapolation: Parallelized Implicit Extrapolation Method
-   Midpoint extrapolation using Barycentric coordinates
+Midpoint extrapolation using Barycentric coordinates
 """
 struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
@@ -282,7 +268,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 """
 ExtrapolationMidpointHairerWanner: Parallelized Explicit Extrapolation Method
-  Midpoint extrapolation using Barycentric coordinates, following Hairer's ODEX in the adaptivity behavior.
+Midpoint extrapolation using Barycentric coordinates, following Hairer's ODEX in the adaptivity behavior.
 """
 struct ExtrapolationMidpointHairerWanner{TO} <:
        OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
@@ -336,7 +322,7 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 """
 ImplicitHairerWannerExtrapolation: Parallelized Implicit Extrapolation Method
-  Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
+Midpoint extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
 """
 struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
@@ -397,7 +383,7 @@ end
 
 """
 ImplicitEulerBarycentricExtrapolation: Parallelized Implicit Extrapolation Method
-  Euler extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
+Euler extrapolation using Barycentric coordinates, following Hairer's SODEX in the adaptivity behavior.
 """
 struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
@@ -465,310 +451,6 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 end
 
 """
-    RK46NL(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
-Fixed timestep only.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-- Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion
-  Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006.
-  doi: https://doi.org/10.1016/j.compfluid.2005.04.003
-"""
-struct RK46NL{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function RK46NL(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    RK46NL{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function RK46NL(stage_limiter!, step_limiter! = trivial_limiter!)
-    RK46NL{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::RK46NL)
-    print(io, "RK46NL(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    Heun(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-           step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-           thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-The second order Heun's method. Uses embedded Euler method for adaptivity.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-"""
-struct Heun{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function Heun(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    Heun{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function Heun(stage_limiter!, step_limiter! = trivial_limiter!)
-    Heun{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::Heun)
-    print(io, "Heun(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    Ralston(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-The optimized second order midpoint method. Uses embedded Euler method for adaptivity.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-"""
-struct Ralston{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function Ralston(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    Ralston{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function Ralston(stage_limiter!, step_limiter! = trivial_limiter!)
-    Ralston{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::Ralston)
-    print(io, "Ralston(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    Ralston(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-              thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-The second order midpoint method. Uses embedded Euler method for adaptivity.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-"""
-struct Midpoint{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function Midpoint(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    Midpoint{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function Midpoint(stage_limiter!, step_limiter! = trivial_limiter!)
-    Midpoint{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::Midpoint)
-    print(io, "Midpoint(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    RK4(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-The canonical Runge-Kutta Order 4 method.
-Uses a defect control for adaptive stepping using maximum error over the whole interval.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{shampine2005solving,
-  title={Solving ODEs and DDEs with residual control},
-  author={Shampine, LF},
-  journal={Applied Numerical Mathematics},
-  volume={52},
-  number={1},
-  pages={113--127},
-  year={2005},
-  publisher={Elsevier}
-}
-"""
-struct RK4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function RK4(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    RK4{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function RK4(stage_limiter!, step_limiter! = trivial_limiter!)
-    RK4{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::RK4)
-    print(io, "RK4(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-struct RKM{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function RKM(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    RKM{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
-    RKM{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::RKM)
-    print(io, "RKM(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    MSRK5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-5th order Explicit RK method.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 3.
-"""
-struct MSRK5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function MSRK5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    MSRK5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function MSRK5(stage_limiter!, step_limiter! = trivial_limiter!)
-    MSRK5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::MSRK5)
-    print(io, "MSRK5(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
     MSRK6(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())
@@ -785,6 +467,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Table 4.
 """
 struct MSRK6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
@@ -830,12 +513,13 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 @article{Stepanov2021Embedded5,
-  title={Embedded (4, 5) pairs of explicit 7-stage Runge–Kutta methods with FSAL property},
-  author={Misha Stepanov},
-  journal={Calcolo},
-  year={2021},
-  volume={59}
+title={Embedded (4, 5) pairs of explicit 7-stage Runge–Kutta methods with FSAL property},
+author={Misha Stepanov},
+journal={Calcolo},
+year={2021},
+volume={59}
 }
 """
 struct Stepanov5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -880,15 +564,15 @@ appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
 default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
-
 ## Reference
+
 @article{Kovalnogov2020RungeKuttaPS,
-  title={Runge–Kutta pairs suited for SIR‐type epidemic models},
-  author={Vladislav N. Kovalnogov and Theodore E. Simos and Ch. Tsitouras},
-  journal={Mathematical Methods in the Applied Sciences},
-  year={2020},
-  volume={44},
-  pages={5210 - 5216}
+title={Runge–Kutta pairs suited for SIR‐type epidemic models},
+author={Vladislav N. Kovalnogov and Theodore E. Simos and Ch. Tsitouras},
+journal={Mathematical Methods in the Applied Sciences},
+year={2020},
+volume={44},
+pages={5210 - 5216}
 }
 """
 struct SIR54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -918,109 +602,6 @@ function Base.show(io::IO, alg::SIR54)
 end
 
 """
-    Anas5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  4th order Runge-Kutta method designed for periodic problems.
-  Requires a periodicity estimate, which when accurate the method becomes 5th order (and is otherwise 4th order with less error for better estimates).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-"""
-struct Anas5{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    w::T
-end
-
-function Anas5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), w = 1)
-    Anas5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread), typeof(w)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        w)
-end
-
-# for backwards compatibility
-function Anas5(stage_limiter!, step_limiter! = trivial_limiter!; w = 1)
-    Anas5{typeof(stage_limiter!), typeof(step_limiter!), False, typeof(w)}(stage_limiter!,
-        step_limiter!,
-        False(), w)
-end
-
-function Base.show(io::IO, alg::Anas5)
-    print(io, "Anas5(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! =", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", periodicity estimate = ", alg.w,
-        ")")
-end
-
-"""
-    ORK256(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False(),
-             williamson_condition = true)
-
-A second-order, five-stage explicit Runge-Kutta method for wave propagation
-equations. Fixed timestep only.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## References
-- Matteo Bernardini, Sergio Pirozzoli.
-  A General Strategy for the Optimization of Runge-Kutta Schemes for Wave
-  Propagation Phenomena.
-  Journal of Computational Physics, 228(11), pp 4182-4199, 2009.
-  doi: https://doi.org/10.1016/j.jcp.2009.02.032
-"""
-struct ORK256{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    williamson_condition::Bool
-end
-
-function ORK256(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), williamson_condition = true)
-    ORK256{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        williamson_condition)
-end
-
-# for backwards compatibility
-function ORK256(stage_limiter!, step_limiter! = trivial_limiter!;
-    williamson_condition = true)
-    ORK256{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!, False(),
-        williamson_condition)
-end
-
-function Base.show(io::IO, alg::ORK256)
-    print(io, "ORK256(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", williamson_condition = ", alg.williamson_condition, ")")
-end
-
-"""
     CarpenterKennedy2N54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
                            step_limiter! = OrdinaryDiffEq.trivial_limiter!,
                            thread = OrdinaryDiffEq.False(),
@@ -1040,10 +621,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
+
 @article{carpenter1994fourth,
-  title={Fourth-order 2N-storage Runge-Kutta schemes},
-  author={Carpenter, Mark H and Kennedy, Christopher A},
-  year={1994}
+title={Fourth-order 2N-storage Runge-Kutta schemes},
+author={Carpenter, Mark H and Kennedy, Christopher A},
+year={1994}
 }
 """
 struct CarpenterKennedy2N54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
@@ -1096,11 +678,12 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- D. Stanescu, W. G. Habashi.
-  2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for Computational
-  Acoustics.
-  Journal of Computational Physics, 143(2), pp 674-681, 1998.
-  doi: https://doi.org/10.1006/jcph.1998.5986
+
+  - D. Stanescu, W. G. Habashi.
+    2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for Computational
+    Acoustics.
+    Journal of Computational Physics, 143(2), pp 674-681, 1998.
+    doi: https://doi.org/10.1006/jcph.1998.5986
 """
 struct SHLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1244,11 +827,12 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- T. Toulorge, W. Desmet.
-  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
-  Applied to Wave Propagation Problems.
-  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
-  doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+  - T. Toulorge, W. Desmet.
+    Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+    Applied to Wave Propagation Problems.
+    Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+    doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
 struct DGLDDRK73_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1302,11 +886,12 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- T. Toulorge, W. Desmet.
-  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
-  Applied to Wave Propagation Problems.
-  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
-  doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+  - T. Toulorge, W. Desmet.
+    Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+    Applied to Wave Propagation Problems.
+    Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+    doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
 struct DGLDDRK84_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1360,11 +945,12 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- T. Toulorge, W. Desmet.
-  Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
-  Applied to Wave Propagation Problems.
-  Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
-  doi: https://doi.org/10.1016/j.jcp.2011.11.024
+
+  - T. Toulorge, W. Desmet.
+    Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+    Applied to Wave Propagation Problems.
+    Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+    doi: https://doi.org/10.1016/j.jcp.2011.11.024
 """
 struct DGLDDRK84_F{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1416,10 +1002,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Jens Niegemann, Richard Diehl, Kurt Busch.
-  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
-  Journal of Computational Physics, 231, pp 364-372, 2012.
-  doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+  - Jens Niegemann, Richard Diehl, Kurt Busch.
+    Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+    Journal of Computational Physics, 231, pp 364-372, 2012.
+    doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
 struct NDBLSRK124{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1470,10 +1057,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Jens Niegemann, Richard Diehl, Kurt Busch.
-  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
-  Journal of Computational Physics, 231, pp 364-372, 2012.
-  doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+  - Jens Niegemann, Richard Diehl, Kurt Busch.
+    Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+    Journal of Computational Physics, 231, pp 364-372, 2012.
+    doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
 struct NDBLSRK134{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1524,10 +1112,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Jens Niegemann, Richard Diehl, Kurt Busch.
-  Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
-  Journal of Computational Physics, 231, pp 364-372, 2012.
-  doi: https://doi.org/10.1016/j.jcp.2011.09.003
+
+  - Jens Niegemann, Richard Diehl, Kurt Busch.
+    Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
+    Journal of Computational Physics, 231, pp 364-372, 2012.
+    doi: https://doi.org/10.1016/j.jcp.2011.09.003
 """
 struct NDBLSRK144{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -1578,6 +1167,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 M. Calvo, J. M. Franco, L. Randez. A New Minimum Storage Runge–Kutta Scheme
 for Computational Acoustics. Journal of Computational Physics, 201, pp 1-12, 2004.
 doi: https://doi.org/10.1016/j.jcp.2004.05.012
@@ -1664,7 +1254,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  4-stage, third order low-storage scheme, optimized for compressible Navier–Stokes equations.
+4-stage, third order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1748,12 +1338,11 @@ end
 
 """
 CKLLSRK95_4S(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
+step_limiter! = OrdinaryDiffEq.trivial_limiter!,
+thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
-
+9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1796,7 +1385,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1839,7 +1428,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1883,7 +1472,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1927,7 +1516,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -1970,7 +1559,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2013,7 +1602,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2056,7 +1645,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2099,7 +1688,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2142,7 +1731,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2185,7 +1774,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2270,7 +1859,7 @@ end
                  thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2310,7 +1899,7 @@ end
 
 """
 CKLLSRK75_4M_5R: Low-Storage Method
-  7-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
+7-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 """
 struct CKLLSRK75_4M_5R{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -2344,7 +1933,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  3-stage, second order (3S) low-storage scheme, optimized  the spectral difference method applied to wave propagation problems.
+3-stage, second order (3S) low-storage scheme, optimized  the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2356,6 +1945,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2395,7 +1985,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  8-stage, second order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
+8-stage, second order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2407,6 +1997,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2446,7 +2037,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  5-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
+5-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2458,6 +2049,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2497,7 +2089,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  17-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
+17-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2509,6 +2101,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2548,7 +2141,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  9-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
+9-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2560,6 +2153,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2599,7 +2193,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  18-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
+18-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2611,6 +2205,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2650,7 +2245,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  10-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
+10-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2662,6 +2257,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2701,7 +2297,7 @@ end
              thread = OrdinaryDiffEq.False())
 
 Low-Storage Method
-  20-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
+20-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.
 
 Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
 and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
@@ -2713,6 +2309,7 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
 "Optimized explicit Runge--Kutta schemes for the spectral difference method applied to wave propagation problems."
 SIAM Journal on Scientific Computing 35.2 (2013): A957-A986.
@@ -2764,10 +2361,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
-  Optimized Runge-Kutta Methods with Automatic Step Size Control for
-  Compressible Computational Fluid Dynamics
-  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+
+  - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+    Optimized Runge-Kutta Methods with Automatic Step Size Control for
+    Compressible Computational Fluid Dynamics
+    [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3Sp35{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -2813,10 +2411,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
-  Optimized Runge-Kutta Methods with Automatic Step Size Control for
-  Compressible Computational Fluid Dynamics
-  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+
+  - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+    Optimized Runge-Kutta Methods with Automatic Step Size Control for
+    Compressible Computational Fluid Dynamics
+    [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3SpFSAL35{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -2862,10 +2461,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
-  Optimized Runge-Kutta Methods with Automatic Step Size Control for
-  Compressible Computational Fluid Dynamics
-  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+
+  - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+    Optimized Runge-Kutta Methods with Automatic Step Size Control for
+    Compressible Computational Fluid Dynamics
+    [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3Sp49{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -2911,10 +2511,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
-  Optimized Runge-Kutta Methods with Automatic Step Size Control for
-  Compressible Computational Fluid Dynamics
-  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+
+  - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+    Optimized Runge-Kutta Methods with Automatic Step Size Control for
+    Compressible Computational Fluid Dynamics
+    [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3SpFSAL49{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -2960,10 +2561,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
-  Optimized Runge-Kutta Methods with Automatic Step Size Control for
-  Compressible Computational Fluid Dynamics
-  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+
+  - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+    Optimized Runge-Kutta Methods with Automatic Step Size Control for
+    Compressible Computational Fluid Dynamics
+    [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3Sp510{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -3009,10 +2611,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ranocha, Dalcin, Parsani, Ketcheson (2021)
-  Optimized Runge-Kutta Methods with Automatic Step Size Control for
-  Compressible Computational Fluid Dynamics
-  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+
+  - Ranocha, Dalcin, Parsani, Ketcheson (2021)
+    Optimized Runge-Kutta Methods with Automatic Step Size Control for
+    Compressible Computational Fluid Dynamics
+    [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct RDPK3SpFSAL510{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -3067,53 +2670,6 @@ function Base.show(io::IO, alg::KYK2014DGSSPRK_3S2)
 end
 
 """
-    RKO65(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-A fifth-order six-stage explicit Runge-Kutta method.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-Tsitouras, Ch. "Explicit Runge–Kutta methods for starting integration of
-Lane–Emden problem." Applied Mathematics and Computation 354 (2019): 353-364.
-doi: https://doi.org/10.1016/j.amc.2019.02.047
-"""
-struct RKO65{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function RKO65(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    RKO65{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function RKO65(stage_limiter!, step_limiter! = trivial_limiter!)
-    RKO65{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::RKO65)
-    print(io, "RKO65(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
     SSPRK22(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
               thread = OrdinaryDiffEq.False())
@@ -3131,10 +2687,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Shu, Chi-Wang, and Stanley Osher.
-  "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
-  Journal of Computational Physics 77.2 (1988): 439-471.
-  https://doi.org/10.1016/0021-9991(88)90177-5
+
+  - Shu, Chi-Wang, and Stanley Osher.
+    "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
+    Journal of Computational Physics 77.2 (1988): 439-471.
+    https://doi.org/10.1016/0021-9991(88)90177-5
 """
 struct SSPRK22{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3179,10 +2736,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Shu, Chi-Wang, and Stanley Osher.
-  "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
-  Journal of Computational Physics 77.2 (1988): 439-471.
-  https://doi.org/10.1016/0021-9991(88)90177-5
+
+  - Shu, Chi-Wang, and Stanley Osher.
+    "Efficient implementation of essentially non-oscillatory shock-capturing schemes."
+    Journal of Computational Physics 77.2 (1988): 439-471.
+    https://doi.org/10.1016/0021-9991(88)90177-5
 """
 struct SSPRK33{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3227,9 +2785,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ruuth, Steven.
-  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
-  Mathematics of Computation 75.253 (2006): 183-207.
+
+  - Ruuth, Steven.
+    "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+    Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK53{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3300,9 +2859,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Higueras and T. Roldán.
-  "New third order low-storage SSP explicit Runge–Kutta methods".
-  arXiv:1809.04807v1.
+
+  - Higueras and T. Roldán.
+    "New third order low-storage SSP explicit Runge–Kutta methods".
+    arXiv:1809.04807v1.
 """
 struct SSPRK53_2N1{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3348,9 +2908,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Higueras and T. Roldán.
-  "New third order low-storage SSP explicit Runge–Kutta methods".
-  arXiv:1809.04807v1.
+
+  - Higueras and T. Roldán.
+    "New third order low-storage SSP explicit Runge–Kutta methods".
+    arXiv:1809.04807v1.
 """
 struct SSPRK53_2N2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3396,9 +2957,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Higueras and T. Roldán.
-  "New third order low-storage SSP explicit Runge–Kutta methods".
-  arXiv:1809.04807v1.
+
+  - Higueras and T. Roldán.
+    "New third order low-storage SSP explicit Runge–Kutta methods".
+    arXiv:1809.04807v1.
 """
 struct SSPRK53_H{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3443,9 +3005,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ruuth, Steven.
-  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
-  Mathematics of Computation 75.253 (2006): 183-207.
+
+  - Ruuth, Steven.
+    "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+    Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK63{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3490,9 +3053,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ruuth, Steven.
-  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
-  Mathematics of Computation 75.253 (2006): 183-207.
+
+  - Ruuth, Steven.
+    "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+    Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK73{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3537,9 +3101,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ruuth, Steven.
-  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
-  Mathematics of Computation 75.253 (2006): 183-207.
+
+  - Ruuth, Steven.
+    "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+    Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK83{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3583,23 +3148,27 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
+
 Optimal third-order explicit SSP method with four stages discovered by
-- J. F. B. M. Kraaijevanger.
-  "Contractivity of Runge-Kutta methods."
-  In: BIT Numerical Mathematics 31.3 (1991), pp. 482–528.
-  [DOI: 10.1007/BF01933264](https://doi.org/10.1007/BF01933264).
+
+  - J. F. B. M. Kraaijevanger.
+    "Contractivity of Runge-Kutta methods."
+    In: BIT Numerical Mathematics 31.3 (1991), pp. 482–528.
+    [DOI: 10.1007/BF01933264](https://doi.org/10.1007/BF01933264).
 
 Embedded method constructed by
-- Sidafa Conde, Imre Fekete, John N. Shadid.
-  "Embedded error estimation and adaptive step-size control for
-  optimal explicit strong stability preserving Runge–Kutta methods."
-  [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
+
+  - Sidafa Conde, Imre Fekete, John N. Shadid.
+    "Embedded error estimation and adaptive step-size control for
+    optimal explicit strong stability preserving Runge–Kutta methods."
+    [arXiv: 1806.08693](https://arXiv.org/abs/1806.08693)
 
 Efficient implementation (and optimized controller) developed by
-- Hendrik Ranocha, Lisandro Dalcin, Matteo Parsani, David I. Ketcheson (2021)
-  Optimized Runge-Kutta Methods with Automatic Step Size Control for
-  Compressible Computational Fluid Dynamics
-  [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
+
+  - Hendrik Ranocha, Lisandro Dalcin, Matteo Parsani, David I. Ketcheson (2021)
+    Optimized Runge-Kutta Methods with Automatic Step Size Control for
+    Compressible Computational Fluid Dynamics
+    [arXiv:2104.06836](https://arxiv.org/abs/2104.06836)
 """
 struct SSPRK43{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -3646,10 +3215,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
-  Strong stability preserving Runge-Kutta and multistep time discretizations.
-  World Scientific, 2011.
-  Example 6.1.
+
+  - Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
+    Strong stability preserving Runge-Kutta and multistep time discretizations.
+    World Scientific, 2011.
+    Example 6.1.
 """
 struct SSPRK432{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -3695,10 +3265,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Shu, Chi-Wang.
-  "Total-variation-diminishing time discretizations."
-  SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
-  [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
+
+  - Shu, Chi-Wang.
+    "Total-variation-diminishing time discretizations."
+    SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
+    [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
 """
 struct SSPRKMSVS43{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -3745,10 +3316,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Shu, Chi-Wang.
-  "Total-variation-diminishing time discretizations."
-  SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
-  [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
+
+  - Shu, Chi-Wang.
+    "Total-variation-diminishing time discretizations."
+    SIAM Journal on Scientific and Statistical Computing 9, no. 6 (1988): 1073-1084.
+    [DOI: 10.1137/0909073](https://doi.org/10.1137/0909073)
 """
 struct SSPRKMSVS32{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -3796,9 +3368,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
-  Strong stability preserving Runge-Kutta and multistep time discretizations.
-  World Scientific, 2011.
+
+  - Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
+    Strong stability preserving Runge-Kutta and multistep time discretizations.
+    World Scientific, 2011.
 """
 struct SSPRK932{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter
@@ -3843,9 +3416,10 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ruuth, Steven.
-  "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
-  Mathematics of Computation 75.253 (2006): 183-207.
+
+  - Ruuth, Steven.
+    "Global optimization of explicit strong-stability-preserving Runge-Kutta methods."
+    Mathematics of Computation 75.253 (2006): 183-207.
 """
 struct SSPRK54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3890,10 +3464,11 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## References
-- Ketcheson, David I.
-  "Highly efficient strong stability-preserving Runge–Kutta methods with
-  low-storage implementations."
-  SIAM Journal on Scientific Computing 30.4 (2008): 2113-2136.
+
+  - Ketcheson, David I.
+    "Highly efficient strong stability-preserving Runge–Kutta methods with
+    low-storage implementations."
+    SIAM Journal on Scientific Computing 30.4 (2008): 2113-2136.
 """
 struct SSPRK104{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter
@@ -3921,171 +3496,6 @@ function Base.show(io::IO, alg::SSPRK104)
 end
 
 """
-    OwrenZen3(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Owren-Zennaro optimized interpolation 3/2 method (free 3rd order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{owren1992derivation,
-  title={Derivation of efficient, continuous, explicit Runge--Kutta methods},
-  author={Owren, Brynjulf and Zennaro, Marino},
-  journal={SIAM journal on scientific and statistical computing},
-  volume={13},
-  number={6},
-  pages={1488--1501},
-  year={1992},
-  publisher={SIAM}
-}
-"""
-struct OwrenZen3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function OwrenZen3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    OwrenZen3{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function OwrenZen3(stage_limiter!, step_limiter! = trivial_limiter!)
-    OwrenZen3{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::OwrenZen3)
-    print(io, "OwrenZen3(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    OwrenZen4(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Owren-Zennaro optimized interpolation 4/3 method (free 4th order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{owren1992derivation,
-  title={Derivation of efficient, continuous, explicit Runge--Kutta methods},
-  author={Owren, Brynjulf and Zennaro, Marino},
-  journal={SIAM journal on scientific and statistical computing},
-  volume={13},
-  number={6},
-  pages={1488--1501},
-  year={1992},
-  publisher={SIAM}
-}
-"""
-struct OwrenZen4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function OwrenZen4(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    OwrenZen4{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function OwrenZen4(stage_limiter!, step_limiter! = trivial_limiter!)
-    OwrenZen4{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::OwrenZen4)
-    print(io, "OwrenZen4(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    OwrenZen5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Owren-Zennaro optimized interpolation 5/4 method (free 5th order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{owren1992derivation,
-  title={Derivation of efficient, continuous, explicit Runge--Kutta methods},
-  author={Owren, Brynjulf and Zennaro, Marino},
-  journal={SIAM journal on scientific and statistical computing},
-  volume={13},
-  number={6},
-  pages={1488--1501},
-  year={1992},
-  publisher={SIAM}
-}
-"""
-struct OwrenZen5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function OwrenZen5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    OwrenZen5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function OwrenZen5(stage_limiter!, step_limiter! = trivial_limiter!)
-    OwrenZen5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::OwrenZen5)
-    print(io, "OwrenZen5(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
     Alshina2(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
              thread = OrdinaryDiffEq.False())
@@ -4102,18 +3512,19 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 @article{Alshina2008,
-  doi = {10.1134/s0965542508030068},
-  url = {https://doi.org/10.1134/s0965542508030068},
-  year = {2008},
-  month = mar,
-  publisher = {Pleiades Publishing Ltd},
-  volume = {48},
-  number = {3},
-  pages = {395--405},
-  author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
-  title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
-  journal = {Computational Mathematics and Mathematical Physics}
+doi = {10.1134/s0965542508030068},
+url = {https://doi.org/10.1134/s0965542508030068},
+year = {2008},
+month = mar,
+publisher = {Pleiades Publishing Ltd},
+volume = {48},
+number = {3},
+pages = {395--405},
+author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
+title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
+journal = {Computational Mathematics and Mathematical Physics}
 }
 """
 struct Alshina2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -4158,18 +3569,19 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 @article{Alshina2008,
-  doi = {10.1134/s0965542508030068},
-  url = {https://doi.org/10.1134/s0965542508030068},
-  year = {2008},
-  month = mar,
-  publisher = {Pleiades Publishing Ltd},
-  volume = {48},
-  number = {3},
-  pages = {395--405},
-  author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
-  title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
-  journal = {Computational Mathematics and Mathematical Physics}
+doi = {10.1134/s0965542508030068},
+url = {https://doi.org/10.1134/s0965542508030068},
+year = {2008},
+month = mar,
+publisher = {Pleiades Publishing Ltd},
+volume = {48},
+number = {3},
+pages = {395--405},
+author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
+title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
+journal = {Computational Mathematics and Mathematical Physics}
 }
 """
 struct Alshina3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -4214,18 +3626,19 @@ default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
 Julia is started with multiple threads.
 
 ## Reference
+
 @article{Alshina2008,
-  doi = {10.1134/s0965542508030068},
-  url = {https://doi.org/10.1134/s0965542508030068},
-  year = {2008},
-  month = mar,
-  publisher = {Pleiades Publishing Ltd},
-  volume = {48},
-  number = {3},
-  pages = {395--405},
-  author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
-  title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
-  journal = {Computational Mathematics and Mathematical Physics}
+doi = {10.1134/s0965542508030068},
+url = {https://doi.org/10.1134/s0965542508030068},
+year = {2008},
+month = mar,
+publisher = {Pleiades Publishing Ltd},
+volume = {48},
+number = {3},
+pages = {395--405},
+author = {E. A. Alshina and E. M. Zaks and N. N. Kalitkin},
+title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
+journal = {Computational Mathematics and Mathematical Physics}
 }
 """
 struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
@@ -4253,757 +3666,6 @@ function Base.show(io::IO, alg::Alshina6)
         ", thread = ", alg.thread, ")")
 end
 
-"""
-    BS3(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-          step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-          thread = OrdinaryDiffEq.False())
-
-A third-order, four-stage explicit FSAL Runge-Kutta method with embedded error
-estimator of Bogacki and Shampine.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## References
-@article{bogacki19893,
-  title={A 3 (2) pair of Runge-Kutta formulas},
-  author={Bogacki, Przemyslaw and Shampine, Lawrence F},
-  journal={Applied Mathematics Letters},
-  volume={2},
-  number={4},
-  pages={321--325},
-  year={1989},
-  publisher={Elsevier}
-}
-"""
-struct BS3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function BS3(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    BS3{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function BS3(stage_limiter!, step_limiter! = trivial_limiter!)
-    BS3{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::BS3)
-    print(io, "BS3(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    DP5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Dormand-Prince's 5/4 Runge-Kutta method. (free 4th order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{dormand1980family,
-  title={A family of embedded Runge-Kutta formulae},
-  author={Dormand, John R and Prince, Peter J},
-  journal={Journal of computational and applied mathematics},
-  volume={6},
-  number={1},
-  pages={19--26},
-  year={1980},
-  publisher={Elsevier}
-}
-"""
-struct DP5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function DP5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    DP5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function DP5(stage_limiter!, step_limiter! = trivial_limiter!)
-    DP5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!, False())
-end
-
-function Base.show(io::IO, alg::DP5)
-    print(io, "DP5(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    Tsit5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-            step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-            thread = OrdinaryDiffEq.False())
-
-A fifth-order explicit Runge-Kutta method with embedded error
-estimator of Tsitouras. Free 4th order interpolant.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## References
-@article{tsitouras2011runge,
-  title={Runge--Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption},
-  author={Tsitouras, Ch},
-  journal={Computers \\& Mathematics with Applications},
-  volume={62},
-  number={2},
-  pages={770--775},
-  year={2011},
-  publisher={Elsevier}
-}
-"""
-struct Tsit5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-TruncatedStacktraces.@truncate_stacktrace Tsit5 3
-
-function Tsit5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    Tsit5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function Tsit5(stage_limiter!, step_limiter! = trivial_limiter!)
-    Tsit5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!, False())
-end
-
-function Base.show(io::IO, alg::Tsit5)
-    print(io, "Tsit5(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    DP8(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Hairer's 8/5/3 adaption of the Dormand-Prince Runge-Kutta method. (7th order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
-Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-Springer-Verlag.
-"""
-struct DP8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function DP8(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    DP8{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function DP8(stage_limiter!, step_limiter! = trivial_limiter!)
-    DP8{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::DP8)
-    print(io, "DP8(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    TanYam7(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Tanaka-Yamashita 7 Runge-Kutta method.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-Tanaka M., Muramatsu S., Yamashita S., (1992), On the Optimization of Some Nine-Stage
-Seventh-order Runge-Kutta Method, Information Processing Society of Japan,
-33 (12), pp. 1512-1526.
-"""
-struct TanYam7{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function TanYam7(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    TanYam7{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function TanYam7(stage_limiter!, step_limiter! = trivial_limiter!)
-    TanYam7{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::TanYam7)
-    print(io, "TanYam7(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-    TsitPap8(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Tsitouras-Papakostas 8/7 Runge-Kutta method.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-"""
-struct TsitPap8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-function TsitPap8(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False())
-    TsitPap8{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread)
-end
-
-# for backwards compatibility
-function TsitPap8(stage_limiter!, step_limiter! = trivial_limiter!)
-    TsitPap8{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-function Base.show(io::IO, alg::TsitPap8)
-    print(io, "TsitPap8(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread, ")")
-end
-
-"""
-@article{feagin2012high,
-  title={High-order explicit Runge-Kutta methods using m-symmetry},
-  author={Feagin, Terry},
-  year={2012},
-  publisher={Neural, Parallel \\& Scientific Computations}
-}
-
-Feagin10: Explicit Runge-Kutta Method
-   Feagin's 10th-order Runge-Kutta method.
-"""
-struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
-
-"""
-@article{feagin2012high,
-  title={High-order explicit Runge-Kutta methods using m-symmetry},
-  author={Feagin, Terry},
-  year={2012},
-  publisher={Neural, Parallel \\& Scientific Computations}
-}
-
-Feagin12: Explicit Runge-Kutta Method
-   Feagin's 12th-order Runge-Kutta method.
-"""
-struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
-
-"""
-Feagin, T., “An Explicit Runge-Kutta Method of Order Fourteen,” Numerical
-Algorithms, 2009
-
-Feagin14: Explicit Runge-Kutta Method
-   Feagin's 14th-order Runge-Kutta method.
-"""
-struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
-
-"""
-    BS5(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False(),
-             lazy = true)
-
-Explicit Runge-Kutta Method
-  Bogacki-Shampine 5/4 Runge-Kutta method. (lazy 5th order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{bogacki1996efficient,
-  title={An efficient runge-kutta (4, 5) pair},
-  author={Bogacki, P and Shampine, Lawrence F},
-  journal={Computers \\& Mathematics with Applications},
-  volume={32},
-  number={6},
-  pages={15--28},
-  year={1996},
-  publisher={Elsevier}
-}
-"""
-struct BS5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    lazy::Bool
-end
-
-function BS5(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), lazy = true)
-    BS5{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        lazy)
-end
-
-# for backwards compatibility
-function BS5(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    BS5{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False(),
-        lazy)
-end
-
-function Base.show(io::IO, alg::BS5)
-    print(io, "BS5(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", lazy = ", alg.lazy,
-        ")")
-end
-
-"""
-    Vern6(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False(),
-             lazy = true)
-
-Explicit Runge-Kutta Method
-  Verner's “Most Efficient” 6/5 Runge-Kutta method. (lazy 6th order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{verner2010numerically,
-  title={Numerically optimal Runge--Kutta pairs with interpolants},
-  author={Verner, James H},
-  journal={Numerical Algorithms},
-  volume={53},
-  number={2-3},
-  pages={383--396},
-  year={2010},
-  publisher={Springer}
-}
-"""
-struct Vern6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    lazy::Bool
-end
-
-TruncatedStacktraces.@truncate_stacktrace Vern6 3
-
-function Vern6(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), lazy = true)
-    Vern6{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        lazy)
-end
-
-# for backwards compatibility
-function Vern6(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    Vern6{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False(),
-        lazy)
-end
-
-function Base.show(io::IO, alg::Vern6)
-    print(io, "Vern6(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", lazy = ", alg.lazy,
-        ")")
-end
-
-"""
-    Vern7(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False())
-
-Explicit Runge-Kutta Method
-  Verner's “Most Efficient” 7/6 Runge-Kutta method. (lazy 7th order interpolant).
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{verner2010numerically,
-  title={Numerically optimal Runge--Kutta pairs with interpolants},
-  author={Verner, James H},
-  journal={Numerical Algorithms},
-  volume={53},
-  number={2-3},
-  pages={383--396},
-  year={2010},
-  publisher={Springer}
-}
-"""
-struct Vern7{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    lazy::Bool
-end
-
-TruncatedStacktraces.@truncate_stacktrace Vern7 3
-
-function Vern7(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), lazy = true)
-    Vern7{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        lazy)
-end
-
-# for backwards compatibility
-function Vern7(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    Vern7{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False(),
-        lazy)
-end
-
-function Base.show(io::IO, alg::Vern7)
-    print(io, "Vern7(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", lazy = ", alg.lazy,
-        ")")
-end
-
-"""
-    Vern8(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False(),
-             lazy = true)
-
-Explicit Runge-Kutta Method
-  Verner's “Most Efficient” 8/7 Runge-Kutta method. (lazy 8th order interpolant)
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{verner2010numerically,
-  title={Numerically optimal Runge--Kutta pairs with interpolants},
-  author={Verner, James H},
-  journal={Numerical Algorithms},
-  volume={53},
-  number={2-3},
-  pages={383--396},
-  year={2010},
-  publisher={Springer}
-}
-"""
-struct Vern8{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    lazy::Bool
-end
-
-TruncatedStacktraces.@truncate_stacktrace Vern8 3
-
-function Vern8(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), lazy = true)
-    Vern8{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        lazy)
-end
-
-# for backwards compatibility
-function Vern8(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    Vern8{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False(),
-        lazy)
-end
-
-function Base.show(io::IO, alg::Vern8)
-    print(io, "Vern8(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", lazy = ", alg.lazy,
-        ")")
-end
-
-"""
-    Vern9(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False(),
-             lazy = true)
-
-Explicit Runge-Kutta Method
-  Verner's “Most Efficient” 9/8 Runge-Kutta method. (lazy 9th order interpolant)
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-
-## Reference
-@article{verner2010numerically,
-  title={Numerically optimal Runge--Kutta pairs with interpolants},
-  author={Verner, James H},
-  journal={Numerical Algorithms},
-  volume={53},
-  number={2-3},
-  pages={383--396},
-  year={2010},
-  publisher={Springer}
-}
-"""
-struct Vern9{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    lazy::Bool
-end
-
-TruncatedStacktraces.@truncate_stacktrace Vern9 3
-
-function Vern9(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), lazy = true)
-    Vern9{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        lazy)
-end
-
-# for backwards compatibility
-function Vern9(stage_limiter!, step_limiter! = trivial_limiter!; lazy = true)
-    Vern9{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
-        step_limiter!,
-        False(),
-        lazy)
-end
-
-function Base.show(io::IO, alg::Vern9)
-    print(io, "Vern9(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", lazy = ", alg.lazy,
-        ")")
-end
-
-"""
-    FRK65(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False(),
-             omega = 0.0)
-
-Explicit Runge-Kutta
-  Zero Dissipation Runge-Kutta of 6th order.
-  Takes an optional argument omega to for the periodicity phase, in which case this method results in zero numerical dissipation.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-"""
-struct FRK65{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    omega::T
-end
-
-function FRK65(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), omega = 0.0)
-    FRK65{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread), typeof(omega)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        omega)
-end
-
-# for backwards compatibility
-function FRK65(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    FRK65{typeof(stage_limiter!), typeof(step_limiter!), False, typeof(omega)}(stage_limiter!,
-        step_limiter!,
-        False(),
-        omega)
-end
-
-function Base.show(io::IO, alg::FRK65)
-    print(io, "FRK65(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", periodicity phase = ", alg.omega,
-        ")")
-end
-
-"""
-    PFRK87(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-             thread = OrdinaryDiffEq.False(),
-             omega = 0.0)
-
-Explicit Runge-Kutta
-  Phase-fitted Runge-Kutta of 8th order.
-  Takes an optional argument w to for the periodicity phase, in which case this method results in zero numerical dissipation.
-
-Like SSPRK methods, this method also takes optional arguments `stage_limiter!`
-and `step_limiter!`, where `stage_limiter!` and `step_limiter!` are functions
-of the form `limiter!(u, integrator, p, t)`.
-
-The argument `thread` determines whether internal broadcasting on
-appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-Julia is started with multiple threads.
-"""
-struct PFRK87{StageLimiter, StepLimiter, Thread, T} <: OrdinaryDiffEqAdaptiveAlgorithm
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-    omega::T
-end
-
-function PFRK87(; stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!,
-    thread = False(), omega = 0.0)
-    PFRK87{typeof(stage_limiter!), typeof(step_limiter!), typeof(thread), typeof(omega)}(stage_limiter!,
-        step_limiter!,
-        thread,
-        omega)
-end
-
-# for backwards compatibility
-function PFRK87(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
-    PFRK87{typeof(stage_limiter!), typeof(step_limiter!), False, typeof(omega)}(stage_limiter!,
-        step_limiter!,
-        False(),
-        omega)
-end
-
-function Base.show(io::IO, alg::PFRK87)
-    print(io, "PFRK87(stage_limiter! = ", alg.stage_limiter!,
-        ", step_limiter! = ", alg.step_limiter!,
-        ", thread = ", alg.thread,
-        ", periodicity phase = ", alg.omega,
-        ")")
-end
-
 ################################################################################
 
 # Symplectic methods
@@ -5012,97 +3674,97 @@ struct SymplecticEuler <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{verlet1967computer,
-  title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
-  author={Verlet, Loup},
-  journal={Physical review},
-  volume={159},
-  number={1},
-  pages={98},
-  year={1967},
-  publisher={APS}
+title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
+author={Verlet, Loup},
+journal={Physical review},
+volume={159},
+number={1},
+pages={98},
+year={1967},
+publisher={APS}
 }
 """
 struct VelocityVerlet <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{verlet1967computer,
-  title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
-  author={Verlet, Loup},
-  journal={Physical review},
-  volume={159},
-  number={1},
-  pages={98},
-  year={1967},
-  publisher={APS}
+title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
+author={Verlet, Loup},
+journal={Physical review},
+volume={159},
+number={1},
+pages={98},
+year={1967},
+publisher={APS}
 }
 """
 struct VerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{verlet1967computer,
-  title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
-  author={Verlet, Loup},
-  journal={Physical review},
-  volume={159},
-  number={1},
-  pages={98},
-  year={1967},
-  publisher={APS}
+title={Computer" experiments" on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules},
+author={Verlet, Loup},
+journal={Physical review},
+volume={159},
+number={1},
+pages={98},
+year={1967},
+publisher={APS}
 }
 """
 struct PseudoVerletLeapfrog <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
-  title={The accuracy of symplectic integrators},
-  author={McLachlan, Robert I and Atela, Pau},
-  journal={Nonlinearity},
-  volume={5},
-  number={2},
-  pages={541},
-  year={1992},
-  publisher={IOP Publishing}
+title={The accuracy of symplectic integrators},
+author={McLachlan, Robert I and Atela, Pau},
+journal={Nonlinearity},
+volume={5},
+number={2},
+pages={541},
+year={1992},
+publisher={IOP Publishing}
 }
 """
 struct McAte2 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{ruth1983canonical,
-  title={A canonical integration technique},
-  author={Ruth, Ronald D},
-  journal={IEEE Trans. Nucl. Sci.},
-  volume={30},
-  number={CERN-LEP-TH-83-14},
-  pages={2669--2671},
-  year={1983}
+title={A canonical integration technique},
+author={Ruth, Ronald D},
+journal={IEEE Trans. Nucl. Sci.},
+volume={30},
+number={CERN-LEP-TH-83-14},
+pages={2669--2671},
+year={1983}
 }
 """
 struct Ruth3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
-  title={The accuracy of symplectic integrators},
-  author={McLachlan, Robert I and Atela, Pau},
-  journal={Nonlinearity},
-  volume={5},
-  number={2},
-  pages={541},
-  year={1992},
-  publisher={IOP Publishing}
+title={The accuracy of symplectic integrators},
+author={McLachlan, Robert I and Atela, Pau},
+journal={Nonlinearity},
+volume={5},
+number={2},
+pages={541},
+year={1992},
+publisher={IOP Publishing}
 }
 """
 struct McAte3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{candy1991symplectic,
-  title={A symplectic integration algorithm for separable Hamiltonian functions},
-  author={Candy, J and Rozmus, W},
-  journal={Journal of Computational Physics},
-  volume={92},
-  number={1},
-  pages={230--256},
-  year={1991},
-  publisher={Elsevier}
+title={A symplectic integration algorithm for separable Hamiltonian functions},
+author={Candy, J and Rozmus, W},
+journal={Journal of Computational Physics},
+volume={92},
+number={1},
+pages={230--256},
+year={1991},
+publisher={Elsevier}
 }
 """
 struct CandyRoz4 <: OrdinaryDiffEqPartitionedAlgorithm end
@@ -5110,110 +3772,110 @@ struct McAte4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{sanz1993symplectic,
-  title={Symplectic numerical methods for Hamiltonian problems},
-  author={Sanz-Serna, Jes{\'u}s Maria and Calvo, Mari-Paz},
-  journal={International Journal of Modern Physics C},
-  volume={4},
-  number={02},
-  pages={385--392},
-  year={1993},
-  publisher={World Scientific}
+title={Symplectic numerical methods for Hamiltonian problems},
+author={Sanz-Serna, Jes{\'u}s Maria and Calvo, Mari-Paz},
+journal={International Journal of Modern Physics C},
+volume={4},
+number={02},
+pages={385--392},
+year={1993},
+publisher={World Scientific}
 }
 """
 struct CalvoSanz4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
-  title={The accuracy of symplectic integrators},
-  author={McLachlan, Robert I and Atela, Pau},
-  journal={Nonlinearity},
-  volume={5},
-  number={2},
-  pages={541},
-  year={1992},
-  publisher={IOP Publishing}
+title={The accuracy of symplectic integrators},
+author={McLachlan, Robert I and Atela, Pau},
+journal={Nonlinearity},
+volume={5},
+number={2},
+pages={541},
+year={1992},
+publisher={IOP Publishing}
 }
 """
 struct McAte42 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1992accuracy,
-  title={The accuracy of symplectic integrators},
-  author={McLachlan, Robert I and Atela, Pau},
-  journal={Nonlinearity},
-  volume={5},
-  number={2},
-  pages={541},
-  year={1992},
-  publisher={IOP Publishing}
+title={The accuracy of symplectic integrators},
+author={McLachlan, Robert I and Atela, Pau},
+journal={Nonlinearity},
+volume={5},
+number={2},
+pages={541},
+year={1992},
+publisher={IOP Publishing}
 }
 """
 struct McAte5 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{yoshida1990construction,
-  title={Construction of higher order symplectic integrators},
-  author={Yoshida, Haruo},
-  journal={Physics letters A},
-  volume={150},
-  number={5-7},
-  pages={262--268},
-  year={1990},
-  publisher={Elsevier}
+title={Construction of higher order symplectic integrators},
+author={Yoshida, Haruo},
+journal={Physics letters A},
+volume={150},
+number={5-7},
+pages={262--268},
+year={1990},
+publisher={Elsevier}
 }
 """
 struct Yoshida6 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{kahan1997composition,
-  title={Composition constants for raising the orders of unconventional schemes for ordinary differential equations},
-  author={Kahan, William and Li, Ren-Cang},
-  journal={Mathematics of computation},
-  volume={66},
-  number={219},
-  pages={1089--1099},
-  year={1997}
+title={Composition constants for raising the orders of unconventional schemes for ordinary differential equations},
+author={Kahan, William and Li, Ren-Cang},
+journal={Mathematics of computation},
+volume={66},
+number={219},
+pages={1089--1099},
+year={1997}
 }
 """
 struct KahanLi6 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{mclachlan1995numerical,
-  title={On the numerical integration of ordinary differential equations by symmetric composition methods},
-  author={McLachlan, Robert I},
-  journal={SIAM Journal on Scientific Computing},
-  volume={16},
-  number={1},
-  pages={151--168},
-  year={1995},
-  publisher={SIAM}
+title={On the numerical integration of ordinary differential equations by symmetric composition methods},
+author={McLachlan, Robert I},
+journal={SIAM Journal on Scientific Computing},
+volume={16},
+number={1},
+pages={151--168},
+year={1995},
+publisher={SIAM}
 }
 """
 struct McAte8 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{kahan1997composition,
-  title={Composition constants for raising the orders of unconventional schemes for ordinary differential equations},
-  author={Kahan, William and Li, Ren-Cang},
-  journal={Mathematics of computation},
-  volume={66},
-  number={219},
-  pages={1089--1099},
-  year={1997}
+title={Composition constants for raising the orders of unconventional schemes for ordinary differential equations},
+author={Kahan, William and Li, Ren-Cang},
+journal={Mathematics of computation},
+volume={66},
+number={219},
+pages={1089--1099},
+year={1997}
 }
 """
 struct KahanLi8 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 """
 @article{sofroniou2005derivation,
-  title={Derivation of symmetric composition constants for symmetric integrators},
-  author={Sofroniou, Mark and Spaletta, Giulia},
-  journal={Optimization Methods and Software},
-  volume={20},
-  number={4-5},
-  pages={597--613},
-  year={2005},
-  publisher={Taylor \\& Francis}
+title={Derivation of symmetric composition constants for symmetric integrators},
+author={Sofroniou, Mark and Spaletta, Giulia},
+journal={Optimization Methods and Software},
+volume={20},
+number={4-5},
+pages={597--613},
+year={2005},
+publisher={Taylor \\& Francis}
 }
 """
 struct SofSpa10 <: OrdinaryDiffEqPartitionedAlgorithm end
@@ -5228,10 +3890,11 @@ Improved Runge-Kutta-Nyström method of order three, which minimizes the amount 
 Second order ODE should not depend on the first derivative.
 
 ## References
+
 @article{rabiei2012numerical,
-  title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
-  author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
-  publisher={Citeseer}
+title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
+author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
+publisher={Citeseer}
 }
 """
 struct IRKN3 <: OrdinaryDiffEqPartitionedAlgorithm end
@@ -5241,13 +3904,14 @@ struct IRKN3 <: OrdinaryDiffEqPartitionedAlgorithm end
 
 A 4th order explicit Runge-Kutta-Nyström method which can be applied directly on second order ODEs. Can only be used with fixed time steps.
 
-In case the ODE Problem is not dependent on the first derivative consider using 
+In case the ODE Problem is not dependent on the first derivative consider using
 [`Nystrom4VelocityIndependent`](@ref) to increase performance.
 
 ## References
+
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
-  Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-  Springer-Verlag.
+Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+Springer-Verlag.
 """
 struct Nystrom4 <: OrdinaryDiffEqPartitionedAlgorithm end
 
@@ -5258,6 +3922,7 @@ A 4th order explicit Runge-Kutta-Nyström method which can be applied directly t
 In particular, this method allows the acceleration equation to depend on the velocity.
 
 ## References
+
 ```
 @article{fine1987low,
   title={Low order practical {R}unge-{K}utta-{N}ystr{\"o}m methods},
@@ -5280,6 +3945,7 @@ A 5th order explicit Runge-Kutta-Nyström method which can be applied directly t
 In particular, this method allows the acceleration equation to depend on the velocity.
 
 ## References
+
 ```
 @article{fine1987low,
   title={Low order practical {R}unge-{K}utta-{N}ystr{\"o}m methods},
@@ -5305,9 +3971,10 @@ More efficient then [`Nystrom4`](@ref) on velocity independent problems, since l
 Fixed time steps only.
 
 ## References
+
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
-  Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-  Springer-Verlag.
+Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+Springer-Verlag.
 """
 struct Nystrom4VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 
@@ -5321,10 +3988,11 @@ Second order ODE should not be dependent on the first derivative.
 Recommended for smooth problems with expensive functions to evaluate.
 
 ## References
+
 @article{rabiei2012numerical,
-  title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
-  author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
-  publisher={Citeseer}
+title={Numerical Solution of Second-Order Ordinary Differential Equations by Improved Runge-Kutta Nystrom Method},
+author={Rabiei, Faranak and Ismail, Fudziah and Norazak, S and Emadi, Saeid},
+publisher={Citeseer}
 }
 """
 struct IRKN4 <: OrdinaryDiffEqPartitionedAlgorithm end
@@ -5336,9 +4004,10 @@ A 5th order explicit Runkge-Kutta-Nyström method. Used directly on second order
 Fixed time steps only.
 
 ## References
+
 E. Hairer, S.P. Norsett, G. Wanner, (1993) Solving Ordinary Differential Equations I.
-  Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
-  Springer-Verlag.
+Nonstiff Problems. 2nd Edition. Springer Series in Computational Mathematics,
+Springer-Verlag.
 """
 struct Nystrom5VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 
@@ -5348,13 +4017,14 @@ struct Nystrom5VelocityIndependent <: OrdinaryDiffEqPartitionedAlgorithm end
 4th order explicit Runge-Kutta-Nyström methods. The second order ODE should not depend on the first derivative.
 
 ## References
+
 @article{Dormand1987FamiliesOR,
-  title={Families of Runge-Kutta-Nystrom Formulae},
-  author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
-  journal={Ima Journal of Numerical Analysis},
-  year={1987},
-  volume={7},
-  pages={235-250}
+title={Families of Runge-Kutta-Nystrom Formulae},
+author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
+journal={Ima Journal of Numerical Analysis},
+year={1987},
+volume={7},
+pages={235-250}
 }
 """
 struct DPRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5365,14 +4035,15 @@ struct DPRKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 5th order explicit Runge-Kutta-Nyström mehod. The second order ODE should not depend on the first derivative.
 
 ## References
+
 @article{Bettis1973ARN,
-  title={A Runge-Kutta Nystrom algorithm},
-  author={Dale G. Bettis},
-  journal={Celestial mechanics},
-  year={1973},
-  volume={8},
-  pages={229-233},
-  publisher={Springer}
+title={A Runge-Kutta Nystrom algorithm},
+author={Dale G. Bettis},
+journal={Celestial mechanics},
+year={1973},
+volume={8},
+pages={229-233},
+publisher={Springer}
 }
 """
 struct DPRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5383,15 +4054,16 @@ struct DPRKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 6th order explicit Runge-Kutta-Nyström method. The second order ODE should not depend on the first derivative. Free 6th order interpolant.
 
 ## References
+
 @article{dormand1987runge,
-  title={Runge-kutta-nystrom triples},
-  author={Dormand, JR and Prince, PJ},
-  journal={Computers \\& Mathematics with Applications},
-  volume={13},
-  number={12},
-  pages={937--949},
-  year={1987},
-  publisher={Elsevier}
+title={Runge-kutta-nystrom triples},
+author={Dormand, JR and Prince, PJ},
+journal={Computers \\& Mathematics with Applications},
+volume={13},
+number={12},
+pages={937--949},
+year={1987},
+publisher={Elsevier}
 }
 """
 struct DPRKN6 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5405,13 +4077,14 @@ Compared to [`DPRKN6`](@ref), this method has smaller truncation error coefficie
 when only the main solution points are considered.
 
 ## References
+
 @article{Dormand1987FamiliesOR,
-  title={Families of Runge-Kutta-Nystrom Formulae},
-  author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
-  journal={Ima Journal of Numerical Analysis},
-  year={1987},
-  volume={7},
-  pages={235-250}
+title={Families of Runge-Kutta-Nystrom Formulae},
+author={J. R. Dormand and Moawwad E. A. El-Mikkawy and P. J. Prince},
+journal={Ima Journal of Numerical Analysis},
+year={1987},
+volume={7},
+pages={235-250}
 }
 """
 struct DPRKN6FM <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5425,15 +4098,16 @@ Not as efficient as [`DPRKN12`](@ref) when high accuracy is needed, however this
 [`DPRKN6`](@ref) at lax tolerances and, depending on the problem, might be a good option between performance and accuracy.
 
 ## References
+
 @article{dormand1987high,
-  title={High-order embedded Runge-Kutta-Nystrom formulae},
-  author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
-  journal={IMA Journal of Numerical Analysis},
-  volume={7},
-  number={4},
-  pages={423--430},
-  year={1987},
-  publisher={Oxford University Press}
+title={High-order embedded Runge-Kutta-Nystrom formulae},
+author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
+journal={IMA Journal of Numerical Analysis},
+volume={7},
+number={4},
+pages={423--430},
+year={1987},
+publisher={Oxford University Press}
 }
 """
 struct DPRKN8 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5446,15 +4120,16 @@ struct DPRKN8 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 Most efficient when high accuracy is needed.
 
 ## References
+
 @article{dormand1987high,
-  title={High-order embedded Runge-Kutta-Nystrom formulae},
-  author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
-  journal={IMA Journal of Numerical Analysis},
-  volume={7},
-  number={4},
-  pages={423--430},
-  year={1987},
-  publisher={Oxford University Press}
+title={High-order embedded Runge-Kutta-Nystrom formulae},
+author={Dormand, JR and El-Mikkawy, MEA and Prince, PJ},
+journal={IMA Journal of Numerical Analysis},
+volume={7},
+number={4},
+pages={423--430},
+year={1987},
+publisher={Oxford University Press}
 }
 """
 struct DPRKN12 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5469,14 +4144,15 @@ The second order ODE should not depend on the first derivative.
 Uses adaptive step size control. This method is extra efficient on periodic problems.
 
 ## References
+
 @article{demba2017embedded,
-  title={An Embedded 4 (3) Pair of Explicit Trigonometrically-Fitted Runge-Kutta-Nystr{\"o}m Method for Solving Periodic Initial Value Problems},
-  author={Demba, MA and Senu, N and Ismail, F},
-  journal={Applied Mathematical Sciences},
-  volume={11},
-  number={17},
-  pages={819--838},
-  year={2017}
+title={An Embedded 4 (3) Pair of Explicit Trigonometrically-Fitted Runge-Kutta-Nystr{\"o}m Method for Solving Periodic Initial Value Problems},
+author={Demba, MA and Senu, N and Ismail, F},
+journal={Applied Mathematical Sciences},
+volume={11},
+number={17},
+pages={819--838},
+year={2017}
 }
 """
 struct ERKN4 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5491,15 +4167,16 @@ The second order ODE should not depend on the first derivative.
 Uses adaptive step size control. This method is extra efficient on periodic problems.
 
 ## References
+
 @article{demba20165,
-  title={A 5 (4) Embedded Pair of Explicit Trigonometrically-Fitted Runge--Kutta--Nystr{\"o}m Methods for the Numerical Solution of Oscillatory Initial Value Problems},
-  author={Demba, Musa A and Senu, Norazak and Ismail, Fudziah},
-  journal={Mathematical and Computational Applications},
-  volume={21},
-  number={4},
-  pages={46},
-  year={2016},
-  publisher={Multidisciplinary Digital Publishing Institute}
+title={A 5 (4) Embedded Pair of Explicit Trigonometrically-Fitted Runge--Kutta--Nystr{\"o}m Methods for the Numerical Solution of Oscillatory Initial Value Problems},
+author={Demba, Musa A and Senu, Norazak and Ismail, Fudziah},
+journal={Mathematical and Computational Applications},
+volume={21},
+number={4},
+pages={46},
+year={2016},
+publisher={Multidisciplinary Digital Publishing Institute}
 }
 """
 struct ERKN5 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5514,12 +4191,13 @@ The second order ODE should not depend on the first derivative.
 Uses adaptive step size control. This method is extra efficient on periodic Problems.
 
 ## References
+
 @article{SimosOnHO,
-  title={On high order Runge-Kutta-Nystr{\"o}m pairs},
-  author={Theodore E. Simos and Ch. Tsitouras},
-  journal={J. Comput. Appl. Math.},
-  volume={400},
-  pages={113753}
+title={On high order Runge-Kutta-Nystr{\"o}m pairs},
+author={Theodore E. Simos and Ch. Tsitouras},
+journal={J. Comput. Appl. Math.},
+volume={400},
+pages={113753}
 }
 """
 struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
@@ -5534,7 +4212,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 AB3: Adams-Bashforth Explicit Method
-  The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
+The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
 """
 struct AB3 <: OrdinaryDiffEqAlgorithm end
 
@@ -5544,7 +4222,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 AB4: Adams-Bashforth Explicit Method
-  The 4-step fourth order multistep method. Runge-Kutta method of order 4 is used to calculate starting values.
+The 4-step fourth order multistep method. Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct AB4 <: OrdinaryDiffEqAlgorithm end
 
@@ -5554,7 +4232,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 AB5: Adams-Bashforth Explicit Method
-  The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
+The 3-step third order multistep method. Ralston's Second Order Method is used to calculate starting values.
 """
 struct AB5 <: OrdinaryDiffEqAlgorithm end
 
@@ -5564,8 +4242,8 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 ABM32: Adams-Bashforth Explicit Method
-  It is third order method. In ABM32, AB3 works as predictor and Adams Moulton 2-steps method works as Corrector.
-  Ralston's Second Order Method is used to calculate starting values.
+It is third order method. In ABM32, AB3 works as predictor and Adams Moulton 2-steps method works as Corrector.
+Ralston's Second Order Method is used to calculate starting values.
 """
 struct ABM32 <: OrdinaryDiffEqAlgorithm end
 
@@ -5575,8 +4253,8 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 ABM43: Adams-Bashforth Explicit Method
-  It is fourth order method. In ABM43, AB4 works as predictor and Adams Moulton 3-steps method works as Corrector.
-  Runge-Kutta method of order 4 is used to calculate starting values.
+It is fourth order method. In ABM43, AB4 works as predictor and Adams Moulton 3-steps method works as Corrector.
+Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct ABM43 <: OrdinaryDiffEqAlgorithm end
 
@@ -5586,8 +4264,8 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 ABM54: Adams-Bashforth Explicit Method
-   It is fifth order method. In ABM54, AB5 works as predictor and Adams Moulton 4-steps method works as Corrector.
-   Runge-Kutta method of order 4 is used to calculate starting values.
+It is fifth order method. In ABM54, AB5 works as predictor and Adams Moulton 4-steps method works as Corrector.
+Runge-Kutta method of order 4 is used to calculate starting values.
 """
 struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
@@ -5599,7 +4277,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCAB3: Adaptive step size Adams explicit Method
-  The 3rd order Adams method. Bogacki-Shampine 3/2 method is used to calculate starting values.
+The 3rd order Adams method. Bogacki-Shampine 3/2 method is used to calculate starting values.
 """
 struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -5609,7 +4287,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCAB4: Adaptive step size Adams explicit Method
-  The 4th order Adams method. Runge-Kutta 4 is used to calculate starting values.
+The 4th order Adams method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -5619,7 +4297,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCAB5: Adaptive step size Adams explicit Method
-  The 5th order Adams method. Runge-Kutta 4 is used to calculate starting values.
+The 5th order Adams method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -5629,7 +4307,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCABM3: Adaptive step size Adams explicit Method
-  The 3rd order Adams-Moulton method. Bogacki-Shampine 3/2 method is used to calculate starting values.
+The 3rd order Adams-Moulton method. Bogacki-Shampine 3/2 method is used to calculate starting values.
 """
 struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -5639,7 +4317,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCABM4: Adaptive step size Adams explicit Method
-  The 4th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
+The 4th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -5649,7 +4327,7 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCABM5: Adaptive step size Adams explicit Method
-   The 5th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
+The 5th order Adams-Moulton method. Runge-Kutta 4 is used to calculate starting values.
 """
 struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -5661,8 +4339,8 @@ Problems. Computational Mathematics (2nd revised ed.), Springer (1996) doi:
 https://doi.org/10.1007/978-3-540-78862-1
 
 VCABM: Adaptive step size Adams explicit Method
-  An adaptive order adaptive time Adams Moulton method.
-  It uses an order adaptivity algorithm is derived from Shampine's DDEABM.
+An adaptive order adaptive time Adams Moulton method.
+It uses an order adaptivity algorithm is derived from Shampine's DDEABM.
 """
 struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
@@ -5707,8 +4385,8 @@ end
 
 """
 QNDF1: Multistep Method
-  An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
-  Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
+An adaptive order 1 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
 
 See also `QNDF`.
 """
@@ -5746,7 +4424,7 @@ QBDF1(; kwargs...) = QNDF1(; kappa = 0, kwargs...)
 
 """
 QNDF2: Multistep Method
-  An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
+An adaptive order 2 quasi-constant timestep L-stable numerical differentiation function (NDF) method.
 
 See also `QNDF`.
 """
@@ -5784,18 +4462,18 @@ QBDF2(; kwargs...) = QNDF2(; kappa = 0, kwargs...)
 
 """
 QNDF: Multistep Method
-  An adaptive order quasi-constant timestep NDF method.
-  Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
+An adaptive order quasi-constant timestep NDF method.
+Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
 
 @article{shampine1997matlab,
-  title={The matlab ode suite},
-  author={Shampine, Lawrence F and Reichelt, Mark W},
-  journal={SIAM journal on scientific computing},
-  volume={18},
-  number={1},
-  pages={1--22},
-  year={1997},
-  publisher={SIAM}
+title={The matlab ode suite},
+author={Shampine, Lawrence F and Reichelt, Mark W},
+journal={SIAM journal on scientific computing},
+volume={18},
+number={1},
+pages={1--22},
+year={1997},
+publisher={SIAM}
 }
 """
 struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType} <:
@@ -5841,10 +4519,10 @@ An adaptive order quasi-constant timestep NDF method.
 Utilizes Shampine's accuracy-optimal kappa values as defaults (has a keyword argument for a tuple of kappa coefficients).
 
 @article{shampine2002solving,
-  title={Solving 0= F (t, y (t), y′(t)) in Matlab},
-  author={Shampine, Lawrence F},
-  year={2002},
-  publisher={Walter de Gruyter GmbH \\& Co. KG}
+title={Solving 0= F (t, y (t), y′(t)) in Matlab},
+author={Shampine, Lawrence F},
+year={2002},
+publisher={Walter de Gruyter GmbH \\& Co. KG}
 }
 """
 struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
@@ -5932,17 +4610,20 @@ end
 
 The one-step version of the IMEX multistep methods of
 
-- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
-  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
-  Society for Industrial and Applied Mathematics.
-  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
-  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+  - Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+    Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+    Society for Industrial and Applied Mathematics.
+    Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+    doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
 
 When applied to a `SplitODEProblem` of the form
+
 ```
 u'(t) = f1(u) + f2(u)
 ```
+
 The default `IMEXEuler()` method uses an update of the form
+
 ```
 unew = uold + dt * (f1(unew) + f2(uold))
 ```
@@ -5956,19 +4637,22 @@ IMEXEuler(; kwargs...) = SBDF(1; kwargs...)
 
 The one-step version of the IMEX multistep methods of
 
-- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
-  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
-  Society for Industrial and Applied Mathematics.
-  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
-  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+  - Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+    Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+    Society for Industrial and Applied Mathematics.
+    Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+    doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
 
 When applied to a `SplitODEProblem` of the form
+
 ```
 u'(t) = f1(u) + f2(u)
 ```
+
 A classical additive Runge-Kutta method in the sense of
 [Araújo, Murua, Sanz-Serna (1997)](https://doi.org/10.1137/S0036142995292128)
 consisting of the implicit and the explicit Euler method given by
+
 ```
 y1   = uold + dt * f1(y1)
 unew = uold + dt * (f1(unew) + f2(y1))
@@ -5983,11 +4667,11 @@ IMEXEulerARK(; kwargs...) = SBDF(1; ark = true, kwargs...)
 
 The two-step version of the IMEX multistep methods of
 
-- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
-  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
-  Society for Industrial and Applied Mathematics.
-  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
-  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+  - Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+    Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+    Society for Industrial and Applied Mathematics.
+    Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+    doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
 
 See also `SBDF`.
 """
@@ -5998,11 +4682,11 @@ SBDF2(; kwargs...) = SBDF(2; kwargs...)
 
 The three-step version of the IMEX multistep methods of
 
-- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
-  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
-  Society for Industrial and Applied Mathematics.
-  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
-  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+  - Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+    Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+    Society for Industrial and Applied Mathematics.
+    Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+    doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
 
 See also `SBDF`.
 """
@@ -6013,11 +4697,11 @@ SBDF3(; kwargs...) = SBDF(3; kwargs...)
 
 The four-step version of the IMEX multistep methods of
 
-- Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
-  Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
-  Society for Industrial and Applied Mathematics.
-  Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
-  doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
+  - Uri M. Ascher, Steven J. Ruuth, Brian T. R. Wetton.
+    Implicit-Explicit Methods for Time-Dependent Partial Differential Equations.
+    Society for Industrial and Applied Mathematics.
+    Journal on Numerical Analysis, 32(3), pp 797-823, 1995.
+    doi: [https://doi.org/10.1137/0732037](https://doi.org/10.1137/0732037)
 
 See also `SBDF`.
 """
@@ -6026,7 +4710,7 @@ SBDF4(; kwargs...) = SBDF(4; kwargs...)
 # Adams/BDF methods in Nordsieck forms
 """
 AN5: Adaptive step size Adams explicit Method
-  An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
+An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
 """
 struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE{bType, aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
@@ -6051,17 +4735,16 @@ Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orth
 Numerische Mathematik, 90 (1), pp 1-18, 2001. doi: https://dx.doi.org/10.1007/s002110100292
 
 ROCK2: Stabilized Explicit Method.
-  Second order stabilized Runge-Kutta method.
-  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
+Second order stabilized Runge-Kutta method.
+Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 
-This method takes optional keyword arguments `min_stages`, `max_stages`, and `eigen_est`. 
-The function `eigen_est` should be of the form 
-  
-  `eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+This method takes optional keyword arguments `min_stages`, `max_stages`, and `eigen_est`.
+The function `eigen_est` should be of the form
 
-where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. If `eigen_est` 
-is not provided, `upper_bound` will be estimated using the power iteration. 
+`eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
 
+where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. If `eigen_est`
+is not provided, `upper_bound` will be estimated using the power iteration.
 """
 struct ROCK2{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
@@ -6074,23 +4757,22 @@ end
 
 """
     ROCK4(; min_stages = 0, max_stages = 152, eigen_est = nothing)
-    
+
 Assyr Abdulle. Fourth Order Chebyshev Methods With Recurrence Relation. 2002 Society for
 Industrial and Applied Mathematics Journal on Scientific Computing, 23(6), pp 2041-2054, 2001.
 doi: https://doi.org/10.1137/S1064827500379549
 
 ROCK4: Stabilized Explicit Method.
-  Fourth order stabilized Runge-Kutta method.
-  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
+Fourth order stabilized Runge-Kutta method.
+Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 
-This method takes optional keyword arguments `min_stages`, `max_stages`, and `eigen_est`. 
-The function `eigen_est` should be of the form 
-  
-  `eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+This method takes optional keyword arguments `min_stages`, `max_stages`, and `eigen_est`.
+The function `eigen_est` should be of the form
 
-where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. If `eigen_est` 
-is not provided, `upper_bound` will be estimated using the power iteration. 
+`eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
 
+where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. If `eigen_est`
+is not provided, `upper_bound` will be estimated using the power iteration.
 """
 struct ROCK4{E} <: OrdinaryDiffEqAdaptiveAlgorithm
     min_stages::Int
@@ -6116,39 +4798,39 @@ end
     RKC(; eigen_est = nothing)
 
 B. P. Sommeijer, L. F. Shampine, J. G. Verwer. RKC: An Explicit Solver for Parabolic PDEs,
-  Journal of Computational and Applied Mathematics, 88(2), pp 315-326, 1998. doi:
-  https://doi.org/10.1016/S0377-0427(97)00219-7
+Journal of Computational and Applied Mathematics, 88(2), pp 315-326, 1998. doi:
+https://doi.org/10.1016/S0377-0427(97)00219-7
 
 RKC: Stabilized Explicit Method.
-  Second order stabilized Runge-Kutta method.
-  Exhibits high stability for real eigenvalues. 
-  
-This method takes the keyword argument `eigen_est` of the form   
+Second order stabilized Runge-Kutta method.
+Exhibits high stability for real eigenvalues.
 
-  `eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+This method takes the keyword argument `eigen_est` of the form
 
-where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. If `eigen_est` 
-is not provided, `upper_bound` will be estimated using the power iteration. 
+`eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+
+where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. If `eigen_est`
+is not provided, `upper_bound` will be estimated using the power iteration.
 """
 function RKC end
 
 """
     ESERK4(; eigen_est = nothing)
 
-J. Martín-Vaquero, B. Kleefeld. Extrapolated stabilized explicit Runge-Kutta methods, 
-  Journal of Computational Physics, 326, pp 141-155, 2016. doi:
-  https://doi.org/10.1016/j.jcp.2016.08.042.
+J. Martín-Vaquero, B. Kleefeld. Extrapolated stabilized explicit Runge-Kutta methods,
+Journal of Computational Physics, 326, pp 141-155, 2016. doi:
+https://doi.org/10.1016/j.jcp.2016.08.042.
 
 ESERK4: Stabilized Explicit Method.
-  Fourth order extrapolated stabilized Runge-Kutta method.  
-  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
+Fourth order extrapolated stabilized Runge-Kutta method.
+Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 
-This method takes the keyword argument `eigen_est` of the form 
-  
-  `eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+This method takes the keyword argument `eigen_est` of the form
 
-where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. 
-If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration. 
+`eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+
+where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
 """
 function ESERK4 end
 
@@ -6156,19 +4838,19 @@ function ESERK4 end
     ESERK5(; eigen_est = nothing)
 
 J. Martín-Vaquero, A. Kleefeld. ESERK5: A fifth-order extrapolated stabilized explicit Runge-Kutta method,
-  Journal of Computational and Applied Mathematics, 356, pp 22-36, 2019. doi:
-  https://doi.org/10.1016/j.cam.2019.01.040.
+Journal of Computational and Applied Mathematics, 356, pp 22-36, 2019. doi:
+https://doi.org/10.1016/j.cam.2019.01.040.
 
 ESERK5: Stabilized Explicit Method.
-  Fifth order extrapolated stabilized Runge-Kutta method.  
-  Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
+Fifth order extrapolated stabilized Runge-Kutta method.
+Exhibits high stability for real eigenvalues and is smoothened to allow for moderate sized complex eigenvalues.
 
-This method takes the keyword argument `eigen_est` of the form 
-  
-  `eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+This method takes the keyword argument `eigen_est` of the form
 
-where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix. 
-If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration. 
+`eigen_est = (integrator) -> integrator.eigen_est = upper_bound`,
+
+where `upper_bound` is an estimated upper bound on the spectral radius of the Jacobian matrix.
+If `eigen_est` is not provided, `upper_bound` will be estimated using the power iteration.
 """
 function ESERK5 end
 
@@ -6248,18 +4930,18 @@ struct CayleyEuler <: OrdinaryDiffEqAlgorithm end
 
 """
 @article{hairer1999stiff,
-  title={Stiff differential equations solved by Radau methods},
-  author={Hairer, Ernst and Wanner, Gerhard},
-  journal={Journal of Computational and Applied Mathematics},
-  volume={111},
-  number={1-2},
-  pages={93--111},
-  year={1999},
-  publisher={Elsevier}
+title={Stiff differential equations solved by Radau methods},
+author={Hairer, Ernst and Wanner, Gerhard},
+journal={Journal of Computational and Applied Mathematics},
+volume={111},
+number={1-2},
+pages={93--111},
+year={1999},
+publisher={Elsevier}
 }
 
 RadauIIA3: Fully-Implicit Runge-Kutta Method
-  An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
 struct RadauIIA3{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6296,18 +4978,18 @@ TruncatedStacktraces.@truncate_stacktrace RadauIIA3
 
 """
 @article{hairer1999stiff,
-  title={Stiff differential equations solved by Radau methods},
-  author={Hairer, Ernst and Wanner, Gerhard},
-  journal={Journal of Computational and Applied Mathematics},
-  volume={111},
-  number={1-2},
-  pages={93--111},
-  year={1999},
-  publisher={Elsevier}
+title={Stiff differential equations solved by Radau methods},
+author={Hairer, Ernst and Wanner, Gerhard},
+journal={Journal of Computational and Applied Mathematics},
+volume={111},
+number={1-2},
+pages={93--111},
+year={1999},
+publisher={Elsevier}
 }
 
 RadauIIA5: Fully-Implicit Runge-Kutta Method
-   An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
+An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
 struct RadauIIA5{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6348,8 +5030,8 @@ TruncatedStacktraces.@truncate_stacktrace RadauIIA5
 # SDIRK Methods
 """
 ImplicitEuler: SDIRK Method
-  A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
-  Strong-stability preserving (SSP).
+A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
+Strong-stability preserving (SSP).
 """
 struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6373,8 +5055,8 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = Val{true}(),
 end
 """
 ImplicitMidpoint: SDIRK Method
-  A second order A-stable symplectic and symmetric implicit solver.
-  Good for highly stiff equations which need symplectic integration.
+A second order A-stable symplectic and symmetric implicit solver.
+Good for highly stiff equations which need symplectic integration.
 """
 struct ImplicitMidpoint{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6399,12 +5081,12 @@ end
 
 """
 Andre Vladimirescu. 1994. The Spice Book. John Wiley & Sons, Inc., New York,
-  NY, USA.
+NY, USA.
 
 Trapezoid: SDIRK Method
 A second order A-stable symmetric ESDIRK method.
 "Almost symplectic" without numerical dampening.
- Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
+Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via divided
 differences approximation to the second derivative terms in the local truncation error
 estimate (the SPICE approximation strategy).
 """
@@ -6434,19 +5116,19 @@ end
 
 """
 @article{hosea1996analysis,
-  title={Analysis and implementation of TR-BDF2},
-  author={Hosea, ME and Shampine, LF},
-  journal={Applied Numerical Mathematics},
-  volume={20},
-  number={1-2},
-  pages={21--37},
-  year={1996},
-  publisher={Elsevier}
+title={Analysis and implementation of TR-BDF2},
+author={Hosea, ME and Shampine, LF},
+journal={Applied Numerical Mathematics},
+volume={20},
+number={1-2},
+pages={21--37},
+year={1996},
+publisher={Elsevier}
 }
 
 TRBDF2: SDIRK Method
-  A second order A-B-L-S-stable one-step ESDIRK method.
-  Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
+A second order A-B-L-S-stable one-step ESDIRK method.
+Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
 """
 struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6473,18 +5155,18 @@ TruncatedStacktraces.@truncate_stacktrace TRBDF2
 
 """
 @article{hindmarsh2005sundials,
-  title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
-  author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
-  journal={ACM Transactions on Mathematical Software (TOMS)},
-  volume={31},
-  number={3},
-  pages={363--396},
-  year={2005},
-  publisher={ACM}
+title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
+author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
+journal={ACM Transactions on Mathematical Software (TOMS)},
+volume={31},
+number={3},
+pages={363--396},
+year={2005},
+publisher={ACM}
 }
 
 SDIRK2: SDIRK Method
-   An A-B-L stable 2nd order SDIRK method
+An A-B-L stable 2nd order SDIRK method
 """
 struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6554,18 +5236,18 @@ end
 
 """
 @article{kvaerno2004singly,
-  title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
-  author={Kv{\\ae}rn{\\o}, Anne},
-  journal={BIT Numerical Mathematics},
-  volume={44},
-  number={3},
-  pages={489--502},
-  year={2004},
-  publisher={Springer}
+title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
+author={Kv{\\ae}rn{\\o}, Anne},
+journal={BIT Numerical Mathematics},
+volume={44},
+number={3},
+pages={489--502},
+year={2004},
+publisher={Springer}
 }
 
 Kvaerno3: SDIRK Method
-  An A-L stable stiffly-accurate 3rd order ESDIRK method
+An A-L stable stiffly-accurate 3rd order ESDIRK method
 """
 struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6590,14 +5272,14 @@ end
 
 """
 @book{kennedy2001additive,
-  title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
-  author={Kennedy, Christopher Alan},
-  year={2001},
-  publisher={National Aeronautics and Space Administration, Langley Research Center}
+title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
+author={Kennedy, Christopher Alan},
+year={2001},
+publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
 
 KenCarp3: SDIRK Method
-  An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting
+An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting
 """
 struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6642,18 +5324,18 @@ end
 
 """
 @article{hindmarsh2005sundials,
-  title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
-  author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
-  journal={ACM Transactions on Mathematical Software (TOMS)},
-  volume={31},
-  number={3},
-  pages={363--396},
-  year={2005},
-  publisher={ACM}
+title={{SUNDIALS}: Suite of nonlinear and differential/algebraic equation solvers},
+author={Hindmarsh, Alan C and Brown, Peter N and Grant, Keith E and Lee, Steven L and Serban, Radu and Shumaker, Dan E and Woodward, Carol S},
+journal={ACM Transactions on Mathematical Software (TOMS)},
+volume={31},
+number={3},
+pages={363--396},
+year={2005},
+publisher={ACM}
 }
 
 Cash4: SDIRK Method
-  An A-L stable 4th order SDIRK method
+An A-L stable 4th order SDIRK method
 """
 struct Cash4{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6786,11 +5468,11 @@ end
 
 """
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
-  differential-algebraic problems. Computational mathematics (2nd revised ed.),
-  Springer (1996)
+differential-algebraic problems. Computational mathematics (2nd revised ed.),
+Springer (1996)
 
 Hairer4: SDIRK Method
-  An A-L stable 4th order SDIRK method
+An A-L stable 4th order SDIRK method
 """
 struct Hairer4{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6814,11 +5496,11 @@ end
 
 """
 E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
-  differential-algebraic problems. Computational mathematics (2nd revised ed.),
-  Springer (1996)
+differential-algebraic problems. Computational mathematics (2nd revised ed.),
+Springer (1996)
 
 Hairer42: SDIRK Method
-  An A-L stable 4th order SDIRK method
+An A-L stable 4th order SDIRK method
 """
 struct Hairer42{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6843,18 +5525,18 @@ end
 
 """
 @article{kvaerno2004singly,
-  title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
-  author={Kv{\\ae}rn{\\o}, Anne},
-  journal={BIT Numerical Mathematics},
-  volume={44},
-  number={3},
-  pages={489--502},
-  year={2004},
-  publisher={Springer}
+title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
+author={Kv{\\ae}rn{\\o}, Anne},
+journal={BIT Numerical Mathematics},
+volume={44},
+number={3},
+pages={489--502},
+year={2004},
+publisher={Springer}
 }
 
 Kvaerno4: SDIRK Method
-  An A-L stable stiffly-accurate 4th order ESDIRK method.
+An A-L stable stiffly-accurate 4th order ESDIRK method.
 """
 struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6879,18 +5561,18 @@ end
 
 """
 @article{kvaerno2004singly,
-  title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
-  author={Kv{\\ae}rn{\\o}, Anne},
-  journal={BIT Numerical Mathematics},
-  volume={44},
-  number={3},
-  pages={489--502},
-  year={2004},
-  publisher={Springer}
+title={Singly diagonally implicit Runge--Kutta methods with an explicit first stage},
+author={Kv{\\ae}rn{\\o}, Anne},
+journal={BIT Numerical Mathematics},
+volume={44},
+number={3},
+pages={489--502},
+year={2004},
+publisher={Springer}
 }
 
 Kvaerno5: SDIRK Method
-  An A-L stable stiffly-accurate 5th order ESDIRK method
+An A-L stable stiffly-accurate 5th order ESDIRK method
 """
 struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6915,14 +5597,14 @@ end
 
 """
 @book{kennedy2001additive,
-  title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
-  author={Kennedy, Christopher Alan},
-  year={2001},
-  publisher={National Aeronautics and Space Administration, Langley Research Center}
+title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
+author={Kennedy, Christopher Alan},
+year={2001},
+publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
 
 KenCarp4: SDIRK Method
-  An A-L stable stiffly-accurate 4th order ESDIRK method with splitting
+An A-L stable stiffly-accurate 4th order ESDIRK method with splitting
 """
 struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6949,17 +5631,17 @@ TruncatedStacktraces.@truncate_stacktrace KenCarp4
 
 """
 @article{kennedy2019higher,
-  title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H},
-  journal={Applied Numerical Mathematics},
-  volume={136},
-  pages={183--205},
-  year={2019},
-  publisher={Elsevier}
+title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
+author={Kennedy, Christopher A and Carpenter, Mark H},
+journal={Applied Numerical Mathematics},
+volume={136},
+pages={183--205},
+year={2019},
+publisher={Elsevier}
 }
 
 KenCarp47: SDIRK Method
-  An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting
+An A-L stable stiffly-accurate 4th order seven-stage ESDIRK method with splitting
 """
 struct KenCarp47{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -6984,14 +5666,14 @@ end
 
 """
 @book{kennedy2001additive,
-  title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
-  author={Kennedy, Christopher Alan},
-  year={2001},
-  publisher={National Aeronautics and Space Administration, Langley Research Center}
+title={Additive Runge-Kutta schemes for convection-diffusion-reaction equations},
+author={Kennedy, Christopher Alan},
+year={2001},
+publisher={National Aeronautics and Space Administration, Langley Research Center}
 }
 
 KenCarp5: SDIRK Method
-  An A-L stable stiffly-accurate 5th order ESDIRK method with splitting
+An A-L stable stiffly-accurate 5th order ESDIRK method with splitting
 """
 struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -7015,17 +5697,17 @@ function KenCarp5(; chunk_size = Val{0}(), autodiff = Val{true}(),
 end
 """
 @article{kennedy2019higher,
-  title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
-  author={Kennedy, Christopher A and Carpenter, Mark H},
-  journal={Applied Numerical Mathematics},
-  volume={136},
-  pages={183--205},
-  year={2019},
-  publisher={Elsevier}
+title={Higher-order additive Runge--Kutta schemes for ordinary differential equations},
+author={Kennedy, Christopher A and Carpenter, Mark H},
+journal={Applied Numerical Mathematics},
+volume={136},
+pages={183--205},
+year={2019},
+publisher={Elsevier}
 }
 
 KenCarp58: SDIRK Method
-  An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting
+An A-L stable stiffly-accurate 5th order eight-stage ESDIRK method with splitting
 """
 struct KenCarp58{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -7070,12 +5752,12 @@ end
 
 """
 @article{Kennedy2019DiagonallyIR,
-  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
-  author={Christopher A. Kennedy and Mark H. Carpenter},
-  journal={Applied Numerical Mathematics},
-  year={2019},
-  volume={146},
-  pages={221-244}
+title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+author={Christopher A. Kennedy and Mark H. Carpenter},
+journal={Applied Numerical Mathematics},
+year={2019},
+volume={146},
+pages={221-244}
 }
 """
 struct ESDIRK436L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -7099,12 +5781,12 @@ end
 
 """
 @article{Kennedy2019DiagonallyIR,
-  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
-  author={Christopher A. Kennedy and Mark H. Carpenter},
-  journal={Applied Numerical Mathematics},
-  year={2019},
-  volume={146},
-  pages={221-244}
+title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+author={Christopher A. Kennedy and Mark H. Carpenter},
+journal={Applied Numerical Mathematics},
+year={2019},
+volume={146},
+pages={221-244}
 }
 """
 struct ESDIRK437L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -7128,12 +5810,12 @@ end
 
 """
 @article{Kennedy2019DiagonallyIR,
-  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
-  author={Christopher A. Kennedy and Mark H. Carpenter},
-  journal={Applied Numerical Mathematics},
-  year={2019},
-  volume={146},
-  pages={221-244}
+title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+author={Christopher A. Kennedy and Mark H. Carpenter},
+journal={Applied Numerical Mathematics},
+year={2019},
+volume={146},
+pages={221-244}
 }
 """
 struct ESDIRK547L2SA2{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -7157,15 +5839,15 @@ end
 
 """
 @article{Kennedy2019DiagonallyIR,
-  title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
-  author={Christopher A. Kennedy and Mark H. Carpenter},
-  journal={Applied Numerical Mathematics},
-  year={2019},
-  volume={146},
-  pages={221-244}
+title={Diagonally implicit Runge–Kutta methods for stiff ODEs},
+author={Christopher A. Kennedy and Mark H. Carpenter},
+journal={Applied Numerical Mathematics},
+year={2019},
+volume={146},
+pages={221-244}
 
-  Currently has STABILITY ISSUES, causing it to fail the adaptive tests.
-  Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more details.
+Currently has STABILITY ISSUES, causing it to fail the adaptive tests.
+Check issue https://github.com/SciML/OrdinaryDiffEq.jl/issues/1933 for more details.
 }
 """
 struct ESDIRK659L2SA{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -7295,7 +5977,7 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = true,
 end
 """
 RosenbrockW6S4OS: Rosenbrock-W Method
-  A 4th order L-stable Rosenbrock-W method (fixed step only).
+A 4th order L-stable Rosenbrock-W method (fixed step only).
 """
 struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
        OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ}
@@ -7372,7 +6054,7 @@ struct SplitEuler <:
        OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
 """
 ETD2: Exponential Runge-Kutta Method
-  Second order Exponential Time Differencing method (in development).
+Second order Exponential Time Differencing method (in development).
 """
 struct ETD2 <:
        OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
@@ -7385,7 +6067,7 @@ an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Compute
 29, pp 1014-1026, 2014. doi: https://doi.org/10.1016/j.procs.2014.05.091
 
 ABDF2: Multistep Method
-  An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
+An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
 """
 struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -7426,8 +6108,8 @@ end
 ################################################################################
 """
 MEBDF2: Multistep Method
-  The second order Modified Extended BDF method, which has improved stability properties over the standard BDF.
-  Fixed timestep only.
+The second order Modified Extended BDF method, which has improved stability properties over the standard BDF.
+Fixed timestep only.
 """
 struct MEBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
@@ -7451,7 +6133,7 @@ end
 #################################################
 """
 PDIRK44: Parallel Diagonally Implicit Runge-Kutta Method
-  A 2 processor 4th order diagonally non-adaptive implicit method.
+A 2 processor 4th order diagonally non-adaptive implicit method.
 """
 struct PDIRK44{CS, AD, F, F2, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}

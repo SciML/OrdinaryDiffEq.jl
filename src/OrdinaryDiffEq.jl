@@ -126,7 +126,10 @@ import Preferences
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 
 include("misc_utils.jl")
+
 include("algorithms.jl")
+include("algorithms/explicit_rk.jl")
+
 include("alg_utils.jl")
 
 include("nlsolve/type.jl")

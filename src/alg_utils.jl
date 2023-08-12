@@ -921,6 +921,7 @@ Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
 with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
 
 # Examples
+
 ```julia-repl
 julia> ssp_coefficient(SSPRK104())
 6
