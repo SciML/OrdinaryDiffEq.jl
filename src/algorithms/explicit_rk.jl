@@ -122,6 +122,38 @@ function MSRK5(stage_limiter!, step_limiter! = trivial_limiter!)
     MSRK5(stage_limiter!, step_limiter!, False())
 end
 
+@doc explicit_rk_docstring("6th order Explicit RK method.", "MSRK6",
+    references = "Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Table4")
+Base.@kwdef struct MSRK6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function MSRK6(stage_limiter!, step_limiter! = trivial_limiter!)
+    MSRK6(stage_limiter!, step_limiter!, False())
+end
+
+@doc explicit_rk_docstring("5th order Explicit RK method.",
+    "Stepanov5",
+    references = "@article{Stepanov2021Embedded5,
+    title={Embedded (4, 5) pairs of explicit 7-stage Runge–Kutta methods with FSAL property},
+    author={Misha Stepanov},
+    journal={Calcolo},
+    year={2021},
+    volume={59}
+    }")
+Base.@kwdef struct Stepanov5{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function Stepanov5(stage_limiter!, step_limiter! = trivial_limiter!)
+    Stepanov5(stage_limiter!, step_limiter!, False())
+end
+
 @doc explicit_rk_docstring("4th order Runge-Kutta method designed for periodic problems.",
     "Anas5",
     extra_keyword_description = """- `w`: a periodicity estimate, which when accurate the method becomes 5th order
