@@ -134,9 +134,9 @@
 
     dt₀ = IfElse.ifelse((d₀ < 1 // 10^(5)) |
                         (d₁ < 1 // 10^(5)), smalldt,
-        convert(_tType,
+                        DiffEqBase.value(convert(_tType,
             oneunit_tType * (d₀ / d₁) /
-            100))
+            100)))
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
     # else
@@ -188,12 +188,12 @@
 
     max_d₁d₂ = max(d₁, d₂)
     if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
+        dt₁ = max(convert(_tType, DiffEqBase.value(oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3)))
     else
         dt₁ = convert(_tType,
-            oneunit_tType *
+            DiffEqBase.value(oneunit_tType *
             10.0^(-(2 + log10(max_d₁d₂)) /
-                  get_current_alg_order(integrator.alg, integrator.cache)))
+                  get_current_alg_order(integrator.alg, integrator.cache))))
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
@@ -259,7 +259,7 @@ end
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
     else
-        dt₀ = convert(_tType, oneunit_tType * (d₀ / d₁) / 100)
+        dt₀ = convert(_tType, DiffEqBase.value(oneunit_tType * (d₀ / d₁) / 100))
     end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
@@ -278,9 +278,9 @@ end
     if max_d₁d₂ <= 1 // Int64(10)^(15)
         dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
     else
-        dt₁ = _tType(oneunit_tType *
+        dt₁ = _tType(DiffEqBase.value(oneunit_tType *
                      10^(-(2 + log10(max_d₁d₂)) /
-                         get_current_alg_order(integrator.alg, integrator.cache)))
+                         get_current_alg_order(integrator.alg, integrator.cache))))
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end

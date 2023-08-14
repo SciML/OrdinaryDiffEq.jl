@@ -148,6 +148,7 @@ end
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
         @time @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
+        @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
     end
 
     if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
