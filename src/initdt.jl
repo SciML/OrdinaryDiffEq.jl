@@ -188,7 +188,7 @@
 
     max_d₁d₂ = max(d₁, d₂)
     if max_d₁d₂ <= 1 // Int64(10)^(15)
-        dt₁ = max(convert(_tType, DiffEqBase.value(oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3)))
+        dt₁ = max(convert(_tType, oneunit_tType * 1 // 10^(6)), dt₀ * 1 // 10^(3))
     else
         dt₁ = convert(_tType,
             DiffEqBase.value(oneunit_tType *
