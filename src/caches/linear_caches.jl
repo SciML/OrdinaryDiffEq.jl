@@ -205,7 +205,8 @@ function alg_cache(alg::RKMK4, u, rate_prototype, ::Type{uEltypeNoUnits},
     W = false .* _vec(rate_prototype) .* _vec(rate_prototype)' # uEltype?
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    RKMK4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k)
+    exp_cache = ExponentialUtilities.alloc_mem(f, ExpMethodGeneric())
+    RKMK4Cache(u, uprev, uprev2, zero(u), fsalfirst, W, k, exp_cache)
 end
 
 struct RKMK4ConstantCache <: OrdinaryDiffEqConstantCache
