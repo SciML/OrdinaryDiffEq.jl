@@ -185,7 +185,7 @@ end
 
 function perform_step!(integrator, cache::CG3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
     exp_method = ExpMethodGeneric()
 
