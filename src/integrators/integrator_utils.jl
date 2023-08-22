@@ -285,6 +285,31 @@ function _loopfooter!(integrator)
     nothing
 end
 
+# Use a generated function to call apply_callback! in a type-stable way
+@generated function apply_ith_callback!(integrator,
+                                        time, upcrossing, event_idx, cb_idx,
+                                        callbacks::NTuple{N,
+                                                          Union{ContinuousCallback,
+                                                                VectorContinuousCallback}}) where {N}
+    ex = quote
+        throw(BoundsError(callbacks, cb_idx))
+    end
+    for i in 1:N
+        # N.B: doing this as an explicit if (return) else (rest of expression)
+        # means that LLVM compiles this into a switch.
+        # This seemingly isn't the case with just if (return) end (rest of expression)
+        ex = quote
+            if (cb_idx == $i)
+                return DiffEqBase.apply_callback!(integrator, callbacks[$i], time,
+                                                  upcrossing, event_idx)
+            else
+                $ex
+            end
+        end
+    end
+    ex
+end
+
 function handle_callbacks!(integrator)
     discrete_callbacks = integrator.opts.callback.discrete_callbacks
     continuous_callbacks = integrator.opts.callback.continuous_callbacks
@@ -295,14 +320,15 @@ function handle_callbacks!(integrator)
     saved_in_cb = false
     if !(typeof(continuous_callbacks) <: Tuple{})
         time, upcrossing, event_occurred, event_idx, idx, counter = DiffEqBase.find_first_continuous_callback(integrator,
-            continuous_callbacks...)
+                                                                                                              continuous_callbacks...)
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
-            continuous_modified, saved_in_cb = DiffEqBase.apply_callback!(integrator,
-                continuous_callbacks[idx],
-                time, upcrossing,
-                event_idx)
+            continuous_modified, saved_in_cb = apply_ith_callback!(integrator,
+                                                                   time, upcrossing,
+                                                                   event_idx,
+                                                                   idx,
+                                                                   continuous_callbacks)
         else
             integrator.event_last_time = 0
             integrator.vector_event_last_time = 1
@@ -310,7 +336,7 @@ function handle_callbacks!(integrator)
     end
     if !integrator.force_stepfail && !(typeof(discrete_callbacks) <: Tuple{})
         discrete_modified, saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
-            discrete_callbacks...)
+                                                                             discrete_callbacks...)
     end
     if !saved_in_cb
         savevalues!(integrator)
@@ -321,6 +347,7 @@ function handle_callbacks!(integrator)
         integrator.do_error_check = false
         handle_callback_modifiers!(integrator)
     end
+    nothing
 end
 
 function handle_callback_modifiers!(integrator::ODEIntegrator)
