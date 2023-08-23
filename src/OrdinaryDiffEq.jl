@@ -246,7 +246,7 @@ PrecompileTools.@compile_workload begin
     end
 
     nonstiff = [
-        Tsit5(), Vern7()
+        Tsit5(), Vern7(),
     ]
 
     stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
@@ -257,7 +257,7 @@ PrecompileTools.@compile_workload begin
     autoswitch = [
         AutoTsit5(Rosenbrock23(autodiff = false)),
         AutoTsit5(TRBDF2(autodiff = false)),
-        AutoVern7(Rodas5P(autodiff=false)),
+        AutoVern7(Rodas5P(autodiff = false)),
         AutoVern7(KenCarp47(autodiff = false)),
     ]
 
