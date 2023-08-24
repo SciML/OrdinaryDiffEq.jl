@@ -37,8 +37,8 @@ end
 
 affect! = function (integrator)
     u = integrator.u
-    resize!(integrator, length(u) + 1)
     maxidx = findmax(u)[2]
+    resize!(integrator, length(u) + 1)
     Θ = rand() / 5 + 0.25
     u[maxidx] = Θ
     u[end] = 1 - Θ
