@@ -28,6 +28,7 @@ function loopheader!(integrator)
     fix_dt_at_bounds!(integrator)
     modify_dt_for_tstops!(integrator)
     integrator.force_stepfail = false
+    return nothing
 end
 
 function last_step_failed(integrator::ODEIntegrator)
@@ -408,6 +409,7 @@ function apply_step!(integrator)
             end
         end
     end
+    return nothing
 end
 
 handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
@@ -431,6 +433,7 @@ function calc_dt_propose!(integrator, dtnew)
     dtpropose = integrator.tdir * min(abs(integrator.opts.dtmax), abs(dtnew))
     dtpropose = integrator.tdir * max(abs(dtpropose), timedepentdtmin(integrator))
     integrator.dtpropose = dtpropose
+    return nothing
 end
 
 function fix_dt_at_bounds!(integrator)
@@ -445,6 +448,7 @@ function fix_dt_at_bounds!(integrator)
     else
         integrator.dt = min(integrator.dt, dtmin)
     end
+    return nothing
 end
 
 function handle_tstop!(integrator)
@@ -453,7 +457,7 @@ function handle_tstop!(integrator)
         tdir_tstop = first_tstop(integrator)
         if tdir_t == tdir_tstop
             while tdir_t == tdir_tstop #remove all redundant copies
-                pop_tstop!(integrator)
+                res = pop_tstop!(integrator)
                 has_tstop(integrator) ? (tdir_tstop = first_tstop(integrator)) : break
             end
             integrator.just_hit_tstop = true
@@ -468,6 +472,7 @@ function handle_tstop!(integrator)
             end
         end
     end
+    return nothing
 end
 
 function reset_fsal!(integrator)

@@ -21,6 +21,7 @@ function _change_t_via_interpolation!(integrator, t,
             solution_endpoint_match_cur_integrator!(integrator)
         end
     end
+    return nothing
 end
 function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
     t,
@@ -30,6 +31,7 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
     T,
 }
     _change_t_via_interpolation!(integrator, t, modify_save_endpoint)
+    return nothing
 end
 
 function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator)
@@ -440,6 +442,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
     if reinit_retcode
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
+    return nothing
 end
 
 function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
