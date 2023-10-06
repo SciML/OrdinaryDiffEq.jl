@@ -80,6 +80,7 @@ end
             end
         end
     end
+    return nothing
 end
 @inline function DiffEqBase.addsteps!(integrator::ODEIntegrator, args...)
     ode_addsteps!(integrator, args...)

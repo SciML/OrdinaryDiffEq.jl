@@ -791,6 +791,7 @@ function initialize!(integrator, cache::Tsit5Cache)
     integrator.k[7] = cache.k7
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     integrator.stats.nf += 1
+    return nothing
 end
 
 @muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step = false)
