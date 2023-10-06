@@ -63,6 +63,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     progress_steps = 1000,
     progress_name = "ODE",
     progress_message = ODE_DEFAULT_PROG_MESSAGE,
+    progress_id = gensym("OrdinaryDiffEq"),
     userdata = nothing,
     allow_extrapolation = alg_extrapolates(alg),
     initialize_integrator = true,
@@ -99,7 +100,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
 
-    progress && @logmsg(LogLevel(-1), progress_name, _id=_id = :OrdinaryDiffEq, progress=0)
+    progress && @logmsg(LogLevel(-1), progress_name, _id=progress_id, progress=0)
 
     tType = eltype(prob.tspan)
     tspan = prob.tspan
@@ -380,6 +381,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         progress_steps,
         progress_name,
         progress_message,
+        progress_id,
         timeseries_errors,
         dense_errors, dense,
         save_on, save_start,

@@ -152,7 +152,7 @@ function _postamble!(integrator)
     if integrator.opts.progress
         @logmsg(LogLevel(-1),
             integrator.opts.progress_name,
-            _id=:OrdinaryDiffEq,
+            _id=integrator.opts.progress_id,
             message=integrator.opts.progress_message(integrator.dt, integrator.u,
                 integrator.p, integrator.t),
             progress="done")
@@ -270,7 +270,7 @@ function _loopfooter!(integrator)
         t1, t2 = integrator.sol.prob.tspan
         @logmsg(LogLevel(-1),
             integrator.opts.progress_name,
-            _id=:OrdinaryDiffEq,
+            _id=integrator.opts.progress_id,
             message=integrator.opts.progress_message(integrator.dt, integrator.u,
                 integrator.p, integrator.t),
             progress=(integrator.t - t1) / (t2 - t1))
