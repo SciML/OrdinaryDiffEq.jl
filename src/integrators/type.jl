@@ -131,7 +131,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
     reinitialize::Bool
     isdae::Bool
     opts::O
-    stats::DiffEqBase.Stats
+    stats::SciMLBase.DEStats
     initializealg::IA
     fsalfirst::FSALType
     fsallast::FSALType

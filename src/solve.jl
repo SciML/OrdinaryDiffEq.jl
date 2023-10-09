@@ -393,7 +393,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         advance_to_tstop,
         stop_at_next_tstop)
 
-    stats = DiffEqBase.Stats(0)
+    stats = SciMLBase.DEStats(0)
 
     if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
         id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache)
