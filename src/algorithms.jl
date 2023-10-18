@@ -1210,6 +1210,26 @@ pages={113753}
 """
 struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
+"""
+    Newmark
+
+Classical Newmark Beta method to solve second order ODEs, possibly in mass matrix form.
+
+Fixed time step only.
+
+## References
+
+## References
+
+Newmark, Nathan (1959), "A method of computation for structural dynamics", 
+Journal of the Engineering Mechanics Division, 85 (EM3) (3): 67–94, doi:
+https://doi.org/10.1061/JMCEA3.0000098
+"""
+struct Newmark{PT} <: OrdinaryDiffEqPartitionedAlgorithm
+    β::PT
+    γ::PT
+end
+
 ################################################################################
 
 # Adams Bashforth and Adams moulton methods
