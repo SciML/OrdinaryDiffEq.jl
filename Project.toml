@@ -80,7 +80,7 @@ SparseDiffTools = "2.3"
 StaticArrayInterface = "1.2"
 StaticArrays = "0.11, 0.12, 1.0"
 TruncatedStacktraces = "1.2"
-julia = "1.6"
+julia = "1.9"
 
 [extras]
 AlgebraicMultigrid = "2169fc97-5a83-5252-b627-83903c6c433c"
