@@ -25,9 +25,9 @@ struct AutoSwitch{nAlg, sAlg, tolType, T}
     switch_max::Int
 end
 function AutoSwitch(nonstiffalg, stiffalg; maxstiffstep = 10, maxnonstiffstep = 3,
-    nonstifftol = 9 // 10, stifftol = 9 // 10, dtfac = 2,
-    stiffalgfirst = false,
-    switch_max = 5)
+        nonstifftol = 9 // 10, stifftol = 9 // 10, dtfac = 2,
+        stiffalgfirst = false,
+        switch_max = 5)
     AutoSwitch(nonstiffalg, stiffalg, maxstiffstep, maxnonstiffstep,
         promote(nonstifftol, stifftol)..., dtfac, stiffalgfirst, switch_max)
 end

@@ -1,76 +1,76 @@
 function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,
-        DiffEqBase.AbstractDAEProblem},
-    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
-    kwargs...)
+            DiffEqBase.AbstractDAEProblem},
+        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
+        kwargs...)
     integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
     solve!(integrator)
     integrator.sol
 end
 
 function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
-        DiffEqBase.AbstractDAEProblem},
-    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
-    timeseries_init = (),
-    ts_init = (),
-    ks_init = (),
-    recompile::Type{Val{recompile_flag}} = Val{true};
-    saveat = (),
-    tstops = (),
-    d_discontinuities = (),
-    save_idxs = nothing,
-    save_everystep = isempty(saveat),
-    save_on = true,
-    save_start = save_everystep || isempty(saveat) ||
-                     saveat isa Number || prob.tspan[1] in saveat,
-    save_end = nothing,
-    callback = nothing,
-    dense = save_everystep &&
-                !(typeof(alg) <: Union{DAEAlgorithm, FunctionMap}) &&
-                isempty(saveat),
-    calck = (callback !== nothing && callback !== CallbackSet()) ||
-                (dense) || !isempty(saveat), # and no dense output
-    dt = alg isa FunctionMap && isempty(tstops) ?
-         eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-    dtmin = nothing,
-    dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
-    force_dtmin = false,
-    adaptive = anyadaptive(alg),
-    gamma = gamma_default(alg),
-    abstol = nothing,
-    reltol = nothing,
-    qmin = qmin_default(alg),
-    qmax = qmax_default(alg),
-    qsteady_min = qsteady_min_default(alg),
-    qsteady_max = qsteady_max_default(alg),
-    beta1 = nothing,
-    beta2 = nothing,
-    qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
-    controller = nothing,
-    fullnormalize = true,
-    failfactor = 2,
-    maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
-    internalnorm = ODE_DEFAULT_NORM,
-    internalopnorm = LinearAlgebra.opnorm,
-    isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
-    unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-    verbose = true,
-    timeseries_errors = true,
-    dense_errors = false,
-    advance_to_tstop = false,
-    stop_at_next_tstop = false,
-    initialize_save = true,
-    progress = false,
-    progress_steps = 1000,
-    progress_name = "ODE",
-    progress_message = ODE_DEFAULT_PROG_MESSAGE,
-    progress_id = gensym("OrdinaryDiffEq"),
-    userdata = nothing,
-    allow_extrapolation = alg_extrapolates(alg),
-    initialize_integrator = true,
-    alias_u0 = false,
-    alias_du0 = false,
-    initializealg = DefaultInit(),
-    kwargs...) where {recompile_flag}
+            DiffEqBase.AbstractDAEProblem},
+        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = (),
+        recompile::Type{Val{recompile_flag}} = Val{true};
+        saveat = (),
+        tstops = (),
+        d_discontinuities = (),
+        save_idxs = nothing,
+        save_everystep = isempty(saveat),
+        save_on = true,
+        save_start = save_everystep || isempty(saveat) ||
+                         saveat isa Number || prob.tspan[1] in saveat,
+        save_end = nothing,
+        callback = nothing,
+        dense = save_everystep &&
+                    !(typeof(alg) <: Union{DAEAlgorithm, FunctionMap}) &&
+                    isempty(saveat),
+        calck = (callback !== nothing && callback !== CallbackSet()) ||
+                    (dense) || !isempty(saveat), # and no dense output
+        dt = alg isa FunctionMap && isempty(tstops) ?
+             eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+        dtmin = nothing,
+        dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
+        force_dtmin = false,
+        adaptive = anyadaptive(alg),
+        gamma = gamma_default(alg),
+        abstol = nothing,
+        reltol = nothing,
+        qmin = qmin_default(alg),
+        qmax = qmax_default(alg),
+        qsteady_min = qsteady_min_default(alg),
+        qsteady_max = qsteady_max_default(alg),
+        beta1 = nothing,
+        beta2 = nothing,
+        qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
+        controller = nothing,
+        fullnormalize = true,
+        failfactor = 2,
+        maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
+        internalnorm = ODE_DEFAULT_NORM,
+        internalopnorm = LinearAlgebra.opnorm,
+        isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
+        unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
+        verbose = true,
+        timeseries_errors = true,
+        dense_errors = false,
+        advance_to_tstop = false,
+        stop_at_next_tstop = false,
+        initialize_save = true,
+        progress = false,
+        progress_steps = 1000,
+        progress_name = "ODE",
+        progress_message = ODE_DEFAULT_PROG_MESSAGE,
+        progress_id = gensym("OrdinaryDiffEq"),
+        userdata = nothing,
+        allow_extrapolation = alg_extrapolates(alg),
+        initialize_integrator = true,
+        alias_u0 = false,
+        alias_du0 = false,
+        initializealg = DefaultInit(),
+        kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end

@@ -45,7 +45,7 @@ variable, then the system is not Index 1!
 ## Expansion
 
 function DiffEqBase.initialize_dae!(integrator::ODEIntegrator,
-    initializealg = integrator.initializealg)
+        initializealg = integrator.initializealg)
     _initialize_dae!(integrator, integrator.sol.prob,
         initializealg,
         Val(DiffEqBase.isinplace(integrator.sol.prob)))
@@ -54,19 +54,19 @@ end
 ## Default algorithms
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-    alg::DefaultInit, x::Val{true})
+        alg::DefaultInit, x::Val{true})
     _initialize_dae!(integrator, prob,
         BrownFullBasicInit(integrator.opts.abstol), x)
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-    alg::DefaultInit, x::Val{false})
+        alg::DefaultInit, x::Val{false})
     _initialize_dae!(integrator, prob,
         BrownFullBasicInit(integrator.opts.abstol), x)
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-    alg::DefaultInit, x::Val{false})
+        alg::DefaultInit, x::Val{false})
     if prob.differential_vars === nothing
         _initialize_dae!(integrator, prob,
             ShampineCollocationInit(), x)
@@ -77,7 +77,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-    alg::DefaultInit, x::Val{true})
+        alg::DefaultInit, x::Val{true})
     if prob.differential_vars === nothing
         _initialize_dae!(integrator, prob,
             ShampineCollocationInit(), x)
@@ -90,7 +90,7 @@ end
 ## NoInit
 
 function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
-    alg::NoInit, x::Union{Val{true}, Val{false}})
+        alg::NoInit, x::Union{Val{true}, Val{false}})
 end
 
 ## ShampineCollocationInit
@@ -104,7 +104,7 @@ Solve for `u`
 =#
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
-    isinplace::Val{true})
+        isinplace::Val{true})
     @unpack p, t, f = integrator
     M = integrator.f.mass_matrix
     dtmax = integrator.opts.dtmax
@@ -197,7 +197,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocationInit,
-    isinplace::Val{false})
+        isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
     M = integrator.f.mass_matrix
@@ -273,7 +273,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-    alg::ShampineCollocationInit, isinplace::Val{true})
+        alg::ShampineCollocationInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u0 = integrator.u
 
@@ -333,7 +333,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-    alg::ShampineCollocationInit, isinplace::Val{false})
+        alg::ShampineCollocationInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     u0 = integrator.u
     dtmax = integrator.opts.dtmax
@@ -392,12 +392,12 @@ Solve for the algebraic variables
 
 algebraic_jacobian(::Nothing, algebraic_eqs, algebraic_vars) = nothing
 function algebraic_jacobian(jac_prototype::T, algebraic_eqs,
-    algebraic_vars) where {T <: AbstractMatrix}
+        algebraic_vars) where {T <: AbstractMatrix}
     jac_prototype[algebraic_eqs, algebraic_vars]
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-    alg::BrownFullBasicInit, isinplace::Val{true})
+        alg::BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     u = integrator.u
     M = integrator.f.mass_matrix
@@ -457,7 +457,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
-    alg::BrownFullBasicInit, isinplace::Val{false})
+        alg::BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
 
     u0 = integrator.u
@@ -526,7 +526,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-    alg::BrownFullBasicInit, isinplace::Val{true})
+        alg::BrownFullBasicInit, isinplace::Val{true})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
     u = integrator.u
@@ -587,7 +587,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
-    alg::BrownFullBasicInit, isinplace::Val{false})
+        alg::BrownFullBasicInit, isinplace::Val{false})
     @unpack p, t, f = integrator
     differential_vars = prob.differential_vars
 

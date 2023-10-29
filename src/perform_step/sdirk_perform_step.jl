@@ -1,23 +1,23 @@
 function initialize!(integrator,
-    cache::Union{ImplicitEulerConstantCache,
-        ImplicitMidpointConstantCache,
-        TrapezoidConstantCache,
-        TRBDF2ConstantCache,
-        SDIRK2ConstantCache,
-        SDIRK22ConstantCache,
-        SSPSDIRK2ConstantCache,
-        Cash4ConstantCache,
-        Hairer4ConstantCache,
-        ESDIRK54I8L2SAConstantCache,
-        ESDIRK436L2SA2ConstantCache,
-        ESDIRK437L2SAConstantCache,
-        ESDIRK547L2SA2ConstantCache,
-        ESDIRK659L2SAConstantCache,
-        SFSDIRK4ConstantCache,
-        SFSDIRK5ConstantCache,
-        SFSDIRK6ConstantCache,
-        SFSDIRK7ConstantCache,
-        SFSDIRK8ConstantCache})
+        cache::Union{ImplicitEulerConstantCache,
+            ImplicitMidpointConstantCache,
+            TrapezoidConstantCache,
+            TRBDF2ConstantCache,
+            SDIRK2ConstantCache,
+            SDIRK22ConstantCache,
+            SSPSDIRK2ConstantCache,
+            Cash4ConstantCache,
+            Hairer4ConstantCache,
+            ESDIRK54I8L2SAConstantCache,
+            ESDIRK436L2SA2ConstantCache,
+            ESDIRK437L2SAConstantCache,
+            ESDIRK547L2SA2ConstantCache,
+            ESDIRK659L2SAConstantCache,
+            SFSDIRK4ConstantCache,
+            SFSDIRK5ConstantCache,
+            SFSDIRK6ConstantCache,
+            SFSDIRK7ConstantCache,
+            SFSDIRK8ConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -30,25 +30,25 @@ function initialize!(integrator,
 end
 
 function initialize!(integrator,
-    cache::Union{ImplicitEulerCache,
-        ImplicitMidpointCache,
-        TrapezoidCache,
-        TRBDF2Cache,
-        SDIRK2Cache,
-        SDIRK22Cache,
-        SSPSDIRK2Cache,
-        Cash4Cache,
-        Hairer4Cache,
-        ESDIRK54I8L2SACache,
-        ESDIRK436L2SA2Cache,
-        ESDIRK437L2SACache,
-        ESDIRK547L2SA2Cache,
-        ESDIRK659L2SACache,
-        SFSDIRK4Cache,
-        SFSDIRK5Cache,
-        SFSDIRK6Cache,
-        SFSDIRK7Cache,
-        SFSDIRK8Cache})
+        cache::Union{ImplicitEulerCache,
+            ImplicitMidpointCache,
+            TrapezoidCache,
+            TRBDF2Cache,
+            SDIRK2Cache,
+            SDIRK22Cache,
+            SSPSDIRK2Cache,
+            Cash4Cache,
+            Hairer4Cache,
+            ESDIRK54I8L2SACache,
+            ESDIRK436L2SA2Cache,
+            ESDIRK437L2SACache,
+            ESDIRK547L2SA2Cache,
+            ESDIRK659L2SACache,
+            SFSDIRK4Cache,
+            SFSDIRK5Cache,
+            SFSDIRK6Cache,
+            SFSDIRK7Cache,
+            SFSDIRK8Cache})
     integrator.kshortsize = 2
     integrator.fsalfirst = cache.fsalfirst
     integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
@@ -60,7 +60,7 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -154,7 +154,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -181,7 +181,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack nlsolver = cache
     @unpack z, tmp = nlsolver
@@ -207,7 +207,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -794,7 +794,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     nlsolver = cache.nlsolver
     alg = unwrap_alg(integrator, true)
@@ -1099,7 +1099,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK4ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, c2, c3, c4 = cache.tab
     nlsolver = cache.nlsolver
@@ -1221,7 +1221,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK5ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, c2, c3, c4, c5 = cache.tab
     nlsolver = cache.nlsolver
@@ -1364,7 +1364,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK6ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, c2, c3, c4, c5, c6 = cache.tab
     nlsolver = cache.nlsolver
@@ -1531,7 +1531,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK7ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, c2, c3, c4, c5, c6, c7 = cache.tab
     nlsolver = cache.nlsolver
@@ -1721,7 +1721,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::SFSDIRK8ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a92, a93, a94, a95, a96, a97, a98, c2, c3, c4, c5, c6, c7, c8 = cache.tab
     nlsolver = cache.nlsolver
@@ -2108,7 +2108,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK54I8L2SAConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2325,7 +2325,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK436L2SA2ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2499,7 +2499,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK437L2SAConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2694,7 +2694,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK547L2SA2ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,
@@ -2889,7 +2889,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK659L2SAConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack γ,
     a31, a32,

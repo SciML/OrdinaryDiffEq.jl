@@ -415,15 +415,15 @@ if VERSION >= v"1.7"
     @testset "Callbacks with LinearExponential" begin
         A = sprand(ComplexF64, 100, 100, 0.5)
         A += A'
-    
+
         t_l = LinRange(0, 1, 100)
-    
+
         saved_values = SavedValues(Float64, Float64)
         function save_func(u, t, integrator)
             real(u' * A * u)
         end
         cb = SavingCallback(save_func, saved_values, saveat = t_l)
-    
+
         u0 = normalize(rand(ComplexF64, 100))
         A = MatrixOperator(-1im * A)
         prob = ODEProblem(A, u0, (0, 1.0))

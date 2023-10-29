@@ -537,8 +537,8 @@ struct Tsit5ConstantCacheActual{T, T2}
 end
 
 @fold function Tsit5ConstantCacheActual(::Type{T},
-    ::Type{T2}) where {T <: CompiledFloats,
-    T2 <: CompiledFloats}
+        ::Type{T2}) where {T <: CompiledFloats,
+        T2 <: CompiledFloats}
     c1 = convert(T2, 0.161)
     c2 = convert(T2, 0.327)
     c3 = convert(T2, 0.9)
@@ -1313,9 +1313,9 @@ struct DP5ConstantCacheActual{T, T2}
 end
 
 @fold function DP5ConstantCacheActual(::Type{T},
-    ::Type{T2}) where {T <: CompiledFloats,
-    T2 <:
-    CompiledFloats}
+        ::Type{T2}) where {T <: CompiledFloats,
+        T2 <:
+        CompiledFloats}
     a21 = convert(T, 0.2)
     a31 = convert(T, 0.075)
     a32 = convert(T, 0.225)

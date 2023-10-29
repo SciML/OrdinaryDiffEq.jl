@@ -6,10 +6,10 @@ function Base.show(io::IO, alg::OrdinaryDiffEqAlgorithm)
     print(io, ")")
 end
 function explicit_rk_docstring(description::String,
-    name::String;
-    references::String = "",
-    extra_keyword_description = "",
-    extra_keyword_default = "")
+        name::String;
+        references::String = "",
+        extra_keyword_description = "",
+        extra_keyword_default = "")
     if !isempty(extra_keyword_default)
         extra_keyword_default = "\n" * repeat(" ", 8) * extra_keyword_default
     end
@@ -608,8 +608,8 @@ Base.@kwdef struct ORK256{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAl
 end
 # for backwards compatibility
 function ORK256(stage_limiter!,
-    step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        step_limiter! = trivial_limiter!;
+        williamson_condition = true)
     ORK256(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
 

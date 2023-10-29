@@ -12,9 +12,9 @@ end
 struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -25,9 +25,9 @@ function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK22ConstantCache()
 end
 
@@ -45,9 +45,9 @@ end
 struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -58,9 +58,9 @@ function alg_cache(alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK33, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK33ConstantCache()
 end
 
@@ -122,9 +122,9 @@ function KYKSSPRK42ConstantCache(T, T2)
 end
 
 function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -135,9 +135,9 @@ function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::KYKSSPRK42, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     KYKSSPRK42ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -193,9 +193,9 @@ struct SSPRK53ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     if calck
@@ -209,9 +209,9 @@ function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -262,16 +262,16 @@ function SHLDDRK52ConstantCache(T1, T2)
 end
 
 function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SHLDDRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -367,16 +367,16 @@ function SHLDDRK_2NConstantCache(T1, T2)
 end
 
 function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
 function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -435,9 +435,9 @@ struct SSPRK53_2N1ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -451,9 +451,9 @@ function alg_cache(alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK53_2N1, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK53_2N1ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -510,9 +510,9 @@ struct SSPRK53_2N2ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -526,9 +526,9 @@ function alg_cache(alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK53_2N2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK53_2N2ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -582,9 +582,9 @@ struct SSPRK53_HConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     if calck
@@ -598,9 +598,9 @@ function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK53_H, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK53_HConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -660,9 +660,9 @@ struct SSPRK63ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₂ = zero(u)
     k = zero(rate_prototype)
@@ -677,9 +677,9 @@ function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK63, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK63ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -747,9 +747,9 @@ struct SSPRK73ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₁ = zero(u)
     k = zero(rate_prototype)
@@ -764,9 +764,9 @@ function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK73, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK73ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -841,9 +841,9 @@ struct SSPRK83ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     u₂ = zero(u)
     u₃ = zero(u)
@@ -859,9 +859,9 @@ function alg_cache(alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK83, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK83ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -896,9 +896,9 @@ struct SSPRK43ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -914,9 +914,9 @@ function alg_cache(alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK43, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK43ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -942,9 +942,9 @@ end
 struct SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -959,9 +959,9 @@ function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK432, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK432ConstantCache()
 end
 
@@ -996,9 +996,9 @@ end
 end
 
 function alg_cache(alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     dts = fill(zero(dt), 3)
     dtf = fill(zero(dt), 2)
@@ -1012,9 +1012,9 @@ function alg_cache(alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRKMSVS32, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dts = fill(zero(dt), 3)
     dtf = fill(zero(dt), 2)
     μ = zero(dt)
@@ -1060,9 +1060,9 @@ end
 end
 
 function alg_cache(alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     fsalfirst = zero(rate_prototype)
     u_3 = zero(u)
     u_2 = zero(u)
@@ -1077,9 +1077,9 @@ function alg_cache(alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRKMSVS43, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u_3 = u
     u_2 = u
     u_1 = u
@@ -1111,9 +1111,9 @@ end
 struct SSPRK932ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k = zero(rate_prototype)
     if calck
         fsalfirst = zero(k)
@@ -1128,9 +1128,9 @@ function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK932, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK932ConstantCache()
 end
 
@@ -1198,9 +1198,9 @@ struct SSPRK54ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     u₂ = zero(u)
     u₃ = zero(u)
     tmp = zero(u)
@@ -1217,9 +1217,9 @@ function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK54, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK54ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
@@ -1239,9 +1239,9 @@ end
 struct SSPRK104ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     tmp = zero(u)
     k = zero(rate_prototype)
     if calck
@@ -1255,8 +1255,8 @@ function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SSPRK104, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     SSPRK104ConstantCache()
 end

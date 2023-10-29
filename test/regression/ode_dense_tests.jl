@@ -39,7 +39,7 @@ const deriv_test_points = range(0, stop = 1, length = 5)
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
 function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false,
-    nth_der = 1, dertol = 1e-6)
+        nth_der = 1, dertol = 1e-6)
     println("\n")
     show(stdout, alg)
     println()

@@ -1,7 +1,7 @@
 ## initialize!
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, false},
-    integrator::DiffEqBase.DEIntegrator)
+        integrator::DiffEqBase.DEIntegrator)
     @unpack dt = integrator
     @unpack cache = nlsolver
 
@@ -12,7 +12,7 @@
 end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLNewton, true},
-    integrator::DiffEqBase.DEIntegrator)
+        integrator::DiffEqBase.DEIntegrator)
     @unpack u, uprev, t, dt, opts = integrator
     @unpack cache = nlsolver
     @unpack weight = cache
@@ -161,8 +161,8 @@ end
 end
 
 @muladd function compute_step!(nlsolver::NLSolver{<:NLNewton, true, <:Array},
-    integrator,
-    γW)
+        integrator,
+        γW)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache = nlsolver
     @unpack W_γdt, ustep, tstep, k, atmp, dz, W, new_W, invγdt, linsolve, weight = cache
@@ -234,7 +234,7 @@ end
 end
 
 @inline function _compute_rhs(nlsolver::NLSolver{<:NLNewton, false}, integrator, f::TF,
-    z) where {TF}
+        z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack tstep, invγdt = cache
@@ -273,7 +273,7 @@ end
 end
 
 @inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true}, integrator, f::TF,
-    z) where {TF}
+        z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, invγdt = cache
@@ -317,7 +317,7 @@ end
 end
 
 @inline function _compute_rhs!(nlsolver::NLSolver{<:NLNewton, true, <:Array}, integrator,
-    f::TF, z) where {TF}
+        f::TF, z) where {TF}
     @unpack uprev, t, p, dt = integrator
     @unpack tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, invγdt = cache
@@ -385,14 +385,14 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF) 
     relax(dz, nlsolver, integrator, f, relax(nlsolver))
 end
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-    r::Number) where {TF}
+        r::Number) where {TF}
     if !iszero(r)
         rmul!(dz, 1 - r)
     end
 end
 
 function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-    linesearch) where {TF}
+        linesearch) where {TF}
     let dz = dz,
         integrator = integrator,
         nlsolver = nlsolver,
@@ -435,7 +435,7 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
 end
 
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-    r::Number) where {TF}
+        r::Number) where {TF}
     if !iszero(r)
         dz = (1 - r) * dz
     end
@@ -443,7 +443,7 @@ function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
 end
 
 function relax(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
-    linesearch) where {TF}
+        linesearch) where {TF}
     let dz = dz,
         integrator = integrator,
         nlsolver = nlsolver,
