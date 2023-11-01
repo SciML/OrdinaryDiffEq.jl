@@ -182,8 +182,6 @@ end
     M = [0.637947 0.637947
         0.637947 0.637947]
 
-    inv(M) # not caught as singular
-
     function f2!(du, u, p, t)
         du[1] = u[2]
         du[2] = u[1]
