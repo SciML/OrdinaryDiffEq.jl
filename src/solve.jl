@@ -96,6 +96,15 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         error("This solver is not able to use mass matrices.")
     end
 
+    if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
+            !(prob.f.mass_matrix isa SciMLOperators.AbstractSciMLOperator) &&
+            all(isequal(0), prob.f.mass_matrix)
+        alg isa Union{Rosenbrock23, Rosenbrock32} && error("Rosenbrock23 and Rosenbrock32 require at least one differential variable to produce valid solutions")
+        if dense && verbose
+            @warn("Rosenbrock methods have questionable interpolations when applied to equations without differential states.")
+        end
+    end
+
     if !isempty(saveat) && dense
         @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
