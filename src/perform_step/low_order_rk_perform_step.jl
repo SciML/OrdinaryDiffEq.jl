@@ -752,7 +752,7 @@ end
     integrator.fsallast = f(u, p, t + dt)
     k7 = integrator.fsallast
     integrator.stats.nf += 6
-    if typeof(integrator.alg) <: CompositeAlgorithm
+    if integrator.alg isa CompositeAlgorithm
         g7 = u
         # Hairer II, page 22
         integrator.eigen_est = integrator.opts.internalnorm(k7 - k6, t) /
@@ -880,7 +880,7 @@ end
     integrator.fsallast = f(u, p, t + dt)
     k7 = integrator.fsallast
     integrator.stats.nf += 6
-    if typeof(integrator.alg) <: CompositeAlgorithm
+    if integrator.alg isa CompositeAlgorithm
         g7 = u
         # Hairer II, page 22
         integrator.eigen_est = integrator.opts.internalnorm(k7 - k6, t) /
@@ -1014,7 +1014,7 @@ end
   end
   f(k7, u, p, t+dt)
   integrator.stats.nf += 6
-  if typeof(integrator.alg) <: CompositeAlgorithm
+  if integrator.alg isa CompositeAlgorithm
     g6 = tmp
     g7 = u
     # Hairer II, page 22

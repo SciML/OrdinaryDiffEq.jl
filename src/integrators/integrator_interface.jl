@@ -42,8 +42,8 @@ function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegra
     if integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if typeof(alg) <: BS5 || typeof(alg) <: Vern6 || typeof(alg) <: Vern7 ||
-           typeof(alg) <: Vern8 || typeof(alg) <: Vern9
+        if alg isa BS5 || alg isa Vern6 || alg isa Vern7 ||
+           alg isa Vern8 || alg isa Vern9
             ode_addsteps!(integrator, integrator.f, true, false, !alg.lazy)
         else
             ode_addsteps!(integrator, integrator.f, true, false)
@@ -87,11 +87,11 @@ end
     integrator.cache isa FunctionMapCache ||
         integrator.cache isa FunctionMapConstantCache &&
             error("Derivatives are not defined for this stepper.")
-    if typeof(integrator.cache) <: FunctionMapCache
+    if integrator.cache isa FunctionMapCache
         out .= integrator.cache.tmp
     else
         return if isdefined(integrator, :fsallast) &&
-                  !(typeof(integrator.alg) <:
+                  !(integrator.alg isa
                     Union{Rosenbrock23, Rosenbrock32, Rodas4, Rodas4P, Rodas4P2, Rodas5,
             Rodas5P})
             # Special stiff interpolations do not store the right value in fsallast
@@ -408,7 +408,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
         if integrator.sol.u_analytic !== nothing
             resize!(integrator.sol.u_analytic, 0)
         end
-        if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+        if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
             resize!(integrator.sol.alg_choice, resize_start)
         end
         integrator.saveiter = resize_start

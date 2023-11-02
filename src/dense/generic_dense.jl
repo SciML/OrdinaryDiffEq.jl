@@ -37,7 +37,7 @@ end
 @inline function ode_addsteps!(integrator, f = integrator.f, always_calc_begin = false,
     allow_calc_end = true, force_calc_end = false)
     cache = integrator.cache
-    if !(typeof(cache) <: CompositeCache)
+    if !(cache isa CompositeCache)
         _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev, integrator.u,
             integrator.dt, f, integrator.p, cache,
             always_calc_begin, allow_calc_end, force_calc_end)
@@ -88,7 +88,7 @@ end
 
 @inline function ode_interpolant(Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
     DiffEqBase.addsteps!(integrator)
-    if !(typeof(integrator.cache) <: CompositeCache)
+    if !(integrator.cache isa CompositeCache)
         val = ode_interpolant(Θ, integrator.dt, integrator.uprev, integrator.u,
             integrator.k, integrator.cache, idxs, deriv)
     else
@@ -120,7 +120,7 @@ end
 
 @inline function ode_interpolant!(val, Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
     DiffEqBase.addsteps!(integrator)
-    if !(typeof(integrator.cache) <: CompositeCache)
+    if !(integrator.cache isa CompositeCache)
         ode_interpolant!(val, Θ, integrator.dt, integrator.uprev, integrator.u,
             integrator.k, integrator.cache, idxs, deriv)
     else
@@ -208,7 +208,7 @@ end
 
 @inline function ode_extrapolant!(val, Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
     DiffEqBase.addsteps!(integrator)
-    if !(typeof(integrator.cache) <: CompositeCache)
+    if !(integrator.cache isa CompositeCache)
         ode_interpolant!(val, Θ, integrator.t - integrator.tprev, integrator.uprev2,
             integrator.uprev, integrator.k, integrator.cache, idxs, deriv)
     else
@@ -239,7 +239,7 @@ end
 
 @inline function ode_extrapolant(Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
     DiffEqBase.addsteps!(integrator)
-    if !(typeof(integrator.cache) <: CompositeCache)
+    if !(integrator.cache isa CompositeCache)
         ode_interpolant(Θ, integrator.t - integrator.tprev, integrator.uprev2,
             integrator.uprev, integrator.k, integrator.cache, idxs, deriv)
     else
@@ -298,12 +298,12 @@ end
 
 function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
     deriv, ks, ts, id, p)
-    if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+    if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
         return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv)
     elseif !id.dense
         return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
-    elseif typeof(cache) <: CompositeCache
+    elseif cache isa CompositeCache
         return evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊, cache.caches, idxs,
             deriv, ks, ts, p, id.alg_choice[i₊])
     else
@@ -367,7 +367,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
     i₊ = 2
     # if CompositeCache, have an inplace cache for lower allocations
     # (expecting the same algorithms for large portions of ts)
-    if typeof(cache) <: OrdinaryDiffEq.CompositeCache
+    if cache isa OrdinaryDiffEq.CompositeCache
         current_alg = id.alg_choice[i₊]
         cache_i₊ = cache.caches[current_alg]
     end
@@ -389,7 +389,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
-        if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+        if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
             if eltype(vals) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
                     idxs, deriv)
@@ -405,7 +405,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                 vals[j] = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs,
                     deriv)
             end
-        elseif typeof(cache) <: CompositeCache
+        elseif cache isa CompositeCache
             if current_alg != id.alg_choice[i₊] # switched algorithm
                 current_alg = id.alg_choice[i₊]
                 @inbounds cache_i₊ = cache.caches[current_alg] # this alloc is costly
@@ -462,12 +462,12 @@ function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+        if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv)
         elseif !id.dense
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
-        elseif typeof(cache) <: CompositeCache
+        elseif cache isa CompositeCache
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                 cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
@@ -510,12 +510,12 @@ function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
+        if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv)
         elseif !id.dense
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
-        elseif typeof(cache) <: CompositeCache
+        elseif cache isa CompositeCache
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                 cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
@@ -537,7 +537,7 @@ By default, Hermite interpolant so update the derivative at the two ends
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false,
     allow_calc_end = true, force_calc_end = false)
     if length(k) < 2 || always_calc_begin
-        if typeof(cache) <: OrdinaryDiffEqMutableCache
+        if cache isa OrdinaryDiffEqMutableCache
             rtmp = similar(u, eltype(eltype(k)))
             f(rtmp, uprev, p, t)
             copyat_or_push!(k, 1, rtmp)
@@ -560,10 +560,10 @@ end
 
 function ode_interpolant(Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCache, idxs,
     T::Type{Val{TI}}) where {TI}
-    if typeof(idxs) <: Number || typeof(y₀) <: Union{Number, SArray}
+    if idxs isa Number || y₀ isa Union{Number, SArray}
         # typeof(y₀) can be these if saveidxs gives a single value
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T)
-    elseif typeof(idxs) <: Nothing
+    elseif idxs isa Nothing
         if y₁ isa Array{<:Number}
             out = similar(y₁, eltype(first(y₁) * oneunit(Θ)))
             copyto!(out, y₁)
@@ -592,7 +592,7 @@ end
 
 # If no dispatch found, assume Hermite
 function _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}) where {TI}
-    hermite_interpolant(Θ, dt, y₀, y₁, k, Val{typeof(cache) <: OrdinaryDiffEqMutableCache},
+    hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache},
         idxs, T)
 end
 

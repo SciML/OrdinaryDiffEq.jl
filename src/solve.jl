@@ -25,7 +25,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     save_end = nothing,
     callback = nothing,
     dense = save_everystep &&
-                !(typeof(alg) <: Union{DAEAlgorithm, FunctionMap}) &&
+                !(alg isa Union{DAEAlgorithm, FunctionMap}) &&
                 isempty(saveat),
     calck = (callback !== nothing && callback !== CallbackSet()) ||
                 (dense) || !isempty(saveat), # and no dense output
@@ -85,12 +85,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         end
     end
 
-    if typeof(prob.f) <: DynamicalODEFunction && typeof(prob.f.mass_matrix) <: Tuple
+    if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
         if any(mm != I for mm in prob.f.mass_matrix)
             error("This solver is not able to use mass matrices.")
         end
-    elseif !(typeof(prob) <: DiscreteProblem) &&
-           !(typeof(prob) <: DiffEqBase.AbstractDAEProblem) &&
+    elseif !(prob isa DiscreteProblem) &&
+           !(prob isa DiffEqBase.AbstractDAEProblem) &&
            !is_mass_matrix_alg(alg) &&
            prob.f.mass_matrix != I
         error("This solver is not able to use mass matrices.")
@@ -108,17 +108,17 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     t = tspan[1]
 
-    if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) &&
-          !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) &&
-          !(typeof(alg) <: DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
+    if (((!(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
+          !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
+          !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
         dt == tType(0) && isempty(tstops)) &&
-       !(typeof(alg) <: Union{FunctionMap, LinearExponential})
+       !(alg isa Union{FunctionMap, LinearExponential})
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
 
-    isdae = alg isa DAEAlgorithm || (!(typeof(prob) <: DiscreteProblem) &&
+    isdae = alg isa DAEAlgorithm || (!(prob isa DiscreteProblem) &&
              prob.f.mass_matrix != I &&
-             !(typeof(prob.f.mass_matrix) <: Tuple) &&
+             !(prob.f.mass_matrix isa Tuple) &&
              ArrayInterface.issingular(prob.f.mass_matrix))
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
@@ -167,7 +167,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if typeof(_alg) <: FunctionMap
+    if _alg isa FunctionMap
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -181,7 +181,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         abstol_internal = real.(abstol)
     end
 
-    if typeof(_alg) <: FunctionMap
+    if _alg isa FunctionMap
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -197,7 +197,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
     # dtmin is all abs => does not care about sign already.
 
-    if !isdae && isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number &&
+    if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
        uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
         rate_prototype = recursivecopy(u)
     elseif prob isa DAEProblem
@@ -262,7 +262,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
-    alg_choice = typeof(_alg) <: CompositeAlgorithm ? Int[] : ()
+    alg_choice = _alg isa CompositeAlgorithm ? Int[] : ()
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
@@ -395,7 +395,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     stats = DiffEqBase.Stats(0)
 
-    if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
+    if _alg isa OrdinaryDiffEqCompositeAlgorithm
         id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
             dense = dense, k = ks, interp = id,
@@ -442,7 +442,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
-    last_event_error = typeof(_alg) <: FunctionMap ? false : zero(uBottomEltypeNoUnits)
+    last_event_error = _alg isa FunctionMap ? false : zero(uBottomEltypeNoUnits)
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0
@@ -501,7 +501,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         initialize_callbacks!(integrator, initialize_save)
         initialize!(integrator, integrator.cache)
 
-        if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
+        if _alg isa OrdinaryDiffEqCompositeAlgorithm
             # in case user mixes adaptive and non-adaptive algorithms
             ensure_behaving_adaptivity!(integrator, integrator.cache)
 
@@ -605,7 +605,7 @@ function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    if typeof(saveat) <: Number
+    if saveat isa Number
         directional_saveat = tdir * abs(saveat)
         for t in (t0 + directional_saveat):directional_saveat:tf
             push!(saveat_internal, tdir * t)

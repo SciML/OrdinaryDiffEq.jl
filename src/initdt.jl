@@ -15,7 +15,7 @@
         return tdir * max(smalldt, dtmin)
     end
 
-    if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
+    if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
         cache = get_tmp_cache(integrator)
         sk = first(cache)
         if u0 isa Array && abstol isa Number && reltol isa Number
@@ -37,7 +37,7 @@
     end
 
     if get_current_isfsal(integrator.alg, integrator.cache) &&
-       typeof(integrator) <: ODEIntegrator
+       integrator isa ODEIntegrator
         # Right now DelayDiffEq has issues with fsallast not being initialized
         f₀ = integrator.fsallast
         f(f₀, u0, p, t)
@@ -103,7 +103,7 @@
     still works for matrix-free definitions of the mass matrix.
     =#
 
-    if prob.f.mass_matrix != I && (!(typeof(prob.f) <: DynamicalODEFunction) ||
+    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
         any(mm != I for mm in prob.f.mass_matrix))
         ftmp = zero(f₀)
         try
@@ -164,7 +164,7 @@
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
 
-    if prob.f.mass_matrix != I && (!(typeof(prob.f) <: DynamicalODEFunction) ||
+    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
         any(mm != I for mm in prob.f.mass_matrix))
         integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
         copyto!(f₁, ftmp)

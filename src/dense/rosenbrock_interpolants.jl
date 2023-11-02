@@ -2,7 +2,7 @@
 From MATLAB ODE Suite by Shampine
 """
 @def rosenbrock2332unpack begin
-    if typeof(cache) <: OrdinaryDiffEqMutableCache
+    if cache isa OrdinaryDiffEqMutableCache
         d = cache.tab.d
     else
         d = cache.d

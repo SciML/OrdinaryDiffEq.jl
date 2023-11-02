@@ -459,7 +459,7 @@ end
     u = u + dt * b5 * ku
 
     kdu = f.f1(du, u, p, tnew)
-    if typeof(alg) <: McAte42
+    if alg isa McAte42
         du = du + dt * a5 * kdu
         kdu = f.f1(du, u, p, tnew)
         integrator.stats.nf += 1
@@ -513,7 +513,7 @@ end
     @.. broadcast=false u=u + dt * b5 * ku
 
     f.f1(kdu, du, u, p, tnew)
-    if typeof(alg) <: McAte42
+    if alg isa McAte42
         @.. broadcast=false du=du + dt * a5 * kdu
         f.f1(kdu, du, u, p, tnew)
         integrator.stats.nf += 1

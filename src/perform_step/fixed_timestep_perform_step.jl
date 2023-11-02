@@ -7,7 +7,7 @@ function perform_step!(integrator, cache::FunctionMapConstantCache, repeat_step 
     @unpack uprev, dt, t, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
     if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT &&
-       !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&
+       !(integrator.f isa DiffEqBase.EvalFunc &&
          integrator.f.f === DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT)
         if FunctionMap_scale_by_time(alg)
             tmp = f(uprev, p, t + dt)
@@ -30,7 +30,7 @@ function perform_step!(integrator, cache::FunctionMapCache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack tmp = cache
     if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT &&
-       !(typeof(integrator.f) <: DiffEqBase.EvalFunc &&
+       !(integrator.f isa DiffEqBase.EvalFunc &&
          integrator.f.f === DiffEqBase.DISCRETE_INPLACE_DEFAULT)
         if FunctionMap_scale_by_time(alg)
             f(tmp, uprev, p, t + dt)
@@ -102,7 +102,7 @@ end
     @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
 
     # precalculations
-    if typeof(cache) <: HeunConstantCache
+    if cache isa HeunConstantCache
         a₁ = dt
         a₂ = dt / 2
     else # Ralston
@@ -115,14 +115,14 @@ end
     k2 = f(tmp, p, t + a₁)
     integrator.stats.nf += 1
 
-    if typeof(cache) <: HeunConstantCache
+    if cache isa HeunConstantCache
         u = @.. broadcast=false uprev+a₂ * (fsalfirst + k2)
     else
         u = @.. broadcast=false uprev+a₂*fsalfirst+a₃*k2
     end
 
     if integrator.opts.adaptive
-        if typeof(cache) <: HeunConstantCache
+        if cache isa HeunConstantCache
             tmp = @.. broadcast=false a₂*(k2 - fsalfirst)
         else
             tmp = @.. broadcast=false a₃*(k2 - fsalfirst)
@@ -158,7 +158,7 @@ end
     @unpack fsalfirst, k, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
 
     # precalculations
-    if typeof(cache) <: HeunCache
+    if cache isa HeunCache
         a₁ = dt
         a₂ = dt / 2
     else # Ralston
@@ -172,7 +172,7 @@ end
     f(k, tmp, p, t + a₁)
     integrator.stats.nf += 1
 
-    if typeof(cache) <: HeunCache
+    if cache isa HeunCache
         @.. broadcast=false thread=thread u=uprev + a₂ * (fsalfirst + k)
         stage_limiter!(u, integrator, p, t + dt)
         step_limiter!(u, integrator, p, t + dt)
@@ -183,7 +183,7 @@ end
     end
 
     if integrator.opts.adaptive
-        if typeof(cache) <: HeunCache
+        if cache isa HeunCache
             @.. broadcast=false thread=thread tmp=a₂ * (k - fsalfirst)
         else
             @.. broadcast=false thread=thread tmp=a₃ * (k - fsalfirst)
