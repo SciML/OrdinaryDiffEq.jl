@@ -1,5 +1,5 @@
 function initialize!(integrator, cache::Union{Rosenbrock23Cache,
-    Rosenbrock32Cache})
+        Rosenbrock32Cache})
     integrator.kshortsize = 2
     @unpack k₁, k₂, fsalfirst, fsallast = cache
     integrator.fsalfirst = fsalfirst
@@ -12,8 +12,8 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
 end
 
 function initialize!(integrator,
-    cache::Union{Rosenbrock23ConstantCache,
-        Rosenbrock32ConstantCache})
+        cache::Union{Rosenbrock23ConstantCache,
+            Rosenbrock32ConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -127,7 +127,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache{<:Array},
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p, opts = integrator
     @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
     @unpack c₃₂, d = cache.tab
@@ -342,7 +342,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack c₃₂, d, tf, uf = cache
 
@@ -407,7 +407,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack c₃₂, d, tf, uf = cache
 
@@ -475,9 +475,9 @@ end
 end
 
 function initialize!(integrator,
-    cache::Union{Rosenbrock33ConstantCache,
-        Rosenbrock34ConstantCache,
-        Rosenbrock4ConstantCache})
+        cache::Union{Rosenbrock33ConstantCache,
+            Rosenbrock34ConstantCache,
+            Rosenbrock4ConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -490,9 +490,9 @@ function initialize!(integrator,
 end
 
 function initialize!(integrator,
-    cache::Union{Rosenbrock33Cache,
-        Rosenbrock34Cache,
-        Rosenbrock4Cache})
+        cache::Union{Rosenbrock33Cache,
+            Rosenbrock34Cache,
+            Rosenbrock4Cache})
     integrator.kshortsize = 2
     @unpack fsalfirst, fsallast = cache
     integrator.fsalfirst = fsalfirst
@@ -505,7 +505,7 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
     @unpack a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3 = cache.tab
@@ -674,7 +674,7 @@ end
 ################################################################################
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
     @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
@@ -1418,7 +1418,7 @@ function initialize!(integrator, cache::Rosenbrock5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
@@ -1826,7 +1826,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache{<:Array},
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab

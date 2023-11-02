@@ -97,8 +97,8 @@ function initialize!(integrator, cache::Union{HeunConstantCache, RalstonConstant
 end
 
 @muladd function perform_step!(integrator,
-    cache::Union{HeunConstantCache, RalstonConstantCache},
-    repeat_step = false)
+        cache::Union{HeunConstantCache, RalstonConstantCache},
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
 
     # precalculations
@@ -153,7 +153,7 @@ function initialize!(integrator, cache::Union{HeunCache, RalstonCache})
 end
 
 @muladd function perform_step!(integrator, cache::Union{HeunCache, RalstonCache},
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack fsalfirst, k, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
 
@@ -211,7 +211,7 @@ function initialize!(integrator, cache::MidpointConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::MidpointConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     halfdt = dt / 2
     tmp = @.. broadcast=false uprev+halfdt * integrator.fsalfirst

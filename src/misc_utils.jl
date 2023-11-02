@@ -81,9 +81,9 @@ macro threaded(option, ex)
 end
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-    du = nothing, u = nothing, p = nothing, t = nothing,
-    weight = nothing, solverdata = nothing,
-    reltol = integrator === nothing ? nothing : integrator.opts.reltol)
+        du = nothing, u = nothing, p = nothing, t = nothing,
+        weight = nothing, solverdata = nothing,
+        reltol = integrator === nothing ? nothing : integrator.opts.reltol)
     A !== nothing && (linsolve.A = A)
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)

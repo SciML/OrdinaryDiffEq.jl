@@ -10,7 +10,7 @@ function initialize!(integrator, cache::KuttaPRK2p5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::KuttaPRK2p5ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, false)
     @unpack α21, α31, α32, α41, α42, α43, α5_6 = cache

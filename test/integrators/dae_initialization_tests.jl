@@ -202,8 +202,8 @@ struct BrokenNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
     BrokenNLSolve(; kwargs...) = new()
 end
 function SciMLBase.__solve(prob::NonlinearProblem,
-    alg::BrokenNLSolve, args...;
-    kwargs...)
+        alg::BrokenNLSolve, args...;
+        kwargs...)
     u = fill(reinterpret(Float64, 0xDEADBEEFDEADBEEF), 3)
     SciMLBase.build_solution(prob, alg, u, copy(u);
         retcode = ReturnCode.Success)

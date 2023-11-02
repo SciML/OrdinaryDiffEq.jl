@@ -13,7 +13,7 @@ function initialize!(integrator, cache::SplitEulerConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SplitEulerConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     u = @.. broadcast=false uprev+dt * integrator.fsalfirst
     integrator.fsallast = f.f1(u, p, t + dt) + f.f2(u, p, t + dt)  # For the interpolation, needs k at the updated point

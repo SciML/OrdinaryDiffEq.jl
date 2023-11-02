@@ -36,7 +36,7 @@ ad
 @test ad ≈ findiff
 
 function test_f2(p, sensealg = ForwardDiffSensitivity(), controller = nothing,
-    alg = Tsit5())
+        alg = Tsit5())
     _prob = remake(prob, p = p)
     u = solve(_prob, alg, sensealg = sensealg, controller = controller,
         abstol = 1e-14, reltol = 1e-14, callback = cb, save_everystep = false)

@@ -1,7 +1,7 @@
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-    prob::DiffEqBase.AbstractODEProblem{uType, tType, true
-    },
-    integrator) where {tType, uType}
+        prob::DiffEqBase.AbstractODEProblem{uType, tType, true
+        },
+        integrator) where {tType, uType}
     _tType = eltype(tType)
     f = prob.f
     p = integrator.p
@@ -226,9 +226,9 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-    prob::DiffEqBase.AbstractODEProblem{uType, tType,
-        false},
-    integrator) where {uType, tType}
+        prob::DiffEqBase.AbstractODEProblem{uType, tType,
+            false},
+        integrator) where {uType, tType}
     _tType = eltype(tType)
     f = prob.f
     p = prob.p
@@ -288,9 +288,9 @@ end
 end
 
 @inline function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-    prob::DiffEqBase.AbstractDAEProblem{duType, uType,
-        tType},
-    integrator) where {duType, uType, tType}
+        prob::DiffEqBase.AbstractDAEProblem{duType, uType,
+            tType},
+        integrator) where {duType, uType, tType}
     _tType = eltype(tType)
     tspan = prob.tspan
     init_dt = abs(tspan[2] - tspan[1])

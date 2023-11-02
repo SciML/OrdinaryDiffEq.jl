@@ -266,7 +266,7 @@ function initialize!(integrator, cache::ImplicitEulerExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, true)
     @unpack T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2 = cache
@@ -525,7 +525,7 @@ function initialize!(integrator, cache::ImplicitEulerExtrapolationConstantCache)
 end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, true)
     @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
@@ -732,7 +732,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardCache)
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -949,7 +949,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCa
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -1143,7 +1143,7 @@ function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -1546,7 +1546,7 @@ function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCa
 end
 
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -1804,7 +1804,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerCache)
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -2024,7 +2024,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerConstan
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -2220,7 +2220,7 @@ function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationConstan
 end
 
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2495,7 +2495,7 @@ function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2916,8 +2916,8 @@ function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCon
 end
 
 function perform_step!(integrator,
-    cache::ImplicitEulerBarycentricExtrapolationConstantCache,
-    repeat_step = false)
+        cache::ImplicitEulerBarycentricExtrapolationConstantCache,
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -3189,7 +3189,7 @@ function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCac
 end
 
 function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)

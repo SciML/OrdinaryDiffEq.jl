@@ -11,7 +11,7 @@ function initialize!(integrator, cache::ExplicitRKConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, false)
     @unpack A, c, α, αEEst, stages = cache
@@ -86,7 +86,7 @@ function initialize!(integrator, cache::ExplicitRKCache)
 end
 
 @generated function accumulate_explicit_stages!(out, A, uprev, kk, dt, ::Val{s},
-    ::Val{r} = Val(s)) where {s, r}
+        ::Val{r} = Val(s)) where {s, r}
     if s == 1
         return :(@muladd @.. broadcast=false out=uprev + dt * kk[1])
     elseif s == 2
@@ -125,7 +125,7 @@ function accumulate_EEst!(out, αEEst, utilde, kk, dt, stages)
 end
 
 @muladd function compute_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
-    stages::Integer) where {F}
+        stages::Integer) where {F}
     # Middle
     for i in 2:(stages - 1)
         @.. broadcast=false utilde=zero(kk[1][1])
@@ -147,7 +147,7 @@ end
 end
 
 @generated function compute_stages!(f::F, A, c, u, tmp, uprev, kk, p, t, dt,
-    ::Val{s}) where {F, s}
+        ::Val{s}) where {F, s}
     quote
         Base.@nexprs $(s - 2) i′->begin
             i = i′ + 1
@@ -160,7 +160,7 @@ end
 end
 
 function runtime_split_stages!(f::F, A, c, utilde, u, tmp, uprev, kk, p, t, dt,
-    stages::Integer) where {F}
+        stages::Integer) where {F}
     Base.@nif 17 (s->(s == stages)) (s->compute_stages!(f, A, c, u, tmp, uprev, kk, p, t,
         dt, Val(s))) (s->compute_stages!(f,
         A,

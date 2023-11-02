@@ -696,7 +696,7 @@ function initialize!(integrator, cache::MagnusLeapfrogCache)
 end
 
 function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = false,
-    alg_extrapolates = true, iter = 1)
+        alg_extrapolates = true, iter = 1)
     @unpack t, dt, uprev, uprev2, u, p, iter = integrator
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
@@ -747,7 +747,7 @@ function initialize!(integrator, cache::LinearExponentialConstantCache)
 end
 
 function perform_step!(integrator, cache::LinearExponentialConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
     A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator

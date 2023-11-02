@@ -21,17 +21,17 @@ function cb_affect!(integrator)
 end
 
 cbs = CallbackSet(ContinuousCallback(cond_1, cb_affect!),
-                  ContinuousCallback(cond_2, cb_affect!),
-                  ContinuousCallback(cond_3, cb_affect!),
-                  ContinuousCallback(cond_4, cb_affect!),
-                  ContinuousCallback(cond_5, cb_affect!),
-                  ContinuousCallback(cond_6, cb_affect!),
-                  ContinuousCallback(cond_7, cb_affect!),
-                  ContinuousCallback(cond_8, cb_affect!),
-                  ContinuousCallback(cond_9, cb_affect!))
+    ContinuousCallback(cond_2, cb_affect!),
+    ContinuousCallback(cond_3, cb_affect!),
+    ContinuousCallback(cond_4, cb_affect!),
+    ContinuousCallback(cond_5, cb_affect!),
+    ContinuousCallback(cond_6, cb_affect!),
+    ContinuousCallback(cond_7, cb_affect!),
+    ContinuousCallback(cond_8, cb_affect!),
+    ContinuousCallback(cond_9, cb_affect!))
 
 integrator = init(ODEProblem(f!, [0.8, 1.0], (0.0, 100.0), [0, 0]), Tsit5(), callback = cbs,
-                  save_on = false);
+    save_on = false);
 # Force a callback event to occur so we can call handle_callbacks! directly.
 # Step to a point where u[1] is still > 0.5, so we can force it below 0.5 and
 # call handle callbacks
@@ -42,6 +42,6 @@ if VERSION >= v"1.7"
         integrator.u[1] = 0.4
         @allocations OrdinaryDiffEq.handle_callbacks!(integrator)
     end
-    handle_allocs(integrator);
+    handle_allocs(integrator)
     @test handle_allocs(integrator) == 0
 end

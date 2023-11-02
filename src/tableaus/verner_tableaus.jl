@@ -574,8 +574,8 @@ struct Vern7ExtraStages{T, T2}
 end
 
 @fold function Vern7ExtraStages(::Type{T},
-    ::Type{T2}) where {T <: CompiledFloats,
-    T2 <: CompiledFloats}
+        ::Type{T2}) where {T <: CompiledFloats,
+        T2 <: CompiledFloats}
     c11 = convert(T2, 1)
     a1101 = convert(T, 0.04715561848627222)
     a1104 = convert(T, 0.25750564298434153)
@@ -1043,7 +1043,7 @@ struct Vern7Tableau{T, T2}
 end
 
 @fold function Vern7Tableau(::Type{T},
-    ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
+        ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
     c2 = convert(T2, 0.005)
     c3 = convert(T2, 0.10888888888888888)
     c4 = convert(T2, 0.16333333333333333)
@@ -2444,8 +2444,8 @@ struct Vern9ExtraStages{T, T2}
 end
 
 @fold function Vern9ExtraStages(::Type{T},
-    ::Type{T2}) where {T <: CompiledFloats,
-    T2 <: CompiledFloats}
+        ::Type{T2}) where {T <: CompiledFloats,
+        T2 <: CompiledFloats}
     #  FIVE ADDITIONAL STAGES FOR INTERPOLANT OF ORDER  8
     c17 = convert(T2, 1)
     a1701 = convert(T, 0.014611976858423152)
@@ -3376,7 +3376,7 @@ struct Vern9Tableau{T, T2}
 end
 
 @fold function Vern9Tableau(::Type{T},
-    ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
+        ::Type{T2}) where {T <: CompiledFloats, T2 <: CompiledFloats}
     c1 = convert(T2, 0.03462)
     c2 = convert(T2, 0.09702435063878045)
     c3 = convert(T2, 0.14553652595817068)
