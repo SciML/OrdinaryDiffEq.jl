@@ -124,7 +124,7 @@ interpd_idxs = sol(0:(1 // 2^(4)):1, idxs = 1:2:5)
 
 interpd_single = sol(0:(1 // 2^(4)):1, idxs = 1)
 
-@test typeof(interpd_single.u) <: Vector{Float64}
+@test interpd_single.u isa Vector{Float64}
 
 @test typeof(sol(0.5, idxs = 1)) <: Float64
 

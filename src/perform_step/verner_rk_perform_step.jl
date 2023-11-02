@@ -38,7 +38,7 @@ end
     integrator.fsallast = f(u, p, t + dt)
     k9 = integrator.fsallast
     integrator.stats.nf += 8
-    if typeof(integrator.alg) <: CompositeAlgorithm
+    if integrator.alg isa CompositeAlgorithm
         g9 = u
         ϱu = integrator.opts.internalnorm(k9 - k8, t)
         ϱd = integrator.opts.internalnorm(g9 - g8, t)
@@ -241,7 +241,7 @@ end
     k10 = f(g10, p, t + dt)
     integrator.stats.nf += 10
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
-    if typeof(integrator.alg) <: CompositeAlgorithm
+    if integrator.alg isa CompositeAlgorithm
         ϱu = integrator.opts.internalnorm(k10 - k9, t)
         ϱd = integrator.opts.internalnorm(g10 - g9, t)
         integrator.eigen_est = ϱu / ϱd
@@ -510,7 +510,7 @@ end
     u = uprev +
         dt * (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12)
-    if typeof(integrator.alg) <: CompositeAlgorithm
+    if integrator.alg isa CompositeAlgorithm
         ϱu = integrator.opts.internalnorm(k13 - k12, t)
         ϱd = integrator.opts.internalnorm(g13 - g12, t)
         integrator.eigen_est = ϱu / ϱd
@@ -852,7 +852,7 @@ end
     u = uprev +
         dt * (b1 * k1 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 + b12 * k12 + b13 * k13 +
          b14 * k14 + b15 * k15)
-    if typeof(integrator.alg) <: CompositeAlgorithm
+    if integrator.alg isa CompositeAlgorithm
         ϱu = integrator.opts.internalnorm(k16 - k15, t)
         ϱd = integrator.opts.internalnorm(g16 - g15, t)
         integrator.eigen_est = ϱu / ϱd

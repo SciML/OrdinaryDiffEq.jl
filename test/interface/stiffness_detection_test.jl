@@ -35,7 +35,7 @@ for (i, prob) in enumerate(probArr)
     sol2 = solve(prob, alg, maxiters = 1000)
     @test sol.t == sol2.t # test reinitialization
     @test length(sol.t) < 280
-    @test typeof(alg.algs[sol.alg_choice[1]]) <: Rodas5
+    @test alg.algs[sol.alg_choice[1]] isa Rodas5
     i == 1 || @test is_switching_fb(sol) # fails due to eigenvalue estimate of J
     sol = solve(prob,
         AutoDP5(Rodas5(); maxstiffstep = 2, maxnonstiffstep = 2,

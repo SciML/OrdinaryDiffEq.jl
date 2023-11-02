@@ -251,7 +251,7 @@ function DiffEqBase.prepare_alg(alg::Union{
         elseif (prob isa ODEProblem || prob isa DDEProblem) &&
                (prob.f.mass_matrix === nothing ||
                 (prob.f.mass_matrix !== nothing &&
-                 !(typeof(prob.f.jac_prototype) <: AbstractSciMLOperator)))
+                 !(prob.f.jac_prototype isa AbstractSciMLOperator)))
             linsolve = LinearSolve.defaultalg(prob.f.jac_prototype, u0)
         else
             # If mm is a sparse matrix and A is a MatrixOperator, then let linear
@@ -793,7 +793,7 @@ function default_controller(alg::Union{ExtrapolationMidpointDeuflhard,
 end
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
-    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+    if alg isa OrdinaryDiffEqCompositeAlgorithm
         beta2 = _beta2 === nothing ?
                 _composite_beta2_default(alg.algs, cache.current, Val(QT)) : _beta2
         beta1 = _beta1 === nothing ?
@@ -966,10 +966,10 @@ alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
-    iscomp = typeof(alg) <: CompositeAlgorithm
+    iscomp = alg isa CompositeAlgorithm
     if !iscomp
         return alg
-    elseif typeof(alg.choice_function) <: AutoSwitchCache
+    elseif alg.choice_function isa AutoSwitchCache
         if is_stiff === nothing
             throwautoswitch(alg)
         end
@@ -986,10 +986,10 @@ end
 
 function unwrap_alg(integrator, is_stiff)
     alg = integrator.alg
-    iscomp = typeof(alg) <: CompositeAlgorithm
+    iscomp = alg isa CompositeAlgorithm
     if !iscomp
         return alg
-    elseif typeof(alg.choice_function) <: AutoSwitchCache
+    elseif alg.choice_function isa AutoSwitchCache
         if is_stiff === nothing
             throwautoswitch(alg)
         end

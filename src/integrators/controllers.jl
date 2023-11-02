@@ -676,7 +676,7 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
             fd_weights = calc_finite_difference_weights(ts_tmp, t + dt, k - 2,
                 Val(max_order))
             terk_tmp = @.. broadcast=false fd_weights[k - 2, 1]*u
-            if typeof(u) <: Number
+            if u isa Number
                 for i in 2:(k - 2)
                     terk_tmp += fd_weights[i, k - 2] * u_history[i - 1]
                 end
@@ -875,17 +875,17 @@ function stepsize_controller_internal!(integrator,
     # Compute and save the stepsize scaling based on the latest error estimate of the current order
     @unpack controller = integrator.opts
 
-    if typeof(alg) <:
+    if alg isa
        Union{ImplicitEulerExtrapolation, ImplicitEulerBarycentricExtrapolation,
         ImplicitHairerWannerExtrapolation}
         if iszero(integrator.EEst)
             q = inv(integrator.opts.qmax)
         else
             # Update gamma and beta1
-            if typeof(alg) <: ImplicitHairerWannerExtrapolation
+            if alg isa ImplicitHairerWannerExtrapolation
                 controller.beta1 = typeof(controller.beta1)(1 //
                                                             (2integrator.cache.n_curr + 1))
-            elseif typeof(alg) <: ImplicitEulerExtrapolation
+            elseif alg isa ImplicitEulerExtrapolation
                 controller.beta1 = typeof(controller.beta1)(1 // (integrator.cache.n_curr))
             else
                 controller.beta1 = typeof(controller.beta1)(1 //
