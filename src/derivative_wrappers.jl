@@ -6,7 +6,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can be found at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
                                   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
                                3. Defining analytical Jacobians and time gradients. More details can be
@@ -48,7 +48,7 @@ const FIRST_AUTODIFF_JAC_MESSAGE = """
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can befound at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
                                   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
                                3. Defining analytical Jacobians. More details can be
@@ -357,32 +357,28 @@ function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
     grad_config
 end
 
-function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
+function build_grad_config(alg, f::F1, tf::F2, dT, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
         if alg_autodiff(alg) isa AutoForwardDiff
             T = if standardtag(alg)
-                typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(du1)))
+                typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(dT)))
             else
-                typeof(ForwardDiff.Tag(f, eltype(du1)))
+                typeof(ForwardDiff.Tag(f, eltype(dT)))
             end
 
-            if du1 isa Array
-                dualt = Dual{T, eltype(du1), 1}(first(du1) * t,
-                    ForwardDiff.Partials((one(eltype(du1)),)))
-                grad_config = similar(du1, typeof(dualt))
+            if dT isa Array
+                dualt = Dual{T, eltype(dT), 1}(first(dT),
+                    ForwardDiff.Partials((one(eltype(dT)),)))
+                grad_config = similar(dT, typeof(dualt))
                 fill!(grad_config, false)
             else
-                grad_config = ArrayInterface.restructure(du1,
-                    Dual{
-                        T,
-                        eltype(du1),
-                        1,
-                    }.(du1,
-                        (ForwardDiff.Partials((one(eltype(du1)),)),)) .*
+                grad_config = ArrayInterface.restructure(dT,
+                    Dual{T, eltype(dT), 1}.(dT,
+                        (ForwardDiff.Partials((one(eltype(dT)),)),)) .*
                     false)
             end
         elseif alg_autodiff(alg) isa AutoFiniteDiff
-            grad_config = FiniteDiff.GradientCache(du1, t, alg_difftype(alg))
+            grad_config = FiniteDiff.GradientCache(dT, t, alg_difftype(alg))
         else
             error("$alg_autodiff not yet supported in build_grad_config function")
         end
