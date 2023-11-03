@@ -43,13 +43,8 @@
         f(f₀, u0, p, t)
     else
         # TODO: use more caches
-        if u0 isa Array && eltype(u0) isa Number
-            T = eltype(first(u0) / t)
-            f₀ = similar(u0, T)
-            fill!(f₀, zero(T))
-        else
-            f₀ = zero.(u0 ./ t)
-        end
+        f₀ = similar(first(get_tmp_cache(integrator)), length(u0))
+        fill!(f₀, 0)
         f(f₀, u0, p, t)
     end
 
