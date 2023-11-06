@@ -93,6 +93,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
             try
                 f(grad_config, xdual)
             catch e
+                rethrow(e)
                 throw(FirstAutodiffTgradError(e))
             end
         else
@@ -356,28 +357,28 @@ function resize_grad_config!(grad_config::FiniteDiff.GradientCache, i)
     grad_config
 end
 
-function build_grad_config(alg, f::F1, tf::F2, dT, t) where {F1, F2}
+function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
     if !DiffEqBase.has_tgrad(f)
         if alg_autodiff(alg) isa AutoForwardDiff
             T = if standardtag(alg)
-                typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(dT)))
+                typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(du1)))
             else
-                typeof(ForwardDiff.Tag(f, eltype(dT)))
+                typeof(ForwardDiff.Tag(f, eltype(du1)))
             end
 
-            if dT isa Array
-                dualt = Dual{T, eltype(dT), 1}(first(dT),
-                    ForwardDiff.Partials((one(eltype(dT)),)))
-                grad_config = similar(dT, typeof(dualt))
+            if du1 isa Array
+                dualt = Dual{T, eltype(du1), 1}(first(du1),
+                    ForwardDiff.Partials((one(eltype(du1)),)))
+                grad_config = similar(du1, typeof(dualt))
                 fill!(grad_config, false)
             else
-                grad_config = ArrayInterface.restructure(dT,
-                    Dual{T, eltype(dT), 1}.(dT,
-                        (ForwardDiff.Partials((one(eltype(dT)),)),)) .*
+                grad_config = ArrayInterface.restructure(du1,
+                    Dual{T, eltype(du1), 1}.(du1,
+                        (ForwardDiff.Partials((one(eltype(du1)),)),)) .*
                     false)
             end
         elseif alg_autodiff(alg) isa AutoFiniteDiff
-            grad_config = FiniteDiff.GradientCache(dT, t, alg_difftype(alg))
+            grad_config = FiniteDiff.GradientCache(du1, t, alg_difftype(alg))
         else
             error("$alg_autodiff not yet supported in build_grad_config function")
         end
