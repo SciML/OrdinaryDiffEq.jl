@@ -101,7 +101,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
         alg isa Union{Rosenbrock23, Rosenbrock32} && error("Rosenbrock23 and Rosenbrock32 require at least one differential variable to produce valid solutions")
-        if dense && verbose
+        if (dense || !isempty(saveat)) && verbose
             @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
         end
     end
