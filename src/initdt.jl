@@ -43,7 +43,7 @@
         f(f₀, u0, p, t)
     else
         # TODO: use more caches
-        f₀ = similar(first(get_tmp_cache(integrator)), length(u0))
+        f₀ = similar(first(get_tmp_cache(integrator)), size(u0))
         fill!(f₀, zero(eltype(f₀)))
         f(f₀, u0, p, t)
     end
