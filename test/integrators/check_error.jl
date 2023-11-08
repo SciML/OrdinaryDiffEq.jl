@@ -40,3 +40,11 @@ for i in 1:(integrator.opts.maxiters)
     end
 end
 @test ok
+
+let
+    function f!(out, u, _, t)
+       out[1] = u[1]  - sin(1e8*t)
+    end
+    mprob = ODEProblem(ODEFunction(f!, mass_matrix=[0.0;;]), [0.0], (0, 2.0))
+    @test_throws ErrorException solve(mprob, Rosenbrock23())
+end
