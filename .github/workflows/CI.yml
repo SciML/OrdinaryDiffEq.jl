@@ -25,6 +25,7 @@ jobs:
           - ODEInterfaceRegression
           - Multithreading
         version:
+          - '1.9'
           - '1'
     steps:
       - uses: actions/checkout@v4
