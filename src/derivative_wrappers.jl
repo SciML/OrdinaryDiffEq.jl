@@ -81,13 +81,14 @@ function derivative!(df::AbstractArray{<:Number}, f,
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivtive for all elements in gradient
     if alg_autodiff(alg) isa AutoForwardDiff
+        tag = DiffEqBase.promote_dual(eltype(df), typeof(x))
         T = if standardtag(alg)
-            typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(x)))
+            typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), tag))
         else
-            typeof(ForwardDiff.Tag(f, eltype(x)))
+            typeof(ForwardDiff.Tag(f, tag))
         end
-        xdual = Dual{T, eltype(x), 1}(x,
-            ForwardDiff.Partials((one(eltype(x)),)))
+        xdual = Dual{T, tag, 1}(convert(tag, x),
+            ForwardDiff.Partials((oneunit(tag),)))
 
         if integrator.iter == 1
             try
