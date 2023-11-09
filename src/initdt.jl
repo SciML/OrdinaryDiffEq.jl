@@ -47,7 +47,7 @@
         if u0 isa Array && eltype(u0) isa Number
             fill!(f₀, zero(T))
         else
-            f₀ = zero.(u0 ./ t)
+            f₀ = zero.(f₀)
         end
         f(f₀, u0, p, t)
     end
