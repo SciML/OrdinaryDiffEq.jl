@@ -44,7 +44,11 @@
     else
         # TODO: use more caches
         f₀ = similar(first(get_tmp_cache(integrator)), size(u0))
-        f₀ = zero.(f₀)
+        if u0 isa Array && eltype(u0) isa Number
+            fill!(f₀, zero(T))
+        else
+            f₀ = zero.(u0 ./ t)
+        end
         f(f₀, u0, p, t)
     end
 
