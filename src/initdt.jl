@@ -43,7 +43,7 @@
         f(f₀, u0, p, t)
     else
         # TODO: use more caches
-        f₀ = similar(first(get_tmp_cache(integrator)), size(u0))
+        f₀ = first(get_tmp_cache(integrator))
         if u0 isa Array && eltype(u0) isa Number
             fill!(f₀, zero(T))
         else
