@@ -78,6 +78,28 @@ function alg_cache(alg::FineRKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
     FineRKN4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
+@cache struct FineRKN5Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    k2::reducedRateType
+    k3::reducedRateType
+    k4::reducedRateType
+    k5::reducedRateType
+    k6::reducedRateType
+    k7::reducedRateType
+    k8::reducedRateType
+    k9::reducedRateType
+    k10::reducedRateType
+    k11::reducedRateType
+    k::rateType
+    utilde::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    tab::TabType
+end
+
 function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
     dt, reltol, p, calck,
@@ -93,19 +115,14 @@ function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
     k7 = zero(reduced_rate_prototype)
     k8 = zero(reduced_rate_prototype)
     k9 = zero(reduced_rate_prototype)
+    k10 = zero(reduced_rate_prototype)
+    k11 = zero(reduced_rate_prototype)
     k = zero(rate_prototype)
     utilde = zero(u)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
     tmp = zero(u)
-    FineRKN5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k, utilde, tmp, atmp, tab)
-end
-
-function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    FineRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    FineRKN5Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k, utilde, tmp, atmp, tab)
 end
 
 function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
