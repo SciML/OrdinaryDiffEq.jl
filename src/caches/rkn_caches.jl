@@ -124,6 +124,55 @@ function alg_cache(alg::FineRKN5, u, rate_prototype, ::Type{uEltypeNoUnits},
     FineRKN5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
+@cache struct SharpFineRKN6Cache{uType, rateType, reducedRateType, uNoUnitsType, TabType} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    k2::reducedRateType
+    k3::reducedRateType
+    k4::reducedRateType
+    k5::reducedRateType
+    k6::reducedRateType
+    k7::reducedRateType
+    k8::reducedRateType
+    k::rateType
+    utilde::uType
+    tmp::uType
+    atmp::uNoUnitsType
+    tab::TabType
+end
+
+function alg_cache(alg::SharpFineRKN6, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    reduced_rate_prototype = rate_prototype.x[2]
+    tab = SharpFineRKN6ConstantCache(constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits))
+    k1 = zero(rate_prototype)
+    k2 = zero(reduced_rate_prototype)
+    k3 = zero(reduced_rate_prototype)
+    k4 = zero(reduced_rate_prototype)
+    k5 = zero(reduced_rate_prototype)
+    k6 = zero(reduced_rate_prototype)
+    k7 = zero(reduced_rate_prototype)
+    k8 = zero(reduced_rate_prototype)
+    k = zero(rate_prototype)
+    utilde = zero(u)
+    atmp = similar(u, uEltypeNoUnits)
+    recursivefill!(atmp, false)
+    tmp = zero(u)
+    SharpFineRKN6Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k, utilde, tmp, atmp, tab)
+end
+
+function alg_cache(alg::SharpFineRKN6, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    SharpFineRKN6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
 @cache struct Nystrom4VelocityIndependentCache{uType, rateType, reducedRateType} <:
               OrdinaryDiffEqMutableCache
     u::uType
