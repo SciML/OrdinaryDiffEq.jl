@@ -21,6 +21,7 @@ function _change_t_via_interpolation!(integrator, t,
             solution_endpoint_match_cur_integrator!(integrator)
         end
     end
+    return nothing
 end
 function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
     t,
@@ -30,6 +31,7 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
     T,
 }
     _change_t_via_interpolation!(integrator, t, modify_save_endpoint)
+    return nothing
 end
 
 function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator)
@@ -40,8 +42,8 @@ function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegra
     if integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if typeof(alg) <: BS5 || typeof(alg) <: Vern6 || typeof(alg) <: Vern7 ||
-           typeof(alg) <: Vern8 || typeof(alg) <: Vern9
+        if alg isa BS5 || alg isa Vern6 || alg isa Vern7 ||
+           alg isa Vern8 || alg isa Vern9
             ode_addsteps!(integrator, integrator.f, true, false, !alg.lazy)
         else
             ode_addsteps!(integrator, integrator.f, true, false)
@@ -85,11 +87,11 @@ end
     integrator.cache isa FunctionMapCache ||
         integrator.cache isa FunctionMapConstantCache &&
             error("Derivatives are not defined for this stepper.")
-    if typeof(integrator.cache) <: FunctionMapCache
+    if integrator.cache isa FunctionMapCache
         out .= integrator.cache.tmp
     else
         return if isdefined(integrator, :fsallast) &&
-                  !(typeof(integrator.alg) <:
+                  !(integrator.alg isa
                     Union{Rosenbrock23, Rosenbrock32, Rodas4, Rodas4P, Rodas4P2, Rodas5,
             Rodas5P})
             # Special stiff interpolations do not store the right value in fsallast
@@ -208,6 +210,7 @@ function resize!(integrator::ODEIntegrator, i::Int)
         # may be required for things like units
         c !== nothing && resize!(c, i)
     end
+    resize_f!(integrator.f, i)
     resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
     resize_non_user_cache!(integrator, cache, i)
@@ -219,10 +222,19 @@ function resize!(integrator::ODEIntegrator, i::NTuple{N, Int}) where {N}
     for c in full_cache(cache)
         resize!(c, i)
     end
+    resize_f!(integrator.f, i)
     # TODO the parts below need to be adapted for implicit methods
     isdefined(integrator.cache, :nlsolver) && resize_nlsolver!(integrator, i)
     resize_J_W!(cache, integrator, i)
     resize_non_user_cache!(integrator, cache, i)
+end
+
+# default fallback
+resize_f!(f, i) = nothing
+
+function resize_f!(f::SplitFunction, i)
+    resize!(f.cache, i)
+    return nothing
 end
 
 function resize_J_W!(cache, integrator, i)
@@ -396,7 +408,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
         if integrator.sol.u_analytic !== nothing
             resize!(integrator.sol.u_analytic, 0)
         end
-        if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+        if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
             resize!(integrator.sol.alg_choice, resize_start)
         end
         integrator.saveiter = resize_start
@@ -430,6 +442,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.
     if reinit_retcode
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol, ReturnCode.Default)
     end
+    return nothing
 end
 
 function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)

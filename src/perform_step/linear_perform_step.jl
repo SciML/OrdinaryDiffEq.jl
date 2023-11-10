@@ -12,8 +12,9 @@ end
 function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, u, p, t + dt / 2)
@@ -22,8 +23,8 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = fal
         u .= expv(dt, L, u; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
-        u .= exp(dt * L) * u
+        A = convert(AbstractMatrix, L)
+        u .= exponential!(dt * A, exp_method, exp_cache) * u
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
@@ -43,39 +44,39 @@ end
 function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
 
     Y1 = uprev
     update_coefficients!(L, Y1, p, t)
-    A = Matrix(deepcopy(L))
-    k1 = dt * A
+    k1 = dt * convert(AbstractMatrix, L)
 
-    Y2 = exp(k1 / 2) * uprev
+    Y2 = exponential!(k1 / 2, exp_method, exp_cache) * uprev
     update_coefficients!(L, Y2, p, t)
-    B = Matrix(deepcopy(L))
-    k2 = dt * B
+    k2 = dt * convert(AbstractMatrix, L)
 
-    Y3 = exp(k2 / 2) * uprev
+    Y3 = exponential!(k2 / 2, exp_method, exp_cache) * uprev
     update_coefficients!(L, Y3, p, t)
-    C = Matrix(deepcopy(L))
-    k3 = dt * C
+    k3 = dt * convert(AbstractMatrix, L)
 
-    Y4 = exp(k3 - k1 / 2) * Y2
+    Y4 = exponential!(k3 - k1 / 2, exp_method, exp_cache) * Y2
     update_coefficients!(L, Y4, p, t)
-    D = Matrix(deepcopy(L))
-    k4 = dt * D
+    k4 = dt * convert(AbstractMatrix, L)
 
-    y1_2 = exp((3 * k1 + 2 * k2 + 2 * k3 - k4) / 12) * uprev
+    y1_2 = exponential!((3 * k1 + 2 * k2 + 2 * k3 - k4) / 12, exp_method, exp_cache) * uprev
 
     if alg.krylov
         u .= expv((1 / 12), (-k1 + 2 * k2 + 2 * k3 + 3 * k4), y1_2;
             m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
             iop = alg.iop)
     else
-        u .= exp((1 / 12) * (-k1 + 2 * k2 + 2 * k3 + 3 * k4)) * y1_2
+        u .= exponential!((1 / 12) * (-k1 + 2 * k2 + 2 * k3 + 3 * k4),
+            exp_method,
+            exp_cache) *
+             y1_2
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
@@ -96,28 +97,30 @@ end
 function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
-    A = Matrix(deepcopy(L))
-    k1 = dt * A
-    update_coefficients!(L, exp(k1 / 2) * uprev, p, t)
-    B = Matrix(deepcopy(L))
-    k2 = dt * B
-    update_coefficients!(L, exp(k1 / 2 - (k1 * k2 - k2 * k1) / 8) * uprev, p, t)
-    C = Matrix(deepcopy(L))
-    k3 = dt * C
-    update_coefficients!(L, exp(k3) * uprev, p, t)
-    D = Matrix(deepcopy(L))
-    k4 = dt * D
+    k1 = dt * convert(AbstractMatrix, L)
+    update_coefficients!(L, exponential!(k1 / 2, exp_method, exp_cache) * uprev, p, t)
+    k2 = dt * convert(AbstractMatrix, L)
+    update_coefficients!(L,
+        exponential!(k1 / 2 - (k1 * k2 - k2 * k1) / 8, exp_method, exp_cache) * uprev,
+        p,
+        t)
+    k3 = dt * convert(AbstractMatrix, L)
+    update_coefficients!(L, exponential!(k3, exp_method, exp_cache) * uprev, p, t)
+    k4 = dt * convert(AbstractMatrix, L)
     if alg.krylov
         u .= expv(1 / 6, (k1 + 2 * k2 + 2 * k3 + k4 - (k1 * k4 - k4 * k1) / 2), uprev;
             m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
             iop = alg.iop)
     else
-        u .= exp((1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4 - (k1 * k4 - k4 * k1) / 2)) * uprev
+        u .= exponential!((1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4 - (k1 * k4 - k4 * k1) / 2),
+            exp_method,
+            exp_cache) * uprev
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
@@ -138,21 +141,20 @@ end
 function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
-    A = Matrix(deepcopy(L))
-    k1 = dt * A
-    update_coefficients!(L, exp(k1) * uprev, p, t)
-    B = Matrix(deepcopy(L))
-    k2 = dt * B
+    k1 = dt * convert(AbstractMatrix, L)
+    update_coefficients!(L, exponential!(k1, exp_method, exp_cache) * uprev, p, t)
+    k2 = dt * convert(AbstractMatrix, L)
     if alg.krylov
         u .= expv(1 / 2, (k1 + k2), uprev; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        u .= exp((1 / 2) * (k1 + k2)) * uprev
+        u .= exponential!((1 / 2) * (k1 + k2), exp_method, exp_cache) * uprev
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
@@ -172,19 +174,23 @@ end
 
 function perform_step!(integrator, cache::CG3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
-    A = Matrix(deepcopy(L))
-    v2 = exp((3 / 4) * dt * A) * uprev
+    A = deepcopy(convert(AbstractMatrix, L))
+    v2 = exponential!((3 / 4) * dt * A, exp_method, exp_cache) * uprev
     update_coefficients!(L, v2, p, t + (3 * dt / 4))
-    B = Matrix(deepcopy(L))
-    v3 = exp((119 / 216) * dt * B) * exp((17 / 108) * dt * A) * uprev
+    B = deepcopy(convert(AbstractMatrix, L))
+    v3 = exponential!((119 / 216) * dt * B, exp_method, exp_cache) *
+         exponential!((17 / 108) * dt * A, exp_method, exp_cache) * uprev
     update_coefficients!(L, v3, p, t + (17 * dt / 24))
-    C = Matrix(deepcopy(L))
-    u .= (exp(dt * (24 / 17) * C) * exp(dt * (-2 / 3) * B) * exp(dt * (13 / 51) * A)) *
+    C = convert(AbstractMatrix, L)
+    u .= (exponential!(dt * (24 / 17) * C, exp_method, exp_cache) *
+          exponential!(dt * (-2 / 3) * B, exp_method, exp_cache) *
+          exponential!(dt * (13 / 51) * A, exp_method, exp_cache)) *
          uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
@@ -204,17 +210,17 @@ end
 
 function perform_step!(integrator, cache::CG2Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
-    A = Matrix(deepcopy(L))
-    k1 = dt * A
-    update_coefficients!(L, exp(k1) * uprev, p, t)
-    B = Matrix(deepcopy(L))
-    k2 = dt * B
-    u .= (exp((1 / 2) * (k1)) * (exp((1 / 2) * k2))) * uprev
+    k1 = dt * convert(AbstractMatrix, L)
+    update_coefficients!(L, exponential!(k1, exp_method, exp_cache) * uprev, p, t)
+    k2 = dt * convert(AbstractMatrix, L)
+    u .= (exponential!((1 / 2) * (k1), exp_method, exp_cache) *
+          (exponential!((1 / 2) * k2, exp_method, exp_cache))) * uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -233,29 +239,36 @@ end
 
 function perform_step!(integrator, cache::CG4aCache, repeat_step = false)
     @unpack t, dt, uprev, u, p, alg = integrator
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
-    A = Matrix(deepcopy(L))
-    v2 = exp((0.8177227988124852) * dt * A) * uprev
+    A = deepcopy(convert(AbstractMatrix, L))
+    v2 = exponential!((0.8177227988124852) * dt * A, exp_method, exp_cache) * uprev
     update_coefficients!(L, v2, p, t + (0.8177227988124852 * dt))
-    B = Matrix(deepcopy(L))
-    v3 = exp((0.3199876375476427) * dt * B) * exp((0.0659864263556022) * dt * A) * uprev
+    B = deepcopy(convert(AbstractMatrix, L))
+    v3 = exponential!((0.3199876375476427) * dt * B, exp_method, exp_cache) *
+         exponential!((0.0659864263556022) * dt * A, exp_method, exp_cache) * uprev
     update_coefficients!(L, v3, p, t + (0.3859740639032449 * dt))
-    C = Matrix(deepcopy(L))
-    v4 = exp((0.9214417194464946) * dt * C) * exp((0.4997857776773573) * dt * B) *
-         exp((-1.0969984448371582) * dt * A) * uprev
+    C = deepcopy(convert(AbstractMatrix, L))
+    v4 = exponential!((0.9214417194464946) * dt * C, exp_method, exp_cache) *
+         exponential!((0.4997857776773573) * dt * B, exp_method, exp_cache) *
+         exponential!((-1.0969984448371582) * dt * A, exp_method, exp_cache) * uprev
     update_coefficients!(L, v4, p, t + (0.3242290522866937 * dt))
-    D = Matrix(deepcopy(L))
-    v5 = exp((0.3552358559023322) * dt * D) * exp((0.2390958372307326) * dt * C) *
-         exp((1.3918565724203246) * dt * B) * exp((-1.1092979392113465) * dt * A) * uprev
+    D = deepcopy(convert(AbstractMatrix, L))
+    v5 = exponential!((0.3552358559023322) * dt * D, exp_method, exp_cache) *
+         exponential!((0.2390958372307326) * dt * C, exp_method, exp_cache) *
+         exponential!((1.3918565724203246) * dt * B, exp_method, exp_cache) *
+         exponential!((-1.1092979392113465) * dt * A, exp_method, exp_cache) * uprev
     update_coefficients!(L, v5, p, t + (0.8768903263420429 * dt))
-    E = Matrix(deepcopy(L))
-    u .= (exp(dt * (0.3322195591068374) * E) * exp(dt * (-0.1907142565505889) * D) *
-          exp(dt * (0.7397813985370780) * C) * exp(dt * (-0.0183698531564020) * B) *
-          exp(dt * (0.1370831520630755) * A)) * uprev
+    E = convert(AbstractMatrix, L)
+    u .= (exponential!(dt * (0.3322195591068374) * E, exp_method, exp_cache) *
+          exponential!(dt * (-0.1907142565505889) * D, exp_method, exp_cache) *
+          exponential!(dt * (0.7397813985370780) * C, exp_method, exp_cache) *
+          exponential!(dt * (-0.0183698531564020) * B, exp_method, exp_cache) *
+          exponential!(dt * (0.1370831520630755) * A, exp_method, exp_cache)) * uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -274,55 +287,56 @@ end
 
 function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack W, k, tmp, utilde, atmp = cache
+    @unpack W, k, tmp, utilde, atmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
-    L = deepcopy(integrator.f.f)
+    L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
-    A0 = Matrix(L)
+    A0 = deepcopy(convert(AbstractMatrix, L))
     k1 = dt * A0
     Q1 = k1
 
     y2 = (1 / 2) * Q1
-    update_coefficients!(L, exp(y2) * uprev, p, t + dt / 2)
-    A1 = Matrix(L)
+    update_coefficients!(L, exponential!(y2, exp_method, exp_cache) * uprev, p, t + dt / 2)
+    A1 = deepcopy(convert(AbstractMatrix, L))
     k2 = dt * A1
     Q2 = k2 - k1
 
     y3 = (1 / 2) * Q1 + (1 / 4) * Q2
-    update_coefficients!(L, exp(y3) * uprev, p, t + dt / 2)
-    A2 = Matrix(L)
+    update_coefficients!(L, exponential!(y3, exp_method, exp_cache) * uprev, p, t + dt / 2)
+    A2 = deepcopy(convert(AbstractMatrix, L))
     k3 = dt * A2
     Q3 = k3 - k2
 
     y4 = Q1 + Q2
-    update_coefficients!(L, exp(y4) * uprev, p, t + dt)
-    A3 = Matrix(L)
+    update_coefficients!(L, exponential!(y4, exp_method, exp_cache) * uprev, p, t + dt)
+    A3 = deepcopy(convert(AbstractMatrix, L))
     k4 = dt * A3
     Q4 = k4 - 2 * k2 + k1
 
     y5 = (1 / 2) * Q1 + (1 / 4) * Q2 + (1 / 3) * Q3 - (1 / 24) * Q4 -
          (1 / 48) * (Q1 * Q2 - Q2 * Q1)
-    update_coefficients!(L, exp(y5) * uprev, p, t + dt / 2)
-    A4 = Matrix(L)
+    update_coefficients!(L, exponential!(y5, exp_method, exp_cache) * uprev, p, t + dt / 2)
+    A4 = deepcopy(convert(AbstractMatrix, L))
     k5 = dt * A4
     Q5 = k5 - k2
 
     y6 = Q1 + Q2 + (2 / 3) * Q3 + (1 / 6) * Q4 - (1 / 6) * (Q1 * Q2 - Q2 * Q1)
-    update_coefficients!(L, exp(y6) * uprev, p, t + dt)
-    A5 = Matrix(L)
+    update_coefficients!(L, exponential!(y6, exp_method, exp_cache) * uprev, p, t + dt)
+    A5 = convert(AbstractMatrix, L)
     k6 = dt * A5
     Q6 = k6 - 2 * k2 + k1
 
     v4 = Q1 + Q2 + (2 / 3) * Q5 + (1 / 6) * Q6 -
          (1 / 6) * (Q1 * (Q2 - Q3 + Q5 + (1 / 2) * Q6) - (Q2 - Q3 + Q5 + (1 / 2) * Q6) * Q1)
 
-    u .= exp(v4) * uprev
+    u .= exponential!(v4, exp_method, exp_cache) * uprev
 
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
     if integrator.opts.adaptive
-        utilde = u - exp(y6) * uprev
+        utilde = u - exponential!(y6, exp_method, exp_cache) * uprev
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -343,25 +357,26 @@ end
 function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
-    L1 = deepcopy(integrator.f.f)
+    L = integrator.f.f
 
-    update_coefficients!(L1, u, p, t)
-    A0 = Matrix(L1)
-    update_coefficients!(L1, u, p, t + dt / 6)
-    A1 = Matrix(L1)
-    update_coefficients!(L1, u, p, t + 2 * dt / 6)
-    A2 = Matrix(L1)
-    update_coefficients!(L1, u, p, t + 3 * dt / 6)
-    A3 = Matrix(L1)
-    update_coefficients!(L1, u, p, t + 4 * dt / 6)
-    A4 = Matrix(L1)
-    update_coefficients!(L1, u, p, t + 5 * dt / 6)
-    A5 = Matrix(L1)
-    update_coefficients!(L1, u, p, t + dt)
-    A6 = Matrix(L1)
+    update_coefficients!(L, u, p, t)
+    A0 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, u, p, t + dt / 6)
+    A1 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, u, p, t + 2 * dt / 6)
+    A2 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, u, p, t + 3 * dt / 6)
+    A3 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, u, p, t + 4 * dt / 6)
+    A4 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, u, p, t + 5 * dt / 6)
+    A5 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, u, p, t + dt)
+    A6 = convert(AbstractMatrix, L)
 
     S1 = A0 + A6
     S2 = A1 + A5
@@ -395,10 +410,10 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
     Ω2 = (dt^2) * (Q1 + Q2)
     Ω3_4_5_6 = (dt^3) * (Q3 + Q4) + (dt^4) * (Q5 + Q6) + (dt^5) * Q7
     if alg.krylov
-        u .= expv(1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L1, 1)),
+        u .= expv(1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
+        u .= exponential!(Ω1 + Ω2 + Ω3_4_5_6, exp_method, exp_cache) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -418,21 +433,23 @@ end
 function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    L1 = deepcopy(integrator.f.f)
-    update_coefficients!(L1, uprev, p, t + dt * (1 / 2 - sqrt(3) / 6))
-    A1 = Matrix(L1)
-    update_coefficients!(L1, uprev, p, t + dt * (1 / 2 + sqrt(3) / 6))
-    A2 = Matrix(L1)
+    exp_method = ExpMethodGeneric()
+
+    L = integrator.f.f
+    update_coefficients!(L, uprev, p, t + dt * (1 / 2 - sqrt(3) / 6))
+    A1 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt * (1 / 2 + sqrt(3) / 6))
+    A2 = convert(AbstractMatrix, L)
 
     Ω = (dt / 2) * (A1 + A2) - (dt^2) * (sqrt(3) / 12) * (A1 * A2 - A2 * A1)
 
     if alg.krylov
-        u .= expv(1.0, Ω, uprev; m = min(alg.m, size(L1, 1)),
+        u .= expv(1.0, Ω, uprev; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        u .= exp(Ω) * uprev
+        u .= exponential!(Ω, exp_method, exp_cache) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -452,22 +469,21 @@ end
 function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    L1 = deepcopy(integrator.f.f)
-    L2 = deepcopy(integrator.f.f)
-    L3 = deepcopy(integrator.f.f)
-    L4 = deepcopy(integrator.f.f)
+    exp_method = ExpMethodGeneric()
+
+    L = integrator.f.f
     v1 = (1 / 2) * sqrt((3 + 2 * sqrt(6 / 5)) / 7)
     v2 = (1 / 2) * sqrt((3 - 2 * sqrt(6 / 5)) / 7)
-    update_coefficients!(L1, uprev, p, t - dt * v1 + dt / 2)
-    A1 = Matrix(L1)
-    update_coefficients!(L4, uprev, p, t + dt * v1 + dt / 2)
-    A4 = Matrix(L4)
-    update_coefficients!(L2, uprev, p, t - dt * v2 + dt / 2)
-    A2 = Matrix(L2)
-    update_coefficients!(L3, uprev, p, t + dt * v2 + dt / 2)
-    A3 = Matrix(L3)
+    update_coefficients!(L, uprev, p, t - dt * v1 + dt / 2)
+    A1 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt * v1 + dt / 2)
+    A4 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t - dt * v2 + dt / 2)
+    A2 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt * v2 + dt / 2)
+    A3 = convert(AbstractMatrix, L)
     w1 = (1 / 2) - (1 / 6) * sqrt(5 / 6)
     w2 = (1 / 2) + (1 / 6) * sqrt(5 / 6)
     S1 = A1 + A4
@@ -498,10 +514,10 @@ function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
     Ω2 = (dt^2) * (Q1 + Q2)
     Ω3_4_5_6 = (dt^3) * (Q3 + Q4) + (dt^4) * (Q5 + Q6) + (dt^5) * Q7
     if alg.krylov
-        u .= expv(1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L1, 1)),
+        u .= expv(1.0, Ω1 + Ω2 + Ω3_4_5_6, uprev; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        u .= exp(Ω1 + Ω2 + Ω3_4_5_6) * uprev
+        u .= exponential!(Ω1 + Ω2 + Ω3_4_5_6, exp_method, exp_cache) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -521,23 +537,21 @@ end
 function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    L0 = deepcopy(integrator.f.f)
-    L1 = deepcopy(integrator.f.f)
-    L2 = deepcopy(integrator.f.f)
-    L3 = deepcopy(integrator.f.f)
-    L4 = deepcopy(integrator.f.f)
-    update_coefficients!(L0, uprev, p, t)
-    A0 = Matrix(L0)
-    update_coefficients!(L1, uprev, p, t + dt / 4)
-    A1 = Matrix(L1)
-    update_coefficients!(L2, uprev, p, t + dt / 2)
-    A2 = Matrix(L2)
-    update_coefficients!(L3, uprev, p, t + 3 * dt / 4)
-    A3 = Matrix(L3)
-    update_coefficients!(L4, uprev, p, t + dt)
-    A4 = Matrix(L4)
+    exp_method = ExpMethodGeneric()
+
+    L = integrator.f.f
+    update_coefficients!(L, uprev, p, t)
+    A0 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt / 4)
+    A1 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt / 2)
+    A2 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + 3 * dt / 4)
+    A3 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt)
+    A4 = convert(AbstractMatrix, L)
     B0 = (1 / 90) * (7 * (A0 + A4) + 32 * (A1 + A3) + 12 * (A2))
     B1 = (1 / 90) * ((7 / 2) * (A4 - A0) + 8 * (A3 - A1))
     B2 = (1 / 90) * ((7 / 4) * (A0 + A4) + 2 * (A1 + A3))
@@ -548,10 +562,10 @@ function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
             (B0 * (dt * B2 / 2 - Ω2 / 60) - (dt * B2 / 2 - Ω2 / 60) * B0) * B0) +
            (3 * dt / 5) * (B1 * Ω2 - Ω2 * B1)
     if alg.krylov
-        u .= expv(1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L1, 1)),
+        u .= expv(1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
+        u .= exponential!(Ω1 + Ω2 + Ω3_4, exp_method, exp_cache) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -571,17 +585,17 @@ end
 function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    L1 = deepcopy(integrator.f.f)
-    L2 = deepcopy(integrator.f.f)
-    L3 = deepcopy(integrator.f.f)
-    update_coefficients!(L1, uprev, p, t - dt * (sqrt(3 / 20)) + dt / 2)
-    A1 = Matrix(L1)
-    update_coefficients!(L2, uprev, p, t + dt / 2)
-    A2 = Matrix(L2)
-    update_coefficients!(L3, uprev, p, t + dt * (sqrt(3 / 20)) + dt / 2)
-    A3 = Matrix(L3)
+    exp_method = ExpMethodGeneric()
+
+    L = integrator.f.f
+    update_coefficients!(L, uprev, p, t - dt * (sqrt(3 / 20)) + dt / 2)
+    A1 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt / 2)
+    A2 = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt * (sqrt(3 / 20)) + dt / 2)
+    A3 = convert(AbstractMatrix, L)
     B0 = (1 / 18) * (5 * (A1 + A3) + 8 * A2)
     B1 = (sqrt(15) / 36) * (A3 - A1)
     B2 = (1 / 24) * (A1 + A3)
@@ -592,10 +606,10 @@ function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
             (B0 * (dt * B2 / 2 - Ω2 / 60) - (dt * B2 / 2 - Ω2 / 60) * B0) * B0) +
            (3 * dt / 5) * (B1 * Ω2 - Ω2 * B1)
     if alg.krylov
-        u .= expv(1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L1, 1)),
+        u .= expv(1.0, Ω1 + Ω2 + Ω3_4, uprev; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        u .= exp(Ω1 + Ω2 + Ω3_4) * uprev
+        u .= exponential!(Ω1 + Ω2 + Ω3_4, exp_method, exp_cache) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -615,20 +629,24 @@ end
 function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    L1 = deepcopy(integrator.f.f)
-    L2 = deepcopy(integrator.f.f)
-    update_coefficients!(L1, uprev, p, t + dt * (1 / 2 + sqrt(3) / 6))
-    A = Matrix(L1)
-    update_coefficients!(L2, uprev, p, t + dt * (1 / 2 - sqrt(3) / 6))
-    B = Matrix(L2)
+    exp_method = ExpMethodGeneric()
+
+    L = integrator.f.f
+    update_coefficients!(L, uprev, p, t + dt * (1 / 2 + sqrt(3) / 6))
+    A = deepcopy(convert(AbstractMatrix, L))
+    update_coefficients!(L, uprev, p, t + dt * (1 / 2 - sqrt(3) / 6))
+    B = convert(AbstractMatrix, L)
     if alg.krylov
         u .= expv(dt, (A + B) ./ 2 + (dt * sqrt(3)) .* (B * A - A * B) ./ 12, u;
-            m = min(alg.m, size(L1, 1)), opnorm = integrator.opts.internalopnorm,
+            m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
             iop = alg.iop)
     else
-        u .= exp((dt / 2) .* (A + B) + ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B)) * uprev
+        u .= exponential!((dt / 2) .* (A + B) +
+                          ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B),
+            exp_method,
+            exp_cache) * uprev
     end
     integrator.f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
@@ -648,8 +666,9 @@ end
 function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, u, p, t)
@@ -658,8 +677,7 @@ function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
         u .= expv(dt, L, u; m = min(alg.m, size(L, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
-        A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
-        u .= exp(dt * L) * u
+        u .= exponential!(dt * convert(AbstractMatrix, L), exp_method, exp_cache) * u
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
@@ -681,8 +699,9 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
     alg_extrapolates = true, iter = 1)
     @unpack t, dt, uprev, uprev2, u, p, iter = integrator
     alg = unwrap_alg(integrator, nothing)
-    @unpack W, k, tmp = cache
+    @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
+    exp_method = ExpMethodGeneric()
     # println("iter   : $iter")
     if iter == 1
         L = integrator.f.f
@@ -691,8 +710,8 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
             u .= expv(dt, L, u; m = min(alg.m, size(L, 1)),
                 opnorm = integrator.opts.internalopnorm, iop = alg.iop)
         else
-            A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
-            u .= exp(dt * L) * u
+            A = convert(AbstractMatrix, L)
+            u .= exponential!(dt * A, exp_method, exp_cache) * u
         end
 
         integrator.f(integrator.fsallast, u, p, t + dt)
@@ -705,8 +724,8 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
             u .= expv(2 * dt, L, uprev2; m = min(alg.m, size(L, 1)),
                 opnorm = integrator.opts.internalopnorm, iop = alg.iop)
         else
-            A = Matrix(L) #size(L) == () ? convert(Number, L) : convert(AbstractMatrix, L)
-            u .= exp(2 * dt * L) * uprev2
+            A = convert(AbstractMatrix, L)
+            u .= exponential!(2 * dt * A, exp_method, exp_cache) * uprev2
         end
         uprev = u
         integrator.f(integrator.fsallast, u, p, t + dt)
@@ -731,10 +750,10 @@ function perform_step!(integrator, cache::LinearExponentialConstantCache,
     repeat_step = false)
     @unpack t, dt, uprev, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
-    A = f.f # assume f to be an ODEFunction wrapped around a linear operator
+    A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator
 
     if alg.krylov == :off
-        u = exp(dt * Matrix(f)) * integrator.u
+        u = exponential!(dt * A, ExpMethodGeneric()) * integrator.u
     elseif alg.krylov == :simple
         u = expv(dt, A, integrator.u; m = min(alg.m, size(A, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
@@ -768,12 +787,13 @@ end
 
 function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tmp, KsCache = cache
+    @unpack tmp, KsCache, exp_cache = cache
     alg = unwrap_alg(integrator, nothing)
-    A = f.f # assume f to be an ODEFunction wrapped around a linear operator
+    exp_method = ExpMethodGeneric()
+    A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator
 
     if alg.krylov == :off
-        E = exponential!(dt * Matrix(A))
+        E = exponential!(dt * A, exp_method, exp_cache)
         mul!(tmp, E, u)
     elseif alg.krylov == :simple
         Ks, expv_cache = KsCache

@@ -4,9 +4,11 @@
     nlsolve!(nlsolver::AbstractNLSolver, integrator)
 
 Solve
+
 ```math
 dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
+
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator,
@@ -45,7 +47,12 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
 
         # compute next step and calculate norm of residuals
         iter > 1 && (ndzprev = ndz)
-        ndz = compute_step!(nlsolver, integrator)
+        if isnewton(nlsolver)
+            # Newton solve requires γW in order to update W
+            ndz = compute_step!(nlsolver, integrator, γW)
+        else
+            ndz = compute_step!(nlsolver, integrator)
+        end
         if !isfinite(ndz)
             nlsolver.status = Divergence
             nlsolver.nfails += 1

@@ -1074,7 +1074,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation, u, rate_prototype,
     end
 
     #Update stage_number by the jacobian size
-    jac_dim = typeof(rate_prototype) <: Union{CompiledFloats, BigFloat} ? 1 :
+    jac_dim = rate_prototype isa Union{CompiledFloats, BigFloat} ? 1 :
               sum(size(rate_prototype))
     stage_number = stage_number .+ jac_dim
 

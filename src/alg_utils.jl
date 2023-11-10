@@ -180,6 +180,9 @@ isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 isadaptive(alg::DFBDF) = true
 
+anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
+anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
+
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
@@ -231,49 +234,18 @@ function DiffEqBase.prepare_alg(alg::Union{
         OrdinaryDiffEqExponentialAlgorithm{0, AD, FDT}},
     u0::AbstractArray{T},
     p, prob) where {AD, FDT, T}
-    if alg isa OrdinaryDiffEqExponentialAlgorithm
-        linsolve = nothing
-    elseif alg.linsolve === nothing
-        if (prob.f isa ODEFunction && prob.f.f isa AbstractSciMLOperator)
-            linsolve = LinearSolve.defaultalg(prob.f.f, u0)
-        elseif (prob.f isa SplitFunction &&
-                prob.f.f1.f isa AbstractSciMLOperator)
-            linsolve = LinearSolve.defaultalg(prob.f.f1.f, u0)
-            if (linsolve === nothing) || (linsolve isa LinearSolve.DefaultLinearSolver &&
-                linsolve.alg !== LinearSolve.DefaultAlgorithmChoice.KrylovJL_GMRES)
-                msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
-                @warn msg
-                linsolve = KrylovJL_GMRES()
-            end
-        elseif (prob isa ODEProblem || prob isa DDEProblem) &&
-               (prob.f.mass_matrix === nothing ||
-                (prob.f.mass_matrix !== nothing &&
-                 !(typeof(prob.f.jac_prototype) <: AbstractSciMLOperator)))
-            linsolve = LinearSolve.defaultalg(prob.f.jac_prototype, u0)
-        else
-            # If mm is a sparse matrix and A is a MatrixOperator, then let linear
-            # solver choose things later
-            linsolve = nothing
-        end
-    else
-        linsolve = alg.linsolve
-    end
 
-    # If norecompile mode or very large bitsize, like a dual number u0 already, then
+    # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
     # don't use a large chunksize as it will either error or not be beneficial
-    if (isbitstype(T) && sizeof(T) > 24) || (prob.f isa ODEFunction &&
-        prob.f.f isa
-        FunctionWrappersWrappers.FunctionWrappersWrapper)
-        if alg isa OrdinaryDiffEqExponentialAlgorithm
-            return remake(alg, chunk_size = Val{1}())
-        else
-            return remake(alg, chunk_size = Val{1}(), linsolve = linsolve)
-        end
+    if !(alg_autodiff(alg) isa AutoForwardDiff) ||
+       (isbitstype(T) && sizeof(T) > 24) ||
+       (prob.f isa ODEFunction &&
+        prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+        return remake(alg, chunk_size = Val{1}())
     end
 
     L = StaticArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
-
         # If chunksize is zero, pick chunksize right at the start of solve and
         # then do function barrier to infer the full solve
         x = if prob.f.colorvec === nothing
@@ -283,19 +255,10 @@ function DiffEqBase.prepare_alg(alg::Union{
         end
 
         cs = ForwardDiff.pickchunksize(x)
-
-        if alg isa OrdinaryDiffEqExponentialAlgorithm
-            return remake(alg, chunk_size = Val{cs}())
-        else
-            return remake(alg, chunk_size = Val{cs}(), linsolve = linsolve)
-        end
+        return remake(alg, chunk_size = Val{cs}())
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
-        if alg isa OrdinaryDiffEqExponentialAlgorithm
-            return remake(alg, chunk_size = cs)
-        else
-            return remake(alg, chunk_size = cs, linsolve = linsolve)
-        end
+        return remake(alg, chunk_size = cs)
     end
 end
 
@@ -789,7 +752,7 @@ function default_controller(alg::Union{ExtrapolationMidpointDeuflhard,
 end
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
-    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+    if alg isa OrdinaryDiffEqCompositeAlgorithm
         beta2 = _beta2 === nothing ?
                 _composite_beta2_default(alg.algs, cache.current, Val(QT)) : _beta2
         beta1 = _beta1 === nothing ?
@@ -865,6 +828,7 @@ beta1_default(alg::ImplicitEulerBarycentricExtrapolation, beta2) = 1 // (alg.ini
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
 end
+gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 gamma_default(alg::RKC) = 8 // 10
 gamma_default(alg::IRKC) = 8 // 10
 function gamma_default(alg::ExtrapolationMidpointDeuflhard)
@@ -916,6 +880,7 @@ Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
 with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
 
 # Examples
+
 ```julia-repl
 julia> ssp_coefficient(SSPRK104())
 6
@@ -960,10 +925,10 @@ alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
-    iscomp = typeof(alg) <: CompositeAlgorithm
+    iscomp = alg isa CompositeAlgorithm
     if !iscomp
         return alg
-    elseif typeof(alg.choice_function) <: AutoSwitchCache
+    elseif alg.choice_function isa AutoSwitchCache
         if is_stiff === nothing
             throwautoswitch(alg)
         end
@@ -980,10 +945,10 @@ end
 
 function unwrap_alg(integrator, is_stiff)
     alg = integrator.alg
-    iscomp = typeof(alg) <: CompositeAlgorithm
+    iscomp = alg isa CompositeAlgorithm
     if !iscomp
         return alg
-    elseif typeof(alg.choice_function) <: AutoSwitchCache
+    elseif alg.choice_function isa AutoSwitchCache
         if is_stiff === nothing
             throwautoswitch(alg)
         end

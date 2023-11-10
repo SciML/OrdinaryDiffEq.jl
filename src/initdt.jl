@@ -15,7 +15,7 @@
         return tdir * max(smalldt, dtmin)
     end
 
-    if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
+    if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
         cache = get_tmp_cache(integrator)
         sk = first(cache)
         if u0 isa Array && abstol isa Number && reltol isa Number
@@ -37,7 +37,7 @@
     end
 
     if get_current_isfsal(integrator.alg, integrator.cache) &&
-       typeof(integrator) <: ODEIntegrator
+       integrator isa ODEIntegrator
         # Right now DelayDiffEq has issues with fsallast not being initialized
         f₀ = integrator.fsallast
         f(f₀, u0, p, t)
@@ -103,7 +103,7 @@
     still works for matrix-free definitions of the mass matrix.
     =#
 
-    if prob.f.mass_matrix != I && (!(typeof(prob.f) <: DynamicalODEFunction) ||
+    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
         any(mm != I for mm in prob.f.mass_matrix))
         ftmp = zero(f₀)
         try
@@ -135,8 +135,8 @@
     dt₀ = IfElse.ifelse((d₀ < 1 // 10^(5)) |
                         (d₁ < 1 // 10^(5)), smalldt,
         convert(_tType,
-            oneunit_tType * (d₀ / d₁) /
-            100))
+            oneunit_tType * DiffEqBase.value((d₀ / d₁) /
+                                             100)))
     # if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     #   dt₀ = smalldt
     # else
@@ -164,7 +164,7 @@
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
 
-    if prob.f.mass_matrix != I && (!(typeof(prob.f) <: DynamicalODEFunction) ||
+    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
         any(mm != I for mm in prob.f.mass_matrix))
         integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
         copyto!(f₁, ftmp)
@@ -192,8 +192,9 @@
     else
         dt₁ = convert(_tType,
             oneunit_tType *
-            10.0^(-(2 + log10(max_d₁d₂)) /
-                  get_current_alg_order(integrator.alg, integrator.cache)))
+            DiffEqBase.value(10.0^(-(2 + log10(max_d₁d₂)) /
+                                   get_current_alg_order(integrator.alg,
+                integrator.cache))))
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end
@@ -259,7 +260,7 @@ end
     if d₀ < 1 // 10^(5) || d₁ < 1 // 10^(5)
         dt₀ = smalldt
     else
-        dt₀ = convert(_tType, oneunit_tType * (d₀ / d₁) / 100)
+        dt₀ = convert(_tType, oneunit_tType * DiffEqBase.value((d₀ / d₁) / 100))
     end
     dt₀ = min(dt₀, dtmax_tdir)
     dt₀_tdir = tdir * dt₀
@@ -279,8 +280,9 @@ end
         dt₁ = max(smalldt, dt₀ * 1 // 10^(3))
     else
         dt₁ = _tType(oneunit_tType *
-                     10^(-(2 + log10(max_d₁d₂)) /
-                         get_current_alg_order(integrator.alg, integrator.cache)))
+                     DiffEqBase.value(10^(-(2 + log10(max_d₁d₂)) /
+                                          get_current_alg_order(integrator.alg,
+            integrator.cache))))
     end
     return tdir * max(dtmin, min(100dt₀, dt₁, dtmax_tdir))
 end

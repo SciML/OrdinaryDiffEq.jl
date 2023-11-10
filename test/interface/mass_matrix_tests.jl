@@ -182,8 +182,6 @@ end
     M = [0.637947 0.637947
         0.637947 0.637947]
 
-    inv(M) # not caught as singular
-
     function f2!(du, u, p, t)
         du[1] = u[2]
         du[2] = u[1]
@@ -302,6 +300,7 @@ end
 
 x0 = zeros(n, n)
 M = zeros(n * n) |> Diagonal |> Matrix
+M[1,1] = true # zero mass matrix breaks rosenbrock
 f = ODEFunction(dynamics!, mass_matrix = M)
 tspan = (0, 10.0)
 prob = ODEProblem(f, x0, tspan)

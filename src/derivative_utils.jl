@@ -293,11 +293,21 @@ end
 SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
-set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
-function SciMLOperators.update_coefficients!(W::WOperator, u, p, t)
-    update_coefficients!(W.J, u, p, t)
-    update_coefficients!(W.mass_matrix, u, p, t)
-    !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
+# In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma/transform and don't update them in that case.
+# This helps support partial updating logic used with Newton solvers. 
+function SciMLOperators.update_coefficients!(W::WOperator,
+    u = nothing,
+    p = nothing,
+    t = nothing;
+    dtgamma = nothing,
+    transform = nothing)
+    if (u !== nothing) && (p !== nothing) && (t !== nothing)
+        update_coefficients!(W.J, u, p, t)
+        update_coefficients!(W.mass_matrix, u, p, t)
+        !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
+    end
+    dtgamma !== nothing && (W.gamma = dtgamma)
+    transform !== nothing && (W.transform = transform)
     W
 end
 
@@ -672,10 +682,15 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     end
 
     # calculate W
-    if W isa WOperator
-        isnewton(nlsolver) || update_coefficients!(W, uprev, p, t) # we will call `update_coefficients!` in NLNewton
-        W.transform = W_transform
-        set_gamma!(W, dtgamma)
+    if W isa AbstractSciMLOperator && !(W isa Union{WOperator, StaticWOperator})
+        update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
+    elseif W isa WOperator
+        if isnewton(nlsolver)
+            # we will call `update_coefficients!` for u/p/t in NLNewton
+            update_coefficients!(W; transform = W_transform, dtgamma)
+        else
+            update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
+        end
         if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             islin, isode = islinearfunction(integrator)
             islin ? (J = isode ? f.f : f.f1.f) :
@@ -687,7 +702,6 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
         islin, isode = islinearfunction(integrator)
         islin ? (J = isode ? f.f : f.f1.f) :
         (new_jac && (calc_J!(J, integrator, lcache, next_step)))
-        update_coefficients!(W, uprev, p, t)
         new_W && !isdae && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
     end
     if isnewton(nlsolver)
@@ -724,13 +738,16 @@ end
     islin, isode = islinearfunction(integrator)
     !isdae && update_coefficients!(mass_matrix, uprev, p, t)
 
-    if islin
+    if cache.W isa AbstractSciMLOperator && !(cache.W isa Union{WOperator, StaticWOperator})
+        J = update_coefficients(cache.J, uprev, p, t)
+        W = update_coefficients(cache.W, uprev, p, t; dtgamma, transform = W_transform)
+    elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
     elseif DiffEqBase.has_jac(f)
         J = f.jac(uprev, p, t)
-        if typeof(J) <: StaticArray &&
-           typeof(integrator.alg) <:
+        if J isa StaticArray &&
+           integrator.alg isa
            Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
@@ -755,7 +772,7 @@ end
             W = if W_full isa Number
                 W_full
             elseif len !== nothing &&
-                   typeof(integrator.alg) <:
+                   integrator.alg isa
                    Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
                 StaticWOperator(W_full)
             else
@@ -831,7 +848,14 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
     islin, isode = islinearfunction(f, alg)
-    if f.jac_prototype isa AbstractSciMLOperator
+    if isdefined(f, :W_prototype) && (f.W_prototype isa AbstractSciMLOperator)
+        # We use W_prototype when it is provided as a SciMLOperator, and in this case we require jac_prototype to be a SciMLOperator too.
+        if !(f.jac_prototype isa AbstractSciMLOperator)
+            error("SciMLOperator for W_prototype only supported when jac_prototype is a SciMLOperator, but got $(typeof(f.jac_prototype))")
+        end
+        W = f.W_prototype
+        J = f.jac_prototype
+    elseif f.jac_prototype isa AbstractSciMLOperator
         W = WOperator{IIP}(f, u, dt)
         J = W.J
     elseif IIP && f.jac_prototype !== nothing && concrete_jac(alg) === nothing &&
@@ -890,7 +914,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             len = StaticArrayInterface.known_length(typeof(J))
             if len !== nothing &&
-               typeof(alg) <:
+               alg isa
                Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
                 StaticWOperator(J, false)
             else

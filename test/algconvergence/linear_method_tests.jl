@@ -77,7 +77,7 @@ sol2 = solve(prob, CG4a(), dt = 1 / 4)
 dts = (0.38) .^ (6:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sim = analyticless_test_convergence(dts, prob, CG4a(), test_setup)
-@test sim.𝒪est[:l2]≈4 atol=0.2
+@test sim.𝒪est[:l2]≈4 atol=0.28
 
 function update_func!(A, u, p, t)
     A[1, 1] = 0

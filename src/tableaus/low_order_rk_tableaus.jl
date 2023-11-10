@@ -881,9 +881,8 @@ struct BS5ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
 end
 
 """
-
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
- Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
+Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 """
 function BS5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     c1 = convert(T2, 0.16666666666666666)
@@ -956,9 +955,8 @@ function BS5ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
 end
 
 """
-
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
- Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
+Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 """
 function BS5ConstantCache(T::Type, T2::Type)
     c1 = convert(T2, 1 // 6)
@@ -1031,10 +1029,8 @@ function BS5ConstantCache(T::Type, T2::Type)
 end
 
 """
-
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
- Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
-
+Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 
 Used in the lazy construction of the dense output
 
@@ -1078,10 +1074,8 @@ function BS5Interp(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
 end
 
 """
-
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
- Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
-
+Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 
 Used in the lazy construction of the dense output
 

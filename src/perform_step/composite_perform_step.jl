@@ -39,8 +39,13 @@ function initialize!(integrator, cache::CompositeCache)
         initialize!(integrator, @inbounds(cache.caches[1]))
     elseif cache.current == 2
         initialize!(integrator, @inbounds(cache.caches[2]))
+        # the controller was initialized by default for integrator.alg.algs[1]
+        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[2])
     else
         initialize!(integrator, @inbounds(cache.caches[cache.current]))
+        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[cache.current])
     end
     resize!(integrator.k, integrator.kshortsize)
 end
@@ -51,8 +56,23 @@ function initialize!(integrator, cache::CompositeCache{Tuple{T1, T2}, F}) where 
         initialize!(integrator, @inbounds(cache.caches[1]))
     elseif cache.current == 2
         initialize!(integrator, @inbounds(cache.caches[2]))
+        reset_alg_dependent_opts!(integrator.opts.controller, integrator.alg.algs[1],
+            integrator.alg.algs[2])
     end
     resize!(integrator.k, integrator.kshortsize)
+end
+
+"""
+If the user mixes adaptive and non-adaptive algorithms then, right after
+initialize!, make integrator.opts match the default adaptivity such that
+the behaviour is consistent.
+In particular, prevents dt ⟶ 0 if starting with non-adaptive alg and opts.adaptive=true,
+and dt=cst if starting with adaptive alg and opts.adaptive=false.
+"""
+function ensure_behaving_adaptivity!(integrator, cache::CompositeCache)
+    if anyadaptive(integrator.alg) && !isadaptive(integrator.alg)
+        integrator.opts.adaptive = isadaptive(integrator.alg.algs[cache.current])
+    end
 end
 
 function perform_step!(integrator, cache::CompositeCache, repeat_step = false)
@@ -79,30 +99,33 @@ choose_algorithm!(integrator, cache::OrdinaryDiffEqCache) = nothing
 function choose_algorithm!(integrator,
     cache::CompositeCache{Tuple{T1, T2}, F}) where {T1, T2, F}
     new_current = cache.choice_function(integrator)
-    @inbounds if new_current != cache.current
+    old_current = cache.current
+    @inbounds if new_current != old_current
+        cache.current = new_current
         if new_current == 1
             initialize!(integrator, @inbounds(cache.caches[1]))
         elseif new_current == 2
             initialize!(integrator, @inbounds(cache.caches[2]))
         end
-        if cache.current == 1 && new_current == 2
+        if old_current == 1 && new_current == 2
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[1],
                 integrator.alg.algs[2])
             transfer_cache!(integrator, integrator.cache.caches[1],
                 integrator.cache.caches[2])
-        elseif cache.current == 2 && new_current == 1
+        elseif old_current == 2 && new_current == 1
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[2],
                 integrator.alg.algs[1])
             transfer_cache!(integrator, integrator.cache.caches[2],
                 integrator.cache.caches[1])
         end
-        cache.current = new_current
     end
 end
 
 function choose_algorithm!(integrator, cache::CompositeCache)
     new_current = cache.choice_function(integrator)
-    @inbounds if new_current != cache.current
+    old_current = cache.current
+    @inbounds if new_current != old_current
+        cache.current = new_current
         if new_current == 1
             initialize!(integrator, @inbounds(cache.caches[1]))
         elseif new_current == 2
@@ -110,29 +133,30 @@ function choose_algorithm!(integrator, cache::CompositeCache)
         else
             initialize!(integrator, @inbounds(cache.caches[new_current]))
         end
-        if cache.current == 1 && new_current == 2
+        if old_current == 1 && new_current == 2
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[1],
                 integrator.alg.algs[2])
             transfer_cache!(integrator, integrator.cache.caches[1],
                 integrator.cache.caches[2])
-        elseif cache.current == 2 && new_current == 1
+        elseif old_current == 2 && new_current == 1
             reset_alg_dependent_opts!(integrator, integrator.alg.algs[2],
                 integrator.alg.algs[1])
             transfer_cache!(integrator, integrator.cache.caches[2],
                 integrator.cache.caches[1])
         else
-            reset_alg_dependent_opts!(integrator, integrator.alg.algs[cache.current],
+            reset_alg_dependent_opts!(integrator, integrator.alg.algs[old_current],
                 integrator.alg.algs[new_current])
-            transfer_cache!(integrator, integrator.cache.caches[cache.current],
+            transfer_cache!(integrator, integrator.cache.caches[old_current],
                 integrator.cache.caches[new_current])
         end
-        cache.current = new_current
     end
 end
 
 """
 If no user default, then this will change the default to the defaults
 for the second algorithm.
+Except if the user default turns out to be the default for the current alg,
+then it will change anyway and keep changing afterwards (e.g. adaptive).
 """
 function reset_alg_dependent_opts!(integrator, alg1, alg2)
     integrator.dtchangeable = isdtchangeable(alg2)

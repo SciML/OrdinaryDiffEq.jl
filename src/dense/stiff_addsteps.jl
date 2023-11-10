@@ -14,7 +14,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         end
 
         mass_matrix = f.mass_matrix
-        if typeof(uprev) <: AbstractArray
+        if uprev isa AbstractArray
             J = ForwardDiff.jacobian(uf, uprev)
             W = mass_matrix - γ * J
         else
@@ -188,7 +188,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
 
         # Jacobian
         uf.t = t
-        if typeof(uprev) <: AbstractArray
+        if uprev isa AbstractArray
             J = ForwardDiff.jacobian(uf, uprev)
             W = mass_matrix / dtgamma - J
         else
@@ -574,7 +574,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
 
         # Jacobian
         uf.t = t
-        if typeof(uprev) <: AbstractArray
+        if uprev isa AbstractArray
             J = ForwardDiff.jacobian(uf, uprev)
             W = mass_matrix / dtgamma - J
         else

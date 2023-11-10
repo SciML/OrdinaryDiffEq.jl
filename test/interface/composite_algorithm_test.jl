@@ -37,6 +37,22 @@ v = @inferred OrdinaryDiffEq.ode_extrapolant(1.0, integrator1, integrator1.opts.
 @inferred OrdinaryDiffEq.ode_extrapolant!(v, 1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
 
+@testset "Mixed adaptivity" begin
+    reverse_choice(integrator) = (Int(integrator.t > 0.5) + 1)
+    alg_mixed = CompositeAlgorithm((Tsit5(), ABM54()), choice_function)
+    alg_mixed_r = CompositeAlgorithm((ABM54(), Tsit5()), reverse_choice)
+    alg_mixed2 = CompositeAlgorithm((Tsit5(), ABM54()), reverse_choice)
+
+    @test_throws ErrorException solve(prob_ode_linear, alg_mixed)
+    sol2 = solve(prob_ode_linear, Tsit5())
+    sol3 = solve(prob_ode_linear, alg_mixed; dt = 0.05)
+    sol4 = solve(prob_ode_linear, alg_mixed_r; dt = 0.05)
+    sol5 = solve(prob_ode_linear, alg_mixed2; dt = 0.05)
+    @test sol3.t == sol4.t && sol3.u == sol4.u
+    @test sol3(0.8)≈sol2(0.8) atol=1e-4
+    @test sol5(0.8)≈sol2(0.8) atol=1e-4
+end
+
 condition(u, t, integrator) = t == 192.0
 function affect!(integrator)
     integrator.u[1] += 14000

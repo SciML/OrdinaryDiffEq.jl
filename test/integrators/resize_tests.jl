@@ -186,3 +186,13 @@ runSim(BS3())
 
 runSim(Rosenbrock23())
 runSim(Rosenbrock23(autodiff = false))
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1990
+@testset "resize! with SplitODEProblem" begin
+    f!(du, u, p, t) = du .= u
+    ode = SplitODEProblem(f!, f!, [1.0], (0.0, 1.0))
+    integrator = init(ode, Tsit5())
+    @test_nowarn step!(integrator)
+    @test_nowarn resize!(integrator, 2)
+    @test_nowarn step!(integrator)
+end

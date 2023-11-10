@@ -43,7 +43,7 @@ function alg_cache(alg::KenCarp3, u, rate_prototype, ::Type{uEltypeNoUnits},
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
-    if typeof(f) <: SplitFunction
+    if f isa SplitFunction
         k1 = zero(u)
         k2 = zero(u)
         k3 = zero(u)
@@ -228,7 +228,7 @@ function alg_cache(alg::KenCarp4, u, rate_prototype, ::Type{uEltypeNoUnits},
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
-    if typeof(f) <: SplitFunction
+    if f isa SplitFunction
         k1 = zero(u)
         k2 = zero(u)
         k3 = zero(u)
@@ -368,7 +368,7 @@ function alg_cache(alg::KenCarp5, u, rate_prototype, ::Type{uEltypeNoUnits},
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
-    if typeof(f) <: SplitFunction
+    if f isa SplitFunction
         k1 = zero(u)
         k2 = zero(u)
         k3 = zero(u)
@@ -455,7 +455,7 @@ function alg_cache(alg::KenCarp47, u, rate_prototype, ::Type{uEltypeNoUnits},
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
-    if typeof(f) <: SplitFunction
+    if f isa SplitFunction
         k1 = zero(u)
         k2 = zero(u)
         k3 = zero(u)
@@ -542,7 +542,7 @@ function alg_cache(alg::KenCarp58, u, rate_prototype, ::Type{uEltypeNoUnits},
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
 
-    if typeof(f) <: SplitFunction
+    if f isa SplitFunction
         k1 = zero(u)
         k2 = zero(u)
         k3 = zero(u)

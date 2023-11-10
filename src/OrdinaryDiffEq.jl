@@ -126,7 +126,11 @@ import Preferences
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 
 include("misc_utils.jl")
+
 include("algorithms.jl")
+include("algorithms/explicit_rk.jl")
+include("algorithms/explicit_rk_pde.jl")
+
 include("alg_utils.jl")
 
 include("nlsolve/type.jl")
@@ -242,63 +246,19 @@ PrecompileTools.@compile_workload begin
     end
 
     nonstiff = [
-        BS3(), Tsit5(), Vern7(), Vern9(),
+        Tsit5(), Vern7(),
     ]
 
     stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
-        #Rosenbrock23(chunk_size = 1), Rosenbrock23(chunk_size = Val{1}()),
-
-        Rodas4(), Rodas4(autodiff = false),
-        #Rodas4(chunk_size = 1), Rodas4(chunk_size = Val{1}()),
-
-        Rodas5(), Rodas5(autodiff = false),
-        #Rodas5(chunk_size = 1), Rodas5(chunk_size = Val{1}()),
-
         Rodas5P(), Rodas5P(autodiff = false),
-        #Rodas5P(chunk_size = 1), Rodas5P(chunk_size = Val{1}()),
-
-        TRBDF2(), TRBDF2(autodiff = false),
-        #TRBDF2(chunk_size = 1), TRBDF2(chunk_size = Val{1}()),
-
-        KenCarp4(), KenCarp4(autodiff = false),
-        #KenCarp4(chunk_size = 1), KenCarp4(chunk_size = Val{1}()),
-
-        QNDF(), QNDF(autodiff = false),
-        #QNDF(chunk_size = 1), QNDF(chunk_size = Val{1}()),
+        FBDF(), FBDF(autodiff = false),
     ]
 
     autoswitch = [
-        AutoTsit5(Rosenbrock23()), AutoTsit5(Rosenbrock23(autodiff = false)),
-        #AutoTsit5(Rosenbrock23(chunk_size = 1)),
-        #AutoTsit5(Rosenbrock23(chunk_size = Val{1}())),
-
-        AutoTsit5(TRBDF2()), AutoTsit5(TRBDF2(autodiff = false)),
-        #AutoTsit5(TRBDF2(chunk_size = 1)),
-        #AutoTsit5(TRBDF2(chunk_size = Val{1}())),
-
-        AutoVern9(KenCarp47()), AutoVern9(KenCarp47(autodiff = false)),
-        #AutoVern9(KenCarp47(chunk_size = 1)),
-        #AutoVern9(KenCarp47(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5()), AutoVern9(Rodas5(autodiff = false)),
-        #AutoVern9(Rodas5(chunk_size = 1)),
-        #AutoVern9(Rodas5(chunk_size = Val{1}())),
-
-        AutoVern9(Rodas5P()), AutoVern9(Rodas5P(autodiff = false)),
-        #AutoVern9(Rodas5P(chunk_size = 1)),
-        #AutoVern9(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(Rodas4()), AutoVern7(Rodas4(autodiff = false)),
-        #AutoVern7(Rodas4(chunk_size = 1)),
-        #AutoVern7(Rodas4(chunk_size = Val{1}())),
-
-        #AutoVern7(Rodas5P()), AutoVern7(Rodas5P(autodiff=false)),
-        #AutoVern7(Rodas5P(chunk_size = 1)),
-        #AutoVern7(Rodas5P(chunk_size = Val{1}())),
-
-        AutoVern7(TRBDF2()), AutoVern7(TRBDF2(autodiff = false)),
-        #AutoVern7(TRBDF2(chunk_size = 1)),
-        #AutoVern7(TRBDF2(chunk_size = Val{1}())),
+        AutoTsit5(Rosenbrock23(autodiff = false)),
+        AutoTsit5(TRBDF2(autodiff = false)),
+        AutoVern7(Rodas5P(autodiff = false)),
+        AutoVern7(KenCarp47(autodiff = false)),
     ]
 
     low_storage = [

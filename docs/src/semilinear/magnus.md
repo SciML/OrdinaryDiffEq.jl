@@ -15,6 +15,7 @@ RKMK4
 LieRK4
 CG2
 CG3
+CG4a
 MagnusAdapt4
 CayleyEuler
 ```

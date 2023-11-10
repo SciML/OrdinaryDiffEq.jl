@@ -104,7 +104,7 @@ function (m::DAEResidualJacobianWrapper)(out, x)
 end
 
 mutable struct DAEResidualDerivativeWrapper{F, pType, alphaType, gammaType, tmpType,
-    uprevType, tType} <: Function
+    uprevType, tType}
     f::F
     p::pType
     α::alphaType
@@ -128,29 +128,31 @@ DiffEqBase.has_jac(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_jac(f.f)
 DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f)
 DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
-function build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, ::Type{uEltypeNoUnits},
+function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
+    ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits},
     ::Type{tTypeNoUnits}, γ, c,
-    iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
         tTypeNoUnits, γ, c, 1, iip)
 end
 
-function build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, ::Type{uEltypeNoUnits},
+function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
+    ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits},
     ::Type{tTypeNoUnits}, γ, c, α,
-    iip) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
 end
 
 function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
     t, dt,
-    f, rate_prototype, ::Type{uEltypeNoUnits},
+    f::F, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
     γ, c, α,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
+    ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
     tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
@@ -231,10 +233,10 @@ end
 
 function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
     t, dt,
-    f, rate_prototype, ::Type{uEltypeNoUnits},
+    f::F, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
     γ, c, α,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits,
+    ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
     tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)

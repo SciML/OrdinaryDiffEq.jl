@@ -3262,7 +3262,7 @@ function Vern9InterpolationCoefficients(T)
 end
 
 """
-From Verner's Website 
+From Verner's Website
 """
 struct Vern9Tableau{T, T2}
     c1::T2

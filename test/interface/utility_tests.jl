@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: WOperator, set_gamma!, calc_W, calc_W!
+using OrdinaryDiffEq: WOperator, calc_W, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
 
 @testset "calc_W and calc_W!" begin

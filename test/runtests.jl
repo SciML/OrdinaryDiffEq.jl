@@ -37,6 +37,7 @@ end
         @time @safetestset "Export tests" include("interface/export_tests.jl")
         @time @safetestset "Type Handling Tests" include("interface/type_handling.jl")
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
+        @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
@@ -47,6 +48,7 @@ end
         @time @safetestset "Sparse Diff Tests" include("interface/sparsediff_tests.jl")
         @time @safetestset "Enum Tests" include("interface/enums.jl")
         @time @safetestset "Mass Matrix Tests" include("interface/mass_matrix_tests.jl")
+        @time @safetestset "W-Operator prototype tests" include("interface/wprototype_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceIII" || GROUP == "Interface")
@@ -79,6 +81,7 @@ end
         @time @safetestset "Events Tests" include("integrators/ode_event_tests.jl")
         @time @safetestset "Alg Events Tests" include("integrators/alg_events_tests.jl")
         @time @safetestset "Discrete Callback Dual Tests" include("integrators/discrete_callback_dual_test.jl")
+        @time VERSION >= v"1.9" && @safetestset "Callback Allocation Tests" include("integrators/callback_allocation_tests.jl")
         @time @safetestset "Iterator Tests" include("integrators/iterator_tests.jl")
         @time @safetestset "Integrator Interface Tests" include("integrators/integrator_interface_tests.jl")
         @time @safetestset "Error Check Tests" include("integrators/check_error.jl")
@@ -145,7 +148,8 @@ end
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
-        @time @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
+        @time VERSION >= v"1.9" && @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
+        @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
     end
 
     if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"

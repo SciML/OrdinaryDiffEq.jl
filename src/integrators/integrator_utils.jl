@@ -28,6 +28,7 @@ function loopheader!(integrator)
     fix_dt_at_bounds!(integrator)
     modify_dt_for_tstops!(integrator)
     integrator.force_stepfail = false
+    return nothing
 end
 
 function last_step_failed(integrator::ODEIntegrator)
@@ -73,7 +74,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
             copyat_or_push!(integrator.sol.t, integrator.saveiter, curt)
             save_val = val
             copyat_or_push!(integrator.sol.u, integrator.saveiter, save_val, false)
-            if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+            if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                     integrator.cache.current)
             end
@@ -86,7 +87,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 copyat_or_push!(integrator.sol.u, integrator.saveiter,
                     integrator.u[integrator.opts.save_idxs], false)
             end
-            if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
+            if integrator.alg isa FunctionMap || integrator.opts.dense
                 integrator.saveiter_dense += 1
                 if integrator.opts.dense
                     if integrator.opts.save_idxs === nothing
@@ -99,7 +100,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                     end
                 end
             end
-            if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+            if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                     integrator.cache.current)
             end
@@ -116,7 +117,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 integrator.u[integrator.opts.save_idxs], false)
         end
         copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
-        if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
+        if integrator.alg isa FunctionMap || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
@@ -129,7 +130,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 end
             end
         end
-        if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+        if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
             copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                 integrator.cache.current)
         end
@@ -151,7 +152,7 @@ function _postamble!(integrator)
     if integrator.opts.progress
         @logmsg(LogLevel(-1),
             integrator.opts.progress_name,
-            _id=:OrdinaryDiffEq,
+            _id=integrator.opts.progress_id,
             message=integrator.opts.progress_message(integrator.dt, integrator.u,
                 integrator.p, integrator.t),
             progress="done")
@@ -174,7 +175,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
                 integrator.u[integrator.opts.save_idxs], false)
         end
-        if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
+        if integrator.alg isa FunctionMap || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
@@ -187,7 +188,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
                 end
             end
         end
-        if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+        if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
             copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                 integrator.cache.current)
         end
@@ -269,7 +270,7 @@ function _loopfooter!(integrator)
         t1, t2 = integrator.sol.prob.tspan
         @logmsg(LogLevel(-1),
             integrator.opts.progress_name,
-            _id=:OrdinaryDiffEq,
+            _id=integrator.opts.progress_id,
             message=integrator.opts.progress_message(integrator.dt, integrator.u,
                 integrator.p, integrator.t),
             progress=(integrator.t - t1) / (t2 - t1))
@@ -285,6 +286,31 @@ function _loopfooter!(integrator)
     nothing
 end
 
+# Use a generated function to call apply_callback! in a type-stable way
+@generated function apply_ith_callback!(integrator,
+                                        time, upcrossing, event_idx, cb_idx,
+                                        callbacks::NTuple{N,
+                                                          Union{ContinuousCallback,
+                                                                VectorContinuousCallback}}) where {N}
+    ex = quote
+        throw(BoundsError(callbacks, cb_idx))
+    end
+    for i in 1:N
+        # N.B: doing this as an explicit if (return) else (rest of expression)
+        # means that LLVM compiles this into a switch.
+        # This seemingly isn't the case with just if (return) end (rest of expression)
+        ex = quote
+            if (cb_idx == $i)
+                return DiffEqBase.apply_callback!(integrator, callbacks[$i], time,
+                                                  upcrossing, event_idx)
+            else
+                $ex
+            end
+        end
+    end
+    ex
+end
+
 function handle_callbacks!(integrator)
     discrete_callbacks = integrator.opts.callback.discrete_callbacks
     continuous_callbacks = integrator.opts.callback.continuous_callbacks
@@ -293,24 +319,25 @@ function handle_callbacks!(integrator)
     continuous_modified = false
     discrete_modified = false
     saved_in_cb = false
-    if !(typeof(continuous_callbacks) <: Tuple{})
+    if !(continuous_callbacks isa Tuple{})
         time, upcrossing, event_occurred, event_idx, idx, counter = DiffEqBase.find_first_continuous_callback(integrator,
-            continuous_callbacks...)
+                                                                                                              continuous_callbacks...)
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
-            continuous_modified, saved_in_cb = DiffEqBase.apply_callback!(integrator,
-                continuous_callbacks[idx],
-                time, upcrossing,
-                event_idx)
+            continuous_modified, saved_in_cb = apply_ith_callback!(integrator,
+                                                                   time, upcrossing,
+                                                                   event_idx,
+                                                                   idx,
+                                                                   continuous_callbacks)
         else
             integrator.event_last_time = 0
             integrator.vector_event_last_time = 1
         end
     end
-    if !integrator.force_stepfail && !(typeof(discrete_callbacks) <: Tuple{})
+    if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
         discrete_modified, saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
-            discrete_callbacks...)
+                                                                             discrete_callbacks...)
     end
     if !saved_in_cb
         savevalues!(integrator)
@@ -321,6 +348,7 @@ function handle_callbacks!(integrator)
         integrator.do_error_check = false
         handle_callback_modifiers!(integrator)
     end
+    nothing
 end
 
 function handle_callback_modifiers!(integrator::ODEIntegrator)
@@ -369,8 +397,8 @@ function apply_step!(integrator)
     elseif all_fsal(integrator.alg, integrator.cache) ||
            get_current_isfsal(integrator.alg, integrator.cache)
         if integrator.reeval_fsal || integrator.u_modified ||
-           (typeof(integrator.alg) <: DP8 && !integrator.opts.calck) ||
-           (typeof(integrator.alg) <: Union{Rosenbrock23, Rosenbrock32} &&
+           (integrator.alg isa DP8 && !integrator.opts.calck) ||
+           (integrator.alg isa Union{Rosenbrock23, Rosenbrock32} &&
             !integrator.opts.adaptive)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over
@@ -381,12 +409,13 @@ function apply_step!(integrator)
             end
         end
     end
+    return nothing
 end
 
 handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
 
 function calc_dt_propose!(integrator, dtnew)
-    if (typeof(integrator.alg) <: Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5}) &&
+    if (integrator.alg isa Union{ROCK2, ROCK4, SERK2, ESERK4, ESERK5}) &&
        integrator.opts.adaptive && (integrator.iter >= 1)
         (integrator.alg isa ROCK2) && (dtnew = min(dtnew,
             typeof(dtnew)((((min(integrator.alg.max_stages, 200)^2.0) * 0.811 -
@@ -404,6 +433,7 @@ function calc_dt_propose!(integrator, dtnew)
     dtpropose = integrator.tdir * min(abs(integrator.opts.dtmax), abs(dtnew))
     dtpropose = integrator.tdir * max(abs(dtpropose), timedepentdtmin(integrator))
     integrator.dtpropose = dtpropose
+    return nothing
 end
 
 function fix_dt_at_bounds!(integrator)
@@ -418,6 +448,7 @@ function fix_dt_at_bounds!(integrator)
     else
         integrator.dt = min(integrator.dt, dtmin)
     end
+    return nothing
 end
 
 function handle_tstop!(integrator)
@@ -426,7 +457,7 @@ function handle_tstop!(integrator)
         tdir_tstop = first_tstop(integrator)
         if tdir_t == tdir_tstop
             while tdir_t == tdir_tstop #remove all redundant copies
-                pop_tstop!(integrator)
+                res = pop_tstop!(integrator)
                 has_tstop(integrator) ? (tdir_tstop = first_tstop(integrator)) : break
             end
             integrator.just_hit_tstop = true
@@ -441,6 +472,7 @@ function handle_tstop!(integrator)
             end
         end
     end
+    return nothing
 end
 
 function reset_fsal!(integrator)
@@ -450,9 +482,9 @@ function reset_fsal!(integrator)
     if integrator.sol.prob isa DAEProblem
         DiffEqBase.initialize_dae!(integrator)
     else
-        if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache ||
-           (typeof(integrator.cache) <: CompositeCache &&
-            typeof(integrator.cache.caches[1]) <: OrdinaryDiffEqMutableCache)
+        if integrator.cache isa OrdinaryDiffEqMutableCache ||
+           (integrator.cache isa CompositeCache &&
+            integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache)
             integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
         else
             integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)

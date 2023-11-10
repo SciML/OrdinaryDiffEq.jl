@@ -13,6 +13,7 @@ which specify upper and lower bounds on the adaptively chosen number of stages f
 ```@docs
 ROCK2
 ROCK4
+SERK2
 ESERK4
 ESERK5
 RKC
