@@ -30,6 +30,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     progress_steps::Int
     progress_name::String
     progress_message::F6
+    progress_id::Symbol
     timeseries_errors::Bool
     dense_errors::Bool
     dense::Bool

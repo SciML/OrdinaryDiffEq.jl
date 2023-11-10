@@ -20,7 +20,7 @@ steps:
     matrix:
       setup:
         version:
-          - "1.6"
+          - "1.9"
           - "1"
         group:
           - "Regression_I"

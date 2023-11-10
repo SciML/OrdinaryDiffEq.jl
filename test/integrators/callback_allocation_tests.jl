@@ -37,9 +37,11 @@ integrator = init(ODEProblem(f!, [0.8, 1.0], (0.0, 100.0), [0, 0]), Tsit5(), cal
 # call handle callbacks
 step!(integrator, 0.1, true)
 
-function handle_allocs(integrator)
-    integrator.u[1] = 0.4
-    @allocations OrdinaryDiffEq.handle_callbacks!(integrator)
+if VERSION >= v"1.7"
+    function handle_allocs(integrator)
+        integrator.u[1] = 0.4
+        @allocations OrdinaryDiffEq.handle_callbacks!(integrator)
+    end
+    handle_allocs(integrator);
+    @test handle_allocs(integrator) == 0
 end
-handle_allocs(integrator);
-@test handle_allocs(integrator) == 0
