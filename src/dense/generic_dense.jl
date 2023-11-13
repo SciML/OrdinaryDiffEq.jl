@@ -324,8 +324,8 @@ function get_differential_vars(f, len)
         elseif isdiag(mm)
             differential_vars = Diagonal(mm).diag .!= 0
         else
-            @show typeof(mm)
-            error("QR factorizations is annoying")
+            # QR factorization
+            # @show typeof(mm)
         end
     end
     @show differential_vars
