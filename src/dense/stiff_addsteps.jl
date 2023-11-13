@@ -838,6 +838,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
         veck8 = _vec(k8)
         @.. broadcast=false veck8=-vecu
 
+        # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2055
+        tmp = linsolve_tmp
+
         @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
         @.. broadcast=false tmp=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5 +
                                 h26 * k6 + h27 * k7 + h28 * k8
@@ -1091,6 +1094,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Arra
         end
 
         @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
+
+        # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2055
+        tmp = linsolve_tmp
 
         @inbounds @simd ivdep for i in eachindex(u)
             tmp[i] = h21 * k1[i] + h22 * k2[i] + h23 * k3[i] + h24 * k4[i] + h25 * k5[i] +
