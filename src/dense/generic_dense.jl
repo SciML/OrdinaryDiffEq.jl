@@ -444,10 +444,10 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
                 cache) # update the kcurrent
             if eltype(vals) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache, idxs, deriv)
+                    cache, idxs, deriv, differential_vars)
             else
                 vals[j] = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                    cache, idxs, deriv)
+                    cache, idxs, deriv, differential_vars)
             end
         end
     end
