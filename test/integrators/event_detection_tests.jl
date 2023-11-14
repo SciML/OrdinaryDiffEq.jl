@@ -1,5 +1,6 @@
 using StaticArrays
 using OrdinaryDiffEq
+using DiffEqDevTools
 using Test
 
 @inbounds @inline function ż(z, p, t)
@@ -59,6 +60,15 @@ p = 9.8
 prob = ODEProblem(f, u0, tspan, p)
 sol = solve(prob, Tsit5(), callback = cb2)
 @test minimum(Array(sol)) > -40
+
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/2055
+for alg in (Rodas5(), Rodas5P())
+    sol2 = solve(prob, alg; callback = cb2)
+    sol3 = appxtrue(sol, sol2)
+    @test sol3.errors[:L2] < 1e-5
+    @test sol3.errors[:L∞] < 5e-5
+    @test sol3.errors[:final] < 1e-5
+end
 
 function fball(du, u, p, t)
     du[1] = u[2]
