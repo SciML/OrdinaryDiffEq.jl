@@ -87,7 +87,6 @@ end
 end
 
 @inline function ode_interpolant(Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
-    @show integrator.f.mass_matrix
     DiffEqBase.addsteps!(integrator)
     if !(integrator.cache isa CompositeCache)
         val = ode_interpolant(Θ, integrator.dt, integrator.uprev, integrator.u,
@@ -120,7 +119,6 @@ end
 end
 
 @inline function ode_interpolant!(val, Θ, integrator::DiffEqBase.DEIntegrator, idxs, deriv)
-    @show "!" integrator.f.mass_matrix
     DiffEqBase.addsteps!(integrator)
     if !(integrator.cache isa CompositeCache)
         ode_interpolant!(val, Θ, integrator.dt, integrator.uprev, integrator.u,
@@ -328,7 +326,6 @@ function get_differential_vars(f, size)
             # @show typeof(mm)
         end
     end
-    @show differential_vars
 end
 
 """
@@ -584,7 +581,6 @@ end
 
 function ode_interpolant(Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCache, idxs,
     T::Type{Val{TI}}, differential_vars=trues(size(y₀))) where {TI}
-    @show differential_vars
     if idxs isa Number || y₀ isa Union{Number, SArray}
         # typeof(y₀) can be these if saveidxs gives a single value
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
@@ -665,7 +661,6 @@ end
 function partial_hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
     throw("how did we get here")
     @assert all(differential_vars)
-    @show differential_vars
     hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache}, idxs, T)
 end
 
@@ -682,9 +677,8 @@ function partial_hermite_interpolant!(out::AbstractArray, Θ, dt, y₀::AT, y₁
     if ArrayInterface.fast_scalar_indexing(AT)
         partial_hermite_interpolant!(out, Θ, dt, y₀, y₁, k, cache, eachindex(IndexLinear(), y₀), T, differential_vars)
     else
-        @show differential_vars
-        @show h = hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache}, idxs, T)
-        @show l = linear_interpolant(Θ, dt, y₀, y₁, idxs, T)
+        h = hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache}, idxs, T)
+        l = linear_interpolant(Θ, dt, y₀, y₁, idxs, T)
         @.. broadcast=false out=h*differential_vars + l*!differential_vars
     end
 end
@@ -708,7 +702,7 @@ end
 function partial_hermite_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
     throw("how did we get here")
     @assert all(differential_vars)
-    @show differential_vars
+    differential_vars
     hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T)
 end
 
