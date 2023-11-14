@@ -25,6 +25,7 @@ function Base.similar(bc::Base.Broadcast.Broadcasted{NoIndexStyle{N}},
 end
 Base.Broadcast._broadcast_getindex(x::NoIndexArray, i) = x.x[i]
 Base.Broadcast.extrude(x::NoIndexArray) = x
+ArrayInterface.fast_scalar_indexing(::Type{<:NoIndexArray}) = false
 
 @inline function Base.copyto!(dest::NoIndexArray,
     bc::Base.Broadcast.Broadcasted{<:NoIndexStyle})
