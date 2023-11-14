@@ -326,6 +326,7 @@ function get_differential_vars(f, size)
             # @show typeof(mm)
         end
     end
+    return differential_vars
 end
 
 """
