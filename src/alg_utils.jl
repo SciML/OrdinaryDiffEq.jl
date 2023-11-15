@@ -234,33 +234,6 @@ function DiffEqBase.prepare_alg(alg::Union{
         OrdinaryDiffEqExponentialAlgorithm{0, AD, FDT}},
     u0::AbstractArray{T},
     p, prob) where {AD, FDT, T}
-    if alg isa OrdinaryDiffEqExponentialAlgorithm
-        linsolve = nothing
-    elseif alg.linsolve === nothing
-        if (prob.f isa ODEFunction && prob.f.f isa AbstractSciMLOperator)
-            linsolve = LinearSolve.defaultalg(prob.f.f, u0)
-        elseif (prob.f isa SplitFunction &&
-                prob.f.f1.f isa AbstractSciMLOperator)
-            linsolve = LinearSolve.defaultalg(prob.f.f1.f, u0)
-            if (linsolve === nothing) || (linsolve isa LinearSolve.DefaultLinearSolver &&
-                linsolve.alg !== LinearSolve.DefaultAlgorithmChoice.KrylovJL_GMRES)
-                msg = "Split ODE problem do not work with factorization linear solvers. Bug detailed in https://github.com/SciML/OrdinaryDiffEq.jl/pull/1643. Defaulting to linsolve=KrylovJL()"
-                @warn msg
-                linsolve = KrylovJL_GMRES()
-            end
-        elseif (prob isa ODEProblem || prob isa DDEProblem) &&
-               (prob.f.mass_matrix === nothing ||
-                (prob.f.mass_matrix !== nothing &&
-                 !(prob.f.jac_prototype isa AbstractSciMLOperator)))
-            linsolve = LinearSolve.defaultalg(prob.f.jac_prototype, u0)
-        else
-            # If mm is a sparse matrix and A is a MatrixOperator, then let linear
-            # solver choose things later
-            linsolve = nothing
-        end
-    else
-        linsolve = alg.linsolve
-    end
 
     # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
     # don't use a large chunksize as it will either error or not be beneficial
@@ -268,16 +241,11 @@ function DiffEqBase.prepare_alg(alg::Union{
        (isbitstype(T) && sizeof(T) > 24) ||
        (prob.f isa ODEFunction &&
         prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
-        if alg isa OrdinaryDiffEqExponentialAlgorithm
-            return remake(alg, chunk_size = Val{1}())
-        else
-            return remake(alg, chunk_size = Val{1}(), linsolve = linsolve)
-        end
+        return remake(alg, chunk_size = Val{1}())
     end
 
     L = StaticArrayInterface.known_length(typeof(u0))
     if L === nothing # dynamic sized
-
         # If chunksize is zero, pick chunksize right at the start of solve and
         # then do function barrier to infer the full solve
         x = if prob.f.colorvec === nothing
@@ -287,19 +255,10 @@ function DiffEqBase.prepare_alg(alg::Union{
         end
 
         cs = ForwardDiff.pickchunksize(x)
-
-        if alg isa OrdinaryDiffEqExponentialAlgorithm
-            return remake(alg, chunk_size = Val{cs}())
-        else
-            return remake(alg, chunk_size = Val{cs}(), linsolve = linsolve)
-        end
+        return remake(alg, chunk_size = Val{cs}())
     else # statically sized
         cs = pick_static_chunksize(Val{L}())
-        if alg isa OrdinaryDiffEqExponentialAlgorithm
-            return remake(alg, chunk_size = cs)
-        else
-            return remake(alg, chunk_size = cs, linsolve = linsolve)
-        end
+        return remake(alg, chunk_size = cs)
     end
 end
 

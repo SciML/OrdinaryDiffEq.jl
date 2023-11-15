@@ -300,6 +300,7 @@ end
 
 x0 = zeros(n, n)
 M = zeros(n * n) |> Diagonal |> Matrix
+M[1,1] = true # zero mass matrix breaks rosenbrock
 f = ODEFunction(dynamics!, mass_matrix = M)
 tspan = (0, 10.0)
 prob = ODEProblem(f, x0, tspan)

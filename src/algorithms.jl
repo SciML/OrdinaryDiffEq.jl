@@ -63,13 +63,11 @@ function DiffEqBase.remake(thing::Union{
             ST, CJ},
         OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ
         },
-        DAEAlgorithm{CS, AD, FDT, ST, CJ}};
-    linsolve, kwargs...) where {CS, AD, FDT, ST, CJ}
+        DAEAlgorithm{CS, AD, FDT, ST, CJ}}; kwargs...) where {CS, AD, FDT, ST, CJ}
     T = SciMLBase.remaker_of(thing)
     T(; SciMLBase.struct_as_namedtuple(thing)...,
         chunk_size = Val{CS}(), autodiff = Val{AD}(), standardtag = Val{ST}(),
         concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
-        linsolve = linsolve,
         kwargs...)
 end
 
@@ -3008,7 +3006,7 @@ end
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
     """
     Hochbruck, Marlis, and Alexander Ostermann. “Exponential Integrators.” Acta
-      Numerica 19 (2010): 209–86. doi:10.1017/S0962492910000048.
+      Numerica 19 (2010): 209–286. doi:10.1017/S0962492910000048.
     """
     @eval struct $Alg{CS, AD, FDT, ST, CJ} <:
                  OrdinaryDiffEqExponentialAlgorithm{CS, AD, FDT, ST, CJ}
