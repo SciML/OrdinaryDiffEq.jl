@@ -94,7 +94,6 @@ function derivative!(df::AbstractArray{<:Number}, f,
             try
                 f(grad_config, xdual)
             catch e
-                rethrow(e)
                 throw(FirstAutodiffTgradError(e))
             end
         else
