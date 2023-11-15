@@ -641,7 +641,7 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
     T::Type{Val{0}}, dv=1) # Default interpolant is Hermite
     #@.. broadcast=false (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
-    @inbounds (1 - Θ) * y₀ + Θ * y₁ +
+    @inbounds @.. (1 - Θ) * y₀ + Θ * y₁ +
               dv * Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2])
 end
 
@@ -664,7 +664,7 @@ end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{0}}, dv=1) # Default interpolant is Hermite
     # return @.. broadcast=false (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
-    return (1 - Θ) * y₀[idxs] + Θ * y₁[idxs] +
+    return @.. (1 - Θ) * y₀[idxs] + Θ * y₁[idxs] +
            dv * Θ * (Θ - 1) *
            ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] +
             Θ * dt * k[2][idxs])
