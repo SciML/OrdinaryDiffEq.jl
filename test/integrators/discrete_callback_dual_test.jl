@@ -11,7 +11,7 @@ times_finalize_called = 0
 function stopping_cb(tstop)
     condition = (u, t, integrator) -> t == tstop
     affect! = integrator -> (println("Stopped!"); integrator.p = zero(integrator.p))
-    DiscreteCallback(condition, affect!, finalize=(args...)->times_finalize_called+=1)
+    DiscreteCallback(condition, affect!, finalize=(args...)->global times_finalize_called+=1)
 end
 
 function test_fun(tstop)
