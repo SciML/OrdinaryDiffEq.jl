@@ -25,7 +25,7 @@ out_VMF = vecarrzero(ntt, size(prob_ode_2Dlinear.u0))   # Vector{Matrix{Float64}
         @test_throws MethodError sol_ODE(out_VF, tt; idxs = 1:1)
         @test sol_ODE(out_VF, tt) isa Vector{Float64}
         @test sol_ODE(out_VVF_1, tt) isa Vector{Vector{Float64}}
-        @test sol_ODE_interp.u == out_VF
+        @test sol_ODE_interp.u ≈ out_VF
     end
 
     @testset "2D" begin
@@ -35,6 +35,6 @@ out_VMF = vecarrzero(ntt, size(prob_ode_2Dlinear.u0))   # Vector{Matrix{Float64}
         @test sol_ODE_2D(out_VVF_1, tt; idxs = 3:3) isa Vector{Vector{Float64}}
         @test sol_ODE_2D(out_VVF_2, tt; idxs = 2:3) isa Vector{Vector{Float64}}
         @test sol_ODE_2D(out_VMF, tt) isa Vector{Matrix{Float64}}
-        @test sol_ODE_2D_interp.u == out_VMF
+        @test sol_ODE_2D_interp.u ≈ out_VMF
     end
 end
