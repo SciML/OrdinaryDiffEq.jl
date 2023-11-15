@@ -210,7 +210,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     if prob isa DAEProblem
         rate_prototype = prob.du0
     else
-        rate_prototype = DiffEqBase._rate_prototype(u, t, one(t))
+        rate_prototype = zero.(DiffEqBase._rate_prototype(u, t, one(t)))
     end
     rateType = typeof(rate_prototype) ## Can be different if unitful
 
