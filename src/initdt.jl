@@ -43,12 +43,8 @@
         f(f₀, u0, p, t)
     else
         # TODO: use more caches
-        f₀ = first(get_tmp_cache(integrator))
-        if u0 isa Array && eltype(u0) isa Number
-            fill!(f₀, zero(T))
-        else
-            f₀ = zero.(f₀)
-        end
+        f₀ = DiffEqBase._rate_prototype(u0, t, one(t))
+        f₀ = zero.(f₀)
         f(f₀, u0, p, t)
     end
 

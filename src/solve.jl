@@ -197,20 +197,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
     # dtmin is all abs => does not care about sign already.
 
-    if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
-       uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
-        rate_prototype = recursivecopy(u)
-    elseif prob isa DAEProblem
+    if prob isa DAEProblem
         rate_prototype = prob.du0
     else
-        if (uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits) ||
-           eltype(u) <: Enum
-            rate_prototype = u
-        else # has units!
-            rate_prototype = u / oneunit(tType)
-        end
+        rate_prototype = DiffEqBase._rate_prototype(u, t, one(t))
     end
-    rateType = typeof(rate_prototype) ## Can be different if united
+    rateType = typeof(rate_prototype) ## Can be different if unitful
 
     if isdae
         if uBottomEltype == uBottomEltypeNoUnits
