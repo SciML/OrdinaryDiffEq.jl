@@ -329,7 +329,7 @@ function get_differential_vars(f, idxs, size)
     if idxs === nothing || differential_vars === nothing
         return differential_vars
     else
-        return differential_vars[idxs]
+        return @view differential_vars[idxs]
     end
 end
 
