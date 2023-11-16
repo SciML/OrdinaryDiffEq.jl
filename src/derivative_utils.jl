@@ -302,9 +302,22 @@ function SciMLOperators.update_coefficients!(W::WOperator,
     dtgamma = nothing,
     transform = nothing)
     if (u !== nothing) && (p !== nothing) && (t !== nothing)
-        update_coefficients!(W.J, u, p, t)
+        if W.J isa FunctionOperator
+            update_coefficients!(W.J, u, ifelse(W.J.p === nothing, nothing, p),
+                ifelse(W.J.t === nothing, nothing, t))
+        else
+            update_coefficients!(W.J, u, p, t)
+        end
         update_coefficients!(W.mass_matrix, u, p, t)
-        !isnothing(W.jacvec) && update_coefficients!(W.jacvec, u, p, t)
+        if !isnothing(W.jacvec)
+            if W.jacvec isa FunctionOperator
+                update_coefficients!(W.jacvec, u,
+                    ifelse(W.jacvec.p === nothing, nothing, p),
+                    ifelse(W.jacvec.t === nothing, nothing, t))
+            else
+                update_coefficients!(W.jacvec, u, p, t)
+            end
+        end
     end
     dtgamma !== nothing && (W.gamma = dtgamma)
     transform !== nothing && (W.transform = transform)
@@ -874,7 +887,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # be overridden with concrete_jac.
 
         _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u);
             autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
@@ -890,7 +903,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u);
             autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
