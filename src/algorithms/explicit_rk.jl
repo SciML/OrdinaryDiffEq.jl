@@ -254,7 +254,7 @@ function OwrenZen5(stage_limiter!, step_limiter! = trivial_limiter!)
     OwrenZen5(stage_limiter!, step_limiter!, False())
 end
 
-@doc explicit_rk_docstring(A third-order, four-stage explicit FSAL Runge-Kutta method with embedded error
+@doc explicit_rk_docstring("A third-order, four-stage explicit FSAL Runge-Kutta method with embedded error
 estimator of Bogacki and Shampine.",
     "BS3",
     references = "@article{bogacki19893,
