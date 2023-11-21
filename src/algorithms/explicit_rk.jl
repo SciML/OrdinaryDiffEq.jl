@@ -254,8 +254,9 @@ function OwrenZen5(stage_limiter!, step_limiter! = trivial_limiter!)
     OwrenZen5(stage_limiter!, step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("Owren-Zennaro optimized interpolation 5/4 method (free 5th order interpolant).",
-    "OwrenZen5",
+@doc explicit_rk_docstring(A third-order, four-stage explicit FSAL Runge-Kutta method with embedded error
+estimator of Bogacki and Shampine.",
+    "BS3",
     references = "@article{bogacki19893,
     title={A 3 (2) pair of Runge-Kutta formulas},
     author={Bogacki, Przemyslaw and Shampine, Lawrence F},
