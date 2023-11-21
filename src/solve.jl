@@ -587,21 +587,15 @@ end
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    if isempty(d_discontinuities) && isempty(tstops) # TODO: Specialize more
-        push!(tstops_internal, tdir_tf)
-    else
-        for t in tstops
-            tdir_t = tdir * t
-            tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
-        end
-
-        for t in d_discontinuities
-            tdir_t = tdir * t
-            tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
-        end
-
-        push!(tstops_internal, tdir_tf)
+    for t in tstops
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
     end
+    for t in d_discontinuities
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+    end
+    push!(tstops_internal, tdir_tf)
 
     return tstops_internal
 end
