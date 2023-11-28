@@ -270,11 +270,11 @@ end
 
 function _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
     cache, idxs,
-    deriv, ks, ts, p)
+    deriv, ks, ts, p, differential_vars=nothing)
     _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
         cache) # update the kcurrent
     return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-        cache, idxs, deriv)
+        cache, idxs, deriv, differential_vars)
 end
 function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
     caches::Tuple{C1, C2, Vararg}, idxs,
@@ -297,7 +297,7 @@ function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
 end
 
 function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
-    deriv, ks, ts, id, p)
+    deriv, ks, ts, id, p, differential_vars)
     if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
         return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv)
@@ -309,7 +309,7 @@ function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
     else
         return _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
             cache, idxs,
-            deriv, ks, ts, p)
+            deriv, ks, ts, p, differential_vars)
     end
 end
 
@@ -365,7 +365,7 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
         evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
-            deriv, ks, ts, id, p)
+            deriv, ks, ts, id, p, differential_vars)
     end
     invpermute!(vals, idx)
     DiffEqArray(vals, tvals)
