@@ -662,7 +662,7 @@ end
     end
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{0}}, dv=1) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{0}}, dv=true) # Default interpolant is Hermite
     # return @.. broadcast=false (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
     return (1 - Θ) * y₀[idxs] + Θ * y₁[idxs] +
            dv .* (Θ * (Θ - 1) *
@@ -687,7 +687,7 @@ end
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, dv=1) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, dv=true) # Default interpolant is Hermite
     @views @.. broadcast=false out=(1 - Θ) * y₀[idxs] + Θ * y₁[idxs] +
                                    dv * Θ * (Θ - 1) *
                                    ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) +
@@ -707,62 +707,69 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
-    T::Type{Val{1}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{1}}, dv=true) # Default interpolant is Hermite
     #@.. broadcast=false k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
-    @inbounds k[1] +
+    @inbounds !only(dv)*(y₁ - y₀)/dt + only(dv)*(
+              k[1] +
               Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-               Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt
+               Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
-    T::Type{Val{1}}, dv=I) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false k[1]+Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+    T::Type{Val{1}}, dv=true) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false !dv*((y₁ - y₀)/dt)+dv*(
+                                   k[1]+Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
                                         Θ *
                                         (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
-                                        6 * y₁) / dt
+                                        6 * y₁) / dt)
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{1}}, dv=I) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{1}}, dv=trues(size(y₀))) # Default interpolant is Hermite
     # return @.. broadcast=false k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
-    return k[1][idxs] +
+    return !dv[idxs]*((y₁[idxs] - y₀[idxs])/dt)+dv[idxs]*(
+           k[1][idxs] +
            Θ * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
             Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] + 6 * y₀[idxs] - 6 * y₁[idxs]) +
-            6 * y₁[idxs]) / dt
+            6 * y₁[idxs]) / dt)
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{1}}, dv=I) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false out=k[1] +
+@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{1}}, dv=true) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false out=!dv*((y₁ - y₀)/dt)+dv*(
+                                      k[1] +
                                       Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
                                        Θ *
                                        (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
-                                       6 * y₁) / dt
+                                       6 * y₁) / dt)
 end
 
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
-    T::Type{Val{1}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{1}}, dv=trues(size(out))) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = k[1][i] +
+        out[i] = !dv[i]*((y₁[i] - y₀[i])/dt)+dv[i]*(
+                 k[1][i] +
                  Θ * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                   Θ * (3 * dt * k[1][i] + 3 * dt * k[2][i] + 6 * y₀[i] - 6 * y₁[i]) +
-                  6 * y₁[i]) / dt
+                  6 * y₁[i]) / dt)
     end
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, dv=I) # Default interpolant is Hermite
-    @views @.. broadcast=false out=k[1][idxs] +
+@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, dv=true) # Default interpolant is Hermite
+    @views @.. broadcast=false out=!dv*((y₁ - y₀)/dt)+dv*(
+                                   k[1][idxs] +
                                    Θ * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
                                     6 * y₀[idxs] +
                                     Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] +
-                                     6 * y₀[idxs] - 6 * y₁[idxs]) + 6 * y₁[idxs]) / dt
+                                     6 * y₀[idxs] - 6 * y₁[idxs]) + 6 * y₁[idxs]) / dt)
 end
 
-@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, dv=I) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, dv=trues(size(out))) # Default interpolant is Hermite
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = k[1][i] +
+        out[j] = !dv[j]*((y₁[i] - y₀[i])/dt)+dv[j]*(
+                 k[1][i] +
                  Θ * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                   Θ * (3 * dt * k[1][i] + 3 * dt * k[2][i] + 6 * y₀[i] - 6 * y₁[i]) +
-                  6 * y₁[i]) / dt
+                  6 * y₁[i]) / dt)
     end
     out
 end
@@ -771,62 +778,57 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
-    T::Type{Val{2}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{2}}, dv=true) # Default interpolant is Hermite
     #@.. broadcast=false (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
-    @inbounds (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+    @inbounds only(dv) * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
                Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) / (dt * dt)
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
-    T::Type{Val{2}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{2}}, dv=true) # Default interpolant is Hermite
     #@.. broadcast=false (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
-    @inbounds @.. broadcast=false (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+    @inbounds @.. broadcast=false dv * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
                                    Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) +
                                    6 * y₁)/(dt * dt)
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{2}}, dv=I) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{2}}, dv=trues(size(idxs))) # Default interpolant is Hermite
     #out = similar(y₀,axes(idxs))
     #@views @.. broadcast=false out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
-    @views out = (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
+    @views out = dv[idxs] .* (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
                   Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
                    12 * y₁[idxs]) + 6 * y₁[idxs]) / (dt * dt)
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{2}}, dv=I) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false out=(-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{2}}, dv=true) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false out= dv * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
                                        Θ *
                                        (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) +
                                        6 * y₁) / (dt * dt)
 end
 
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
-    T::Type{Val{2}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{2}}, dv=trues(size(out))) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
+        out[i] = dv[i] * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                   Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
                   6 * y₁[i]) / (dt * dt)
     end
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, dv=I) # Default interpolant is Hermite
-    @views @.. broadcast=false out=(-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
+@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, dv=true) # Default interpolant is Hermite
+    @views @.. broadcast=false out=dv * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
                                     6 * y₀[idxs] +
                                     Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] +
                                      12 * y₀[idxs] - 12 * y₁[idxs]) + 6 * y₁[idxs]) /
                                    (dt * dt)
 end
 
-@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, dv=I) # Default interpolant is Hermite
-    @views @.. broadcast=false out=(-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
-                                    6 * y₀[idxs] +
-                                    Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] +
-                                     12 * y₀[idxs] - 12 * y₁[idxs]) + 6 * y₁[idxs]) /
-                                   (dt * dt)
+@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, dv=trues(size(out))) # Default interpolant is Hermite
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
+        out[j] = dv[j] * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                   Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
                   6 * y₁[i]) / (dt * dt)
     end
@@ -837,31 +839,31 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
-    T::Type{Val{3}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{3}}, dv=true) # Default interpolant is Hermite
     #@.. broadcast=false (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
-    @inbounds (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) / (dt * dt * dt)
+    @inbounds only(dv) * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) / (dt * dt * dt)
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
-    T::Type{Val{3}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{3}}, dv=true) # Default interpolant is Hermite
     #@.. broadcast=false (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
-    @inbounds @.. broadcast=false (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ -
+    @inbounds @.. broadcast=false dv * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ -
                                    12 * y₁)/(dt *
                                              dt *
                                              dt)
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{3}}, dv=I) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{3}}, dv=true) # Default interpolant is Hermite
     #out = similar(y₀,axes(idxs))
     #@views @.. broadcast=false out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
-    @views out = (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
+    @views out = dv[idxs] * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
                   12 * y₁[idxs]) /
                  (dt * dt * dt)
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{3}}, dv=I) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false out=(6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) /
+@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{3}}, dv=true) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false out=dv * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) /
                                       (dt * dt * dt)
     #for i in eachindex(out)
     #  out[i] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
@@ -870,9 +872,9 @@ end
 end
 
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
-    T::Type{Val{3}}, dv=I) # Default interpolant is Hermite
+    T::Type{Val{3}}, dv=trues(size(out))) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
+        out[i] = dv[i] * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
                  (dt * dt * dt)
     end
     out
@@ -883,9 +885,9 @@ end
                                     12 * y₀[idxs] - 12 * y₁[idxs]) / (dt * dt * dt)
 end
 
-@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, dv=I) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, dv=trues(size(out))) # Default interpolant is Hermite
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
+        out[j] = dv[j] * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
                  (dt * dt * dt)
     end
     out
