@@ -320,7 +320,7 @@ function get_differential_vars(f, idxs, size)
         if mm isa UniformScaling
             # already correct
         elseif isdiag(mm)
-            differential_vars = reshape(Diagonal(mm).diag .!= 0, size)
+            differential_vars = reshape(diag(mm)  .!= 0, size)
         else
             # QR factorization
             # @show typeof(mm)
