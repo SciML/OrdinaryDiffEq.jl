@@ -318,15 +318,14 @@ function get_differential_vars(f, idxs, size)
     if hasproperty(f, :mass_matrix)
         mm = f.mass_matrix
         if mm isa UniformScaling
-            # already correct
+            return nothing
         elseif isdiag(mm)
             differential_vars = reshape(diag(mm)  .!= 0, size)
         else
-            # QR factorization
-            # @show typeof(mm)
+            return missing # interpret missing downstream as not implemented
         end
     end
-    if idxs === nothing || differential_vars === nothing
+    if idxs === nothing
         return differential_vars
     else
         return @view differential_vars[idxs]
