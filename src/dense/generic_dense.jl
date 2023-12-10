@@ -616,7 +616,7 @@ function _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, 
         if y₀ isa Number
             differential_vars = true
         elseif idxs === nothing
-            differential_vars = Trues(size(out))
+            differential_vars = Trues(size(y₀))
         elseif idxs isa Number
             differential_vars = true
         else
