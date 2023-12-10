@@ -677,7 +677,7 @@ end
     repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
-    @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
+    @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -731,6 +731,9 @@ end
 
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
+    u = uprev + a41 * k1 + a42 * k2 + a43 * k3
+    du = f(u, p, t + dt) #-- c4 = 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 + dtC43 * k3
@@ -760,7 +763,7 @@ end
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
+    @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
     # Assignments
     uidx = eachindex(integrator.uprev)
@@ -841,6 +844,10 @@ end
     veck3 = _vec(k3)
     @.. broadcast=false veck3=-vecu
     integrator.stats.nsolve += 1
+
+    @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
+    f(du, u, p, t + dt) #-- c4 = 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 +
