@@ -35,9 +35,9 @@ version = "0.1.33"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
-git-tree-sha1 = "02f731463748db57cc2ebfbd9fbc9ce8280d3433"
+git-tree-sha1 = "cde29ddf7e5726c9fb511f340244ea3481267608"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.7.1"
+version = "3.7.2"
 weakdeps = ["StaticArrays"]
 
     [deps.Adapt.extensions]
@@ -197,9 +197,9 @@ version = "1.9.1"
 
 [[deps.DiffEqBase]]
 deps = ["ArrayInterface", "DataStructures", "DocStringExtensions", "EnumX", "EnzymeCore", "FastBroadcast", "ForwardDiff", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "Logging", "Markdown", "MuladdMacro", "Parameters", "PreallocationTools", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "Setfield", "SparseArrays", "Static", "StaticArraysCore", "Statistics", "Tricks", "TruncatedStacktraces"]
-git-tree-sha1 = "b983d7e2b869375c74b1197fb65209b6f528d28f"
+git-tree-sha1 = "4aff905c723e3f883064f00a4ba553b29372ce57"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.141.1"
+version = "6.142.0"
 
     [deps.DiffEqBase.extensions]
     DiffEqBaseChainRulesCoreExt = "ChainRulesCore"
@@ -532,9 +532,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LinearSolve]]
 deps = ["ArrayInterface", "ConcreteStructs", "DocStringExtensions", "EnumX", "FastLapackInterface", "GPUArraysCore", "InteractiveUtils", "KLU", "Krylov", "Libdl", "LinearAlgebra", "MKL_jll", "PrecompileTools", "Preferences", "RecursiveFactorization", "Reexport", "Requires", "SciMLBase", "SciMLOperators", "Setfield", "SparseArrays", "Sparspak", "StaticArraysCore", "UnPack"]
-git-tree-sha1 = "8d8633bb983a811bbb4475f3bd179186e58eebb7"
+git-tree-sha1 = "1961a307fae7aef8e2b331902c6072f0e90e5abb"
 uuid = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-version = "2.20.1"
+version = "2.20.2"
 
     [deps.LinearSolve.extensions]
     LinearSolveBandedMatricesExt = "BandedMatrices"
@@ -679,9 +679,9 @@ version = "1.2.0"
 
 [[deps.NonlinearSolve]]
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "DiffEqBase", "EnumX", "FastBroadcast", "FiniteDiff", "ForwardDiff", "LazyArrays", "LineSearches", "LinearAlgebra", "LinearSolve", "MaybeInplace", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "SimpleNonlinearSolve", "SparseArrays", "SparseDiffTools", "StaticArrays", "UnPack"]
-git-tree-sha1 = "9606064e74223ce62ef9e98ec579a34ef1e0cd9e"
+git-tree-sha1 = "ec6577e2ebccf19797edcbf5951229598ad35650"
 uuid = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
-version = "3.0.0"
+version = "3.0.1"
 
     [deps.NonlinearSolve.extensions]
     NonlinearSolveBandedMatricesExt = "BandedMatrices"
