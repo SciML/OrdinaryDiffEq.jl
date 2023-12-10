@@ -616,11 +616,15 @@ function _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, 
         if y₀ isa Number
             differential_vars = true
         elseif idxs === nothing
-            differential_vars = Trues(size(y₀))
+            differential_vars = Trues(size(out))
+        elseif idxs isa Number
+            differential_vars = true
         else
             differential_vars = Trues(size(idxs))
         end
-    elseif idxs !== nothing
+    elseif idxs isa Number
+        differential_vars[idxs]
+    else idxs !== nothing
         @view differential_vars[idxs]
     end
 
@@ -635,10 +639,14 @@ function _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{
             differential_vars = true
         elseif idxs === nothing
             differential_vars = Trues(size(out))
+        elseif idxs isa Number
+            differential_vars = true
         else
             differential_vars = Trues(size(idxs))
         end
-    elseif idxs !== nothing
+    elseif idxs isa Number
+        differential_vars[idxs]
+    else idxs !== nothing
         @view differential_vars[idxs]
     end
 
