@@ -486,7 +486,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         last_event_error, accept_step,
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
-        opts, stats, initializealg, differnetial_vars)
+        opts, stats, initializealg, differential_vars)
 
     if initialize_integrator
         if isdae
