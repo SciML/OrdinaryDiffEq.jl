@@ -171,3 +171,27 @@ macro fold(arg)
         esc(:(Base.@assume_effects :foldable $arg))
     end
 end
+
+struct DifferentialVarsUndefined end
+
+"""
+    get_differential_vars(f, idxs, timeseries::uType)
+
+Returns an array of booleans for which values are the differential variables
+vs algebraic variables. Returns `nothing` for the cases where all variables
+are differential variables. Returns `DifferentialVarsUndefined` if it cannot
+be determined (i.e. the mass matrix is not diagonal).
+"""
+function get_differential_vars(f, u)
+    differential_vars = nothing
+    if hasproperty(f, :mass_matrix)
+        mm = f.mass_matrix
+        if mm isa UniformScaling
+            return nothing
+        elseif isdiag(mm)
+            differential_vars = reshape(diag(mm)  .!= 0, size(u))
+        else
+            return DifferentialVarsUndefined()
+        end
+    end
+end

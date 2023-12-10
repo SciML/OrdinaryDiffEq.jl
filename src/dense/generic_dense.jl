@@ -90,7 +90,7 @@ end
     DiffEqBase.addsteps!(integrator)
     if !(integrator.cache isa CompositeCache)
         val = ode_interpolant(Θ, integrator.dt, integrator.uprev, integrator.u,
-            integrator.k, integrator.cache, idxs, deriv)
+            integrator.k, integrator.cache, idxs, deriv, integrator.differential_vars)
     else
         val = composite_ode_interpolant(Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv)
@@ -122,11 +122,11 @@ end
     DiffEqBase.addsteps!(integrator)
     if !(integrator.cache isa CompositeCache)
         ode_interpolant!(val, Θ, integrator.dt, integrator.uprev, integrator.u,
-            integrator.k, integrator.cache, idxs, deriv)
+            integrator.k, integrator.cache, idxs, deriv, integrator.differential_vars)
     else
         ode_interpolant!(val, Θ, integrator.dt, integrator.uprev, integrator.u,
             integrator.k, integrator.cache.caches[integrator.cache.current],
-            idxs, deriv)
+            idxs, deriv, integrator.differential_vars)
     end
 end
 
@@ -210,7 +210,7 @@ end
     DiffEqBase.addsteps!(integrator)
     if !(integrator.cache isa CompositeCache)
         ode_interpolant!(val, Θ, integrator.t - integrator.tprev, integrator.uprev2,
-            integrator.uprev, integrator.k, integrator.cache, idxs, deriv)
+            integrator.uprev, integrator.k, integrator.cache, idxs, deriv, integrator.differential_vars)
     else
         composite_ode_extrapolant!(val, Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv)
@@ -241,7 +241,7 @@ end
     DiffEqBase.addsteps!(integrator)
     if !(integrator.cache isa CompositeCache)
         ode_interpolant(Θ, integrator.t - integrator.tprev, integrator.uprev2,
-            integrator.uprev, integrator.k, integrator.cache, idxs, deriv)
+            integrator.uprev, integrator.k, integrator.cache, idxs, deriv, integrator.differential_vars)
     else
         composite_ode_extrapolant(Θ, integrator, integrator.cache.caches,
             integrator.cache.current, idxs, deriv)
@@ -278,58 +278,38 @@ function _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
 end
 function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
     caches::Tuple{C1, C2, Vararg}, idxs,
-    deriv, ks, ts, p, cacheid) where {C1, C2}
+    deriv, ks, ts, p, cacheid, differential_vars) where {C1, C2}
     if (cacheid -= 1) != 0
         return evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊, Base.tail(caches),
             idxs,
-            deriv, ks, ts, p, cacheid)
+            deriv, ks, ts, p, cacheid, differential_vars)
     end
     _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
         first(caches), idxs,
-        deriv, ks, ts, p)
+        deriv, ks, ts, p, differential_vars)
 end
 function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
     caches::Tuple{C}, idxs,
-    deriv, ks, ts, p, _) where {C}
+    deriv, ks, ts, p, _, differential_vars) where {C}
     _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
         only(caches), idxs,
-        deriv, ks, ts, p)
+        deriv, ks, ts, p, differential_vars)
 end
 
 function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
     deriv, ks, ts, id, p, differential_vars)
     if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
         return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
-            deriv)
+            deriv, differential_vars)
     elseif !id.dense
         return linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
     elseif cache isa CompositeCache
         return evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊, cache.caches, idxs,
-            deriv, ks, ts, p, id.alg_choice[i₊])
+            deriv, ks, ts, p, id.alg_choice[i₊], differential_vars)
     else
         return _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
             cache, idxs,
             deriv, ks, ts, p, differential_vars)
-    end
-end
-
-struct DifferentialVarsUndefined end
-function get_differential_vars(f, idxs, timeseries)
-    differential_vars = nothing
-    if hasproperty(f, :mass_matrix)
-        mm = f.mass_matrix
-        if mm isa UniformScaling
-            return nothing
-        elseif isdiag(mm) && all(x -> size(x) == size(timeseries[begin]), timeseries)
-            differential_vars = reshape(diag(mm)  .!= 0, size(timeseries[begin]))
-        else
-            return DifferentialVarsUndefined()
-        end
-    end
-    if idxs === nothing
-        return differential_vars
-    else
-        return @view differential_vars[idxs]
     end
 end
 
@@ -341,10 +321,9 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
     continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
-    differential_vars = get_differential_vars(f, idxs, timeseries)
     # start the search thinking it's ts[1]-ts[2]
     i₋₊ref = Ref((1, 2))
     vals = map(idx) do j
@@ -379,10 +358,9 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
     continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
-    differential_vars = get_differential_vars(f, idxs, timeseries)
 
     # start the search thinking it's in ts[1]-ts[2]
     i₋ = 1
@@ -465,10 +443,8 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
     continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
-
-    differential_vars = get_differential_vars(f, idxs, timeseries)
 
     if continuity === :left
         # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
@@ -488,7 +464,7 @@ function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
 
         if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
-                deriv)
+                deriv, differential_vars)
         elseif !id.dense
             val = linear_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif cache isa CompositeCache
@@ -515,10 +491,8 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
     continuity::Symbol = :left) where {I, D}
-    @unpack ts, timeseries, ks, f, cache = id
+    @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
-
-    differential_vars = get_differential_vars(f, idxs, timeseries)
 
     if continuity === :left
         # we have i₋ = i₊ = 1 if tval = ts[1], i₊ = i₋ + 1 = lastindex(ts) if tval > ts[end],
@@ -538,14 +512,14 @@ function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
 
         if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
-                deriv)
+                deriv, differential_vars)
         elseif !id.dense
             linear_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], idxs, deriv)
         elseif cache isa CompositeCache
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                 cache.caches[id.alg_choice[i₊]]) # update the kcurrent
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                cache.caches[id.alg_choice[i₊]], idxs, deriv)
+                cache.caches[id.alg_choice[i₊]], idxs, deriv, differential_vars)
         else
             _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
                 cache) # update the kcurrent
@@ -646,6 +620,8 @@ function _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, 
         else
             differential_vars = Trues(size(idxs))
         end
+    elseif idxs !== nothing
+        @view differential_vars[idxs]
     end
 
     hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache}, idxs, T, differential_vars)
@@ -662,6 +638,8 @@ function _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{
         else
             differential_vars = Trues(size(idxs))
         end
+    elseif idxs !== nothing
+        @view differential_vars[idxs]
     end
 
     hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
