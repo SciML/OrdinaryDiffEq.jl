@@ -107,7 +107,7 @@ end
                 if $i == current
                     return ode_interpolant(Θ, integrator.dt, integrator.uprev,
                         integrator.u, integrator.k, caches[$i], idxs,
-                        deriv)
+                        deriv, integrator.differential_vars)
                 end
             end)
     end
