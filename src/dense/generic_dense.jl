@@ -597,7 +597,7 @@ const HERMITE_CASE_NOT_DEFINED_MESSAGE = """
                                          ODE solver. Either use a method which has a specialized interpolation,
                                          such as Rodas5P, or use `dense=false`
 
-                                         You can find the list of available DAE solvers with their documented interpolations at: 
+                                         You can find the list of available DAE solvers with their documented interpolations at:
                                          https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/
                                          """
 
@@ -654,7 +654,7 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
     T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
     @inbounds (1 - Θ) * y₀ + Θ * y₁ +
-              differential_vars * (Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
+              differential_vars .* (Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
