@@ -1,6 +1,6 @@
 using OrdinaryDiffEq
-using DiffEqBase
 using Test
+
 function rober_ip(du, u, p, t)
     y₁, y₂, y₃ = u
     k₁, k₂, k₃ = p
