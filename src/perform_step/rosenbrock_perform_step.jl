@@ -124,8 +124,8 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         if mass_matrix !== I
-            @.. broadcast=false vectmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
-            integrator.EEst += integrator.opts.internalnorm(vectmp, t)
+            @.. broadcast=false atmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
     cache.linsolve = linres.cache
@@ -357,8 +357,8 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         if mass_matrix !== I
-            @.. broadcast=false vectmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
-            integrator.EEst += integrator.opts.internalnorm(vectmp, t)
+            @.. broadcast=false atmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
     cache.linsolve = linres.cache
