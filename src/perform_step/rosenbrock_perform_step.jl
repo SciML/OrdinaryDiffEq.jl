@@ -117,11 +117,16 @@ end
             veck₃ = _vec(k₃)
             vectmp = _vec(tmp)
             @.. broadcast=false vectmp=ifelse(cache.algebraic_vars,
-                dto6 * (veck₁ - 2 * veck₂ + veck₃))
+                false, dto6 * (veck₁ - 2 * veck₂ + veck₃))
         end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            @.. broadcast=false vectmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(vectmp, t)
+        end
     end
     cache.linsolve = linres.cache
 end
@@ -245,6 +250,19 @@ end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            if integrator.opts.abstol isa AbstractVector
+                @inbounds @simd ivdep for i in 1:length(vectmp)
+                    vectmp[i] = ifelse(cache.algebraic_vars[i],fsallast[i],false)/integrator.opts.abstol[i]
+                end
+            else
+                @inbounds @simd ivdep for i in 1:length(vectmp)
+                    vectmp[i] = ifelse(cache.algebraic_vars[i],fsallast[i],false)/integrator.opts.abstol
+                end
+            end
+            integrator.EEst += integrator.opts.internalnorm(vectmp, t)
+        end
     end
     cache.linsolve = linres.cache
 end
@@ -337,6 +355,11 @@ end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            @.. broadcast=false vectmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(vectmp, t)
+        end
     end
     cache.linsolve = linres.cache
 end
@@ -399,6 +422,11 @@ end
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            atmp = ifelse.(cache.algebraic_vars,integrator.fsallast,false)./integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        end
     end
     integrator.k[1] = k₁
     integrator.k[2] = k₂
@@ -466,6 +494,11 @@ end
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            atmp = ifelse.(cache.algebraic_vars,integrator.fsallast,false)./integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        end
     end
 
     integrator.k[1] = k₁
