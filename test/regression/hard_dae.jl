@@ -223,7 +223,7 @@ for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
     maxiters = solver isa Rosenbrock23 ? 1e6 : 1e5
     sol = solve(prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-12,
-        abstol = 1e-16)
+        abstol = 1e-16, maxiters = maxiters)
     @test sol.retcode == ReturnCode.Success
     @test sol.t[end] == 20.0
     @test maximum(sol - refsol) < 1e-11
