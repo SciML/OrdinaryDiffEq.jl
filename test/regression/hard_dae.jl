@@ -221,6 +221,7 @@ refsol = solve(prob, Rodas4(), saveat = 0.1, callback = cb, tstops = [1.0], relt
 for solver in (Rodas4, Rodas4P, Rodas5, Rodas5P, FBDF, QNDF, Rosenbrock23)
     @show solver
     prob = ODEProblem(f, deepcopy(res.zero), (0, 20.0), deepcopy(p_inv))
+    maxiters = solver isa Rosenbrock23 ? 1e6 : 1e5
     sol = solve(prob, solver(), saveat = 0.1, callback = cb, tstops = [1.0], reltol = 1e-12,
         abstol = 1e-16)
     @test sol.retcode == ReturnCode.Success
