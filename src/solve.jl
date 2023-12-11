@@ -404,15 +404,16 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         stop_at_next_tstop)
 
     stats = DiffEqBase.Stats(0)
+    differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)
 
     if _alg isa OrdinaryDiffEqCompositeAlgorithm
-        id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache)
+        id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
             dense = dense, k = ks, interp = id,
             alg_choice = alg_choice,
             calculate_error = false, stats = stats)
     else
-        id = InterpolationData(f, timeseries, ts, ks, dense, cache)
+        id = InterpolationData(f, timeseries, ts, ks, dense, cache, differential_vars)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
             dense = dense, k = ks, interp = id,
             calculate_error = false, stats = stats)
@@ -469,7 +470,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         FType, cacheType,
         typeof(opts), fsal_typeof(_alg, rate_prototype),
         typeof(last_event_error), typeof(callback_cache),
-        typeof(initializealg)}(sol, u, du, k, t, tType(dt), f, p,
+        typeof(initializealg), typeof(differential_vars)}(sol, u, du, k, t, tType(dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est, EEst,
@@ -485,7 +486,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         last_event_error, accept_step,
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
-        opts, stats, initializealg)
+        opts, stats, initializealg, differential_vars)
 
     if initialize_integrator
         if isdae

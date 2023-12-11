@@ -28,6 +28,8 @@ using LinearSolve, SimpleNonlinearSolve
 
 using LineSearches
 
+import FillArrays: Trues
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 
