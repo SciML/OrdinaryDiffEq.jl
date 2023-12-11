@@ -190,7 +190,7 @@ function get_differential_vars(f, u)
 
         if mm isa UniformScaling
             return nothing
-        elseif !(mm isa SciMLOperators.AbstractSciMLOperators) && isdiag(mm)
+        elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && isdiag(mm)
             differential_vars = reshape(diag(mm)  .!= 0, size(u))
         else
             return DifferentialVarsUndefined()
