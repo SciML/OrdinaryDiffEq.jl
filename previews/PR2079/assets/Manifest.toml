@@ -316,9 +316,9 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random"]
-git-tree-sha1 = "25a10f2b86118664293062705fd9c7e2eda881a2"
+git-tree-sha1 = "5b93957f6dcd33fc343044af3d48c215be2562f1"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.9.2"
+version = "1.9.3"
 
     [deps.FillArrays.extensions]
     FillArraysPDMatsExt = "PDMats"
