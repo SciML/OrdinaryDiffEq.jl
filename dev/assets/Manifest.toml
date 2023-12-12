@@ -316,9 +316,9 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random"]
-git-tree-sha1 = "25a10f2b86118664293062705fd9c7e2eda881a2"
+git-tree-sha1 = "5b93957f6dcd33fc343044af3d48c215be2562f1"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.9.2"
+version = "1.9.3"
 
     [deps.FillArrays.extensions]
     FillArraysPDMatsExt = "PDMats"
@@ -1009,9 +1009,9 @@ version = "0.8.8"
 
 [[deps.StaticArrayInterface]]
 deps = ["ArrayInterface", "Compat", "IfElse", "LinearAlgebra", "PrecompileTools", "Requires", "SparseArrays", "Static", "SuiteSparse"]
-git-tree-sha1 = "03fec6800a986d191f64f5c0996b59ed526eda25"
+git-tree-sha1 = "5d66818a39bb04bf328e92bc933ec5b4ee88e436"
 uuid = "0d7ed370-da01-4f52-bd93-41d350b8b718"
-version = "1.4.1"
+version = "1.5.0"
 weakdeps = ["OffsetArrays", "StaticArrays"]
 
     [deps.StaticArrayInterface.extensions]
