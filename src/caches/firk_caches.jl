@@ -239,6 +239,7 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
     W2 = similar(J, Complex{eltype(W1)})
+    recursivefill!(W2, false)
 
     du1 = zero(rate_prototype)
 

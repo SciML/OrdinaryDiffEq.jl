@@ -746,8 +746,8 @@ end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
     elseif DiffEqBase.has_jac(f)
         J = f.jac(uprev, p, t)
-        if typeof(J) <: StaticArray &&
-           typeof(integrator.alg) <:
+        if J isa StaticArray &&
+           integrator.alg isa
            Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
@@ -772,7 +772,7 @@ end
             W = if W_full isa Number
                 W_full
             elseif len !== nothing &&
-                   typeof(integrator.alg) <:
+                   integrator.alg isa
                    Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
                 StaticWOperator(W_full)
             else
@@ -874,7 +874,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # be overridden with concrete_jac.
 
         _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+        jacvec = JacVec((du, u, p, t) -> _f(du, u, p, t), copy(u), p, t;
             autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
@@ -890,7 +890,12 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+        __f = if IIP
+            (du, u, p, t) -> _f(du, u, p, t)
+        else
+            (u, p, t) -> _f(u, p, t)
+        end
+        jacvec = JacVec(__f, copy(u), p, t;
             autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
@@ -914,7 +919,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             len = StaticArrayInterface.known_length(typeof(J))
             if len !== nothing &&
-               typeof(alg) <:
+               alg isa
                Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
                 StaticWOperator(J, false)
             else

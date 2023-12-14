@@ -117,11 +117,16 @@ end
             veck₃ = _vec(k₃)
             vectmp = _vec(tmp)
             @.. broadcast=false vectmp=ifelse(cache.algebraic_vars,
-                dto6 * (veck₁ - 2 * veck₂ + veck₃))
+                false, dto6 * (veck₁ - 2 * veck₂ + veck₃))
         end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            @.. broadcast=false atmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        end
     end
     cache.linsolve = linres.cache
 end
@@ -245,6 +250,19 @@ end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            if integrator.opts.abstol isa AbstractVector
+                @inbounds @simd ivdep for i in 1:length(vectmp)
+                    vectmp[i] = ifelse(cache.algebraic_vars[i],fsallast[i],false)/integrator.opts.abstol[i]
+                end
+            else
+                @inbounds @simd ivdep for i in 1:length(vectmp)
+                    vectmp[i] = ifelse(cache.algebraic_vars[i],fsallast[i],false)/integrator.opts.abstol
+                end
+            end
+            integrator.EEst += integrator.opts.internalnorm(vectmp, t)
+        end
     end
     cache.linsolve = linres.cache
 end
@@ -337,6 +355,11 @@ end
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            @.. broadcast=false atmp = ifelse(cache.algebraic_vars,fsallast,false)/integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        end
     end
     cache.linsolve = linres.cache
 end
@@ -399,6 +422,11 @@ end
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            atmp = @. ifelse(!integrator.differential_vars,integrator.fsallast,false)./integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        end
     end
     integrator.k[1] = k₁
     integrator.k[2] = k₂
@@ -466,6 +494,11 @@ end
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
+
+        if mass_matrix !== I
+            atmp = @. ifelse(!integrator.differential_vars,integrator.fsallast,false)./integrator.opts.abstol
+            integrator.EEst += integrator.opts.internalnorm(atmp, t)
+        end
     end
 
     integrator.k[1] = k₁
@@ -677,7 +710,7 @@ end
     repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
-    @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
+    @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -731,6 +764,9 @@ end
 
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
+    u = uprev + a41 * k1 + a42 * k2 + a43 * k3
+    du = f(u, p, t + dt) #-- c4 = 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         linsolve_tmp = du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 + dtC43 * k3
@@ -760,7 +796,7 @@ end
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight = cache
-    @unpack a21, a31, a32, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
+    @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
     # Assignments
     uidx = eachindex(integrator.uprev)
@@ -841,6 +877,10 @@ end
     veck3 = _vec(k3)
     @.. broadcast=false veck3=-vecu
     integrator.stats.nsolve += 1
+
+    @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
+    f(du, u, p, t + dt) #-- c4 = 1
+    integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 +

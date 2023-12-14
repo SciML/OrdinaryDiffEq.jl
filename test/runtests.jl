@@ -11,6 +11,18 @@ function activate_downstream_env()
     Pkg.instantiate()
 end
 
+function activate_gpu_env()
+    Pkg.activate("gpu")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_odeinterface_env()
+    Pkg.activate("odeinterface")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -38,6 +50,7 @@ end
         @time @safetestset "Type Handling Tests" include("interface/type_handling.jl")
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
+        @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
@@ -153,7 +166,7 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
-        activate_downstream_env()
+        activate_odeinterface_env()
         @time @safetestset "Init dt vs dorpri tests" include("odeinterface/init_dt_vs_dopri_tests.jl")
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
     end
@@ -163,7 +176,7 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "GPU"
-        activate_downstream_env()
+        activate_gpu_env()
         @time @safetestset "Simple GPU" begin
             import OrdinaryDiffEq
             include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..",

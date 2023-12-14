@@ -14,7 +14,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         end
 
         mass_matrix = f.mass_matrix
-        if typeof(uprev) <: AbstractArray
+        if uprev isa AbstractArray
             J = ForwardDiff.jacobian(uf, uprev)
             W = mass_matrix - γ * J
         else
@@ -188,7 +188,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
 
         # Jacobian
         uf.t = t
-        if typeof(uprev) <: AbstractArray
+        if uprev isa AbstractArray
             J = ForwardDiff.jacobian(uf, uprev)
             W = mass_matrix / dtgamma - J
         else
@@ -522,7 +522,7 @@ end
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCache,
     always_calc_begin = false, allow_calc_end = true,
     force_calc_end = false)
-    if length(k) < 2 || always_calc_begin
+    if length(k) < 3 || always_calc_begin
         @unpack tf, uf = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
 
@@ -574,7 +574,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
 
         # Jacobian
         uf.t = t
-        if typeof(uprev) <: AbstractArray
+        if uprev isa AbstractArray
             J = ForwardDiff.jacobian(uf, uprev)
             W = mass_matrix / dtgamma - J
         else
@@ -644,7 +644,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
              h48 * k8
         copyat_or_push!(k, 1, k₁)
         copyat_or_push!(k, 2, k₂)
-        copyat_or_push!(k, 2, k₃)
+        copyat_or_push!(k, 3, k₃)
     end
     nothing
 end
@@ -652,7 +652,7 @@ end
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
     always_calc_begin = false, allow_calc_end = true,
     force_calc_end = false)
-    if length(k) < 2 || always_calc_begin
+    if length(k) < 3 || always_calc_begin
         @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
 
@@ -838,6 +838,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
         veck8 = _vec(k8)
         @.. broadcast=false veck8=-vecu
 
+        # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2055
+        tmp = linsolve_tmp
+
         @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
         @.. broadcast=false tmp=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5 +
                                 h26 * k6 + h27 * k7 + h28 * k8
@@ -857,7 +860,7 @@ end
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Array},
     always_calc_begin = false, allow_calc_end = true,
     force_calc_end = false)
-    if length(k) < 2 || always_calc_begin
+    if length(k) < 3 || always_calc_begin
         @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
 
@@ -1091,6 +1094,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Arra
         end
 
         @unpack h21, h22, h23, h24, h25, h26, h27, h28, h31, h32, h33, h34, h35, h36, h37, h38, h41, h42, h43, h44, h45, h46, h47, h48 = cache.tab
+
+        # https://github.com/SciML/OrdinaryDiffEq.jl/issues/2055
+        tmp = linsolve_tmp
 
         @inbounds @simd ivdep for i in eachindex(u)
             tmp[i] = h21 * k1[i] + h22 * k2[i] + h23 * k3[i] + h24 * k4[i] + h25 * k5[i] +
