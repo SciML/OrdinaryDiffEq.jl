@@ -403,9 +403,9 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         advance_to_tstop,
         stop_at_next_tstop)
 
-    stats = DiffEqBase.Stats(0)
+    stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)
-
+      
     if _alg isa OrdinaryDiffEqCompositeAlgorithm
         id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
