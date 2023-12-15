@@ -77,9 +77,9 @@ version = "7.6.1"
 
 [[deps.ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra"]
-git-tree-sha1 = "e2a63c49d6ed91065ae3e892b0382495a5ad45e3"
+git-tree-sha1 = "b08a4043e1c14096ef8efe4dd97e07de5cacf240"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "1.4.4"
+version = "1.4.5"
 weakdeps = ["SparseArrays"]
 
     [deps.ArrayLayouts.extensions]
@@ -996,13 +996,17 @@ weakdeps = ["OffsetArrays", "StaticArrays"]
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
-git-tree-sha1 = "5ef59aea6f18c25168842bded46b16662141ab87"
+git-tree-sha1 = "2aded4182a14b19e9b62b063c0ab561809b5af2c"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.7.0"
-weakdeps = ["Statistics"]
+version = "1.8.0"
 
     [deps.StaticArrays.extensions]
+    StaticArraysChainRulesCoreExt = "ChainRulesCore"
     StaticArraysStatisticsExt = "Statistics"
+
+    [deps.StaticArrays.weakdeps]
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+    Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "36b3d696ce6366023a0ea192b4cd442268995a0d"
