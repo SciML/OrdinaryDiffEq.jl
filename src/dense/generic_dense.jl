@@ -1,3 +1,23 @@
+const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
+                                         Derivative order too high for interpolation order. An interpolation derivative is
+                                         only accurate to a certain deriative. For example, a second order interpolation
+                                         is a quadratic polynomial, and thus third derivatives cannot be computed (will be
+                                         incorrectly zero). Thus use a solver with a higher order interpolation or compute
+                                         the higher order derivative through other means.
+
+                                         You can find the list of available ODE/DAE solvers with their documented interpolations at:
+
+                                         * https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/
+                                         * https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/
+                                         """
+
+struct DerivativeOrderNotPossibleError <: Exception end
+
+function Base.showerror(io::IO, e::DerivativeOrderNotPossibleError)
+    print(io, DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE)
+    println(io, TruncatedStacktraces.VERBOSE_MSG)
+end
+
 ## Integrator Dispatches
 
 # Can get rid of an allocation here with a function
@@ -611,6 +631,7 @@ end
 # If no dispatch found, assume Hermite
 function _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
     differential_vars isa DifferentialVarsUndefined && throw(HermiteInterpolationNonDiagonalError())
+    TI > 3 && throw(DerivativeOrderNotPossibleError())
 
     differential_vars = if differential_vars === nothing
         if y₀ isa Number
@@ -635,6 +656,7 @@ end
 
 function _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
     differential_vars isa DifferentialVarsUndefined && throw(HermiteInterpolationNonDiagonalError())
+    TI > 3 && throw(DerivativeOrderNotPossibleError())
 
     differential_vars = if differential_vars === nothing
         if y₀ isa Number

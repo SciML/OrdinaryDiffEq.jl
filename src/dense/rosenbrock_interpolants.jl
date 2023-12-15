@@ -1,3 +1,24 @@
+### Fallbacks to capture
+
+ROSENBROCKS_WITH_INTERPOLATIONS = Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
+                                        Rosenbrock32ConstantCache, Rosenbrock32Cache,
+                                        Rodas4ConstantCache, Rosenbrock5ConstantCache,
+                                        Rodas4Cache, Rosenbrock5Cache}
+
+function _ode_interpolant(Θ, dt, y₀, y₁, k,
+    cache::ROSENBROCKS_WITH_INTERPOLATIONS,
+    idxs, T::Type{Val{D}}, differential_vars) where D
+    throw(DerivativeOrderNotPossibleError())
+end
+
+function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
+    cache::ROSENBROCKS_WITH_INTERPOLATIONS,
+    idxs, T::Type{Val{D}}, differential_vars) where D
+    throw(DerivativeOrderNotPossibleError())
+end
+
+####
+
 """
 From MATLAB ODE Suite by Shampine
 """

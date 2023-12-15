@@ -1,3 +1,33 @@
+RK_WITH_SPECIAL_INTERPOLATIONS = Union{FunctionMapConstantCache, FunctionMapCache,
+                                        DP5ConstantCache, DP5Cache,
+                                        SSPRK22ConstantCache, SSPRK22Cache,
+                                        SSPRK33ConstantCache, SSPRK33Cache,
+                                        SSPRK43ConstantCache, SSPRK43Cache,
+                                        SSPRK432ConstantCache, SSPRK432Cache,
+                                        Tsit5ConstantCache, Tsit5Cache,
+                                        OwrenZen3ConstantCache, OwrenZen3Cache,
+                                        OwrenZen4ConstantCache, OwrenZen4Cache,
+                                        OwrenZen5ConstantCache, OwrenZen5Cache,
+                                        BS5ConstantCache, BS5Cache,
+                                        Vern6ConstantCache, Vern6Cache,
+                                        Vern7ConstantCache, Vern7Cache,
+                                        Vern8ConstantCache, Vern8Cache,
+                                        Vern9ConstantCache, Vern9Cache
+                                        }
+function _ode_interpolant(Θ, dt, y₀, y₁, k,
+    cache::RK_WITH_SPECIAL_INTERPOLATIONS,
+    idxs, T::Type{Val{D}}, differential_vars) where D
+    throw(DerivativeOrderNotPossibleError())
+end
+
+function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
+    cache::RK_WITH_SPECIAL_INTERPOLATIONS,
+    idxs, T::Type{Val{D}}, differential_vars) where D
+    throw(DerivativeOrderNotPossibleError())
+end
+
+####
+
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
     cache::Union{FunctionMapConstantCache, FunctionMapCache},
     idxs, T::Type{Val{0}}, differential_vars::Nothing)
