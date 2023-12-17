@@ -2,7 +2,7 @@ using StaticArrays, Test
 using OrdinaryDiffEq
 using RecursiveArrayTools
 
-u0 = [fill(2, MVector{2, Float64}), ones(MVector{2, Float64})]
+u0 = VectorOfAray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
 g(u, p, t) = SA[u[1] + u[2], u[1]]
 f = (du, u, p, t) -> begin
     for i in 1:2
@@ -17,7 +17,7 @@ sol = solve(ode, Tsit5())
 sol = solve(ode, Vern9())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 
-u0 = [fill(2, SVector{2, Float64}), ones(SVector{2, Float64})]
+u0 = VectorOfAray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
 ode = ODEProblem(f, u0, (0.0, 1.0))
 sol = solve(ode, Euler(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
@@ -28,14 +28,14 @@ sol = solve(ode, SSPRK22(), dt = 1e-2)
 sol = solve(ode, ROCK4())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 
-u0 = ones(MVector{2, Float64})
+u0 = VectorOfAray(ones(MVector{2, Float64}))
 ode = ODEProblem(g, u0, (0.0, 1.0))
 sol = solve(ode, Euler(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 sol = solve(ode, Tsit5(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 
-u0 = ones(SVector{2, Float64})
+u0 = VectorOfAray(ones(SVector{2, Float64}))
 f = (u, p, t) -> u
 ode = ODEProblem(f, u0, (0.0, 1.0))
 sol = solve(ode, Euler(), dt = 1e-2)
