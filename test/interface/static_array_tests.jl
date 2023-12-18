@@ -35,7 +35,7 @@ sol = solve(ode, Euler(), dt = 1e-2)
 sol = solve(ode, Tsit5(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 
-u0 = VectorOfArray(ones(SVector{2, Float64}))
+u0 = ones(SVector{2, Float64})
 f = (u, p, t) -> u
 ode = ODEProblem(f, u0, (0.0, 1.0))
 sol = solve(ode, Euler(), dt = 1e-2)
