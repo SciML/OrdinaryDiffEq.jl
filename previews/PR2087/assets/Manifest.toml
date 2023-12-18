@@ -659,9 +659,9 @@ version = "1.2.0"
 
 [[deps.NonlinearSolve]]
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "DiffEqBase", "EnumX", "FastBroadcast", "FiniteDiff", "ForwardDiff", "LazyArrays", "LineSearches", "LinearAlgebra", "LinearSolve", "MaybeInplace", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "SimpleNonlinearSolve", "SparseArrays", "SparseDiffTools", "StaticArrays", "UnPack"]
-git-tree-sha1 = "767100434dc775c993082e70e453ba7bd9866afa"
+git-tree-sha1 = "2ed2c035a8186344663d98337ea1b5c06a697591"
 uuid = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
-version = "3.1.0"
+version = "3.1.1"
 
     [deps.NonlinearSolve.extensions]
     NonlinearSolveBandedMatricesExt = "BandedMatrices"
@@ -811,9 +811,9 @@ version = "1.3.4"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "Requires", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "3f40e61c93a7c46b85df57b770bc360988f9ca36"
+git-tree-sha1 = "f7d4d01d3321b92c2217d599704d29c45e12905e"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "3.0.0"
+version = "3.1.0"
 
     [deps.RecursiveArrayTools.extensions]
     RecursiveArrayToolsMeasurementsExt = "Measurements"
@@ -909,9 +909,9 @@ uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
 [[deps.SimpleNonlinearSolve]]
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "DiffEqBase", "FiniteDiff", "ForwardDiff", "LinearAlgebra", "MaybeInplace", "PrecompileTools", "Reexport", "SciMLBase", "StaticArraysCore"]
-git-tree-sha1 = "62b08ae70b9fe7e4dacffcf9cbb0e5c2d6688d09"
+git-tree-sha1 = "d3009620f6aa42016c06bc2aaa766ca8bc4ae5db"
 uuid = "727e6d20-b764-4bd8-a329-72de5adea6c7"
-version = "1.0.2"
+version = "1.0.3"
 
 [[deps.SimpleTraits]]
 deps = ["InteractiveUtils", "MacroTools"]
@@ -996,9 +996,9 @@ weakdeps = ["OffsetArrays", "StaticArrays"]
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
-git-tree-sha1 = "2aded4182a14b19e9b62b063c0ab561809b5af2c"
+git-tree-sha1 = "fba11dbe2562eecdfcac49a05246af09ee64d055"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.8.0"
+version = "1.8.1"
 
     [deps.StaticArrays.extensions]
     StaticArraysChainRulesCoreExt = "ChainRulesCore"
