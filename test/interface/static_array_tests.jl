@@ -28,7 +28,7 @@ sol = solve(ode, SSPRK22(), dt = 1e-2)
 sol = solve(ode, ROCK4())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 
-u0 = VectorOfArray(ones(MVector{2, Float64}))
+u0 = ones(MVector{2, Float64})
 ode = ODEProblem(g, u0, (0.0, 1.0))
 sol = solve(ode, Euler(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
