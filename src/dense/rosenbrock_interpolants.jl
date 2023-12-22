@@ -113,34 +113,35 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Rodas4ConstantCache,
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Union{Rodas4ConstantCache, Rodas23WConstantCache, Rodas3PConstantCache},
     idxs::Nothing, T::Type{Val{0}})
     Θ1 = 1 - Θ
     @inbounds Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
 end
 
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Rodas4Cache, idxs::Nothing,
-    T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Union{Rodas4Cache, Rodas23WCache, Rodas3PCache}, 
+    idxs::Nothing, T::Type{Val{0}})
     Θ1 = 1 - Θ
     @inbounds @.. broadcast=false Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-    cache::Union{Rodas4ConstantCache, Rodas4Cache}, idxs,
-    T::Type{Val{0}})
+    cache::Union{Rodas4ConstantCache, Rodas4Cache, Rodas23WConstantCache, Rodas23WCache, Rodas3PConstantCache, Rodas3PCache}, 
+    idxs, T::Type{Val{0}})
     Θ1 = 1 - Θ
     @.. broadcast=false Θ1 * y₀[idxs]+Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-    cache::Union{Rodas4ConstantCache, Rodas4Cache},
+    cache::Union{Rodas4ConstantCache, Rodas4Cache, Rodas23WConstantCache, Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
     idxs::Nothing, T::Type{Val{0}})
     Θ1 = 1 - Θ
     @.. broadcast=false out=Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
     out
 end
 
-@muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache::Rodas4Cache{<:Array},
+@muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k, 
+    cache::Union{Rodas4Cache{<:Array}, Rodas23WCache{<:Array}, Rodas3PCache{<:Array}},
     idxs::Nothing, T::Type{Val{0}})
     Θ1 = 1 - Θ
     @inbounds @simd ivdep for i in eachindex(out)
@@ -150,8 +151,8 @@ end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-    cache::Union{Rodas4ConstantCache, Rodas4Cache}, idxs,
-    T::Type{Val{0}})
+    cache::Union{Rodas4ConstantCache, Rodas4Cache, Rodas23WConstantCache, Rodas23WCache, Rodas3PConstantCache, Rodas3PCache}, 
+    idxs, T::Type{Val{0}})
     Θ1 = 1 - Θ
     @views @.. broadcast=false out=Θ1 * y₀[idxs] +
                                    Θ * (y₁[idxs] + Θ1 * (k[1][idxs] + Θ * k[2][idxs]))
@@ -159,27 +160,27 @@ end
 end
 
 # First Derivative
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Rodas4ConstantCache,
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Union{Rodas4ConstantCache, Rodas23WConstantCache, Rodas3PConstantCache},
     idxs::Nothing, T::Type{Val{1}})
     @inbounds (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) / dt
 end
 
-@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Rodas4Cache, idxs::Nothing,
-    T::Type{Val{1}})
+@muladd function _ode_interpolant(Θ, dt, y₀, y₁, k, cache::Union{Rodas4Cache, Rodas23WCache, Rodas3PCache}, 
+    idxs::Nothing, T::Type{Val{1}})
     @inbounds @.. broadcast=false (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ +
                                    y₁)/dt
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-    cache::Union{Rodas4ConstantCache, Rodas4Cache}, idxs,
-    T::Type{Val{1}})
+    cache::Union{Rodas4ConstantCache, Rodas4Cache, Rodas23WConstantCache, Rodas23WCache, Rodas3PConstantCache, Rodas3PCache}, 
+    idxs, T::Type{Val{1}})
     @.. broadcast=false (k[1][idxs] +
                          Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] - 3 * k[2][idxs] * Θ) -
                          y₀[idxs] + y₁[idxs])/dt
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-    cache::Union{Rodas4ConstantCache, Rodas4Cache},
+    cache::Union{Rodas4ConstantCache, Rodas4Cache, Rodas23WConstantCache, Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
     idxs::Nothing, T::Type{Val{1}})
     @.. broadcast=false out=(k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) /
                             dt
@@ -187,8 +188,8 @@ end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-    cache::Union{Rodas4ConstantCache, Rodas4Cache}, idxs,
-    T::Type{Val{1}})
+    cache::Union{Rodas4ConstantCache, Rodas4Cache, Rodas23WConstantCache, Rodas23WCache, Rodas3PConstantCache, Rodas3PCache}, 
+    idxs, T::Type{Val{1}})
     @views @.. broadcast=false out=(k[1][idxs] +
                                     Θ *
                                     (-2 * k[1][idxs] + 2 * k[2][idxs] -

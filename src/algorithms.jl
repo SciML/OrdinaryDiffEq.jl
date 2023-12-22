@@ -2910,6 +2910,11 @@ Scientific Computing, 18 (1), pp. 1-22.
 - Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four with stepsize control
   for stiff ordinary differential equations. P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
 
+#### Rodas23W, Rodas3P
+
+- Steinebach G., Rodas23W / Rodas32P - a Rosenbrock-type method for DAEs with additional error estimate for dense output and Julia implementation,
+ in progress
+
 #### Rodas4P
 
 - Steinebach G. Order-reduction of ROW-methods for DAEs and method of lines
@@ -2921,10 +2926,14 @@ Scientific Computing, 18 (1), pp. 1-22.
   Differential-Algebraic Equations Forum. Springer, Cham. https://doi.org/10.1007/978-3-030-53905-4_6
 
 #### Rodas5
-
 - Di Marzo G. RODAS5(4) – Méthodes de Rosenbrock d’ordre 5(4) adaptées aux problemes
 différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
 University of Geneva, Switzerland.
+
+#### Rodas5P
+- Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
+ In: BIT Numerical Mathematics, 63(2), 2023
+
 =#
 
 for Alg in [
@@ -2942,6 +2951,8 @@ for Alg in [
     :GRK4T,
     :GRK4A,
     :Ros4LStab,
+    :Rodas23W,
+    :Rodas3P,
     :Rodas4,
     :Rodas42,
     :Rodas4P,

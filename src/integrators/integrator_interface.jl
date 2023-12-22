@@ -92,7 +92,7 @@ end
     else
         return if isdefined(integrator, :fsallast) &&
                   !(integrator.alg isa
-                    Union{Rosenbrock23, Rosenbrock32, Rodas4, Rodas4P, Rodas4P2, Rodas5,
+                    Union{Rosenbrock23, Rosenbrock32, Rodas23W, Rodas3P,Rodas4, Rodas4P, Rodas4P2, Rodas5,
             Rodas5P})
             # Special stiff interpolations do not store the right value in fsallast
             out .= integrator.fsallast
