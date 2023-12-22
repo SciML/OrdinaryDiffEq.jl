@@ -28,6 +28,8 @@ using LinearSolve, SimpleNonlinearSolve
 
 using LineSearches
 
+import FillArrays: Trues
+
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
 
@@ -62,7 +64,6 @@ using ExponentialUtilities
 
 using NonlinearSolve
 
-using NLsolve
 # Required by temporary fix in not in-place methods with 12+ broadcasts
 # `MVector` is used by Nordsieck forms
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA

@@ -1,7 +1,7 @@
 abstract type OrdinaryDiffEqInterpolation{cacheType} <:
               DiffEqBase.AbstractDiffEqInterpolation end
 
-struct InterpolationData{F, uType, tType, kType, cacheType} <:
+struct InterpolationData{F, uType, tType, kType, cacheType, DV} <:
        OrdinaryDiffEqInterpolation{cacheType}
     f::F
     timeseries::uType
@@ -9,9 +9,10 @@ struct InterpolationData{F, uType, tType, kType, cacheType} <:
     ks::kType
     dense::Bool
     cache::cacheType
+    differential_vars::DV
 end
 
-struct CompositeInterpolationData{F, uType, tType, kType, cacheType} <:
+struct CompositeInterpolationData{F, uType, tType, kType, cacheType, DV} <:
        OrdinaryDiffEqInterpolation{cacheType}
     f::F
     timeseries::uType
@@ -20,6 +21,7 @@ struct CompositeInterpolationData{F, uType, tType, kType, cacheType} <:
     alg_choice::Vector{Int}
     dense::Bool
     cache::cacheType
+    differential_vars::DV
 end
 
 function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{
