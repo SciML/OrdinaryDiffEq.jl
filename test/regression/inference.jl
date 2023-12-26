@@ -13,7 +13,7 @@ using Test
 
     #notinferred = [SDIRK2(), TRBDF2(), KenCarp4(), Rosenbrock23(), Rodas4()]
     #for alg in notinferred
-    #    @test_broken @inferred init(prob, alg).t[1] == 0.0
-    #    @test_broken @inferred init(prob2D, alg).t[1] == 0.0
+    #    @test_broken @inferred init(prob, alg)
+    #    @test_broken @inferred init(prob2D, alg)
     #end
 end
