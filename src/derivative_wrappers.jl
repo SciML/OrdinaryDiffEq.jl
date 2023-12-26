@@ -6,7 +6,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can be found at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
                                   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
                                3. Defining analytical Jacobians and time gradients. More details can be
@@ -48,7 +48,7 @@ const FIRST_AUTODIFF_JAC_MESSAGE = """
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can befound at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
                                   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
                                3. Defining analytical Jacobians. More details can be
