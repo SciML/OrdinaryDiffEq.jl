@@ -850,9 +850,15 @@ uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
 [[deps.SimpleNonlinearSolve]]
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "DiffEqBase", "FiniteDiff", "ForwardDiff", "LinearAlgebra", "MaybeInplace", "PrecompileTools", "Reexport", "SciMLBase", "StaticArraysCore"]
-git-tree-sha1 = "1a467a5767d712863e2108e86f7ab103f6d54b13"
+git-tree-sha1 = "f731e99a61b31588109070e00668128a2c35295f"
 uuid = "727e6d20-b764-4bd8-a329-72de5adea6c7"
-version = "1.0.4"
+version = "1.1.0"
+
+    [deps.SimpleNonlinearSolve.extensions]
+    SimpleNonlinearSolvePolyesterForwardDiffExt = "PolyesterForwardDiff"
+
+    [deps.SimpleNonlinearSolve.weakdeps]
+    PolyesterForwardDiff = "98d1487c-24ca-40b6-b7ab-df2af84e126b"
 
 [[deps.SimpleTraits]]
 deps = ["InteractiveUtils", "MacroTools"]
