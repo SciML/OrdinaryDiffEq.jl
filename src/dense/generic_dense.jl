@@ -761,7 +761,7 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
     T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
     if all(differential_vars)
-        @inbounds (y₁ - y₀)/dt + (
+        @inbounds  (
             k[1] +
             Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
             Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
