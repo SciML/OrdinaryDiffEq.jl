@@ -12,8 +12,8 @@ R,L,C = 10, 0.3, 2
 
 prob = setup_rlc(R,L,C,v_init=2.0)
 
-res1 = solve(prob,Vern8(),dt=1/10,saveat=1/10) # success
-res3 = solve(prob,CalvoSanz4(),dt=1/10,saveat=1/10) # fail
+res1 = solve(prob,Vern8(),dt=1/10,saveat=1/10)
+res3 = solve(prob,CalvoSanz4(),dt=1/10,saveat=1/10)
 
 sol = solve(prob,CalvoSanz4(),dt=1/10)
 @test sol(0.32) isa OrdinaryDiffEq.ArrayPartition
