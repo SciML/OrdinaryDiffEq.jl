@@ -89,7 +89,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        iter > 1 && (η = θ / (1 - θ))
+        iter > 1 && (η = DiffEqBase.value(θ / (1 - θ)))
         if (iter == 1 && ndz < 1e-5) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
             nlsolver.status = Convergence
             nlsolver.nfails = 0
