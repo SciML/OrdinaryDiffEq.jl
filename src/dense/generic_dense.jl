@@ -687,6 +687,18 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
     T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+    if all(differential_vars)
+        @inbounds (1 - Θ) * y₀ + Θ * y₁ +
+                (Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
+    else
+        @inbounds (1 - Θ) * y₀ + Θ * y₁ +
+                differential_vars .* (Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
+    end
+end
+
+@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
+    T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+    #@.. broadcast=false (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
     @inbounds (1 - Θ) * y₀ + Θ * y₁ +
               differential_vars .* (Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
 end
@@ -755,10 +767,17 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
     T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
-    @inbounds (.!differential_vars).*(y₁ - y₀)/dt + differential_vars .*(
-              k[1] +
-              Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-               Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
+    if all(differential_vars)
+        @inbounds (y₁ - y₀)/dt + (
+            k[1] +
+            Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+            Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
+    else
+        @inbounds (.!differential_vars).*(y₁ - y₀)/dt + differential_vars .*(
+                k[1] +
+                Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+                Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
+    end
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
@@ -826,8 +845,13 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
     T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
-    @inbounds differential_vars .* (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-               Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) / (dt * dt)
+    if all(differential_vars)
+        @inbounds (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+        Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) / (dt * dt)
+    else
+        @inbounds differential_vars .* (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+                Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) / (dt * dt)
+    end
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
@@ -887,7 +911,11 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
     T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
-    @inbounds differential_vars .* (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) / (dt * dt * dt)
+    if all(differential_vars)
+        @inbounds (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) / (dt * dt * dt)
+    else
+        @inbounds differential_vars .* (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) / (dt * dt * dt)
+    end
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,

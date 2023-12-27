@@ -44,6 +44,7 @@ end
         @time @safetestset "Complex Tests" include("interface/complex_tests.jl")
         @time @safetestset "Ndim Complex Tests" include("interface/ode_ndim_complex_tests.jl")
         @time @safetestset "Number Type Tests" include("interface/ode_numbertype_tests.jl")
+        @time @safetestset "Interpolation Output Type Tests" include("interface/interpolation_output_types.jl")
         @time @safetestset "Stiffness Detection Tests" include("interface/stiffness_detection_test.jl")
         @time @safetestset "Composite Interpolation Tests" include("interface/composite_interpolation.jl")
         @time @safetestset "Export tests" include("interface/export_tests.jl")
