@@ -163,9 +163,9 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
 [[deps.DiffEqBase]]
 deps = ["ArrayInterface", "DataStructures", "DocStringExtensions", "EnumX", "EnzymeCore", "FastBroadcast", "ForwardDiff", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "Logging", "Markdown", "MuladdMacro", "Parameters", "PreallocationTools", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "Setfield", "SparseArrays", "Static", "StaticArraysCore", "Statistics", "Tricks", "TruncatedStacktraces"]
-git-tree-sha1 = "8775b80752e9656000ab3800adad8ee22c9cb8f6"
+git-tree-sha1 = "f45adda33e3eb24ae1428dfa9b57ded8248ced99"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.145.0"
+version = "6.145.4"
 
     [deps.DiffEqBase.extensions]
     DiffEqBaseChainRulesCoreExt = "ChainRulesCore"
@@ -750,9 +750,9 @@ version = "1.3.4"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "Requires", "SparseArrays", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "c563a89ec04d1123d579e6f2ccf71d530287efbf"
+git-tree-sha1 = "4da78e9b73a8d585e1c520e60d46601af9828275"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "3.2.8"
+version = "3.3.1"
 
     [deps.RecursiveArrayTools.extensions]
     RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
@@ -808,9 +808,9 @@ version = "0.6.42"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FillArrays", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLOperators", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables", "TruncatedStacktraces"]
-git-tree-sha1 = "f58d1854f00d05417c5487841a0e307f3bc78d3b"
+git-tree-sha1 = "2c3706caa9adab5031f30937699c46e159ae477f"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.11.7"
+version = "2.13.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
@@ -970,9 +970,9 @@ uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
 version = "7.2.1+1"
 
 [[deps.SymbolicIndexingInterface]]
-git-tree-sha1 = "65f4ed0f9e3125e0836df12c231cea3dd98bb165"
+git-tree-sha1 = "be414bfd80c2c91197823890c66ef4b74f5bf5fe"
 uuid = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
-version = "0.3.0"
+version = "0.3.1"
 
 [[deps.TOML]]
 deps = ["Dates"]
