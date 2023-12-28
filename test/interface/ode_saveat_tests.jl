@@ -160,7 +160,7 @@ integ = init(ODEProblem((u, p, t) -> u, 0.0, (0.0, 1.0)), Tsit5(), saveat = _sav
     save_end = false)
 add_tstop!(integ, 2.0)
 solve!(integ)
-@test integ.sol.t == _saveat
+@test integ.sol.t == _saveat[1:end-1]
 
 # Catch save for maxiters
 ode = ODEProblem((u, p, t) -> u, 1.0, (0.0, 1.0))
