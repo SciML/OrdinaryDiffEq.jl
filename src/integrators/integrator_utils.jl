@@ -79,6 +79,10 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                     integrator.cache.current)
             end
         else # ==t, just save
+            if curt == integrator.sol.prob.tspan[2] && !integrator.opts.save_end
+                integrator.saveiter -= 1
+                continue
+            end
             savedexactly = true
             copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
             if integrator.opts.save_idxs === nothing
@@ -145,6 +149,7 @@ postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
 function _postamble!(integrator)
     DiffEqBase.finalize!(integrator.opts.callback, integrator.u, integrator.t, integrator)
     solution_endpoint_match_cur_integrator!(integrator)
+    save
     resize!(integrator.sol.t, integrator.saveiter)
     resize!(integrator.sol.u, integrator.saveiter)
     if !(integrator.sol isa DAESolution)
