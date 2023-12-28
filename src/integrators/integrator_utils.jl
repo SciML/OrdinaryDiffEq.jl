@@ -149,7 +149,6 @@ postamble!(integrator::ODEIntegrator) = _postamble!(integrator)
 function _postamble!(integrator)
     DiffEqBase.finalize!(integrator.opts.callback, integrator.u, integrator.t, integrator)
     solution_endpoint_match_cur_integrator!(integrator)
-    save
     resize!(integrator.sol.t, integrator.saveiter)
     resize!(integrator.sol.u, integrator.saveiter)
     if !(integrator.sol isa DAESolution)
