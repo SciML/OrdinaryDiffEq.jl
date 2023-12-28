@@ -79,6 +79,10 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                     integrator.cache.current)
             end
         else # ==t, just save
+            if curt == integrator.sol.prob.tspan[2] && !integrator.opts.save_end
+                integrator.saveiter -= 1
+                continue
+            end
             savedexactly = true
             copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
             if integrator.opts.save_idxs === nothing
@@ -107,7 +111,9 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
         end
     end
     if force_save || (integrator.opts.save_everystep &&
-        (isempty(integrator.sol.t) || (integrator.t !== integrator.sol.t[end])))
+        (isempty(integrator.sol.t) || (integrator.t !== integrator.sol.t[end]) &&
+        (integrator.opts.save_end || integrator.t !== integrator.sol.prob.tspan[2])
+        ))
         integrator.saveiter += 1
         saved, savedexactly = true, true
         if integrator.opts.save_idxs === nothing

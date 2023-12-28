@@ -293,9 +293,16 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         sizehint!(ts, 50)
         sizehint!(ks, 50)
     elseif !isempty(saveat_internal)
-        sizehint!(timeseries, length(saveat_internal) + 1)
-        sizehint!(ts, length(saveat_internal) + 1)
-        sizehint!(ks, length(saveat_internal) + 1)
+        savelength = length(saveat_internal) + 1
+        if save_start == false
+            savelength -= 1
+        end
+        if save_end == false && prob.tspan[2] in saveat_internal.valtree
+            savelength -= 1
+        end
+        sizehint!(timeseries, savelength)
+        sizehint!(ts, savelength)
+        sizehint!(ks, savelength)
     else
         sizehint!(timeseries, 2)
         sizehint!(ts, 2)
