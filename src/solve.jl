@@ -31,7 +31,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                 (dense) || !isempty(saveat), # and no dense output
     dt = alg isa FunctionMap && isempty(tstops) ?
          eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-    dtmin = nothing,
+    dtmin = eltype(prob.tspan)(0),
     dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
     force_dtmin = false,
     adaptive = anyadaptive(alg),
@@ -281,7 +281,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
             # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
             # to prevent infinite loops.
-            abs(dt) < DiffEqBase.prob2dtmin(prob) &&
+            abs(dt) < dtmin &&
                 throw(ArgumentError("Supplied dt is smaller than dtmin"))
             steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
         end
@@ -357,8 +357,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     if controller === nothing
         controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
     end
-
-    dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob))
 
     save_end_user = save_end
     save_end = save_end === nothing ?
