@@ -90,6 +90,6 @@ dt=2e-8
 ref=solve(prob_direct,DPRKN12(),abstol=1e-12,reltol=1e-12,maxiters=1e7,saveat=0.01)
 
 @testset "symplectic time-dependent $alg" for (alg, x, d) in ALGOS
-    sol=solve(prob_direct,alg,dt=dt,saveat=0.01)
+    sol=solve(prob_direct,alg(),dt=dt,saveat=0.01)
     @test maximum(ref-sol) < 1e-3
 end
