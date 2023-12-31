@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: [1.9, 1]
+        julia-version: [1]
         os: [ubuntu-latest]
         package:
           - {user: SciML, repo: DelayDiffEq.jl, group: Interface}
