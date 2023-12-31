@@ -141,6 +141,19 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         failed = nlsolvefail(nlsolver)
         @.. broadcast=false integrator.u=integrator.uprev + z
     else
+
+        # _u0 should be non-dual since NonlinearSolve does not differentiate the solver
+        # These non-dual values are thus used to make the caches
+        #_du = DiffEqBase.value.(du)
+        _u0 = DiffEqBase.value.(u0)
+
+        # If not doing auto-diff of the solver, save an allocation
+        if typeof(u0) === typeof(_u0)
+            tmp = get_tmp_cache(integrator)[1]
+        else
+            tmp = copy(_u0)
+        end
+
         isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
         if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
@@ -150,10 +163,11 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         end
 
         nlequation! = @closure (out, u, p) -> begin
+            T = one(Base.promote_type(eltype(u),eltype(p)))
             update_coefficients!(M, u, p, t)
             # f(u,p,t) + M * (u0 - u)/dt
-            tmp = isAD ? PreallocationTools.get_tmp(_tmp, u) : _tmp
-            @. tmp = (u0 - u) / dt
+            tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+            @. tmp = (_u0 - u) / dt
             mul!(_vec(out), M, _vec(tmp))
             f(tmp, u, p, t)
             out .+= tmp
@@ -277,13 +291,24 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     u0 = integrator.u
 
     dtmax = integrator.opts.dtmax
-    tmp = get_tmp_cache(integrator)[1]
     resid = get_tmp_cache(integrator)[2]
 
     dt = t != 0 ? min(t / 1000, dtmax / 10) : dtmax / 10 # Haven't implemented norm reduction
 
     f(resid, integrator.du, u0, p, t)
     integrator.opts.internalnorm(resid, t) <= integrator.opts.abstol && return
+
+    # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
+    # These non-dual values are thus used to make the caches
+    #_du = DiffEqBase.value.(du)
+    _u0 = DiffEqBase.value.(u0)
+
+    # If not doing auto-diff of the solver, save an allocation
+    if typeof(u0) === typeof(_u0)
+        tmp = get_tmp_cache(integrator)[1]
+    else
+        tmp = copy(_u0)
+    end
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
@@ -294,9 +319,10 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation! = @closure (out, u, p) -> begin
-        tmp = isAD ? PreallocationTools.get_tmp(_tmp, u) : _tmp
+        T = one(Base.promote_type(eltype(u),eltype(p)))
+        tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
         #M * (u-u0)/dt - f(u,p,t)
-        @. tmp = (u - u0) / dt
+        @. tmp = (u - _u0) / dt
         f(out, tmp, u, p, t)
         nothing
     end
@@ -414,9 +440,17 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     integrator.opts.internalnorm(tmp, t) <= alg.abstol && return
     alg_u = @view u[algebraic_vars]
 
+    # These non-dual values are thus used to make the caches
+    _u = DiffEqBase.value.(u)
+
+    # If auto-diff of the solver, should be non-dual since NonlinearSolve does not differentiate the solver
+    if typeof(u) !== typeof(_u)
+        tmp = DiffEqBase.value.(tmp)
+    end
+
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
-        chunk = ForwardDiff.pickchunksize(count(algebraic_vars))
+        chunk = ForwardDiff.pickchunksize(max(count(algebraic_vars),length(p)))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
         _du_tmp = PreallocationTools.dualcache(similar(tmp), chunk)
     else
@@ -424,9 +458,10 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, x) : _tmp
-        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, x) : _du_tmp
-        copyto!(uu, integrator.u)
+        T = one(Base.promote_type(eltype(x),eltype(p)))
+        uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
+        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
+        copyto!(uu, _u)
         alg_uu = @view uu[algebraic_vars]
         alg_uu .= x
         f(du_tmp, uu, p, t)
@@ -531,31 +566,46 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     u = integrator.u
     du = integrator.du
 
-    tmp = get_tmp_cache(integrator)[1]
-    du_tmp = get_tmp_cache(integrator)[2]
-    f(tmp, du, u, p, t)
+    # _du and _u should be non-dual since NonlinearSolve does not differentiate the solver
+    # These non-dual values are thus used to make the caches
+    _du = DiffEqBase.value.(du)
+    _u = DiffEqBase.value.(u)
 
-    if integrator.opts.internalnorm(tmp, t) <= alg.abstol
+    # If not doing auto-diff of the solver, save an allocation
+    if typeof(u) === typeof(_u)
+        tmp = get_tmp_cache(integrator)[1]
+        du_tmp = get_tmp_cache(integrator)[2]
+    else
+        tmp = copy(_u)
+        du_tmp = copy(_du)
+    end
+
+    # Can be the same as tmp
+    normtmp = get_tmp_cache(integrator)[1]
+    f(normtmp, du, u, p, t)
+
+    if integrator.opts.internalnorm(normtmp, t) <= alg.abstol
         return
     elseif differential_vars === nothing
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
-    if isAD
-        chunk = ForwardDiff.pickchunksize(length(tmp))
-        _tmp = PreallocationTools.dualcache(tmp, chunk)
-        _du_tmp = PreallocationTools.dualcache(du_tmp, chunk)
-    else
-        _tmp, _du_tmp = tmp, similar(tmp)
-    end
+   isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+   if isAD
+       chunk = ForwardDiff.pickchunksize(length(tmp))
+       _tmp = PreallocationTools.dualcache(tmp, chunk)
+       _du_tmp = PreallocationTools.dualcache(du_tmp, chunk)
+   else
+        _tmp, _du_tmp = tmp, _du_tmp
+   end
 
     nlequation! = @closure (out, x, p) -> begin
-        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, x) : _du_tmp
-        uu = isAD ? PreallocationTools.get_tmp(_tmp, x) : _tmp
+        T = one(Base.promote_type(eltype(x),eltype(p)))
+        du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
+        uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
 
-        @. du_tmp = ifelse(differential_vars, x, du)
-        @. uu = ifelse(differential_vars, u, x)
+        @. du_tmp = ifelse(differential_vars, x, _du)
+        @. uu = ifelse(differential_vars, _u, x)
 
         f(out, du_tmp, uu, p, t)
     end
