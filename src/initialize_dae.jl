@@ -463,7 +463,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        T = one(Base.promote_type(eltype(x),eltype(p)))
+        T = Base.promote_type(eltype(x),eltype(p))
         uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
         du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
         copyto!(uu, _u)
@@ -605,7 +605,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
    end
 
     nlequation! = @closure (out, x, p) -> begin
-        T = one(Base.promote_type(eltype(x),eltype(p)))
+        T = Base.promote_type(eltype(x),eltype(p))
         du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
         uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
 
