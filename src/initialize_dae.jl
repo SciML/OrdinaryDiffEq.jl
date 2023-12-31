@@ -450,7 +450,12 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
-        chunk = ForwardDiff.pickchunksize(max(count(algebraic_vars),length(p)))
+        csize = if p isa SciMLBase.NullParameters || typeof(_u) === typeof(u)
+            count(algebraic_vars)
+        else
+            max(count(algebraic_vars),length(p))
+        end
+        chunk = ForwardDiff.pickchunksize(csize)
         _tmp = PreallocationTools.dualcache(tmp, chunk)
         _du_tmp = PreallocationTools.dualcache(similar(tmp), chunk)
     else
