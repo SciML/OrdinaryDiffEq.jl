@@ -163,7 +163,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         end
 
         nlequation! = @closure (out, u, p) -> begin
-            T = one(Base.promote_type(eltype(u),eltype(p)))
+            T = p isa SciMLBase.NullParameters ? eltype(x) : Base.promote_type(eltype(x),eltype(p))
             update_coefficients!(M, u, p, t)
             # f(u,p,t) + M * (u0 - u)/dt
             tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
@@ -319,7 +319,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation! = @closure (out, u, p) -> begin
-        T = one(Base.promote_type(eltype(u),eltype(p)))
+        T = p isa SciMLBase.NullParameters ? eltype(x) : Base.promote_type(eltype(x),eltype(p))
         tmp = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
         #M * (u-u0)/dt - f(u,p,t)
         @. tmp = (u - _u0) / dt
