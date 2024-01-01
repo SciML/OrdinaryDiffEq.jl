@@ -357,7 +357,7 @@ function concrete_jac(alg::Union{
 end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-alg_extrapolates(alg::CompositeAlgorithm) = error("any(alg_extrapolates.(alg.algs))")
+alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::DefaultSolverAlgorithm) = false
 alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::DImplicitEuler) = true
