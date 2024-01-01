@@ -3242,6 +3242,9 @@ end
 struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
+    function CompositeAlgorithm(algs, choice_function)
+        new{typeof(algs), typeof(choice_function)}(algs, choice_function)
+    end
 end
 
 TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
@@ -3249,6 +3252,40 @@ TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
 end
+
+mutable struct AutoSwitchCache{Trait, nAlg, sAlg, tolType, T}
+    algtrait::Trait
+    count::Int
+    successive_switches::Int
+    nonstiffalg::nAlg
+    stiffalg::sAlg
+    is_stiffalg::Bool
+    maxstiffstep::Int
+    maxnonstiffstep::Int
+    nonstifftol::tolType
+    stifftol::tolType
+    dtfac::T
+    stiffalgfirst::Bool
+    switch_max::Int
+    current::Int
+end
+
+struct AutoSwitch{Trait, nAlg, sAlg, tolType, T}
+    algtrait::Trait
+    nonstiffalg::nAlg
+    stiffalg::sAlg
+    maxstiffstep::Int
+    maxnonstiffstep::Int
+    nonstifftol::tolType
+    stifftol::tolType
+    dtfac::T
+    stiffalgfirst::Bool
+    switch_max::Int
+end
+
+struct DefaultODESolver end
+const DefaultSolverAlgorithm = Union{CompositeAlgorithm{<:Tuple, <:AutoSwitch{DefaultODESolver}},
+CompositeAlgorithm{<:Tuple, <:AutoSwitchCache{DefaultODESolver}}}
 
 ################################################################################
 """

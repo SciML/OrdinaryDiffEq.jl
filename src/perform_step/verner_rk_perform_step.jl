@@ -2,7 +2,7 @@ function initialize!(integrator, cache::Vern6ConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     integrator.stats.nf += 1
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
+    cache.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -13,7 +13,7 @@ function initialize!(integrator, cache::Vern6ConstantCache)
     end
     integrator.k[integrator.kshortsize] = integrator.fsallast
 
-    if !alg.lazy
+    if !cache.lazy
         @inbounds for i in 10:12
             integrator.k[i] = zero(integrator.fsalfirst)
         end
@@ -63,7 +63,7 @@ end
     integrator.k[9] = k9
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab.extra
@@ -94,7 +94,7 @@ end
 
 function initialize!(integrator, cache::Vern6Cache)
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
+    cache.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
     integrator.fsalfirst = cache.k1
     integrator.fsallast = cache.k9
     @unpack k = integrator
@@ -109,7 +109,7 @@ function initialize!(integrator, cache::Vern6Cache)
     k[8] = cache.k8
     k[9] = cache.k9 # Set the pointers
 
-    if !alg.lazy
+    if !cache.lazy
         k[10] = similar(cache.k1)
         k[11] = similar(cache.k1)
         k[12] = similar(cache.k1)
@@ -182,7 +182,7 @@ end
     end
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack c10, a1001, a1004, a1005, a1006, a1007, a1008, a1009, c11, a1101, a1104, a1105, a1106, a1107, a1108, a1109, a1110, c12, a1201, a1204, a1205, a1206, a1207, a1208, a1209, a1210, a1211 = cache.tab.extra
@@ -214,7 +214,7 @@ end
 
 function initialize!(integrator, cache::Vern7ConstantCache)
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
+    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -277,7 +277,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @OnDemandTableauExtract Vern7ExtraStages T T2
@@ -329,7 +329,7 @@ function initialize!(integrator, cache::Vern7Cache)
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10 = cache
     @unpack k = integrator
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
+    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
     resize!(k, integrator.kshortsize)
     k[1] = k1
     k[2] = k2
@@ -342,7 +342,7 @@ function initialize!(integrator, cache::Vern7Cache)
     k[9] = k9
     k[10] = k10 # Setup pointers
 
-    if !alg.lazy
+    if !cache.lazy
         k[11] = similar(cache.k1)
         k[12] = similar(cache.k1)
         k[13] = similar(cache.k1)
@@ -433,7 +433,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack tmp = cache
@@ -489,7 +489,7 @@ end
 
 function initialize!(integrator, cache::Vern8ConstantCache)
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
+    cache.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -575,7 +575,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab.extra
@@ -642,7 +642,7 @@ function initialize!(integrator, cache::Vern8Cache)
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13 = cache
     @unpack k = integrator
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
+    cache.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
     resize!(k, integrator.kshortsize)
     k[1] = k1
     k[2] = k2
@@ -658,7 +658,7 @@ function initialize!(integrator, cache::Vern8Cache)
     k[12] = k12
     k[13] = k13 # Setup pointers
 
-    if !alg.lazy
+    if !cache.lazy
         for i in 14:21
             k[i] = similar(cache.k1)
         end
@@ -764,7 +764,7 @@ end
     end
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack c14, a1401, a1406, a1407, a1408, a1409, a1410, a1411, a1412, c15, a1501, a1506, a1507, a1508, a1509, a1510, a1511, a1512, a1514, c16, a1601, a1606, a1607, a1608, a1609, a1610, a1611, a1612, a1614, a1615, c17, a1701, a1706, a1707, a1708, a1709, a1710, a1711, a1712, a1714, a1715, a1716, c18, a1801, a1806, a1807, a1808, a1809, a1810, a1811, a1812, a1814, a1815, a1816, a1817, c19, a1901, a1906, a1907, a1908, a1909, a1910, a1911, a1912, a1914, a1915, a1916, a1917, c20, a2001, a2006, a2007, a2008, a2009, a2010, a2011, a2012, a2014, a2015, a2016, a2017, c21, a2101, a2106, a2107, a2108, a2109, a2110, a2111, a2112, a2114, a2115, a2116, a2117 = cache.tab.extra
@@ -851,7 +851,7 @@ end
 
 function initialize!(integrator, cache::Vern9ConstantCache)
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
+    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
     # Avoid undefined entries if k is an array of arrays
@@ -945,7 +945,7 @@ end
     integrator.u = u
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @OnDemandTableauExtract Vern9ExtraStages T T2
@@ -1032,7 +1032,7 @@ function initialize!(integrator, cache::Vern9Cache)
     @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16 = cache
     @unpack k = integrator
     alg = unwrap_alg(integrator, false)
-    alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
+    cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
     resize!(k, integrator.kshortsize)
     # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
     # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
@@ -1047,7 +1047,7 @@ function initialize!(integrator, cache::Vern9Cache)
     k[9] = k15
     k[10] = k16 # Setup pointers
 
-    if !alg.lazy
+    if !cache.lazy
         for i in 11:20
             k[i] = similar(cache.k1)
         end
@@ -1174,7 +1174,7 @@ end
     end
 
     alg = unwrap_alg(integrator, false)
-    if !alg.lazy && (integrator.opts.adaptive == false ||
+    if !cache.lazy && (integrator.opts.adaptive == false ||
         accept_step_controller(integrator, integrator.opts.controller))
         k = integrator.k
         @unpack tmp = cache
