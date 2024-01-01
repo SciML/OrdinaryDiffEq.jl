@@ -289,7 +289,7 @@ PrecompileTools.@compile_workload begin
     end
 
     if Preferences.@load_preference("PrecompileDefault", true)
-        append!(solver_list, stiff)
+        append!(solver_list, default_ode)
     end
 
     if Preferences.@load_preference("PrecompileAutoSwitch", false)
