@@ -26,6 +26,8 @@ using LinearSolve, SimpleNonlinearSolve
 
 using LineSearches
 
+import EnumX
+
 import FillArrays: Trues
 
 # Interfaces
@@ -139,6 +141,7 @@ include("nlsolve/functional.jl")
 include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
+include("composite_algs.jl")
 
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
@@ -232,7 +235,6 @@ include("constants.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
-include("composite_algs.jl")
 
 import PrecompileTools
 
@@ -251,9 +253,14 @@ PrecompileTools.@compile_workload begin
         Tsit5(), Vern7()
     ]
 
-    stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
-        Rodas5P(), Rodas5P(autodiff = false),
-        FBDF(), FBDF(autodiff = false)
+    stiff = [Rosenbrock23(),
+        Rodas5P(),
+        FBDF()
+    ]
+
+    default_ode = [
+        DefaultODEAlgorithm(autodiff=false),
+        DefaultODEAlgorithm()
     ]
 
     autoswitch = [
@@ -282,7 +289,11 @@ PrecompileTools.@compile_workload begin
         append!(solver_list, stiff)
     end
 
-    if Preferences.@load_preference("PrecompileAutoSwitch", true)
+    if Preferences.@load_preference("PrecompileDefault", true)
+        append!(solver_list, default_ode)
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSwitch", false)
         append!(solver_list, autoswitch)
     end
 
