@@ -4,7 +4,7 @@ abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
-mutable struct CompositeCache{T, F} <: OrdinaryDiffEqCache
+mutable struct CompositeCache{Fallbacks, T, F} <: OrdinaryDiffEqCache
     caches::T
     choice_function::F
     current::Int
@@ -16,11 +16,11 @@ if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeCache)
 end
 
-function alg_cache(alg::CompositeAlgorithm{Tuple{T1, T2}, F}, u, rate_prototype,
+function alg_cache(alg::CompositeAlgorithm{Fallbacks, Tuple{T1, T2}, F}, u, rate_prototype,
     ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
     ::Type{tTypeNoUnits}, uprev,
     uprev2, f, t, dt, reltol, p, calck,
-    ::Val{V}) where {T1, T2, F, V, uEltypeNoUnits, uBottomEltypeNoUnits,
+    ::Val{V}) where {Fallbacks, T1, T2, F, V, uEltypeNoUnits, uBottomEltypeNoUnits,
     tTypeNoUnits}
     caches = (alg_cache(alg.algs[1], u, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits,
@@ -28,16 +28,18 @@ function alg_cache(alg::CompositeAlgorithm{Tuple{T1, T2}, F}, u, rate_prototype,
         alg_cache(alg.algs[2], u, rate_prototype, uEltypeNoUnits,
             uBottomEltypeNoUnits,
             tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)))
-    CompositeCache(caches, alg.choice_function, 1)
+    CompositeCache{Fallbacks, typeof(caches), typeof(alg.choice_function)}(
+                   caches, alg.choice_function, 1)
 end
 
-function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::CompositeAlgorithm{Fallbacks}, u, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
     dt, reltol, p, calck,
-    ::Val{V}) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    ::Val{V}) where {Fallbacks, V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
-    CompositeCache(caches, alg.choice_function, 1)
+    CompositeCache{Fallbacks, typeof(caches), typeof(alg.choice_function)}(
+            caches, alg.choice_function, 1)
 end
 
 # map + closure approach doesn't infer

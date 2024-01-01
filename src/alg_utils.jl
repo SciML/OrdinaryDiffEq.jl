@@ -164,6 +164,8 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
+isdtchangeable(alg::DefaultSolverAlgorithm) = true
+
 function isdtchangeable(alg::Union{LawsonEuler, NorsettEuler, LieEuler, MagnusGauss4,
     CayleyEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2})
     false
@@ -176,12 +178,14 @@ ismultistep(alg::ETD2) = true
 isadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
+isadaptive(alg::DefaultSolverAlgorithm) = true
 isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 isadaptive(alg::DFBDF) = true
 
 anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
 anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
+anyadaptive(alg::DefaultSolverAlgorithm) = true
 
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
@@ -191,9 +195,11 @@ function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
 end
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 qmin_default(alg::DP8) = 1 // 3
+qmin_default(alg::DefaultSolverAlgorithm) = 1 // 5
 
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
+qmax_default(alg::DefaultSolverAlgorithm) = 10
 qmax_default(alg::DP8) = 6
 qmax_default(alg::Union{RadauIIA3, RadauIIA5}) = 8
 
@@ -277,7 +283,7 @@ end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
     algs = map(alg -> DiffEqBase.prepare_alg(alg, u0, p, prob), alg.algs)
-    CompositeAlgorithm(algs, alg.choice_function)
+    CompositeAlgorithm(algs, alg.choice_function, Val(allowfallbacks(alg)))
 end
 
 # Extract AD type parameter from algorithm, returning as Val to ensure type stability for boolean options.
@@ -351,7 +357,8 @@ function concrete_jac(alg::Union{
 end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
+alg_extrapolates(alg::CompositeAlgorithm) = error("any(alg_extrapolates.(alg.algs))")
+alg_extrapolates(alg::DefaultSolverAlgorithm) = false
 alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
@@ -695,6 +702,7 @@ alg_order(alg::Alshina6) = 6
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
+alg_maximum_order(alg::DefaultSolverAlgorithm) = 7
 alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.max_order + 1)
 alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.max_order + 1)
 alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.max_order + 1)
@@ -829,6 +837,7 @@ function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
 end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
+gamma_default(alg::DefaultSolverAlgorithm) = 9 // 10
 gamma_default(alg::RKC) = 8 // 10
 gamma_default(alg::IRKC) = 8 // 10
 function gamma_default(alg::ExtrapolationMidpointDeuflhard)
@@ -949,14 +958,18 @@ function unwrap_alg(integrator, is_stiff)
     if !iscomp
         return alg
     elseif alg.choice_function isa AutoSwitchCache
-        if is_stiff === nothing
-            throwautoswitch(alg)
-        end
-        num = is_stiff ? 2 : 1
-        if num == 1
-            return alg.algs[1]
+        if alg.choice_function.algtrait isa DefaultODESolver
+            alg.algs[alg.choice_function.current]
         else
-            return alg.algs[2]
+            if is_stiff === nothing
+                throwautoswitch(alg)
+            end
+            num = is_stiff ? 2 : 1
+            if num == 1
+                return alg.algs[1]
+            else
+                return alg.algs[2]
+            end
         end
     else
         return _eval_index(identity, alg.algs, integrator.cache.current)
