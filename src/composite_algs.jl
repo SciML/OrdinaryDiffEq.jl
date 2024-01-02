@@ -140,7 +140,7 @@ function stiffchoice(reltol, len)
         if reltol < LOW_TOL
             DefaultSolverChoice.Rodas5P
         else
-            DefaultSolverChoice.Rosnebrock23
+            DefaultSolverChoice.Rosenbrock23
         end
     end
     Int(x)
