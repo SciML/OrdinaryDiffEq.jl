@@ -133,7 +133,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
         _alg = CompositeAlgorithm(alg.algs,
-            AutoSwitchCache(0, 0,
+            AutoSwitchCache(auto.algtrait, 0, 0,
                 auto.nonstiffalg,
                 auto.stiffalg,
                 auto.stiffalgfirst,
@@ -143,7 +143,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                 auto.stifftol,
                 auto.dtfac,
                 auto.stiffalgfirst,
-                auto.switch_max))
+                auto.switch_max, 0), Val(allowfallbacks(alg)))
     else
         _alg = alg
     end
@@ -410,7 +410,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)
-      
+
     if _alg isa OrdinaryDiffEqCompositeAlgorithm
         id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars)
         sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
