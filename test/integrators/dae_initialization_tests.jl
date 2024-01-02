@@ -197,6 +197,14 @@ integrator = init(prob, DABDF2())
 @test integrator.du[1]≈1.0 atol=1e-9
 @test integrator.du[2]≈1.0 atol=1e-9
 
+# test initialization with parameters without eltype/length
+struct A
+end
+probp = DAEProblem(f, du₀, u₀, A(), tspan, differential_vars = differential_vars)
+for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
+    @test isapprox(init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
+
+
 # to test that we get the right NL solve we need a broken solver.
 struct BrokenNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
     BrokenNLSolve(; kwargs...) = new()
@@ -216,3 +224,4 @@ prob = ODEProblem(f, ones(3), (0.0, 1.0))
 integrator = init(prob, Rodas5P(),
     initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
 @test all(isequal(reinterpret(Float64, 0xDEADBEEFDEADBEEF)), integrator.u)
+
