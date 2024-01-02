@@ -280,11 +280,11 @@ PrecompileTools.@compile_workload begin
     solver_list = []
     solver_list_nonadaptive = []
 
-    if Preferences.@load_preference("PrecompileNonStiff", true)
+    if Preferences.@load_preference("PrecompileNonStiff", false)
         append!(solver_list, nonstiff)
     end
 
-    if Preferences.@load_preference("PrecompileStiff", true)
+    if Preferences.@load_preference("PrecompileStiff", false)
         append!(solver_list, stiff)
     end
 
