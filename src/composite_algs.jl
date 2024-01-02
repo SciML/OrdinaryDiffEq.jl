@@ -75,7 +75,7 @@ AutoVern9(alg; lazy = true, kwargs...) = AutoAlgSwitch(Vern9(lazy = lazy), alg; 
 EnumX.@enumx DefaultSolverChoice begin
     Tsit5 = 1
     Vern7 = 2
-    Rosnebrock23 = 3
+    Rosenbrock23 = 3
     Rodas5P = 4
     FBDF = 5
     KrylovFBDF = 6
