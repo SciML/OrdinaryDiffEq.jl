@@ -18,8 +18,6 @@ using MuladdMacro, SparseArrays, FastClosures
 
 using LinearAlgebra
 
-using LoopVectorization
-
 import StaticArrayInterface
 
 import InteractiveUtils
