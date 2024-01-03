@@ -163,7 +163,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         end
 
         nlequation! = @closure (out, u, p) -> begin
-            if p isa AbstractArray{<:Dual}
+            if DiffEqBase.anyeltypedual(p) <: Dual
                 T = Base.promote_type(eltype(u), eltype(p))
             else
                 T = eltype(u)
@@ -323,7 +323,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation! = @closure (out, u, p) -> begin
-        if p isa AbstractArray{<:Dual}
+        if DiffEqBase.anyeltypedual(p) <: Dual
             T = Base.promote_type(eltype(u), eltype(p))
         else
             T = eltype(u)
@@ -458,10 +458,12 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
     if isAD
-        csize = if p isa SciMLBase.NullParameters || typeof(_u) !== typeof(u)
-            max(count(algebraic_vars),length(p))
-        else
-            count(algebraic_vars)
+        csize = count(algebraic_vars)
+        if !(p isa SciMLBase.NullParameters) && typeof(_u) !== typeof(u)
+            try
+                csize = max(csize,length(p))
+            catch
+            end
         end
         chunk = ForwardDiff.pickchunksize(csize)
         _tmp = PreallocationTools.dualcache(tmp, chunk)
@@ -471,7 +473,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        if p isa AbstractArray{<:Dual}
+        if DiffEqBase.anyeltypedual(p) <: Dual
             T = Base.promote_type(eltype(x), eltype(p))
         else
             T = eltype(x)
@@ -617,7 +619,11 @@ function _initialize_dae!(integrator, prob::DAEProblem,
    end
 
     nlequation! = @closure (out, x, p) -> begin
-        T = p isa SciMLBase.NullParameters ? eltype(x) : Base.promote_type(eltype(x),eltype(p))
+        if DiffEqBase.anyeltypedual(p) <: Dual
+            T = Base.promote_type(eltype(x), eltype(p))
+        else
+            T = eltype(x)
+        end
         du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
         uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
 
