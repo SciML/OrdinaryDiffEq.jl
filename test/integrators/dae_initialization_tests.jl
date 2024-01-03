@@ -203,7 +203,7 @@ end
 probp = DAEProblem(f, du₀, u₀, A(), tspan, differential_vars = differential_vars)
 for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
     @test isapprox(init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
-
+end
 
 # to test that we get the right NL solve we need a broken solver.
 struct BrokenNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
