@@ -163,8 +163,9 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         end
 
         nlequation! = @closure (out, u, p) -> begin
-            if DiffEqBase.anyeltypedual(p) <: Dual
-                T = Base.promote_type(eltype(u), eltype(p))
+            TP = DiffEqBase.anyeltypedual(p)
+            if TP <: Dual
+                T = Base.promote_type(eltype(u), TP)
             else
                 T = eltype(u)
             end
@@ -323,8 +324,9 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     end
 
     nlequation! = @closure (out, u, p) -> begin
-        if DiffEqBase.anyeltypedual(p) <: Dual
-            T = Base.promote_type(eltype(u), eltype(p))
+        TP = DiffEqBase.anyeltypedual(p)
+        if TP <: Dual
+            T = Base.promote_type(eltype(u), TP)
         else
             T = eltype(u)
         end
@@ -473,8 +475,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     nlequation! = @closure (out, x, p) -> begin
-        if DiffEqBase.anyeltypedual(p) <: Dual
-            T = Base.promote_type(eltype(x), eltype(p))
+        TP = DiffEqBase.anyeltypedual(p)
+        if TP <: Dual
+            T = Base.promote_type(eltype(x), TP)
         else
             T = eltype(x)
         end
@@ -619,8 +622,9 @@ function _initialize_dae!(integrator, prob::DAEProblem,
    end
 
     nlequation! = @closure (out, x, p) -> begin
-        if DiffEqBase.anyeltypedual(p) <: Dual
-            T = Base.promote_type(eltype(x), eltype(p))
+        TP = DiffEqBase.anyeltypedual(p)
+        if TP <: Dual
+            T = Base.promote_type(eltype(x), TP)
         else
             T = eltype(x)
         end
