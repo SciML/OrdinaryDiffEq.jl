@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, ForwardDiff, Test
+using OrdinaryDiffEq, LinearAlgebra, ForwardDiff, Test
 
 function rober(du, u, p, t)
     y₁, y₂, y₃ = u
@@ -46,8 +46,8 @@ sol1 = solve(prob, DFBDF(), dt=1e-5, abstol = 1e-8, reltol = 1e-8)
 
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
-@testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit)" for _prob in [prob, prob_mm, prob_oop, prob_mm_oop], initalg in [BrownFullBasicInit(), ShampineCollocationInit()]
-    alg = _prob isa DAEProblem ? DFBDF() : Rodas5P()
+@testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [prob, prob_mm, prob_oop, prob_mm_oop], initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [true, false]
+    alg = _prob isa DAEProblem ? DFBDF(;autodiff) : Rodas5P(;autodiff)
     function f(p)
         sol = solve(remake(_prob, p = p), alg, abstol = 1e-14, reltol = 1e-14, initializealg = initalg)
         sum(sol)
