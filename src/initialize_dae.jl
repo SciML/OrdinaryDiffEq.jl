@@ -154,7 +154,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             tmp = copy(_u0)
         end
 
-        isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+        isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u0) !== typeof(_u0)
         if isAD
             chunk = ForwardDiff.pickchunksize(length(tmp))
             _tmp = PreallocationTools.dualcache(tmp, chunk)
@@ -315,7 +315,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         tmp = copy(_u0)
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u0) !== typeof(_u0)
     if isAD
         chunk = ForwardDiff.pickchunksize(length(tmp))
         _tmp = PreallocationTools.dualcache(tmp, chunk)
@@ -458,7 +458,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
         tmp = DiffEqBase.value.(tmp)
     end
 
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
     if isAD
         csize = count(algebraic_vars)
         if !(p isa SciMLBase.NullParameters) && typeof(_u) !== typeof(u)
@@ -483,6 +483,9 @@ function _initialize_dae!(integrator, prob::ODEProblem,
         end
         uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
         du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
+        @show isAD
+        @show T, TP
+        @show typeof(x), typeof(p), typeof(du_tmp)
         copyto!(uu, _u)
         alg_uu = @view uu[algebraic_vars]
         alg_uu .= x
@@ -612,7 +615,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         error("differential_vars must be set for DAE initialization to occur. Either set consistent initial conditions, differential_vars, or use a different initialization algorithm.")
     end
 
-   isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff || typeof(u) !== typeof(_u)
    if isAD
        chunk = ForwardDiff.pickchunksize(length(tmp))
        _tmp = PreallocationTools.dualcache(tmp, chunk)
