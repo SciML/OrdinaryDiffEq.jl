@@ -58,9 +58,9 @@ version = "7.7.0"
 
 [[deps.ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra"]
-git-tree-sha1 = "b08a4043e1c14096ef8efe4dd97e07de5cacf240"
+git-tree-sha1 = "ab9e65a1a0cfa0c1add8525f75533aea063cd8b4"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "1.4.5"
+version = "1.5.0"
 weakdeps = ["SparseArrays"]
 
     [deps.ArrayLayouts.extensions]
@@ -753,9 +753,9 @@ version = "1.3.4"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "SparseArrays", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "ba6dc2ce929bb8502e468a4981c1c69cab07c8b8"
+git-tree-sha1 = "4873672a6d7990c683b4badf8671c50043ad321b"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "3.4.1"
+version = "3.4.2"
 
     [deps.RecursiveArrayTools.extensions]
     RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
