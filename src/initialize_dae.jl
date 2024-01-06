@@ -483,9 +483,6 @@ function _initialize_dae!(integrator, prob::ODEProblem,
         end
         uu = isAD ? PreallocationTools.get_tmp(_tmp, T) : _tmp
         du_tmp = isAD ? PreallocationTools.get_tmp(_du_tmp, T) : _du_tmp
-        @show isAD
-        @show T, TP
-        @show typeof(x), typeof(p), typeof(du_tmp)
         copyto!(uu, _u)
         alg_uu = @view uu[algebraic_vars]
         alg_uu .= x
