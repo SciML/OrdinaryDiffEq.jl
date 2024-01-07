@@ -360,6 +360,7 @@ function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
             i₋ = max(1, _searchsortedlast(ts, t, i₋, tdir > 0))
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
+        id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
         i₋₊ref[] = (i₋, i₊)
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
@@ -405,6 +406,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
             i₋ = max(1, _searchsortedlast(ts, t, i₋, tdir > 0))
             i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
         end
+        id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
 
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
@@ -477,6 +479,7 @@ function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
         i₋ = max(1, _searchsortedlast(ts, tval, 1, tdir > 0))
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
+    id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
@@ -525,6 +528,7 @@ function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
         i₋ = max(1, _searchsortedlast(ts, tval, 1, tdir > 0))
         i₊ = i₋ < lastindex(ts) ? i₋ + 1 : i₋
     end
+    id.sensitivitymode && error(SENSITIVITY_INTERP_MESSAGE)
 
     @inbounds begin
         dt = ts[i₊] - ts[i₋]
