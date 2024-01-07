@@ -1,7 +1,7 @@
 abstract type OrdinaryDiffEqInterpolation{cacheType} <:
               DiffEqBase.AbstractDiffEqInterpolation end
 
-struct InterpolationData{F, uType, tType, kType, algType <: Union{Tuple{}, Vector{Int}}, cacheType, DV} <:
+struct InterpolationData{F, uType, tType, kType, algType <: Union{Nothing, Vector{Int}}, cacheType, DV} <:
        OrdinaryDiffEqInterpolation{cacheType}
     f::F
     timeseries::uType

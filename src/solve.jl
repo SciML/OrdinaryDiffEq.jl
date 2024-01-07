@@ -272,7 +272,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
-    alg_choice = _alg isa CompositeAlgorithm ? Int[] : ()
+    alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
