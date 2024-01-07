@@ -411,7 +411,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)
 
-    id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars)
+    id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
     sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
         dense = dense, k = ks, interp = id,
         alg_choice = alg_choice,
