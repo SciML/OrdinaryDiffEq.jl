@@ -272,7 +272,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
-    alg_choice = _alg isa CompositeAlgorithm ? Int[] : ()
+    alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
@@ -410,19 +410,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)
-      
-    if _alg isa OrdinaryDiffEqCompositeAlgorithm
-        id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            alg_choice = alg_choice,
-            calculate_error = false, stats = stats)
-    else
-        id = InterpolationData(f, timeseries, ts, ks, dense, cache, differential_vars)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            calculate_error = false, stats = stats)
-    end
+
+    id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
+    sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
+        dense = dense, k = ks, interp = id,
+        alg_choice = alg_choice,
+        calculate_error = false, stats = stats)
 
     if recompile_flag == true
         FType = typeof(f)
