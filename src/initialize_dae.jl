@@ -201,6 +201,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         integrator.u .= nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
+    u_modified!(integrator, true)
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
         recursivecopy!(integrator.uprev2, integrator.uprev)
@@ -251,6 +252,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         olddt
         failed = nlsolvefail(nlsolver)
         @.. broadcast=false integrator.u=integrator.uprev + z
+        u_modified!(integrator, true)
     else
         nlequation_oop = @closure (u, _) -> begin
             update_coefficients!(M, u, p, t)
@@ -276,6 +278,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
         integrator.u = nlsol.u
         failed = nlsol.retcode != ReturnCode.Success
     end
+    u_modified!(integrator, true)
 
     integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
@@ -355,6 +358,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         reltol = integrator.opts.reltol)
 
     integrator.u = nlsol.u
+    u_modified!(integrator, true)
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
         recursivecopy!(integrator.uprev2, integrator.uprev)
@@ -402,6 +406,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         reltol = integrator.opts.reltol)
 
     integrator.u = nlsol.u
+    u_modified!(integrator, true)
 
     integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
@@ -499,6 +504,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
     nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
     alg_u .= nlsol
+    u_modified!(integrator, true)
 
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
@@ -568,6 +574,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     else
         integrator.u = u
     end
+    u_modified!(integrator, true)
 
     integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
@@ -649,6 +656,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
 
     @. du = ifelse(differential_vars, nlsol.u, du)
     @. u = ifelse(differential_vars, u, nlsol.u)
+    u_modified!(integrator, true)
 
     recursivecopy!(integrator.uprev, integrator.u)
     if alg_extrapolates(integrator.alg)
@@ -706,6 +714,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         integrator.u = u
         integrator.du = du
     end
+    u_modified!(integrator, true)
 
     integrator.uprev = copy(integrator.u)
     if alg_extrapolates(integrator.alg)
