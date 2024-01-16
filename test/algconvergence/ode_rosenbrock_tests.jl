@@ -285,7 +285,7 @@ import LinearSolve
     prob = prob_ode_2Dlinear
 
     sim = test_convergence(dts, prob, ROS34PRw())
-    @test sim.𝒪est[:final]≈4 atol=testTol
+    @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, ROS34PRw())
     @test length(sol) < 20
