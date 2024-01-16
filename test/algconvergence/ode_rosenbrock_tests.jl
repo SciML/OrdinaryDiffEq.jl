@@ -273,6 +273,23 @@ import LinearSolve
     sol = solve(prob, ROS34PW3())
     @test length(sol) < 20
 
+    ### ROS34PRw
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS34PRw())
+    @test sim.𝒪est[:final]≈4 atol=testTol
+
+    sol = solve(prob, ROS34PRw())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS34PRw())
+    @test sim.𝒪est[:final]≈4 atol=testTol
+
+    sol = solve(prob, ROS34PRw())
+    @test length(sol) < 20
+
     ### RosenbrockW6S4OS
     sim = test_convergence(dts, prob, RosenbrockW6S4OS())#test inplace
     @test sim.𝒪est[:final]≈4 atol=testTol
