@@ -385,7 +385,7 @@ export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
     MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3, CG4a
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-    Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P,
+    Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2, Rodas5, Rodas5P,
     RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3
 
 export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A,

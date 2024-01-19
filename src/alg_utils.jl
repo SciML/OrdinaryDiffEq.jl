@@ -30,6 +30,8 @@ isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
 
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
+isfsal(alg::Rodas3P) = false
+isfsal(alg::Rodas23W) = false
 isfsal(alg::Rodas5) = false
 isfsal(alg::Rodas5P) = false
 isfsal(alg::Rodas4) = false
@@ -620,9 +622,11 @@ alg_order(alg::Feagin14) = 14
 alg_order(alg::PFRK87) = 8
 
 alg_order(alg::Rosenbrock23) = 2
+alg_order(alg::Rodas23W) = 3
 alg_order(alg::Rosenbrock32) = 3
 alg_order(alg::ROS3P) = 3
 alg_order(alg::Rodas3) = 3
+alg_order(alg::Rodas3P) = 3
 alg_order(alg::ROS34PW1a) = 3
 alg_order(alg::ROS34PW1b) = 3
 alg_order(alg::ROS34PW2) = 3

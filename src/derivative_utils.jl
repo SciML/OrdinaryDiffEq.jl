@@ -748,7 +748,7 @@ end
         J = f.jac(uprev, p, t)
         if J isa StaticArray &&
            integrator.alg isa
-           Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
+           Union{Rosenbrock23, Rodas23W, Rodas3P,Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
         else
