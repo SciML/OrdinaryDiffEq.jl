@@ -568,7 +568,7 @@ end
     kdu = f.f1(du, u, p, tnew)
     du = du + dt * a5 * kdu
 
-    tnew = tnew + t + a5 * dt
+    tnew = tnew + a5 * dt
     ku = f.f2(du, u, p, tnew)
     u = u + dt * b6 * ku
 
@@ -625,7 +625,7 @@ end
     f.f1(kdu, du, u, p, tnew)
     @.. broadcast=false du=du + dt * a5 * kdu
 
-    tnew = tnew + t + a5 * dt
+    tnew = tnew + a5 * dt
     f.f2(ku, du, u, p, tnew)
     @.. broadcast=false u=u + dt * b6 * ku
 

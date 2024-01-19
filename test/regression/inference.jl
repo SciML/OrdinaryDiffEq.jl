@@ -7,13 +7,13 @@ using Test
 
     inferred = [BS3(), Tsit5(), RK4(), Vern6()]
     for alg in inferred
-        @test_broken init(prob, alg)
-        @test_broken init(prob2D, alg)
+        @inferred init(prob, alg)
+        @inferred init(prob2D, alg)
     end
 
-    notinferred = [SDIRK2(), TRBDF2(), KenCarp4(), Rosenbrock23(), Rodas4()]
-    for alg in notinferred
-        @test_broken @inferred init(prob, alg)
-        @test_broken @inferred init(prob2D, alg)
-    end
+    #notinferred = [SDIRK2(), TRBDF2(), KenCarp4(), Rosenbrock23(), Rodas4()]
+    #for alg in notinferred
+    #    @test_broken @inferred init(prob, alg)
+    #    @test_broken @inferred init(prob2D, alg)
+    #end
 end

@@ -160,7 +160,7 @@ integ = init(ODEProblem((u, p, t) -> u, 0.0, (0.0, 1.0)), Tsit5(), saveat = _sav
     save_end = false)
 add_tstop!(integ, 2.0)
 solve!(integ)
-@test integ.sol.t == _saveat
+@test integ.sol.t == _saveat[1:end-1]
 
 # Catch save for maxiters
 ode = ODEProblem((u, p, t) -> u, 1.0, (0.0, 1.0))
@@ -187,3 +187,28 @@ prob = ODEProblem(SIR!, [0.99, 0.01, 0.0], (t_obs[1], t_obs[end]), [0.20, 0.15])
 sol = solve(prob, DP5(), reltol = 1e-6, abstol = 1e-6, saveat = t_obs)
 @test maximum(sol) <= 1
 @test minimum(sol) >= 0
+
+@testset "Proper save_start and save_end behavior" begin
+    function f2(du, u, p, t)
+        du[1] = -cos(u[1]) * u[1]
+    end
+    prob = ODEProblem(f2, [10], (0.0, 0.4))
+
+    @test solve(prob, Tsit5(); saveat = 0:.1:.4).t == [0.0; 0.1; 0.2; 0.3; 0.4]
+    @test solve(prob, Tsit5(); saveat = 0:.1:.4, save_start = true, save_end = true).t == [0.0; 0.1; 0.2; 0.3; 0.4]
+    @test solve(prob, Tsit5(); saveat = 0:.1:.4, save_start = false, save_end = false).t == [0.1; 0.2; 0.3]
+
+    ts = solve(prob, Tsit5()).t
+    @test 0.0 in ts
+    @test 0.4 in ts
+    ts = solve(prob, Tsit5(); save_start = true, save_end = true).t
+    @test 0.0 in ts
+    @test 0.4 in ts
+    ts = solve(prob, Tsit5(); save_start = false, save_end = false).t
+    @test 0.0 ∉ ts
+    @test 0.4 ∉ ts
+
+    @test solve(prob, Tsit5(); saveat = [.2]).t == [0.2]
+    @test solve(prob, Tsit5(); saveat = [.2], save_start = true, save_end = true).t == [0.0; 0.2; 0.4]
+    @test solve(prob, Tsit5(); saveat = [.2], save_start = false, save_end = false).t == [0.2]
+end

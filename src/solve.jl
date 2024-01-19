@@ -31,7 +31,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
                 (dense) || !isempty(saveat), # and no dense output
     dt = alg isa FunctionMap && isempty(tstops) ?
          eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-    dtmin = nothing,
+    dtmin = eltype(prob.tspan)(0),
     dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
     force_dtmin = false,
     adaptive = anyadaptive(alg),
@@ -195,10 +195,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = real(convert(uBottomEltype,
-                oneunit(uBottomEltype) * 1 // 10^3))
+            reltol_internal = ForwardDiff.value(real(convert(uBottomEltype,
+                oneunit(uBottomEltype) * 1 // 10^3)))
         else
-            reltol_internal = real.(oneunit.(u) .* 1 // 10^3)
+            reltol_internal = ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^3))
         end
     else
         reltol_internal = real.(reltol)
@@ -272,7 +272,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
-    alg_choice = _alg isa CompositeAlgorithm ? Int[] : ()
+    alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
@@ -281,7 +281,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
             # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
             # to prevent infinite loops.
-            abs(dt) < DiffEqBase.prob2dtmin(prob) &&
+            abs(dt) < dtmin &&
                 throw(ArgumentError("Supplied dt is smaller than dtmin"))
             steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
         end
@@ -293,9 +293,16 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         sizehint!(ts, 50)
         sizehint!(ks, 50)
     elseif !isempty(saveat_internal)
-        sizehint!(timeseries, length(saveat_internal) + 1)
-        sizehint!(ts, length(saveat_internal) + 1)
-        sizehint!(ks, length(saveat_internal) + 1)
+        savelength = length(saveat_internal) + 1
+        if save_start == false
+            savelength -= 1
+        end
+        if save_end == false && prob.tspan[2] in saveat_internal.valtree
+            savelength -= 1
+        end
+        sizehint!(timeseries, savelength)
+        sizehint!(ts, savelength)
+        sizehint!(ks, savelength)
     else
         sizehint!(timeseries, 2)
         sizehint!(ts, 2)
@@ -351,8 +358,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
     end
 
-    dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob))
-
     save_end_user = save_end
     save_end = save_end === nothing ?
                save_everystep || isempty(saveat) || saveat isa Number ||
@@ -405,19 +410,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)
-      
-    if _alg isa OrdinaryDiffEqCompositeAlgorithm
-        id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            alg_choice = alg_choice,
-            calculate_error = false, stats = stats)
-    else
-        id = InterpolationData(f, timeseries, ts, ks, dense, cache, differential_vars)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            calculate_error = false, stats = stats)
-    end
+
+    id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
+    sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
+        dense = dense, k = ks, interp = id,
+        alg_choice = alg_choice,
+        calculate_error = false, stats = stats)
 
     if recompile_flag == true
         FType = typeof(f)

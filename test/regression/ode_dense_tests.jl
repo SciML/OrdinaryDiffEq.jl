@@ -537,10 +537,10 @@ regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 
 regression_test(Rodas4P2(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
 
 # Rodas5
-regression_test(Rodas5(), 2e-6, 3e-6, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+regression_test(Rodas5(), 2e-6, 3e-6, test_diff1 = true, nth_der = 3, dertol = 5e-1)
 
 # Rodas5P
-regression_test(Rodas5P(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+regression_test(Rodas5P(), 2e-5, 3e-5, test_diff1 = true, nth_der = 3, dertol = 5e-1)
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)

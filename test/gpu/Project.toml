@@ -3,4 +3,4 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 
 [compat]
-CUDA = "4.2"
+CUDA = "5"

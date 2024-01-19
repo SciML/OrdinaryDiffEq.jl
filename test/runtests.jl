@@ -44,6 +44,7 @@ end
         @time @safetestset "Complex Tests" include("interface/complex_tests.jl")
         @time @safetestset "Ndim Complex Tests" include("interface/ode_ndim_complex_tests.jl")
         @time @safetestset "Number Type Tests" include("interface/ode_numbertype_tests.jl")
+        @time @safetestset "Interpolation Output Type Tests" include("interface/interpolation_output_types.jl")
         @time @safetestset "Stiffness Detection Tests" include("interface/stiffness_detection_test.jl")
         @time @safetestset "Composite Interpolation Tests" include("interface/composite_interpolation.jl")
         @time @safetestset "Export tests" include("interface/export_tests.jl")
@@ -83,8 +84,9 @@ end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
-        @time @safetestset "AD Tests" include("interface/interpolation_derivative_error_tests.jl")
+        @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
+        @time @safetestset "DAE AD Tests" include("interface/dae_ad_tests.jl")
         @time @safetestset "Newton Tests" include("interface/newton_tests.jl")
         @time @safetestset "DAE Initialize Integration" include("interface/dae_initialize_integration.jl")
     end

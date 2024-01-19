@@ -271,24 +271,6 @@ end
     @test ForwardDiff.derivative(g, 0.0)≈_u0 / 2 * exp(-0.5) rtol=rtol
 end
 
-function f(out, du, u, p, t)
-    out[1] = -p[1] * u[1] + 1e4 * u[2] * u[3] - du[1]
-    out[2] = +p[1] * u[1] - 3e7 * u[2]^2 - 1e4 * u[2] * u[3] - du[2]
-    out[3] = u[1] + u[2] + u[3] - 1.0
-end
-
-p = [0.5]
-u₀ = [1.0, 0, 0]
-du₀ = [-0.04, 0.04, 0.0]
-tspan = (0.0, 100000.0)
-differential_vars = [true, true, false]
-prob = DAEProblem(f, du₀, u₀, tspan, p, differential_vars = differential_vars)
-
-function f(p)
-    sum(solve(remake(prob, p = p), DABDF2(), saveat = 0.1, abstol = 1e-6, reltol = 1e-6))
-end
-@test ForwardDiff.gradient(f, [0.5])[1]≈0 atol=1e-2
-
 # https://github.com/SciML/DifferentialEquations.jl/issues/903
 
 #ode function
