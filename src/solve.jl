@@ -195,10 +195,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = real(convert(uBottomEltype,
-                oneunit(uBottomEltype) * 1 // 10^3))
+            reltol_internal = ForwardDiff.value(real(convert(uBottomEltype,
+                oneunit(uBottomEltype) * 1 // 10^3)))
         else
-            reltol_internal = real.(oneunit.(u) .* 1 // 10^3)
+            reltol_internal = ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^3))
         end
     else
         reltol_internal = real.(reltol)
