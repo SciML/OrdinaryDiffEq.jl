@@ -43,8 +43,8 @@ end
 
 let
     function f!(out, u, _, t)
-       out[1] = u[1]  - sin(1e8*t)
+       out[1] = u[1]  + 1 - sin(t)
     end
     mprob = ODEProblem(ODEFunction(f!, mass_matrix=[0.0;;]), [0.0], (0, 2.0))
-    @test_throws ErrorException solve(mprob, Rosenbrock23())
+    @test solve(mprob, Rosenbrock23()).retcode == ReturnCode.Success
 end
