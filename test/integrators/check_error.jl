@@ -48,3 +48,11 @@ let
     mprob = ODEProblem(ODEFunction(f!, mass_matrix=[0.0;;]), [0.0], (0, 2.0))
     @test solve(mprob, Rosenbrock23()).retcode == ReturnCode.Success
 end
+
+@testset "Callbacks shouldn't disable error checking" begin
+    callback=ContinuousCallback((u,t,integ)->t-prevfloat(.5), Returns(nothing))
+    prob = ODEProblem((u,p,t) -> u, 0.0, (0.0, 1); tstops=[.5], callback);
+    sol = solve(prob, FBDF(), maxiters=30)
+    @test sol.stats.naccept + sol.stats.nreject <= 30
+    @test_broken sol.retcode = ReturnCode.Success
+end

@@ -41,6 +41,7 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
 
     if !bool
         integrator.alg.choice_function.successive_switches += 1
+        integrator.do_error_check = false
     else
         integrator.alg.choice_function.successive_switches = 0
     end
