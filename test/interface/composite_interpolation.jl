@@ -23,8 +23,7 @@ u0 = [0.35793622925128044,
     0.00]
 prob = ODEProblem(f, u0, (0, 26.0), p)
 sol = solve(prob, AutoTsit5(Rodas5(), dtfac = 2))
-
-@test sol([21.2])[1][4]≈1.803 atol=1e-2
+@test sol([21.2])[4,1]≈1.803 atol=1e-2
 
 #=
 using Plots
