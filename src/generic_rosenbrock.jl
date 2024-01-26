@@ -969,6 +969,8 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
+@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
+
 """
     @ROS34PW(part)
 
