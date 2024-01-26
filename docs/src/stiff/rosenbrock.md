@@ -5,6 +5,7 @@
 ```@docs
 ROS3P
 Rodas3
+Rodas3P
 RosShamp4
 Veldd4
 Velds4
@@ -25,6 +26,7 @@ GeneralRosenbrock
 ```@docs
 Rosenbrock23
 Rosenbrock32
+Rodas23W
 ROS34PW1a
 ROS34PW1b
 ROS34PW2

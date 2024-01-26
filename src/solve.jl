@@ -97,10 +97,11 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     end
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
+            # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
+            !(alg isa Union{Rosenbrock23, Rosenbrock32}) &&
             prob.f.mass_matrix isa AbstractMatrix &&
             all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
-        alg isa Union{Rosenbrock23, Rosenbrock32} && error("Rosenbrock23 and Rosenbrock32 require at least one differential variable to produce valid solutions")
         if (dense || !isempty(saveat)) && verbose
             @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
         end
@@ -195,10 +196,10 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = real(convert(uBottomEltype,
-                oneunit(uBottomEltype) * 1 // 10^3))
+            reltol_internal = ForwardDiff.value(real(convert(uBottomEltype,
+                oneunit(uBottomEltype) * 1 // 10^3)))
         else
-            reltol_internal = real.(oneunit.(u) .* 1 // 10^3)
+            reltol_internal = ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^3))
         end
     else
         reltol_internal = real.(reltol)

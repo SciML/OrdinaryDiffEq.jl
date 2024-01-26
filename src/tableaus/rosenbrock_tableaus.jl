@@ -133,6 +133,88 @@ function Rodas3Tableau(T, T2)
         b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4)
 end
 
+struct Rodas3PTableau{T, T2}
+    a21::T
+    a41::T
+    a42::T
+    a43::T
+    C21::T
+    C31::T
+    C32::T
+    C41::T
+    C42::T
+    C43::T
+    C51::T
+    C52::T
+    C53::T
+    C54::T
+    gamma::T
+    c2::T2
+    c3::T2
+    d1::T
+    d2::T
+    d3::T
+    h21::T
+    h22::T
+    h23::T
+    h24::T
+    h25::T
+    h31::T
+    h32::T
+    h33::T
+    h34::T
+    h35::T
+    h2_21::T
+    h2_22::T
+    h2_23::T
+    h2_24::T
+    h2_25::T
+end
+
+function Rodas3PTableau(T, T2)
+    gamma = convert(T, 1 // 3)
+    a21 = convert(T, 4.0/3.0)
+    a41 = convert(T, 2.90625)
+    a42 = convert(T, 3.375)
+    a43 = convert(T, 0.40625)
+    C21 = -convert(T, 4.0)
+    C31 = convert(T, 8.25)
+    C32 = convert(T, 6.75)
+    C41 = convert(T, 1.21875)
+    C42 = -convert(T, 5.0625)
+    C43 = -convert(T, 1.96875)
+    C51 = convert(T, 4.03125)
+    C52 = -convert(T, 15.1875)
+    C53 = -convert(T, 4.03125)
+    C54 = convert(T, 6.0)
+    c2 = convert(T2, 4.0/9.0)
+    c3 = convert(T2, 0.0)
+    d1 = convert(T, 1.0/3.0)
+    d2 = -convert(T, 1.0/9.0)
+    d3 = convert(T, 1.0)
+    h21 = convert(T, 1.78125)
+    h22 = convert(T, 6.75)
+    h23 = convert(T, 0.15625)
+    h24 = -convert(T, 6.0)
+    h25 = -convert(T, 1.0)
+    h31 = convert(T, 4.21875)
+    h32 = -convert(T, 15.1875)
+    h33 = -convert(T, 3.09375)
+    h34 = convert(T, 9.0)
+    h35 = convert(T, 0.0)
+    h2_21 = convert(T, 4.21875)
+    h2_22 = -convert(T, 2.025)
+    h2_23 = -convert(T, 1.63125)
+    h2_24 = -convert(T, 1.7)
+    h2_25 = -convert(T, 0.1)
+    Rodas3PTableau(a21, a41, a42, a43,
+        C21, C31, C32, C41, C42, C43, C51, C52, C53, C54,
+        gamma, c2, c3, d1, d2, d3,
+        h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25)
+end
+
+
+
 @ROS34PW(:tableau)
 
 @Rosenbrock4(:tableau)

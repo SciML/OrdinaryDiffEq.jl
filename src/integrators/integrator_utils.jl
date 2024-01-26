@@ -352,7 +352,6 @@ function handle_callbacks!(integrator)
 
     integrator.u_modified = continuous_modified || discrete_modified
     if integrator.u_modified
-        integrator.do_error_check = false
         handle_callback_modifiers!(integrator)
     end
     nothing
