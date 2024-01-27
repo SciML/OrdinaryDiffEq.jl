@@ -2930,6 +2930,11 @@ Scientific Computing, 18 (1), pp. 1-22.
 différentiels-algébriques. MSc mathematics thesis, Faculty of Science,
 University of Geneva, Switzerland.
 
+#### ROS34PRw
+-Joachim Rang, Improved traditional Rosenbrock–Wanner methods for stiff ODEs and DAEs,
+Journal of Computational and Applied Mathematics,
+https://doi.org/10.1016/j.cam.2015.03.010
+
 #### Rodas5P
 - Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
  In: BIT Numerical Mathematics, 63(2), 2023
@@ -2945,6 +2950,7 @@ for Alg in [
     :ROS34PW1b,
     :ROS34PW2,
     :ROS34PW3,
+    :ROS34PRw,
     :RosShamp4,
     :Veldd4,
     :Velds4,

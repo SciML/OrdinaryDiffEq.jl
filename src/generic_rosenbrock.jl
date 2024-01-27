@@ -946,9 +946,35 @@ function ROS34PW3Tableau()#4th order
 end
 
 """
+    ROS34PRwTableau()
+
+Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang
+
+Joachim Rang, Improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs,
+Journal of Computational and Applied Mathematics: https://doi.org/10.1016/j.cam.2015.03.010
+"""
+function ROS34PRwTableau() # 3rd order
+    gamma=4.3586652150845900e-01
+    Alpha=[0                         0                         0                       0;
+           8.7173304301691801e-01    0                         0                       0;
+           1.4722022879435914e+00    -3.1840250568090289e-01   0                       0;
+           8.1505192016694938e-01    0.5                       -3.1505192016694938e-01 0]
+    Gamma=[ gamma                    0                        0                        0;
+           -8.7173304301691801e-01   gamma                    0                        0;
+           -1.2855347382089872e+00   5.0507005541550687e-01   gamma                    0;
+           -4.8201449182864348e-01   2.1793326075422950e-01   -1.7178529043404503e-01 gamma]
+    B=[3.3303742833830591e-01, 7.1793326075422947e-01, -4.8683721060099439e-01, 4.3586652150845900e-01]
+    Bhat=[0.25, 7.4276119608319180e-01, -3.1472922970066219e-01, 3.2196803361747034e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
+
+"""
     @ROS34PW(part)
 
-Generate code for the ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3.
+Generate code for the ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw.
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS34PW(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS34PW(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
@@ -963,6 +989,7 @@ macro ROS34PW(part)
     ROS34PW1btabname=:ROS34PW1bTableau
     ROS34PW2tabname=:ROS34PW2Tableau
     ROS34PW3tabname=:ROS34PW3Tableau
+    ROS34PRwtabname=:ROS34PRwTableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros34Tableau)
@@ -971,6 +998,7 @@ macro ROS34PW(part)
         push!(tabexprs,gen_tableau(ROS34PW1bTableau(),tabstructexpr,ROS34PW1btabname))
         push!(tabexprs,gen_tableau(ROS34PW2Tableau(),tabstructexpr,ROS34PW2tabname))
         push!(tabexprs,gen_tableau(ROS34PW3Tableau(),tabstructexpr,ROS34PW3tabname))
+        push!(tabexprs,gen_tableau(ROS34PRwTableau(),tabstructexpr,ROS34PRwtabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
@@ -979,6 +1007,7 @@ macro ROS34PW(part)
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW1b,ROS34PW1btabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW2,ROS34PW2tabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW3,ROS34PW3tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PRw,ROS34PRwtabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:init
         return esc(gen_initialize(cachename,constcachename))
@@ -1005,7 +1034,7 @@ end
     b. write tableau function. When only `Alpha, Gamma, B, Bhat` are given, use _transformtab
     c. write macro with :tableau, :cache, :init and :performstep
     d. put the macros in the right places.
-
+5. test\algconvergence\ode_rosenbrock_tests.jl: add a test for your method
 # How to refactor methods into generic ones
 RUN CONVERGENCE TESTS BETWEEN ANY OF THE TWO STEPS!
 1. write tableau function and macro definition in this file
