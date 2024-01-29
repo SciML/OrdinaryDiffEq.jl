@@ -971,22 +971,59 @@ end
 
 @doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
 
-function test12() # 3rd order
+
+"""
+    ROS3PRLTableau()
+
+Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS3PRLTableau() # 3rd order
     gamma=4.3586652150845900e-01
-    Alpha=[0                         0                         0                       0;
-           8.7173304301691801e-01    0                         0                       0;
-           1.4722022879435914e+00    -3.1840250568090289e-01   0                       0;
-           8.1505192016694938e-01    0.5                       -3.1505192016694938e-01 0]
-    Gamma=[ gamma                    0                        0                        0;
-           -8.7173304301691801e-01   gamma                    0                        0;
-           -1.2855347382089872e+00   5.0507005541550687e-01   gamma                    0;
-           -4.8201449182864348e-01   2.1793326075422950e-01   -1.7178529043404503e-01 gamma]
-    B=[3.3303742833830591e-01, 7.1793326075422947e-01, -4.8683721060099439e-01, 4.3586652150845900e-01]
-    Bhat=[0.25, 7.4276119608319180e-01, -3.1472922970066219e-01, 3.2196803361747034e-01]
+    Alpha=[0                       0                       0                       0;
+           5.00000000000000e-01    0                       0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0]
+    Gamma=[ gamma                  0                      0                        0;
+           -5.00000000000000e-01   gamma                  0                        0;
+           -7.91564804204642e-01   3.52442167927514e-01   gamma                    0;
+           -4.97889699145187e-01   3.86075154415805e-01   -3.24051976779077e-01    gamma]
+    B=[2.11030085481324e-03, 8.86075154415805e-01, -3.24051976779077e-01, 4.35866521508459e-01]
+    Bhat=[0.5, 3.87524229532982e-01, -2.09492263150452e-01, 3.21968033617470e-01]
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
+#@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL 
+
+
+"""
+    ROS3PRL2Tableau()
+
+Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS3PRL2Tableau() # 3rd order
+    gamma=4.35866521508459e-01
+    Alpha=[0                       0                       0                       0;
+           1.30759956452538e+00    0                       0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0]
+    Gamma=[gamma                  0                       0                       0;
+           -1.30759956452538e+00   gamma                  0                        0;
+           -7.09885758609722e-01   -5.59967359602778e-01  gamma                    0;
+           -1.55508568075521e-01   -9.53885165751122e-01  6.73527212318184e-01    gamma]
+    B=[3.44491431924479e-01,-4.53885165751122e-01, 6.73527212318184e-01, 4.35866521508459e-01]
+    Bhat=[5.00000000000000e-01, -2.57388120865221e-01, 4.35420087247750e-01, 3.21968033617470e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+#@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
 
 
 
@@ -994,7 +1031,7 @@ end
 """
     @ROS34PW(part)
 
-Generate code for the ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw.
+Generate code for the ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL, ROS3PRL2.
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS34PW(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS34PW(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
@@ -1010,6 +1047,8 @@ macro ROS34PW(part)
     ROS34PW2tabname=:ROS34PW2Tableau
     ROS34PW3tabname=:ROS34PW3Tableau
     ROS34PRwtabname=:ROS34PRwTableau
+    ROS3PRLtabname=:ROS3PRLTableau
+    ROS3PRL2tabname=:ROS3PRL2Tableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros34Tableau)
@@ -1019,6 +1058,8 @@ macro ROS34PW(part)
         push!(tabexprs,gen_tableau(ROS34PW2Tableau(),tabstructexpr,ROS34PW2tabname))
         push!(tabexprs,gen_tableau(ROS34PW3Tableau(),tabstructexpr,ROS34PW3tabname))
         push!(tabexprs,gen_tableau(ROS34PRwTableau(),tabstructexpr,ROS34PRwtabname))
+        push!(tabexprs,gen_tableau(ROS3PRLTableau(),tabstructexpr,ROS3PRLtabname))
+        push!(tabexprs,gen_tableau(ROS3PRL2Tableau(),tabstructexpr,ROS3PRL2tabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
@@ -1028,6 +1069,8 @@ macro ROS34PW(part)
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW2,ROS34PW2tabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW3,ROS34PW3tabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PRw,ROS34PRwtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL,ROS3PRLtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL2,ROS3PRL2tabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:init
         return esc(gen_initialize(cachename,constcachename))

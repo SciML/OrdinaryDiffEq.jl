@@ -290,6 +290,40 @@ import LinearSolve
     sol = solve(prob, ROS34PRw())
     @test length(sol) < 20
 
+    ### ROS3PRL
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS3PRL())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS3PRL())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL())
+    @test length(sol) < 20
+
+    ### ROS3PRL2
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS3PRL2())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL2())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS3PRL2())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL2())
+    @test length(sol) < 20
+
     ### RosenbrockW6S4OS
     sim = test_convergence(dts, prob, RosenbrockW6S4OS())#test inplace
     @test sim.𝒪est[:final]≈4 atol=testTol

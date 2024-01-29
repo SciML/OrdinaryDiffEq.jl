@@ -2935,6 +2935,16 @@ University of Geneva, Switzerland.
 Journal of Computational and Applied Mathematics,
 https://doi.org/10.1016/j.cam.2015.03.010
 
+#### ROS3PRL
+-Rang, Joachim (2014): The Prothero and Robinson example : 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+https://doi.org/10.24355/dbbs.084-201408121139-0
+
+#### ROS3PRL2
+-Rang, Joachim (2014): The Prothero and Robinson example : 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+https://doi.org/10.24355/dbbs.084-201408121139-0
+
 #### Rodas5P
 - Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
  In: BIT Numerical Mathematics, 63(2), 2023
@@ -2951,6 +2961,8 @@ for Alg in [
     :ROS34PW2,
     :ROS34PW3,
     :ROS34PRw,
+    :ROS3PRL,
+    :ROS3PRL2,
     :RosShamp4,
     :Veldd4,
     :Velds4,
