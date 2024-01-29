@@ -996,7 +996,7 @@ function ROS3PRLTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-#@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL 
+@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL 
 
 
 """
@@ -1023,7 +1023,7 @@ function ROS3PRL2Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-#@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
 
 
 
