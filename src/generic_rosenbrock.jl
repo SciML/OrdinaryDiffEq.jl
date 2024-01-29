@@ -971,6 +971,26 @@ end
 
 @doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
 
+function test12() # 3rd order
+    gamma=4.3586652150845900e-01
+    Alpha=[0                         0                         0                       0;
+           8.7173304301691801e-01    0                         0                       0;
+           1.4722022879435914e+00    -3.1840250568090289e-01   0                       0;
+           8.1505192016694938e-01    0.5                       -3.1505192016694938e-01 0]
+    Gamma=[ gamma                    0                        0                        0;
+           -8.7173304301691801e-01   gamma                    0                        0;
+           -1.2855347382089872e+00   5.0507005541550687e-01   gamma                    0;
+           -4.8201449182864348e-01   2.1793326075422950e-01   -1.7178529043404503e-01 gamma]
+    B=[3.3303742833830591e-01, 7.1793326075422947e-01, -4.8683721060099439e-01, 4.3586652150845900e-01]
+    Bhat=[0.25, 7.4276119608319180e-01, -3.1472922970066219e-01, 3.2196803361747034e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+
+
+
+
 """
     @ROS34PW(part)
 
