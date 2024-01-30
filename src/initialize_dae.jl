@@ -618,7 +618,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
        _tmp = PreallocationTools.dualcache(tmp, chunk)
        _du_tmp = PreallocationTools.dualcache(du_tmp, chunk)
    else
-        _tmp, _du_tmp = tmp, _du_tmp
+        _tmp, _du_tmp = tmp, du_tmp
    end
 
     nlequation! = @closure (out, x, p) -> begin
