@@ -916,6 +916,13 @@ end
 
 #### ROS34PW type method
 
+@ROS23(:init)
+@ROS23(:performstep)
+
+################################################################################
+
+#### ROS34PW type method
+
 @ROS34PW(:init)
 @ROS34PW(:performstep)
 

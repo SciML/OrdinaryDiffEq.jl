@@ -805,7 +805,8 @@ macro Rosenbrock4(part)
     end
 end
 
-#ROS34PW methods (Rang and Angermann, 2005)
+#ROS23 and ROS34PW methods (Rang and Angermann, 2005)
+
 """
     Ros34dummyTableau()
 
@@ -829,6 +830,26 @@ function Ros34dummyTableau()
 end
 
 """
+    Ros23dummyTableau()
+
+Generate a dummy tableau for ROS23 methods proposed by Rang. This type of methods has 3 steps.
+"""
+function Ros23dummyTableau()
+    a=[false false false;
+       true  false false;
+       true  true  false]
+    C=[false false false;
+       true  false false;
+       true  true  false;]
+    b=[true,true,true]
+    btilde=[true,true,true]
+    gamma=true
+    c=[false,true,true]
+    d=[true,true,true]
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+"""
     _transformtab(Alpha,Gamma,B,Bhat)
 
 Transform the tableau from values in the paper into values used in OrdinaryDiffEq according to p112 in Hairer and Wanner.
@@ -848,6 +869,164 @@ function _transformtab(Alpha,Gamma,B,Bhat)
     (a,C,b,btilde,d,c)
 end
 
+
+
+
+# 3 step ROS Methods
+"""
+    ROS2PRTableau()
+
+Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS2PRTableau() # 2nd order
+    gamma=2.28155493653962e-01
+    Alpha=[0                       0                      0;
+           1.00000000000000e+00    0                      0;
+           0.00000000000000e+00    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -2.28155493653962e-01   gamma                   0;
+            6.47798871261042e-01   -8.75954364915004e-01   gamma]
+    B=[6.47798871261042e-01,1.24045635084996e-01, 2.28155493653962e-01]
+    Bhat=[7.71844506346038e-01, 2.28155493653962e-01, 0.00000000000000e+00]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc "Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+
+
+
+"""
+    ROS2STableau()
+
+Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS2STableau() # 2nd order
+    gamma=2.92893218813452e-01
+    Alpha=[0                       0                      0;
+           5.85786437626905e-01    0                      0;
+           0.00000000000000e+00    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -5.85786437626905e-01   gamma                   0;
+            3.53553390593274e-01   -6.46446609406726e-01   gamma]
+    B=[3.53553390593274e-01,3.53553390593274e-01, 2.92893218813452e-01]
+    Bhat=[3.33333333333333e-01, 3.33333333333333e-01, 3.33333333333333e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc "Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+
+
+"""
+    ROS3PRTableau()
+
+Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs by Joachim Rang
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS3PRTableau() # 3rd order
+    gamma=7.88675134594813e-01
+    Alpha=[0                       0                      0;
+           2.36602540378444e+00    0                      0;
+           0.00000000000000e+00    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -2.36602540378444e+00   gamma                   0;
+           -2.84686425165674e-01   -1.08133897861876e+00   gamma]
+    B=[2.92663844023951e-01,-8.13389786187641e-02, 7.88675134594813e-01]
+    Bhat=[1.11324865405187e-01, 1.00000000000000e-01, 7.88675134594813e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc "Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+
+
+"""
+    SCHOLZ4_7Tableau()
+
+Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs discussed by Joachim Rang
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function SCHOLZ4_7Tableau() # 3rd order
+    gamma=7.88675134594813e-01
+    Alpha=[0                       0                      0;
+           2.36602540378444e+00    0                      0;
+           2.50000000000000e-01    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -2.36602540378444e+00   gamma                   0;
+           -6.13414364537605e-01   -1.10383267558217e+00   gamma]
+    B=[4.95076910424059e-01,-1.12898126628685e-01, 6.17821216204626e-01]
+    Bhat=[3.33333333333333e-01, 3.33333333333333e-01, 3.33333333333333e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc "Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs discussed by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+
+
+
+"""
+    @ROS23(part)
+
+Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3PR, SCHOLZ4_7
+`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`@ROS23(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
+`@ROS23(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
+`@ROS23(:init)` and `@ROS23(:performstep)` should be placed in
+`perform_step/rosenbrock_perform_step.jl`.
+"""
+macro ROS23(part)
+    tabmask=Ros23dummyTableau()
+    cachename=:ROS23Cache
+    constcachename=:ROS23ConstantCache
+    ROS2PRtabname=:ROS2PRTableau
+    ROS2Stabname=:ROS2STableau
+    ROS3PRtabname=:ROS3PRTableau
+    SCHOLZ4_7tabname=:SCHOLZ4_7Tableau
+    n_normalstep=length(tabmask.b)-1
+    if part.value==:tableau
+        tabstructexpr=gen_tableau_struct(tabmask,:Ros23Tableau)
+        tabexprs=Array{Expr,1}([tabstructexpr])
+        push!(tabexprs,gen_tableau(ROS2PRTableau(),tabstructexpr,ROS2PRtabname))
+        push!(tabexprs,gen_tableau(ROS2STableau(),tabstructexpr,ROS2Stabname))
+        push!(tabexprs,gen_tableau(ROS3PRTableau(),tabstructexpr,ROS3PRtabname))
+        push!(tabexprs,gen_tableau(SCHOLZ4_7Tableau(),tabstructexpr,SCHOLZ4_7tabname))
+        return esc(quote $(tabexprs...) end)
+    elseif part.value==:cache
+        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
+        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2PR,ROS2PRtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2S,ROS2Stabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PR,ROS3PRtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:SCHOLZ4_7,SCHOLZ4_7tabname))
+        return esc(quote $(cacheexprs...) end)
+    elseif part.value==:init
+        return esc(gen_initialize(cachename,constcachename))
+    elseif part.value==:performstep
+        performstepexprs=Array{Expr,1}()
+        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
+        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
+        return esc(quote $(performstepexprs...) end)
+    else
+        throw(ArgumentError("Unknown parameter!"))
+        nothing
+    end
+end
+
+
+
+
+# 4 step ROS Methods
 """
     ROS34PW1aTableau()
 
@@ -969,7 +1148,7 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
+@doc "Improved traditional Rosenbrock-Wanner method of 3rd oder for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
 
 
 """
@@ -996,7 +1175,7 @@ function ROS3PRLTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL 
+@doc "Improved traditional Rosenbrock-Wanner method of 3rd oder for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL 
 
 
 """
@@ -1023,7 +1202,7 @@ function ROS3PRL2Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+@doc "Improved traditional Rosenbrock-Wanner method of 3rd oder for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
 
 
 
@@ -1031,7 +1210,7 @@ end
 """
     @ROS34PW(part)
 
-Generate code for the ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL, ROS3PRL2.
+Generate code for the 4 steps ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL, ROS3PRL2.
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS34PW(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS34PW(:cache)` should be placed in `caches/rosenbrock_caches.jl`.

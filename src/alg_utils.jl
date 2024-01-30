@@ -621,6 +621,11 @@ alg_order(alg::Feagin12) = 12
 alg_order(alg::Feagin14) = 14
 alg_order(alg::PFRK87) = 8
 
+alg_order(alg::ROS2PR) = 2
+alg_order(alg::ROS2S) = 2
+alg_order(alg::ROS3PR) = 3
+alg_order(alg::SCHOLZ4_7) = 3
+
 alg_order(alg::Rosenbrock23) = 2
 alg_order(alg::Rodas23W) = 3
 alg_order(alg::Rosenbrock32) = 3

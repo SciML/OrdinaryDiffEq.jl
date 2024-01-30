@@ -2954,6 +2954,10 @@ https://doi.org/10.24355/dbbs.084-201408121139-0
 for Alg in [
     :Rosenbrock23,
     :Rosenbrock32,
+    :ROS2PR,
+    :ROS2S,
+    :ROS3PR,
+    :SCHOLZ4_7,
     :ROS3P,
     :Rodas3,
     :ROS34PW1a,
