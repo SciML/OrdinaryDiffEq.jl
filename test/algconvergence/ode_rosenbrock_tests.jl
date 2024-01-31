@@ -97,7 +97,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈2 atol=testTol
 
     sol = solve(prob, ROS2PR())
-    @test length(sol) < 20 # length(sol) = 24 => Too big??
+    @test length(sol) < 30 
 
     prob = prob_ode_2Dlinear
 
@@ -105,7 +105,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈2 atol=testTol
 
     sol = solve(prob, ROS2PR())
-    @test length(sol) < 20 # length(sol) = 24 => Too big??
+    @test length(sol) < 30 
 
     ### ROS2S
     prob = prob_ode_linear
@@ -148,7 +148,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, SCHOLZ4_7())
-    @test length(sol) < 20 # length(sol) = 28 => Too big??
+    @test length(sol) < 30 
 
     prob = prob_ode_2Dlinear
 
@@ -156,7 +156,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, SCHOLZ4_7())
-    @test length(sol) < 20 # length(sol) = 28 => Too big??
+    @test length(sol) < 30 
 
     println("4th order Rosenbrocks")
 

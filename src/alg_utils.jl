@@ -625,7 +625,6 @@ alg_order(alg::ROS2PR) = 2
 alg_order(alg::ROS2S) = 2
 alg_order(alg::ROS3PR) = 3
 alg_order(alg::SCHOLZ4_7) = 3
-
 alg_order(alg::Rosenbrock23) = 2
 alg_order(alg::Rodas23W) = 3
 alg_order(alg::Rosenbrock32) = 3
@@ -1026,8 +1025,6 @@ isWmethod(alg::ROS34PW1b) = true
 isWmethod(alg::ROS34PW2) = true
 isWmethod(alg::ROS34PW3) = true
 isWmethod(alg::ROS34PRw) = true
-isWmethod(alg::ROS3PRL) = false # not 100% sure about it see: https://doi.org/10.24355/dbbs.084-201408121139-0
-isWmethod(alg::ROS3PRL2) = false # not 100% sure about it
 isWmethod(alg::RosenbrockW6S4OS) = true
 
 isesdirk(alg::TRBDF2) = true
