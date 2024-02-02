@@ -623,6 +623,7 @@ alg_order(alg::PFRK87) = 8
 
 alg_order(alg::ROS2PR) = 2
 alg_order(alg::ROS2S) = 2
+alg_order(alg::ROS3) = 3
 alg_order(alg::ROS3PR) = 3
 alg_order(alg::Scholz4_7) = 3
 alg_order(alg::Rosenbrock23) = 2

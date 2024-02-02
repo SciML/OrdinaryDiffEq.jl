@@ -124,6 +124,23 @@ import LinearSolve
     sol = solve(prob, ROS2S())
     @test length(sol) < 20 
 
+    ### ROS3
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS3())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS3())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3())
+    @test length(sol) < 20 
+
     ### ROS3PR
     prob = prob_ode_linear
 

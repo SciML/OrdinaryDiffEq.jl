@@ -936,6 +936,33 @@ More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
 
 
 """
+    ROS3Tableau()
+E. Hairer, G. Wanner, Solving ordinary differential equations II,
+stiff and differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
+With coefficients from https://doi.org/10.1016/S1352-2310(97)83212-8
+
+"""
+function ROS3Tableau() # 3rd order
+    gamma=0.435866521508459
+    Alpha=[0                    0                      0;
+           0.435866521508459    0                      0;
+           0.435866521508459    0                      0]
+    Gamma=[gamma                  0                        0;
+           -0.19294655696029095   gamma                   0;
+           0                      1.7492714812579468   gamma]
+    B=[-0.7545741238540432,1.9410040706196443, -0.18642994676560104]
+    Bhat=[-1.5335874578414959, 2.817451311486258, -0.28386385364476185]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+3rd order L-stable Rosenbrock-Wanner method with 3 internal stages with an embedded strongly A-stable 2nd order method
+More Information at https://link.springer.com/book/10.1007/978-3-662-09947-6 
+""" ROS3
+
+
+"""
     ROS3PRTableau()
 
 3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
@@ -995,7 +1022,7 @@ More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
 """
     @ROS23(part)
 
-Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3PR, Scholz4_7
+Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS23(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS23(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
@@ -1008,6 +1035,7 @@ macro ROS23(part)
     constcachename=:ROS23ConstantCache
     ROS2PRtabname=:ROS2PRTableau
     ROS2Stabname=:ROS2STableau
+    ROS3tabname=:ROS3Tableau
     ROS3PRtabname=:ROS3PRTableau
     Scholz4_7tabname=:Scholz4_7Tableau
     n_normalstep=length(tabmask.b)-1
@@ -1016,6 +1044,7 @@ macro ROS23(part)
         tabexprs=Array{Expr,1}([tabstructexpr])
         push!(tabexprs,gen_tableau(ROS2PRTableau(),tabstructexpr,ROS2PRtabname))
         push!(tabexprs,gen_tableau(ROS2STableau(),tabstructexpr,ROS2Stabname))
+        push!(tabexprs,gen_tableau(ROS3Tableau(),tabstructexpr,ROS3tabname))
         push!(tabexprs,gen_tableau(ROS3PRTableau(),tabstructexpr,ROS3PRtabname))
         push!(tabexprs,gen_tableau(Scholz4_7Tableau(),tabstructexpr,Scholz4_7tabname))
         return esc(quote $(tabexprs...) end)
@@ -1024,6 +1053,7 @@ macro ROS23(part)
         cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2PR,ROS2PRtabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2S,ROS2Stabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3,ROS3tabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PR,ROS3PRtabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Scholz4_7,Scholz4_7tabname))
         return esc(quote $(cacheexprs...) end)

@@ -2890,7 +2890,7 @@ Scientific Computing, 18 (1), pp. 1-22.
 - Lang, J. & Verwer, ROS3P—An Accurate Third-Order Rosenbrock Solver Designed for
   Parabolic Problems J. BIT Numerical Mathematics (2001) 41: 731. doi:10.1023/A:1021900219772
 
-#### Rodas3, Ros4LStab, Rodas4, Rodas42
+#### ROS3, Rodas3, Ros4LStab, Rodas4, Rodas42
 
 - E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
@@ -2956,6 +2956,7 @@ for Alg in [
     :Rosenbrock32,
     :ROS2PR,
     :ROS2S,
+    :ROS3,
     :ROS3PR,
     :Scholz4_7,
     :ROS3P,
