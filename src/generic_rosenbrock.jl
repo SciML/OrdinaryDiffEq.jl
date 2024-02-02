@@ -1168,7 +1168,8 @@ function ROS34PRwTableau() # 3rd order
 end
 
 @doc """
-3nd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages with B_PR consistent of order 2
+3rd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages,
+B_PR consistent of order 2.
 The order of convergence decreases if medium stiff problems are considered.
 More Information at https://doi.org/10.1016/j.cam.2015.03.010
 """ ROS34PRw
