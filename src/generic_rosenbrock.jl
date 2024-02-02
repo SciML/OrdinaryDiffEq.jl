@@ -876,7 +876,8 @@ end
 """
     ROS2PRTableau()
 
-Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang
+2nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with (Rinf=0).
+For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use ROS2S instead.
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
@@ -895,14 +896,19 @@ function ROS2PRTableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+@doc """
+2nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with (Rinf=0).
+For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use ROS2S instead.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS2PR
 
 
 
 """
     ROS2STableau()
 
-Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang
+2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
@@ -921,13 +927,16 @@ function ROS2STableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method of 2nd order for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
+@doc """
+2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS2
 
 
 """
     ROS3PRTableau()
 
-Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs by Joachim Rang
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
@@ -946,18 +955,21 @@ function ROS3PRTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
-
+@doc """
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS3PR
 
 """
-    SCHOLZ4_7Tableau()
+    Scholz47Tableau()
 
-Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs discussed by Joachim Rang
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
+Convergence with order 4 for the stiff case, but has a poor accuracy.
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
-function SCHOLZ4_7Tableau() # 3rd order
+function Scholz47Tableau() # 3rd order
     gamma=7.88675134594813e-01
     Alpha=[0                       0                      0;
            2.36602540378444e+00    0                      0;
@@ -971,14 +983,17 @@ function SCHOLZ4_7Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method of 3rd order for stiff ODEs and DAEs discussed by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
-
+@doc """
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
+Convergence with order 4 for the stiff case, but has a poor accuracy.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" Scholz47
 
 
 """
     @ROS23(part)
 
-Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3PR, SCHOLZ4_7
+Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3PR, Scholz47
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS23(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS23(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
@@ -992,7 +1007,7 @@ macro ROS23(part)
     ROS2PRtabname=:ROS2PRTableau
     ROS2Stabname=:ROS2STableau
     ROS3PRtabname=:ROS3PRTableau
-    SCHOLZ4_7tabname=:SCHOLZ4_7Tableau
+    Scholz47tabname=:Scholz47Tableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros23Tableau)
@@ -1000,7 +1015,7 @@ macro ROS23(part)
         push!(tabexprs,gen_tableau(ROS2PRTableau(),tabstructexpr,ROS2PRtabname))
         push!(tabexprs,gen_tableau(ROS2STableau(),tabstructexpr,ROS2Stabname))
         push!(tabexprs,gen_tableau(ROS3PRTableau(),tabstructexpr,ROS3PRtabname))
-        push!(tabexprs,gen_tableau(SCHOLZ4_7Tableau(),tabstructexpr,SCHOLZ4_7tabname))
+        push!(tabexprs,gen_tableau(Scholz47Tableau(),tabstructexpr,Scholz47tabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
@@ -1008,7 +1023,7 @@ macro ROS23(part)
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2PR,ROS2PRtabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2S,ROS2Stabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PR,ROS3PRtabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:SCHOLZ4_7,SCHOLZ4_7tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Scholz47,Scholz47tabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:init
         return esc(gen_initialize(cachename,constcachename))
@@ -1127,7 +1142,8 @@ end
 """
     ROS34PRwTableau()
 
-Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang
+3nd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages with B_PR consistent of order 2
+The order of convergence decreases if medium stiff problems are considered.
 
 Joachim Rang, Improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs,
 Journal of Computational and Applied Mathematics: https://doi.org/10.1016/j.cam.2015.03.010
@@ -1148,13 +1164,17 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method of 3rd oder for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
-
+@doc """
+3nd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages with B_PR consistent of order 2
+The order of convergence decreases if medium stiff problems are considered.
+More Information at https://doi.org/10.1016/j.cam.2015.03.010
+""" ROS34PRw
 
 """
     ROS3PRLTableau()
 
-Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang
+3nd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages with B_PR consistent of order 2 with Rinf=0
+The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
@@ -1175,13 +1195,18 @@ function ROS3PRLTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method of 3rd oder for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL 
+@doc """
+3nd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages with B_PR consistent of order 2 with Rinf=0
+The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS3PRL
 
 
 """
     ROS3PRL2Tableau()
 
-Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang
+3nd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages with B_PR consistent of order 3
+The order of convergence does NOT decreases if medium stiff problems are considered as it does for ROS3PRL.
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
@@ -1202,8 +1227,11 @@ function ROS3PRL2Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method of 3rd oder for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.24355/dbbs.084-201408121139-0" ROS3PRL2 
-
+@doc """
+3nd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages with B_PR consistent of order 3
+The order of convergence does NOT decreases if medium stiff problems are considered as it does for ROS3PRL.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS3PRL2
 
 
 

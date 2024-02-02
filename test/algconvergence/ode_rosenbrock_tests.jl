@@ -141,21 +141,21 @@ import LinearSolve
     sol = solve(prob, ROS3PR())
     @test length(sol) < 20 #length(sol) = 4 => Too Small??
 
-    ### SCHOLZ4_7
+    ### Scholz47
     prob = prob_ode_linear
 
-    sim = test_convergence(dts, prob, SCHOLZ4_7())
+    sim = test_convergence(dts, prob, Scholz47())
     @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob, SCHOLZ4_7())
+    sol = solve(prob, Scholz47())
     @test length(sol) < 30 
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, SCHOLZ4_7())
+    sim = test_convergence(dts, prob, Scholz47())
     @test sim.𝒪est[:final]≈3 atol=testTol
 
-    sol = solve(prob, SCHOLZ4_7())
+    sol = solve(prob, Scholz47())
     @test length(sol) < 30 
 
     println("4th order Rosenbrocks")

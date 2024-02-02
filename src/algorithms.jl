@@ -2895,6 +2895,11 @@ Scientific Computing, 18 (1), pp. 1-22.
 - E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 
+#### ROS2PR, ROS2S, ROS3PR, Scholz47
+-Rang, Joachim (2014): The Prothero and Robinson example: 
+ Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+ https://doi.org/10.24355/dbbs.084-201408121139-0
+
 #### RosShamp4
 
 - L. F. Shampine, Implementation of Rosenbrock Methods, ACM Transactions on
@@ -2932,18 +2937,13 @@ University of Geneva, Switzerland.
 
 #### ROS34PRw
 -Joachim Rang, Improved traditional Rosenbrock–Wanner methods for stiff ODEs and DAEs,
-Journal of Computational and Applied Mathematics,
-https://doi.org/10.1016/j.cam.2015.03.010
+ Journal of Computational and Applied Mathematics,
+ https://doi.org/10.1016/j.cam.2015.03.010
 
-#### ROS3PRL
--Rang, Joachim (2014): The Prothero and Robinson example : 
-Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-https://doi.org/10.24355/dbbs.084-201408121139-0
-
-#### ROS3PRL2
--Rang, Joachim (2014): The Prothero and Robinson example : 
-Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
-https://doi.org/10.24355/dbbs.084-201408121139-0
+#### ROS3PRL, ROS3PRL2
+-Rang, Joachim (2014): The Prothero and Robinson example: 
+ Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+ https://doi.org/10.24355/dbbs.084-201408121139-0
 
 #### Rodas5P
 - Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
@@ -2957,7 +2957,7 @@ for Alg in [
     :ROS2PR,
     :ROS2S,
     :ROS3PR,
-    :SCHOLZ4_7,
+    :Scholz47,
     :ROS3P,
     :Rodas3,
     :ROS34PW1a,
