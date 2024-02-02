@@ -1235,8 +1235,9 @@ function ROS3PRL2Tableau() # 3rd order
 end
 
 @doc """
-3nd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages with B_PR consistent of order 3
-The order of convergence does NOT decreases if medium stiff problems are considered as it does for ROS3PRL.
+3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+B_PR consistent of order 3.
+The order of convergence does NOT decreases if medium stiff problems are considered as it does for [`ROS3PRL`](@ref).
 More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
 """ ROS3PRL2
 
