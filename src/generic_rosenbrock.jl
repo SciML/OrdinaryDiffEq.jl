@@ -932,7 +932,7 @@ end
 @doc """
 2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
 More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
-""" ROS2
+""" ROS2S
 
 
 """
