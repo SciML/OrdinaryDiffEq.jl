@@ -1176,7 +1176,8 @@ More Information at https://doi.org/10.1016/j.cam.2015.03.010
 """
     ROS3PRLTableau()
 
-3nd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages with B_PR consistent of order 2 with Rinf=0
+3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+B_PR consistent of order 2 with Rinf=0.
 The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
