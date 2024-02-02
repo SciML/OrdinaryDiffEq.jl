@@ -2895,7 +2895,7 @@ Scientific Computing, 18 (1), pp. 1-22.
 - E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 
-#### ROS2PR, ROS2S, ROS3PR, Scholz47
+#### ROS2PR, ROS2S, ROS3PR, Scholz4_7
 -Rang, Joachim (2014): The Prothero and Robinson example: 
  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
  https://doi.org/10.24355/dbbs.084-201408121139-0
@@ -2957,7 +2957,7 @@ for Alg in [
     :ROS2PR,
     :ROS2S,
     :ROS3PR,
-    :Scholz47,
+    :Scholz4_7,
     :ROS3P,
     :Rodas3,
     :ROS34PW1a,

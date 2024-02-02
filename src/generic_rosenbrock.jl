@@ -963,7 +963,7 @@ More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
 """ ROS3PR
 
 """
-    Scholz47Tableau()
+    Scholz4_7Tableau()
 
 3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
 Convergence with order 4 for the stiff case, but has a poor accuracy.
@@ -971,7 +971,7 @@ Convergence with order 4 for the stiff case, but has a poor accuracy.
 Rang, Joachim (2014): The Prothero and Robinson example: 
 Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
 """
-function Scholz47Tableau() # 3rd order
+function Scholz4_7Tableau() # 3rd order
     gamma=7.88675134594813e-01
     Alpha=[0                       0                      0;
            2.36602540378444e+00    0                      0;
@@ -989,13 +989,13 @@ end
 3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
 Convergence with order 4 for the stiff case, but has a poor accuracy.
 More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
-""" Scholz47
+""" Scholz4_7
 
 
 """
     @ROS23(part)
 
-Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3PR, Scholz47
+Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3PR, Scholz4_7
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS23(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS23(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
@@ -1009,7 +1009,7 @@ macro ROS23(part)
     ROS2PRtabname=:ROS2PRTableau
     ROS2Stabname=:ROS2STableau
     ROS3PRtabname=:ROS3PRTableau
-    Scholz47tabname=:Scholz47Tableau
+    Scholz4_7tabname=:Scholz4_7Tableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros23Tableau)
@@ -1017,7 +1017,7 @@ macro ROS23(part)
         push!(tabexprs,gen_tableau(ROS2PRTableau(),tabstructexpr,ROS2PRtabname))
         push!(tabexprs,gen_tableau(ROS2STableau(),tabstructexpr,ROS2Stabname))
         push!(tabexprs,gen_tableau(ROS3PRTableau(),tabstructexpr,ROS3PRtabname))
-        push!(tabexprs,gen_tableau(Scholz47Tableau(),tabstructexpr,Scholz47tabname))
+        push!(tabexprs,gen_tableau(Scholz4_7Tableau(),tabstructexpr,Scholz4_7tabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
@@ -1025,7 +1025,7 @@ macro ROS23(part)
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2PR,ROS2PRtabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2S,ROS2Stabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PR,ROS3PRtabname))
-        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Scholz47,Scholz47tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Scholz4_7,Scholz4_7tabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:init
         return esc(gen_initialize(cachename,constcachename))
