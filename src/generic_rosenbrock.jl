@@ -899,7 +899,8 @@ end
 
 @doc """
 2nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with (Rinf=0).
-For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use ROS2S instead.
+For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use 
+[`ROS2S`](@ref) instead.
 More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
 """ ROS2PR
 
