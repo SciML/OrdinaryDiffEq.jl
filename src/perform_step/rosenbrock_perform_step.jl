@@ -418,7 +418,11 @@ end
         end
         integrator.stats.nsolve += 1
 
-        utilde = dto6 * f.mass_matrix * (k₁ - 2 * k₂ + k₃)
+if  u isa Number
+    utilde = dto6 * f.mass_matrix[1,1] * (k₁ - 2 * k₂ + k₃)
+else
+    utilde = dto6 * f.mass_matrix * (k₁ - 2 * k₂ + k₃)
+end
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
