@@ -1034,7 +1034,7 @@ end
         integrator.k[3] = h2_21 * k1 + h2_22 * k2 + h2_23 * k3 + h2_24 * k4 + h2_25 * k5
         if integrator.opts.adaptive
             calculate_interpoldiff!(k1, k2, uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
-            atm = calculate_residuals!(k2, uprev, k1, integrator.opts.abstol,
+            atmp = calculate_residuals(k2, uprev, k1, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             EEst = max(EEst,integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
         end
