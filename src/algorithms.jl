@@ -2890,10 +2890,15 @@ Scientific Computing, 18 (1), pp. 1-22.
 - Lang, J. & Verwer, ROS3P—An Accurate Third-Order Rosenbrock Solver Designed for
   Parabolic Problems J. BIT Numerical Mathematics (2001) 41: 731. doi:10.1023/A:1021900219772
 
-#### Rodas3, Ros4LStab, Rodas4, Rodas42
+#### ROS3, Rodas3, Ros4LStab, Rodas4, Rodas42
 
 - E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
   differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
+
+#### ROS2PR, ROS2S, ROS3PR, Scholz4_7
+-Rang, Joachim (2014): The Prothero and Robinson example: 
+ Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+ https://doi.org/10.24355/dbbs.084-201408121139-0
 
 #### RosShamp4
 
@@ -2932,8 +2937,13 @@ University of Geneva, Switzerland.
 
 #### ROS34PRw
 -Joachim Rang, Improved traditional Rosenbrock–Wanner methods for stiff ODEs and DAEs,
-Journal of Computational and Applied Mathematics,
-https://doi.org/10.1016/j.cam.2015.03.010
+ Journal of Computational and Applied Mathematics,
+ https://doi.org/10.1016/j.cam.2015.03.010
+
+#### ROS3PRL, ROS3PRL2
+-Rang, Joachim (2014): The Prothero and Robinson example: 
+ Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
+ https://doi.org/10.24355/dbbs.084-201408121139-0
 
 #### Rodas5P
 - Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
@@ -2944,6 +2954,11 @@ https://doi.org/10.1016/j.cam.2015.03.010
 for Alg in [
     :Rosenbrock23,
     :Rosenbrock32,
+    :ROS2PR,
+    :ROS2S,
+    :ROS3,
+    :ROS3PR,
+    :Scholz4_7,
     :ROS3P,
     :Rodas3,
     :ROS34PW1a,
@@ -2951,6 +2966,8 @@ for Alg in [
     :ROS34PW2,
     :ROS34PW3,
     :ROS34PRw,
+    :ROS3PRL,
+    :ROS3PRL2,
     :RosShamp4,
     :Veldd4,
     :Velds4,

@@ -106,6 +106,11 @@ dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
         @test _norm_dsol(Rosenbrock32(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(ROS3P(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(Rodas3(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(ROS2PR(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(ROS2S(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(ROS3(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(ROS3PR(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(Scholz4_7(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(RosShamp4(), prob, prob2)≈0 atol=1e-10
         @test _norm_dsol(Veldd4(), prob, prob2)≈0 atol=1e-10
         @test _norm_dsol(Velds4(), prob, prob2)≈0 atol=1e-10
@@ -117,7 +122,9 @@ dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
         @test _norm_dsol(ROS34PW1b(), prob, prob2)≈0 atol=1e-10
         @test _norm_dsol(ROS34PW2(), prob, prob2)≈0 atol=1e-10
         @test _norm_dsol(ROS34PW3(), prob, prob2)≈0 atol=1e-10
-        @test _norm_dsol(ROS34PRw(), prob, prob2)≈0 atol=1e-10
+        @test _norm_dsol(ROS34PRw(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(ROS3PRL(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(ROS3PRL2(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(Rodas4(), prob, prob2)≈0 atol=1e-9
         @test _norm_dsol(Rodas42(), prob, prob2)≈0 atol=1e-9
         @test _norm_dsol(Rodas4P(), prob, prob2)≈0 atol=1e-9

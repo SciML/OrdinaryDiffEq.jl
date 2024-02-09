@@ -90,6 +90,91 @@ import LinearSolve
     sol = solve(prob, Rodas3())
     @test length(sol) < 20
 
+    ### ROS2PR
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS2PR())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+
+    sol = solve(prob, ROS2PR())
+    @test length(sol) < 30 
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS2PR())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+
+    sol = solve(prob, ROS2PR())
+    @test length(sol) < 30 
+
+    ### ROS2S
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS2S())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+
+    sol = solve(prob, ROS2S())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS2S())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+
+    sol = solve(prob, ROS2S())
+    @test length(sol) < 20 
+
+    ### ROS3
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS3())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS3())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3())
+    @test length(sol) < 20 
+
+    ### ROS3PR
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS3PR())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PR())
+    @test length(sol) < 20 #length(sol) = 4 => Too Small??
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS3PR())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PR())
+    @test length(sol) < 20 #length(sol) = 4 => Too Small??
+
+    ### Scholz4_7
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Scholz4_7())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, Scholz4_7())
+    @test length(sol) < 30 
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Scholz4_7())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, Scholz4_7())
+    @test length(sol) < 30 
+
     println("4th order Rosenbrocks")
 
     ### RosShamp4
@@ -288,6 +373,40 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, ROS34PRw())
+    @test length(sol) < 20
+
+    ### ROS3PRL
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS3PRL())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS3PRL())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL())
+    @test length(sol) < 20
+
+    ### ROS3PRL2
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS3PRL2())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL2())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS3PRL2())
+    @test sim.𝒪est[:final]≈3 atol=testTol
+
+    sol = solve(prob, ROS3PRL2())
     @test length(sol) < 20
 
     ### RosenbrockW6S4OS

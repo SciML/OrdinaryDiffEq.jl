@@ -805,7 +805,8 @@ macro Rosenbrock4(part)
     end
 end
 
-#ROS34PW methods (Rang and Angermann, 2005)
+#ROS23 and ROS34PW methods (Rang and Angermann, 2005)
+
 """
     Ros34dummyTableau()
 
@@ -829,6 +830,26 @@ function Ros34dummyTableau()
 end
 
 """
+    Ros23dummyTableau()
+
+Generate a dummy tableau for ROS23 methods proposed by Rang. This type of methods has 3 steps.
+"""
+function Ros23dummyTableau()
+    a=[false false false;
+       true  false false;
+       true  true  false]
+    C=[false false false;
+       true  false false;
+       true  true  false;]
+    b=[true,true,true]
+    btilde=[true,true,true]
+    gamma=true
+    c=[false,true,true]
+    d=[true,true,true]
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+"""
     _transformtab(Alpha,Gamma,B,Bhat)
 
 Transform the tableau from values in the paper into values used in OrdinaryDiffEq according to p112 in Hairer and Wanner.
@@ -848,6 +869,211 @@ function _transformtab(Alpha,Gamma,B,Bhat)
     (a,C,b,btilde,d,c)
 end
 
+
+
+
+# 3 step ROS Methods
+"""
+    ROS2PRTableau()
+
+2nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with (Rinf=0).
+For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use 
+[`ROS2S`](@ref) instead.
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS2PRTableau() # 2nd order
+    gamma=2.28155493653962e-01
+    Alpha=[0                       0                      0;
+           1.00000000000000e+00    0                      0;
+           0.00000000000000e+00    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -2.28155493653962e-01   gamma                   0;
+            6.47798871261042e-01   -8.75954364915004e-01   gamma]
+    B=[6.47798871261042e-01,1.24045635084996e-01, 2.28155493653962e-01]
+    Bhat=[7.71844506346038e-01, 2.28155493653962e-01, 0.00000000000000e+00]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+2nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with (Rinf=0).
+For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use 
+[`ROS2S`](@ref) instead.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS2PR
+
+
+
+"""
+    ROS2STableau()
+
+2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS2STableau() # 2nd order
+    gamma=2.92893218813452e-01
+    Alpha=[0                       0                      0;
+           5.85786437626905e-01    0                      0;
+           0.00000000000000e+00    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -5.85786437626905e-01   gamma                   0;
+            3.53553390593274e-01   -6.46446609406726e-01   gamma]
+    B=[3.53553390593274e-01,3.53553390593274e-01, 2.92893218813452e-01]
+    Bhat=[3.33333333333333e-01, 3.33333333333333e-01, 3.33333333333333e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+2nd order stiffly accurate Rosenbrock-Wanner W-method with 3 internal stages with B_PR consistent of order 2 with (Rinf=0).
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS2S
+
+
+"""
+    ROS3Tableau()
+E. Hairer, G. Wanner, Solving ordinary differential equations II,
+stiff and differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
+With coefficients from https://doi.org/10.1016/S1352-2310(97)83212-8
+
+"""
+function ROS3Tableau() # 3rd order
+    gamma=0.435866521508459
+    Alpha=[0                    0                      0;
+           0.435866521508459    0                      0;
+           0.435866521508459    0                      0]
+    Gamma=[gamma                  0                        0;
+           -0.19294655696029095   gamma                   0;
+           0                      1.7492714812579468   gamma]
+    B=[-0.7545741238540432,1.9410040706196443, -0.18642994676560104]
+    Bhat=[-1.5335874578414959, 2.817451311486258, -0.28386385364476185]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+3rd order L-stable Rosenbrock-Wanner method with 3 internal stages with an embedded strongly A-stable 2nd order method
+More Information at https://link.springer.com/book/10.1007/978-3-662-09947-6 
+""" ROS3
+
+
+"""
+    ROS3PRTableau()
+
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS3PRTableau() # 3rd order
+    gamma=7.88675134594813e-01
+    Alpha=[0                       0                      0;
+           2.36602540378444e+00    0                      0;
+           0.00000000000000e+00    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -2.36602540378444e+00   gamma                   0;
+           -2.84686425165674e-01   -1.08133897861876e+00   gamma]
+    B=[2.92663844023951e-01,-8.13389786187641e-02, 7.88675134594813e-01]
+    Bhat=[1.11324865405187e-01, 1.00000000000000e-01, 7.88675134594813e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS3PR
+
+"""
+    Scholz4_7Tableau()
+
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
+Convergence with order 4 for the stiff case, but has a poor accuracy.
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function Scholz4_7Tableau() # 3rd order
+    gamma=7.88675134594813e-01
+    Alpha=[0                       0                      0;
+           2.36602540378444e+00    0                      0;
+           2.50000000000000e-01    1.0000000000000e+00    0]
+    Gamma=[gamma                  0                        0;
+           -2.36602540378444e+00   gamma                   0;
+           -6.13414364537605e-01   -1.10383267558217e+00   gamma]
+    B=[4.95076910424059e-01,-1.12898126628685e-01, 6.17821216204626e-01]
+    Bhat=[3.33333333333333e-01, 3.33333333333333e-01, 3.33333333333333e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
+Convergence with order 4 for the stiff case, but has a poor accuracy.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" Scholz4_7
+
+
+"""
+    @ROS23(part)
+
+Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
+`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`@ROS23(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
+`@ROS23(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
+`@ROS23(:init)` and `@ROS23(:performstep)` should be placed in
+`perform_step/rosenbrock_perform_step.jl`.
+"""
+macro ROS23(part)
+    tabmask=Ros23dummyTableau()
+    cachename=:ROS23Cache
+    constcachename=:ROS23ConstantCache
+    ROS2PRtabname=:ROS2PRTableau
+    ROS2Stabname=:ROS2STableau
+    ROS3tabname=:ROS3Tableau
+    ROS3PRtabname=:ROS3PRTableau
+    Scholz4_7tabname=:Scholz4_7Tableau
+    n_normalstep=length(tabmask.b)-1
+    if part.value==:tableau
+        tabstructexpr=gen_tableau_struct(tabmask,:Ros23Tableau)
+        tabexprs=Array{Expr,1}([tabstructexpr])
+        push!(tabexprs,gen_tableau(ROS2PRTableau(),tabstructexpr,ROS2PRtabname))
+        push!(tabexprs,gen_tableau(ROS2STableau(),tabstructexpr,ROS2Stabname))
+        push!(tabexprs,gen_tableau(ROS3Tableau(),tabstructexpr,ROS3tabname))
+        push!(tabexprs,gen_tableau(ROS3PRTableau(),tabstructexpr,ROS3PRtabname))
+        push!(tabexprs,gen_tableau(Scholz4_7Tableau(),tabstructexpr,Scholz4_7tabname))
+        return esc(quote $(tabexprs...) end)
+    elseif part.value==:cache
+        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
+        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2PR,ROS2PRtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2S,ROS2Stabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3,ROS3tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PR,ROS3PRtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:Scholz4_7,Scholz4_7tabname))
+        return esc(quote $(cacheexprs...) end)
+    elseif part.value==:init
+        return esc(gen_initialize(cachename,constcachename))
+    elseif part.value==:performstep
+        performstepexprs=Array{Expr,1}()
+        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
+        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
+        return esc(quote $(performstepexprs...) end)
+    else
+        throw(ArgumentError("Unknown parameter!"))
+        nothing
+    end
+end
+
+
+
+
+# 4 step ROS Methods
 """
     ROS34PW1aTableau()
 
@@ -948,7 +1174,9 @@ end
 """
     ROS34PRwTableau()
 
-Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang
+3rd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages,
+B_PR consistent of order 2.
+The order of convergence decreases if medium stiff problems are considered.
 
 Joachim Rang, Improved traditional Rosenbrock-Wanner methods for stiff ODEs and DAEs,
 Journal of Computational and Applied Mathematics: https://doi.org/10.1016/j.cam.2015.03.010
@@ -969,12 +1197,86 @@ function ROS34PRwTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc "Improved traditional Rosenbrock-Wanner method for stiff ODEs and DAEs by Joachim Rang. More Information add https://doi.org/10.1016/j.cam.2015.03.010" ROS34PRw 
+@doc """
+3rd order stiffly accurate Rosenbrock-Wanner W-method with 4 internal stages,
+B_PR consistent of order 2.
+The order of convergence decreases if medium stiff problems are considered.
+More Information at https://doi.org/10.1016/j.cam.2015.03.010
+""" ROS34PRw
+
+"""
+    ROS3PRLTableau()
+
+3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+B_PR consistent of order 2 with Rinf=0.
+The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS3PRLTableau() # 3rd order
+    gamma=4.3586652150845900e-01
+    Alpha=[0                       0                       0                       0;
+           5.00000000000000e-01    0                       0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0]
+    Gamma=[ gamma                  0                      0                        0;
+           -5.00000000000000e-01   gamma                  0                        0;
+           -7.91564804204642e-01   3.52442167927514e-01   gamma                    0;
+           -4.97889699145187e-01   3.86075154415805e-01   -3.24051976779077e-01    gamma]
+    B=[2.11030085481324e-03, 8.86075154415805e-01, -3.24051976779077e-01, 4.35866521508459e-01]
+    Bhat=[0.5, 3.87524229532982e-01, -2.09492263150452e-01, 3.21968033617470e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+B_PR consistent of order 2 with Rinf=0.
+The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS3PRL
+
+
+"""
+    ROS3PRL2Tableau()
+
+3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+B_PR consistent of order 3.
+The order of convergence does NOT decreases if medium stiff problems are considered as it does for [`ROS3PRL`](@ref).
+
+Rang, Joachim (2014): The Prothero and Robinson example: 
+Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods. https://doi.org/10.24355/dbbs.084-201408121139-0
+"""
+function ROS3PRL2Tableau() # 3rd order
+    gamma=4.35866521508459e-01
+    Alpha=[0                       0                       0                       0;
+           1.30759956452538e+00    0                       0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0;
+           5.00000000000000e-01    5.00000000000000e-01    0                       0]
+    Gamma=[gamma                  0                       0                       0;
+           -1.30759956452538e+00   gamma                  0                        0;
+           -7.09885758609722e-01   -5.59967359602778e-01  gamma                    0;
+           -1.55508568075521e-01   -9.53885165751122e-01  6.73527212318184e-01    gamma]
+    B=[3.44491431924479e-01,-4.53885165751122e-01, 6.73527212318184e-01, 4.35866521508459e-01]
+    Bhat=[5.00000000000000e-01, -2.57388120865221e-01, 4.35420087247750e-01, 3.21968033617470e-01]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+B_PR consistent of order 3.
+The order of convergence does NOT decreases if medium stiff problems are considered as it does for [`ROS3PRL`](@ref).
+More Information at https://doi.org/10.24355/dbbs.084-201408121139-0
+""" ROS3PRL2
+
+
 
 """
     @ROS34PW(part)
 
-Generate code for the ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw.
+Generate code for the 4 steps ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL, ROS3PRL2.
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS34PW(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS34PW(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
@@ -990,6 +1292,8 @@ macro ROS34PW(part)
     ROS34PW2tabname=:ROS34PW2Tableau
     ROS34PW3tabname=:ROS34PW3Tableau
     ROS34PRwtabname=:ROS34PRwTableau
+    ROS3PRLtabname=:ROS3PRLTableau
+    ROS3PRL2tabname=:ROS3PRL2Tableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros34Tableau)
@@ -999,6 +1303,8 @@ macro ROS34PW(part)
         push!(tabexprs,gen_tableau(ROS34PW2Tableau(),tabstructexpr,ROS34PW2tabname))
         push!(tabexprs,gen_tableau(ROS34PW3Tableau(),tabstructexpr,ROS34PW3tabname))
         push!(tabexprs,gen_tableau(ROS34PRwTableau(),tabstructexpr,ROS34PRwtabname))
+        push!(tabexprs,gen_tableau(ROS3PRLTableau(),tabstructexpr,ROS3PRLtabname))
+        push!(tabexprs,gen_tableau(ROS3PRL2Tableau(),tabstructexpr,ROS3PRL2tabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
@@ -1008,6 +1314,8 @@ macro ROS34PW(part)
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW2,ROS34PW2tabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PW3,ROS34PW3tabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PRw,ROS34PRwtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL,ROS3PRLtabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL2,ROS3PRL2tabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:init
         return esc(gen_initialize(cachename,constcachename))
