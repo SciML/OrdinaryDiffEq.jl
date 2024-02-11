@@ -81,14 +81,14 @@ function derivative!(df::AbstractArray{<:Number}, f,
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivtive for all elements in gradient
     if alg_autodiff(alg) isa AutoForwardDiff
+        tag = DiffEqBase.promote_dual(eltype(df), typeof(x))
         T = if standardtag(alg)
-            typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
+            typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), tag))
         else
-            typeof(ForwardDiff.Tag(f, eltype(df)))
+            typeof(ForwardDiff.Tag(f, tag))
         end
-
-        xdual = Dual{T, eltype(df), 1}(convert(eltype(df), x),
-            ForwardDiff.Partials((one(eltype(df)),)))
+        xdual = Dual{T, tag, 1}(convert(tag, x),
+            ForwardDiff.Partials((oneunit(tag),)))
 
         if integrator.iter == 1
             try
@@ -367,17 +367,13 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
             end
 
             if du1 isa Array
-                dualt = Dual{T, eltype(du1), 1}(first(du1) * t,
+                dualt = Dual{T, eltype(du1), 1}(first(du1),
                     ForwardDiff.Partials((one(eltype(du1)),)))
                 grad_config = similar(du1, typeof(dualt))
                 fill!(grad_config, false)
             else
                 grad_config = ArrayInterface.restructure(du1,
-                    Dual{
-                        T,
-                        eltype(du1),
-                        1,
-                    }.(du1,
+                    Dual{T, eltype(du1), 1}.(du1,
                         (ForwardDiff.Partials((one(eltype(du1)),)),)) .*
                     false)
             end
