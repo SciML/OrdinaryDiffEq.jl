@@ -11,6 +11,8 @@ const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
                                          * https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/
                                          """
 
+using SciMLBase: SENSITIVITY_INTERP_MESSAGE
+
 struct DerivativeOrderNotPossibleError <: Exception end
 
 function Base.showerror(io::IO, e::DerivativeOrderNotPossibleError)
