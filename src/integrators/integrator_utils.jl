@@ -102,6 +102,14 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                             [k[integrator.opts.save_idxs] for k in integrator.k],
                             false)
                     end
+                    if integrator.alg isa DAEAlgorithm
+                        if integrator.opts.save_idxs === nothing
+                            copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator.du)
+                        else
+                            copyat_or_push!(integrator.sol.du, integrator.saveiter,
+                                integrator.du[integrator.opts.save_idxs], false)
+                        end
+                    end
                 end
             end
             if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
@@ -133,6 +141,14 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                     copyat_or_push!(integrator.sol.k, integrator.saveiter_dense,
                         [k[integrator.opts.save_idxs] for k in integrator.k],
                         false)
+                end
+                if integrator.alg isa DAEAlgorithm
+                    if integrator.opts.save_idxs === nothing
+                        copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator.du)
+                    else
+                        copyat_or_push!(integrator.sol.du, integrator.saveiter,
+                            integrator.du[integrator.opts.save_idxs], false)
+                    end
                 end
             end
         end
@@ -350,9 +366,15 @@ function handle_callbacks!(integrator)
         savevalues!(integrator)
     end
 
-    integrator.u_modified = continuous_modified | discrete_modified
-    integrator.reeval_fsal  && handle_callback_modifiers!(integrator) # Hook for DDEs to add discontinuities
+    integrator.u_modified = continuous_modified || discrete_modified
+    if integrator.u_modified
+        handle_callback_modifiers!(integrator)
+    end
     nothing
+end
+
+function handle_callback_modifiers!(integrator::ODEIntegrator)
+    integrator.reeval_fsal = true
 end
 
 function update_uprev!(integrator)

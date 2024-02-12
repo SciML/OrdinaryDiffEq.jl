@@ -25,7 +25,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     save_end = nothing,
     callback = nothing,
     dense = save_everystep &&
-                !(alg isa Union{DAEAlgorithm, FunctionMap}) &&
+                !(alg isa FunctionMap) &&
                 isempty(saveat),
     calck = (callback !== nothing && callback !== CallbackSet()) ||
                 (dense) || !isempty(saveat), # and no dense output
@@ -413,10 +413,17 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)
 
     id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
-    sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-        dense = dense, k = ks, interp = id,
-        alg_choice = alg_choice,
-        calculate_error = false, stats = stats)
+    if _alg isa DAEAlgorithm
+        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries, Vector{typeof(du)}(undef,0),
+            dense = dense, k = ks, interp = id,
+            alg_choice = alg_choice,
+            calculate_error = false, stats = stats)
+    else
+        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
+            dense = dense, k = ks, interp = id,
+            alg_choice = alg_choice,
+            calculate_error = false, stats = stats)
+    end
 
     if recompile_flag == true
         FType = typeof(f)
