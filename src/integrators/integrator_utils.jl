@@ -350,15 +350,8 @@ function handle_callbacks!(integrator)
         savevalues!(integrator)
     end
 
-    integrator.u_modified = continuous_modified || discrete_modified
-    if integrator.u_modified
-        handle_callback_modifiers!(integrator)
-    end
+    integrator.u_modified = continuous_modified | discrete_modified
     nothing
-end
-
-function handle_callback_modifiers!(integrator::ODEIntegrator)
-    integrator.reeval_fsal = true
 end
 
 function update_uprev!(integrator)
