@@ -51,6 +51,10 @@ function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegra
     end
 
     integrator.u_modified = false
+
+    # This will reset fsal if any u_modified is true!
+    integrator.do_error_check = false
+    integrator.reeval_fsal = true
 end
 
 function u_modified!(integrator::ODEIntegrator, bool::Bool)
