@@ -474,21 +474,24 @@ function handle_tstop!(integrator)
     return nothing
 end
 
+handle_callback_modifiers!(integrator::ODEIntegrator) = nothing
+
 function reset_fsal!(integrator)
     # Under these conditions, these algorithms are not FSAL anymore
     integrator.stats.nf += 1
 
-    if integrator.sol.prob isa DAEProblem
-        DiffEqBase.initialize_dae!(integrator)
+    handle_callback_modifiers!(integrator) # Hook for DDEs to add discontinuities
+
+    # Ignore DAEs but they already re-ran initialization
+    # Mass matrix DAEs do need to reset FSAL if available
+    if !(integrator.sol.prob isa DAEProblem) && (integrator.cache isa OrdinaryDiffEqMutableCache ||
+       (integrator.cache isa CompositeCache &&
+        integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache)
+        integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t))
     else
-        if integrator.cache isa OrdinaryDiffEqMutableCache ||
-           (integrator.cache isa CompositeCache &&
-            integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache)
-            integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
-        else
-            integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
-        end
+        integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
     end
+    
     # Do not set false here so it can be checked in the algorithm
     # integrator.reeval_fsal = false
 end
