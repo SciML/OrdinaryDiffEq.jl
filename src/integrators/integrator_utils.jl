@@ -486,8 +486,8 @@ function reset_fsal!(integrator)
     # Mass matrix DAEs do need to reset FSAL if available
     if !(integrator.sol.prob isa DAEProblem) && (integrator.cache isa OrdinaryDiffEqMutableCache ||
        (integrator.cache isa CompositeCache &&
-        integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache)
-        integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t))
+        integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache))
+        integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
     else
         integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
     end
