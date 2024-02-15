@@ -481,7 +481,6 @@ function reset_fsal!(integrator)
     # Under these conditions, these algorithms are not FSAL anymore
     integrator.stats.nf += 1
 
-    handle_callback_modifiers!(integrator) # Hook for DDEs to add discontinuities
 
     # Ignore DAEs but they already re-ran initialization
     # Mass matrix DAEs do need to reset FSAL if available
