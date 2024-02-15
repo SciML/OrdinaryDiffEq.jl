@@ -351,7 +351,7 @@ function handle_callbacks!(integrator)
     end
 
     integrator.u_modified = continuous_modified | discrete_modified
-    integrator.reeval_fsal  && handle_callback_modifiers!(integrator)
+    integrator.reeval_fsal  && handle_callback_modifiers!(integrator) # Hook for DDEs to add discontinuities
     nothing
 end
 
