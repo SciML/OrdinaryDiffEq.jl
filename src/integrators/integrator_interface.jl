@@ -34,12 +34,12 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
     return nothing
 end
 
-function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator)
+function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator, continuous_modification=true)
     if integrator.isdae
         DiffEqBase.initialize_dae!(integrator)
     end
 
-    if integrator.opts.calck
+    if continuous_modification && integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
         if alg isa BS5 || alg isa Vern6 || alg isa Vern7 ||
@@ -51,6 +51,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegra
     end
 
     integrator.u_modified = false
+    integrator.reeval_fsal = true
 end
 
 function u_modified!(integrator::ODEIntegrator, bool::Bool)
