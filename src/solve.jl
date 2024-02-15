@@ -70,6 +70,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     alias_u0 = false,
     alias_du0 = false,
     initializealg = DefaultInit(),
+    save_du = false,
     kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
@@ -407,7 +408,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         unstable_check,
         verbose, calck, force_dtmin,
         advance_to_tstop,
-        stop_at_next_tstop)
+        stop_at_next_tstop,
+        save_du)
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars : get_differential_vars(f, u)

@@ -102,19 +102,19 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                             [k[integrator.opts.save_idxs] for k in integrator.k],
                             false)
                     end
-                    if integrator.alg isa DAEAlgorithm
-                        if integrator.opts.save_idxs === nothing
-                            copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator.du)
-                        else
-                            copyat_or_push!(integrator.sol.du, integrator.saveiter,
-                                integrator.du[integrator.opts.save_idxs], false)
-                        end
-                    end
                 end
             end
             if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                     integrator.cache.current)
+            end
+            if integrator.opts.save_du
+                if integrator.opts.save_idxs === nothing
+                    copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator(integrator.t, Val{1}))
+                else
+                    copyat_or_push!(integrator.sol.du, integrator.saveiter,
+                        integrator(integrator.t, Val{1}, idxs=integrator.opts.save_idxs), false)
+                end
             end
         end
     end
@@ -142,19 +142,19 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                         [k[integrator.opts.save_idxs] for k in integrator.k],
                         false)
                 end
-                if integrator.alg isa DAEAlgorithm
-                    if integrator.opts.save_idxs === nothing
-                        copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator.du)
-                    else
-                        copyat_or_push!(integrator.sol.du, integrator.saveiter,
-                            integrator.du[integrator.opts.save_idxs], false)
-                    end
-                end
             end
         end
         if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
             copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                 integrator.cache.current)
+        end
+        if integrator.opts.save_du
+            if integrator.opts.save_idxs === nothing
+                copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator(integrator.t, Val{1}))
+            else
+                copyat_or_push!(integrator.sol.du, integrator.saveiter,
+                    integrator(integrator.t, Val{1}, idxs=integrator.opts.save_idxs), false)
+            end
         end
     end
     reduce_size && resize!(integrator.k, integrator.kshortsize)
