@@ -366,15 +366,9 @@ function handle_callbacks!(integrator)
         savevalues!(integrator)
     end
 
-    integrator.u_modified = continuous_modified || discrete_modified
-    if integrator.u_modified
-        handle_callback_modifiers!(integrator)
-    end
+    integrator.u_modified = continuous_modified | discrete_modified
+    integrator.reeval_fsal  && handle_callback_modifiers!(integrator) # Hook for DDEs to add discontinuities
     nothing
-end
-
-function handle_callback_modifiers!(integrator::ODEIntegrator)
-    integrator.reeval_fsal = true
 end
 
 function update_uprev!(integrator)
@@ -515,7 +509,7 @@ function reset_fsal!(integrator)
             integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
         end
     end
-    
+
     # Do not set false here so it can be checked in the algorithm
     # integrator.reeval_fsal = false
 end
