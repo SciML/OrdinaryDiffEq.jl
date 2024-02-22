@@ -87,13 +87,13 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
         if any(mm != I for mm in prob.f.mass_matrix)
-            error("This solver is not able to use mass matrices.")
+            error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
     elseif !(prob isa DiscreteProblem) &&
            !(prob isa DiffEqBase.AbstractDAEProblem) &&
            !is_mass_matrix_alg(alg) &&
            prob.f.mass_matrix != I
-        error("This solver is not able to use mass matrices.")
+        error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
     end
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
