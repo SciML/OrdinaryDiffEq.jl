@@ -266,6 +266,244 @@ function FineRKN5ConstantCache(T::Type, T2::Type)
         bptilde3, bptilde4, bptilde5, bptilde6, bptilde7)
 end
 
+struct SharpFineRKN6ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    c1::T2
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+    c7::T2
+    c8::T2
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+    a71::T
+    a72::T
+    a73::T
+    a74::T
+    a75::T
+    a76::T
+    a81::T
+    a82::T
+    a83::T
+    a84::T
+    a85::T
+    a86::T
+    a87::T
+    abar21::T
+    abar31::T
+    abar32::T
+    abar41::T
+    abar42::T
+    abar43::T
+    abar51::T
+    abar52::T
+    abar53::T
+    abar54::T
+    abar61::T
+    abar62::T
+    abar63::T
+    abar64::T
+    abar65::T
+    abar71::T
+    abar72::T
+    abar73::T
+    abar74::T
+    abar75::T
+    abar76::T
+    abar81::T
+    abar82::T
+    abar83::T
+    abar84::T
+    abar85::T
+    abar86::T
+    abar87::T
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+    b5::T
+    b6::T
+    b7::T
+    b8::T
+    bp1::T
+    bp2::T
+    bp3::T
+    bp4::T
+    bp5::T
+    bp6::T
+    bp7::T
+    bp8::T
+    #bhat1::T
+    #bhat2::T
+    #bhat3::T
+    #bhat4::T
+    #bhat5::T
+    #bhat6::T
+    #bhat7::T
+    #bhat8::T
+    #bphat1::T
+    #bphat2::T
+    #bphat3::T
+    #bphat4::T
+    #bphat5::T
+    #bphat6::T
+    #bphat7::T
+    #bphat8::T
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
+    btilde5::T
+    btilde6::T
+    btilde7::T
+    btilde8::T
+    bptilde1::T
+    bptilde2::T
+    bptilde3::T
+    bptilde4::T
+    bptilde5::T
+    bptilde6::T
+    bptilde7::T
+    bptilde8::T
+end
+
+function SharpFineRKN6ConstantCache(T::Type, T2::Type)
+    c1 = convert(T2, 1 // 1)
+    c2 = convert(T2, 1 // 10)
+    c3 = convert(T2, 2 // 9)
+    c4 = convert(T2, 3 // 7)
+    c5 = convert(T2, 2 // 3)
+    c6 = convert(T2, 4 // 5)
+    c7 = convert(T2, 1 // 1)
+    c8 = convert(T2, 1 // 1)
+    abar21 = convert(T, 1 // 10)
+    abar31 = convert(T, -2 // 81)
+    abar32 = convert(T, 20 // 81)
+    abar41 = convert(T, 615 // 1372)
+    abar42 = convert(T, -270 // 343)
+    abar43 = convert(T, 1053 // 1372)
+    abar51 = convert(T, 140 // 297)
+    abar52 = convert(T, -20 // 33)
+    abar53 = convert(T, 42 // 143)
+    abar54 = convert(T, 1960 // 3861)
+    abar61 = convert(T, -15544 // 20625)
+    abar62 = convert(T, 72 // 55)
+    abar63 = convert(T, 1053 // 6875)
+    abar64 = convert(T, -40768 // 103125)
+    abar65 = convert(T, 1521 // 3125)
+    abar71 = convert(T, 6841 // 1584)
+    abar72 = convert(T, -60 // 11)
+    abar73 = convert(T, -15291 // 7436)
+    abar74 = convert(T, 207319 // 33462)
+    abar75 = convert(T, -27 // 8)
+    abar76 = convert(T, 11125 // 8112)
+    abar81 = convert(T, 207707 // 54432)
+    abar82 = convert(T, -305 // 63)
+    abar83 = convert(T, -24163 // 14196)
+    abar84 = convert(T, 4448227//821340) 
+    abar85 = convert(T, -4939 // 1680)
+    abar86 = convert(T, 3837625 // 3066336)
+    abar87 = convert(T, 0 // 1)
+    a21 = convert(T, 1 // 200)
+    a31 = convert(T, 14 // 2187)
+    a32 = convert(T, 40 // 2187)
+    a41 = convert(T, 148 // 3087)
+    a42 = convert(T, -85 // 3087)
+    a43 = convert(T, 1 // 14)
+    a51 = convert(T, -2207 // 28350)
+    a52 = convert(T, 932 // 2835)
+    a53 = convert(T, -7 // 50)
+    a54 = convert(T, 1 // 9)
+    a61 = convert(T, 13198826 // 54140625)
+    a62 = convert(T, -5602364 // 10828125)
+    a63 = convert(T, 27987101 // 44687500)
+    a64 = convert(T, -332539 // 4021872)
+    a65 = convert(T, 1 // 20)
+    a71 = convert(T, -601416947 // 162162000)  
+    a72 = convert(T, 2972539 // 810810)
+    a73 = convert(T, 10883471 // 2574000)
+    a74 = convert(T, -503477 // 99000)
+    a75 = convert(T, 3 // 5)
+    a76 = convert(T, 4 // 5)
+    a81 = convert(T, -228527046421 // 72442188000)
+    a82 = convert(T, 445808287 // 139311900)  
+    a83 = convert(T, 104724572891 // 298967760000)
+    a84 = convert(T, -31680158501 // 747419400)
+    a85 = convert(T, 1033813 // 2044224)
+    a86 = convert(T, 1166143 // 1703520)
+    a87 = convert(T, 0 // 1)
+    b1 = convert(T, 23 // 320)
+    b2 = convert(T, 0 // 1)
+    b3 = convert(T, 12393 // 54080)
+    b4 = convert(T, 2401 // 25350)
+    b5 = convert(T, 99 // 1600)
+    b6 = convert(T, 1375 // 32448)
+    b7 = convert(T, 0 // 1)
+    b8 = convert(T, 0 // 1)
+    bp1 = convert(T, 23 // 320)
+    bp2 = convert(T, 0 // 1)
+    bp3 = convert(T, 111537 // 378560)
+    bp4 = convert(T, 16807 // 101400)
+    bp5 = convert(T, 297 // 1600)
+    bp6 = convert(T, 6875 // 32448)
+    bp7 = convert(T, -319 // 840)
+    bp8 = convert(T, 9 // 20)
+    #bhat1 = convert(T, 22151 // 202500) 
+    #bhat2 = convert(T, 0 // 1)
+    #bhat3 = convert(T, 64521 // 910000)
+    #bhat4 = convert(T, 8536927 // 26325000)
+    #bhat5 = convert(T, -16429 // 150000)
+    #bhat6 = convert(T, 1 // 10)
+    #bhat7 = convert(T, -3971 // 37800)
+    #bhat8 = convert(T, 11 // 100)  
+    #bphat1 = convert(T, 241 // 2880)
+    #bphat2 = convert(T, 0 // 1)
+    #bphat3 = convert(T, 12393 // 54080)
+    #bphat4 = convert(T, 45619 // 152100)
+    #bphat5 = convert(T, -9 // 1600)
+    #bphat6 = convert(T, 11125 // 32448)
+    #bphat7 = convert(T, 1 // 20)
+    #bphat8 = convert(T, 0 // 1)
+    # btilde = b - bhat
+    btilde1 = convert(T, -121541 // 3240000)
+    btilde2 = convert(T, 0 // 1)
+    btilde3 = convert(T, 7488783 // 47320000)
+    btilde4 = convert(T, -78566551 // 342225000)
+    btilde5 = convert(T, 102841 // 600000)
+    btilde6 = convert(T, -9349 // 162240)
+    btilde7 = convert(T, 3971 // 37800)
+    btilde8 = convert(T, -11 // 100)
+    bptilde1 = convert(T, -17 // 1440)
+    bptilde2 = convert(T, 0 // 1)
+    bptilde3 = convert(T, 12393 // 189280)
+    bptilde4 = convert(T, -40817 // 304200)
+    bptilde5 = convert(T, 153 // 800)
+    bptilde6 = convert(T, -2125 // 16224)
+    bptilde7 = convert(T, -361 // 840)
+    bptilde8 = convert(T, 9 // 20)
+    SharpFineRKN6ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8,
+        a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87,
+        abar21, abar31, abar32, abar41, abar42, abar43, abar51, abar52, abar53, abar54, abar61, abar62, abar63, abar64, abar65,
+        abar71, abar72, abar73, abar74, abar75, abar76, abar81, abar82, abar83, abar84, abar85, abar86, abar87,
+        b1, b2, b3, b4, b5, b6, b7, b8, bp1, bp2, bp3, bp4, bp5, bp6, bp7, bp8,
+        btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, btilde8,
+        bptilde1, bptilde2, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8)
+end
+
 struct IRKN3ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
     bconst1::T
     bconst2::T
