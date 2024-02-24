@@ -108,6 +108,14 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                     integrator.cache.current)
             end
+            if integrator.opts.save_du
+                if integrator.opts.save_idxs === nothing
+                    copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator(integrator.t, Val{1}))
+                else
+                    copyat_or_push!(integrator.sol.du, integrator.saveiter,
+                        integrator(integrator.t, Val{1}, idxs=integrator.opts.save_idxs), false)
+                end
+            end
         end
     end
     if force_save || (integrator.opts.save_everystep &&
@@ -139,6 +147,14 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
         if integrator.alg isa OrdinaryDiffEqCompositeAlgorithm
             copyat_or_push!(integrator.sol.alg_choice, integrator.saveiter,
                 integrator.cache.current)
+        end
+        if integrator.opts.save_du
+            if integrator.opts.save_idxs === nothing
+                copyat_or_push!(integrator.sol.du, integrator.saveiter, integrator(integrator.t, Val{1}))
+            else
+                copyat_or_push!(integrator.sol.du, integrator.saveiter,
+                    integrator(integrator.t, Val{1}, idxs=integrator.opts.save_idxs), false)
+            end
         end
     end
     reduce_size && resize!(integrator.k, integrator.kshortsize)
@@ -493,7 +509,7 @@ function reset_fsal!(integrator)
             integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
         end
     end
-    
+
     # Do not set false here so it can be checked in the algorithm
     # integrator.reeval_fsal = false
 end
