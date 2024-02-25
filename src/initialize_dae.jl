@@ -28,6 +28,16 @@ function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, autod
     SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
 
+struct OverrideInit{T, F} <: DiffEqBase.DAEInitializationAlgorithm
+    abstol::T
+    nlsolve::F
+end
+
+function OverrideInit(; abstol = 1e-10, nlsolve = nothing)
+    OverrideInit(abstol, nlsolve)
+end
+OverrideInit(abstol) = OverrideInit(; abstol = abstol, nlsolve = nothing)
+
 ## Notes
 
 #=
@@ -54,19 +64,32 @@ end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
         alg::DefaultInit, x::Val{true})
-    _initialize_dae!(integrator, prob,
-        BrownFullBasicInit(integrator.opts.abstol), x)
+    if SciMLBase.has_initializeprob(prob.f)
+        _initialize_dae!(integrator, prob,
+            OverrideInit(integrator.opts.abstol), x)
+    else
+        _initialize_dae!(integrator, prob,
+            BrownFullBasicInit(integrator.opts.abstol), x)
+    end
 end
 
 function _initialize_dae!(integrator, prob::ODEProblem,
         alg::DefaultInit, x::Val{false})
-    _initialize_dae!(integrator, prob,
-        BrownFullBasicInit(integrator.opts.abstol), x)
+    if SciMLBase.has_initializeprob(prob.f)
+        _initialize_dae!(integrator, prob,
+            OverrideInit(integrator.opts.abstol), x)
+    else
+        _initialize_dae!(integrator, prob,
+            BrownFullBasicInit(integrator.opts.abstol), x)
+    end
 end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
         alg::DefaultInit, x::Val{false})
-    if prob.differential_vars === nothing
+    if SciMLBase.has_initializeprob(prob.f)
+        _initialize_dae!(integrator, prob,
+            OverrideInit(integrator.opts.abstol), x)
+    elseif prob.differential_vars === nothing
         _initialize_dae!(integrator, prob,
             ShampineCollocationInit(), x)
     else
@@ -77,7 +100,10 @@ end
 
 function _initialize_dae!(integrator, prob::DAEProblem,
         alg::DefaultInit, x::Val{true})
-    if prob.differential_vars === nothing
+    if SciMLBase.has_initializeprob(prob.f)
+        _initialize_dae!(integrator, prob,
+            OverrideInit(integrator.opts.abstol), x)
+    elseif prob.differential_vars === nothing
         _initialize_dae!(integrator, prob,
             ShampineCollocationInit(), x)
     else
@@ -90,6 +116,24 @@ end
 
 function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         alg::NoInit, x::Union{Val{true}, Val{false}})
+end
+
+## OverrideInit
+
+function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
+        alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
+    initializeprob = prob.f.initializeprob
+    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, isAD)
+    sol = solve(initializeprob, alg)
+    @show "here!!!"
+    if isinplace === Val{true}()
+        integrator.u .= prob.f.initializeprobmap(sol.u)
+    elseif isinplace === Val{false}()
+        integrator.u = prob.f.initializeprobmap(sol.u)
+    else
+        error("Unreachable reached. Report this error.")
+    end
 end
 
 ## ShampineCollocationInit
