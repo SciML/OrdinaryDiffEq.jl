@@ -132,7 +132,8 @@ function TanYam7ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloa
     btilde9 = convert(T, -121.84501355497527)
     btilde10 = convert(T, 80)
 
-    TanYam7ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54,
+    TanYam7ConstantCache(
+        c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54,
         a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85,
         a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104,
         a105, a106, a107, a108, b1, b4, b5, b6, b7, b8, b9, btilde1,
@@ -294,7 +295,8 @@ function TanYam7ConstantCache(T::Type, T2::Type)
         271248590133163812341791503489000)
     btilde10 = convert(T, 80)
 
-    TanYam7ConstantCache(c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54,
+    TanYam7ConstantCache(
+        c1, c2, c3, c4, c5, c6, c7, a21, a31, a32, a41, a43, a51, a53, a54,
         a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a83, a84, a85,
         a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104,
         a105, a106, a107, a108, b1, b4, b5, b6, b7, b8, b9, btilde1,
@@ -937,10 +939,12 @@ function DP8ConstantCache(T::Type{<:CompiledFloats}, T2::Type{<:CompiledFloats})
     a1209 = convert(T, -8.87285693353063)
     a1210 = convert(T, 12.360567175794303)
     a1211 = convert(T, 0.6433927460157636)
-    c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = DP8Interp(T,
+    c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = DP8Interp(
+        T,
         T2)
     d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = DP8Interp_polyweights(T)
-    DP8ConstantCache(c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11,
+    DP8ConstantCache(
+        c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11,
         b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11,
         btilde12, er1, er6, er7, er8, er9, er10, er11, er12, a0201, a0301,
         a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701,
@@ -1045,10 +1049,12 @@ function DP8ConstantCache(T::Type, T2::Type)
     a1209 = convert(T, big" -8.87285693353062954433549289258e0")
     a1210 = convert(T, big" 1.23605671757943030647266201528e1")
     a1211 = convert(T, big" 6.43392746015763530355970484046e-1")
-    c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = DP8Interp(T,
+    c14, c15, c16, a1401, a1407, a1408, a1409, a1410, a1411, a1412, a1413, a1501, a1506, a1507, a1508, a1511, a1512, a1513, a1514, a1601, a1606, a1607, a1608, a1609, a1613, a1614, a1615 = DP8Interp(
+        T,
         T2)
     d401, d406, d407, d408, d409, d410, d411, d412, d413, d414, d415, d416, d501, d506, d507, d508, d509, d510, d511, d512, d513, d514, d515, d516, d601, d606, d607, d608, d609, d610, d611, d612, d613, d614, d615, d616, d701, d706, d707, d708, d709, d710, d711, d712, d713, d714, d715, d716 = DP8Interp_polyweights(T)
-    DP8ConstantCache(c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11,
+    DP8ConstantCache(
+        c7, c8, c9, c10, c11, c6, c5, c4, c3, c2, b1, b6, b7, b8, b9, b10, b11,
         b12, btilde1, btilde6, btilde7, btilde8, btilde9, btilde10, btilde11,
         btilde12, er1, er6, er7, er8, er9, er10, er11, er12, a0201, a0301,
         a0302, a0401, a0403, a0501, a0503, a0504, a0601, a0604, a0605, a0701,

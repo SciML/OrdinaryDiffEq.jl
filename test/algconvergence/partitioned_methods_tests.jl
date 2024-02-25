@@ -382,15 +382,17 @@ sol = solve(prob, ERKN7(), reltol = 1e-8)
 println("In Place")
 
 # Damped oscillator
-prob = ODEProblem(DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
+prob = ODEProblem(
+    DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
         (du, u, p, t) -> du,
-        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition([
+        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition(
+            [
                 exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
-                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4)),
+                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
             ], # du
             [
                 exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
-                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4)),
+                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
             ])),
     OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
@@ -416,15 +418,17 @@ sol = solve(prob, FineRKN5())
 
 println("Out of Place")
 # Damped oscillator
-prob = ODEProblem(DynamicalODEFunction{true}((d_du, du, u, p, t) -> @.(d_du=-u - 0.5 * du),
+prob = ODEProblem(
+    DynamicalODEFunction{true}((d_du, du, u, p, t) -> @.(d_du=-u - 0.5 * du),
         (d_u, du, u, p, t) -> d_u .= du,
-        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition([
+        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition(
+            [
                 exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
-                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4)),
+                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
             ], # du
             [
                 exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
-                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4)),
+                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
             ])),
     OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan

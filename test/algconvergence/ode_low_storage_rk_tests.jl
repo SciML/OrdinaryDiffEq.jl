@@ -13,16 +13,19 @@ prob_ode_sin_inplace = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> [sin(t
     (0.0, 1.0))
 
 f = (u, p, t) -> sin(u)
-prob_ode_nonlinear = ODEProblem(ODEFunction(f;
+prob_ode_nonlinear = ODEProblem(
+    ODEFunction(f;
         analytic = (u0, p, t) -> 2 * acot(exp(-t) *
                                           cot(0.5))), 1.0,
     (0.0, 0.5))
 
 f = (du, u, p, t) -> du[1] = sin(u[1])
-prob_ode_nonlinear_inplace = ODEProblem(ODEFunction(f;
+prob_ode_nonlinear_inplace = ODEProblem(
+    ODEFunction(f;
         analytic = (u0, p, t) -> [
-            2 * acot(exp(-t) * cot(0.5)),
-        ]), [1.0], (0.0, 0.5))
+            2 * acot(exp(-t) * cot(0.5))
+        ]),
+    [1.0], (0.0, 0.5))
 
 test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
@@ -77,7 +80,8 @@ prob_ode_large = ODEProblem((du, u, p, t) -> du .= u, u0_large, (0.0, 1.0))
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -121,7 +125,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -165,7 +170,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -209,7 +215,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -253,7 +260,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -297,7 +305,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -341,7 +350,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -385,7 +395,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -429,7 +440,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -460,7 +472,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -491,7 +504,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -507,16 +521,19 @@ end
 test_problems_only_time_BigFloat = @. RemakeNew(test_problems_only_time)
 test_problems_linear_BigFloat = @. RemakeNew(test_problems_linear)
 f = (u, p, t) -> sin(u)
-prob_nonlinear_A = ODEProblem(ODEFunction(f;
+prob_nonlinear_A = ODEProblem(
+    ODEFunction(f;
         analytic = (u0, p, t) -> 2 * acot(exp(-t) *
                                           cot(BigFloat(0.5)))),
     BigFloat(1.0), (BigFloat(0.0), BigFloat(0.5)))
 
 f = (du, u, p, t) -> du[1] = sin(u[1])
-prob_nonlinear_B = ODEProblem(ODEFunction(f;
+prob_nonlinear_B = ODEProblem(
+    ODEFunction(f;
         analytic = (u0, p, t) -> [
-            2 * acot(exp(-t) * cot(BigFloat(0.5))),
-        ]), [BigFloat(1.0)],
+            2 * acot(exp(-t) * cot(BigFloat(0.5)))
+        ]),
+    [BigFloat(1.0)],
     (BigFloat(0.0), BigFloat(0.5)))
 test_problems_nonlinear_BigFloat = [prob_nonlinear_A, prob_nonlinear_B]
 
@@ -549,7 +566,8 @@ test_problems_nonlinear_BigFloat = [prob_nonlinear_A, prob_nonlinear_B]
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -583,7 +601,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -617,7 +636,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -651,7 +671,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -685,7 +706,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -719,7 +741,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -753,7 +776,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -787,7 +811,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -821,7 +846,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -855,7 +881,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -889,7 +916,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -923,7 +951,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -957,7 +986,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -991,7 +1021,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1025,7 +1056,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1059,7 +1091,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1093,7 +1126,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1125,7 +1159,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1157,7 +1192,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1191,7 +1227,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1222,7 +1259,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1254,7 +1292,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1287,7 +1326,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1320,7 +1360,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1354,7 +1395,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1387,7 +1429,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1418,7 +1461,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1450,7 +1494,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1483,7 +1528,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end
@@ -1514,7 +1560,8 @@ end
         (0.0, 0.5))
     sol_old = solve(prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false)
-    sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
+    sol_new = solve(
+        new_prob_ode_nonlinear_inplace, alg, dt = 1.e-4, save_everystep = false,
         save_start = false, alias_u0 = true)
     @test sol_old[end] ≈ sol_new[end]
 end

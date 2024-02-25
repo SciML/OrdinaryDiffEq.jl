@@ -1422,7 +1422,8 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     Ks, phiv_cache, ws = KsCache
     w1, w2 = ws
     # Krylov for F1
-    arnoldi!(Ks, J, F1; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
+    arnoldi!(
+        Ks, J, F1; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
         iop = alg.iop)
     phiv!(w1, dt, Ks, 3; cache = phiv_cache)
     # Krylov for F2
@@ -1430,7 +1431,8 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step = false)
     _compute_nl!(F2, f, tmp, p, t + dt, J, rtmp)
     integrator.stats.nf += 1
     F2 .+= mul!(rtmp, J, uprev)
-    arnoldi!(Ks, J, F2; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
+    arnoldi!(
+        Ks, J, F2; m = min(alg.m, size(J, 1)), opnorm = integrator.opts.internalopnorm,
         iop = alg.iop)
     phiv!(w2, dt, Ks, 3; cache = phiv_cache)
     # Update u

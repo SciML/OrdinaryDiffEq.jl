@@ -1,8 +1,8 @@
 function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-    cache::Union{Rosenbrock23ConstantCache,
-        Rosenbrock32ConstantCache},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        cache::Union{Rosenbrock23ConstantCache,
+            Rosenbrock32ConstantCache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack tf, uf, d = cache
         γ = dt * d
@@ -31,9 +31,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-    cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, weight = cache
         @unpack c₃₂, d = cache.tab
@@ -90,8 +90,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock23Cache{<:Array},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, uf, tf, linsolve_tmp, weight = cache
         @unpack c₃₂, d = cache.tab
@@ -147,9 +147,10 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock23Cache{<:Arr
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WConstantCache, Rodas3PConstantCache},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::Union{Rodas23WConstantCache, Rodas3PConstantCache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack tf, uf = cache
         @unpack a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3 = cache.tab
@@ -228,9 +229,10 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WConstantC
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache, Rodas3PCache},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+function _ode_addsteps!(
+        k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache, Rodas3PCache},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
         @unpack a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3 = cache.tab
@@ -289,7 +291,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache, Ro
         @.. broadcast=false veck2=-vecu
 
         if mass_matrix === I
-            @.. broadcast=false linsolve_tmp=fsalfirst + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
+            @.. broadcast=false linsolve_tmp=fsalfirst + dtd3 * dT +
+                                             (dtC31 * k1 + dtC32 * k2)
         else
             @.. broadcast=false du1=dtC31 * k1 + dtC32 * k2
             mul!(du2, mass_matrix, du1)
@@ -342,9 +345,10 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache, Ro
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache{<:Array}, Rodas3PCache{<:Array}},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+function _ode_addsteps!(k, t, uprev, u, dt, f, p,
+        cache::Union{Rodas23WCache{<:Array}, Rodas3PCache{<:Array}},
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst = cache
         @unpack a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3 = cache.tab
@@ -414,7 +418,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache{<:A
 
         if mass_matrix === I
             @inbounds @simd ivdep for i in eachindex(u)
-                linsolve_tmp[i] = fsalfirst[i] + dtd3 * dT[i] + (dtC31 * k1[i] + dtC32 * k2[i])
+                linsolve_tmp[i] = fsalfirst[i] + dtd3 * dT[i] +
+                                  (dtC31 * k1[i] + dtC32 * k2[i])
             end
         else
             @inbounds @simd ivdep for i in eachindex(u)
@@ -495,10 +500,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache{<:A
     nothing
 end
 
-
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack tf, uf = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
@@ -585,8 +589,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
@@ -710,8 +714,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache{<:Array},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
@@ -869,8 +873,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache{<:Array},
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCache,
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 3 || always_calc_begin
         @unpack tf, uf = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
@@ -999,8 +1003,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCach
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 3 || always_calc_begin
         @unpack du, du1, du2, tmp, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst, weight = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
@@ -1207,8 +1211,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache{<:Array},
-    always_calc_begin = false, allow_calc_end = true,
-    force_calc_end = false)
+        always_calc_begin = false, allow_calc_end = true,
+        force_calc_end = false)
     if length(k) < 3 || always_calc_begin
         @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, fsalfirst = cache
         @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab

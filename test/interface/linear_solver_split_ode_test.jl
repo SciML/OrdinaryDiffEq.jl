@@ -12,8 +12,8 @@ tspan = (0.0, 1.0)
 M1 = 2ones(n) |> Diagonal #|> Array
 M2 = 2ones(n) |> Diagonal #|> Array
 
-f1 = (du,u,p,t) -> du .= M1 * u
-f2 = (du,u,p,t) -> du .= M2 * u
+f1 = (du, u, p, t) -> du .= M1 * u
+f2 = (du, u, p, t) -> du .= M2 * u
 prob = SplitODEProblem(f1, f2, u0, tspan)
 
 for algname in (:SBDF2,

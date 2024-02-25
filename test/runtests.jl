@@ -97,7 +97,8 @@ end
         @time @safetestset "Events Tests" include("integrators/ode_event_tests.jl")
         @time @safetestset "Alg Events Tests" include("integrators/alg_events_tests.jl")
         @time @safetestset "Discrete Callback Dual Tests" include("integrators/discrete_callback_dual_test.jl")
-        @time VERSION >= v"1.9" && @safetestset "Callback Allocation Tests" include("integrators/callback_allocation_tests.jl")
+        @time VERSION >= v"1.9" &&
+              @safetestset "Callback Allocation Tests" include("integrators/callback_allocation_tests.jl")
         @time @safetestset "Iterator Tests" include("integrators/iterator_tests.jl")
         @time @safetestset "Integrator Interface Tests" include("integrators/integrator_interface_tests.jl")
         @time @safetestset "Error Check Tests" include("integrators/check_error.jl")
@@ -164,7 +165,8 @@ end
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
-        @time VERSION >= v"1.9" && @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
+        @time VERSION >= v"1.9" &&
+              @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
     end
 

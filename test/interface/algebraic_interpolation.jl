@@ -19,8 +19,8 @@ function rober_op(u, p, t)
     du
 end
 M = [1.0 0 0
-    0 1.0 0
-    0 0 0]
+     0 1.0 0
+     0 0 0]
 fip = ODEFunction(rober_ip, mass_matrix = M)
 prob_ip = ODEProblem(fip, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 
@@ -54,16 +54,22 @@ idxsv = [2, 3]
 @test isapprox(ref_op(tv), sol_op(tv), rtol = reltol, atol = abstol) # op, tv
 
 # primal, scalar index
-@test isapprox(ref_ip(t, idxs=idxs), sol_ip(t, idxs=idxs), rtol = reltol, atol = abstol) # ip, t
-@test isapprox(ref_ip(tv, idxs=idxs), sol_ip(tv, idxs=idxs), rtol = reltol, atol = abstol) # ip, tv
-@test isapprox(ref_op(t, idxs=idxs), sol_op(t, idxs=idxs), rtol = reltol, atol = abstol) # op, t
-@test isapprox(ref_op(tv, idxs=idxs), sol_op(tv, idxs=idxs), rtol = reltol, atol = abstol) # op, tv
+@test isapprox(ref_ip(t, idxs = idxs), sol_ip(t, idxs = idxs), rtol = reltol, atol = abstol) # ip, t
+@test isapprox(
+    ref_ip(tv, idxs = idxs), sol_ip(tv, idxs = idxs), rtol = reltol, atol = abstol) # ip, tv
+@test isapprox(ref_op(t, idxs = idxs), sol_op(t, idxs = idxs), rtol = reltol, atol = abstol) # op, t
+@test isapprox(
+    ref_op(tv, idxs = idxs), sol_op(tv, idxs = idxs), rtol = reltol, atol = abstol) # op, tv
 
 # primal, vector index
-@test isapprox(ref_ip(t, idxs=idxsv), sol_ip(t, idxs=idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_ip(tv, idxs=idxsv), sol_ip(tv, idxs=idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(t, idxs=idxsv), sol_op(t, idxs=idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(tv, idxs=idxsv), sol_op(tv, idxs=idxsv), rtol = reltol, atol = abstol)
+@test isapprox(
+    ref_ip(t, idxs = idxsv), sol_ip(t, idxs = idxsv), rtol = reltol, atol = abstol)
+@test isapprox(
+    ref_ip(tv, idxs = idxsv), sol_ip(tv, idxs = idxsv), rtol = reltol, atol = abstol)
+@test isapprox(
+    ref_op(t, idxs = idxsv), sol_op(t, idxs = idxsv), rtol = reltol, atol = abstol)
+@test isapprox(
+    ref_op(tv, idxs = idxsv), sol_op(tv, idxs = idxsv), rtol = reltol, atol = abstol)
 
 abstol = 1e-3
 # derivative, no index
@@ -73,16 +79,24 @@ abstol = 1e-3
 @test isapprox(ref_op(tv, Val{1}), sol_op(tv, Val{1}), rtol = reltol, atol = abstol)
 
 # derivative, scalar index
-@test isapprox(ref_ip(t, Val{1}, idxs=idxs), sol_ip(t, Val{1}, idxs=idxs), rtol = reltol, atol = abstol)
-@test isapprox(ref_ip(tv, Val{1}, idxs=idxs), sol_ip(tv, Val{1}, idxs=idxs), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(t, Val{1}, idxs=idxs), sol_op(t, Val{1}, idxs=idxs), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(tv, Val{1}, idxs=idxs), sol_op(tv, Val{1}, idxs=idxs), rtol = reltol, atol = abstol)
+@test isapprox(ref_ip(t, Val{1}, idxs = idxs),
+    sol_ip(t, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
+@test isapprox(ref_ip(tv, Val{1}, idxs = idxs),
+    sol_ip(tv, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
+@test isapprox(ref_op(t, Val{1}, idxs = idxs),
+    sol_op(t, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
+@test isapprox(ref_op(tv, Val{1}, idxs = idxs),
+    sol_op(tv, Val{1}, idxs = idxs), rtol = reltol, atol = abstol)
 
 # derivative, vector index
-@test isapprox(ref_ip(tv, Val{1}, idxs=idxsv), sol_ip(tv, Val{1}, idxs=idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_ip(t, Val{1}, idxs=idxsv), sol_ip(t, Val{1}, idxs=idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(t, Val{1}, idxs=idxsv), sol_op(t, Val{1}, idxs=idxsv), rtol = reltol, atol = abstol)
-@test isapprox(ref_op(tv, Val{1}, idxs=idxsv), sol_op(tv, Val{1}, idxs=idxsv), rtol = reltol, atol = abstol)
+@test isapprox(ref_ip(tv, Val{1}, idxs = idxsv),
+    sol_ip(tv, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
+@test isapprox(ref_ip(t, Val{1}, idxs = idxsv),
+    sol_ip(t, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
+@test isapprox(ref_op(t, Val{1}, idxs = idxsv),
+    sol_op(t, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
+@test isapprox(ref_op(tv, Val{1}, idxs = idxsv),
+    sol_op(tv, Val{1}, idxs = idxsv), rtol = reltol, atol = abstol)
 
 # higher derivatives should be zero
 # second derivative, no index
@@ -92,16 +106,16 @@ abstol = 1e-3
 @test all(map(==([false, false, true]), sol_op(tv, Val{2}) .== 0))
 
 # second derivative, scalar index
-@test sol_ip(t, Val{2}, idxs=idxs) == 0
-@test all(sol_ip(tv, Val{2}, idxs=idxs) .== 0)
-@test sol_op(t, Val{2}, idxs=idxs) == 0
-@test all(sol_op(tv, Val{2}, idxs=idxs) .== 0)
+@test sol_ip(t, Val{2}, idxs = idxs) == 0
+@test all(sol_ip(tv, Val{2}, idxs = idxs) .== 0)
+@test sol_op(t, Val{2}, idxs = idxs) == 0
+@test all(sol_op(tv, Val{2}, idxs = idxs) .== 0)
 
 # second derivative, vector index
-@test (sol_ip(t, Val{2}, idxs=idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_ip(tv, Val{2}, idxs=idxsv) .== 0))
-@test (sol_op(t, Val{2}, idxs=idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_op(tv, Val{2}, idxs=idxsv) .== 0))
+@test (sol_ip(t, Val{2}, idxs = idxsv) .== 0) == [false, true]
+@test all(map(==([false, true]), sol_ip(tv, Val{2}, idxs = idxsv) .== 0))
+@test (sol_op(t, Val{2}, idxs = idxsv) .== 0) == [false, true]
+@test all(map(==([false, true]), sol_op(tv, Val{2}, idxs = idxsv) .== 0))
 
 # third derivative, no index
 @test (sol_ip(t, Val{3}) .== 0) == [false, false, true]
@@ -110,13 +124,13 @@ abstol = 1e-3
 @test all(map(==([false, false, true]), sol_op(tv, Val{3}) .== 0))
 
 # third derivative, scalar index
-@test sol_ip(t, Val{3}, idxs=idxs) == 0
-@test all(sol_ip(tv, Val{3}, idxs=idxs) .== 0)
-@test sol_op(t, Val{3}, idxs=idxs) == 0
-@test all(sol_op(tv, Val{3}, idxs=idxs) .== 0)
+@test sol_ip(t, Val{3}, idxs = idxs) == 0
+@test all(sol_ip(tv, Val{3}, idxs = idxs) .== 0)
+@test sol_op(t, Val{3}, idxs = idxs) == 0
+@test all(sol_op(tv, Val{3}, idxs = idxs) .== 0)
 
 # third derivative, vector index
-@test (sol_ip(t, Val{3}, idxs=idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_ip(tv, Val{3}, idxs=idxsv) .== 0))
-@test (sol_op(t, Val{3}, idxs=idxsv) .== 0) == [false, true]
-@test all(map(==([false, true]), sol_op(tv, Val{3}, idxs=idxsv) .== 0))
+@test (sol_ip(t, Val{3}, idxs = idxsv) .== 0) == [false, true]
+@test all(map(==([false, true]), sol_ip(tv, Val{3}, idxs = idxsv) .== 0))
+@test (sol_op(t, Val{3}, idxs = idxsv) .== 0) == [false, true]
+@test all(map(==([false, true]), sol_op(tv, Val{3}, idxs = idxsv) .== 0))

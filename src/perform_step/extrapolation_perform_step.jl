@@ -266,7 +266,7 @@ function initialize!(integrator, cache::ImplicitEulerExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, true)
     @unpack T, utilde, atmp, dtpropose, n_curr, A, stage_number, diff1, diff2 = cache
@@ -349,7 +349,8 @@ function perform_step!(integrator, cache::ImplicitEulerExtrapolationCache,
                 endIndex = (i == 1) ? n_curr : n_curr + 1
                 for index in startIndex:endIndex
                     dt_temp = dt / sequence[index]
-                    jacobian2W!(W[Threads.threadid()], integrator.f.mass_matrix, dt_temp, J,
+                    jacobian2W!(
+                        W[Threads.threadid()], integrator.f.mass_matrix, dt_temp, J,
                         false)
                     @.. broadcast=false k_tmps[Threads.threadid()]=integrator.fsalfirst
                     @.. broadcast=false u_tmps[Threads.threadid()]=uprev
@@ -525,7 +526,7 @@ function initialize!(integrator, cache::ImplicitEulerExtrapolationConstantCache)
 end
 
 function perform_step!(integrator, cache::ImplicitEulerExtrapolationConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     alg = unwrap_alg(integrator, true)
     @unpack dtpropose, T, n_curr, work, A, tf, uf = cache
@@ -732,7 +733,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardCache)
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -798,7 +799,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache,
                                                                         dt_int_temp *
                                                                         fsalfirst # Euler starting step
                         for j in 2:j_int_temp
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
                                                              2 * dt_int_temp *
@@ -949,7 +951,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCa
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -1143,7 +1145,7 @@ function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -1276,7 +1278,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                         @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:j_int_temp
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()] -
@@ -1362,7 +1365,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache,
                         @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:j_int_temp
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()] -
@@ -1546,7 +1550,7 @@ function initialize!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCa
 end
 
 function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -1590,9 +1594,11 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
             diff1 = u_temp1 - u_temp2
             for j in 2:j_int
                 T[i + 1] = 2 * u_temp1 - u_temp2 +
-                           2 * _reshape(W \
-                                    -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int) -
-                                          (u_temp1 - u_temp2)), axes(uprev))
+                           2 * _reshape(
+                    W \
+                    -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int) -
+                          (u_temp1 - u_temp2)),
+                    axes(uprev))
                 integrator.stats.nf += 1
                 u_temp2 = u_temp1
                 u_temp1 = T[i + 1]
@@ -1635,10 +1641,12 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                         diff1 = u_temp3 - u_temp4
                         for j in 2:j_int
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
-                                           2 * _reshape(W \
-                                                    -_vec(dt_int * f(u_temp3, p,
+                                           2 * _reshape(
+                                W \
+                                -_vec(dt_int * f(u_temp3, p,
                                     t + (j - 1) * dt_int) -
-                                                          (u_temp3 - u_temp4)), axes(uprev))
+                                      (u_temp3 - u_temp4)),
+                                axes(uprev))
                             integrator.stats.nf += 1
                             u_temp4 = u_temp3
                             u_temp3 = T[index + 1]
@@ -1646,8 +1654,9 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                                 # Deuflhard Stability check for initial two sequences
                                 diff2 = u_temp3 - u_temp4
                                 if (integrator.opts.internalnorm(diff1[1], t) <
-                                    integrator.opts.internalnorm(0.5 *
-                                                                 (diff2[1] - diff1[1]), t))
+                                    integrator.opts.internalnorm(
+                                    0.5 *
+                                    (diff2[1] - diff1[1]), t))
                                     # Divergence of iteration, overflow is possible. Force fail and start with smaller step
                                     integrator.force_stepfail = true
                                     return
@@ -1678,10 +1687,12 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                         diff1 = u_temp3 - u_temp4
                         for j in 2:j_int
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
-                                           2 * _reshape(W \
-                                                    -_vec(dt_int * f(u_temp3, p,
+                                           2 * _reshape(
+                                W \
+                                -_vec(dt_int * f(u_temp3, p,
                                     t + (j - 1) * dt_int) -
-                                                          (u_temp3 - u_temp4)), axes(uprev))
+                                      (u_temp3 - u_temp4)),
+                                axes(uprev))
                             integrator.stats.nf += 1
                             u_temp4 = u_temp3
                             u_temp3 = T[index + 1]
@@ -1748,10 +1759,12 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationConstant
                           _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
                 for j in 2:j_int
                     T[n_curr + 1] = 2 * u_temp1 - u_temp2 +
-                                    2 * _reshape(W \
-                                             -_vec(dt_int *
-                                                   f(u_temp1, p, t + (j - 1) * dt_int) -
-                                                   (u_temp1 - u_temp2)), axes(uprev))
+                                    2 * _reshape(
+                        W \
+                        -_vec(dt_int *
+                              f(u_temp1, p, t + (j - 1) * dt_int) -
+                              (u_temp1 - u_temp2)),
+                        axes(uprev))
                     integrator.stats.nf += 1
                     u_temp2 = u_temp1
                     u_temp1 = T[n_curr + 1]
@@ -1804,7 +1817,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerCache)
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -1873,7 +1886,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                                                                         dt_int_temp *
                                                                         fsalfirst # Euler starting step
                         for j in 2:j_int_temp
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
                                                              2 * dt_int_temp *
@@ -1900,7 +1914,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
                                                                         dt_int_temp *
                                                                         fsalfirst # Euler starting step
                         for j in 2:j_int_temp
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false T[index + 1]=u_temp4[Threads.threadid()] +
                                                              2 * dt_int_temp *
@@ -2024,7 +2039,7 @@ function initialize!(integrator, cache::ExtrapolationMidpointHairerWannerConstan
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, false)
@@ -2220,7 +2235,7 @@ function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationConstan
 end
 
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2267,9 +2282,11 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
             diff1 = u_temp1 - u_temp2
             for j in 2:(j_int + 1)
                 T[i + 1] = 2 * u_temp1 - u_temp2 +
-                           2 * _reshape(W \
-                                    -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int) -
-                                          (u_temp1 - u_temp2)), axes(uprev))
+                           2 * _reshape(
+                    W \
+                    -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int) -
+                          (u_temp1 - u_temp2)),
+                    axes(uprev))
                 integrator.stats.nf += 1
                 if (j == j_int + 1)
                     T[i + 1] = 0.5(T[i + 1] + u_temp2)
@@ -2316,10 +2333,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
-                                           2 * _reshape(W \
-                                                    -_vec(dt_int * f(u_temp3, p,
+                                           2 * _reshape(
+                                W \
+                                -_vec(dt_int * f(u_temp3, p,
                                     t + (j - 1) * dt_int) -
-                                                          (u_temp3 - u_temp4)), axes(uprev))
+                                      (u_temp3 - u_temp4)),
+                                axes(uprev))
                             integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
@@ -2362,10 +2381,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
                             T[index + 1] = 2 * u_temp3 - u_temp4 +
-                                           2 * _reshape(W \
-                                                    -_vec(dt_int * f(u_temp3, p,
+                                           2 * _reshape(
+                                W \
+                                -_vec(dt_int * f(u_temp3, p,
                                     t + (j - 1) * dt_int) -
-                                                          (u_temp3 - u_temp4)), axes(uprev))
+                                      (u_temp3 - u_temp4)),
+                                axes(uprev))
                             integrator.stats.nf += 1
                             if (j == j_int + 1)
                                 T[index + 1] = 0.5(T[index + 1] + u_temp4)
@@ -2437,10 +2458,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
                           _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
                 for j in 2:(j_int + 1)
                     T[n_curr + 1] = 2 * u_temp1 - u_temp2 +
-                                    2 * _reshape(W \
-                                             -_vec(dt_int *
-                                                   f(u_temp1, p, t + (j - 1) * dt_int) -
-                                                   (u_temp1 - u_temp2)), axes(uprev))
+                                    2 * _reshape(
+                        W \
+                        -_vec(dt_int *
+                              f(u_temp1, p, t + (j - 1) * dt_int) -
+                              (u_temp1 - u_temp2)),
+                        axes(uprev))
                     integrator.stats.nf += 1
                     if (j == j_int + 1)
                         T[n_curr + 1] = 0.5(T[n_curr + 1] + u_temp2)
@@ -2495,7 +2518,7 @@ function initialize!(integrator, cache::ImplicitHairerWannerExtrapolationCache)
 end
 
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2634,7 +2657,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
                         @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()] -
@@ -2916,8 +2940,8 @@ function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCon
 end
 
 function perform_step!(integrator,
-    cache::ImplicitEulerBarycentricExtrapolationConstantCache,
-    repeat_step = false)
+        cache::ImplicitEulerBarycentricExtrapolationConstantCache,
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -2965,7 +2989,8 @@ function perform_step!(integrator,
             diff1 = u_temp1 - u_temp2
             for j in 2:(j_int + 1)
                 T[i + 1] = u_temp1 +
-                           _reshape(W \ -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int)),
+                           _reshape(
+                    W \ -_vec(dt_int * f(u_temp1, p, t + (j - 1) * dt_int)),
                     axes(uprev))
                 integrator.stats.nf += 1
                 if (j == j_int + 1)
@@ -3012,8 +3037,9 @@ function perform_step!(integrator,
                             axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
-                            T[index + 1] = u_temp3 + _reshape(W \
-                                                    -_vec(dt_int * f(u_temp3, p,
+                            T[index + 1] = u_temp3 + _reshape(
+                                W \
+                                -_vec(dt_int * f(u_temp3, p,
                                     t + (j - 1) * dt_int)),
                                 axes(uprev))
                             integrator.stats.nf += 1
@@ -3057,8 +3083,9 @@ function perform_step!(integrator,
                             axes(uprev)) # Euler starting step
                         diff1 = u_temp3 - u_temp4
                         for j in 2:(j_int + 1)
-                            T[index + 1] = u_temp3 + _reshape(W \
-                                                    -_vec(dt_int * f(u_temp3, p,
+                            T[index + 1] = u_temp3 + _reshape(
+                                W \
+                                -_vec(dt_int * f(u_temp3, p,
                                     t + (j - 1) * dt_int)),
                                 axes(uprev))
                             integrator.stats.nf += 1
@@ -3131,9 +3158,10 @@ function perform_step!(integrator,
                 u_temp1 = u_temp2 +
                           _reshape(W \ -_vec(dt_int * integrator.fsalfirst), axes(uprev)) # Euler starting step
                 for j in 2:(j_int + 1)
-                    T[n_curr + 1] = u_temp1 + _reshape(W \
-                                             -_vec(dt_int *
-                                                   f(u_temp1, p, t + (j - 1) * dt_int)),
+                    T[n_curr + 1] = u_temp1 + _reshape(
+                        W \
+                        -_vec(dt_int *
+                              f(u_temp1, p, t + (j - 1) * dt_int)),
                         axes(uprev))
                     integrator.stats.nf += 1
                     if (j == j_int + 1)
@@ -3189,7 +3217,7 @@ function initialize!(integrator, cache::ImplicitEulerBarycentricExtrapolationCac
 end
 
 function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationCache,
-    repeat_step = false)
+        repeat_step = false)
     # Unpack all information needed
     @unpack t, uprev, dt, f, p = integrator
     alg = unwrap_alg(integrator, true)
@@ -3329,7 +3357,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()]
@@ -3419,7 +3448,8 @@ function perform_step!(integrator, cache::ImplicitEulerBarycentricExtrapolationC
                         @.. broadcast=false diff1[Threads.threadid()]=u_temp3[Threads.threadid()] -
                                                                       u_temp4[Threads.threadid()]
                         for j in 2:(j_int_temp + 1)
-                            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()],
+                            f(k_tmps[Threads.threadid()],
+                                cache.u_temp3[Threads.threadid()],
                                 p, t + (j - 1) * dt_int_temp)
                             @.. broadcast=false linsolve_tmps[Threads.threadid()]=dt_int_temp *
                                                                                   k_tmps[Threads.threadid()]

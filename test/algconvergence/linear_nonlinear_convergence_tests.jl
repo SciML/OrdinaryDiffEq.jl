@@ -21,7 +21,7 @@ using OrdinaryDiffEq: alg_order
         HochOst4,
         ETD2,
         KenCarp3,
-        CFNLIRK3,
+        CFNLIRK3
     ]
         sim = test_convergence(dts, prob, Alg())
         @test sim.𝒪est[:l2]≈alg_order(Alg()) atol=0.2
@@ -51,7 +51,7 @@ end
         ETDRK3(),
         ETDRK4(),
         HochOst4(),
-        ETD2(),
+        ETD2()
     ]
         sim = test_convergence(dts, prob, Alg)
         @test sim.𝒪est[:l2]≈alg_order(Alg) atol=0.15

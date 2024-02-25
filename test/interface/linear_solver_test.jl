@@ -30,8 +30,8 @@ odef = ODEFunction(foop; jac = jac, jac_prototype = jac(u0, p, 0.0), paramjac = 
 
 function g_helper(p; alg = Rosenbrock23(linsolve = LUFactorization()))
     prob = ODEProblem(odef, u0, tspan, p)
-    soln = Array(solve(prob, alg; u0 = prob.u0, p = prob.p, abstol = 1e-4, reltol = 1e-4))[:,
-        end]
+    soln = Array(solve(prob, alg; u0 = prob.u0, p = prob.p, abstol = 1e-4, reltol = 1e-4))[
+        :, end]
     return soln
 end
 function g(p; kwargs...)
@@ -50,19 +50,22 @@ end
     atol = 1e-3, rtol = 1e-3)
 @test isapprox(exp.(p), g_helper(p; alg = Rodas4(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = Rodas4(linsolve = KrylovJL_GMRES())); atol = 1e-1,
+@test isapprox(
+    exp.(p), g_helper(p; alg = Rodas4(linsolve = KrylovJL_GMRES())); atol = 1e-1,
     rtol = 1e-1)
 
 @test isapprox(exp.(p), g_helper(p; alg = Rodas5(linsolve = KLUFactorization()));
     atol = 1e-3, rtol = 1e-3)
 @test isapprox(exp.(p), g_helper(p; alg = Rodas5(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = Rodas5(linsolve = KrylovJL_GMRES())); atol = 1e-1,
+@test isapprox(
+    exp.(p), g_helper(p; alg = Rodas5(linsolve = KrylovJL_GMRES())); atol = 1e-1,
     rtol = 1e-1)
 
 @test isapprox(exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = KLUFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = UMFPACKFactorization()));
+@test isapprox(
+    exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
 @test isapprox(exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = KrylovJL_GMRES()));
     atol = 1e-1, rtol = 1e-1)
@@ -71,7 +74,8 @@ end
     atol = 1e-1, rtol = 1e-1)
 @test isapprox(exp.(p), g_helper(p; alg = TRBDF2(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = TRBDF2(linsolve = KrylovJL_GMRES())); atol = 1e-1,
+@test isapprox(
+    exp.(p), g_helper(p; alg = TRBDF2(linsolve = KrylovJL_GMRES())); atol = 1e-1,
     rtol = 1e-1)
 
 @test isapprox(exp.(p), g_helper(p; alg = KenCarp47(linsolve = KLUFactorization()));
@@ -96,8 +100,8 @@ odef = ODEFunction{true}(fiip; jac = jac, jac_prototype = jac(u0, p, 0.0),
 
 function g_helper(p; alg = Rosenbrock23(linsolve = LUFactorization()))
     prob = ODEProblem(odef, u0, tspan, p)
-    soln = Array(solve(prob, alg; u0 = prob.u0, p = prob.p, abstol = 1e-4, reltol = 1e-4))[:,
-        end]
+    soln = Array(solve(prob, alg; u0 = prob.u0, p = prob.p, abstol = 1e-4, reltol = 1e-4))[
+        :, end]
     return soln
 end
 function g(p; kwargs...)
@@ -116,19 +120,22 @@ end
     atol = 1e-3, rtol = 1e-3)
 @test isapprox(exp.(p), g_helper(p; alg = Rodas4(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = Rodas4(linsolve = KrylovJL_GMRES())); atol = 1e-1,
+@test isapprox(
+    exp.(p), g_helper(p; alg = Rodas4(linsolve = KrylovJL_GMRES())); atol = 1e-1,
     rtol = 1e-1)
 
 @test isapprox(exp.(p), g_helper(p; alg = Rodas5(linsolve = KLUFactorization()));
     atol = 1e-3, rtol = 1e-3)
 @test isapprox(exp.(p), g_helper(p; alg = Rodas5(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = Rodas5(linsolve = KrylovJL_GMRES())); atol = 1e-1,
+@test isapprox(
+    exp.(p), g_helper(p; alg = Rodas5(linsolve = KrylovJL_GMRES())); atol = 1e-1,
     rtol = 1e-1)
 
 @test isapprox(exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = KLUFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = UMFPACKFactorization()));
+@test isapprox(
+    exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
 @test isapprox(exp.(p), g_helper(p; alg = ImplicitEuler(linsolve = KrylovJL_GMRES()));
     atol = 1e-1, rtol = 1e-1)
@@ -137,7 +144,8 @@ end
     atol = 1e-1, rtol = 1e-1)
 @test isapprox(exp.(p), g_helper(p; alg = TRBDF2(linsolve = UMFPACKFactorization()));
     atol = 1e-1, rtol = 1e-1)
-@test isapprox(exp.(p), g_helper(p; alg = TRBDF2(linsolve = KrylovJL_GMRES())); atol = 1e-1,
+@test isapprox(
+    exp.(p), g_helper(p; alg = TRBDF2(linsolve = KrylovJL_GMRES())); atol = 1e-1,
     rtol = 1e-1)
 
 @test isapprox(exp.(p), g_helper(p; alg = KenCarp47(linsolve = KLUFactorization()));

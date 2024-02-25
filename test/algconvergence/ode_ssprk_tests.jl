@@ -14,16 +14,19 @@ prob_ode_sin_inplace = ODEProblem(ODEFunction(f; analytic = (u0, p, t) -> [sin(t
     (0.0, 1.0))
 
 f = (u, p, t) -> sin(u)
-prob_ode_nonlinear = ODEProblem(ODEFunction(f;
+prob_ode_nonlinear = ODEProblem(
+    ODEFunction(f;
         analytic = (u0, p, t) -> 2 * acot(exp(-t) *
                                           cot(0.5))), 1.0,
     (0.0, 0.5))
 
 f = (du, u, p, t) -> du[1] = sin(u[1])
-prob_ode_nonlinear_inplace = ODEProblem(ODEFunction(f;
+prob_ode_nonlinear_inplace = ODEProblem(
+    ODEFunction(f;
         analytic = (u0, p, t) -> [
-            2 * acot(exp(-t) * cot(0.5)),
-        ]), [1.0], (0.0, 0.5))
+            2 * acot(exp(-t) * cot(0.5))
+        ]),
+    [1.0], (0.0, 0.5))
 
 test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]

@@ -1,14 +1,14 @@
 ## initialize!
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLFunctional},
-    integrator::DiffEqBase.DEIntegrator)
+        integrator::DiffEqBase.DEIntegrator)
     nlsolver.cache.tstep = integrator.t + nlsolver.c * integrator.dt
 
     nothing
 end
 
 @muladd function initialize!(nlsolver::NLSolver{<:NLAnderson},
-    integrator::DiffEqBase.DEIntegrator)
+        integrator::DiffEqBase.DEIntegrator)
     @unpack cache = nlsolver
 
     cache.history = 0
@@ -91,10 +91,11 @@ end
     compute_step_fixedpoint!(nlsolver, integrator)
 end
 
-@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{
-        <:Union{NLFunctional,
-            NLAnderson}, false},
-    integrator)
+@muladd function compute_step_fixedpoint!(
+        nlsolver::NLSolver{
+            <:Union{NLFunctional,
+                NLAnderson}, false},
+        integrator)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, γ, α, cache, tmp = nlsolver
     @unpack tstep = cache
@@ -151,10 +152,11 @@ end
     ndz
 end
 
-@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{
-        <:Union{NLFunctional,
-            NLAnderson}, true},
-    integrator)
+@muladd function compute_step_fixedpoint!(
+        nlsolver::NLSolver{
+            <:Union{NLFunctional,
+                NLAnderson}, true},
+        integrator)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, tmp, ztmp, γ, α, cache = nlsolver
     @unpack ustep, tstep, k, atmp, dz = cache
@@ -221,7 +223,7 @@ function Base.resize!(nlcache::NLFunctionalCache, i::Int)
 end
 
 function Base.resize!(nlcache::NLAndersonCache, nlsolver::NLSolver{<:NLAnderson},
-    integrator, i::Int)
+        integrator, i::Int)
     resize!(nlcache, nlsolver.alg, i)
 end
 

@@ -34,7 +34,7 @@ Random.seed!(100)
 end
 
 @testset "Integrator Tstops Tests on the Interval $(["[-1, 0]", "[0, 1]"][i])" for (i, tdir) in enumerate([-1.0;
-    1.0])
+                                                                                                           1.0])
     prob2 = remake(prob_ode_linear, tspan = (0.0, tdir * 1.0))
     integrator = init(prob2, Tsit5())
     tstops = tdir .* [0, 1 / 5, 1 / 4, 1 / 3, 1 / 2, 3 / 4, 1]

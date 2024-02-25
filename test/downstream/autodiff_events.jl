@@ -36,7 +36,7 @@ ad
 @test ad ≈ findiff
 
 function test_f2(p, sensealg = ForwardDiffSensitivity(), controller = nothing,
-    alg = Tsit5())
+        alg = Tsit5())
     _prob = remake(prob, p = p)
     u = solve(_prob, alg, sensealg = sensealg, controller = controller,
         abstol = 1e-14, reltol = 1e-14, callback = cb, save_everystep = false)
@@ -50,14 +50,19 @@ g2 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint()), p)
 g3 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), IController()), p)
 g4 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), PIController(7 // 50, 2 // 25)),
     p)
-@test_broken g5 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(),
+@test_broken g5 = Zygote.gradient(
+    θ -> test_f2(θ, ReverseDiffAdjoint(),
         PIDController(1 / 18.0, 1 / 9.0, 1 / 18.0)),
     p)
-g6 = Zygote.gradient(θ -> test_f2(θ, ForwardDiffSensitivity(),
-        OrdinaryDiffEq.PredictiveController(), TRBDF2()), p)
-@test_broken g7 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(),
+g6 = Zygote.gradient(
+    θ -> test_f2(θ, ForwardDiffSensitivity(),
+        OrdinaryDiffEq.PredictiveController(), TRBDF2()),
+    p)
+@test_broken g7 = Zygote.gradient(
+    θ -> test_f2(θ, ReverseDiffAdjoint(),
         OrdinaryDiffEq.PredictiveController(),
-        TRBDF2()), p)
+        TRBDF2()),
+    p)
 
 @test g1[1] ≈ findiff[2, 1:2]
 @test g2[1] ≈ findiff[2, 1:2]

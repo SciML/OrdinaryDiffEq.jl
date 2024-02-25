@@ -17,7 +17,8 @@ end
 p = (1.0, 2.0, 3.0)
 u0 = [1.0]
 tspan = (0.0, 10.0)
-prob = ODEProblem(ODEFunction(d_alembert,
+prob = ODEProblem(
+    ODEFunction(d_alembert,
         jac = d_alembert_jac,
         analytic = d_alembert_analytic),
     u0, tspan, p)

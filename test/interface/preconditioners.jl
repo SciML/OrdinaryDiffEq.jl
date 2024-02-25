@@ -47,11 +47,13 @@ u0 = init_brusselator_2d(xyd_brusselator)
 prob_ode_brusselator_2d = ODEProblem(brusselator_2d_loop, u0, (0.0, 11.5), p)
 
 du0 = copy(u0)
-jac = ModelingToolkit.Symbolics.jacobian_sparsity((du, u) -> brusselator_2d_loop(du, u, p,
+jac = ModelingToolkit.Symbolics.jacobian_sparsity(
+    (du, u) -> brusselator_2d_loop(du, u, p,
         0.0), du0,
     u0)
 
-prob_ode_brusselator_2d_sparse = ODEProblem(ODEFunction(brusselator_2d_loop,
+prob_ode_brusselator_2d_sparse = ODEProblem(
+    ODEFunction(brusselator_2d_loop,
         jac_prototype = float.(jac)),
     u0, (0.0, 11.5), p)
 
@@ -66,7 +68,8 @@ end
 
 function algebraicmultigrid(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
     if newW === nothing || newW
-        Pl = AlgebraicMultigrid.aspreconditioner(AlgebraicMultigrid.ruge_stuben(convert(AbstractMatrix,
+        Pl = AlgebraicMultigrid.aspreconditioner(AlgebraicMultigrid.ruge_stuben(convert(
+            AbstractMatrix,
             W)))
     else
         Pl = Plprev

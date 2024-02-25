@@ -19,7 +19,8 @@ const CACHE_TEST_ALGS = [Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK
 
 tspan = (0.0, 1.0)
 
-for (ff_time_derivative, u0) in ((ODEFunction(time_derivative,
+for (ff_time_derivative, u0) in (
+    (ODEFunction(time_derivative,
             analytic = time_derivative_analytic), [1.0]),
     (ODEFunction(time_derivative_static,
             analytic = time_derivative_analytic),

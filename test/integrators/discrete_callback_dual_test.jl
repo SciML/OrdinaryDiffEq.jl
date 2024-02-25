@@ -11,7 +11,8 @@ times_finalize_called = 0
 function stopping_cb(tstop)
     condition = (u, t, integrator) -> t == tstop
     affect! = integrator -> (println("Stopped!"); integrator.p = zero(integrator.p))
-    DiscreteCallback(condition, affect!, finalize=(args...)->global times_finalize_called+=1)
+    DiscreteCallback(
+        condition, affect!, finalize = (args...) -> global times_finalize_called += 1)
 end
 
 function test_fun(tstop)
@@ -23,9 +24,8 @@ end
 
 @test ForwardDiff.derivative(test_fun, 0.5) ≈ exp(0.5) * u0 # Analytical solution: exp(tstop)*u0
 @test times_finalize_called == 1 # test that finalize callback ran exactly once
-test_fun(.5)
+test_fun(0.5)
 @test times_finalize_called == 2 # test that finalize callback ran again
-
 
 function test_fun(tstop)
     DualT = typeof(tstop)

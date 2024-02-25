@@ -68,32 +68,35 @@ end
     end
 end
 
-function motionfuncDirect1(dv,v,u,p,t)
+function motionfuncDirect1(dv, v, u, p, t)
     # 1:Electron, 2: Be
-    ω_1,ω_2,γ,m_1,m_2,η,ω_d=p
-    dv[1]=-ω_1^2*u[1]*(1+η*cos(ω_d*t))-γ*u[2]/m_1
-    dv[2]=-ω_2^2*u[2]-γ*u[1]/m_2
+    ω_1, ω_2, γ, m_1, m_2, η, ω_d = p
+    dv[1] = -ω_1^2 * u[1] * (1 + η * cos(ω_d * t)) - γ * u[2] / m_1
+    dv[2] = -ω_2^2 * u[2] - γ * u[1] / m_2
 end
 
-function motionfuncDirect1(v,u,p,t)
+function motionfuncDirect1(v, u, p, t)
     # 1:Electron, 2: Be
-    ω_1,ω_2,γ,m_1,m_2,η,ω_d=p
-    [-ω_1^2*u[1]*(1+η*cos(ω_d*t))-γ*u[2]/m_1,-ω_2^2*u[2]-γ*u[1]/m_2]
+    ω_1, ω_2, γ, m_1, m_2, η, ω_d = p
+    [-ω_1^2 * u[1] * (1 + η * cos(ω_d * t)) - γ * u[2] / m_1,
+        -ω_2^2 * u[2] - γ * u[1] / m_2]
 end
 
-param=[90386.15717208837, 3938.9288690708827, 8560.718748264337, 0.000544617021484666, 8.947079933513658, 0.7596480420227258, 78778.57738141765]
-u0_direct=zeros(2) # mm, mm
+param = [90386.15717208837, 3938.9288690708827, 8560.718748264337, 0.000544617021484666,
+    8.947079933513658, 0.7596480420227258, 78778.57738141765]
+u0_direct = zeros(2) # mm, mm
 v0_direct = [0.0, 135.83668926684385]
-tspan=(0.0, 1.321179076090661)
-prob_direct=SecondOrderODEProblem(motionfuncDirect1,v0_direct,u0_direct,tspan,param)
-dt=2e-8
-ref=solve(prob_direct,DPRKN12(),abstol=1e-12,reltol=1e-12,maxiters=1e7,saveat=0.01)
+tspan = (0.0, 1.321179076090661)
+prob_direct = SecondOrderODEProblem(motionfuncDirect1, v0_direct, u0_direct, tspan, param)
+dt = 2e-8
+ref = solve(
+    prob_direct, DPRKN12(), abstol = 1e-12, reltol = 1e-12, maxiters = 1e7, saveat = 0.01)
 
 @testset "symplectic time-dependent $alg" for (alg, x, d) in ALGOS
-    sol=solve(prob_direct,alg(),dt=dt,saveat=0.01)
+    sol = solve(prob_direct, alg(), dt = dt, saveat = 0.01)
     if alg <: Yoshida6
-        @test maximum(ref[4,:]-sol[4,:]) < 9e-3
+        @test maximum(ref[4, :] - sol[4, :]) < 9e-3
     else
-        @test maximum(ref[4,:]-sol[4,:]) < 3e-3
+        @test maximum(ref[4, :] - sol[4, :]) < 3e-3
     end
 end

@@ -1,8 +1,10 @@
 #Low Storage Explicit Runge-Kutta Methods
 
-@doc explicit_rk_docstring("A fourth-order, five-stage explicit low-storage method of Carpenter and Kennedy
+@doc explicit_rk_docstring(
+    "A fourth-order, five-stage explicit low-storage method of Carpenter and Kennedy
 (free 3rd order Hermite interpolant). Fixed timestep only. Designed for
-hyperbolic PDEs (stability properties).", "CarpenterKennedy2N54",
+hyperbolic PDEs (stability properties).",
+    "CarpenterKennedy2N54",
     references = "@article{carpenter1994fourth,
     title={Fourth-order 2N-storage Runge-Kutta schemes},
     author={Carpenter, Mark H and Kennedy, Christopher A},
@@ -20,12 +22,13 @@ Base.@kwdef struct CarpenterKennedy2N54{StageLimiter, StepLimiter, Thread} <:
 end
 # for backwards compatibility
 function CarpenterKennedy2N54(stage_limiter!,
-    step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        step_limiter! = trivial_limiter!;
+        williamson_condition = true)
     CarpenterKennedy2N54(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
 
-@doc explicit_rk_docstring("A fourth-order, six-stage explicit low-storage method. Fixed timestep only.",
+@doc explicit_rk_docstring(
+    "A fourth-order, six-stage explicit low-storage method. Fixed timestep only.",
     "SHLDDRK64",
     references = "D. Stanescu, W. G. Habashi.
     2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for Computational
@@ -44,8 +47,8 @@ Base.@kwdef struct SHLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
 end
 # for backwards compatibility
 function SHLDDRK64(stage_limiter!,
-    step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        step_limiter! = trivial_limiter!;
+        williamson_condition = true)
     SHLDDRK64(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
 
@@ -93,17 +96,19 @@ struct HSLDDRK64{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     thread::Thread
     williamson_condition::Bool
     function HSLDDRK64(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!;
-        williamson_condition = true)
+            williamson_condition = true)
         Base.depwarn("HSLDDRK64 is deprecated, use SHLDDRK64 instead.", :HSLDDRK64)
         SHLDDRK64(stage_limiter!, step_limiter!, thread;
             williamson_condition = williamson_condition)
     end
 end
 
-@doc explicit_rk_docstring("7-stage, third order low-storage low-dissipation, low-dispersion scheme for
+@doc explicit_rk_docstring(
+    "7-stage, third order low-storage low-dissipation, low-dispersion scheme for
 discontinuous Galerkin space discretizations applied to wave propagation problems.
 Optimized for PDE discretizations when maximum spatial step is small due to
-geometric features of computational domain. Fixed timestep only.", "DGLDDRK73_C",
+geometric features of computational domain. Fixed timestep only.",
+    "DGLDDRK73_C",
     references = "T. Toulorge, W. Desmet.
     Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
     Applied to Wave Propagation Problems.
@@ -120,17 +125,19 @@ Base.@kwdef struct DGLDDRK73_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
 end
 # for backwards compatibility
 function DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        williamson_condition = true)
     DGLDDRK73_C(stage_limiter!,
         step_limiter!,
         False(),
         williamson_condition)
 end
 
-@doc explicit_rk_docstring("8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
+@doc explicit_rk_docstring(
+    "8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
 discontinuous Galerkin space discretizations applied to wave propagation problems.
 Optimized for PDE discretizations when maximum spatial step is small due to
-geometric features of computational domain. Fixed timestep only.", "DGLDDRK84_C",
+geometric features of computational domain. Fixed timestep only.",
+    "DGLDDRK84_C",
     references = "T. Toulorge, W. Desmet.
     Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
     Applied to Wave Propagation Problems.
@@ -147,17 +154,19 @@ Base.@kwdef struct DGLDDRK84_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
 end
 # for backwards compatibility
 function DGLDDRK84_C(stage_limiter!, step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        williamson_condition = true)
     DGLDDRK84_C(stage_limiter!,
         step_limiter!,
         False(),
         williamson_condition)
 end
 
-@doc explicit_rk_docstring("8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
+@doc explicit_rk_docstring(
+    "8-stage, fourth order low-storage low-dissipation, low-dispersion scheme for
 discontinuous Galerkin space discretizations applied to wave propagation problems.
 Optimized for PDE discretizations when the maximum spatial step size is not
-constrained. Fixed timestep only.", "DGLDDRK84_F",
+constrained. Fixed timestep only.",
+    "DGLDDRK84_F",
     references = "T. Toulorge, W. Desmet.
     Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
     Applied to Wave Propagation Problems.
@@ -174,15 +183,17 @@ Base.@kwdef struct DGLDDRK84_F{StageLimiter, StepLimiter, Thread} <: OrdinaryDif
 end
 # for backwards compatibility
 function DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        williamson_condition = true)
     DGLDDRK84_F(stage_limiter!,
         step_limiter!,
         False(),
         williamson_condition)
 end
 
-@doc explicit_rk_docstring("12-stage, fourth order low-storage method with optimized stability regions for
-advection-dominated problems. Fixed timestep only.", "NDBLSRK124",
+@doc explicit_rk_docstring(
+    "12-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.",
+    "NDBLSRK124",
     references = "Jens Niegemann, Richard Diehl, Kurt Busch.
     Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
     Journal of Computational Physics, 231, pp 364-372, 2012.
@@ -198,14 +209,16 @@ Base.@kwdef struct NDBLSRK124{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
 end
 # for backwards compatibility
 function NDBLSRK124(stage_limiter!, step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        williamson_condition = true)
     NDBLSRK124(stage_limiter!,
         step_limiter!, False(),
         williamson_condition)
 end
 
-@doc explicit_rk_docstring("13-stage, fourth order low-storage method with optimized stability regions for
-advection-dominated problems. Fixed timestep only.", "NDBLSRK134",
+@doc explicit_rk_docstring(
+    "13-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.",
+    "NDBLSRK134",
     references = "Jens Niegemann, Richard Diehl, Kurt Busch.
     Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
     Journal of Computational Physics, 231, pp 364-372, 2012.
@@ -221,14 +234,16 @@ Base.@kwdef struct NDBLSRK134{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
 end
 # for backwards compatibility
 function NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        williamson_condition = true)
     NDBLSRK134(stage_limiter!,
         step_limiter!, False(),
         williamson_condition)
 end
 
-@doc explicit_rk_docstring("14-stage, fourth order low-storage method with optimized stability regions for
-advection-dominated problems. Fixed timestep only.", "NDBLSRK144",
+@doc explicit_rk_docstring(
+    "14-stage, fourth order low-storage method with optimized stability regions for
+advection-dominated problems. Fixed timestep only.",
+    "NDBLSRK144",
     references = "Jens Niegemann, Richard Diehl, Kurt Busch.
     Efficient Low-Storage Runge–Kutta Schemes with Optimized Stability Regions.
     Journal of Computational Physics, 231, pp 364-372, 2012.
@@ -244,7 +259,7 @@ Base.@kwdef struct NDBLSRK144{StageLimiter, StepLimiter, Thread} <: OrdinaryDiff
 end
 # for backwards compatibility
 function NDBLSRK144(stage_limiter!, step_limiter! = trivial_limiter!;
-    williamson_condition = true)
+        williamson_condition = true)
     NDBLSRK144{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
         step_limiter!, False(),
         williamson_condition)
@@ -268,9 +283,11 @@ function CFRLDDRK64(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 7-stage, fourth order low-storage low-dissipation, low-dispersion scheme with maximal accuracy and stability limit along the imaginary axes.
-Fixed timestep only.", "TSLDDRK74",
+Fixed timestep only.",
+    "TSLDDRK74",
     references = "Kostas Tselios, T. E. Simos. Optimized Runge–Kutta Methods with Minimal Dispersion and Dissipation
     for Problems arising from Computational Acoustics. Physics Letters A, 393(1-2), pp 38-47, 2007.
     doi: https://doi.org/10.1016/j.physleta.2006.10.072")
@@ -286,7 +303,8 @@ function TSLDDRK74(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 4-stage, third order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK43_2")
 Base.@kwdef struct CKLLSRK43_2{StageLimiter, StepLimiter, Thread} <:
@@ -302,7 +320,8 @@ function CKLLSRK43_2(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3C")
 Base.@kwdef struct CKLLSRK54_3C{StageLimiter, StepLimiter, Thread} <:
@@ -318,7 +337,8 @@ function CKLLSRK54_3C(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK95_4S")
 Base.@kwdef struct CKLLSRK95_4S{StageLimiter, StepLimiter, Thread} <:
@@ -334,7 +354,8 @@ function CKLLSRK95_4S(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK95_4C")
 Base.@kwdef struct CKLLSRK95_4C{StageLimiter, StepLimiter, Thread} <:
@@ -350,7 +371,8 @@ function CKLLSRK95_4C(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 9-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK95_4M")
 Base.@kwdef struct CKLLSRK95_4M{StageLimiter, StepLimiter, Thread} <:
@@ -366,7 +388,8 @@ function CKLLSRK95_4M(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3C_3R")
 Base.@kwdef struct CKLLSRK54_3C_3R{StageLimiter, StepLimiter, Thread} <:
@@ -382,7 +405,8 @@ function CKLLSRK54_3C_3R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3M_3R")
 Base.@kwdef struct CKLLSRK54_3M_3R{StageLimiter, StepLimiter, Thread} <:
@@ -398,7 +422,8 @@ function CKLLSRK54_3M_3R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3N_3R")
 Base.@kwdef struct CKLLSRK54_3N_3R{StageLimiter, StepLimiter, Thread} <:
@@ -414,7 +439,8 @@ function CKLLSRK54_3N_3R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK85_4C_3R")
 Base.@kwdef struct CKLLSRK85_4C_3R{StageLimiter, StepLimiter, Thread} <:
@@ -430,7 +456,8 @@ function CKLLSRK85_4C_3R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK85_4M_3R")
 Base.@kwdef struct CKLLSRK85_4M_3R{StageLimiter, StepLimiter, Thread} <:
@@ -446,7 +473,8 @@ function CKLLSRK85_4M_3R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK85_4P_3R")
 Base.@kwdef struct CKLLSRK85_4P_3R{StageLimiter, StepLimiter, Thread} <:
@@ -462,7 +490,8 @@ function CKLLSRK85_4P_3R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3N_4R")
 Base.@kwdef struct CKLLSRK54_3N_4R{StageLimiter, StepLimiter, Thread} <:
@@ -478,7 +507,8 @@ function CKLLSRK54_3N_4R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 5-stage, fourth order low-storage scheme, optimized for compressible Navier–Stokes equations.
 ", "CKLLSRK54_3M_4R")
 Base.@kwdef struct CKLLSRK54_3M_4R{StageLimiter, StepLimiter, Thread} <:
@@ -494,7 +524,8 @@ function CKLLSRK54_3M_4R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("6-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.",
+@doc explicit_rk_docstring(
+    "6-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.",
     "CKLLSRK65_4M_4R")
 Base.@kwdef struct CKLLSRK65_4M_4R{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAdaptiveAlgorithm
@@ -509,7 +540,8 @@ function CKLLSRK65_4M_4R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 8-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.",
     "CKLLSRK85_4FM_4R")
 Base.@kwdef struct CKLLSRK85_4FM_4R{StageLimiter, StepLimiter, Thread} <:
@@ -525,7 +557,8 @@ function CKLLSRK85_4FM_4R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("CKLLSRK75_4M_5R: Low-Storage Method
+@doc explicit_rk_docstring(
+    "CKLLSRK75_4M_5R: Low-Storage Method
 7-stage, fifth order low-storage scheme, optimized for compressible Navier–Stokes equations.",
     "CKLLSRK75_4M_5R")
 Base.@kwdef struct CKLLSRK75_4M_5R{StageLimiter, StepLimiter, Thread} <:
@@ -541,7 +574,8 @@ function CKLLSRK75_4M_5R(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 3-stage, second order (3S) low-storage scheme, optimized  the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S32",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -556,12 +590,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S32{StageLimiter, StepLimiter, Thre
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S32(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S32{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S32{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 8-stage, second order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S82",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -576,12 +612,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S82{StageLimiter, StepLimiter, Thre
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S82(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S82{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S82{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 5-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S53",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -596,12 +634,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S53{StageLimiter, StepLimiter, Thre
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S53(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S53{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S53{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 17-stage, third order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S173",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -616,12 +656,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S173{StageLimiter, StepLimiter, Thr
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S173(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S173{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S173{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 9-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S94",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -636,12 +678,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S94{StageLimiter, StepLimiter, Thre
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S94(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S94{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S94{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 18-stage, fourth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S184",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -656,12 +700,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S184{StageLimiter, StepLimiter, Thr
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S184(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S184{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S184{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 10-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S105",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -676,12 +722,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S105{StageLimiter, StepLimiter, Thr
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S105(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S105{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S105{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("Low-Storage Method
+@doc explicit_rk_docstring(
+    "Low-Storage Method
 20-stage, fifth order (3S) low-storage scheme, optimized for the spectral difference method applied to wave propagation problems.",
     "ParsaniKetchesonDeconinck3S205",
     references = "Parsani, Matteo, David I. Ketcheson, and W. Deconinck.
@@ -696,12 +744,14 @@ Base.@kwdef struct ParsaniKetchesonDeconinck3S205{StageLimiter, StepLimiter, Thr
 end
 # for backwards compatibility
 function ParsaniKetchesonDeconinck3S205(stage_limiter!, step_limiter! = trivial_limiter!)
-    ParsaniKetchesonDeconinck3S205{typeof(stage_limiter!), typeof(step_limiter!), False}(stage_limiter!,
+    ParsaniKetchesonDeconinck3S205{typeof(stage_limiter!), typeof(step_limiter!), False}(
+        stage_limiter!,
         step_limiter!,
         False())
 end
 
-@doc explicit_rk_docstring("A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
+@doc explicit_rk_docstring(
+    "A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.",
     "RDPK3Sp35",
     references = "Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -720,7 +770,8 @@ function RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
+@doc explicit_rk_docstring(
+    "A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.",
     "RDPK3SpFSAL35",
@@ -741,7 +792,8 @@ function RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
+@doc explicit_rk_docstring(
+    "A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.",
     "RDPK3Sp49",
     references = "Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -760,7 +812,8 @@ function RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
+@doc explicit_rk_docstring(
+    "A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.",
     "RDPK3SpFSAL49",
@@ -781,7 +834,8 @@ function RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
+@doc explicit_rk_docstring(
+    "A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.",
     "RDPK3Sp510",
     references = "Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -800,7 +854,8 @@ function RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
+@doc explicit_rk_docstring(
+    "A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.",
     "RDPK3SpFSAL510",
@@ -838,7 +893,8 @@ function KYK2014DGSSPRK_3S2(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A second-order, two-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A second-order, two-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK22",
     references = "Shu, Chi-Wang, and Stanley Osher.
@@ -856,7 +912,8 @@ function SSPRK22(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, three-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A third-order, three-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK33",
     references = "Shu, Chi-Wang, and Stanley Osher.
@@ -874,7 +931,8 @@ function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, five-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A third-order, five-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK53",
     references = "Ruuth, Steven.
@@ -905,7 +963,8 @@ function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+@doc explicit_rk_docstring(
+    "A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
 Fixed timestep only.",
     "SSPRK53_2N1",
     references = "Higueras and T. Roldán.
@@ -923,7 +982,8 @@ function SSPRK53_2N1(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+@doc explicit_rk_docstring(
+    "A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
 Fixed timestep only.",
     "SSPRK53_2N2",
     references = "Higueras and T. Roldán.
@@ -941,7 +1001,8 @@ function SSPRK53_2N2(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
+@doc explicit_rk_docstring(
+    "A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
 Fixed timestep only.",
     "SSPRK53_H",
     references = "Higueras and T. Roldán.
@@ -958,7 +1019,8 @@ function SSPRK53_H(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, six-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A third-order, six-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK63",
     references = "Ruuth, Steven.
@@ -975,7 +1037,8 @@ function SSPRK63(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, seven-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A third-order, seven-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK73",
     references = "Ruuth, Steven.
@@ -992,7 +1055,8 @@ function SSPRK73(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, eight-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A third-order, eight-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK83",
     references = "Ruuth, Steven.
@@ -1009,7 +1073,8 @@ function SSPRK83(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, four-stage explicit strong stability preserving (SSP) method.",
+@doc explicit_rk_docstring(
+    "A third-order, four-stage explicit strong stability preserving (SSP) method.",
     "SSPRK43",
     references = """Optimal third-order explicit SSP method with four stages discovered by
 
@@ -1043,7 +1108,8 @@ function SSPRK43(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, four-stage explicit strong stability preserving (SSP) method.",
+@doc explicit_rk_docstring(
+    "A third-order, four-stage explicit strong stability preserving (SSP) method.",
     "SSPRK432",
     references = "Gottlieb, Sigal, David I. Ketcheson, and Chi-Wang Shu.
     Strong stability preserving Runge-Kutta and multistep time discretizations.
@@ -1061,7 +1127,8 @@ function SSPRK432(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A third-order, four-step explicit strong stability preserving (SSP) linear multistep method.
+@doc explicit_rk_docstring(
+    "A third-order, four-step explicit strong stability preserving (SSP) linear multistep method.
 This method does not come with an error estimator and requires a fixed time step
 size.",
     "SSPRKMSVS43",
@@ -1082,7 +1149,8 @@ function SSPRKMSVS43(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A second-order, three-step explicit strong stability preserving (SSP) linear multistep method.
+@doc explicit_rk_docstring(
+    "A second-order, three-step explicit strong stability preserving (SSP) linear multistep method.
 This method does not come with an error estimator and requires a fixed time step
 size.",
     "SSPRKMSVS32",
@@ -1103,7 +1171,8 @@ function SSPRKMSVS32(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("A third-order, nine-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A third-order, nine-stage explicit strong stability preserving (SSP) method.
 
 Consider using `SSPRK43` instead, which uses the same main method and an
 improved embedded method.",
@@ -1123,7 +1192,8 @@ function SSPRK932(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A fourth-order, five-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A fourth-order, five-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK54",
     references = "Ruuth, Steven.
@@ -1140,7 +1210,8 @@ function SSPRK54(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("A fourth-order, ten-stage explicit strong stability preserving (SSP) method.
+@doc explicit_rk_docstring(
+    "A fourth-order, ten-stage explicit strong stability preserving (SSP) method.
 Fixed timestep only.",
     "SSPRK104",
     references = "Ketcheson, David I.

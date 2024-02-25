@@ -129,31 +129,31 @@ DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f
 DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, γ, c,
-    iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, γ, c,
+        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
         tTypeNoUnits, γ, c, 1, iip)
 end
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, γ, c, α,
-    iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, γ, c, α,
+        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
 end
 
 function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
-    t, dt,
-    f::F, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-    γ, c, α,
-    ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
-    tTypeNoUnits}
+        t, dt,
+        f::F, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        γ, c, α,
+        ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
     # define unitless type
@@ -193,8 +193,10 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
-        Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-                nothing)..., weight, dz)
+        Pl, Pr = wrapprecs(
+            alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
+                nothing)...,
+            weight, dz)
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
             Pl = Pl, Pr = Pr,
             assumptions = LinearSolve.OperatorAssumptions(true))
@@ -232,12 +234,12 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
 end
 
 function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
-    t, dt,
-    f::F, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-    γ, c, α,
-    ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
-    tTypeNoUnits}
+        t, dt,
+        f::F, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        γ, c, α,
+        ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
     # define unitless type

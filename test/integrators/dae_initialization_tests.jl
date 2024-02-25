@@ -11,8 +11,8 @@ function rober_oop(u, p, t)
     [du1, du2, du3]
 end
 M = [1.0 0 0
-    0 1.0 0
-    0 0 0]
+     0 1.0 0
+     0 0 0]
 f_oop = ODEFunction(rober_oop, mass_matrix = M)
 prob_mm = ODEProblem(f_oop, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 sol = solve(prob_mm, Rosenbrock23(autodiff = false), reltol = 1e-8, abstol = 1e-8)
@@ -41,8 +41,8 @@ function rober(du, u, p, t)
     nothing
 end
 M = [1.0 0 0
-    0 1.0 0
-    0 0 0]
+     0 1.0 0
+     0 0 0]
 f = ODEFunction(rober, mass_matrix = M)
 prob_mm = ODEProblem(f, [1.0, 0.0, 0.0], (0.0, 1e5), (0.04, 3e7, 1e4))
 sol = solve(prob_mm, Rodas5(autodiff = false), reltol = 1e-8, abstol = 1e-8)
@@ -65,7 +65,7 @@ end
 
 function rober_no_p(du, u, p, t)
     y₁, y₂, y₃ = u
-    ;(k₁, k₂, k₃) = (0.04, 3e7, 1e4)
+    (k₁, k₂, k₃) = (0.04, 3e7, 1e4)
     du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
     du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
     du[3] = y₁ + y₂ + y₃ - 1
@@ -74,7 +74,7 @@ end
 
 function rober_oop_no_p(du, u, p, t)
     y₁, y₂, y₃ = u
-    ;(k₁, k₂, k₃) = (0.04, 3e7, 1e4)
+    (k₁, k₂, k₃) = (0.04, 3e7, 1e4)
     du1 = -k₁ * y₁ + k₃ * y₂ * y₃
     du2 = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
     du3 = y₁ + y₂ + y₃ - 1
@@ -84,13 +84,14 @@ end
 # test oop and iip ODE initialization with parameters without eltype/length
 struct UnusedParam
 end
-for f in (ODEFunction(rober_no_p, mass_matrix = M), ODEFunction(rober_oop_no_p, mass_matrix = M))
+for f in (
+    ODEFunction(rober_no_p, mass_matrix = M), ODEFunction(rober_oop_no_p, mass_matrix = M))
     local prob, probp
     prob = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5))
     probp = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5), UnusedParam)
     for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
-        isapprox(init(prob, Rodas5(), abstol=1e-10; initializealg).u,
-                 init(prob, Rodas5(), abstol=1e-10; initializealg).u)
+        isapprox(init(prob, Rodas5(), abstol = 1e-10; initializealg).u,
+            init(prob, Rodas5(), abstol = 1e-10; initializealg).u)
     end
 end
 
@@ -150,7 +151,7 @@ tspan = (0.0, 100000.0)
 differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
 integrator = init(prob, DABDF2())
-integrator2 = init(prob, DABDF2(autodiff=false))
+integrator2 = init(prob, DABDF2(autodiff = false))
 
 @test integrator.du[1]≈-0.04 atol=1e-9
 @test integrator.du[2]≈0.04 atol=1e-9
@@ -209,7 +210,8 @@ integrator = init(prob, DABDF2(); initializealg = ShampineCollocationInit())
 # test iip dae initialization with parameters without eltype/length
 probp = DAEProblem(f, du₀, u₀, tspan, UnusedParam(), differential_vars = differential_vars)
 for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
-    @test isapprox(init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
+    @test isapprox(
+        init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
 end
 
 f = function (du, u, p, t)
@@ -241,7 +243,8 @@ integrator = init(prob, DABDF2())
 # test oop DAE initialization with parameters without eltype/length
 probp = DAEProblem(f, du₀, u₀, tspan, UnusedParam(), differential_vars = differential_vars)
 for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
-    @test isapprox(init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
+    @test isapprox(
+        init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
 end
 
 # to test that we get the right NL solve we need a broken solver.
@@ -249,8 +252,8 @@ struct BrokenNLSolve <: SciMLBase.AbstractNonlinearAlgorithm
     BrokenNLSolve(; kwargs...) = new()
 end
 function SciMLBase.__solve(prob::NonlinearProblem,
-    alg::BrokenNLSolve, args...;
-    kwargs...)
+        alg::BrokenNLSolve, args...;
+        kwargs...)
     u = fill(reinterpret(Float64, 0xDEADBEEFDEADBEEF), 3)
     SciMLBase.build_solution(prob, alg, u, copy(u);
         retcode = ReturnCode.Success)
@@ -263,4 +266,3 @@ prob = ODEProblem(f, ones(3), (0.0, 1.0))
 integrator = init(prob, Rodas5P(),
     initializealg = ShampineCollocationInit(1.0, BrokenNLSolve()))
 @test all(isequal(reinterpret(Float64, 0xDEADBEEFDEADBEEF)), integrator.u)
-

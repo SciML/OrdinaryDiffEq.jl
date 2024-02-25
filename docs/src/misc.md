@@ -1,4 +1,3 @@
-
 ```@docs
 LinearExponential
 SplitEuler

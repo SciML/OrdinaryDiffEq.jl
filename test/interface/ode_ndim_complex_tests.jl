@@ -14,4 +14,4 @@ prob = ODEProblem(f, u0, (0.0, 1.0))
 
 sol = solve(prob, Tsit5(), dt = 1 / 2^4)
 
-@test typeof(sol[:,1]) == Array{ComplexF32, 3}
+@test typeof(sol[:, 1]) == Array{ComplexF32, 3}

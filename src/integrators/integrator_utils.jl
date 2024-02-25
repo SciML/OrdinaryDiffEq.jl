@@ -1,5 +1,5 @@
 function save_idxsinitialize(integrator, cache::OrdinaryDiffEqCache,
-    ::Type{uType}) where {uType}
+        ::Type{uType}) where {uType}
     error("This algorithm does not have an initialization function")
 end
 
@@ -111,9 +111,10 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
         end
     end
     if force_save || (integrator.opts.save_everystep &&
-        (isempty(integrator.sol.t) || (integrator.t !== integrator.sol.t[end]) &&
-        (integrator.opts.save_end || integrator.t !== integrator.sol.prob.tspan[2])
-        ))
+        (isempty(integrator.sol.t) ||
+         (integrator.t !== integrator.sol.t[end]) &&
+         (integrator.opts.save_end || integrator.t !== integrator.sol.prob.tspan[2])
+    ))
         integrator.saveiter += 1
         saved, savedexactly = true, true
         if integrator.opts.save_idxs === nothing
@@ -285,7 +286,8 @@ function _loopfooter!(integrator)
 
     # Take value because if t is dual then maxeig can be dual
     if integrator.cache isa CompositeCache
-        cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),
+        cur_eigen_est = integrator.opts.internalnorm(
+            DiffEqBase.value(integrator.eigen_est),
             integrator.t)
         cur_eigen_est > integrator.stats.maxeig &&
             (integrator.stats.maxeig = cur_eigen_est)
@@ -295,10 +297,10 @@ end
 
 # Use a generated function to call apply_callback! in a type-stable way
 @generated function apply_ith_callback!(integrator,
-                                        time, upcrossing, event_idx, cb_idx,
-                                        callbacks::NTuple{N,
-                                                          Union{ContinuousCallback,
-                                                                VectorContinuousCallback}}) where {N}
+        time, upcrossing, event_idx, cb_idx,
+        callbacks::NTuple{N,
+            Union{ContinuousCallback,
+                VectorContinuousCallback}}) where {N}
     ex = quote
         throw(BoundsError(callbacks, cb_idx))
     end
@@ -309,7 +311,7 @@ end
         ex = quote
             if (cb_idx == $i)
                 return DiffEqBase.apply_callback!(integrator, callbacks[$i], time,
-                                                  upcrossing, event_idx)
+                    upcrossing, event_idx)
             else
                 $ex
             end
@@ -327,16 +329,17 @@ function handle_callbacks!(integrator)
     discrete_modified = false
     saved_in_cb = false
     if !(continuous_callbacks isa Tuple{})
-        time, upcrossing, event_occurred, event_idx, idx, counter = DiffEqBase.find_first_continuous_callback(integrator,
-                                                                                                              continuous_callbacks...)
+        time, upcrossing, event_occurred, event_idx, idx, counter = DiffEqBase.find_first_continuous_callback(
+            integrator,
+            continuous_callbacks...)
         if event_occurred
             integrator.event_last_time = idx
             integrator.vector_event_last_time = event_idx
             continuous_modified, saved_in_cb = apply_ith_callback!(integrator,
-                                                                   time, upcrossing,
-                                                                   event_idx,
-                                                                   idx,
-                                                                   continuous_callbacks)
+                time, upcrossing,
+                event_idx,
+                idx,
+                continuous_callbacks)
         else
             integrator.event_last_time = 0
             integrator.vector_event_last_time = 1
@@ -344,14 +347,14 @@ function handle_callbacks!(integrator)
     end
     if !integrator.force_stepfail && !(discrete_callbacks isa Tuple{})
         discrete_modified, saved_in_cb = DiffEqBase.apply_discrete_callback!(integrator,
-                                                                             discrete_callbacks...)
+            discrete_callbacks...)
     end
     if !saved_in_cb
         savevalues!(integrator)
     end
 
     integrator.u_modified = continuous_modified | discrete_modified
-    integrator.reeval_fsal  && handle_callback_modifiers!(integrator) # Hook for DDEs to add discontinuities
+    integrator.reeval_fsal && handle_callback_modifiers!(integrator) # Hook for DDEs to add discontinuities
     nothing
 end
 
@@ -481,11 +484,10 @@ function reset_fsal!(integrator)
     # Under these conditions, these algorithms are not FSAL anymore
     integrator.stats.nf += 1
 
-
     # Ignore DAEs but they already re-ran initialization
     # Mass matrix DAEs do need to reset FSAL if available
     if !(integrator.sol.prob isa DAEProblem)
-        if  integrator.cache isa OrdinaryDiffEqMutableCache ||
+        if integrator.cache isa OrdinaryDiffEqMutableCache ||
            (integrator.cache isa CompositeCache &&
             integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache)
             integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
@@ -493,7 +495,7 @@ function reset_fsal!(integrator)
             integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
         end
     end
-    
+
     # Do not set false here so it can be checked in the algorithm
     # integrator.reeval_fsal = false
 end
@@ -507,12 +509,12 @@ function nlsolve_f(integrator::ODEIntegrator)
 end
 
 function (integrator::ODEIntegrator)(t, ::Type{deriv} = Val{0};
-    idxs = nothing) where {deriv}
+        idxs = nothing) where {deriv}
     current_interpolant(t, integrator, idxs, deriv)
 end
 
 function (integrator::ODEIntegrator)(val::AbstractArray, t::Union{Number, AbstractArray},
-    ::Type{deriv} = Val{0}; idxs = nothing) where {deriv}
+        ::Type{deriv} = Val{0}; idxs = nothing) where {deriv}
     current_interpolant!(val, t, integrator, idxs, deriv)
 end
 

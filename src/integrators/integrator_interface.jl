@@ -2,7 +2,7 @@
 # is specialized, yet, it needs to take both ODEIntegrator and DDEIntegrator.
 # Hence, we need to have two separate functions.
 function _change_t_via_interpolation!(integrator, t,
-    modify_save_endpoint::Type{Val{T}}) where {T}
+        modify_save_endpoint::Type{Val{T}}) where {T}
     # Can get rid of an allocation here with a function
     # get_tmp_arr(integrator.cache) which gives a pointer to some
     # cache array which can be modified.
@@ -24,17 +24,18 @@ function _change_t_via_interpolation!(integrator, t,
     return nothing
 end
 function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
-    t,
-    modify_save_endpoint::Type{Val{T}} = Val{
-        false,
-    }) where {
-    T,
+        t,
+        modify_save_endpoint::Type{Val{T}} = Val{
+            false,
+        }) where {
+        T,
 }
     _change_t_via_interpolation!(integrator, t, modify_save_endpoint)
     return nothing
 end
 
-function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator, continuous_modification=true)
+function DiffEqBase.reeval_internals_due_to_modification!(
+        integrator::ODEIntegrator, continuous_modification = true)
     if integrator.isdae
         DiffEqBase.initialize_dae!(integrator)
     end
@@ -93,7 +94,8 @@ end
     else
         return if isdefined(integrator, :fsallast) &&
                   !(integrator.alg isa
-                    Union{Rosenbrock23, Rosenbrock32, Rodas23W, Rodas3P,Rodas4, Rodas4P, Rodas4P2, Rodas5,
+                    Union{Rosenbrock23, Rosenbrock32, Rodas23W,
+            Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5,
             Rodas5P})
             # Special stiff interpolations do not store the right value in fsallast
             out .= integrator.fsallast
@@ -113,72 +115,72 @@ for typ in (OrdinaryDiffEqAlgorithm, Union{RadauIIA3, RadauIIA5},
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
     Union{SSPRK22, SSPRK33, SSPRK53_2N1, SSPRK53_2N2, SSPRK43, SSPRK432, SSPRK932})
     @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
-        cache::OrdinaryDiffEqConstantCache)
+            cache::OrdinaryDiffEqConstantCache)
         nothing
     end
 end
 
 # the ordering of the cache arrays is important!!!
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5},
-    cache::OrdinaryDiffEqMutableCache)
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.atmp)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+        cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.tmp, cache.atmp)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqNewtonAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.tmp, cache.nlsolver.z)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.linsolve_tmp)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::Union{SSPRK22, SSPRK33, SSPRK53_2N1,
-        SSPRK53_2N2, SSPRK43, SSPRK432,
-        SSPRK932},
-    cache::OrdinaryDiffEqMutableCache)
+        alg::Union{SSPRK22, SSPRK33, SSPRK53_2N1,
+            SSPRK53_2N2, SSPRK43, SSPRK432,
+            SSPRK932},
+        cache::OrdinaryDiffEqMutableCache)
     (cache.k,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::OrdinaryDiffEqExponentialAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        alg::OrdinaryDiffEqExponentialAlgorithm,
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.dz)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::OrdinaryDiffEqLinearExponentialAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        alg::OrdinaryDiffEqLinearExponentialAlgorithm,
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-    alg::LinearExponential,
-    cache::OrdinaryDiffEqMutableCache)
+        alg::LinearExponential,
+        cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
-    cache::CompositeCache)
+        cache::CompositeCache)
     get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
-    cache::OrdinaryDiffEqMutableCache)
+        cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.cache.dz, cache.atmp)
 end
 
@@ -306,7 +308,7 @@ function addat_non_user_cache!(integrator::ODEIntegrator, cache::CompositeCache,
 end
 
 function resize_non_user_cache!(integrator::ODEIntegrator,
-    cache::RosenbrockMutableCache, i)
+        cache::RosenbrockMutableCache, i)
     cache.J = similar(cache.J, i, i)
     cache.W = similar(cache.W, i, i)
     resize_jac_config!(cache.jac_config, i)
@@ -349,17 +351,17 @@ end
 
 DiffEqBase.has_reinit(integrator::ODEIntegrator) = true
 function DiffEqBase.reinit!(integrator::ODEIntegrator, u0 = integrator.sol.prob.u0;
-    t0 = integrator.sol.prob.tspan[1],
-    tf = integrator.sol.prob.tspan[2],
-    erase_sol = true,
-    tstops = integrator.opts.tstops_cache,
-    saveat = integrator.opts.saveat_cache,
-    d_discontinuities = integrator.opts.d_discontinuities_cache,
-    reset_dt = (integrator.dtcache == zero(integrator.dt)) &&
-        integrator.opts.adaptive,
-    reinit_callbacks = true, initialize_save = true,
-    reinit_cache = true,
-    reinit_retcode = true)
+        t0 = integrator.sol.prob.tspan[1],
+        tf = integrator.sol.prob.tspan[2],
+        erase_sol = true,
+        tstops = integrator.opts.tstops_cache,
+        saveat = integrator.opts.saveat_cache,
+        d_discontinuities = integrator.opts.d_discontinuities_cache,
+        reset_dt = (integrator.dtcache == zero(integrator.dt)) &&
+            integrator.opts.adaptive,
+        reinit_callbacks = true, initialize_save = true,
+        reinit_cache = true,
+        reinit_retcode = true)
     if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.u, u0)
         recursivecopy!(integrator.uprev, integrator.u)

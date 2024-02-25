@@ -1,8 +1,8 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using ForwardDiff, Printf
 import ODEProblemLibrary: prob_ode_linear,
-    prob_ode_2Dlinear,
-    prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
+                          prob_ode_2Dlinear,
+                          prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 # use `PRINT_TESTS = true` to print the tests, including results
 const PRINT_TESTS = false
 print_results(x) =
@@ -23,7 +23,8 @@ end
 f_linear_inplace = (du, u, p, t) -> begin
     @. du = 1.01 * u
 end
-prob_ode_linear_inplace = ODEProblem(ODEFunction(f_linear_inplace;
+prob_ode_linear_inplace = ODEProblem(
+    ODEFunction(f_linear_inplace;
         analytic = (u0, p, t) -> exp(1.01 * t) * u0),
     [0.5], (0.0, 1.0))
 const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(undef,
@@ -39,7 +40,7 @@ const deriv_test_points = range(0, stop = 1, length = 5)
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
 function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false,
-    nth_der = 1, dertol = 1e-6)
+        nth_der = 1, dertol = 1e-6)
     println("\n")
     show(stdout, alg)
     println()
