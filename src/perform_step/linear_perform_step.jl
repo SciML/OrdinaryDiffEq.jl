@@ -643,8 +643,9 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false
             m = min(alg.m, size(L, 1)), opnorm = integrator.opts.internalopnorm,
             iop = alg.iop)
     else
-        u .= exponential!((dt / 2) .* (A + B) +
-                          ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B),
+        u .= exponential!(
+            (dt / 2) .* (A + B) +
+            ((dt^2) * (sqrt(3) / 12)) .* (B * A - A * B),
             exp_method,
             exp_cache) * uprev
     end
@@ -696,7 +697,7 @@ function initialize!(integrator, cache::MagnusLeapfrogCache)
 end
 
 function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = false,
-    alg_extrapolates = true, iter = 1)
+        alg_extrapolates = true, iter = 1)
     @unpack t, dt, uprev, uprev2, u, p, iter = integrator
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
@@ -747,7 +748,7 @@ function initialize!(integrator, cache::LinearExponentialConstantCache)
 end
 
 function perform_step!(integrator, cache::LinearExponentialConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, f, p = integrator
     alg = unwrap_alg(integrator, nothing)
     A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator

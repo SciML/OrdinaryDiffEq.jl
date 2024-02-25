@@ -28,7 +28,7 @@ if VERSION >= v"1.9"
         Vern7(),
         Vern8(),
         Vern9(),
-        DP5(),
+        DP5()
     ]
         sol = solve(prob_giesekus, alg, saveat = 0.2, abstol = 1e-14, reltol = 1e-14)
         @test Array(sol) ≈ Array(solve_giesekus)

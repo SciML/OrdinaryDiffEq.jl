@@ -15,7 +15,7 @@ broken_CACHE_TEST_ALGS = [
     QNDF(),
     ExtrapolationMidpointHairerWanner(),
     ImplicitEulerExtrapolation(),
-    ImplicitDeuflhardExtrapolation(),
+    ImplicitDeuflhardExtrapolation()
 ]
 # AitkenNeville(threading=false) fails Elastic but not normal case
 

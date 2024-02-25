@@ -22,7 +22,8 @@ function make_mm_probs(mm_A, ::Val{iip}) where {iip}
     u0 = ones(3)
     tspan = (0.0, 1.0)
 
-    prob = ODEProblem(ODEFunction{iip, true}(mm_f, analytic = mm_analytic,
+    prob = ODEProblem(
+        ODEFunction{iip, true}(mm_f, analytic = mm_analytic,
             mass_matrix = mm_A), u0, tspan)
     prob2 = ODEProblem(ODEFunction{iip, true}(mm_g, analytic = mm_analytic), u0, tspan)
 
@@ -159,7 +160,8 @@ end
         @test norm(sol .- sol2)≈0 atol=1e-7
         @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
 
-        sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
+        sol = solve(
+            prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
             dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         sol2 = solve(prob2,
             ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
@@ -188,7 +190,7 @@ end
     @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
 
     M = [0.637947 0.637947
-        0.637947 0.637947]
+         0.637947 0.637947]
 
     function f2!(du, u, p, t)
         du[1] = u[2]
@@ -204,7 +206,8 @@ end
     sol3 = @test_nowarn solve(m_ode_prob, Cash4(), reltol = 1e-10, abstol = 1e-10)
     println("SDIRKs")
     sol4 = @test_nowarn solve(m_ode_prob, ImplicitEuler(), reltol = 1e-10, abstol = 1e-10)
-    sol5 = @test_nowarn solve(m_ode_prob, ImplicitMidpoint(), dt = 1 / 1000, reltol = 1e-10,
+    sol5 = @test_nowarn solve(
+        m_ode_prob, ImplicitMidpoint(), dt = 1 / 1000, reltol = 1e-10,
         abstol = 1e-10)
     sol6 = @test_nowarn solve(m_ode_prob, Trapezoid(), reltol = 1e-10, abstol = 1e-10)
     println("BDFs")
@@ -243,7 +246,8 @@ end
         eulersol = solve(prob, ImplicitEuler(nlsolve = NLNewton(κ = 1e-10)), reltol = 1e-10)
         @test _norm_dsol2(ImplicitEuler(nlsolve = NLNewton(κ = 1e-10)), prob, prob2,
             reltol = 1e-10)≈0 atol=5e-4
-        @test_skip _norm_dsol2(ImplicitMidpoint(nlsolve = NLNewton(κ = 1e-10)), prob, prob2,
+        @test_skip _norm_dsol2(
+            ImplicitMidpoint(nlsolve = NLNewton(κ = 1e-10)), prob, prob2,
             tstops = eulersol.t)≈0 atol=1e-6
         @test_skip _norm_dsol(RadauIIA5(), prob, prob2)≈0 atol=1e-12
 
@@ -283,7 +287,8 @@ end
         @test norm(sol .- sol2)≈0 atol=1e-7
         @test norm(sol[end] .- sol2[end])≈0 atol=1e-7
 
-        sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
+        sol = solve(
+            prob, ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
             dt = 1 / 10, reltol = 1e-7, abstol = 1e-10)
         sol2 = solve(prob2,
             ImplicitMidpoint(extrapolant = :constant, nlsolve = NLAnderson()),
@@ -308,7 +313,7 @@ end
 
 x0 = zeros(n, n)
 M = zeros(n * n) |> Diagonal |> Matrix
-M[1,1] = true # zero mass matrix breaks rosenbrock
+M[1, 1] = true # zero mass matrix breaks rosenbrock
 f = ODEFunction(dynamics!, mass_matrix = M)
 tspan = (0, 10.0)
 prob = ODEProblem(f, x0, tspan)

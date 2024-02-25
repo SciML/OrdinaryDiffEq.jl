@@ -94,7 +94,7 @@ cb = ManifoldProjection(ghh, nlopts = Dict(:ftol => 1e-13), save = false)
 
 # Callback for Poincare surface of section
 function psos_callback(j, direction = +1, offset::Real = 0,
-    callback_kwargs = Dict{Symbol, Any}(:abstol => 1e-9))
+        callback_kwargs = Dict{Symbol, Any}(:abstol => 1e-9))
 
     # Prepare callback:
     s = sign(direction)

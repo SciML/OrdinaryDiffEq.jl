@@ -81,9 +81,9 @@ macro threaded(option, ex)
 end
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-    du = nothing, u = nothing, p = nothing, t = nothing,
-    weight = nothing, solverdata = nothing,
-    reltol = integrator === nothing ? nothing : integrator.opts.reltol)
+        du = nothing, u = nothing, p = nothing, t = nothing,
+        weight = nothing, solverdata = nothing,
+        reltol = integrator === nothing ? nothing : integrator.opts.reltol)
     A !== nothing && (linsolve.A = A)
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
@@ -191,7 +191,7 @@ function get_differential_vars(f, u)
         if mm isa UniformScaling
             return nothing
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && isdiag(mm)
-            differential_vars = reshape(diag(mm)  .!= 0, size(u))
+            differential_vars = reshape(diag(mm) .!= 0, size(u))
         else
             return DifferentialVarsUndefined()
         end

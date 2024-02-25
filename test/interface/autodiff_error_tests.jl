@@ -53,7 +53,7 @@ for alg in [
     QNDF(autodiff = false),
     TRBDF2(autodiff = false),
     KenCarp4(autodiff = false),
-    FBDF(autodiff = false),
+    FBDF(autodiff = false)
 ]
     u = [0.0, 0.0]
     function f1(u, p, t)

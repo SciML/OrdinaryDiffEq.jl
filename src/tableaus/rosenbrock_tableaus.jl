@@ -66,7 +66,8 @@ function ROS3PTableau(T, T2)
     d1 = convert(T, 0.7886751345948129)
     d2 = convert(T, -0.2113248654051871)
     d3 = convert(T, -1.077350269189626)
-    ROS3PTableau(a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma,
+    ROS3PTableau(
+        a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma,
         c2, c3, d1, d2, d3)
 end
 
@@ -173,7 +174,7 @@ end
 
 function Rodas3PTableau(T, T2)
     gamma = convert(T, 1 // 3)
-    a21 = convert(T, 4.0/3.0)
+    a21 = convert(T, 4.0 / 3.0)
     a41 = convert(T, 2.90625)
     a42 = convert(T, 3.375)
     a43 = convert(T, 0.40625)
@@ -187,10 +188,10 @@ function Rodas3PTableau(T, T2)
     C52 = -convert(T, 15.1875)
     C53 = -convert(T, 4.03125)
     C54 = convert(T, 6.0)
-    c2 = convert(T2, 4.0/9.0)
+    c2 = convert(T2, 4.0 / 9.0)
     c3 = convert(T2, 0.0)
-    d1 = convert(T, 1.0/3.0)
-    d2 = -convert(T, 1.0/9.0)
+    d1 = convert(T, 1.0 / 3.0)
+    d2 = -convert(T, 1.0 / 9.0)
     d3 = convert(T, 1.0)
     h21 = convert(T, 1.78125)
     h22 = convert(T, 6.75)
@@ -212,8 +213,6 @@ function Rodas3PTableau(T, T2)
         gamma, c2, c3, d1, d2, d3,
         h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25)
 end
-
-
 
 @ROS23(:tableau)
 

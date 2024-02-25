@@ -64,7 +64,8 @@ end
         ################################### Error estimation
 
         if integrator.opts.adaptive
-            atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                cache.Δ, uprev, integrator.u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
@@ -160,7 +161,8 @@ end
         ################################### Error estimation
 
         if integrator.opts.adaptive
-            calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
+            calculate_residuals!(
+                atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
             if integrator.EEst > one(integrator.EEst)

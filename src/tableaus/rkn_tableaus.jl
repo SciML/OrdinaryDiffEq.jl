@@ -370,7 +370,7 @@ struct Nystrom5VelocityIndependentConstantCache{T, T2} <: OrdinaryDiffEqConstant
 end
 
 function Nystrom5VelocityIndependentConstantCache(T::Type{<:CompiledFloats},
-    T2::Type{<:CompiledFloats})
+        T2::Type{<:CompiledFloats})
     c1 = convert(T2, 0.2)
     c2 = convert(T2, 0.6666666666666666)
     # c3    = convert(T2,1)

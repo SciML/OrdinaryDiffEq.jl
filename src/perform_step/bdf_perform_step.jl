@@ -724,7 +724,7 @@ function initialize!(integrator, cache::QNDFConstantCache)
 end
 
 function perform_step!(integrator, cache::QNDFConstantCache{max_order},
-    repeat_step = false) where {max_order}
+        repeat_step = false) where {max_order}
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack dtprev, order, D, U, nlsolver, γₖ = cache
     alg = unwrap_alg(integrator, true)
@@ -838,7 +838,7 @@ function initialize!(integrator, cache::QNDFCache)
 end
 
 function perform_step!(integrator, cache::QNDFCache{max_order},
-    repeat_step = false) where {max_order}
+        repeat_step = false) where {max_order}
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack dtprev, order, D, nlsolver, γₖ, dd, atmp, atmpm1, atmpp1, utilde, utildem1, utildep1, ϕ, u₀ = cache
     alg = unwrap_alg(integrator, true)
@@ -1063,7 +1063,7 @@ function initialize!(integrator, cache::FBDFConstantCache)
 end
 
 function perform_step!(integrator, cache::FBDFConstantCache{max_order},
-    repeat_step = false) where {max_order}
+        repeat_step = false) where {max_order}
     @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps = cache
     @unpack t, dt, u, f, p, uprev = integrator
 
@@ -1098,7 +1098,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
         end
     else
         for i in 1:(k - 1)
-            @.. broadcast=false @views u_corrector[:, i] = $calc_Lagrange_interp(k, weights,
+            @.. broadcast=false @views u_corrector[:, i] = $calc_Lagrange_interp(
+                k, weights,
                 equi_ts[i],
                 ts,
                 u_history,
@@ -1171,7 +1172,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
             terk *= abs(dt^(k))
         end
 
-        atmp = calculate_residuals(_vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol,
+        atmp = calculate_residuals(
+            _vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         cache.terk = integrator.opts.internalnorm(atmp, t)
 
@@ -1218,7 +1220,7 @@ function initialize!(integrator, cache::FBDFCache)
 end
 
 function perform_step!(integrator, cache::FBDFCache{max_order},
-    repeat_step = false) where {max_order}
+        repeat_step = false) where {max_order}
     @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp = cache
     @unpack t, dt, u, f, p, uprev = integrator
 

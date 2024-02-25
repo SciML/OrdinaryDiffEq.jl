@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
 import ODEProblemLibrary: prob_ode_linear,
-    prob_ode_2Dlinear,
-    prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
+                          prob_ode_2Dlinear,
+                          prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 import LinearSolve
 
 @testset "Rosenbrock Tests" begin
@@ -97,7 +97,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈2 atol=testTol
 
     sol = solve(prob, ROS2PR())
-    @test length(sol) < 30 
+    @test length(sol) < 30
 
     prob = prob_ode_2Dlinear
 
@@ -105,7 +105,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈2 atol=testTol
 
     sol = solve(prob, ROS2PR())
-    @test length(sol) < 30 
+    @test length(sol) < 30
 
     ### ROS2S
     prob = prob_ode_linear
@@ -122,7 +122,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈2 atol=testTol
 
     sol = solve(prob, ROS2S())
-    @test length(sol) < 20 
+    @test length(sol) < 20
 
     ### ROS3
     prob = prob_ode_linear
@@ -139,7 +139,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, ROS3())
-    @test length(sol) < 20 
+    @test length(sol) < 20
 
     ### ROS3PR
     prob = prob_ode_linear
@@ -165,7 +165,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, Scholz4_7())
-    @test length(sol) < 30 
+    @test length(sol) < 30
 
     prob = prob_ode_2Dlinear
 
@@ -173,7 +173,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈3 atol=testTol
 
     sol = solve(prob, Scholz4_7())
-    @test length(sol) < 30 
+    @test length(sol) < 30
 
     println("4th order Rosenbrocks")
 

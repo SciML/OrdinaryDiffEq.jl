@@ -89,7 +89,7 @@ function initialize!(integrator, cache::OwrenZen3ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::OwrenZen3ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack a21, a31, a32, a41, a42, a43, c1, c2, btilde1, btilde2, btilde3 = cache
     k1 = integrator.fsalfirst
@@ -169,7 +169,7 @@ function initialize!(integrator, cache::OwrenZen4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::OwrenZen4ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c1, c2, c3, c4, btilde1, btilde3, btilde4, btilde5 = cache
     k1 = integrator.fsalfirst
@@ -302,7 +302,7 @@ function initialize!(integrator, cache::OwrenZen5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::OwrenZen5ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack a21, a31, a32, a41, a42, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a83, a84, a85, a86, a87, c1, c2, c3, c4, c5, c6, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7 = cache
     k1 = integrator.fsalfirst
@@ -519,17 +519,24 @@ end
         accept_step_controller(integrator, integrator.opts.controller))
         @unpack c6, c7, c8, a91, a92, a93, a94, a95, a96, a97, a98, a101, a102, a103, a104, a105, a106, a107, a108, a109, a111, a112, a113, a114, a115, a116, a117, a118, a119, a1110 = cache
         k = integrator.k
-        k[9] = f(uprev +
-                 dt * (a91 * k[1] + a92 * k[2] + a93 * k[3] + a94 * k[4] + a95 * k[5] +
-                  a96 * k[6] + a97 * k[7] + a98 * k[8]), p, t + c6 * dt)
-        k[10] = f(uprev +
-                  dt *
-                  (a101 * k[1] + a102 * k[2] + a103 * k[3] + a104 * k[4] + a105 * k[5] +
-                   a106 * k[6] + a107 * k[7] + a108 * k[8] + a109 * k[9]), p, t + c7 * dt)
-        k[11] = f(uprev +
-                  dt *
-                  (a111 * k[1] + a112 * k[2] + a113 * k[3] + a114 * k[4] + a115 * k[5] +
-                   a116 * k[6] + a117 * k[7] + a118 * k[8] + a119 * k[9] + a1110 * k[10]),
+        k[9] = f(
+            uprev +
+            dt * (a91 * k[1] + a92 * k[2] + a93 * k[3] + a94 * k[4] + a95 * k[5] +
+             a96 * k[6] + a97 * k[7] + a98 * k[8]),
+            p,
+            t + c6 * dt)
+        k[10] = f(
+            uprev +
+            dt *
+            (a101 * k[1] + a102 * k[2] + a103 * k[3] + a104 * k[4] + a105 * k[5] +
+             a106 * k[6] + a107 * k[7] + a108 * k[8] + a109 * k[9]),
+            p,
+            t + c7 * dt)
+        k[11] = f(
+            uprev +
+            dt *
+            (a111 * k[1] + a112 * k[2] + a113 * k[3] + a114 * k[4] + a115 * k[5] +
+             a116 * k[6] + a117 * k[7] + a118 * k[8] + a119 * k[9] + a1110 * k[10]),
             p, t + c8 * dt)
         integrator.stats.nf += 3
     end
@@ -1057,7 +1064,7 @@ function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache
     u_1 = α_10 * uprev + dt * β_10 * integrator.fsalfirst
@@ -1086,7 +1093,7 @@ function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_Cache)
 end
 
 @muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_Cache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack k, fsalfirst, u_1, u_2, kk_1, kk_2, stage_limiter!, step_limiter!, thread = cache
     @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache.tab
@@ -1248,10 +1255,16 @@ end
     k5 = f(uprev + α51 * dt * k1 + α53 * dt * k3 + α54 * dt * k4, p, t + c5 * dt)
     k6 = f(uprev + α61 * dt * k1 + α63 * dt * k3 + α64 * dt * k4 + α65 * dt * k5, p,
         t + c6 * dt)
-    k7 = f(uprev + α71 * dt * k1 + α73 * dt * k3 + α74 * dt * k4 + α75 * dt * k5 +
-           α76 * dt * k6, p, t + c7 * dt)
-    k8 = f(uprev + α81 * dt * k1 + α83 * dt * k3 + α84 * dt * k4 + α85 * dt * k5 +
-           α86 * dt * k6 + α87 * dt * k7, p, t + c8 * dt)
+    k7 = f(
+        uprev + α71 * dt * k1 + α73 * dt * k3 + α74 * dt * k4 + α75 * dt * k5 +
+        α76 * dt * k6,
+        p,
+        t + c7 * dt)
+    k8 = f(
+        uprev + α81 * dt * k1 + α83 * dt * k3 + α84 * dt * k4 + α85 * dt * k5 +
+        α86 * dt * k6 + α87 * dt * k7,
+        p,
+        t + c8 * dt)
     u = uprev + dt * (β1 * k1 + β4 * k4 + β5 * k5 + β6 * k6 + β7 * k7 + β8 * k8)
     integrator.fsallast = f(u, p, t + dt)
     k9 = integrator.fsallast

@@ -57,7 +57,7 @@ end
 end
 
 @inline function ode_addsteps!(integrator, f = integrator.f, always_calc_begin = false,
-    allow_calc_end = true, force_calc_end = false)
+        allow_calc_end = true, force_calc_end = false)
     cache = integrator.cache
     if !(cache isa CompositeCache)
         _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev, integrator.u,
@@ -121,7 +121,7 @@ end
 end
 
 @generated function composite_ode_interpolant(Θ, integrator, caches::T, current, idxs,
-    deriv) where {T <: Tuple}
+        deriv) where {T <: Tuple}
     expr = Expr(:block)
     for i in 1:length(T.types)
         push!(expr.args,
@@ -152,8 +152,9 @@ end
     end
 end
 
-@generated function composite_ode_interpolant!(val, Θ, integrator, caches::T, current, idxs,
-    deriv) where {T <: Tuple}
+@generated function composite_ode_interpolant!(
+        val, Θ, integrator, caches::T, current, idxs,
+        deriv) where {T <: Tuple}
     expr = Expr(:block)
     for i in 1:length(T.types)
         push!(expr.args,
@@ -173,7 +174,7 @@ end
 end
 
 @inline function current_interpolant(t::Number, integrator::DiffEqBase.DEIntegrator, idxs,
-    deriv)
+        deriv)
     Θ = (t - integrator.tprev) / integrator.dt
     ode_interpolant(Θ, integrator, idxs, deriv)
 end
@@ -184,19 +185,19 @@ end
 end
 
 @inline function current_interpolant!(val, t::Number, integrator::DiffEqBase.DEIntegrator,
-    idxs, deriv)
+        idxs, deriv)
     Θ = (t - integrator.tprev) / integrator.dt
     ode_interpolant!(val, Θ, integrator, idxs, deriv)
 end
 
 @inline function current_interpolant!(val, t, integrator::DiffEqBase.DEIntegrator, idxs,
-    deriv)
+        deriv)
     Θ = (t .- integrator.tprev) ./ integrator.dt
     [ode_interpolant!(val, ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
 @inline function current_interpolant!(val, t::Array, integrator::DiffEqBase.DEIntegrator,
-    idxs, deriv)
+        idxs, deriv)
     Θ = similar(t)
     @inbounds @simd ivdep for i in eachindex(t)
         Θ[i] = (t[i] - integrator.tprev) / integrator.dt
@@ -205,25 +206,25 @@ end
 end
 
 @inline function current_extrapolant(t::Number, integrator::DiffEqBase.DEIntegrator,
-    idxs = nothing, deriv = Val{0})
+        idxs = nothing, deriv = Val{0})
     Θ = (t - integrator.tprev) / (integrator.t - integrator.tprev)
     ode_extrapolant(Θ, integrator, idxs, deriv)
 end
 
 @inline function current_extrapolant!(val, t::Number, integrator::DiffEqBase.DEIntegrator,
-    idxs = nothing, deriv = Val{0})
+        idxs = nothing, deriv = Val{0})
     Θ = (t - integrator.tprev) / (integrator.t - integrator.tprev)
     ode_extrapolant!(val, Θ, integrator, idxs, deriv)
 end
 
 @inline function current_extrapolant(t::AbstractArray, integrator::DiffEqBase.DEIntegrator,
-    idxs = nothing, deriv = Val{0})
+        idxs = nothing, deriv = Val{0})
     Θ = (t .- integrator.tprev) ./ (integrator.t - integrator.tprev)
     [ode_extrapolant(ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
 
 @inline function current_extrapolant!(val, t, integrator::DiffEqBase.DEIntegrator,
-    idxs = nothing, deriv = Val{0})
+        idxs = nothing, deriv = Val{0})
     Θ = (t .- integrator.tprev) ./ (integrator.t - integrator.tprev)
     [ode_extrapolant!(val, ϕ, integrator, idxs, deriv) for ϕ in Θ]
 end
@@ -239,8 +240,9 @@ end
     end
 end
 
-@generated function composite_ode_extrapolant!(val, Θ, integrator, caches::T, current, idxs,
-    deriv) where {T <: Tuple}
+@generated function composite_ode_extrapolant!(
+        val, Θ, integrator, caches::T, current, idxs,
+        deriv) where {T <: Tuple}
     expr = Expr(:block)
     for i in 1:length(T.types)
         push!(expr.args,
@@ -271,7 +273,7 @@ end
 end
 
 @generated function composite_ode_extrapolant(Θ, integrator, caches::T, current, idxs,
-    deriv) where {T <: Tuple}
+        deriv) where {T <: Tuple}
     expr = Expr(:block)
     for i in 1:length(T.types)
         push!(expr.args,
@@ -291,16 +293,16 @@ end
 end
 
 function _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
-    cache, idxs,
-    deriv, ks, ts, p, differential_vars)
+        cache, idxs,
+        deriv, ks, ts, p, differential_vars)
     _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
         cache) # update the kcurrent
     return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
         cache, idxs, deriv, differential_vars)
 end
 function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
-    caches::Tuple{C1, C2, Vararg}, idxs,
-    deriv, ks, ts, p, cacheid, differential_vars) where {C1, C2}
+        caches::Tuple{C1, C2, Vararg}, idxs,
+        deriv, ks, ts, p, cacheid, differential_vars) where {C1, C2}
     if (cacheid -= 1) != 0
         return evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊, Base.tail(caches),
             idxs,
@@ -311,15 +313,15 @@ function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
         deriv, ks, ts, p, differential_vars)
 end
 function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
-    caches::Tuple{C}, idxs,
-    deriv, ks, ts, p, _, differential_vars) where {C}
+        caches::Tuple{C}, idxs,
+        deriv, ks, ts, p, _, differential_vars) where {C}
     _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
         only(caches), idxs,
         deriv, ks, ts, p, differential_vars)
 end
 
 function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
-    deriv, ks, ts, id, p, differential_vars)
+        deriv, ks, ts, id, p, differential_vars)
     if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
         return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv, differential_vars)
@@ -342,7 +344,7 @@ Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tvals, id::I, idxs, deriv::D, p,
-    continuity::Symbol = :left) where {I, D}
+        continuity::Symbol = :left) where {I, D}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
@@ -380,7 +382,7 @@ Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
-    continuity::Symbol = :left) where {I, D}
+        continuity::Symbol = :left) where {I, D}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
     idx = sortperm(tvals, rev = tdir < 0)
@@ -466,7 +468,7 @@ Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
-    continuity::Symbol = :left) where {I, D}
+        continuity::Symbol = :left) where {I, D}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
@@ -515,7 +517,7 @@ Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
-    continuity::Symbol = :left) where {I, D}
+        continuity::Symbol = :left) where {I, D}
     @unpack ts, timeseries, ks, f, cache, differential_vars = id
     @inbounds tdir = sign(ts[end] - ts[1])
 
@@ -561,7 +563,7 @@ end
 By default, Hermite interpolant so update the derivative at the two ends
 """
 function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache, always_calc_begin = false,
-    allow_calc_end = true, force_calc_end = false)
+        allow_calc_end = true, force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         if cache isa OrdinaryDiffEqMutableCache
             rtmp = similar(u, eltype(eltype(k)))
@@ -580,12 +582,13 @@ end
 """
 ode_interpolant and ode_interpolant! dispatch
 """
-function ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
+function ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
     _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
 end
 
 function ode_interpolant(Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCache, idxs,
-    T::Type{Val{TI}}, differential_vars) where {TI}
+        T::Type{Val{TI}}, differential_vars) where {TI}
     if idxs isa Number || y₀ isa Union{Number, SArray}
         # typeof(y₀) can be these if saveidxs gives a single value
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
@@ -610,7 +613,8 @@ function ode_interpolant(Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCach
     end
 end
 
-function ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
+function ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
     _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
 end
 
@@ -635,8 +639,10 @@ function Base.showerror(io::IO, e::HermiteInterpolationNonDiagonalError)
 end
 
 # If no dispatch found, assume Hermite
-function _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
-    differential_vars isa DifferentialVarsUndefined && throw(HermiteInterpolationNonDiagonalError())
+function _ode_interpolant(
+        Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
+    differential_vars isa DifferentialVarsUndefined &&
+        throw(HermiteInterpolationNonDiagonalError())
     TI > 3 && throw(DerivativeOrderNotPossibleError())
 
     differential_vars = if differential_vars === nothing
@@ -657,11 +663,14 @@ function _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, 
         @view differential_vars[idxs]
     end
 
-    hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache}, idxs, T, differential_vars)
+    hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache},
+        idxs, T, differential_vars)
 end
 
-function _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
-    differential_vars isa DifferentialVarsUndefined && throw(HermiteInterpolationNonDiagonalError())
+function _ode_interpolant!(
+        out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
+    differential_vars isa DifferentialVarsUndefined &&
+        throw(HermiteInterpolationNonDiagonalError())
     TI > 3 && throw(DerivativeOrderNotPossibleError())
 
     differential_vars = if differential_vars === nothing
@@ -691,26 +700,29 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
-    T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
     if all(differential_vars)
         @inbounds (1 - Θ) * y₀ + Θ * y₁ +
-                (Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
+                  (Θ * (Θ - 1) *
+                   ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
     else
         @inbounds (1 - Θ) * y₀ + Θ * y₁ +
-                differential_vars .* (Θ * (Θ - 1) * ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
+                  differential_vars .* (Θ * (Θ - 1) *
+                   ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] + Θ * dt * k[2]))
     end
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
-    T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
     @inbounds @.. broadcast=false (1 - Θ)*y₀+Θ*y₁+
-                                  differential_vars*Θ*(Θ-1)*((1 - 2Θ)*(y₁ - y₀)+(Θ-1)*dt*k[1]+Θ*dt*k[2])
+                                  differential_vars*Θ*(Θ-1)*
+                                  ((1 - 2Θ)*(y₁ - y₀)+(Θ-1)*dt*k[1]+Θ*dt*k[2])
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀::Array, y₁, k, ::Type{Val{true}},
-    idxs::Nothing, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+        idxs::Nothing, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     out = similar(y₀)
     @inbounds @simd ivdep for i in eachindex(y₀)
         out[i] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
@@ -719,15 +731,17 @@ end
     end
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant(
+        Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     # return @.. broadcast=false (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
     return (1 - Θ) * y₀[idxs] + Θ * y₁[idxs] +
            differential_vars .* (Θ * (Θ - 1) *
-           ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] +
-            Θ * dt * k[2][idxs]))
+            ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) + (Θ - 1) * dt * k[1][idxs] +
+             Θ * dt * k[2][idxs]))
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     @inbounds @.. broadcast=false out=(1 - Θ) * y₀ + Θ * y₁ +
                                       differential_vars * Θ * (Θ - 1) *
                                       ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] +
@@ -735,7 +749,7 @@ end
 end
 
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
-    T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
         out[i] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
                  differential_vars[i] * Θ * (Θ - 1) *
@@ -744,14 +758,16 @@ end
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     @views @.. broadcast=false out=(1 - Θ) * y₀[idxs] + Θ * y₁[idxs] +
                                    differential_vars * Θ * (Θ - 1) *
                                    ((1 - 2Θ) * (y₁[idxs] - y₀[idxs]) +
                                     (Θ - 1) * dt * k[1][idxs] + Θ * dt * k[2][idxs])
 end
 
-@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(
+        out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     @inbounds for (j, i) in enumerate(idxs)
         out[j] = (1 - Θ) * y₀[i] + Θ * y₁[i] +
                  differential_vars[j] * Θ * (Θ - 1) *
@@ -764,76 +780,89 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
-    T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
     if all(differential_vars)
-        @inbounds  (
+        @inbounds (
             k[1] +
             Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-            Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
+             Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
     else
-        @inbounds (.!differential_vars).*(y₁ - y₀)/dt + differential_vars .*(
-                k[1] +
-                Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-                Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
+        @inbounds (.!differential_vars) .* (y₁ - y₀) / dt +
+                  differential_vars .* (
+            k[1] +
+            Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+             Θ * (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) + 6 * y₁) / dt)
     end
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
-    T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false !differential_vars*((y₁ - y₀)/dt)+differential_vars*(
-                                   k[1]+Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-                                        Θ *
-                                        (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
-                                        6 * y₁) / dt)
+        T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false !differential_vars *
+                                  ((y₁ - y₀) /
+                                   dt)+differential_vars * (
+        k[1] +
+        Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+         Θ *
+         (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
+         6 * y₁) / dt)
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant(
+        Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
     # return @.. broadcast=false k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
-    return (.!differential_vars).*((y₁[idxs] - y₀[idxs])/dt)+differential_vars.*(
-           k[1][idxs] +
-           Θ * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
-            Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] + 6 * y₀[idxs] - 6 * y₁[idxs]) +
-            6 * y₁[idxs]) / dt)
+    return (.!differential_vars) .* ((y₁[idxs] - y₀[idxs]) / dt) +
+           differential_vars .* (
+        k[1][idxs] +
+        Θ * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
+         Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] + 6 * y₀[idxs] - 6 * y₁[idxs]) +
+         6 * y₁[idxs]) / dt)
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false out=!differential_vars*((y₁ - y₀)/dt)+differential_vars*(
-                                      k[1] +
-                                      Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-                                       Θ *
-                                       (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
-                                       6 * y₁) / dt)
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false out=!differential_vars * ((y₁ - y₀) / dt) +
+                                      differential_vars * (
+        k[1] +
+        Θ * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+         Θ *
+         (3 * dt * k[1] + 3 * dt * k[2] + 6 * y₀ - 6 * y₁) +
+         6 * y₁) / dt)
 end
 
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
-    T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = !differential_vars[i]*((y₁[i] - y₀[i])/dt)+differential_vars[i]*(
-                 k[1][i] +
-                 Θ * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
-                  Θ * (3 * dt * k[1][i] + 3 * dt * k[2][i] + 6 * y₀[i] - 6 * y₁[i]) +
-                  6 * y₁[i]) / dt)
+        out[i] = !differential_vars[i] * ((y₁[i] - y₀[i]) / dt) +
+                 differential_vars[i] * (
+            k[1][i] +
+            Θ * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
+             Θ * (3 * dt * k[1][i] + 3 * dt * k[2][i] + 6 * y₀[i] - 6 * y₁[i]) +
+             6 * y₁[i]) / dt)
     end
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
-    @views @.. broadcast=false out=!differential_vars*((y₁ - y₀)/dt)+differential_vars*(
-                                   k[1][idxs] +
-                                   Θ * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
-                                    6 * y₀[idxs] +
-                                    Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] +
-                                     6 * y₀[idxs] - 6 * y₁[idxs]) + 6 * y₁[idxs]) / dt)
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
+    @views @.. broadcast=false out=!differential_vars * ((y₁ - y₀) / dt) +
+                                   differential_vars * (
+        k[1][idxs] +
+        Θ * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
+         6 * y₀[idxs] +
+         Θ * (3 * dt * k[1][idxs] + 3 * dt * k[2][idxs] +
+              6 * y₀[idxs] - 6 * y₁[idxs]) + 6 * y₁[idxs]) / dt)
 end
 
-@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(
+        out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{1}}, differential_vars) # Default interpolant is Hermite
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = !differential_vars[j]*((y₁[i] - y₀[i])/dt)+differential_vars[j]*(
-                 k[1][i] +
-                 Θ * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
-                  Θ * (3 * dt * k[1][i] + 3 * dt * k[2][i] + 6 * y₀[i] - 6 * y₁[i]) +
-                  6 * y₁[i]) / dt)
+        out[j] = !differential_vars[j] * ((y₁[i] - y₀[i]) / dt) +
+                 differential_vars[j] * (
+            k[1][i] +
+            Θ * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
+             Θ * (3 * dt * k[1][i] + 3 * dt * k[2][i] + 6 * y₀[i] - 6 * y₁[i]) +
+             6 * y₁[i]) / dt)
     end
     out
 end
@@ -842,62 +871,74 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
-    T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
     if all(differential_vars)
         @inbounds (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-        Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) / (dt * dt)
+                   Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) /
+                  (dt * dt)
     else
         @inbounds differential_vars .* (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
-                Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) / (dt * dt)
+                   Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) + 6 * y₁) /
+                  (dt * dt)
     end
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
-    T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
-    @inbounds @.. broadcast=false differential_vars * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+    @inbounds @.. broadcast=false differential_vars *
+                                  (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
                                    Θ * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) +
                                    6 * y₁)/(dt * dt)
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant(
+        Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
     #out = similar(y₀,axes(idxs))
     #@views @.. broadcast=false out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
-    @views out = differential_vars .* (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
+    @views out = differential_vars .*
+                 (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] - 6 * y₀[idxs] +
                   Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
                    12 * y₁[idxs]) + 6 * y₁[idxs]) / (dt * dt)
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false out= differential_vars * (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false out=differential_vars *
+                                      (-4 * dt * k[1] - 2 * dt * k[2] - 6 * y₀ +
                                        Θ *
                                        (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) +
                                        6 * y₁) / (dt * dt)
 end
 
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
-    T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = differential_vars[i] * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
+        out[i] = differential_vars[i] *
+                 (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                   Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
                   6 * y₁[i]) / (dt * dt)
     end
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
-    @views @.. broadcast=false out=differential_vars * (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
+    @views @.. broadcast=false out=differential_vars *
+                                   (-4 * dt * k[1][idxs] - 2 * dt * k[2][idxs] -
                                     6 * y₀[idxs] +
                                     Θ * (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] +
                                      12 * y₀[idxs] - 12 * y₁[idxs]) + 6 * y₁[idxs]) /
                                    (dt * dt)
 end
 
-@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(
+        out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{2}}, differential_vars) # Default interpolant is Hermite
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = differential_vars[j] * (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
+        out[j] = differential_vars[j] *
+                 (-4 * dt * k[1][i] - 2 * dt * k[2][i] - 6 * y₀[i] +
                   Θ * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) +
                   6 * y₁[i]) / (dt * dt)
     end
@@ -908,35 +949,41 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{false}}, idxs::Nothing,
-    T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
     if all(differential_vars)
         @inbounds (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) / (dt * dt * dt)
     else
-        @inbounds differential_vars .* (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) / (dt * dt * dt)
+        @inbounds differential_vars .* (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) /
+                  (dt * dt * dt)
     end
 end
 
 @muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, ::Type{Val{true}}, idxs::Nothing,
-    T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
     #@.. broadcast=false (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
-    @inbounds @.. broadcast=false differential_vars * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ -
+    @inbounds @.. broadcast=false differential_vars *
+                                  (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ -
                                    12 * y₁)/(dt *
                                              dt *
                                              dt)
 end
 
-@muladd function hermite_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant(
+        Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
     #out = similar(y₀,axes(idxs))
     #@views @.. broadcast=false out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
-    @views out = differential_vars .* (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
+    @views out = differential_vars .*
+                 (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
                   12 * y₁[idxs]) /
                  (dt * dt * dt)
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
-    @inbounds @.. broadcast=false out=differential_vars * (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) /
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
+    @inbounds @.. broadcast=false out=differential_vars *
+                                      (6 * dt * k[1] + 6 * dt * k[2] + 12 * y₀ - 12 * y₁) /
                                       (dt * dt * dt)
     #for i in eachindex(out)
     #  out[i] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
@@ -945,22 +992,26 @@ end
 end
 
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
-    T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
+        T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = differential_vars[i] * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
+        out[i] = differential_vars[i] *
+                 (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
                  (dt * dt * dt)
     end
     out
 end
 
-@muladd function hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(
+        out, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
     @views @.. broadcast=false out=(6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] +
                                     12 * y₀[idxs] - 12 * y₁[idxs]) / (dt * dt * dt)
 end
 
-@muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(
+        out::Array, Θ, dt, y₀, y₁, k, idxs, T::Type{Val{3}}, differential_vars) # Default interpolant is Hermite
     @inbounds for (j, i) in enumerate(idxs)
-        out[j] = differential_vars[j] * (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
+        out[j] = differential_vars[j] *
+                 (6 * dt * k[1][i] + 6 * dt * k[2][i] + 12 * y₀[i] - 12 * y₁[i]) /
                  (dt * dt * dt)
     end
     out
@@ -979,7 +1030,7 @@ end
 end
 
 @muladd @inline function linear_interpolant!(out, Θ, dt, y₀, y₁, idxs::Nothing,
-    T::Type{Val{0}})
+        T::Type{Val{0}})
     Θm1 = (1 - Θ)
     @.. broadcast=false out=Θm1 * y₀ + Θ * y₁
     out

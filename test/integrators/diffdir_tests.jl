@@ -15,7 +15,8 @@ for Alg in (Rosenbrock23, TRBDF2)
         sol = solve(ODEProblem((u, p, t) -> sin.(u), u0, tspan), Tsit5())
         @test_nowarn solve(ODEProblem((u, p, t) -> sol(t), u0, tspan), Alg(),
             tstops = tstops)
-        @test_nowarn solve(ODEProblem((u, p, t) -> sol(t), u0, (tspan[2], tspan[1])), Alg(),
+        @test_nowarn solve(
+            ODEProblem((u, p, t) -> sol(t), u0, (tspan[2], tspan[1])), Alg(),
             tstops = tstops)
     end
 end

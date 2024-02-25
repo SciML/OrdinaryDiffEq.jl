@@ -11,21 +11,21 @@ import ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
     @test sol.u[end] ≈ 0.505
     sol = solve(prob_ode_linear, FunctionMap(scale_by_time = true), dt = 1 / 4)
     sol2 = solve(prob_ode_linear, Euler(), dt = 1 / 4)
-    @test  sol.u[end] == sol2.u[end]
+    @test sol.u[end] == sol2.u[end]
     @test sol(0.53) != sol2(0.53)
 end
 
 @testset "Array Discrete Problem" begin
     prob2 = DiscreteProblem(rand(4, 2), (0.0, 1.0))
     sol = solve(prob2, FunctionMap())
-    @test sol[:,1] == sol[:,end]
-    @test sol(0.5) == sol[:,1]
+    @test sol[:, 1] == sol[:, end]
+    @test sol(0.5) == sol[:, 1]
 
     @test_nowarn sol = solve(prob_ode_2Dlinear, FunctionMap())
     @test_nowarn sol2 = solve(prob_ode_2Dlinear, Euler(), dt = 1)
     sol = solve(prob_ode_2Dlinear, FunctionMap(scale_by_time = true), dt = 1 / 4)
     sol2 = solve(prob_ode_2Dlinear, Euler(), dt = 1 / 4)
-    @test sol[:,end] == sol2[:,end]
+    @test sol[:, end] == sol2[:, end]
     @test sol(0.35) != sol2(0.53)
 end
 
