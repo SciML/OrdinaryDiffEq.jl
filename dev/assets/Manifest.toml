@@ -103,9 +103,9 @@ version = "0.3.0"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
-git-tree-sha1 = "d2c021fbdde94f6cdaa799639adfeeaa17fd67f5"
+git-tree-sha1 = "c955881e3c981181362ae4088b35995446298b80"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.13.0"
+version = "4.14.0"
 weakdeps = ["Dates", "LinearAlgebra"]
 
     [deps.Compat.extensions]
@@ -475,9 +475,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LinearSolve]]
 deps = ["ArrayInterface", "ConcreteStructs", "DocStringExtensions", "EnumX", "FastLapackInterface", "GPUArraysCore", "InteractiveUtils", "KLU", "Krylov", "Libdl", "LinearAlgebra", "MKL_jll", "PrecompileTools", "Preferences", "RecursiveFactorization", "Reexport", "SciMLBase", "SciMLOperators", "Setfield", "SparseArrays", "Sparspak", "StaticArraysCore", "UnPack"]
-git-tree-sha1 = "49326f9382400da72ee4c5120a1bf64ca3ea9406"
+git-tree-sha1 = "0153083d1112c9b284334750c22f33b745611c0f"
 uuid = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-version = "2.23.4"
+version = "2.24.0"
 
     [deps.LinearSolve.extensions]
     LinearSolveBandedMatricesExt = "BandedMatrices"
