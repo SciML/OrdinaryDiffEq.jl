@@ -549,11 +549,10 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     end
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
-
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD)
-
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD)
+
     nlsol = solve(nlprob, nlsolve; abstol = alg.abstol, reltol = integrator.opts.reltol)
     alg_u .= nlsol
 
