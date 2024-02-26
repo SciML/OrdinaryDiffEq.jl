@@ -55,7 +55,7 @@ function lotka(du, u, p, t)
 end
 
 prob = ODEProblem(lotka, [1.0, 1.0], (0.0, 1.0), [1.5, 1.0, 3.0, 1.0])
-de = ModelingToolkit.modelingtoolkitize(prob)
+de = ModelingToolkit.modelingtoolkitize(prob) |> structural_simplify |> complete
 prob2 = remake(prob, f = ODEFunction(de; jac = true))
 
 sol = solve(prob, TRBDF2())
