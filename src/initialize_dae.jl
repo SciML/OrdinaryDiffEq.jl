@@ -22,19 +22,22 @@ BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = not
 
 default_nlsolve(alg, isinplace, u, autodiff = false) = alg
 function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
-    FastShortcutNonlinearPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+    FastShortcutNonlinearPolyalg(;
+        autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
-function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, ::NonlinearProblem, autodiff = false)
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+        ::NonlinearProblem, autodiff = false)
     SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
 
-function default_nlsolve(::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+function default_nlsolve(
+        ::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
     FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
-function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, ::NonlinearLeastSquaresProblem, autodiff = false)
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
+        ::NonlinearLeastSquaresProblem, autodiff = false)
     SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
-
 
 struct OverrideInit{T, F} <: DiffEqBase.DAEInitializationAlgorithm
     abstol::T
