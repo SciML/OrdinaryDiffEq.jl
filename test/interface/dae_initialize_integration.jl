@@ -13,7 +13,7 @@ n2 = ODESystem(single_neuron_eqs, t, [v, w, F], [g, e, b], name = :n2)
 connections = [0 ~ n1.F - D * Dk * max(n1.v - n2.v, 0)
                0 ~ n2.F - D * max(n2.v - n1.v, 0)]
 connected = ODESystem(connections, t, [], [D, Dk], systems = [n1, n2], name = :connected)
-connected = complete(structural_simplify(connected))
+connected = complete(connected)
 
 u0 = [
     n1.v => -2,
