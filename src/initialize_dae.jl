@@ -21,12 +21,20 @@ end
 BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
 
 default_nlsolve(alg, isinplace, u, autodiff = false) = alg
-function default_nlsolve(::Nothing, isinplace, u, autodiff = false)
-    TrustRegion(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
+    FastShortcutNonlinearPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
-function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, autodiff = false)
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, ::NonlinearProblem, autodiff = false)
     SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
+
+function default_nlsolve(::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
+    FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray, ::NonlinearLeastSquaresProblem, autodiff = false)
+    SimpleGaussNewton(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
+end
+
 
 struct OverrideInit{T, F} <: DiffEqBase.DAEInitializationAlgorithm
     abstol::T
@@ -124,15 +132,19 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
     initializeprob = prob.f.initializeprob
     isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
-    alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, isAD)
-    sol = solve(initializeprob, alg)
-    @show "here!!!"
+    alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
+    nlsol = solve(initializeprob, alg)
     if isinplace === Val{true}()
-        integrator.u .= prob.f.initializeprobmap(sol.u)
+        integrator.u .= nlsol[Main.ModelingToolkit.unknowns(prob.f.sys)] # prob.f.initializeprobmap(sol)
     elseif isinplace === Val{false}()
-        integrator.u = prob.f.initializeprobmap(sol.u)
+        integrator.u = prob.f.initializeprobmap(nlsol)
     else
         error("Unreachable reached. Report this error.")
+    end
+
+    if nlsol.retcode != ReturnCode.Success
+        integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
+            ReturnCode.InitialFailure)
     end
 end
 
@@ -240,7 +252,7 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             jac_prototype = f.jac_prototype,
             jac = jac)
         nlprob = NonlinearProblem(nlfunc, integrator.u, p)
-        nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
+        nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD)
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
             reltol = integrator.opts.reltol)
         integrator.u .= nlsol.u
@@ -310,12 +322,12 @@ function _initialize_dae!(integrator, prob::ODEProblem, alg::ShampineCollocation
             end
         end
 
-        nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
-
         nlfunc = NonlinearFunction(nlequation_oop;
             jac_prototype = f.jac_prototype,
             jac = jac)
         nlprob = NonlinearProblem(nlfunc, u0)
+        nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, u0)
+
         nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
             reltol = integrator.opts.reltol)
         integrator.u = nlsol.u
@@ -395,7 +407,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         jac_prototype = f.jac_prototype,
         jac = jac)
     nlprob = NonlinearProblem(nlfunc, u0, p)
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD)
     nlsol = solve(nlprob, nlsolve; abstol = integrator.opts.abstol,
         reltol = integrator.opts.reltol)
 
@@ -439,7 +451,7 @@ function _initialize_dae!(integrator, prob::DAEProblem,
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype,
         jac = jac)
     nlprob = NonlinearProblem(nlfunc, u0)
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, u0)
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, u0)
@@ -538,7 +550,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
 
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, isAD)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u, nlprob, isAD)
 
     nlfunc = NonlinearFunction(nlequation!; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, alg_u, p)
@@ -599,7 +611,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
 
     J = algebraic_jacobian(f.jac_prototype, algebraic_eqs, algebraic_vars)
 
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, isAD)
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, u0, nlprob, isAD)
 
     nlfunc = NonlinearFunction(nlequation; jac_prototype = J)
     nlprob = NonlinearProblem(nlfunc, u0[algebraic_vars])
@@ -733,10 +745,10 @@ function _initialize_dae!(integrator, prob::DAEProblem,
         f(du, u, p, t)
     end
 
-    nlsolve = default_nlsolve(alg.nlsolve, isinplace, integrator.u)
-
     nlfunc = NonlinearFunction(nlequation; jac_prototype = f.jac_prototype)
     nlprob = NonlinearProblem(nlfunc, ifelse.(differential_vars, du, u))
+
+    nlsolve = default_nlsolve(alg.nlsolve, isinplace, nlprob, integrator.u)
 
     nlsol = solve(nlprob, nlsolve)
 
