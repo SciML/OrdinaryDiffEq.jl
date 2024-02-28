@@ -103,7 +103,7 @@ end
 
     integrator.fsallast = f(u, p, t + dt)
 
-    if integrator.opts.adaptive && integrator.success_iter > 0  && integrator.f.mass_matrix !== I
+    if integrator.opts.adaptive && integrator.f.mass_matrix !== I
         atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
                     integrator.opts.abstol
         integrator.EEst += integrator.opts.internalnorm(atmp, t)
@@ -160,7 +160,7 @@ end
     integrator.stats.nf += 1
     f(integrator.fsallast, u, p, t + dt)
 
-    if integrator.opts.adaptive && integrator.success_iter > 0 && integrator.f.mass_matrix !== I
+    if integrator.opts.adaptive && integrator.f.mass_matrix !== I
         @.. broadcast=false atmp=ifelse(cache.algebraic_vars, integrator.fsallast, false) /
                                  integrator.opts.abstol
         integrator.EEst += integrator.opts.internalnorm(atmp, t)
