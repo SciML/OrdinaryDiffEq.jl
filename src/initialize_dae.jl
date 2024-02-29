@@ -134,7 +134,12 @@ end
 function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
     initializeprob = prob.f.initializeprob
-    isAD = alg_autodiff(integrator.alg) isa AutoForwardDiff
+    
+    # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
+    # Since then it's the case of not a DAE but has initializeprob
+    # In which case, it should be differentiable
+    isAD = has_autodiff(integrator.alg) ? alg_autodiff(integrator.alg) isa AutoForwardDiff : true
+
     alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
     nlsol = solve(initializeprob, alg)
     if isinplace === Val{true}()

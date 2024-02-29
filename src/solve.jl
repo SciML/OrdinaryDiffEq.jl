@@ -493,7 +493,7 @@ function DiffEqBase.__init(
         opts, stats, initializealg, differential_vars)
 
     if initialize_integrator
-        if isdae
+        if isdae || SciMLBase.has_initializeprob(prob.f)
             DiffEqBase.initialize_dae!(integrator)
         end
 
