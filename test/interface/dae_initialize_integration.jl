@@ -44,23 +44,18 @@ sol = solve(prob, Rodas5(), initializealg = ShampineCollocationInit())
 # Initialize on ODEs
 # https://github.com/SciML/ModelingToolkit.jl/issues/2508
 
-using ModelingToolkit, OrdinaryDiffEq, Test
-using ModelingToolkit: t_nounits as t, D_nounits as D
-
-function System(;name)
-    vars = @variables begin
-        dx(t), [guess=0]
-        ddx(t), [guess=0]
-    end
-    eqs = [
-        D(dx) ~ ddx
-        0 ~ ddx + dx + 1
-    ]
-    return ODESystem(eqs, t, vars, []; name)
+function testsys(du,u,p,t)
+    du[1] = -2
 end
+function initsys(du,u,p)
+    du[1] = -1 + u[1]
+end
+nlprob = NonlinearProblem(initsys, [0.0])
+initprobmap(nlprob) = nlprob.u
+sol = solve(nlprob)
 
-@mtkbuild sys = System()
-prob = ODEProblem(sys, [sys.dx => 1], (0,1)) # OK
-prob = ODEProblem(sys, [sys.ddx => -2], (0,1), guesses = [sys.dx => 1])
-sol = solve(prob, Rodas5P())
+_f = ODEFunction(testsys; initializeprob = nlprob, initializeprobmap = initprobmap)
+prob = ODEProblem(_f, [0.0], (0.0,1.0))
 sol = solve(prob, Tsit5())
+@test SciMLBase.successful_retcode(sol)
+@test sol[1] == [1.0]
