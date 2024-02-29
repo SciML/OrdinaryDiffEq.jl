@@ -40,3 +40,27 @@ sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit())
 @test prob.u0 == sol[1]
 sol = solve(prob, Rodas5(), initializealg = ShampineCollocationInit())
 @test prob.u0 == sol[1]
+
+# Initialize on ODEs
+# https://github.com/SciML/ModelingToolkit.jl/issues/2508
+
+using ModelingToolkit, OrdinaryDiffEq, Test
+using ModelingToolkit: t_nounits as t, D_nounits as D
+
+function System(;name)
+    vars = @variables begin
+        dx(t), [guess=0]
+        ddx(t), [guess=0]
+    end
+    eqs = [
+        D(dx) ~ ddx
+        0 ~ ddx + dx + 1
+    ]
+    return ODESystem(eqs, t, vars, []; name)
+end
+
+@mtkbuild sys = System()
+prob = ODEProblem(sys, [sys.dx => 1], (0,1)) # OK
+prob = ODEProblem(sys, [sys.ddx => -2], (0,1), guesses = [sys.dx => 1])
+sol = solve(prob, Rodas5P())
+sol = solve(prob, Tsit5())
