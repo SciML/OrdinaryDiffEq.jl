@@ -102,6 +102,13 @@ end
     end
 
     integrator.fsallast = f(u, p, t + dt)
+
+    if integrator.opts.adaptive && integrator.f.mass_matrix !== I
+        atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
+                  integrator.opts.abstol
+        integrator.EEst += integrator.opts.internalnorm(atmp, t)
+    end
+
     integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -152,6 +159,12 @@ end
     end
     integrator.stats.nf += 1
     f(integrator.fsallast, u, p, t + dt)
+
+    if integrator.opts.adaptive && integrator.f.mass_matrix !== I
+        @.. broadcast=false atmp=ifelse(cache.algebraic_vars, integrator.fsallast, false) /
+                                 integrator.opts.abstol
+        integrator.EEst += integrator.opts.internalnorm(atmp, t)
+    end
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache,
