@@ -495,6 +495,7 @@ function DiffEqBase.__init(
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f)
             DiffEqBase.initialize_dae!(integrator)
+            update_uprev!(integrator)
         end
 
         if save_start

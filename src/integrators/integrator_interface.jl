@@ -38,6 +38,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(
         integrator::ODEIntegrator, continuous_modification = true)
     if integrator.isdae
         DiffEqBase.initialize_dae!(integrator)
+        update_uprev!(integrator)
     end
 
     if continuous_modification && integrator.opts.calck
