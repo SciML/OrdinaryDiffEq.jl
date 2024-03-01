@@ -24,7 +24,7 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
     recursivefill!(atmp, false)
 
     algebraic_vars = f.mass_matrix === I ? nothing :
-                [all(iszero, x) for x in eachcol(f.mass_matrix)]
+                     [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
     ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars)
 end

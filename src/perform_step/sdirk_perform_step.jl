@@ -105,7 +105,7 @@ end
 
     if integrator.opts.adaptive && integrator.f.mass_matrix !== I
         atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                    integrator.opts.abstol
+                  integrator.opts.abstol
         integrator.EEst += integrator.opts.internalnorm(atmp, t)
     end
 

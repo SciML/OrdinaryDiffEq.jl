@@ -47,8 +47,11 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirstprev = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    algebraic_vars = f.mass_matrix === I ? nothing :
+                     [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    eulercache = ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver)
+    eulercache = ImplicitEulerCache(
+        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars)
 
     dtₙ₋₁ = one(dt)
     zₙ₋₁ = zero(u)

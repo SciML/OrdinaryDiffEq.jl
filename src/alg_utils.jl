@@ -285,8 +285,11 @@ function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
 end
 
 has_autodiff(alg::OrdinaryDiffEqAlgorithm) = false
-has_autodiff(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm, OrdinaryDiffEqImplicitAlgorithm, 
-                        CompositeAlgorithm, OrdinaryDiffEqExponentialAlgorithm, DAEAlgorithm}) = true
+function has_autodiff(alg::Union{
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm, OrdinaryDiffEqImplicitAlgorithm,
+        CompositeAlgorithm, OrdinaryDiffEqExponentialAlgorithm, DAEAlgorithm})
+    true
+end
 
 # Extract AD type parameter from algorithm, returning as Val to ensure type stability for boolean options.
 function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
