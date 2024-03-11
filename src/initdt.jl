@@ -250,9 +250,9 @@ end
         @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
     end
 
-    if Base.promote_op(/, typeof(u0), typeof(oneunit(t))) !== typeof(f₀)
-        throw(TypeNotConstantError(Base.promote_op(/, typeof(u0), typeof(oneunit(t))),
-            typeof(f₀)))
+    inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
+    if !(f₀ isa inferredtype)
+        throw(TypeNotConstantError(inferredtype, typeof(f₀)))
     end
 
     d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
