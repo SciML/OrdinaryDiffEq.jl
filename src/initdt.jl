@@ -251,7 +251,7 @@ end
     end
 
     inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
-    if inferredtype !== Any && inferredtype !== typeof(f₀)
+    if !(f₀ isa inferredtype)
         throw(TypeNotConstantError(inferredtype, typeof(f₀)))
     end
 
