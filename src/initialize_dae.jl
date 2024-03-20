@@ -20,7 +20,7 @@ function BrownFullBasicInit(; abstol = 1e-10, nlsolve = nothing)
 end
 BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
 
-default_nlsolve(alg, isinplace, u, autodiff = false) = alg
+default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
 function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
     FastShortcutNonlinearPolyalg(;
         autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
