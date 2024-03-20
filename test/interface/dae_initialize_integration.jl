@@ -40,6 +40,10 @@ sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit())
 @test prob.u0 == sol[1]
 sol = solve(prob, Rodas5(), initializealg = ShampineCollocationInit())
 @test prob.u0 == sol[1]
+#test initialization when given a specific nonlinear solver
+using NonlinearSolve
+sol = solve(prob, Rodas5(), initializealg = BrownFullBasicInit(1e-10, RobustMultiNewton()))
+@test prob.u0 == sol[1]
 
 # Initialize on ODEs
 # https://github.com/SciML/ModelingToolkit.jl/issues/2508
@@ -60,7 +64,7 @@ sol = solve(prob, Tsit5())
 @test SciMLBase.successful_retcode(sol)
 @test sol[1] == [1.0]
 
-prob = ODEProblem(_f, [0.0], (0.0,1.0))
+prob = ODEProblem(_f, [0.0], (0.0, 1.0))
 sol = solve(prob, Tsit5(), dt = 1e-10)
 @test SciMLBase.successful_retcode(sol)
 @test sol[1] == [1.0]
