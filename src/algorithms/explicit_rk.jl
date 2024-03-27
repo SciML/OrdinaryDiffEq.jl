@@ -642,3 +642,38 @@ This requires that simultaneous calls to f are thread-safe.
 Base.@kwdef struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
     threading::TO = true
 end
+
+
+# @doc explicit_rk_docstring(
+#     "Runge–Kutta pairs of orders 9(8) for use in quadruple
+#     precision computations", "QuadRK9",
+#     references = "﻿@Article{Kovalnogov2024,
+#     author={Kovalnogov, Vladislav N.
+#     and Fedorov, Ruslan V.
+#     and Karpukhina, Tamara V.
+#     and Simos, Theodore E.
+#     and Tsitouras, Charalampos},
+#     title={Runge--Kutta pairs of orders 9(8) for use in quadruple precision computations},
+#     journal={Numerical Algorithms},
+#     year={2024},
+#     month={Apr},
+#     day={01},
+#     volume={95},
+#     number={4},
+#     pages={1905-1919},
+#     abstract={Runge--Kutta embedded pairs of high algebraic order are frequently utilized when strict tolerances are required. When creating such pairings of orders nine and eight for use in double precision arithmetic, numerous conditions are often satisfied. First and foremost, we strive to keep the coefficients' magnitudes small to prevent accuracy loss. We may, however, allow greater coefficients when working with quadruple precision. Then, we may build pairs of orders 9 and 8 with significantly smaller truncation errors. In this paper, a novel pair is generated that, as predicted, outperforms state-of-the-art pairs of the same orders in a collection of important problems.},
+#     issn={1572-9265},
+#     doi={10.1007/s11075-023-01632-8},
+#     url={https://doi.org/10.1007/s11075-023-01632-8}
+#     }")
+# Base.@kwdef struct QuadRK9{StageLimiter, StepLimiter, Thread} <:
+#                    OrdinaryDiffEqAdaptiveAlgorithm
+#     stage_limiter!::StageLimiter = trivial_limiter!
+#     step_limiter!::StepLimiter = trivial_limiter!
+#     thread::Thread = False()
+# end
+# TruncatedStacktraces.@truncate_stacktrace QuadRK9 3
+
+# function QuadRK9(stage_limiter!, step_limiter! = trivial_limiter!)
+#     QuadRK9(stage_limiter!, step_limiter!, False())
+# end
