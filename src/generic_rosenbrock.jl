@@ -805,7 +805,7 @@ macro Rosenbrock4(part)
     end
 end
 
-#ROS23 and ROS34PW methods (Rang and Angermann, 2005)
+#ROS2, ROS23 and ROS34PW methods (Rang and Angermann, 2005)
 
 """
     Ros34dummyTableau()
@@ -850,6 +850,25 @@ function Ros23dummyTableau()
 end
 
 """
+    Ros2dummyTableau()
+
+Generate a dummy tableau for ROS2 methods. This type of methods has 2 steps.
+"""
+function Ros2dummyTableau()
+    a=[false false;
+       true  false]
+    C=[false false;
+       true  false]
+    b=[true,true]
+    btilde=[true,true]
+    gamma=true
+    c=[false,true]
+    d=[true,true]
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+
+"""
     _transformtab(Alpha,Gamma,B,Bhat)
 
 Transform the tableau from values in the paper into values used in OrdinaryDiffEq according to p112 in Hairer and Wanner.
@@ -869,6 +888,77 @@ function _transformtab(Alpha,Gamma,B,Bhat)
     (a,C,b,btilde,d,c)
 end
 
+
+
+
+# 2 step ROS Methods
+"""
+    ROS2Tableau()
+2nd order stiffly accurate Rosenbrock-Wanner method with 2 internal stages with (Rinf=0).
+The embedded method is taken from Kinetic PreProcessor (KPP).
+J. G. Verwer et al. (1999): A second-order Rosenbrock method applied to photochemical dispersion problems
+https://doi.org/10.1137/S1064827597326651
+"""
+function ROS2Tableau() # 2nd order
+    gamma=1.7071067811865475 # 1+1/sqrt(2)
+    Alpha=[0     0;
+           1.    0]
+    Gamma=[gamma                   0;
+           -3.414213562373095   gamma]
+    B=[0.5, 0.5]
+    Bhat=[1, 0]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    println(btilde)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc """
+2nd order stiffly accurate Rosenbrock-Wanner method with 2 internal stages with (Rinf=0).
+The embedded method is taken from Kinetic PreProcessor (KPP).
+J. G. Verwer et al. (1999): A second-order Rosenbrock method applied to photochemical dispersion problems
+More Information at https://doi.org/10.1137/S1064827597326651
+""" ROS2
+
+
+
+"""
+    @ROS2(part)
+
+Generate code for the 2 step ROS methods: ROS2
+`part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
+`@ROS2(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
+`@ROS2(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
+`@ROS2(:init)` and `@ROS2(:performstep)` should be placed in
+`perform_step/rosenbrock_perform_step.jl`.
+"""
+macro ROS2(part)
+    tabmask=Ros2dummyTableau()
+    cachename=:ROS2Cache
+    constcachename=:ROS2ConstantCache
+    ROS2tabname=:ROS2Tableau
+    n_normalstep=length(tabmask.b)-1
+    if part.value==:tableau
+        tabstructexpr=gen_tableau_struct(tabmask,:Ros2Tableau)
+        tabexprs=Array{Expr,1}([tabstructexpr])
+        push!(tabexprs,gen_tableau(ROS2Tableau(),tabstructexpr,ROS2tabname))
+        return esc(quote $(tabexprs...) end)
+    elseif part.value==:cache
+        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
+        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS2,ROS2tabname))
+        return esc(quote $(cacheexprs...) end)
+    elseif part.value==:init
+        return esc(gen_initialize(cachename,constcachename))
+    elseif part.value==:performstep
+        performstepexprs=Array{Expr,1}()
+        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
+        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
+        return esc(quote $(performstepexprs...) end)
+    else
+        throw(ArgumentError("Unknown parameter!"))
+        nothing
+    end
+end
 
 
 

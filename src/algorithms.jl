@@ -2898,6 +2898,11 @@ end
 - Shampine L.F. and Reichelt M., (1997) The MATLAB ODE Suite, SIAM Journal of
 Scientific Computing, 18 (1), pp. 1-22.
 
+#### ROS2
+
+- J. G. Verwer et al. (1999): A second-order Rosenbrock method applied to photochemical dispersion problems
+  https://doi.org/10.1137/S1064827597326651
+
 #### ROS3P
 
 - Lang, J. & Verwer, ROS3P—An Accurate Third-Order Rosenbrock Solver Designed for
@@ -2967,6 +2972,7 @@ University of Geneva, Switzerland.
 for Alg in [
     :Rosenbrock23,
     :Rosenbrock32,
+    :ROS2,
     :ROS2PR,
     :ROS2S,
     :ROS3,

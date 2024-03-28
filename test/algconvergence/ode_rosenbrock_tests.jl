@@ -90,6 +90,23 @@ import LinearSolve
     sol = solve(prob, Rodas3())
     @test length(sol) < 20
 
+    ### ROS2
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, ROS2())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+
+    sol = solve(prob, ROS2())
+    @test length(sol) < 60
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, ROS2())
+    @test sim.𝒪est[:final]≈2 atol=testTol
+
+    sol = solve(prob, ROS2PR())
+    @test length(sol) < 60
+    
     ### ROS2PR
     prob = prob_ode_linear
 
