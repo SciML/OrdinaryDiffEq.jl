@@ -214,6 +214,8 @@ function Rodas3PTableau(T, T2)
         h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25)
 end
 
+@ROS2(:tableau)
+
 @ROS23(:tableau)
 
 @ROS34PW(:tableau)

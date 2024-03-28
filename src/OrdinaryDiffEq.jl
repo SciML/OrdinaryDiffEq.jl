@@ -389,7 +389,7 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        Rodas5, Rodas5P,
        RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
        ROS3PRL2,
-       ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
+       ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 
 export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A,
        EPIRK4s3B,
