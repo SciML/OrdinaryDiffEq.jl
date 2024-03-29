@@ -912,6 +912,8 @@ function ROS2Tableau() # 2nd order
 end
 
 @doc """
+    ROS2()
+
 2nd order stiffly accurate Rosenbrock-Wanner method with 2 internal stages with (Rinf=0).
 The embedded method is taken from Kinetic PreProcessor (KPP).
 J. G. Verwer et al. (1999): A second-order Rosenbrock method applied to photochemical dispersion problems
