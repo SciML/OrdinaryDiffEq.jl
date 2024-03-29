@@ -908,7 +908,6 @@ function ROS2Tableau() # 2nd order
     B=[0.5, 0.5]
     Bhat=[1, 0]
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
-    println(btilde)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
