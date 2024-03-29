@@ -635,10 +635,25 @@ end
 """
 KuttaPRK2p5: Parallel Explicit Runge-Kutta Method
 A 5 parallel, 2 processor explicit Runge-Kutta method of 5th order.
-
+test/algconvergence/partitioned_methods_tests.jl
 These methods utilize multithreading on the f calls to parallelize the problem.
 This requires that simultaneous calls to f are thread-safe.
 """
 Base.@kwdef struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
     threading::TO = true
+end
+
+@doc explicit_rk_docstring(
+    "3 stage fourth order Runge-Kutta Nystrom method to solve
+    second order linear inhomogenous IVPs.", "RKN4",
+    references = "J.I. Montijano, L. Rández, M. Calvo. Explicit Runge–Kutta–Nyström methods for the numerical solution of second order linear inhomogeneous IVPs
+    doi: https://www.sciencedirect.com/science/article/pii/S0377042723004776?via%3Dihub")
+Base.@kwdef struct RKN4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function RKN4(stage_limiter!, step_limiter! = trivial_limiter!)
+    RKN4(stage_limiter!, step_limiter!, False())
 end
