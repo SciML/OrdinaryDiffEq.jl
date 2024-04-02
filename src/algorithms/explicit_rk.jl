@@ -642,3 +642,15 @@ This requires that simultaneous calls to f are thread-safe.
 Base.@kwdef struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
     threading::TO = true
 end
+
+
+
+Base.@kwdef struct QPRK98{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+function QPRK98(stage_limiter!, step_limiter! = trivial_limiter!)
+    QPRK98(stage_limiter!, step_limiter!, False())
+end
