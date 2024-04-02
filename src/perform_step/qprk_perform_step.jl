@@ -14,9 +14,9 @@ end
     @OnDemandTableauExtract QPRK98Tableau T T2
 
     k1 =  f(uprev, p, t)
-    k2 =  f(uprev + b21 * φ1 * dt, p, t + d2 * dt)
+    k2 =  f(uprev + b21 * k1 * dt, p, t + d2 * dt)
     k3 =  f(uprev + dt*(b31 * k1 + b32 * k2), p, t + d3 * dt)
-    k4 =  f(uprev + dt*(b41 * φ1 + b43 * φ3), p, t + d4 * dt)
+    k4 =  f(uprev + dt*(b41 * k1 + b43 * k3), p, t + d4 * dt)
     k5 =  f(uprev + dt * (b51 * k1 + b53 * k3 + b54 * k4), p, t + d5 * dt)
     k6 =  f(uprev + dt * (b61 * k1 + b64 * k4 + b65 * k5), p, t + d6 * dt)
     k7 =  f(uprev + dt * (b71 * k1 + b74 * k4 + b75 * k5 + b76 * k6), p, t + d7 * dt)
