@@ -705,4 +705,4 @@ function alg_cache(alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
     ExplicitRKN4Cache(u, uprev, k₁, k₂, k₃, k, tmp)
 end
 
-struct RKN4constantCache <: OrdinaryDiffEqConstantCache end
+struct RKN4ConstantCache <: OrdinaryDiffEqConstantCache end
