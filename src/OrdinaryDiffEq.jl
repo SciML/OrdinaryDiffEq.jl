@@ -440,7 +440,7 @@ export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2, DFBDF
 
 export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
-export NLNewton, NLAnderson, NLFunctional
+export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 export IController, PIController, PIDController
 end # module
