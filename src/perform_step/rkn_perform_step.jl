@@ -1824,7 +1824,7 @@ function initialize!(integrator, cache::RKN4Cache)
     @unpack fsalfirst, k = cache
     duprev, uprev = integrator.uprev.x
     integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
+    integrator.fsallast = cache.k₃
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1891,11 +1891,11 @@ end
     ku = uprev + halfdt * duprev + eightdtsq * k₁
     kdu = duprev + halfdt * k₁
 
-    k₂ = f.f1(kdu, ku, p, ttmp)
+    f.f1(k₂, kdu, ku, p, ttmp)
     ku = uprev + dt * duprev + halfdtsq * k₂
     kdu = duprev + dt * k₂
 
-    k₃ = f.f1(kdu, ku, p, t + dt)
+    f.f1(k₃, kdu, ku, p, t + dt)
     ku = uprev + dt * duprev + eightdtsq * k₃
     kdu = duprev + dt * k₃
 
@@ -1903,10 +1903,6 @@ end
     u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
     du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
 
-    integrator.u = ArrayPartition((du, u))
-    integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
     integrator.stats.nf += 3
     integrator.stats.nf2 += 1
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
 end
