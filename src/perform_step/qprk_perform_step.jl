@@ -1,10 +1,13 @@
 function initialize!(integrator, ::QPRK98ConstantCache)
-    integrator.kshortsize = 16
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+    integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
-    @inbounds for i in eachindex(integrator.k)
-        integrator.k[i] = zero(integrator.uprev) ./ oneunit(integrator.t)
-    end
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
 end
   
 @muladd function perform_step!(integrator,::QPRK98ConstantCache, repeat_step=false)
@@ -13,7 +16,7 @@ end
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract QPRK98Tableau T T2
 
-    k1 =  f(uprev, p, t)
+    k1 =  integrator.fsalfirst
     k2 =  f(uprev + b21 * k1 * dt, p, t + d2 * dt)
     k3 =  f(uprev + dt*(b31 * k1 + b32 * k2), p, t + d3 * dt)
     k4 =  f(uprev + dt*(b41 * k1 + b43 * k3), p, t + d4 * dt)
@@ -29,7 +32,7 @@ end
     k14 = f(uprev + dt * (b14_1 * k1 + b14_6 * k6 + b14_7 * k7 + b14_8 * k8 + b14_9 * k9 + b14_10 * k10 + b14_11 * k11 + b14_12 * k12 + b14_13 * k13), p, t + d14 * dt)
     k15 = f(uprev + dt * (b15_1 * k1 + b15_6 * k6 + b15_7 * k7 + b15_8 * k8 + b15_9 * k9 + b15_10 * k10 + b15_11 * k11 + b15_12 * k12 + b15_13 * k13 + b15_14 * k14), p, t + dt)
     k16 = f(uprev + dt * (b16_1 * k1 + b16_6 * k6 + b16_7 * k7 + b16_8 * k8 + b16_9 * k9 + b16_10 * k10 + b16_11 * k11 + b16_12 * k12 + b16_13 * k13 + b16_14 * k14), p, t + dt) 
-
+    integrator.stats.nf += 15
     u = uprev + dt * (w1 * k1 + w8 * k8 + w9 * k9 + w10 * k10 + w11 * k11 + w12 * k12 + w13 * k13 + w14 * k14 + w15 * k15 + w16 * k16)
 
     if integrator.opts.adaptive
@@ -38,49 +41,23 @@ end
         integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
-
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
-    integrator.k[8] = k8
-    integrator.k[9] = k9
-    integrator.k[10] = k10
-    integrator.k[11] = k11
-    integrator.k[12] = k12
-    integrator.k[13] = k13
-    integrator.k[14] = k14
-    integrator.k[15] = k15
-    integrator.k[16] = k16
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.stats.nf += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
     integrator.u = u
 end
 
 
-
 function initialize!(integrator, cache::QPRK98Cache)
-    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16 = cache
-    @unpack k = integrator
-    integrator.kshortsize = 16
-    resize!(k, integrator.kshortsize)
-    k[1] = k1
-    k[2] = k2
-    k[3] = k3
-    k[4] = k4
-    k[5] = k5
-    k[6] = k6
-    k[7] = k7
-    k[8] = k8
-    k[9] = k9
-    k[10] = k10
-    k[11] = k11
-    k[12] = k12
-    k[13] = k13
-    k[14] = k14
-    k[15] = k15
-    k[16] = k16
+    integrator.fsalfirst = cache.fsalfirst
+    integrator.fsallast = cache.k
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::QPRK98Cache, repeat_step=false)
@@ -88,8 +65,8 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract QPRK98Tableau T T2
-    @unpack k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
-    
+    @unpack fsalfirst, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, utilde, tmp, atmp, k, stage_limiter!, step_limiter!, thread = cache
+    k1 = fsalfirst
     f(k1, uprev, p, t)
     @.. broadcast=false thread=thread tmp = uprev + dt * b21 * k1
     stage_limiter!(tmp, integrator, p, t + d2 * dt)
@@ -137,10 +114,12 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(k16, tmp, p, t + dt)
-    
+
     integrator.stats.nf += 16
 
     @.. broadcast=false thread=thread u=uprev + dt * (w1 * k1 + w8 * k8 + w9 * k9 + w10 * k10 + w11 * k11 + w12 * k12 + w13 * k13 + w14 * k14 + w15 * k15 + w16 * k16)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde = dt * (ϵ1 * k1 + ϵ8 * k8 +
@@ -154,5 +133,7 @@ end
             thread)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
+    f(k, u, p, t + dt)
+    integrator.stats.nf += 1
     return nothing
 end

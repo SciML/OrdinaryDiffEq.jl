@@ -3,7 +3,7 @@ struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
 @cache struct QPRK98Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    k1::rateType
+    fsalfirst::rateType
     k2::rateType
     k3::rateType
     k4::rateType
@@ -22,6 +22,7 @@ struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
     utilde::uType
     tmp::uType
     atmp::uNoUnitsType
+    k::rateType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
@@ -48,9 +49,10 @@ function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits}, ::Typ
     utilde = zero(u)
     tmp = zero(u)
     atmp = similar(u, uEltypeNoUnits)
+    k = zero(rate_prototype)
     recursivefill!(atmp, false)
     QPRK98Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15,
-    k16, utilde, tmp, atmp, alg.stage_limiter!, alg.step_limiter!,
+    k16, utilde, tmp, atmp, k, alg.stage_limiter!, alg.step_limiter!,
     alg.thread)
 end
 
