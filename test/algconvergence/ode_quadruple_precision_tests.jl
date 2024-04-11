@@ -40,20 +40,21 @@ test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 
 println("QPRK98")
 alg = QPRK98()
+
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @show sim.𝒪est[:final]
+    sim.𝒪est[:final]
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
 end
 
 for prob in test_problems_linear
     sim = test_convergence(BigFloat.(dts), prob, alg)
-    @show sim.𝒪est[:final]
+    sim.𝒪est[:final]
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
 end
 
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @show sim.𝒪est[:final]
+    sim.𝒪est[:final]
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg)+2.5 atol=testTol
 end
