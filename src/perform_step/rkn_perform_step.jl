@@ -1835,7 +1835,7 @@ function initialize!(integrator, cache::RKN4Cache)
     integrator.stats.nf2 += 1
 end
 
-@muladd function perform_step!(integrator, cache::RKN4constantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RKN4ConstantCache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
     

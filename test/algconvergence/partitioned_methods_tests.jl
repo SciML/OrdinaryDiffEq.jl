@@ -15,6 +15,7 @@ end
 ff_harmonic = DynamicalODEFunction(f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
 prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
 
+
 sol = solve(prob, SymplecticEuler(), dt = 1 / 2)
 sol_verlet = solve(prob, VelocityVerlet(), dt = 1 / 100)
 sol_ruth3 = solve(prob, Ruth3(), dt = 1 / 100)
@@ -41,7 +42,7 @@ sol2_verlet(0.1)
 @test sol_ruth3[end][3] == sol2_ruth3[end][3]
 
 prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
-println("Convergence tests")
+println("Convergence tests")    
 
 dts = 1 .// 2 .^ (6:-1:3)
 # Symplectic Euler
@@ -109,9 +110,12 @@ sim = test_convergence(dts, prob, KahanLi8(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 sol = solve(prob, Nystrom4(), dt = 1 / 1000)
-
+RKN
 # Nyström method
 dts = 1 .// 2 .^ (9:-1:6)
+sim = test_convergence(dts, prob, OrdinaryDiffEq.RKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
