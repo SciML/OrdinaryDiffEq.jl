@@ -7,6 +7,8 @@ Random.seed!(100)
 dts = Float128.(1 .// 2 .^ (6:-1:2))
 testTol = 0.35
 
+# Tests on simple problem
+
 f = (u, p, t) -> cos(t)
 prob_ode_sin = ODEProblem(
                     ODEFunction(f; analytic = (u0, p, t) -> sin(t)), 
@@ -45,16 +47,27 @@ for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     sim.𝒪est[:final]
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
+    sol = solve(prob, alg, adaptive = true, save_everystep = false)
+    sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
+    @test minimum(abs.(sol.u[end] .- sol_exact) .< 1e-12)
 end
 
 for prob in test_problems_linear
     sim = test_convergence(BigFloat.(dts), prob, alg)
     sim.𝒪est[:final]
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
+    sol = solve(prob, alg, adaptive = true, save_everystep = false)
+    sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
+    @test minimum(abs.(sol.u[end] .- sol_exact) .< 1e-8)
 end
 
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
     sim.𝒪est[:final]
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg)+2.5 atol=testTol
+    sol = solve(prob, alg, adaptive = true, save_everystep = false)
+    sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
+    @test minimum(abs.(sol.u[end] .- sol_exact) .< 1e-11)
 end
+
+
