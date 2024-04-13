@@ -1,7 +1,6 @@
 struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
 
-@cache struct QPRK98Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,Thread}
-     <: OrdinaryDiffEqMutableCache
+@cache struct QPRK98Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,Thread} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -29,10 +28,8 @@ struct QPRK98ConstantCache <: OrdinaryDiffEqConstantCache end
     thread::Thread
 end
 
-function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, 
-    uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true}) 
-    where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, 
+    uprev, uprev2, f, t, dt, reltol, p, calck, ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -60,7 +57,8 @@ function alg_cache(alg::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(::QPRK98, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p,
-     calck, ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     QPRK98ConstantCache()
 end
