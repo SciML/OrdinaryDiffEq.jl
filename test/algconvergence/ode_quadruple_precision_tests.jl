@@ -1,10 +1,9 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
-using Quadmath
 
 Random.seed!(100)
 
-dts = Float128.(1 .// 2 .^ (6:-1:2))
+dts = BigFloat.(1 .// 2 .^ (6:-1:2))
 testTol = 0.35
 
 # Tests on simple problem
@@ -12,30 +11,30 @@ testTol = 0.35
 f = (u, p, t) -> cos(t)
 prob_ode_sin = ODEProblem(
     ODEFunction(f; analytic = (u0, p, t) -> sin(t)),
-    Float128(0.0),
-    (Float128(0.0), Float128(1.0)))
+    BigFloat(0.0),
+    (BigFloat(0.0), BigFloat(1.0)))
 
 f = (du, u, p, t) -> du[1] = cos(t)
 prob_ode_sin_inplace = ODEProblem(
     ODEFunction(f; analytic = (u0, p, t) -> [sin(t)]),
-    [Float128(0.0)],
-    (Float128(0.0), Float128(1.0)))
+    [BigFloat(0.0)],
+    (BigFloat(0.0), BigFloat(1.0)))
 
 f = (u, p, t) -> sin(u)
 prob_ode_nonlinear = ODEProblem(
     ODEFunction(
-        f; analytic = (u0, p, t) -> Float128(2.0) * acot(exp(-t)
-                                                         * cot(Float128(0.5)))),
-    Float128(1.0),
-    (Float128(0.0), Float128(0.5)))
+        f; analytic = (u0, p, t) -> BigFloat(2.0) * acot(exp(-t)
+                                                         * cot(BigFloat(0.5)))),
+    BigFloat(1.0),
+    (BigFloat(0.0), BigFloat(0.5)))
 
 f = (du, u, p, t) -> du[1] = sin(u[1])
 prob_ode_nonlinear_inplace = ODEProblem(
     ODEFunction(
-        f; analytic = (u0, p, t) -> [Float128(2.0) * acot(exp(-t)
-                                                          * cot(Float128(0.5)))]),
-    [Float128(1.0)],
-    (Float128(0.0), Float128(0.5)))
+        f; analytic = (u0, p, t) -> [BigFloat(2.0) * acot(exp(-t)
+                                                          * cot(BigFloat(0.5)))]),
+    [BigFloat(1.0)],
+    (BigFloat(0.0), BigFloat(0.5)))
 
 test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_bigfloat2Dlinear]
