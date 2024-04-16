@@ -1838,7 +1838,7 @@ end
 @muladd function perform_step!(integrator, cache::RKN4ConstantCache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
-    
+    u, du = integrator.u.x
     #define dt values
     halfdt = dt/2
     dtsq = dt^2
@@ -1851,6 +1851,7 @@ end
     #perform operations to find k values
     k₁ = integrator.fsalfirst.x[1]
     ku = uprev + halfdt * duprev + eightdtsq * k₁
+    print(ku)
     kdu = duprev + halfdt * k₁
 
     k₂ = f.f1(kdu, ku, p, ttmp)
@@ -1876,7 +1877,7 @@ end
 @muladd function perform_step!(integrator, cache::RKN4Cache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
-
+    du, u = integrator.u.x
     @unpack tmp, fsalfirst, k₂, k₃, k = cache
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
 
@@ -1891,20 +1892,20 @@ end
 
     #perform operations to find k values
     k₁ = integrator.fsalfirst.x[1]
-    ku = uprev + halfdt * duprev + eightdtsq * k₁
-    kdu = duprev + halfdt * k₁
+    @.. broadcast=false ku = uprev + halfdt * duprev + eightdtsq * k₁
+    @.. broadcast=false kdu = duprev + halfdt * k₁
 
     f.f1(k₂, kdu, ku, p, ttmp)
-    ku = uprev + dt * duprev + halfdtsq * k₂
-    kdu = duprev + dt * k₂
+    @.. broadcast=false ku = uprev + dt * duprev + halfdtsq * k₂
+    @.. broadcast=false kdu = duprev + dt * k₂
 
     f.f1(k₃, kdu, ku, p, t + dt)
-    ku = uprev + dt * duprev + eightdtsq * k₃
-    kdu = duprev + dt * k₃
+    @.. broadcast=false ku = uprev + dt * duprev + eightdtsq * k₃
+    @.. broadcast=false kdu = duprev + dt * k₃
 
     #perform final calculations to determine new y and y'.
-    u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
-    du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
+    @.. broadcast=false u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
+    @.. broadcast=false du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
