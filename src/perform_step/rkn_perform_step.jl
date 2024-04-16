@@ -12,7 +12,7 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN4Cons
     DPRKN4ConstantCache, DPRKN5ConstantCache,
     DPRKN6FMConstantCache, DPRKN8ConstantCache,
     DPRKN12ConstantCache, ERKN4ConstantCache,
-    ERKN5ConstantCache, ERKN7ConstantCache}
+    ERKN5ConstantCache, ERKN7ConstantCache, RKN4ConstantCache}
 
 function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.kshortsize = 2
@@ -1824,7 +1824,7 @@ function initialize!(integrator, cache::RKN4Cache)
     @unpack fsalfirst, k = cache
     duprev, uprev = integrator.uprev.x
     integrator.fsalfirst = fsalfirst
-    integrator.fsallast = cache.k₃
+    integrator.fsallast = k
     integrator.kshortsize = 2
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1] = integrator.fsalfirst
@@ -1868,7 +1868,7 @@ end
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
     integrator.stats.nf += 3
-    integrator.stats.nf2 += 1
+    integrator.stats.nf2 += 1    
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 end
@@ -1876,7 +1876,10 @@ end
 @muladd function perform_step!(integrator, cache::RKN4Cache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     duprev, uprev = integrator.uprev.x
-    
+
+    @unpack tmp, fsalfirst, k₂, k₃, k = cache
+    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+
     #define dt values
     halfdt = dt/2
     dtsq = dt^2
@@ -1902,6 +1905,9 @@ end
     #perform final calculations to determine new y and y'.
     u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
     du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
+
+    f.f1(k.x[1], du, u, p, t + dt)
+    f.f2(k.x[2], du, u, p, t + dt)
 
     integrator.stats.nf += 3
     integrator.stats.nf2 += 1

@@ -1211,6 +1211,8 @@ pages={113753}
 """
 struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
+struct RKN4 <: OrdinaryDiffEqAlgorithm end
+
 ################################################################################
 
 # Adams Bashforth and Adams moulton methods
