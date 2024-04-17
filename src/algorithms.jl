@@ -2962,6 +2962,10 @@ University of Geneva, Switzerland.
 - Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
  In: BIT Numerical Mathematics, 63(2), 2023
 
+ #### Rodas23W, Rodas3P, Rodas5Pe, Rodas5Pr
+- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications - 
+ Preprint 2024
+
 =#
 
 for Alg in [
@@ -2994,7 +2998,9 @@ for Alg in [
     :Rodas4P,
     :Rodas4P2,
     :Rodas5,
-    :Rodas5P
+    :Rodas5P,
+    :Rodas5Pe,
+    :Rodas5Pr
 ]
     @eval begin
         struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
