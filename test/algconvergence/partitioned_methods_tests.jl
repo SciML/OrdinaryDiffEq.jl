@@ -111,8 +111,6 @@ sim = test_convergence(dts, prob, KahanLi8(), dense_errors = true)
 
 sol = solve(prob, Nystrom4(), dt = 1 / 1000)
 
-sol = solve(prob, RKN4(), dt = 1/1000)
-
 # Nyström method
 dts = 1 .// 2 .^ (9:-1:6)
 sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
@@ -179,6 +177,8 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, RKN4(), reltol = 1e-8)
+@test length(sol.u) < 16
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 16
 sol = solve(prob, FineRKN5())
@@ -300,6 +300,9 @@ sim = test_convergence(dts, prob, KahanLi8(), dense_errors = true)
 
 # Nyström method
 dts = 1 .// 2 .^ (9:-1:6)
+sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
 @test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
@@ -361,6 +364,8 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+sol = solve(prob, RKN4())
+@test length(sol.u) < 16
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 16
 sol = solve(prob, FineRKN5())
@@ -385,7 +390,7 @@ sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
 
 # Testing generalized Runge-Kutte-Nyström methods on velocity dependend ODEs with the damped oscillator
-println("In Place")
+println("Out of Place")
 
 # Damped oscillator
 prob = ODEProblem(
@@ -415,14 +420,19 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
+
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 28
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
-
-println("Out of Place")
+sol = solve(prob, RKN4())
+@test length(sol.u) < 30
+println("In Place")
 # Damped oscillator
 prob = ODEProblem(
     DynamicalODEFunction{true}((d_du, du, u, p, t) -> @.(d_du=-u - 0.5 * du),
@@ -451,6 +461,10 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+
 
 # Adaptive methods regression test
 sol = solve(prob, FineRKN4())
@@ -489,6 +503,20 @@ end
         @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
     end
 
+    @testset "RKN4" begin
+        alg = RKN4()
+        dt = 0.5
+        # fixed time step
+        sol_i = solve(ode_i, alg, dt = dt)
+        sol_o = solve(ode_o, alg, dt = dt)
+        @test sol_i.t ≈ sol_o.t
+        @test sol_i.u ≈ sol_o.u
+        @test sol_i.destats.nf == sol_o.destats.nf
+        @test sol_i.destats.nf2 == sol_o.destats.nf2
+        @test sol_i.destats.naccept == sol_o.destats.naccept
+        @test 19 <= sol_i.destats.naccept <= 21
+        @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
+    end
     @testset "FineRKN4" begin
         alg = FineRKN4()
         dt = 0.5

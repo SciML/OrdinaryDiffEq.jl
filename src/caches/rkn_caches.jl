@@ -706,3 +706,10 @@ function alg_cache(alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 struct RKN4ConstantCache <: OrdinaryDiffEqConstantCache end
+
+function alg_cache(alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    RKN4ConstantCache()
+end

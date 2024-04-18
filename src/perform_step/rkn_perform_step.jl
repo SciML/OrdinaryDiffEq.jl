@@ -1851,7 +1851,6 @@ end
     #perform operations to find k values
     k₁ = integrator.fsalfirst.x[1]
     ku = uprev + halfdt * duprev + eightdtsq * k₁
-    print(ku)
     kdu = duprev + halfdt * k₁
 
     k₂ = f.f1(kdu, ku, p, ttmp)
@@ -1859,8 +1858,6 @@ end
     kdu = duprev + dt * k₂
 
     k₃ = f.f1(kdu, ku, p, t + dt)
-    ku = uprev + dt * duprev + eightdtsq * k₃
-    kdu = duprev + dt * k₃
 
     #perform final calculations to determine new y and y'.
     u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
@@ -1872,6 +1869,17 @@ end
     integrator.stats.nf2 += 1    
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
+    #=
+    if integrator.opts.adaptive
+        uhat = dtsq * (1/6 * k₁ + 1/3 * k₂ + 0 * k₃) 
+        duhat = dt * (1/6 * k₁ + 1/3 * k₂ + 0 * k₃) 
+        utilde = ArrayPartition((duhat, uhat))
+        atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    =#
 end
 
 @muladd function perform_step!(integrator, cache::RKN4Cache, repeat_step = false)
@@ -1900,8 +1908,6 @@ end
     @.. broadcast=false kdu = duprev + dt * k₂
 
     f.f1(k₃, kdu, ku, p, t + dt)
-    @.. broadcast=false ku = uprev + dt * duprev + eightdtsq * k₃
-    @.. broadcast=false kdu = duprev + dt * k₃
 
     #perform final calculations to determine new y and y'.
     @.. broadcast=false u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
@@ -1912,4 +1918,15 @@ end
 
     integrator.stats.nf += 3
     integrator.stats.nf2 += 1
+    #=
+    if integrator.opts.adaptive
+        uhat = dtsq * (1/6 * k₁ + 1/3 * k₂ + 0 * k₃) 
+        duhat = dt * (1/6 * k₁ + 1/3 * k₂ + 0 * k₃) 
+        utilde = ArrayPartition((duhat, uhat))
+        atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
+            integrator.opts.abstol, integrator.opts.reltol,
+            integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    =#
 end
