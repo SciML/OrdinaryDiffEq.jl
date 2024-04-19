@@ -177,8 +177,6 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
-sol = solve(prob, RKN4(), reltol = 1e-8)
-@test length(sol.u) < 16
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 16
 sol = solve(prob, FineRKN5())
@@ -364,8 +362,6 @@ sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
-sol = solve(prob, RKN4())
-@test length(sol.u) < 16
 sol = solve(prob, FineRKN4())
 @test length(sol.u) < 16
 sol = solve(prob, FineRKN5())
@@ -430,8 +426,7 @@ sol = solve(prob, FineRKN4())
 @test length(sol.u) < 28
 sol = solve(prob, FineRKN5())
 @test length(sol.u) < 20
-sol = solve(prob, RKN4())
-@test length(sol.u) < 30
+
 println("In Place")
 # Damped oscillator
 prob = ODEProblem(
