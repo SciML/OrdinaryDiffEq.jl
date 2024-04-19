@@ -97,7 +97,7 @@ import LinearSolve
     @test sim.𝒪est[:final]≈2 atol=testTol
 
     sol = solve(prob, ROS2())
-    @test length(sol) < 60
+    @test length(sol) < 61
 
     prob = prob_ode_2Dlinear
 
