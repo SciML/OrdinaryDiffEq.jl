@@ -2965,6 +2965,7 @@ University of Geneva, Switzerland.
  #### Rodas23W, Rodas3P, Rodas5Pe, Rodas5Pr
 - Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications - 
  Preprint 2024
+ https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 
 =#
 
