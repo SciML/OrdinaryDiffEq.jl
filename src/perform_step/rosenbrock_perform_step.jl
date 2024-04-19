@@ -1456,30 +1456,28 @@ end
 function calculate_interpoldiff(uprev, up2, up3, c_koeff, d_koeff, c2_koeff)
     u_int = 0.0
     u_diff = 0.0
-    for i in eachindex(up2)
-        a1 = up3[i] + c_koeff[i] - up2[i] - c2_koeff[i]
-        a2 = d_koeff[i] - c_koeff[i] + c2_koeff[i]
-        a3 = -d_koeff[i] 
-        dis = a2^2 - 3*a1*a3
-        u_int = up3[i]
-        u_diff = 0.0
-        if dis > 0.0 #-- Min/Max occurs
-           tau1 = (-a2 - sqrt(dis))/(3*a3)
-           tau2 = (-a2 + sqrt(dis))/(3*a3)
-           if tau1 > tau2 
-              tau1,tau2 = tau2,tau1 
-           end
-           for tau in (tau1,tau2)
-              if (tau > 0.0) && (tau < 1.0)
-                 y_tau = (1 - tau)*uprev[i] + 
-                          tau*(up3[i] + (1 - tau)*(c_koeff[i] + tau*d_koeff[i]))
-                 dy_tau = ((a3*tau + a2)*tau + a1)*tau
-                 if abs(dy_tau) > abs(u_diff[i])
+    a1 = up3 + c_koeff - up2 - c2_koeff
+    a2 = d_koeff - c_koeff + c2_koeff
+    a3 = -d_koeff
+    dis = a2^2 - 3*a1*a3
+    u_int = up3
+    u_diff = 0.0
+    if dis > 0.0 #-- Min/Max occurs
+        tau1 = (-a2 - sqrt(dis))/(3*a3)
+        tau2 = (-a2 + sqrt(dis))/(3*a3)
+        if tau1 > tau2 
+            tau1,tau2 = tau2,tau1 
+        end
+        for tau in (tau1,tau2)
+            if (tau > 0.0) && (tau < 1.0)
+                y_tau = (1 - tau)*uprev[i] + 
+                        tau*(up3 + (1 - tau)*(c_koeff + tau*d_koeff))
+                dy_tau = ((a3*tau + a2)*tau + a1)*tau
+                if abs(dy_tau) > abs(u_diff)
                     u_diff = dy_tau
                     u_int = y_tau
                  end
-              end
-           end
+            end
         end
     end
     return u_int, u_diff
