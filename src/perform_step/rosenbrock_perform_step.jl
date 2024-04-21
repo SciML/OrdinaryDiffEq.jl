@@ -1064,7 +1064,8 @@ end
             if  isa(linsolve_tmp,AbstractFloat)
                 u_int, u_diff = calculate_interpoldiff(uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
             else
-                u_int = linsolve_tmp; u_diff = copy(linsolve_tmp)
+                u_int = linsolve_tmp 
+                u_diff = linsolve_tmp .+ 0
                 calculate_interpoldiff!(u_int, u_diff, uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
             end
             atmp = calculate_residuals(u_diff, uprev, u_int, integrator.opts.abstol,
@@ -1074,12 +1075,12 @@ end
     end
 
     if (integrator.alg isa Rodas23W)
-        k1[:] = u[:]
-        u[:] = du[:]
-        du[:] = k1[:]
+        k1 = u .+ 0
+        u = du .+ 0
+        du = k1 .+ 0
         if integrator.opts.calck
-            integrator.k[1][:] = integrator.k[3][:]
-            integrator.k[2][:] .= 0.0
+            integrator.k[1] = integrator.k[3] .+ 0
+            integrator.k[2] = 0*integrator.k[2]
         end
     end
 
