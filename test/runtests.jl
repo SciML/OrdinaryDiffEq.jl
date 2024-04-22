@@ -160,6 +160,7 @@ end
         @time @safetestset "Feagin Tests" include("algconvergence/ode_feagin_tests.jl")
         @time @safetestset "Extrapolation Tests" include("algconvergence/ode_extrapolation_tests.jl")
         @time @safetestset "Symplectic Tests" include("algconvergence/symplectic_tests.jl")
+        @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"

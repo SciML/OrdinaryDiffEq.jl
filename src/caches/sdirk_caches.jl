@@ -1,6 +1,6 @@
 abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
 
-@cache mutable struct ImplicitEulerCache{uType, rateType, uNoUnitsType, N} <:
+@cache mutable struct ImplicitEulerCache{uType, rateType, uNoUnitsType, N, AV} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -8,6 +8,7 @@ abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
     fsalfirst::rateType
     atmp::uNoUnitsType
     nlsolver::N
+    algebraic_vars::AV
 end
 
 function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -22,7 +23,10 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver)
+    algebraic_vars = f.mass_matrix === I ? nothing :
+                     [all(iszero, x) for x in eachcol(f.mass_matrix)]
+
+    ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars)
 end
 
 mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache

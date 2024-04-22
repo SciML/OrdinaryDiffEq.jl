@@ -65,7 +65,7 @@ function DiffEqBase.__init(
         progress_steps = 1000,
         progress_name = "ODE",
         progress_message = ODE_DEFAULT_PROG_MESSAGE,
-        progress_id = progress ? gensym("OrdinaryDiffEq") : :OrdinaryDiffEq,
+        progress_id = :OrdinaryDiffEq,
         userdata = nothing,
         allow_extrapolation = alg_extrapolates(alg),
         initialize_integrator = true,
@@ -493,8 +493,9 @@ function DiffEqBase.__init(
         opts, stats, initializealg, differential_vars)
 
     if initialize_integrator
-        if isdae
+        if isdae || SciMLBase.has_initializeprob(prob.f)
             DiffEqBase.initialize_dae!(integrator)
+            update_uprev!(integrator)
         end
 
         if save_start

@@ -284,6 +284,13 @@ function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
     CompositeAlgorithm(algs, alg.choice_function)
 end
 
+has_autodiff(alg::OrdinaryDiffEqAlgorithm) = false
+function has_autodiff(alg::Union{
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm, OrdinaryDiffEqImplicitAlgorithm,
+        CompositeAlgorithm, OrdinaryDiffEqExponentialAlgorithm, DAEAlgorithm})
+    true
+end
+
 # Extract AD type parameter from algorithm, returning as Val to ensure type stability for boolean options.
 function _alg_autodiff(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have an autodifferentiation option defined.")
@@ -626,6 +633,7 @@ alg_order(alg::Feagin12) = 12
 alg_order(alg::Feagin14) = 14
 alg_order(alg::PFRK87) = 8
 
+alg_order(alg::ROS2) = 2
 alg_order(alg::ROS2PR) = 2
 alg_order(alg::ROS2S) = 2
 alg_order(alg::ROS3) = 3
@@ -709,6 +717,8 @@ alg_order(alg::DFBDF) = 1#dummy value
 alg_order(alg::Alshina2) = 2
 alg_order(alg::Alshina3) = 3
 alg_order(alg::Alshina6) = 6
+
+alg_order(alg::QPRK98) = 9
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
