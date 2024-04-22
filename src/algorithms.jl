@@ -1216,7 +1216,9 @@ struct RKN4 <: OrdinaryDiffEqAlgorithm end
 """
 3 stage fourth order Runge-Kutta Nystrom method to solve second order linear inhomogenous IVPs.
 
-Does not include an adaptive method. Solves for for d-dimensional differential systems of second order linear inhomogeneous equations
+Does not include an adaptive method. Solves for for d-dimensional differential systems of second order linear inhomogeneous equations.
+
+Is only fourth order for these systems, the method is second order otherwise. 
 ## References
 
 @article{MONTIJANO2024115533,

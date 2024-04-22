@@ -635,6 +635,7 @@ end
 """
 KuttaPRK2p5: Parallel Explicit Runge-Kutta Method
 A 5 parallel, 2 processor explicit Runge-Kutta method of 5th order.
+
 These methods utilize multithreading on the f calls to parallelize the problem.
 This requires that simultaneous calls to f are thread-safe.
 """
@@ -653,7 +654,7 @@ Base.@kwdef struct QPRK98{StageLimiter, StepLimiter, Thread} <:
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
-
+# for backwards compatibility
 function QPRK98(stage_limiter!, step_limiter! = trivial_limiter!)
     QPRK98(stage_limiter!, step_limiter!, False())
 end
