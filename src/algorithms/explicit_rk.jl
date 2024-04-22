@@ -643,21 +643,6 @@ Base.@kwdef struct KuttaPRK2p5{TO} <: OrdinaryDiffEqAlgorithm
 end
 
 @doc explicit_rk_docstring(
-    "3 stage fourth order Runge-Kutta Nystrom method to solve
-    second order linear inhomogenous IVPs.", "RKN4",
-    references = "J.I. Montijano, L. Rández, M. Calvo. Explicit Runge–Kutta–Nyström methods for the numerical solution of second order linear inhomogeneous IVPs
-    doi: https://www.sciencedirect.com/science/article/pii/S0377042723004776?via%3Dihub")
-Base.@kwdef struct RKN4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-                      
-function RKN4(stage_limiter!, step_limiter! = trivial_limiter!)
-    RKN4(stage_limiter!, step_limiter!, False())
-end
-
-@doc explicit_rk_docstring(
     "Runge–Kutta pairs of orders 9(8) for use in quadruple precision computations", "QPRK98",
     references = "Kovalnogov VN, Fedorov RV, Karpukhina TV, Simos TE, Tsitouras C. Runge–Kutta pairs 
     of orders 9 (8) for use in quadruple precision computations. Numerical Algorithms, 2023. 

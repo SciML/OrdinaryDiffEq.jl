@@ -416,9 +416,6 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
-@test sim.𝒪est[:l2]≈4 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
 
@@ -455,9 +452,6 @@ sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈5 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
-@test sim.𝒪est[:l2]≈4 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 
