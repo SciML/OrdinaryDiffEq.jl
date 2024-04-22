@@ -1865,7 +1865,7 @@ end
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
-    integrator.stats.nf += 3
+    integrator.stats.nf += 2
     integrator.stats.nf2 += 1    
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
