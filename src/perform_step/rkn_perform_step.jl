@@ -1905,6 +1905,6 @@ end
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
 
-    integrator.stats.nf += 3
+    integrator.stats.nf += 2
     integrator.stats.nf2 += 1
 end
