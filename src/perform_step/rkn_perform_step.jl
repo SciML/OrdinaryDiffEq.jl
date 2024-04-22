@@ -1918,15 +1918,4 @@ end
 
     integrator.stats.nf += 3
     integrator.stats.nf2 += 1
-    #=
-    if integrator.opts.adaptive
-        uhat = dtsq * (1/6 * k₁ + 1/3 * k₂ + 0 * k₃) 
-        duhat = dt * (1/6 * k₁ + 1/3 * k₂ + 0 * k₃) 
-        utilde = ArrayPartition((duhat, uhat))
-        atmp = calculate_residuals(utilde, integrator.uprev, integrator.u,
-            integrator.opts.abstol, integrator.opts.reltol,
-            integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-    =#
 end
