@@ -1209,9 +1209,8 @@ volume={400},
 pages={113753}
 }
 """
-struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
-struct RKN4 <: OrdinaryDiffEqAlgorithm end
+struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
 3 stage fourth order Runge-Kutta Nystrom method to solve second order linear inhomogenous IVPs.
@@ -1231,6 +1230,7 @@ year = {2024},
 }
 """
 
+struct RKN4 <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 
