@@ -47,8 +47,14 @@ testTol = 0.2
     @test sim3.𝒪est[:l∞]≈4 atol=0.2
 
     sim_ps6 = test_convergence(dts2, prob, PSRK4p7q6())
-    @test sim_ps6.𝒪est[:l∞]≈5 atol=testTol
+    @test sim_ps6.𝒪est[:l∞]≈4 atol=testTol
 
+    sim_ps5 = test_convergence(dts2, prob, PSRK3p6q5())
+    @test sim_ps5.𝒪est[:l∞]≈4 atol=testTol
+
+    sim_ps4 = test_convergence(dts2, prob, PSRK3p5q4())
+    @test sim_ps4.𝒪est[:l∞]≈4 atol=testTol
+    
     sim_ms5 = test_convergence(dts2, prob, MSRK5())
     @test sim_ms5.𝒪est[:l∞]≈5 atol=testTol
 

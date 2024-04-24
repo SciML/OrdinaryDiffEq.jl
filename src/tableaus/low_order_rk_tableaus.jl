@@ -1643,13 +1643,13 @@ function PSRK3p6q5ConstantCache(T::Type{<:CompiledFloats}, T1::Type{<:CompiledFl
     a53 = convert(T, 1.87865617737921)
     a54 = convert(T, -1.00257392477721)
 
-    b1 = convert(T, 0.13502027922909)
+    b1 = convert(T, 0.04113894457092)
     b2 = convert(T, 0.26732123194414)
     b3 = convert(T, 0.86700906289955)
     b4 = convert(T, -0.30547139552036)
     b5 = convert(T, 0.13000215610576)
 
-    c2 = convert(T1, 0.23593376536652)
+    c2 = convert(T1, 0.13502027922909)
     c3 = convert(T1, 0.58712036810182)
     c4 = convert(T1, 0.57332577194528)
     c5 = convert(T1, 1.0)
