@@ -106,7 +106,7 @@ import LinearSolve
 
     sol = solve(prob, ROS2PR())
     @test length(sol) < 60
-    
+
     ### ROS2PR
     prob = prob_ode_linear
 

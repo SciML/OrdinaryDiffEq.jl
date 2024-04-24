@@ -1540,6 +1540,167 @@ function Anas5ConstantCache(T, T2)
         a65, c2, c3, c4, c5, c6, b1, b3, b4, b5, b6)
 end
 
+struct PSRK4p7q6ConstantCache{T, T1} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+    a61::T
+    a62::T
+    a63::T
+    a64::T
+    a65::T
+
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+    b5::T
+    b6::T
+
+    c2::T1
+    c3::T1
+    c4::T1
+    c5::T1
+    c6::T1
+end
+
+function PSRK4p7q6ConstantCache(T::Type{<:CompiledFloats}, T1::Type{<:CompiledFloats})
+    a21 = convert(T, 0.23593376536652)
+    a31 = convert(T, 0.34750735658424)
+    a32 = convert(T, -0.13561935398346)
+    a41 = convert(T, -0.20592852403227)
+    a42 = convert(T, 1.89179076622108)
+    a43 = convert(T, -0.89775024478958)
+    a51 = convert(T, -0.09435493281455)
+    a52 = convert(T, 1.75617141223762)
+    a53 = convert(T, -0.96707850476948)
+    a54 = convert(T, 0.06932825997989)
+    a61 = convert(T, 0.14157883255197)
+    a62 = convert(T, -1.17039696277833)
+    a63 = convert(T, 1.30579112376331)
+    a64 = convert(T, -2.20354136855289)
+    a65 = convert(T, 2.92656837501595)
+
+    b1 = convert(T, 0.07078941627598)
+    b2 = convert(T, 0.87808570611881)
+    b3 = convert(T, -0.44887512239479)
+    b4 = convert(T, -0.44887512239479)
+    b5 = convert(T, 0.87808570611881)
+    b6 = convert(T, 0.07078941627598)
+
+    c2 = convert(T1, 0.23593376536652)
+    c3 = convert(T1, 0.21188800260078)
+    c4 = convert(T1, 0.78811199739923)
+    c5 = convert(T1, 0.76406623463348)
+    c6 = convert(T1, 1.0)
+
+    PSRK4p7q6ConstantCache(
+        a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65,
+        b1, b2, b3, b4, b5, b6,
+        c2, c3, c4, c5, c6)
+end
+
+struct PSRK3p6q5ConstantCache{T, T1} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+    a51::T
+    a52::T
+    a53::T
+    a54::T
+
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+    b5::T
+
+    c2::T1
+    c3::T1
+    c4::T1
+    c5::T1
+end
+
+function PSRK3p6q5ConstantCache(T::Type{<:CompiledFloats}, T1::Type{<:CompiledFloats})
+    a21 = convert(T, 0.13502027922909)
+    a31 = convert(T, -0.47268213605237)
+    a32 = convert(T, 1.05980250415419)
+    a41 = convert(T, -1.21650460595689)
+    a42 = convert(T, 2.16217630216753)
+    a43 = convert(T, -0.37234592426536)
+    a51 = convert(T, 0.33274443036387)
+    a52 = convert(T, -0.20882668296587)
+    a53 = convert(T, 1.87865617737921)
+    a54 = convert(T, -1.00257392477721)
+
+    b1 = convert(T, 0.13502027922909)
+    b2 = convert(T, 0.26732123194414)
+    b3 = convert(T, 0.86700906289955)
+    b4 = convert(T, -0.30547139552036)
+    b5 = convert(T, 0.13000215610576)
+
+    c2 = convert(T1, 0.23593376536652)
+    c3 = convert(T1, 0.58712036810182)
+    c4 = convert(T1, 0.57332577194528)
+    c5 = convert(T1, 1.0)
+
+    PSRK3p6q5ConstantCache(
+        a21, a31, a32, a41, a42, a43, a51, a52, a53, a54,
+        b1, b2, b3, b4, b5,
+        c2, c3, c4, c5)
+end
+
+struct PSRK3p5q4ConstantCache{T, T1} <: OrdinaryDiffEqConstantCache
+    a21::T
+    a31::T
+    a32::T
+    a41::T
+    a42::T
+    a43::T
+
+    b1::T
+    b2::T
+    b3::T
+    b4::T
+
+    c2::T1
+    c3::T1
+    c4::T1
+end
+
+function PSRK3p5q4ConstantCache(T::Type, T1::Type)
+    a21 = T(3 // 8)
+    a31 = T(11 // 12)
+    a32 = T(-2 // 3)
+    a41 = T(-1 // 12)
+    a42 = T(11 // 6)
+    a43 = T(-3 // 4)
+
+    b1 = T(1 // 9)
+    b2 = T(8 // 9)
+    b3 = T(-2 // 9)
+    b4 = T(2 // 9)
+
+    c2 = T1(3 // 8)
+    c3 = T1(1 // 4)
+    c4 = T1(1)
+
+    PSRK3p5q4ConstantCache(
+        a21, a31, a32, a41, a42, a43,
+        b1, b2, b3, b4,
+        c2, c3, c4)
+end
+
 struct MSRK5ConstantCache{T, T1} <: OrdinaryDiffEqConstantCache
     a21::T
     a31::T
