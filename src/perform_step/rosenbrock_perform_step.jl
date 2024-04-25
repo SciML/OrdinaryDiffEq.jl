@@ -2798,7 +2798,7 @@ end
                                  h45 * k5[i] + h46 * k6[i] + h47 * k7[i] + h48 * k8[i]
 	        if (integrator.alg isa Rodas5Pr)
                 k2[i] = 0.5*(uprev[i] + u[i] + 0.5 * (integrator.k[1][i] + 0.5 * (integrator.k[2][i] + 0.5 * integrator.k[3][i])))
-                du1[i] = ( 0.25*(itegrator.k[2][i] + integrator.k[3][i]) - uprev[i] + u[i]) / dt
+                du1[i] = ( 0.25*(integrator.k[2][i] + integrator.k[3][i]) - uprev[i] + u[i]) / dt
 	        end
         end
         if integrator.opts.adaptive && (integrator.EEst < 1.0) && (integrator.alg isa Rodas5Pr) 
