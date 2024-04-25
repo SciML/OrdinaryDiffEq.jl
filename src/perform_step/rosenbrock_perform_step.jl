@@ -1469,7 +1469,7 @@ function calculate_interpoldiff(uprev, up2, up3, c_koeff, d_koeff, c2_koeff)
         end
         for tau in (tau1,tau2)
             if (tau > 0.0) && (tau < 1.0)
-                y_tau = (1 - tau)*uprev[i] + 
+                y_tau = (1 - tau)*uprev + 
                         tau*(up3 + (1 - tau)*(c_koeff + tau*d_koeff))
                 dy_tau = ((a3*tau + a2)*tau + a1)*tau
                 if abs(dy_tau) > abs(u_diff)
