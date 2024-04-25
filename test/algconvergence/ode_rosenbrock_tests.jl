@@ -418,6 +418,49 @@ import LinearSolve
     sim = test_convergence(dts, prob, RosenbrockW6S4OS())#test non-inplace
     @test sim.𝒪est[:final]≈4 atol=testTol
 
+    ### Rodas23W, Rodas3P
+
+    println("Rodas23W")
+
+    prob = prob_ode_linear
+
+    dts = (1 / 2) .^ (6:-1:3)
+    sim = test_convergence(dts, prob, Rodas23W(), dense_errors = true)
+    @test sim.𝒪est[:final]≈2 atol=testTol
+    @test sim.𝒪est[:L2]≈2 atol=testTol
+
+    sol = solve(prob, Rodas23W())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas23W(), dense_errors = true)
+    @test sim.𝒪est[:final]≈2 atol=testTol
+    @test sim.𝒪est[:L2]≈2 atol=testTol
+
+    sol = solve(prob, Rodas23W())
+    @test length(sol) < 20
+
+    println("Rodas3P")
+
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas3P(), dense_errors = true)
+    @test sim.𝒪est[:final]≈3 atol=testTol
+    @test sim.𝒪est[:L2]≈3 atol=testTol
+
+    sol = solve(prob, Rodas3P())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas3P(), dense_errors = true)
+    @test sim.𝒪est[:final]≈3 atol=testTol
+    @test sim.𝒪est[:L2]≈3 atol=testTol
+
+    sol = solve(prob, Rodas3P())
+    @test length(sol) < 20
+
     ### Rodas4 Algorithms
 
     println("RODAS")
@@ -553,21 +596,61 @@ import LinearSolve
 
     prob = prob_ode_linear
 
-    dts = (1 / 2) .^ (6:-1:3)
-    sim = test_convergence(dts, prob, Rodas5(), dense_errors = true)
-    @test sim.𝒪est[:final]≈5 atol=testTol
+    dts = (1 / 2) .^ (5:-1:2)
+    sim = test_convergence(dts, prob, Rodas5P(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sol = solve(prob, Rodas5())
+    sol = solve(prob, Rodas5P())
     @test length(sol) < 20
 
     prob = prob_ode_2Dlinear
 
-    sim = test_convergence(dts, prob, Rodas5(), dense_errors = true)
-    @test sim.𝒪est[:final]≈5 atol=testTol
+    sim = test_convergence(dts, prob, Rodas5P(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
     @test sim.𝒪est[:L2]≈5 atol=testTol
 
-    sol = solve(prob, Rodas5())
+    sol = solve(prob, Rodas5P())
+    @test length(sol) < 20
+    
+    println("Rodas5Pe")
+
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas5Pe(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈5 atol=testTol
+
+    sol = solve(prob, Rodas5Pe())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas5Pe(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈5 atol=testTol
+
+    sol = solve(prob, Rodas5Pe())
+    @test length(sol) < 20
+
+    println("Rodas5Pr")
+
+    prob = prob_ode_linear
+
+    sim = test_convergence(dts, prob, Rodas5Pr(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈5 atol=testTol
+
+    sol = solve(prob, Rodas5Pr())
+    @test length(sol) < 20
+
+    prob = prob_ode_2Dlinear
+
+    sim = test_convergence(dts, prob, Rodas5Pr(), dense_errors = true)
+    #@test sim.𝒪est[:final]≈5 atol=testTol #-- observed order > 6
+    @test sim.𝒪est[:L2]≈5 atol=testTol
+
+    sol = solve(prob, Rodas5Pr())
     @test length(sol) < 20
 
     prob = ODEProblem((u, p, t) -> 0.9u, 0.1, (0.0, 1.0))

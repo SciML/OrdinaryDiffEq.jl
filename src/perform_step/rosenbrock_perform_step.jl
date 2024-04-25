@@ -1430,7 +1430,6 @@ end
             calculate_residuals!(atmp, du2, uprev, du1, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
-            #println(t," ",EEst," ",du2)
         end
     end
 
@@ -1449,7 +1448,6 @@ end
         calculate_residuals!(atmp, u - du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = max(EEst, integrator.opts.internalnorm(atmp, t))
-        #println(t," ",EEst," ",integrator.EEst)
     end
     cache.linsolve = linres.cache
 end
@@ -2229,8 +2227,7 @@ end
                           h47 * k7 + h48 * k8
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive && (integrator.EEst < 1.0)
             k2 = 0.5*(uprev + u + 0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
-            du1 = (integrator.k[1] + 0.5*(-2*integrator.k[1] + 2*integrator.k[2] +
-                    0.5*(-3*integrator.k[2] + 3*integrator.k[3] - 2*integrator.k[3])) - uprev + u) / dt
+            du1 = ( 0.25*(integrator.k[2] + integrator.k[3]) - uprev + u) / dt
             du = f(k2, p, t + dt/2)
             integrator.stats.nf += 1
             if mass_matrix === I
@@ -2479,8 +2476,7 @@ end
                                             h45 * k5 + h46 * k6 + h47 * k7 + h48 * k8
         if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive && (integrator.EEst < 1.0)
             k2 = 0.5*(uprev + u + 0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
-            du1 = (integrator.k[1] + 0.5*(-2*integrator.k[1] + 2*integrator.k[2] +
-                    0.5*(-3*integrator.k[2] + 3*integrator.k[3] - 2*integrator.k[3])) - uprev + u) / dt
+            du1 = ( 0.25*(integrator.k[2] + integrator.k[3]) - uprev + u) / dt
             f(du, k2, p, t + dt/2)
             integrator.stats.nf += 1
             if mass_matrix === I
@@ -2802,8 +2798,7 @@ end
                                  h45 * k5[i] + h46 * k6[i] + h47 * k7[i] + h48 * k8[i]
 	        if (integrator.alg isa Rodas5Pr)
                 k2[i] = 0.5*(uprev[i] + u[i] + 0.5 * (integrator.k[1][i] + 0.5 * (integrator.k[2][i] + 0.5 * integrator.k[3][i])))
-                du1[i] = (integrator.k[1][i] + 0.5*(-2*integrator.k[1][i] + 2*integrator.k[2][i] +
-                                           0.5*(-3*integrator.k[2][i] + 3*integrator.k[3][i] - 2*integrator.k[3][i])) - uprev[i] + u[i]) / dt
+                du1[i] = ( 0.25*(itegrator.k[2][i] + integrator.k[3][i]) - uprev[i] + u[i]) / dt
 	        end
         end
         if integrator.opts.adaptive && (integrator.EEst < 1.0) && (integrator.alg isa Rodas5Pr) 
