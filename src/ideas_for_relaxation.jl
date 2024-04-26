@@ -19,7 +19,7 @@ function (r::Relaxtion)(integrator, integrator.cache)
     γ_opt = minimize(r.opt, γ -> norm(γ*integrator.dt*(integrator.u_propose-integrator.uprev)) + integrator.uprev, [γmin, γmax])
 
     integrator.dt_changed = integrator.dt * γ_opt
-    integrator_dt_has_changed_in_performstep = true
+    
 end
 
 
@@ -44,7 +44,7 @@ end
 # Change the perform_step function
 function perform_step2!(integrator, integrator.cache, method)
     integrator_dt_has_changed_in_performstep = false
-    
+
     # Computations will really only contain the mathematical scheme
     computations!(integrator, integrator.cache)
 
@@ -52,8 +52,11 @@ function perform_step2!(integrator, integrator.cache, method)
 
     if integrator_dt_has_changed_in_performstep
         #check dt in [dtmin, dtmax] and no conflic with tstop
+    else if integrator.dt_changed != zero(integrator.dt_changed)
+        # print error
     end
-
+    integrator_dt_has_changed_in_performstep = true
+    
     # Recording will contain all update we need to do into the integrator 
     recording!(integrator)
 end
@@ -63,4 +66,17 @@ function user_update!(integrator, integrator.cache, method::PerformStepUpdate)
 
 end
 
+function computations!(integrator, integrator.cache)
+    #=  This fonction made all computations of the scheme
+
+    =#
+end
+
+
+function recording!()
+    #=  This fonction aims at containing all the informations we want to update/store in
+        the integrator
+
+    =#
+end
 
