@@ -84,7 +84,7 @@ struct Relaxation{OPT, INV}
 end
 
 # Here is the modif function for relaxation
-function (r::Relaxtion)(integrator, cache)
+function (r::Relaxtion)(integrator)
     # We fix here the bounds of interval where we are going to look for the relaxation
     # and taking accound the bounds [dtmin, dtmax] and the presence of tstops
     γmin = integrator.dtmin / integrator.dt  

@@ -49,23 +49,21 @@ end
 function modif_step!(integrator)
     
     # Perform the modifications
-    modif(integrator)
+    #integrator.modif(integrator)
 
     # Here we check the validity of chaging dt if it has changed
     # if it is valid integrator.changed_valid will be true, if not it will be false
-    integrator.changed_valid = true
+    changed_valid = true
     if integrator_dt_has_changed_in_performstep
         # check dt in [dtmin, dtmax]
         # things related to tstops
         # surely other things
-        if integrator.changed_valid
+        if changed_valid
             integrator.u_propose = integrator.u_changed
             integrator.dt = integrator.dt_changed
         else
             # print error or warning
         end
-    elseif integrator.dt_changed != zero(integrator.dt_changed)
-        # print error
     end
 end
 
