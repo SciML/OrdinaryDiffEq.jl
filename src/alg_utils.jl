@@ -573,6 +573,7 @@ alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
 alg_order(alg::DP5) = 5
 alg_order(alg::Tsit5) = 5
+alg_order(alg::Tsit5_for_relaxation) = 5
 alg_order(alg::DP8) = 8
 alg_order(alg::Vern6) = 6
 alg_order(alg::Vern7) = 7

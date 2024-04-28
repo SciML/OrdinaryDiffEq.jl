@@ -332,6 +332,19 @@ function Tsit5(stage_limiter!, step_limiter! = trivial_limiter!)
     Tsit5(stage_limiter!, step_limiter!, False())
 end
 
+Base.@kwdef struct Tsit5_for_relaxation{StageLimiter, StepLimiter, Thread} <:
+    OrdinaryDiffEqAdaptiveAlgorithm
+stage_limiter!::StageLimiter = trivial_limiter!
+step_limiter!::StepLimiter = trivial_limiter!
+thread::Thread = False()
+end
+
+# for backwards compatibility
+function Tsit5_for_relaxation(stage_limiter!, step_limiter! = trivial_limiter!)
+Tsit5_for_relaxation(stage_limiter!, step_limiter!, False())
+end
+
+
 @doc explicit_rk_docstring(
     "Hairer's 8/5/3 adaption of the Dormand-Prince Runge-Kutta method. (7th order interpolant).",
     "DP8",
