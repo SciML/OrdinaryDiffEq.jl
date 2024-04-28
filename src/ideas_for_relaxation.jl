@@ -1,15 +1,14 @@
-#= Hi. I come back with a suggestion regarding the discussion in the issue about the relaxation implementantation in code.
+#= Hi. I come back with a suggestion regarding the discussion in the issue about implementing relaxation in code.
+ 
+Hendrick suggested in the issue the possibility to use Callback but it seems to be not really convenient as callback are handled 
+after accepting the state, storing t in tprev etc. 
 
-It seems that relaxation  need to be perform during perform_step! and lead to change of the timestep Δt. 
+I may have another approach which is based on the splitting of perform_step! into several functions.
+I do not know if such a thing has already been disccused or are even conceivable as it lead to a notable change in the structure of the code.
+In any case, I put below a sketch of what I have in mind.
 
-Ranocha suggested in the issue the possibility to use Callback. 
-[ dire pourquoi pas satisfaisant et proposer mon approche]
-
-New variables stored in the integrator :
-- u_propose         : like dt_propose, we update in the scheme u_propose instead of u and then if 
-- dt_has_changed    : 
+Please let me know what you think of such changes.  
 =#
-
 
 #= Modification of the perform_step function into three part:
     - computations
@@ -17,9 +16,9 @@ New variables stored in the integrator :
     - finalize_step
     Their role is described below
 =#
-function perform_step2!(integrator, cache)
+function perform_stepNEW!(integrator, cache)
 
-    # Variable to now if dt has changed during perform_step
+    # Variable to know if dt has changed during perform_step
     integrator.dt_has_changed_in_performstep = false
 
     # computations! will only contain the mathematical scheme
@@ -34,7 +33,7 @@ function perform_step2!(integrator, cache)
 
     # finalize_step! will do staff related to the solver like integrator.stats, register integrator.fsal
     # and register integrator.u
-    finalize_step!(integrator)
+    finalize_step!(integrator, cache)
 end
 
 
@@ -49,7 +48,7 @@ while integrator.tdir * integrator.t < first(integrator.opts.tstops)
     # This is just to not break all the package
     if isInTheNewFrameWork(integrator.alg)
         # The new performstep!
-        perform_step2!(integrator, integrator.cache)
+        perform_stepNEW!(integrator, integrator.cache)
     else
         # The already existing perform_step!
         perform_step!(integrator, integrator.cache)
@@ -76,7 +75,7 @@ function modif_step!(integrator, cache, modif)
     integrator.changed_valid = true
     if integrator_dt_has_changed_in_performstep
         # check dt in [dtmin, dtmax]
-        # replace dt by tstops-t if t+dt ≈ tstops 
+        # things related to tstops
         # surely other things
         if integrator.changed_valid
             integrator.u_propose = integrator.u_changed
@@ -87,8 +86,6 @@ function modif_step!(integrator, cache, modif)
     else if integrator.dt_changed != zero(integrator.dt_changed)
         # print error
     end
-
-
 end
 
 ######
@@ -106,14 +103,14 @@ function (r::Relaxtion)(integrator, cache)
     γmax = min(integrator.dtmax / first(integrator.opts.tstops)) / integrator.dt
 
     S_u = integrator.dt*(integrator.u_propose-integrator.uprev) 
-    ## need to define or use a method "minimize" with three main arguments : 
-        # - a method to minimize
+    ## need to define or use a method "minimize" with foure main arguments : 
+        # - a method of minimization
         # - the function to minimize
         # - interval where we look for
         # - starting point (fix to 1) for the minimizing method
     γ_opt = minimize(   r.opt, 
-                        γ -> norm(r.inv(γ*S_u + integrator.uprev) - r.inv(integrator.uprev)), 
-                        [γmin, γmax], 
+                        γ -> norm(r.inv(γ*S_u .+ integrator.uprev) .- r.inv(integrator.uprev)), 
+                        (γmin, γmax), 
                         1.0)
     # new dt
     integrator.dt_changed = integrator.dt * γ_opt
