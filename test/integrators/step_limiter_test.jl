@@ -18,7 +18,6 @@ function test_step_limiter(alg_type, adaptive = true)
     end
 
     n = sol.stats.naccept + sol.stats.nreject
-    println(n, " ", STEP_LIMITER_VAR[])
     @test n == STEP_LIMITER_VAR[]
 end
 
