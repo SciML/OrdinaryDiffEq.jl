@@ -1343,16 +1343,13 @@ end
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    fsalfirst::uType
     k1::rateType
     k2::rateType
     k3::rateType
     k4::rateType
     k5::rateType
     k6::rateType
-    k7::rateType
-    k::rateType
+    tmp::uType
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -1377,12 +1374,9 @@ function alg_cache(alg::PSRK4p7q6, u, rate_prototype, ::Type{uEltypeNoUnits},
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
-    k7 = zero(rate_prototype)
-    k = zero(rate_prototype)
     tmp = zero(u)
-    fsalfirst = zero(u)
     tab = PSRK4p7q6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    PSRK4p7q6Cache(u, uprev, tmp, fsalfirst, k1, k2, k3, k4, k5, k6, k7, k, tab,
+    PSRK4p7q6Cache(u, uprev, k1, k2, k3, k4, k5, k6, tmp, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
@@ -1390,15 +1384,12 @@ end
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    fsalfirst::uType
     k1::rateType
     k2::rateType
     k3::rateType
     k4::rateType
     k5::rateType
-    k6::rateType
-    k::rateType
+    tmp::uType
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -1422,12 +1413,9 @@ function alg_cache(alg::PSRK3p6q5, u, rate_prototype, ::Type{uEltypeNoUnits},
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
-    k6 = zero(rate_prototype)
-    k = zero(rate_prototype)
     tmp = zero(u)
-    fsalfirst = zero(u)
     tab = PSRK3p6q5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    PSRK3p6q5Cache(u, uprev, tmp, fsalfirst, k1, k2, k3, k4, k5, k6, k, tab,
+    PSRK3p6q5Cache(u, uprev, tmp, k1, k2, k3, k4, k5, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
@@ -1435,14 +1423,11 @@ end
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
-    tmp::uType
-    fsalfirst::uType
     k1::rateType
     k2::rateType
     k3::rateType
     k4::rateType
-    k5::rateType
-    k::rateType
+    tmp::uType
     tab::TabType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
@@ -1465,12 +1450,9 @@ function alg_cache(alg::PSRK3p5q4, u, rate_prototype, ::Type{uEltypeNoUnits},
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
-    k5 = zero(rate_prototype)
-    k = zero(rate_prototype)
     tmp = zero(u)
-    fsalfirst = zero(u)
     tab = PSRK3p5q4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    PSRK3p5q4Cache(u, uprev, tmp, fsalfirst, k1, k2, k3, k4, k5, k, tab,
+    PSRK3p5q4Cache(u, uprev, tmp, k1, k2, k3, k4, tab,
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
