@@ -1,15 +1,3 @@
-#= Hi. I come back with a suggestion regarding the discussion in the issue about implementing relaxation in code.
- 
-Hendrick suggested in the issue the possibility to use Callback but it seems to be not really convenient as callback are handled 
-after accepting the state, storing t in tprev etc. 
-
-I may have another approach which is based on the splitting of perform_step! into several functions.
-I do not know if such a thing has already been disccused or are even conceivable as it lead to a notable change in the structure of the code.
-In any case, I put below a sketch of what I have in mind.
-
-Please let me know what you think of such changes.  
-=#
-
 #= Modification of the perform_step function into three part:
     - computations
     - modif_step
