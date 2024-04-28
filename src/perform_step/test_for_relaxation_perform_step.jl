@@ -34,14 +34,14 @@ end
     g6 = uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
     k6 = f(g6, p, t + dt)
     u = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
-
+    k7 = f(u_propose, p, t + dt)
     integrator.k[1] = k1
     integrator.k[2] = k2
     integrator.k[3] = k3
     integrator.k[4] = k4
     integrator.k[5] = k5
     integrator.k[6] = k6
-    
+    integrator.k[7] = k7
     integrator.u_propose = u
 end
 
@@ -74,11 +74,12 @@ function finalize_step!(integrator, cache::Tsit5ConstantCache_for_relaxation)
     @unpack t, dt, uprev, u, u_propose, f, p = integrator
     integrator.u = u_propose
     integrator.fsallast = f(u_propose, p, t + dt)
-    k7 = integrator.fsallast
-    integrator.k[7] = k7
+
+    # We ask the Tableau again but this might be improve by option to ask only the wanted part of the tableau
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
+
     if integrator.opts.adaptive
         utilde = dt *
                  (btilde1 * integrator.k[1] + btilde2 * integrator.k[2] + btilde3 * integrator.k[3] + btilde4 * integrator.k[4] + btilde5 * k5 +
