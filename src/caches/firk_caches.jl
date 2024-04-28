@@ -30,7 +30,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, UF, JC,
-    F1, Tab, Tol, Dt, rTol, aTol} <: OrdinaryDiffEqMutableCache
+    F1, Tab, Tol, Dt, rTol, aTol, StepLimiter} <: OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     z1::uType
@@ -63,6 +63,7 @@ mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     dtprev::Dt
     W_γdt::Dt
     status::NLStatus
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -119,7 +120,7 @@ function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
         J, W1,
         uf, tab, κ, one(uToltype), 10000,
         tmp, atmp, jac_config, linsolve, rtol, atol, dt, dt,
-        Convergence)
+        Convergence,alg.step_limiter!)
 end
 
 mutable struct RadauIIA5ConstantCache{F, Tab, Tol, Dt, U, JType} <:
@@ -136,7 +137,6 @@ mutable struct RadauIIA5ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     W_γdt::Dt
     status::NLStatus
     J::JType
-
 end
 
 function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},

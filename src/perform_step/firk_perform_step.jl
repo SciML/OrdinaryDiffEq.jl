@@ -207,7 +207,7 @@ end
     dw12, cubuff,
     k, k2, fw1, fw2,
     J, W1,
-    tmp, atmp, jac_config, rtol, atol = cache
+    tmp, atmp, jac_config, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -333,7 +333,7 @@ end
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
     end
-
+    step_limiter!(u, f, p, t + dt)
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
     return
