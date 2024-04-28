@@ -522,7 +522,7 @@ end
     dw1, ubuff, dw23, cubuff,
     k, k2, k3, fw1, fw2, fw3,
     J, W1, W2,
-    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
+    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -743,7 +743,7 @@ end
             @.. broadcast=false cache.cont3=cache.cont2 - (tmp - z1 / c1) / c2
         end
     end
-
+    step_limiter!(u, f, p, t + dt)
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
     return
