@@ -33,7 +33,7 @@ end
     
     # test the step_limiter! function for adaptive algorithms
     adaptive = [RadauIIA5, RadauIIA3, SIR54, Alshina2, Alshina3, Heun, Ralston, Midpoint, RK4,
-                OwrenZen3, OwrenZen4, OwrenZen5, 
+                OwrenZen3, OwrenZen4, OwrenZen5, Stepanov5,
                 BS3, DP5, Tsit5, DP8, TanYam7, TsitPap8, FRK65, PFRK87, BS5, Vern6, Vern7,
                 Vern8, Vern9, QPRK98, SSPRKMSVS43, SSPRKMSVS32, SSPRK432, SSPRK43]
     for alg_type in adaptive
