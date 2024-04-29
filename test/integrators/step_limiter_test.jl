@@ -28,8 +28,6 @@ end
 
     # I think all the algorithms with step_limiter! function are tested here
     # (besides Low Storage Runge-Kutta methods)
-
-    STEP_LIMITER_VAR[] = 0
     
     # test the step_limiter! function for adaptive algorithms
     adaptive = [RadauIIA5, RadauIIA3, SIR54, Alshina2, Alshina3, Heun, Ralston, Midpoint, RK4,
