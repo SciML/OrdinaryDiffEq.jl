@@ -1,8 +1,23 @@
+function initialize!(integrator, cache::Tsit5ConstantCache_for_relaxation)
+    integrator.kshortsize = 7
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    @inbounds for i in 2:(integrator.kshortsize - 1)
+        integrator.k[i] = zero(integrator.fsalfirst)
+    end
+    integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
 
 function perform_step!(integrator, cache::Tsit5ConstantCache_for_relaxation, repeat_step = false)
 
     # Variable to know if dt has changed during perform_step
-    integrator.dt_has_changed_in_performstep = false
+    integrator.dt_has_changed = false
 
     # computations! will only contain the mathematical scheme
     # i.e the computations of the u(t+dt)

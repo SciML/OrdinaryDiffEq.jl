@@ -585,6 +585,13 @@ function alg_cache(alg::Tsit5, u, rate_prototype, ::Type{uEltypeNoUnits},
     Tsit5ConstantCache()
 end
 
+function alg_cache(alg::Tsit5_for_relaxation, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+Tsit5ConstantCache_for_relaxation()
+end
+
 @cache struct DP5Cache{uType, rateType, uNoUnitsType, StageLimiter, StepLimiter,
     Thread} <: OrdinaryDiffEqMutableCache
     u::uType
