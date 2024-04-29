@@ -43,7 +43,8 @@ end
     # test the step_limiter! function for non adaptive algorithms
     non_adaptive = [Alshina6, RKM, MSRK5, MSRK6, Anas5, RKO65, RK46NL, ORK256, KYK2014DGSSPRK_3S2,
                     SSPRK22, SSPRK104, SSPRK54, SSPRK932, SSPRK83, SSPRK73, SSPRK63, SSPRK53_H, SSPRK53_2N2,
-                    SSPRK53_2N1, SSPRK53, SSPRK33, SHLDDRK_2N, SHLDDRK52, KYKSSPRK42]
+                    SSPRK53_2N1, SSPRK53, SSPRK33, SHLDDRK_2N, SHLDDRK52, KYKSSPRK42,
+                    CarpenterKennedy2N54]
     for alg_type in non_adaptive
         test_step_limiter(alg_type, false)
     end
