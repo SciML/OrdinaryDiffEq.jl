@@ -131,6 +131,11 @@ dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
         @test _norm_dsol(Rodas42(), prob, prob2)≈0 atol=1e-9
         @test _norm_dsol(Rodas4P(), prob, prob2)≈0 atol=1e-9
         @test _norm_dsol(Rodas5(), prob, prob2)≈0 atol=1e-7
+        @test _norm_dsol(Rodas23W(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(Rodas3P(), prob, prob2)≈0 atol=1e-11
+        @test _norm_dsol(Rodas5P(), prob, prob2)≈0 atol=1e-7
+        @test _norm_dsol(Rodas5Pe(), prob, prob2)≈0 atol=1e-7
+        @test _norm_dsol(Rodas5Pr(), prob, prob2)≈0 atol=1e-7
     end
 end
 
