@@ -49,7 +49,7 @@ end
     g6 = uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
     k6 = f(g6, p, t + dt)
     u = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
-    k7 = f(u_propose, p, t + dt)
+    k7 = f(u, p, t + dt)
     integrator.k[1] = k1
     integrator.k[2] = k2
     integrator.k[3] = k3
@@ -69,7 +69,7 @@ function modif_step!(integrator)
     # Here we check the validity of chaging dt if it has changed
     # if it is valid integrator.changed_valid will be true, if not it will be false
     changed_valid = true
-    if integrator_dt_has_changed_in_performstep
+    if integrator.dt_has_changed
         # check dt in [dtmin, dtmax]
         # things related to tstops
         # surely other things
