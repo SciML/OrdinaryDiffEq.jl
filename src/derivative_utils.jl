@@ -750,7 +750,7 @@ end
         if J isa StaticArray &&
            integrator.alg isa
            Union{
-            Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
+            Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
         else
@@ -775,7 +775,7 @@ end
                 W_full
             elseif len !== nothing &&
                    integrator.alg isa
-                   Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
+                   Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
                 StaticWOperator(W_full)
             else
                 DiffEqBase.default_factorize(W_full)
@@ -923,7 +923,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             len = StaticArrayInterface.known_length(typeof(J))
             if len !== nothing &&
                alg isa
-               Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
+               Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
                 StaticWOperator(J, false)
             else
                 ArrayInterface.lu_instance(J)
