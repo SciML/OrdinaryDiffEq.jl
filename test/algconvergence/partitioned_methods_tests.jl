@@ -504,7 +504,7 @@ end
         @test sol_i.destats.nf2 == sol_o.destats.nf2
         @test sol_i.destats.naccept == sol_o.destats.naccept
         @test 19 <= sol_i.destats.naccept <= 21
-        @test abs(sol_i.destats.nf - 4 * sol_i.destats.naccept) < 4
+        @test abs(sol_i.destats.nf - 2 * sol_i.destats.naccept) < 4
     end
     @testset "FineRKN4" begin
         alg = FineRKN4()
