@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::Tsit5ConstantCache_for_relaxation)
+function initialize!(integrator, ::Tsit5ConstantCache_for_relaxation)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -35,7 +35,7 @@ function perform_step!(integrator, cache::Tsit5ConstantCache_for_relaxation, rep
 end
 
 
-@muladd function computations!(integrator, cache::Tsit5ConstantCache_for_relaxation, repeat_step = false)
+@muladd function computations!(integrator, ::Tsit5ConstantCache_for_relaxation, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
@@ -58,49 +58,46 @@ end
     integrator.k[6] = k6
     integrator.k[7] = k7
     integrator.u_propose = u
+
+    if integrator.opts.adaptive
+        utilde = dt *
+                 (btilde1 * integrator.k[1] + btilde2 * integrator.k[2] + btilde3 * integrator.k[3] + btilde4 * integrator.k[4] + btilde5 * integrator.k[5] +
+                  btilde6 * integrator.k[6] + btilde7 * integrator.k[7])
+        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
 end
 
 
 function modif_step!(integrator)
     
     # Perform the modifications
-    #integrator.modif(integrator)
+    if !(integrator.opts.modif isa Nothing)
+        integrator.opts.modif(integrator)
 
-    # Here we check the validity of chaging dt if it has changed
-    # if it is valid integrator.changed_valid will be true, if not it will be false
-    changed_valid = true
-    if integrator.dt_has_changed
-        # check dt in [dtmin, dtmax]
-        # things related to tstops
-        # surely other things
-        if changed_valid
-            integrator.u_propose = integrator.u_changed
-            integrator.dt = integrator.dt_changed
-        else
-            # print error or warning
+        # Here we check the validity of chaging dt if it has changed
+        # if it is valid integrator.changed_valid will be true, if not it will be false
+        changed_valid = true
+        if integrator.dt_has_changed
+            # check dt in [dtmin, dtmax]
+            # things related to tstops
+            # surely other things
+            if changed_valid
+                integrator.u_propose = integrator.u_changed
+                integrator.dt = integrator.dt_changed
+            else
+                # print error or warning
+            end
         end
     end
 end
 
 
 function finalize_step!(integrator, cache::Tsit5ConstantCache_for_relaxation)
-    @unpack t, dt, uprev, u, u_propose, f, p = integrator
+    @unpack t, dt, uprev, u_propose, f, p = integrator
     integrator.u = u_propose
     integrator.fsallast = f(u_propose, p, t + dt)
 
-    # We ask the Tableau again but this might be improve by option to ask only the wanted part of the tableau
-    T = constvalue(recursive_unitless_bottom_eltype(u))
-    T2 = constvalue(typeof(one(t)))
-    @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
-
-    if integrator.opts.adaptive
-        utilde = dt *
-                 (btilde1 * integrator.k[1] + btilde2 * integrator.k[2] + btilde3 * integrator.k[3] + btilde4 * integrator.k[4] + btilde5 * integrator.k[5] +
-                  btilde6 * integrator.k[6] + btilde7 * integrator.k[7])
-        atmp = calculate_residuals(utilde, uprev, u_propose, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    integrator.stats.nf += 6
+    integrator.stats.nf += 7
 end

@@ -72,6 +72,7 @@ function DiffEqBase.__init(
         alias_u0 = false,
         alias_du0 = false,
         initializealg = DefaultInit(),
+        modif = nothing,
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
@@ -379,7 +380,7 @@ function DiffEqBase.__init(
         typeof(d_discontinuities_internal), typeof(userdata),
         typeof(save_idxs),
         typeof(maxiters), typeof(tstops),
-        typeof(saveat), typeof(d_discontinuities)}(maxiters, save_everystep,
+        typeof(saveat), typeof(d_discontinuities), typeof(modif)}(maxiters, save_everystep,
         adaptive, abstol_internal,
         reltol_internal,
         QT(gamma), QT(qmax),
@@ -411,7 +412,8 @@ function DiffEqBase.__init(
         unstable_check,
         verbose, calck, force_dtmin,
         advance_to_tstop,
-        stop_at_next_tstop)
+        stop_at_next_tstop,
+        modif)
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars :
