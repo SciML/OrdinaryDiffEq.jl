@@ -1209,7 +1209,6 @@ volume={400},
 pages={113753}
 }
 """
-
 struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 
 """
