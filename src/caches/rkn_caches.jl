@@ -681,3 +681,35 @@ function alg_cache(alg::ERKN7, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     ERKN7ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
+
+@cache struct RKN4Cache{uType, rateType, reducedRateType} <: OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    fsalfirst::rateType
+    k₂::reducedRateType
+    k₃::reducedRateType
+    k::rateType
+    tmp::uType
+end
+
+function alg_cache(alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+    dt, reltol, p, calck,
+    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    reduced_rate_prototype = rate_prototype.x[2]
+    k₁ = zero(rate_prototype)
+    k₂ = zero(reduced_rate_prototype)
+    k₃ = zero(reduced_rate_prototype)
+    k = zero(rate_prototype)
+    tmp = zero(u)
+    RKN4Cache(u, uprev, k₁, k₂, k₃, k, tmp)
+end
+
+struct RKN4ConstantCache <: OrdinaryDiffEqConstantCache end
+
+function alg_cache(alg::RKN4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    RKN4ConstantCache()
+end

@@ -12,7 +12,7 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache, FineRKN4Cons
     DPRKN4ConstantCache, DPRKN5ConstantCache,
     DPRKN6FMConstantCache, DPRKN8ConstantCache,
     DPRKN12ConstantCache, ERKN4ConstantCache,
-    ERKN5ConstantCache, ERKN7ConstantCache}
+    ERKN5ConstantCache, ERKN7ConstantCache, RKN4ConstantCache}
 
 function initialize!(integrator, cache::NystromCCDefaultInitialization)
     integrator.kshortsize = 2
@@ -1818,4 +1818,93 @@ end
             integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
+end
+
+function initialize!(integrator, cache::RKN4Cache)
+    @unpack fsalfirst, k = cache
+    duprev, uprev = integrator.uprev.x
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f.f1(integrator.k[1].x[1], duprev, uprev, integrator.p, integrator.t)
+    integrator.f.f2(integrator.k[1].x[2], duprev, uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
+    integrator.stats.nf2 += 1
+end
+
+@muladd function perform_step!(integrator, cache::RKN4ConstantCache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev = integrator.uprev.x
+    u, du = integrator.u.x
+    #define dt values
+    halfdt = dt/2
+    dtsq = dt^2
+    eightdtsq = dtsq/8
+    halfdtsq = dtsq/2
+    sixthdtsq = dtsq/6
+    sixthdt = dt/6
+    ttmp = t + halfdt
+
+    #perform operations to find k values
+    k₁ = integrator.fsalfirst.x[1]
+    ku = uprev + halfdt * duprev + eightdtsq * k₁
+    kdu = duprev + halfdt * k₁
+
+    k₂ = f.f1(kdu, ku, p, ttmp)
+    ku = uprev + dt * duprev + halfdtsq * k₂
+    kdu = duprev + dt * k₂
+
+    k₃ = f.f1(kdu, ku, p, t + dt)
+
+    #perform final calculations to determine new y and y'.
+    u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
+    du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
+
+    integrator.u = ArrayPartition((du, u))
+    integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
+    integrator.stats.nf += 2
+    integrator.stats.nf2 += 1    
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::RKN4Cache, repeat_step = false)
+    @unpack t, dt, f, p = integrator
+    duprev, uprev = integrator.uprev.x
+    du, u = integrator.u.x
+    @unpack tmp, fsalfirst, k₂, k₃, k = cache
+    kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+
+    #define dt values
+    halfdt = dt/2
+    dtsq = dt^2
+    eightdtsq = dtsq/8
+    halfdtsq = dtsq/2
+    sixthdtsq = dtsq/6
+    sixthdt = dt/6
+    ttmp = t + halfdt
+
+    #perform operations to find k values
+    k₁ = integrator.fsalfirst.x[1]
+    @.. broadcast=false ku = uprev + halfdt * duprev + eightdtsq * k₁
+    @.. broadcast=false kdu = duprev + halfdt * k₁
+
+    f.f1(k₂, kdu, ku, p, ttmp)
+    @.. broadcast=false ku = uprev + dt * duprev + halfdtsq * k₂
+    @.. broadcast=false kdu = duprev + dt * k₂
+
+    f.f1(k₃, kdu, ku, p, t + dt)
+
+    #perform final calculations to determine new y and y'.
+    @.. broadcast=false u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
+    @.. broadcast=false du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
+
+    f.f1(k.x[1], du, u, p, t + dt)
+    f.f2(k.x[2], du, u, p, t + dt)
+
+    integrator.stats.nf += 2
+    integrator.stats.nf2 += 1
 end
