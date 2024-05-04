@@ -697,6 +697,7 @@ end
 
     @.. broadcast=false u=uprev + z3
     step_limiter!(u, f, p, t + dt)
+
     if adaptive
         utilde = w2
         e1dt, e2dt, e3dt = e1 / dt, e2 / dt, e3 / dt
