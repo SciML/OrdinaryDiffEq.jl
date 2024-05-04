@@ -328,6 +328,7 @@ end
 
     @. u = uprev + z2
     step_limiter!(u, f, p, t + dt)
+
     if adaptive
         utilde = w2
         @. utilde = dt * (e1 * fsallast + e2 * k2)
