@@ -327,13 +327,13 @@ end
     cache.iter = iter
 
     @. u = uprev + z2
+    step_limiter!(u, f, p, t + dt)
     if adaptive
         utilde = w2
         @. utilde = dt * (e1 * fsallast + e2 * k2)
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
     end
-    step_limiter!(u, f, p, t + dt)
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
     return
@@ -695,7 +695,7 @@ end
     cache.iter = iter
 
     @.. broadcast=false u=uprev + z3
-
+    step_limiter!(u, f, p, t + dt)
     if adaptive
         utilde = w2
         e1dt, e2dt, e3dt = e1 / dt, e2 / dt, e3 / dt
@@ -743,7 +743,6 @@ end
             @.. broadcast=false cache.cont3=cache.cont2 - (tmp - z1 / c1) / c2
         end
     end
-    step_limiter!(u, f, p, t + dt)
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
     return
