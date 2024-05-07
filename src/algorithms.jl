@@ -1217,6 +1217,7 @@ struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 Does not include an adaptive method. Solves for for d-dimensional differential systems of second order linear inhomogeneous equations.
 
 !!! warn
+
     This method is only fourth order for these systems, the method is second order otherwise!
 
 ## References

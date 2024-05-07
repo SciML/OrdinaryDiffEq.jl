@@ -96,7 +96,8 @@ function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence
         iter, maxiters, status, cache, method = DIRK, tmp2 = nothing,
         nfails::Int = 0) where {iip, tType}
     T = eltype(z)
-    NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache), T}(z,
+    NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache), T}(
+        z,
         tmp,
         tmp2,
         ztmp,

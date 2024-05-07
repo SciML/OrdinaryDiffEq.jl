@@ -1068,16 +1068,18 @@ end
         integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
         integrator.k[3] = h2_21 * k1 + h2_22 * k2 + h2_23 * k3 + h2_24 * k4 + h2_25 * k5
         if integrator.opts.adaptive
-            if  isa(linsolve_tmp,AbstractFloat)
-                u_int, u_diff = calculate_interpoldiff(uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
+            if isa(linsolve_tmp, AbstractFloat)
+                u_int, u_diff = calculate_interpoldiff(
+                    uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
             else
-                u_int = linsolve_tmp 
+                u_int = linsolve_tmp
                 u_diff = linsolve_tmp .+ 0
-                calculate_interpoldiff!(u_int, u_diff, uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
+                calculate_interpoldiff!(u_int, u_diff, uprev, du, u, integrator.k[1],
+                    integrator.k[2], integrator.k[3])
             end
             atmp = calculate_residuals(u_diff, uprev, u_int, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
-            EEst = max(EEst,integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
+            EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
         end
     end
 
@@ -1087,7 +1089,7 @@ end
         du = k1 .+ 0
         if integrator.opts.calck
             integrator.k[1] = integrator.k[3] .+ 0
-            integrator.k[2] = 0*integrator.k[2]
+            integrator.k[2] = 0 * integrator.k[2]
         end
     end
 
@@ -1465,24 +1467,24 @@ function calculate_interpoldiff(uprev, up2, up3, c_koeff, d_koeff, c2_koeff)
     a1 = up3 + c_koeff - up2 - c2_koeff
     a2 = d_koeff - c_koeff + c2_koeff
     a3 = -d_koeff
-    dis = a2^2 - 3*a1*a3
+    dis = a2^2 - 3 * a1 * a3
     u_int = up3
     u_diff = 0.0
     if dis > 0.0 #-- Min/Max occurs
-        tau1 = (-a2 - sqrt(dis))/(3*a3)
-        tau2 = (-a2 + sqrt(dis))/(3*a3)
-        if tau1 > tau2 
-            tau1,tau2 = tau2,tau1 
+        tau1 = (-a2 - sqrt(dis)) / (3 * a3)
+        tau2 = (-a2 + sqrt(dis)) / (3 * a3)
+        if tau1 > tau2
+            tau1, tau2 = tau2, tau1
         end
-        for tau in (tau1,tau2)
+        for tau in (tau1, tau2)
             if (tau > 0.0) && (tau < 1.0)
-                y_tau = (1 - tau)*uprev + 
-                        tau*(up3 + (1 - tau)*(c_koeff + tau*d_koeff))
-                dy_tau = ((a3*tau + a2)*tau + a1)*tau
+                y_tau = (1 - tau) * uprev +
+                        tau * (up3 + (1 - tau) * (c_koeff + tau * d_koeff))
+                dy_tau = ((a3 * tau + a2) * tau + a1) * tau
                 if abs(dy_tau) > abs(u_diff)
                     u_diff = dy_tau
                     u_int = y_tau
-                 end
+                end
             end
         end
     end
@@ -2215,10 +2217,12 @@ end
     linsolve_tmp = k8
 
     if integrator.opts.adaptive
-	    if (integrator.alg isa Rodas5Pe)
-            linsolve_tmp = 0.2606326497975715*k1 - 0.005158627295444251*k2 + 1.3038988631109731*k3 + 1.235000722062074*k4 +
-               - 0.7931985603795049*k5 - 1.005448461135913*k6 - 0.18044626132120234*k7 + 0.17051519239113755*k8
-	    end
+        if (integrator.alg isa Rodas5Pe)
+            linsolve_tmp = 0.2606326497975715 * k1 - 0.005158627295444251 * k2 +
+                           1.3038988631109731 * k3 + 1.235000722062074 * k4 +
+                           -0.7931985603795049 * k5 - 1.005448461135913 * k6 -
+                           0.18044626132120234 * k7 + 0.17051519239113755 * k8
+        end
         atmp = calculate_residuals(linsolve_tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -2232,18 +2236,20 @@ end
                           h37 * k7 + h38 * k8
         integrator.k[3] = h41 * k1 + h42 * k2 + h43 * k3 + h44 * k4 + h45 * k5 + h46 * k6 +
                           h47 * k7 + h48 * k8
-        if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive && (integrator.EEst < 1.0)
-            k2 = 0.5*(uprev + u + 0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
-            du1 = ( 0.25*(integrator.k[2] + integrator.k[3]) - uprev + u) / dt
-            du = f(k2, p, t + dt/2)
+        if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
+           (integrator.EEst < 1.0)
+            k2 = 0.5 * (uprev + u +
+                  0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
+            du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
+            du = f(k2, p, t + dt / 2)
             integrator.stats.nf += 1
             if mass_matrix === I
                 du2 = du1 - du
             else
-                du2 = mass_matrix*du1 - du
+                du2 = mass_matrix * du1 - du
             end
-	        EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol*norm(k2)) 
-            integrator.EEst = max(EEst,integrator.EEst)
+            EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol * norm(k2))
+            integrator.EEst = max(EEst, integrator.EEst)
         end
     end
 
@@ -2464,10 +2470,12 @@ end
     u .+= k8
 
     if integrator.opts.adaptive
-	    if (integrator.alg isa Rodas5Pe)
-            du = 0.2606326497975715*k1 - 0.005158627295444251*k2 + 1.3038988631109731*k3 + 1.235000722062074*k4 +
-               - 0.7931985603795049*k5 - 1.005448461135913*k6 - 0.18044626132120234*k7 + 0.17051519239113755*k8
-	    end
+        if (integrator.alg isa Rodas5Pe)
+            du = 0.2606326497975715 * k1 - 0.005158627295444251 * k2 +
+                 1.3038988631109731 * k3 + 1.235000722062074 * k4 +
+                 -0.7931985603795049 * k5 - 1.005448461135913 * k6 -
+                 0.18044626132120234 * k7 + 0.17051519239113755 * k8
+        end
         calculate_residuals!(atmp, du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -2481,10 +2489,12 @@ end
                                             h35 * k5 + h36 * k6 + h37 * k7 + h38 * k8
         @.. broadcast=false integrator.k[3]=h41 * k1 + h42 * k2 + h43 * k3 + h44 * k4 +
                                             h45 * k5 + h46 * k6 + h47 * k7 + h48 * k8
-        if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive && (integrator.EEst < 1.0)
-            k2 = 0.5*(uprev + u + 0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
-            du1 = ( 0.25*(integrator.k[2] + integrator.k[3]) - uprev + u) / dt
-            f(du, k2, p, t + dt/2)
+        if (integrator.alg isa Rodas5Pr) && integrator.opts.adaptive &&
+           (integrator.EEst < 1.0)
+            k2 = 0.5 * (uprev + u +
+                  0.5 * (integrator.k[1] + 0.5 * (integrator.k[2] + 0.5 * integrator.k[3])))
+            du1 = (0.25 * (integrator.k[2] + integrator.k[3]) - uprev + u) / dt
+            f(du, k2, p, t + dt / 2)
             integrator.stats.nf += 1
             if mass_matrix === I
                 du2 = du1 - du
@@ -2492,8 +2502,8 @@ end
                 mul!(_vec(du2), mass_matrix, _vec(du1))
                 du2 = du2 - du
             end
-	        EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol*norm(k2)) 
-            integrator.EEst = max(EEst,integrator.EEst)
+            EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol * norm(k2))
+            integrator.EEst = max(EEst, integrator.EEst)
         end
     end
     cache.linsolve = linres.cache
@@ -2783,11 +2793,13 @@ end
     end
 
     if integrator.opts.adaptive
-	    if (integrator.alg isa Rodas5Pe)
-	    	@inbounds @simd ivdep for i in eachindex(u)
-               	du[i] = 0.2606326497975715*k1[i] - 0.005158627295444251*k2[i] + 1.3038988631109731*k3[i] + 1.235000722062074*k4[i] +
-                   	- 0.7931985603795049*k5[i] - 1.005448461135913*k6[i] - 0.18044626132120234*k7[i] + 0.17051519239113755*k8[i]
-	        end					 
+        if (integrator.alg isa Rodas5Pe)
+            @inbounds @simd ivdep for i in eachindex(u)
+                du[i] = 0.2606326497975715 * k1[i] - 0.005158627295444251 * k2[i] +
+                        1.3038988631109731 * k3[i] + 1.235000722062074 * k4[i] +
+                        -0.7931985603795049 * k5[i] - 1.005448461135913 * k6[i] -
+                        0.18044626132120234 * k7[i] + 0.17051519239113755 * k8[i]
+            end
         end
         calculate_residuals!(atmp, du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -2803,13 +2815,17 @@ end
                                  h35 * k5[i] + h36 * k6[i] + h37 * k7[i] + h38 * k8[i]
             integrator.k[3][i] = h41 * k1[i] + h42 * k2[i] + h43 * k3[i] + h44 * k4[i] +
                                  h45 * k5[i] + h46 * k6[i] + h47 * k7[i] + h48 * k8[i]
-	        if (integrator.alg isa Rodas5Pr)
-                k2[i] = 0.5*(uprev[i] + u[i] + 0.5 * (integrator.k[1][i] + 0.5 * (integrator.k[2][i] + 0.5 * integrator.k[3][i])))
-                du1[i] = ( 0.25*(integrator.k[2][i] + integrator.k[3][i]) - uprev[i] + u[i]) / dt
-	        end
+            if (integrator.alg isa Rodas5Pr)
+                k2[i] = 0.5 * (uprev[i] + u[i] +
+                         0.5 * (integrator.k[1][i] +
+                          0.5 * (integrator.k[2][i] + 0.5 * integrator.k[3][i])))
+                du1[i] = (0.25 * (integrator.k[2][i] + integrator.k[3][i]) - uprev[i] +
+                          u[i]) / dt
+            end
         end
-        if integrator.opts.adaptive && (integrator.EEst < 1.0) && (integrator.alg isa Rodas5Pr) 
-            f(du, k2, p, t + dt/2)
+        if integrator.opts.adaptive && (integrator.EEst < 1.0) &&
+           (integrator.alg isa Rodas5Pr)
+            f(du, k2, p, t + dt / 2)
             integrator.stats.nf += 1
             if mass_matrix === I
                 @inbounds @simd ivdep for i in eachindex(u)
@@ -2821,8 +2837,8 @@ end
                     du2[i] = du2[i] - du[i]
                 end
             end
-	        EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol*norm(k2)) 
-            integrator.EEst = max(EEst,integrator.EEst)
+            EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol * norm(k2))
+            integrator.EEst = max(EEst, integrator.EEst)
         end
     end
     cache.linsolve = linres.cache
