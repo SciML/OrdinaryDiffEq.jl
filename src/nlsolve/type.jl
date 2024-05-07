@@ -117,8 +117,8 @@ end
 function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence_cutoff, ηold,
         iter, maxiters, status, cache, method = DIRK, tmp2 = nothing,
         nfails::Int = 0) where {iip, tType}
-    T = eltype(z)
-    NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache), T}(
+    RT = real(eltype(z))
+    NLSolver{typeof(alg), iip, typeof(z), typeof(γ), typeof(tmp2), tType, typeof(cache), RT}(
         z,
         tmp,
         tmp2,
@@ -136,7 +136,7 @@ function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence
         cache,
         method,
         nfails,
-        one(T))
+        one(RT))
 end
 
 # caches
