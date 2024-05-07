@@ -61,7 +61,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
 
         # check divergence (not in initial step)
         if iter > 1
-            θ = ndz / ndzprev
+            θ = nlsolver.prev_θ = max(0.3 * nlsolver.prev_θ, ndz / ndzprev)
 
             # When one Newton iteration basically does nothing, it's likely that we
             # are at the precision limit of floating point number. Thus, we just call
@@ -84,13 +84,15 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
                 nlsolver.nfails += 1
                 break
             end
+        else
+            θ = min(one(nlsolver.prev_θ), nlsolver.prev_θ)
         end
 
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        iter > 1 && (η = DiffEqBase.value(θ / (1 - θ)))
-        if (iter == 1 && ndz < 1e-5) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
+        η = DiffEqBase.value(θ / (1 - θ))
+        if (iter == 1 && ndz < 1e-5) || (η >= zero(η) && η * ndz < κ)
             nlsolver.status = Convergence
             nlsolver.nfails = 0
             break

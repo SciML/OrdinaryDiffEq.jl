@@ -88,7 +88,7 @@ mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
     cache::C
     method::MethodType
     nfails::Int
-    prev_η::E
+    prev_θ::E
 end
 
 # default to DIRK
