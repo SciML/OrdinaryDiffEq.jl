@@ -12,6 +12,13 @@ dts5 = 1 .// 2 .^ (3:-1:1)
 dts6 = 1 .// 10 .^ (5:-1:1)
 testTol = 0.2
 
+f = (u, p, t) -> sin(u)
+prob_ode_nonlinear = ODEProblem(
+    ODEFunction(f;
+        analytic = (u0, p, t) -> 2 * acot(exp(-t) *
+                                          cot(0.5))), 1.0,
+    (0.0, 0.5))
+
 @testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
     prob = (ODEProblemLibrary.prob_ode_linear,
         ODEProblemLibrary.prob_ode_2Dlinear)[i]
@@ -46,14 +53,14 @@ testTol = 0.2
     sim3 = test_convergence(dts, prob, RKM())
     @test sim3.𝒪est[:l∞]≈4 atol=0.2
 
-    sim_ps6 = test_convergence(dts2, prob, PSRK4p7q6())
+    sim_ps6 = test_convergence(dts2, prob_ode_nonlinear, PSRK4p7q6())
     @test sim_ps6.𝒪est[:l∞]≈4 atol=testTol
 
-    sim_ps5 = test_convergence(dts2, prob, PSRK3p6q5())
-    @test sim_ps5.𝒪est[:l∞]≈4 atol=testTol
+    sim_ps5 = test_convergence(dts2, prob_ode_nonlinear, PSRK3p6q5())
+    @test sim_ps5.𝒪est[:l∞]≈3 atol=testTol
 
-    sim_ps4 = test_convergence(dts2, prob, PSRK3p5q4())
-    @test sim_ps4.𝒪est[:l∞]≈4 atol=testTol
+    sim_ps4 = test_convergence(dts2, prob_ode_nonlinear, PSRK3p5q4())
+    @test sim_ps4.𝒪est[:l∞]≈3 atol=testTol
 
     sim_ms5 = test_convergence(dts2, prob, MSRK5())
     @test sim_ms5.𝒪est[:l∞]≈5 atol=testTol

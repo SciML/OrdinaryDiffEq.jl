@@ -113,7 +113,7 @@ function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
     RKM(stage_limiter!, step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("4 stage Pseudo-Symplectic Explicit RK method.", "3p5q(4)",
+@doc explicit_rk_docstring("4-stage Pseudo-Symplectic Explicit RK method.", "3p5q(4)",
     references = "@article{Aubry1998,
     author = {A. Aubry and P. Chartier},
     journal = {BIT Numer. Math.},
@@ -135,7 +135,7 @@ function PSRK3p5q4(stage_limiter!, step_limiter! = trivial_limiter!)
     PSRK3p5q4(stage_limiter!, step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("5 stage Pseudo-Symplectic Explicit RK method.", "3p6q(5)",
+@doc explicit_rk_docstring("5-stage Pseudo-Symplectic Explicit RK method.", "3p6q(5)",
     references = "@article{Aubry1998,
     author = {A. Aubry and P. Chartier},
     journal = {BIT Numer. Math.},
@@ -157,7 +157,7 @@ function PSRK3p6q5(stage_limiter!, step_limiter! = trivial_limiter!)
     PSRK3p6q5(stage_limiter!, step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("6 stage Pseudo-Symplectic Explicit RK method.", "4p7q(6)",
+@doc explicit_rk_docstring("6-stage Pseudo-Symplectic Explicit RK method.", "4p7q(6)",
     references = "@article{Aubry1998,
     author = {A. Aubry and P. Chartier},
     journal = {BIT Numer. Math.},
