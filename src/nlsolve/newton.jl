@@ -29,11 +29,10 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, false},
         integrator::DiffEqBase.DEIntegrator)
     @unpack uprev, t, p, dt, opts, f = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
-    @unpack ustep, tstep, k, invγdt = cache
-
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
 
+    @unpack ustep, tstep, k, invγdt = cache
     if DiffEqBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.nf
         integrator.stats.nnonliniter += cache.cache.nsteps
@@ -53,10 +52,11 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
         integrator::DiffEqBase.DEIntegrator)
     @unpack uprev, t, p, dt, opts, f = integrator
     @unpack z, tmp, ztmp, γ, α, iter, cache, method, alg = nlsolver
-    @unpack ustep, tstep, k, invγdt = cache
 
     cache.invγdt = inv(dt * nlsolver.γ)
     cache.tstep = integrator.t + nlsolver.c * dt
+
+    @unpack ustep, tstep, k, invγdt = cache
 
     if DiffEqBase.has_stats(integrator)
         integrator.stats.nf += cache.cache.nf
@@ -83,7 +83,8 @@ end
 
     nlcache = nlsolver.cache.cache
     step!(nlcache)
-    nlsolver.ztmp = z .+ nlcache.u
+    nlsolver.ztmp = nlcache.u
+    #@show z, nlcache.u
     ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -100,7 +101,7 @@ end
 
     nlcache = nlsolver.cache.cache
     step!(nlcache)
-    @.. broadcast=false ztmp = z + nlcache.u
+    @.. broadcast=false ztmp = nlcache.u
     ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -157,8 +158,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     elseif W isa AbstractSciMLOperator
         error("Non-concrete Jacobian not yet supported by out-of-place Newton solve.")
     end
-
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
+    #@show z, dz
     dz = relax(dz, nlsolver, integrator, f)
     if DiffEqBase.has_stats(integrator)
         integrator.stats.nsolve += 1
@@ -352,13 +353,12 @@ function compute_ustep!(ustep, tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP
         ustep = z
     else
-        @.. broadcast=false ustep=tmp + γ * z
+        @.. ustep=tmp + γ * z
     end
     ustep
 end
 
-function _compute_rhs(tmp, γ, α, tstep, invγdt,
-        method::MethodType, p, dt, f, z)
+function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f, z)
     mass_matrix = f.mass_matrix
     ustep = compute_ustep(tmp, γ, z, method)
     if method === COEFFICIENT_MULTISTEP

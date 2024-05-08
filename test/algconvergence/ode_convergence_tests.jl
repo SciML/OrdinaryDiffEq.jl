@@ -131,7 +131,7 @@ end
     @test sim134.𝒪est[:final]≈2 atol=testTol
 
     sim136 = test_convergence(dts, prob, ImplicitMidpoint(nlsolve = NonlinearSolveAlg()))
-    @test_broken sim136.𝒪est[:final]≈2 atol=testTol
+    @test sim136.𝒪est[:final]≈2 atol=testTol
 
     sim13 = test_convergence(dts, prob, Trapezoid())
     @test sim13.𝒪est[:final]≈2 atol=testTol
@@ -143,7 +143,7 @@ end
     @test sim135.𝒪est[:final]≈2 atol=testTol
 
     sim137 = test_convergence(dts, prob, Trapezoid(nlsolve = NonlinearSolveAlg()))
-    @test_broken sim137.𝒪est[:final]≈2 atol=testTol
+    @test sim137.𝒪est[:final]≈2 atol=testTol
 
     sim14 = test_convergence(dts, prob, TRBDF2())
     @test sim14.𝒪est[:final]≈2 atol=testTol
@@ -234,7 +234,7 @@ end
     @test sim23.𝒪est[:final]≈2 atol=testTol
 
     sim24 = test_convergence(dts, prob, MEBDF2(nlsolve = NonlinearSolveAlg()), reltol = 1e-2)
-    @test_broken sim24.𝒪est[:final]≈2 atol=testTol
+    @test sim24.𝒪est[:final]≈2 atol=testTol
 
 
     #FBDF
