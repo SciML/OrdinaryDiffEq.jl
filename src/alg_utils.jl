@@ -76,9 +76,9 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
-isfals(alg::PSRK3p5q4) = false
-isfals(alg::PSRK3p6q5) = false
-isfals(alg::PSRK4p7q6) = false
+isfsal(alg::PSRK3p5q4) = false
+isfsal(alg::PSRK3p6q5) = false
+isfsal(alg::PSRK4p7q6) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
 

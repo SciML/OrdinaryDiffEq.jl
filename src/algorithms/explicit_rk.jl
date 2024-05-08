@@ -130,10 +130,6 @@ Base.@kwdef struct PSRK3p5q4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
 end
-# for backwards compatibility
-function PSRK3p5q4(stage_limiter!, step_limiter! = trivial_limiter!)
-    PSRK3p5q4(stage_limiter!, step_limiter!, False())
-end
 
 @doc explicit_rk_docstring("5-stage Pseudo-Symplectic Explicit RK method.", "3p6q(5)",
     references = "@article{Aubry1998,
@@ -151,10 +147,6 @@ Base.@kwdef struct PSRK3p6q5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-end
-# for backwards compatibility
-function PSRK3p6q5(stage_limiter!, step_limiter! = trivial_limiter!)
-    PSRK3p6q5(stage_limiter!, step_limiter!, False())
 end
 
 @doc explicit_rk_docstring("6-stage Pseudo-Symplectic Explicit RK method.", "4p7q(6)",
@@ -179,10 +171,6 @@ Base.@kwdef struct PSRK4p7q6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffE
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
-end
-# for backwards compatibility
-function PSRK4p7q6(stage_limiter!, step_limiter! = trivial_limiter!)
-    PSRK4p7q6(stage_limiter!, step_limiter!, False())
 end
 
 @doc explicit_rk_docstring("5th order Explicit RK method.", "MSRK5",
