@@ -75,7 +75,7 @@ struct NonlinearSolveAlg{K, C1, C2, A} <: AbstractNLSolverAlgorithm
     alg::A
 end
 
-function NonlinearSolveAlg(alg=NewtonRaphson(); κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+function NonlinearSolveAlg(alg=NewtonRaphson(autodiff=AutoFiniteDiff()); κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true)
     if relax isa Number && !(0 <= relax < 1)
         throw(ArgumentError("The relaxation parameter must be in [0, 1), got `relax = $relax`"))
