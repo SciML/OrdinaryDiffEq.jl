@@ -84,7 +84,6 @@ end
     nlcache = nlsolver.cache.cache
     step!(nlcache)
     nlsolver.ztmp = nlcache.u
-    #@show z, nlcache.u
     ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
@@ -159,7 +158,6 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         error("Non-concrete Jacobian not yet supported by out-of-place Newton solve.")
     end
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
-    #@show z, dz
     dz = relax(dz, nlsolver, integrator, f)
     if DiffEqBase.has_stats(integrator)
         integrator.stats.nsolve += 1
