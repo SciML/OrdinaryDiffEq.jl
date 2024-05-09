@@ -415,18 +415,10 @@ function DiffEqBase.__init(
     differential_vars = prob isa DAEProblem ? prob.differential_vars :
                         get_differential_vars(f, u)
 
-    if _alg isa OrdinaryDiffEqCompositeAlgorithm
-        id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            alg_choice = alg_choice,
-            calculate_error = false, stats = stats)
-    else
-        id = InterpolationData(f, timeseries, ts, ks, dense, cache, differential_vars)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            calculate_error = false, stats = stats)
-    end
+    id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
+    sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
+        dense = dense, k = ks, interp = id,
+        calculate_error = false, stats = stats)
 
     if recompile_flag == true
         FType = typeof(f)

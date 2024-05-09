@@ -2935,7 +2935,7 @@ Scientific Computing, 18 (1), pp. 1-22.
   differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 
 #### ROS2PR, ROS2S, ROS3PR, Scholz4_7
--Rang, Joachim (2014): The Prothero and Robinson example: 
+-Rang, Joachim (2014): The Prothero and Robinson example:
  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
  https://doi.org/10.24355/dbbs.084-201408121139-0
 
@@ -2980,16 +2980,16 @@ University of Geneva, Switzerland.
  https://doi.org/10.1016/j.cam.2015.03.010
 
 #### ROS3PRL, ROS3PRL2
--Rang, Joachim (2014): The Prothero and Robinson example: 
+-Rang, Joachim (2014): The Prothero and Robinson example:
  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
  https://doi.org/10.24355/dbbs.084-201408121139-0
 
 #### Rodas5P
-- Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
+- Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package.
  In: BIT Numerical Mathematics, 63(2), 2023
 
  #### Rodas23W, Rodas3P, Rodas5Pe, Rodas5Pr
-- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications - 
+- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
  Preprint 2024
  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 
@@ -3186,9 +3186,6 @@ end
 struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
-    function CompositeAlgorithm(algs, choice_function)
-        new{typeof(algs), typeof(choice_function)}(algs, choice_function)
-    end
 end
 
 TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
