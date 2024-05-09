@@ -40,7 +40,7 @@ function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoU
         ::Val{V}) where {V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
-    CompositeCaches(caches, alg.choice_function, 1)
+    CompositeCache(caches, alg.choice_function, 1)
 end
 
 function alg_cache(alg::CompositeAlgorithm{Tuple{A1, A2, A3, A4, A5, A6}}, u,
