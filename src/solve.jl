@@ -417,7 +417,7 @@ function DiffEqBase.__init(
 
     id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
     sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-        dense = dense, k = ks, interp = id,
+        dense = dense, k = ks, interp = id, alg_choice = alg_choice,
         calculate_error = false, stats = stats)
 
     if recompile_flag == true
