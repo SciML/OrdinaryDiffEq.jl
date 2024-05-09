@@ -6,7 +6,7 @@ function AutoSwitch(nonstiffalg, stiffalg, algtrait = nothing;
         nonstifftol = 9 // 10, stifftol = 9 // 10, dtfac = 2,
         stiffalgfirst = false,
         switch_max = 5)
-    AutoSwitch(nonstiffalg, stiffalg, maxstiffstep, maxnonstiffstep,
+    AutoSwitch(algtrait, nonstiffalg, stiffalg, maxstiffstep, maxnonstiffstep,
         promote(nonstifftol, stifftol)..., dtfac, stiffalgfirst, switch_max)
 end
 
