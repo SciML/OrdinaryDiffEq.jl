@@ -293,7 +293,7 @@ end
 
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
     algs = map(alg -> DiffEqBase.prepare_alg(alg, u0, p, prob), alg.algs)
-    CompositeAlgorithm(algs, alg.choice_function,)
+    CompositeAlgorithm(algs, alg.choice_function)
 end
 
 has_autodiff(alg::OrdinaryDiffEqAlgorithm) = false
