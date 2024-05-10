@@ -20,14 +20,16 @@ NoIndexStyle(::Val{N}) where {N} = NoIndexStyle{N}()
 NoIndexStyle{M}(::Val{N}) where {N, M} = NoIndexStyle{N}()
 Base.BroadcastStyle(::Type{<:NoIndexArray{T, N}}) where {T, N} = NoIndexStyle{N}()
 function Base.similar(bc::Base.Broadcast.Broadcasted{NoIndexStyle{N}},
-    ::Type{ElType}) where {N, ElType}
+        ::Type{ElType}) where {N, ElType}
     NoIndexArray(similar(Array{ElType, N}, axes(bc)))
 end
 Base.Broadcast._broadcast_getindex(x::NoIndexArray, i) = x.x[i]
 Base.Broadcast.extrude(x::NoIndexArray) = x
+using ArrayInterface
+ArrayInterface.fast_scalar_indexing(::Type{<:NoIndexArray}) = false
 
 @inline function Base.copyto!(dest::NoIndexArray,
-    bc::Base.Broadcast.Broadcasted{<:NoIndexStyle})
+        bc::Base.Broadcast.Broadcasted{<:NoIndexStyle})
     axes(dest) == axes(bc) || throwdm(axes(dest), axes(bc))
     bc′ = Base.Broadcast.preprocess(dest, bc)
     dest′ = dest.x

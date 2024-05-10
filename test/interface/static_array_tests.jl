@@ -2,11 +2,11 @@ using StaticArrays, Test
 using OrdinaryDiffEq
 using RecursiveArrayTools
 
-u0 = [fill(2, MVector{2, Float64}), ones(MVector{2, Float64})]
+u0 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
 g(u, p, t) = SA[u[1] + u[2], u[1]]
 f = (du, u, p, t) -> begin
     for i in 1:2
-        du[i] = g(u[i], p, t)
+        du[:, i] = g(u[:, i], p, t)
     end
 end
 ode = ODEProblem(f, u0, (0.0, 1.0))
@@ -17,7 +17,7 @@ sol = solve(ode, Tsit5())
 sol = solve(ode, Vern9())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 
-u0 = [fill(2, SVector{2, Float64}), ones(SVector{2, Float64})]
+u0 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
 ode = ODEProblem(f, u0, (0.0, 1.0))
 sol = solve(ode, Euler(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
@@ -269,5 +269,5 @@ g2(resid, du, u, p, t) = resid .= du .^ 2 - conj.(u)
 prob = DAEProblem(g2, Array(du0), Array(u0), (0.0, 10.0))
 sol2 = solve(prob, DFBDF(autodiff = false), reltol = 1e-8, abstol = 1e-8)
 
-@test all(iszero, sol1[1] - sol2[1])
-@test all(abs.(sol1[end] .- sol2[end]) .< 1e-6)
+@test all(iszero, sol1[:, 1] - sol2[:, 1])
+@test all(abs.(sol1[:, end] .- sol2[:, end]) .< 1e-6)

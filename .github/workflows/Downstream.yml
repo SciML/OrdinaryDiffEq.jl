@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: [1,1.6]
+        julia-version: [1]
         os: [ubuntu-latest]
         package:
           - {user: SciML, repo: DelayDiffEq.jl, group: Interface}
@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
@@ -64,6 +64,8 @@ jobs:
             exit(0)  # Exit immediately, as a success
           end
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: lcov.info
+          fail_ci_if_error: true

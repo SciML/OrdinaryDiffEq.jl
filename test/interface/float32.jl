@@ -10,7 +10,8 @@ tspan = (zero(NF), NF(1e3)) #integrate from t=0 to t = 1000
 
 ode_prob = ODEProblem(some_arbitrary_function!, u, tspan, params)
 
-for alg in [Euler(), Midpoint(), Heun(), Ralston(), RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
+for alg in [
+    Euler(), Midpoint(), Heun(), Ralston(), RK4(), SSPRK104(), SSPRK22(), SSPRK33(),
     SSPRK43(), SSPRK432(), BS3(), BS5(), DP5(), DP8(), Feagin10(), Feagin12(),
     Feagin14(), TanYam7(), Tsit5(), TsitPap8(), Vern6(), Vern7(), Vern8(), Vern9()]
     @test ode_solution = solve(ode_prob, alg, dt = 1.0f-1).retcode === ReturnCode.Success

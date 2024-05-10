@@ -19,7 +19,8 @@ const CACHE_TEST_ALGS = [Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK
 
 tspan = (0.0, 1.0)
 
-for (ff_time_derivative, u0) in ((ODEFunction(time_derivative,
+for (ff_time_derivative, u0) in (
+    (ODEFunction(time_derivative,
             analytic = time_derivative_analytic), [1.0]),
     (ODEFunction(time_derivative_static,
             analytic = time_derivative_analytic),
@@ -94,7 +95,7 @@ for (ff_time_derivative, u0) in ((ODEFunction(time_derivative,
     for alg in CACHE_TEST_ALGS
         @show alg
         sol = solve(prob, alg, dt = 1 / 10)
-        if !(typeof(alg) <: Euler)
+        if !(alg isa Euler)
             @test sol.errors[:final] < 4e-14
         end
     end

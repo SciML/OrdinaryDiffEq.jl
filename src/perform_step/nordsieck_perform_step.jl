@@ -14,7 +14,7 @@ function initialize!(integrator, cache::AN5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, differential_vars = integrator
     @unpack z, l, m, c_LTE, dts, tsit5tab = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified
@@ -28,11 +28,11 @@ end
         z[1] = integrator.uprev
         z[2] = integrator.k[1] * dt
         z[3] = ode_interpolant(t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
-            Val{2}) * dt^2 / 2
+            Val{2}, differential_vars) * dt^2 / 2
         z[4] = ode_interpolant(t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
-            Val{3}) * dt^3 / 6
+            Val{3}, differential_vars) * dt^3 / 6
         z[5] = ode_interpolant(t, dt, nothing, nothing, integrator.k, tsit5tab, nothing,
-            Val{4}) * dt^4 / 24
+            Val{4}, differential_vars) * dt^4 / 24
         z[6] = zero(cache.z[6])
         fill!(dts, dt)
         perform_predict!(cache)
@@ -64,7 +64,8 @@ end
         ################################### Error estimation
 
         if integrator.opts.adaptive
-            atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol,
+            atmp = calculate_residuals(
+                cache.Δ, uprev, integrator.u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm,
                 t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
@@ -105,7 +106,7 @@ function initialize!(integrator, cache::AN5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, uprev2 = integrator
+    @unpack t, dt, uprev, u, f, p, uprev2, differential_vars = integrator
     @unpack z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified
@@ -120,11 +121,11 @@ end
         @.. broadcast=false z[1]=integrator.uprev
         @.. broadcast=false z[2]=integrator.k[1] * dt
         ode_interpolant!(z[3], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
-            Val{2})
+            Val{2}, differential_vars)
         ode_interpolant!(z[4], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
-            Val{3})
+            Val{3}, differential_vars)
         ode_interpolant!(z[5], t, dt, nothing, nothing, integrator.k, tsit5cache, nothing,
-            Val{4})
+            Val{4}, differential_vars)
         @.. broadcast=false z[3]=z[3] * dt^2 / 2
         @.. broadcast=false z[4]=z[4] * dt^3 / 6
         @.. broadcast=false z[5]=z[5] * dt^4 / 24
@@ -160,7 +161,8 @@ end
         ################################### Error estimation
 
         if integrator.opts.adaptive
-            calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
+            calculate_residuals!(
+                atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t) * cache.c_LTE
             if integrator.EEst > one(integrator.EEst)
@@ -198,7 +200,7 @@ function initialize!(integrator, cache::JVODEConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::JVODEConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack t, dt, uprev, u, f, p, differential_vars = integrator
     @unpack z, l, m, c_LTE, dts, tsit5tab = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified || integrator.iter == 1
@@ -265,7 +267,7 @@ function initialize!(integrator, cache::JVODECache)
 end
 
 @muladd function perform_step!(integrator, cache::JVODECache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p, uprev2 = integrator
+    @unpack t, dt, uprev, u, f, p, uprev2, differential_vars = integrator
     @unpack z, l, m, c_LTE, dts, tmp, ratetmp, atmp, tsit5cache = cache
     # handle callbacks, rewind back to order one.
     if integrator.u_modified || integrator.iter == 1

@@ -3,14 +3,14 @@ using OrdinaryDiffEq, DiffEqDevTools, Test
 function nonauto1(u, p, t)
     x, _ = u
     [t * x
-        0]
+     0]
 end
 
 function nonauto2(u, p, t)
     _, y = u
     [
         y,
-        t * y,
+        t * y
     ]
 end
 
@@ -19,20 +19,23 @@ function analytic(u0, p, t)
     et = exp(t^2 / 2)
     [
         et * (x0 + t * y0),
-        et * y0,
+        et * y0
     ]
 end
 
 u0 = [1.1, 2.2]
 tspan = (0.0, 1.0)
-prob1 = ODEProblem(ODEFunction{true}((du, u, p, t) -> du .= nonauto1(u, p, t) .+
-                                                            nonauto2(u, p, t),
+prob1 = ODEProblem(
+    ODEFunction{true}((du, u, p, t) -> du .= nonauto1(u, p, t) .+
+                                             nonauto2(u, p, t),
         analytic = analytic),
     u0, tspan)
-prob2 = ODEProblem(ODEFunction{false}((u, p, t) -> nonauto1(u, p, t) .+ nonauto2(u, p, t),
+prob2 = ODEProblem(
+    ODEFunction{false}((u, p, t) -> nonauto1(u, p, t) .+ nonauto2(u, p, t),
         analytic = analytic),
     u0, tspan)
-prob3 = SplitODEProblem(SplitFunction{true}((du, u, p, t) -> du .= nonauto1(u, p, t),
+prob3 = SplitODEProblem(
+    SplitFunction{true}((du, u, p, t) -> du .= nonauto1(u, p, t),
         (du, u, p, t) -> du .= nonauto2(u, p, t),
         analytic = analytic),
     u0, tspan)

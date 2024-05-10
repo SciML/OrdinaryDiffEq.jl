@@ -11,6 +11,18 @@ function activate_downstream_env()
     Pkg.instantiate()
 end
 
+function activate_gpu_env()
+    Pkg.activate("gpu")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_odeinterface_env()
+    Pkg.activate("odeinterface")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -32,12 +44,14 @@ end
         @time @safetestset "Complex Tests" include("interface/complex_tests.jl")
         @time @safetestset "Ndim Complex Tests" include("interface/ode_ndim_complex_tests.jl")
         @time @safetestset "Number Type Tests" include("interface/ode_numbertype_tests.jl")
+        @time @safetestset "Interpolation Output Type Tests" include("interface/interpolation_output_types.jl")
         @time @safetestset "Stiffness Detection Tests" include("interface/stiffness_detection_test.jl")
         @time @safetestset "Composite Interpolation Tests" include("interface/composite_interpolation.jl")
         @time @safetestset "Export tests" include("interface/export_tests.jl")
         @time @safetestset "Type Handling Tests" include("interface/type_handling.jl")
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
+        @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
@@ -70,7 +84,9 @@ end
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
+        @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
+        @time @safetestset "DAE AD Tests" include("interface/dae_ad_tests.jl")
         @time @safetestset "Newton Tests" include("interface/newton_tests.jl")
         @time @safetestset "DAE Initialize Integration" include("interface/dae_initialize_integration.jl")
     end
@@ -81,7 +97,8 @@ end
         @time @safetestset "Events Tests" include("integrators/ode_event_tests.jl")
         @time @safetestset "Alg Events Tests" include("integrators/alg_events_tests.jl")
         @time @safetestset "Discrete Callback Dual Tests" include("integrators/discrete_callback_dual_test.jl")
-        @time VERSION >= v"1.9" && @safetestset "Callback Allocation Tests" include("integrators/callback_allocation_tests.jl")
+        @time VERSION >= v"1.9" &&
+              @safetestset "Callback Allocation Tests" include("integrators/callback_allocation_tests.jl")
         @time @safetestset "Iterator Tests" include("integrators/iterator_tests.jl")
         @time @safetestset "Integrator Interface Tests" include("integrators/integrator_interface_tests.jl")
         @time @safetestset "Error Check Tests" include("integrators/check_error.jl")
@@ -143,17 +160,19 @@ end
         @time @safetestset "Feagin Tests" include("algconvergence/ode_feagin_tests.jl")
         @time @safetestset "Extrapolation Tests" include("algconvergence/ode_extrapolation_tests.jl")
         @time @safetestset "Symplectic Tests" include("algconvergence/symplectic_tests.jl")
+        @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
-        @time VERSION >= v"1.9" && @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
+        @time VERSION >= v"1.9" &&
+              @safetestset "Autodiff Events Tests" include("downstream/autodiff_events.jl")
         @time @safetestset "Measurements Tests" include("downstream/measurements.jl")
     end
 
     if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
-        activate_downstream_env()
+        activate_odeinterface_env()
         @time @safetestset "Init dt vs dorpri tests" include("odeinterface/init_dt_vs_dopri_tests.jl")
         @time @safetestset "ODEInterface Regression Tests" include("odeinterface/odeinterface_regression.jl")
     end
@@ -163,7 +182,7 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "GPU"
-        activate_downstream_env()
+        activate_gpu_env()
         @time @safetestset "Simple GPU" begin
             import OrdinaryDiffEq
             include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..",

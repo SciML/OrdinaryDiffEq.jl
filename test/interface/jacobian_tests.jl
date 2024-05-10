@@ -17,7 +17,8 @@ end
 p = (1.0, 2.0, 3.0)
 u0 = [1.0]
 tspan = (0.0, 10.0)
-prob = ODEProblem(ODEFunction(d_alembert,
+prob = ODEProblem(
+    ODEFunction(d_alembert,
         jac = d_alembert_jac,
         analytic = d_alembert_analytic),
     u0, tspan, p)
@@ -54,8 +55,8 @@ function lotka(du, u, p, t)
 end
 
 prob = ODEProblem(lotka, [1.0, 1.0], (0.0, 1.0), [1.5, 1.0, 3.0, 1.0])
-de = ModelingToolkit.modelingtoolkitize(prob)
-prob2 = remake(prob, f = ODEFunction(de; jac = true))
+de = ModelingToolkit.modelingtoolkitize(prob) |> complete
+prob2 = ODEProblem(de; jac = true)
 
 sol = solve(prob, TRBDF2())
 

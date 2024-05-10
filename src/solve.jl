@@ -1,76 +1,78 @@
-function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,
-        DiffEqBase.AbstractDAEProblem},
-    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
-    kwargs...)
+function DiffEqBase.__solve(
+        prob::Union{DiffEqBase.AbstractODEProblem,
+            DiffEqBase.AbstractDAEProblem},
+        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, args...;
+        kwargs...)
     integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
     solve!(integrator)
     integrator.sol
 end
 
-function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
-        DiffEqBase.AbstractDAEProblem},
-    alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
-    timeseries_init = (),
-    ts_init = (),
-    ks_init = (),
-    recompile::Type{Val{recompile_flag}} = Val{true};
-    saveat = (),
-    tstops = (),
-    d_discontinuities = (),
-    save_idxs = nothing,
-    save_everystep = isempty(saveat),
-    save_on = true,
-    save_start = save_everystep || isempty(saveat) ||
-                     saveat isa Number || prob.tspan[1] in saveat,
-    save_end = nothing,
-    callback = nothing,
-    dense = save_everystep &&
-                !(typeof(alg) <: Union{DAEAlgorithm, FunctionMap}) &&
-                isempty(saveat),
-    calck = (callback !== nothing && callback !== CallbackSet()) ||
-                (dense) || !isempty(saveat), # and no dense output
-    dt = alg isa FunctionMap && isempty(tstops) ?
-         eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-    dtmin = nothing,
-    dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
-    force_dtmin = false,
-    adaptive = anyadaptive(alg),
-    gamma = gamma_default(alg),
-    abstol = nothing,
-    reltol = nothing,
-    qmin = qmin_default(alg),
-    qmax = qmax_default(alg),
-    qsteady_min = qsteady_min_default(alg),
-    qsteady_max = qsteady_max_default(alg),
-    beta1 = nothing,
-    beta2 = nothing,
-    qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
-    controller = nothing,
-    fullnormalize = true,
-    failfactor = 2,
-    maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
-    internalnorm = ODE_DEFAULT_NORM,
-    internalopnorm = LinearAlgebra.opnorm,
-    isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
-    unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-    verbose = true,
-    timeseries_errors = true,
-    dense_errors = false,
-    advance_to_tstop = false,
-    stop_at_next_tstop = false,
-    initialize_save = true,
-    progress = false,
-    progress_steps = 1000,
-    progress_name = "ODE",
-    progress_message = ODE_DEFAULT_PROG_MESSAGE,
-    progress_id = gensym("OrdinaryDiffEq"),
-    userdata = nothing,
-    allow_extrapolation = alg_extrapolates(alg),
-    initialize_integrator = true,
-    alias_u0 = false,
-    alias_du0 = false,
-    initializealg = DefaultInit(),
-    kwargs...) where {recompile_flag}
+function DiffEqBase.__init(
+        prob::Union{DiffEqBase.AbstractODEProblem,
+            DiffEqBase.AbstractDAEProblem},
+        alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
+        timeseries_init = (),
+        ts_init = (),
+        ks_init = (),
+        recompile::Type{Val{recompile_flag}} = Val{true};
+        saveat = (),
+        tstops = (),
+        d_discontinuities = (),
+        save_idxs = nothing,
+        save_everystep = isempty(saveat),
+        save_on = true,
+        save_start = save_everystep || isempty(saveat) ||
+                         saveat isa Number || prob.tspan[1] in saveat,
+        save_end = nothing,
+        callback = nothing,
+        dense = save_everystep &&
+                    !(alg isa Union{DAEAlgorithm, FunctionMap}) &&
+                    isempty(saveat),
+        calck = (callback !== nothing && callback !== CallbackSet()) ||
+                    (dense) || !isempty(saveat), # and no dense output
+        dt = alg isa FunctionMap && isempty(tstops) ?
+             eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+        dtmin = eltype(prob.tspan)(0),
+        dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
+        force_dtmin = false,
+        adaptive = anyadaptive(alg),
+        gamma = gamma_default(alg),
+        abstol = nothing,
+        reltol = nothing,
+        qmin = qmin_default(alg),
+        qmax = qmax_default(alg),
+        qsteady_min = qsteady_min_default(alg),
+        qsteady_max = qsteady_max_default(alg),
+        beta1 = nothing,
+        beta2 = nothing,
+        qoldinit = anyadaptive(alg) ? 1 // 10^4 : 0,
+        controller = nothing,
+        fullnormalize = true,
+        failfactor = 2,
+        maxiters = anyadaptive(alg) ? 1000000 : typemax(Int),
+        internalnorm = ODE_DEFAULT_NORM,
+        internalopnorm = LinearAlgebra.opnorm,
+        isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
+        unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
+        verbose = true,
+        timeseries_errors = true,
+        dense_errors = false,
+        advance_to_tstop = false,
+        stop_at_next_tstop = false,
+        initialize_save = true,
+        progress = false,
+        progress_steps = 1000,
+        progress_name = "ODE",
+        progress_message = ODE_DEFAULT_PROG_MESSAGE,
+        progress_id = :OrdinaryDiffEq,
+        userdata = nothing,
+        allow_extrapolation = alg_extrapolates(alg),
+        initialize_integrator = true,
+        alias_u0 = false,
+        alias_du0 = false,
+        initializealg = DefaultInit(),
+        kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
     end
@@ -85,15 +87,26 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         end
     end
 
-    if typeof(prob.f) <: DynamicalODEFunction && typeof(prob.f.mass_matrix) <: Tuple
+    if prob.f isa DynamicalODEFunction && prob.f.mass_matrix isa Tuple
         if any(mm != I for mm in prob.f.mass_matrix)
-            error("This solver is not able to use mass matrices.")
+            error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
         end
-    elseif !(typeof(prob) <: DiscreteProblem) &&
-           !(typeof(prob) <: DiffEqBase.AbstractDAEProblem) &&
+    elseif !(prob isa DiscreteProblem) &&
+           !(prob isa DiffEqBase.AbstractDAEProblem) &&
            !is_mass_matrix_alg(alg) &&
            prob.f.mass_matrix != I
-        error("This solver is not able to use mass matrices.")
+        error("This solver is not able to use mass matrices. For compatible solvers see https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/")
+    end
+
+    if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
+       # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
+       !(alg isa Union{Rosenbrock23, Rosenbrock32}) &&
+       prob.f.mass_matrix isa AbstractMatrix &&
+       all(isequal(0), prob.f.mass_matrix)
+        # technically this should also warn for zero operators but those are hard to check for
+        if (dense || !isempty(saveat)) && verbose
+            @warn("Rosenbrock methods on equations without differential states do not bound the error on interpolations.")
+        end
     end
 
     if !isempty(saveat) && dense
@@ -108,17 +121,17 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     t = tspan[1]
 
-    if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) &&
-          !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) &&
-          !(typeof(alg) <: DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
+    if (((!(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
+          !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
+          !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
         dt == tType(0) && isempty(tstops)) &&
-       !(typeof(alg) <: Union{FunctionMap, LinearExponential})
+       !(alg isa Union{FunctionMap, LinearExponential})
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
 
-    isdae = alg isa DAEAlgorithm || (!(typeof(prob) <: DiscreteProblem) &&
+    isdae = alg isa DAEAlgorithm || (!(prob isa DiscreteProblem) &&
              prob.f.mass_matrix != I &&
-             !(typeof(prob.f.mass_matrix) <: Tuple) &&
+             !(prob.f.mass_matrix isa Tuple) &&
              ArrayInterface.issingular(prob.f.mass_matrix))
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
@@ -167,7 +180,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if typeof(_alg) <: FunctionMap
+    if _alg isa FunctionMap
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -181,14 +194,14 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         abstol_internal = real.(abstol)
     end
 
-    if typeof(_alg) <: FunctionMap
+    if _alg isa FunctionMap
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = real(convert(uBottomEltype,
-                oneunit(uBottomEltype) * 1 // 10^3))
+            reltol_internal = ForwardDiff.value(real(convert(uBottomEltype,
+                oneunit(uBottomEltype) * 1 // 10^3)))
         else
-            reltol_internal = real.(oneunit.(u) .* 1 // 10^3)
+            reltol_internal = ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^3))
         end
     else
         reltol_internal = real.(reltol)
@@ -197,7 +210,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
     # dtmin is all abs => does not care about sign already.
 
-    if !isdae && isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number &&
+    if !isdae && isinplace(prob) && u isa AbstractArray && eltype(u) <: Number &&
        uBottomEltypeNoUnits == uBottomEltype && tType == tTypeNoUnits # Could this be more efficient for other arrays?
         rate_prototype = recursivecopy(u)
     elseif prob isa DAEProblem
@@ -262,7 +275,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
 
     ts = ts_init === () ? tType[] : convert(Vector{tType}, ts_init)
     ks = ks_init === () ? ksEltype[] : convert(Vector{ksEltype}, ks_init)
-    alg_choice = typeof(_alg) <: CompositeAlgorithm ? Int[] : ()
+    alg_choice = _alg isa CompositeAlgorithm ? Int[] : nothing
 
     if (!adaptive || !isadaptive(_alg)) && save_everystep && tspan[2] - tspan[1] != Inf
         if dt == 0
@@ -271,7 +284,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
             # For fixed dt, the only time dtmin makes sense is if it's smaller than eps().
             # Therefore user specified dtmin doesn't matter, but we need to ensure dt>=eps()
             # to prevent infinite loops.
-            abs(dt) < DiffEqBase.prob2dtmin(prob) &&
+            abs(dt) < dtmin &&
                 throw(ArgumentError("Supplied dt is smaller than dtmin"))
             steps = ceil(Int, internalnorm((tspan[2] - tspan[1]) / dt, tspan[1]))
         end
@@ -283,9 +296,16 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         sizehint!(ts, 50)
         sizehint!(ks, 50)
     elseif !isempty(saveat_internal)
-        sizehint!(timeseries, length(saveat_internal) + 1)
-        sizehint!(ts, length(saveat_internal) + 1)
-        sizehint!(ks, length(saveat_internal) + 1)
+        savelength = length(saveat_internal) + 1
+        if save_start == false
+            savelength -= 1
+        end
+        if save_end == false && prob.tspan[2] in saveat_internal.valtree
+            savelength -= 1
+        end
+        sizehint!(timeseries, savelength)
+        sizehint!(ts, savelength)
+        sizehint!(ks, savelength)
     else
         sizehint!(timeseries, 2)
         sizehint!(ts, 2)
@@ -341,8 +361,6 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
     end
 
-    dtmin === nothing && (dtmin = DiffEqBase.prob2dtmin(prob))
-
     save_end_user = save_end
     save_end = save_end === nothing ?
                save_everystep || isempty(saveat) || saveat isa Number ||
@@ -393,20 +411,16 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         advance_to_tstop,
         stop_at_next_tstop)
 
-    stats = DiffEqBase.Stats(0)
+    stats = SciMLBase.DEStats(0)
+    differential_vars = prob isa DAEProblem ? prob.differential_vars :
+                        get_differential_vars(f, u)
 
-    if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
-        id = CompositeInterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            alg_choice = alg_choice,
-            calculate_error = false, stats = stats)
-    else
-        id = InterpolationData(f, timeseries, ts, ks, dense, cache)
-        sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-            dense = dense, k = ks, interp = id,
-            calculate_error = false, stats = stats)
-    end
+    id = InterpolationData(
+        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
+    sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
+        dense = dense, k = ks, interp = id,
+        alg_choice = alg_choice,
+        calculate_error = false, stats = stats)
 
     if recompile_flag == true
         FType = typeof(f)
@@ -442,7 +456,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
-    last_event_error = typeof(_alg) <: FunctionMap ? false : zero(uBottomEltypeNoUnits)
+    last_event_error = _alg isa FunctionMap ? false : zero(uBottomEltypeNoUnits)
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0
@@ -459,7 +473,8 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         FType, cacheType,
         typeof(opts), fsal_typeof(_alg, rate_prototype),
         typeof(last_event_error), typeof(callback_cache),
-        typeof(initializealg)}(sol, u, du, k, t, tType(dt), f, p,
+        typeof(initializealg), typeof(differential_vars)}(
+        sol, u, du, k, t, tType(dt), f, p,
         uprev, uprev2, duprev, tprev,
         _alg, dtcache, dtchangeable,
         dtpropose, tdir, eigen_est, EEst,
@@ -475,11 +490,12 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         last_event_error, accept_step,
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
-        opts, stats, initializealg)
+        opts, stats, initializealg, differential_vars)
 
     if initialize_integrator
-        if isdae
+        if isdae || SciMLBase.has_initializeprob(prob.f)
             DiffEqBase.initialize_dae!(integrator)
+            update_uprev!(integrator)
         end
 
         if save_start
@@ -501,7 +517,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,
         initialize_callbacks!(integrator, initialize_save)
         initialize!(integrator, integrator.cache)
 
-        if typeof(_alg) <: OrdinaryDiffEqCompositeAlgorithm
+        if _alg isa OrdinaryDiffEqCompositeAlgorithm
             # in case user mixes adaptive and non-adaptive algorithms
             ensure_behaving_adaptivity!(integrator, integrator.cache)
 
@@ -577,21 +593,15 @@ end
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    if isempty(d_discontinuities) && isempty(tstops) # TODO: Specialize more
-        push!(tstops_internal, tdir_tf)
-    else
-        for t in tstops
-            tdir_t = tdir * t
-            tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
-        end
-
-        for t in d_discontinuities
-            tdir_t = tdir * t
-            tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
-        end
-
-        push!(tstops_internal, tdir_tf)
+    for t in tstops
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
     end
+    for t in d_discontinuities
+        tdir_t = tdir * t
+        tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+    end
+    push!(tstops_internal, tdir_tf)
 
     return tstops_internal
 end
@@ -605,7 +615,7 @@ function initialize_saveat(::Type{T}, saveat, tspan) where {T}
     tdir_t0 = tdir * t0
     tdir_tf = tdir * tf
 
-    if typeof(saveat) <: Number
+    if saveat isa Number
         directional_saveat = tdir * abs(saveat)
         for t in (t0 + directional_saveat):directional_saveat:tf
             push!(saveat_internal, tdir * t)

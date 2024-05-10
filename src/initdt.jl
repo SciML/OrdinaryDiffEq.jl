@@ -1,7 +1,7 @@
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-    prob::DiffEqBase.AbstractODEProblem{uType, tType, true
-    },
-    integrator) where {tType, uType}
+        prob::DiffEqBase.AbstractODEProblem{uType, tType, true
+        },
+        integrator) where {tType, uType}
     _tType = eltype(tType)
     f = prob.f
     p = integrator.p
@@ -15,7 +15,7 @@
         return tdir * max(smalldt, dtmin)
     end
 
-    if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
+    if eltype(u0) <: Number && !(integrator.alg isa CompositeAlgorithm)
         cache = get_tmp_cache(integrator)
         sk = first(cache)
         if u0 isa Array && abstol isa Number && reltol isa Number
@@ -37,18 +37,18 @@
     end
 
     if get_current_isfsal(integrator.alg, integrator.cache) &&
-       typeof(integrator) <: ODEIntegrator
+       integrator isa ODEIntegrator
         # Right now DelayDiffEq has issues with fsallast not being initialized
         f₀ = integrator.fsallast
         f(f₀, u0, p, t)
     else
         # TODO: use more caches
         if u0 isa Array && eltype(u0) isa Number
-            T = eltype(first(u0) / t)
+            T = eltype(first(u0) / oneunit_tType)
             f₀ = similar(u0, T)
             fill!(f₀, zero(T))
         else
-            f₀ = zero.(u0 ./ t)
+            f₀ = zero.(u0 ./ oneunit_tType)
         end
         f(f₀, u0, p, t)
     end
@@ -103,7 +103,7 @@
     still works for matrix-free definitions of the mass matrix.
     =#
 
-    if prob.f.mass_matrix != I && (!(typeof(prob.f) <: DynamicalODEFunction) ||
+    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
         any(mm != I for mm in prob.f.mass_matrix))
         ftmp = zero(f₀)
         try
@@ -164,7 +164,7 @@
     f₁ = zero(f₀)
     f(f₁, u₁, p, t + dt₀_tdir)
 
-    if prob.f.mass_matrix != I && (!(typeof(prob.f) <: DynamicalODEFunction) ||
+    if prob.f.mass_matrix != I && (!(prob.f isa DynamicalODEFunction) ||
         any(mm != I for mm in prob.f.mass_matrix))
         integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
         copyto!(f₁, ftmp)
@@ -226,9 +226,9 @@ function Base.showerror(io::IO, e::TypeNotConstantError)
 end
 
 @muladd function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-    prob::DiffEqBase.AbstractODEProblem{uType, tType,
-        false},
-    integrator) where {uType, tType}
+        prob::DiffEqBase.AbstractODEProblem{uType, tType,
+            false},
+        integrator) where {uType, tType}
     _tType = eltype(tType)
     f = prob.f
     p = prob.p
@@ -250,9 +250,9 @@ end
         @warn("First function call produced NaNs. Exiting. Double check that none of the initial conditions, parameters, or timespan values are NaN.")
     end
 
-    if Base.promote_op(/, typeof(u0), typeof(oneunit(t))) !== typeof(f₀)
-        throw(TypeNotConstantError(Base.promote_op(/, typeof(u0), typeof(oneunit(t))),
-            typeof(f₀)))
+    inferredtype = Base.promote_op(/, typeof(u0), typeof(oneunit(t)))
+    if !(f₀ isa inferredtype)
+        throw(TypeNotConstantError(inferredtype, typeof(f₀)))
     end
 
     d₁ = internalnorm(f₀ ./ sk .* oneunit_tType, t)
@@ -288,9 +288,9 @@ end
 end
 
 @inline function ode_determine_initdt(u0, t, tdir, dtmax, abstol, reltol, internalnorm,
-    prob::DiffEqBase.AbstractDAEProblem{duType, uType,
-        tType},
-    integrator) where {duType, uType, tType}
+        prob::DiffEqBase.AbstractDAEProblem{duType, uType,
+            tType},
+        integrator) where {duType, uType, tType}
     _tType = eltype(tType)
     tspan = prob.tspan
     init_dt = abs(tspan[2] - tspan[1])

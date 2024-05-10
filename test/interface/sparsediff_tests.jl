@@ -62,7 +62,7 @@ for f in [f_oop, f_ip]
                             jac_prototype = jac_sp),
                         ODEFunction(f, jac_prototype = jac_sp),
                         ODEFunction(f, colorvec = colors,
-                            sparsity = jac_sp),
+                            sparsity = jac_sp)
                     ]))
                     sol = solve(prob, Solver(autodiff = ad), reltol = tol, abstol = tol)
                     @test sol.retcode == ReturnCode.Success

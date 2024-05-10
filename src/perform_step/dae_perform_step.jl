@@ -14,7 +14,7 @@ function initialize!(integrator, cache::DImplicitEulerCache)
 end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerConstantCache,
-    repeat_step = false)
+        repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack nlsolver = cache
 
@@ -82,8 +82,9 @@ end
         c = 7 / 12 # default correction factor in SPICE (LTE overestimated by DD)
         r = c * dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-        @.. broadcast=false tmp=r * integrator.opts.internalnorm((u - uprev) / dt1 -
-                                                             (uprev - uprev2) / dt2, t)
+        @.. broadcast=false tmp=r * integrator.opts.internalnorm(
+            (u - uprev) / dt1 -
+            (uprev - uprev2) / dt2, t)
         calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -234,7 +235,7 @@ function initialize!(integrator, cache::DFBDFConstantCache)
 end
 
 function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
-    repeat_step = false) where {max_order}
+        repeat_step = false) where {max_order}
     @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, ts_tmp, iters_from_event, nconsteps = cache
     @unpack t, dt, u, f, p, uprev = integrator
 
@@ -264,7 +265,8 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
         end
     else
         for i in 1:(k - 1)
-            @.. broadcast=false @views u_corrector[:, i] = $calc_Lagrange_interp(k, weights,
+            @.. broadcast=false @views u_corrector[:, i] = $calc_Lagrange_interp(
+                k, weights,
                 equi_ts[i],
                 ts,
                 u_history,
@@ -315,7 +317,8 @@ function perform_step!(integrator, cache::DFBDFConstantCache{max_order},
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         terk = estimate_terk(integrator, cache, k + 1, Val(max_order), u)
-        atmp = calculate_residuals(_vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol,
+        atmp = calculate_residuals(
+            _vec(terk), _vec(uprev), _vec(u), integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         cache.terk = integrator.opts.internalnorm(atmp, t)
 
@@ -359,7 +362,7 @@ function initialize!(integrator, cache::DFBDFCache)
 end
 
 function perform_step!(integrator, cache::DFBDFCache{max_order},
-    repeat_step = false) where {max_order}
+        repeat_step = false) where {max_order}
     @unpack ts, u_history, order, u_corrector, bdf_coeffs, r, nlsolver, weights, terk_tmp, terkp1_tmp, atmp, tmp, equi_ts, u₀, ts_tmp = cache
     @unpack t, dt, u, f, p, uprev = integrator
 

@@ -129,31 +129,31 @@ DiffEqBase.has_Wfact(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact(f.f
 DiffEqBase.has_Wfact_t(f::DAEResidualDerivativeWrapper) = DiffEqBase.has_Wfact_t(f.f)
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, γ, c,
-    iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, γ, c,
+        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
         tTypeNoUnits, γ, c, 1, iip)
 end
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
-    ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, γ, c, α,
-    iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, γ, c, α,
+        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
 end
 
-function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
-    t, dt,
-    f::F, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-    γ, c, α,
-    ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
-    tTypeNoUnits}
+function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        u, uprev, p, t, dt,
+        f::F, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        γ, c, α,
+        ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
     # define unitless type
@@ -172,7 +172,7 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
     atmp = similar(u, uEltypeNoUnits)
     dz = zero(u)
 
-    if nlalg isa NLNewton
+    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
 
@@ -193,8 +193,10 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
         linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
-        Pl, Pr = wrapprecs(alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-                nothing)..., weight, dz)
+        Pl, Pr = wrapprecs(
+            alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
+                nothing)...,
+            weight, dz)
         linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
             Pl = Pl, Pr = Pr,
             assumptions = LinearSolve.OperatorAssumptions(true))
@@ -202,9 +204,31 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
-        nlcache = NLNewtonCache(ustep, tstep, k, atmp, dz, J, W, true, true, true,
-            tType(dt), du1, uf, jac_config,
-            linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t)
+
+        if nlalg isa NonlinearSolveAlg
+            α = tTypeNoUnits(α)
+            dt = tTypeNoUnits(dt)
+            if isdae
+                nlf = (ztmp, z, p) -> begin
+                    tmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f = p
+                    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, _p, dt, f, z)[1]
+                end
+                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
+            else
+                nlf = (ztmp, z, p) -> begin
+                    tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
+                    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+                end
+                nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
+            end
+            prob = NonlinearProblem(NonlinearFunction(nlf), ztmp, nlp_params)
+            cache = init(prob, nlalg.alg)
+            nlcache = NonlinearSolveCache(ustep, tstep, k, invγdt, prob, cache)
+        else
+            nlcache = NLNewtonCache(ustep, tstep, k, atmp, dz, J, W, true,
+                true, true, tType(dt), du1, uf, jac_config,
+                linsolve, weight, invγdt, tType(nlalg.new_W_dt_cutoff), t)
+        end
     elseif nlalg isa NLFunctional
         nlcache = NLFunctionalCache(ustep, tstep, k, atmp, dz)
     elseif nlalg isa NLAnderson
@@ -227,17 +251,16 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
 
     NLSolver{true, tTypeNoUnits}(z, tmp, ztmp, γ, c, α, nlalg, nlalg.κ,
         nlalg.fast_convergence_cutoff, ηold, 0, nlalg.max_iter,
-        Divergence,
-        nlcache)
+        Divergence, nlcache)
 end
 
-function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u, uprev, p,
-    t, dt,
-    f::F, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-    γ, c, α,
-    ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
-    tTypeNoUnits}
+function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg}, u, uprev, p,
+        t, dt,
+        f::F, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        γ, c, α,
+        ::Val{false}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
     # define unitless type
@@ -252,7 +275,7 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
     # build cache of non-linear solver
     tstep = zero(t)
 
-    if nlalg isa NLNewton
+    if nlalg isa Union{NLNewton, NonlinearSolveAlg}
         nf = nlsolve_f(f, alg)
         if isdae
             uf = DAEResidualDerivativeWrapper(f, p, α, inv(γ * dt), tmp, uprev, t)
@@ -264,9 +287,29 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton}, u
         invγdt = inv(oneunit(t) * one(uTolType))
 
         J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
-
-        nlcache = NLNewtonConstantCache(tstep, J, W, true, true, true, tType(dt), uf,
-            invγdt, tType(nlalg.new_W_dt_cutoff), t)
+        if nlalg isa NonlinearSolveAlg
+            α = tTypeNoUnits(α)
+            dt = tTypeNoUnits(dt)
+            if isdae
+                nlf = (z, p)-> begin
+                    tmp, α, tstep, invγdt, _p, dt, uprev, f = p
+                    _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
+                end
+                nlp_params = (tmp, α, tstep, invγdt, _p, dt, uprev, f)
+            else
+                nlf = (z, p)-> begin
+                    tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
+                    _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
+                end
+                nlp_params = (tmp, γ, α, tstep, invγdt, DIRK, p, dt, f)
+            end
+            prob = NonlinearProblem(NonlinearFunction(nlf), copy(ztmp), nlp_params)
+            cache = init(prob, nlalg.alg)
+            nlcache = NonlinearSolveCache(nothing, tstep, nothing, invγdt, prob, cache)
+        else
+            nlcache = NLNewtonConstantCache(tstep, J, W, true, true, true, tType(dt), uf,
+                invγdt, tType(nlalg.new_W_dt_cutoff), t)
+        end
     elseif nlalg isa NLFunctional
         nlcache = NLFunctionalConstantCache(tstep)
     elseif nlalg isa NLAnderson

@@ -6,7 +6,7 @@ const FIRST_AUTODIFF_TGRAD_MESSAGE = """
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can be found at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
                                   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
                                3. Defining analytical Jacobians and time gradients. More details can be
@@ -48,7 +48,7 @@ const FIRST_AUTODIFF_JAC_MESSAGE = """
                                1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes
                                   Rosenbrock23(autodiff=false)). More details can befound at
                                   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/
-                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic 
+                               2. Improving the compatibility of `f` with ForwardDiff.jl automatic
                                   differentiation (using tools like PreallocationTools.jl). More details
                                   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers
                                3. Defining analytical Jacobians. More details can be
@@ -76,8 +76,8 @@ function Base.showerror(io::IO, e::FirstAutodiffJacError)
 end
 
 function derivative!(df::AbstractArray{<:Number}, f,
-    x::Union{Number, AbstractArray{<:Number}}, fx::AbstractArray{<:Number},
-    integrator, grad_config)
+        x::Union{Number, AbstractArray{<:Number}}, fx::AbstractArray{<:Number},
+        integrator, grad_config)
     alg = unwrap_alg(integrator, true)
     tmp = length(x) # We calculate derivtive for all elements in gradient
     if alg_autodiff(alg) isa AutoForwardDiff
@@ -120,7 +120,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
 end
 
 function derivative(f, x::Union{Number, AbstractArray{<:Number}},
-    integrator)
+        integrator)
     local d
     tmp = length(x) # We calculate derivative for all elements in gradient
     alg = unwrap_alg(integrator, true)
@@ -157,7 +157,8 @@ function jacobian_autodiff(f, x::AbstractArray, odefun, alg)
     num_of_chunks = chunk_size === nothing ?
                     Int(ceil(maxcolor / getsize(ForwardDiff.pickchunksize(maxcolor)))) :
                     Int(ceil(maxcolor / _unwrap_val(chunk_size)))
-    (forwarddiff_color_jacobian(f, x, colorvec = colorvec, sparsity = sparsity,
+    (
+        forwarddiff_color_jacobian(f, x, colorvec = colorvec, sparsity = sparsity,
             jac_prototype = jac_prototype, chunksize = chunk_size),
         num_of_chunks)
 end
@@ -174,11 +175,11 @@ function _nfcount(N, ::Type{diff_type}) where {diff_type}
 end
 
 function jacobian_finitediff(f, x, ::Type{diff_type}, dir, colorvec, sparsity,
-    jac_prototype) where {diff_type}
+        jac_prototype) where {diff_type}
     (FiniteDiff.finite_difference_derivative(f, x, diff_type, eltype(x), dir = dir), 2)
 end
 function jacobian_finitediff(f, x::AbstractArray, ::Type{diff_type}, dir, colorvec,
-    sparsity, jac_prototype) where {diff_type}
+        sparsity, jac_prototype) where {diff_type}
     f_in = diff_type === Val{:forward} ? f(x) : similar(x)
     ret_eltype = eltype(f_in)
     J = FiniteDiff.finite_difference_jacobian(f, x, diff_type, ret_eltype, f_in,
@@ -225,8 +226,8 @@ function jacobian_finitediff!(J, f, x, jac_config, integrator)
 end
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
-    fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
-    jac_config)
+        fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator,
+        jac_config)
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg) isa AutoForwardDiff
         if integrator.iter == 1
@@ -258,7 +259,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number},
 end
 
 function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
-    ::Val{transform} = Val(true)) where {transform, F1, F2}
+        ::Val{transform} = Val(true)) where {transform, F1, F2}
     haslinsolve = hasfield(typeof(alg), :linsolve)
 
     if !DiffEqBase.has_jac(f) && # No Jacobian if has analytical solution
@@ -313,10 +314,10 @@ function build_jac_config(alg, f::F1, uf::F2, du1, uprev, u, tmp, du2,
 end
 
 function get_chunksize(jac_config::ForwardDiff.JacobianConfig{
-    T,
-    V,
-    N,
-    D,
+        T,
+        V,
+        N,
+        D
 }) where {T, V, N, D
 }
     Val(N)
@@ -376,7 +377,7 @@ function build_grad_config(alg, f::F1, tf::F2, du1, t) where {F1, F2}
                     Dual{
                         T,
                         eltype(du1),
-                        1,
+                        1
                     }.(du1,
                         (ForwardDiff.Partials((one(eltype(du1)),)),)) .*
                     false)

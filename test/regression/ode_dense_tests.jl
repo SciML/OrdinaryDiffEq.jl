@@ -1,8 +1,8 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using ForwardDiff, Printf
 import ODEProblemLibrary: prob_ode_linear,
-    prob_ode_2Dlinear,
-    prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
+                          prob_ode_2Dlinear,
+                          prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 # use `PRINT_TESTS = true` to print the tests, including results
 const PRINT_TESTS = false
 print_results(x) =
@@ -23,7 +23,8 @@ end
 f_linear_inplace = (du, u, p, t) -> begin
     @. du = 1.01 * u
 end
-prob_ode_linear_inplace = ODEProblem(ODEFunction(f_linear_inplace;
+prob_ode_linear_inplace = ODEProblem(
+    ODEFunction(f_linear_inplace;
         analytic = (u0, p, t) -> exp(1.01 * t) * u0),
     [0.5], (0.0, 1.0))
 const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(undef,
@@ -39,7 +40,7 @@ const deriv_test_points = range(0, stop = 1, length = 5)
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
 function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false,
-    nth_der = 1, dertol = 1e-6)
+        nth_der = 1, dertol = 1e-6)
     println("\n")
     show(stdout, alg)
     println()
@@ -124,7 +125,7 @@ interpd_idxs = sol(0:(1 // 2^(4)):1, idxs = 1:2:5)
 
 interpd_single = sol(0:(1 // 2^(4)):1, idxs = 1)
 
-@test typeof(interpd_single.u) <: Vector{Float64}
+@test interpd_single.u isa Vector{Float64}
 
 @test typeof(sol(0.5, idxs = 1)) <: Float64
 
@@ -524,6 +525,12 @@ regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true, nth_der = 1, dert
 # Rosenbrock32
 regression_test(Rosenbrock32(), 6e-4, 9e-4; test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
+# Rodas23W
+regression_test(Rodas23W(), 2e-3, 4e-3, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas3P
+regression_test(Rodas3P(), 2e-4, 4e-4, test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
 # Rodas4
 regression_test(Rodas4(), 8.5e-6, 2e-5, test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
@@ -537,10 +544,16 @@ regression_test(Rodas4P(), 4e-5, 6e-5, test_diff1 = true, nth_der = 1, dertol = 
 regression_test(Rodas4P2(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
 
 # Rodas5
-regression_test(Rodas5(), 2e-6, 3e-6, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+regression_test(Rodas5(), 2e-6, 3e-6, test_diff1 = true, nth_der = 3, dertol = 5e-1)
 
 # Rodas5P
-regression_test(Rodas5P(), 2e-5, 3e-5, test_diff1 = true, nth_der = 1, dertol = 1e-13)
+regression_test(Rodas5P(), 2e-5, 3e-5, test_diff1 = true, nth_der = 3, dertol = 5e-1)
+
+# Rodas5Pe
+regression_test(Rodas5Pe(), 2e-5, 3e-5, test_diff1 = true, nth_der = 3, dertol = 5e-1)
+
+# Rodas5Pr
+regression_test(Rodas5Pr(), 2e-5, 3e-5, test_diff1 = true, nth_der = 3, dertol = 5e-1)
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)

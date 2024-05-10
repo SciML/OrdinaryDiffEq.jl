@@ -28,7 +28,8 @@ prob = remake(prob, u0 = u0, tspan = tspan)
 tspan = T.((2000, 2100))
 prob = remake(prob, tspan = tspan)
 # set maxiters to prevent infinite loop on test failure
-@test_throws ArgumentError solve(prob, Euler(); dt = T(0.0001), maxiters = 10)
+@test solve(prob, Euler(); dt = T(0.0001), maxiters = 10).retcode ==
+      SciMLBase.ReturnCode.MaxIters
 
 function rober(du, u, p, t)
     y₁, y₂, y₃ = u

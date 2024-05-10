@@ -15,9 +15,9 @@ mutable struct RadauIIA3ConstantCache{F, Tab, Tol, Dt, U, JType} <:
 end
 
 function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA3Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -66,9 +66,9 @@ mutable struct RadauIIA3Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
 end
 
 function alg_cache(alg::RadauIIA3, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA3Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -139,9 +139,9 @@ mutable struct RadauIIA5ConstantCache{F, Tab, Tol, Dt, U, JType} <:
 end
 
 function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -201,9 +201,9 @@ end
 TruncatedStacktraces.@truncate_stacktrace RadauIIA5Cache 1
 
 function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
     tab = RadauIIA5Tableau(uToltype, constvalue(tTypeNoUnits))
@@ -239,6 +239,7 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         error("Non-concrete Jacobian not yet supported by RadauIIA5.")
     end
     W2 = similar(J, Complex{eltype(W1)})
+    recursivefill!(W2, false)
 
     du1 = zero(rate_prototype)
 

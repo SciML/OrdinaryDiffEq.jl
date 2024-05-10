@@ -7,9 +7,9 @@
 end
 
 function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-    uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+        uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 2 // 3, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
@@ -36,9 +36,9 @@ end
 end
 
 function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 2 // 3, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
@@ -47,8 +47,11 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     fsalfirstprev = zero(rate_prototype)
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
+    algebraic_vars = f.mass_matrix === I ? nothing :
+                     [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    eulercache = ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver)
+    eulercache = ImplicitEulerCache(
+        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars)
 
     dtₙ₋₁ = one(dt)
     zₙ₋₁ = zero(u)
@@ -92,9 +95,9 @@ end
 end
 
 function alg_cache(alg::SBDF, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
@@ -115,9 +118,9 @@ function alg_cache(alg::SBDF, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::SBDF, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1 // 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
@@ -135,7 +138,8 @@ function alg_cache(alg::SBDF, u, rate_prototype, ::Type{uEltypeNoUnits},
     uprev3 = order >= 3 ? zero(u) : uprev2
     uprev4 = order == 4 ? zero(u) : uprev2
 
-    SBDFCache(1, alg.ark, u, uprev, fsalfirst, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃,
+    SBDFCache(
+        1, alg.ark, u, uprev, fsalfirst, nlsolver, uprev2, uprev3, uprev4, k₁, k₂, k₃,
         du₁, du₂)
 end
 
@@ -147,7 +151,7 @@ end
     coefType1,
     coefType2,
     dtType,
-    uType,
+    uType
 } <: OrdinaryDiffEqConstantCache
     nlsolver::N
     D::coefType1
@@ -173,9 +177,9 @@ end
 end
 
 function alg_cache(alg::QNDF1, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = zero(inv((1 - alg.kappa))), 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
@@ -194,9 +198,9 @@ function alg_cache(alg::QNDF1, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::QNDF1, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = zero(inv((1 - alg.kappa))), 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
@@ -231,7 +235,7 @@ end
     coefType1,
     coefType2,
     uType,
-    dtType,
+    dtType
 } <: OrdinaryDiffEqConstantCache
     nlsolver::N
     D::coefType1
@@ -261,9 +265,9 @@ end
 end
 
 function alg_cache(alg::QNDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = zero(inv((1 - alg.kappa))), 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
@@ -284,9 +288,9 @@ function alg_cache(alg::QNDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 function alg_cache(alg::QNDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = zero(inv((1 - alg.kappa))), 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
@@ -323,7 +327,7 @@ end
     UType,
     dtType,
     EEstType,
-    gammaType,
+    gammaType
 } <: OrdinaryDiffEqConstantCache
     nlsolver::N
     U::UType
@@ -341,9 +345,9 @@ end
 end
 
 function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
 } where {MO}
     max_order = MO
     γ, c = one(eltype(alg.kappa)), 1
@@ -406,9 +410,9 @@ end
 TruncatedStacktraces.@truncate_stacktrace QNDFCache 1
 
 function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
 } where {MO}
     max_order = MO
     γ, c = one(eltype(alg.kappa)), 1
@@ -465,9 +469,9 @@ end
 end
 
 function alg_cache(alg::MEBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
@@ -488,9 +492,9 @@ mutable struct MEBDF2ConstantCache{N} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::MEBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits},
-    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits},
+        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     γ, c = 1, 1
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
@@ -522,19 +526,19 @@ end
 end
 
 function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits
 } where {MO}
     γ, c = 1.0, 1.0
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
     bdf_coeffs = SA[1 -1 0 0 0 0;
-        3//2 -2 1//2 0 0 0;
-        11//6 -3 3//2 -1//3 0 0;
-        25//12 -4 3 -4//3 1//4 0;
-        137//60 -5 5 -10//3 5//4 -1//5]
+                    3//2 -2 1//2 0 0 0;
+                    11//6 -3 3//2 -1//3 0 0;
+                    25//12 -4 3 -4//3 1//4 0;
+                    137//60 -5 5 -10//3 5//4 -1//5]
     ts = zero(Vector{typeof(t)}(undef, max_order + 2)) #ts is the successful past points, it will be updated after successful step
     ts_tmp = similar(ts)
 
@@ -561,7 +565,8 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
         terkm1, terk, terkp1, r, weights, iters_from_event)
 end
 
-@cache mutable struct FBDFCache{MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
+@cache mutable struct FBDFCache{
+    MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
     coeffType, EEstType, rType, wType} <:
                       OrdinaryDiffEqMutableCache
     fsalfirst::rateType
@@ -595,20 +600,20 @@ end
 TruncatedStacktraces.@truncate_stacktrace FBDFCache 1
 
 function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
-    ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-    dt, reltol, p, calck,
-    ::Val{true}) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits,
-    tTypeNoUnits}
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {MO, uEltypeNoUnits, uBottomEltypeNoUnits,
+        tTypeNoUnits}
     γ, c = 1.0, 1.0
     fsalfirst = zero(rate_prototype)
     max_order = MO
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     bdf_coeffs = SA[1 -1 0 0 0 0;
-        3//2 -2 1//2 0 0 0;
-        11//6 -3 3//2 -1//3 0 0;
-        25//12 -4 3 -4//3 1//4 0;
-        137//60 -5 5 -10//3 5//4 -1//5]
+                    3//2 -2 1//2 0 0 0;
+                    11//6 -3 3//2 -1//3 0 0;
+                    25//12 -4 3 -4//3 1//4 0;
+                    137//60 -5 5 -10//3 5//4 -1//5]
     ts = Vector{typeof(t)}(undef, max_order + 2) #ts is the successful past points, it will be updated after successful step
     u_history = Matrix{eltype(u)}(undef, length(u), max_order + 2)
     order = 1

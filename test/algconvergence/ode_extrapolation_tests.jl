@@ -12,7 +12,8 @@ prob_ode_bigfloatlinear = ODEProblem(ODEFunction(linear, analytic = linear_analy
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 f_2dlinear_analytic = (u0, p, t) -> @. u0 * exp(p * t)
-prob_ode_bigfloat2Dlinear = ODEProblem(ODEFunction(f_2dlinear,
+prob_ode_bigfloat2Dlinear = ODEProblem(
+    ODEFunction(f_2dlinear,
         analytic = f_2dlinear_analytic),
     rand(BigFloat, (4, 2)), (big"0.0", big"1.0"),
     big"1.01")
@@ -220,7 +221,8 @@ testTol = 0.2
 
     println("Regression Test Float32 and Float64 Fallbacks")
     @testset "Regression Test Float32 and Float64 Fallbacks" begin
-        prob_ode_2Dlinear = ODEProblem(ODEFunction(f_2dlinear,
+        prob_ode_2Dlinear = ODEProblem(
+            ODEFunction(f_2dlinear,
                 analytic = f_2dlinear_analytic),
             Float64.(prob_ode_bigfloat2Dlinear.u0), (0.0, 1.0),
             1.01)
@@ -228,7 +230,8 @@ testTol = 0.2
         s2 = solve(prob_ode_2Dlinear, ExtrapolationMidpointDeuflhard())
         @test all(all(s1[i] - s2[i] .< 5e-14) for i in 1:length(s1))
 
-        prob_ode_2Dlinear = ODEProblem(ODEFunction(f_2dlinear,
+        prob_ode_2Dlinear = ODEProblem(
+            ODEFunction(f_2dlinear,
                 analytic = f_2dlinear_analytic),
             Float32.(prob_ode_bigfloat2Dlinear.u0),
             (0.0f0, 1.0f0), 1.01f0)

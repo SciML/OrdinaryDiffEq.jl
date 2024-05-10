@@ -12,7 +12,7 @@ dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator,
-    cache = nothing, repeat_step = false)
+        cache = nothing, repeat_step = false)
     always_new = is_always_new(nlsolver)
     check_div′ = check_div(nlsolver)
     @label REDO
@@ -89,7 +89,7 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        iter > 1 && (η = θ / (1 - θ))
+        iter > 1 && (η = DiffEqBase.value(θ / (1 - θ)))
         if (iter == 1 && ndz < 1e-5) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
             nlsolver.status = Convergence
             nlsolver.nfails = 0
@@ -117,7 +117,7 @@ function initial_η(nlsolver::NLSolver, integrator)
 end
 
 function apply_step!(nlsolver::NLSolver{algType, iip},
-    integrator::DiffEqBase.DEIntegrator) where {algType, iip}
+        integrator::DiffEqBase.DEIntegrator) where {algType, iip}
     if iip
         @.. broadcast=false nlsolver.z=nlsolver.ztmp
     else

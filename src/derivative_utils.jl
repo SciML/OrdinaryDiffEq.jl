@@ -199,7 +199,7 @@ mutable struct WOperator{IIP, T,
     jacvec::JV
 
     function WOperator{IIP}(mass_matrix, gamma, J, u, jacvec = nothing;
-        transform = false) where {IIP}
+            transform = false) where {IIP}
         # TODO: there is definitely a missing interface.
         # Tentative interface: `has_concrete` and `concertize(A)`
         if J isa Union{Number, ScalarOperator}
@@ -296,11 +296,11 @@ Base.eltype(W::WOperator) = eltype(W.J)
 # In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma/transform and don't update them in that case.
 # This helps support partial updating logic used with Newton solvers. 
 function SciMLOperators.update_coefficients!(W::WOperator,
-    u = nothing,
-    p = nothing,
-    t = nothing;
-    dtgamma = nothing,
-    transform = nothing)
+        u = nothing,
+        p = nothing,
+        t = nothing;
+        dtgamma = nothing,
+        transform = nothing)
     if (u !== nothing) && (p !== nothing) && (t !== nothing)
         update_coefficients!(W.J, u, p, t)
         update_coefficients!(W.mass_matrix, u, p, t)
@@ -482,8 +482,9 @@ end
     throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 end
 
-function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
-    W_transform::Bool)::Nothing where {MT}
+function jacobian2W!(
+        W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
+        W_transform::Bool)::Nothing where {MT}
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -565,7 +566,7 @@ function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::Abs
 end
 
 function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix,
-    W_transform::Bool)::Nothing where {MT}
+        W_transform::Bool)::Nothing where {MT}
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -605,7 +606,7 @@ function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix,
 end
 
 function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
-    W_transform::Bool)::Nothing where {MT}
+        W_transform::Bool)::Nothing where {MT}
     # check size and dimension
     mass_matrix isa UniformScaling ||
         @boundscheck axes(mass_matrix) == axes(J) || _throwJMerror(J, mass_matrix)
@@ -629,7 +630,7 @@ function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
 end
 
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
-    repeat_step, W_transform = false, newJW = nothing)
+        repeat_step, W_transform = false, newJW = nothing)
     @unpack t, dt, uprev, u, f, p = integrator
     lcache = nlsolver === nothing ? cache : nlsolver.cache
     next_step = is_always_new(nlsolver)
@@ -746,9 +747,10 @@ end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
     elseif DiffEqBase.has_jac(f)
         J = f.jac(uprev, p, t)
-        if typeof(J) <: StaticArray &&
-           typeof(integrator.alg) <:
-           Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
+        if J isa StaticArray &&
+           integrator.alg isa
+           Union{
+            Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
         else
@@ -772,8 +774,8 @@ end
             W = if W_full isa Number
                 W_full
             elseif len !== nothing &&
-                   typeof(integrator.alg) <:
-                   Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
+                   integrator.alg isa
+                   Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
                 StaticWOperator(W_full)
             else
                 DiffEqBase.default_factorize(W_full)
@@ -788,12 +790,13 @@ end
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step,
-    W_transform)
+        W_transform)
     nlsolver = nothing
     # we need to skip calculating `J` and `W` when a step is repeated
     new_jac = new_W = false
     if !repeat_step
-        new_jac, new_W = calc_W!(cache.W, integrator, nlsolver, cache, dtgamma, repeat_step,
+        new_jac, new_W = calc_W!(
+            cache.W, integrator, nlsolver, cache, dtgamma, repeat_step,
             W_transform)
     end
     # If the Jacobian is not updated, we won't have to update ∂/∂t either.
@@ -807,8 +810,8 @@ function update_W!(integrator, cache, dtgamma, repeat_step, newJW = nothing)
 end
 
 function update_W!(nlsolver::AbstractNLSolver,
-    integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
-    repeat_step::Bool, newJW = nothing)
+        integrator::SciMLBase.DEIntegrator{<:Any, true}, cache, dtgamma,
+        repeat_step::Bool, newJW = nothing)
     if isnewton(nlsolver)
         calc_W!(get_W(nlsolver), integrator, nlsolver, cache, dtgamma, repeat_step, true,
             newJW)
@@ -817,8 +820,8 @@ function update_W!(nlsolver::AbstractNLSolver,
 end
 
 function update_W!(nlsolver::AbstractNLSolver,
-    integrator::SciMLBase.DEIntegrator{<:Any, false}, cache, dtgamma,
-    repeat_step::Bool, newJW = nothing)
+        integrator::SciMLBase.DEIntegrator{<:Any, false}, cache, dtgamma,
+        repeat_step::Bool, newJW = nothing)
     if isnewton(nlsolver)
         isdae = integrator.alg isa DAEAlgorithm
         new_jac, new_W = true, true
@@ -843,7 +846,7 @@ function update_W!(nlsolver::AbstractNLSolver,
 end
 
 function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
-    ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
+        ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
     # TODO - if jvp given, make it SciMLOperators.FunctionOperator
     # TODO - make mass matrix a SciMLOperator so it can be updated with time. Default to IdentityOperator
@@ -874,7 +877,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         # be overridden with concrete_jac.
 
         _f = islin ? (isode ? f.f : f.f1.f) : f
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+        jacvec = JacVec((du, u, p, t) -> _f(du, u, p, t), copy(u), p, t;
             autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         J = jacvec
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
@@ -890,7 +893,12 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        jacvec = JacVec(UJacobianWrapper(_f, t, p), copy(u), p, t;
+        __f = if IIP
+            (du, u, p, t) -> _f(du, u, p, t)
+        else
+            (u, p, t) -> _f(u, p, t)
+        end
+        jacvec = JacVec(__f, copy(u), p, t;
             autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
@@ -914,8 +922,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             len = StaticArrayInterface.known_length(typeof(J))
             if len !== nothing &&
-               typeof(alg) <:
-               Union{Rosenbrock23, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P}
+               alg isa
+               Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
                 StaticWOperator(J, false)
             else
                 ArrayInterface.lu_instance(J)
@@ -928,10 +936,11 @@ end
 build_uf(alg, nf, t, p, ::Val{true}) = UJacobianWrapper(nf, t, p)
 build_uf(alg, nf, t, p, ::Val{false}) = UDerivativeWrapper(nf, t, p)
 
-function LinearSolve.init_cacheval(alg::LinearSolve.DefaultLinearSolver, A::WOperator, b, u,
-    Pl, Pr,
-    maxiters::Int, abstol, reltol, verbose::Bool,
-    assumptions::OperatorAssumptions)
+function LinearSolve.init_cacheval(
+        alg::LinearSolve.DefaultLinearSolver, A::WOperator, b, u,
+        Pl, Pr,
+        maxiters::Int, abstol, reltol, verbose::Bool,
+        assumptions::OperatorAssumptions)
     LinearSolve.init_cacheval(alg, A.J, b, u, Pl, Pr,
         maxiters::Int, abstol, reltol, verbose::Bool,
         assumptions::OperatorAssumptions)
@@ -939,8 +948,8 @@ end
 
 for alg in InteractiveUtils.subtypes(OrdinaryDiffEq.LinearSolve.AbstractFactorization)
     @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
-        maxiters::Int, abstol, reltol, verbose::Bool,
-        assumptions::OperatorAssumptions)
+            maxiters::Int, abstol, reltol, verbose::Bool,
+            assumptions::OperatorAssumptions)
         LinearSolve.init_cacheval(alg, A.J, b, u, Pl, Pr,
             maxiters::Int, abstol, reltol, verbose::Bool,
             assumptions::OperatorAssumptions)
