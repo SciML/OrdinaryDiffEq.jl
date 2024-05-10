@@ -98,7 +98,8 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
 
         # check for convergence
         η = DiffEqBase.value(θ / (1 - θ))
-        if (iter == 1 && ndz < 1e-5) || (η >= zero(η) && η * ndz < κ)
+        if (iter == 1 && ndz < 1e-5) ||
+           ((iter > 1 || isnewton(nlsolver)) && η >= zero(η) && η * ndz < κ)
             nlsolver.status = Convergence
             nlsolver.nfails = 0
             break
