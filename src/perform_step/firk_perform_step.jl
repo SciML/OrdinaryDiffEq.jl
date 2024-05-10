@@ -327,7 +327,7 @@ end
     cache.iter = iter
 
     @. u = uprev + z2
-    step_limiter!(u, f, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -696,7 +696,7 @@ end
     cache.iter = iter
 
     @.. broadcast=false u=uprev + z3
-    step_limiter!(u, f, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2

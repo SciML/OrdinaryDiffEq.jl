@@ -829,8 +829,8 @@ end
     @.. broadcast=false thread=thread u=uprev +
                                         dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 +
                                          a75 * k5 + a76 * k6)
-    stage_limiter!(u, f, p, t + dt)
-    step_limiter!(u, f, p, t + dt)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
     f(k7, u, p, t + dt)
     integrator.stats.nf += 6
     if integrator.alg isa CompositeAlgorithm
