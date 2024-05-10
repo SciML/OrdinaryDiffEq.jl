@@ -356,6 +356,17 @@ function compute_ustep!(ustep, tmp, γ, z, method)
     ustep
 end
 
+# Dispatch for Newmark-type solvers
+function compute_ustep!(ustep::ArrayPartition, tmp::ArrayPartition, γ::ArrayPartitionNLSolveHelper, z, method)
+    if method === COEFFICIENT_MULTISTEP
+        # ustep = z
+        @error "Multistep for second order ODEs does not work yet."
+    else
+        @.. ustep = ArrayPartition(tmp.x[1] + γ.γ₁ * z, tmp.x[1] + γ.γ₂ * z)
+    end
+    ustep
+end
+
 function _compute_rhs(tmp, γ, α, tstep, invγdt, method::MethodType, p, dt, f, z)
     mass_matrix = f.mass_matrix
     ustep = compute_ustep(tmp, γ, z, method)

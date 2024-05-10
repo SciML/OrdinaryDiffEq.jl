@@ -19,6 +19,7 @@ prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
 sol = solve(prob, SymplecticEuler(), dt = 1 / 2)
 sol_verlet = solve(prob, VelocityVerlet(), dt = 1 / 100)
 sol_ruth3 = solve(prob, Ruth3(), dt = 1 / 100)
+sol_newmark = solve(prob, NewmarkBeta(0.5,0.25))
 
 interp_time = 0:0.001:5
 interp = sol(0.5)
@@ -31,6 +32,7 @@ prob = SecondOrderODEProblem(f1_harmonic, v0, u0, (0.0, 5.0))
 sol2 = solve(prob, SymplecticEuler(), dt = 1 / 2)
 sol2_verlet = solve(prob, VelocityVerlet(), dt = 1 / 100)
 sol2_ruth3 = solve(prob, Ruth3(), dt = 1 / 100)
+sol2_newmark = solve(prob, NewmarkBeta(0.5,0.25))
 
 sol2_verlet(0.1)
 

@@ -495,6 +495,7 @@ alg_order(alg::ERKN4) = 4
 alg_order(alg::ERKN5) = 5
 alg_order(alg::ERKN7) = 7
 alg_order(alg::RKN4) = 4
+alg_order(alg::NewmarkBeta) = 1 # or at least 2, depending on the parameters.
 
 alg_order(alg::Midpoint) = 2
 
@@ -1064,3 +1065,5 @@ is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
+is_mass_matrix_alg(alg::NewmarkBeta) = true
+

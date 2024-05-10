@@ -197,3 +197,18 @@ function get_differential_vars(f, u)
         end
     end
 end
+
+"""
+Helper to evaluate
+    f(innertmp + γ̂⋅z, p, t + c⋅dt)
+in the nonlinear solver when z is an array partition and γ̂ is the scaling parameter.
+Note that γ̂ is different from the γ in the Newmark-β method!
+"""
+struct ArrayPartitionNLSolveHelper{T}
+    γ₁::T
+    γ₂::T
+end
+
+function Base.:*(γ::ArrayPartitionNLSolveHelper{T1}, z::ArrayPartition{T2, <: Tuple{<:Any, <:Any}}) where {T1, T2}
+    ArrayPartition(γ.γ₁*z.x[1], γ.γ₂*z.x[2])
+end

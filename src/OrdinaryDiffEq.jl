@@ -164,6 +164,7 @@ include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
 include("caches/dae_caches.jl")
 include("caches/qprk_caches.jl")
+include("caches/newmark_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
@@ -212,6 +213,8 @@ include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
 include("perform_step/dae_perform_step.jl")
 include("perform_step/qprk_perform_step.jl")
+
+include("perform_step/newmark_perform_step.jl")
 
 include("dense/generic_dense.jl")
 include("dense/interpolants.jl")
@@ -404,7 +407,7 @@ export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
 
 export SplitEuler
 
-export Newmark
+export NewmarkBeta
 
 export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
        Nystrom5VelocityIndependent,

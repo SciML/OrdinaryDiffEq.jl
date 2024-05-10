@@ -1,23 +1,32 @@
-@cache struct NewmarkCache{uType, rateType, parameterType, N} <: OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    β::parameterType
-    γ::parameterType
-    tmp::uType
-    nlsolver::N
+@cache struct NewmarkBetaCache{uType, rateType, parameterType, N} <: OrdinaryDiffEqMutableCache
+    u::uType # Current solution
+    uprev::uType # Previous solution
+    upred::uType # Predictor solution
+    fsalfirst::rateType
+    β::parameterType # newmark parameter 1
+    γ::parameterType # newmark parameter 2
+    nlsolver::N # Inner solver
+    tmp::uType # temporary, because it is required.
 end
 
-function alg_cache(alg::Newmark, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::NewmarkBeta, u, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
     dt, reltol, p, calck, 
-    ::Val{true}) {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 
     β = alg.β
     γ = alg.γ
-    tmp = zero(u)
+    upred = zero(u)
+    fsalfirst = zero(rate_prototype)
 
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
-    
-    NewmarkCache(u, uprev, β, γ, tmp, nlsolver)
+    @assert 0.0 ≤ β ≤ 0.5
+    @assert 0.0 ≤ γ ≤ 1.0
+
+    c = 1.0
+    γ̂ = ArrayPartitionNLSolveHelper(1.0,1.0)
+    nlsolver = build_nlsolver(alg, u.x[1], uprev.x[1], p, t, dt, f.f1, rate_prototype.x[1], uEltypeNoUnits,
+        uBottomEltypeNoUnits, tTypeNoUnits, γ̂, c, Val(true))
+
+    tmp = zero(u)
+    NewmarkBetaCache(u, uprev, upred, fsalfirst, β, γ, nlsolver, tmp)
 end
