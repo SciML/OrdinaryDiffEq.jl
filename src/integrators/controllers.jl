@@ -16,6 +16,12 @@ end
 
 @inline function step_reject_controller!(integrator, alg)
     step_reject_controller!(integrator, integrator.opts.controller, alg)
+    cache = integrator.cache
+    if hasfield(typeof(cache), :nlsolve)
+        nlsolve = cache.nlsolve
+        nlsolve.prev_θ = one(nlsolve.prev_θ)
+    end
+    return nothing
 end
 
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing

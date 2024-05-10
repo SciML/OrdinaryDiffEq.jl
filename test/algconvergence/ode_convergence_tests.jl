@@ -293,7 +293,7 @@ end
     @test sim120.𝒪est[:final]≈4 atol=testTol
 
     sim121 = test_convergence(dts, prob, ESDIRK547L2SA2())
-    @test 5-testTol <= sim121.𝒪est[:final] <= 6
+    @test 5 - testTol <= sim121.𝒪est[:final] <= 6
 
     dts = (1 / 2) .^ (5:-1:1)
     sim122 = test_convergence(dts, prob, ESDIRK659L2SA())
