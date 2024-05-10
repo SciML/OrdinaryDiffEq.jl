@@ -207,7 +207,7 @@ end
     dw12, cubuff,
     k, k2, fw1, fw2,
     J, W1,
-    tmp, atmp, jac_config, rtol, atol = cache
+    tmp, atmp, jac_config, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -327,13 +327,14 @@ end
     cache.iter = iter
 
     @. u = uprev + z2
+    step_limiter!(u, integrator, p, t + dt)
+
     if adaptive
         utilde = w2
         @. utilde = dt * (e1 * fsallast + e2 * k2)
         calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
     end
-
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
     return
@@ -522,7 +523,7 @@ end
     dw1, ubuff, dw23, cubuff,
     k, k2, k3, fw1, fw2, fw3,
     J, W1, W2,
-    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
+    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -695,6 +696,7 @@ end
     cache.iter = iter
 
     @.. broadcast=false u=uprev + z3
+    step_limiter!(u, integrator, p, t + dt)
 
     if adaptive
         utilde = w2
@@ -743,7 +745,6 @@ end
             @.. broadcast=false cache.cont3=cache.cont2 - (tmp - z1 / c1) / c2
         end
     end
-
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
     return

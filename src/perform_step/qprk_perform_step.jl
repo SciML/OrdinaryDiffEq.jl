@@ -171,7 +171,6 @@ end
                                            + b16_10 * k10 + b16_11 * k11 + b16_12 * k12
                                            + b16_13 * k13 + b16_14 * k14)
     stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
     f(k16, tmp, p, t + dt)
 
     integrator.stats.nf += 16

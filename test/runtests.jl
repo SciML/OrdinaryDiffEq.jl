@@ -104,6 +104,7 @@ end
         @time @safetestset "Error Check Tests" include("integrators/check_error.jl")
         @time @safetestset "Event Detection Tests" include("integrators/event_detection_tests.jl")
         @time @safetestset "Event Repetition Detection Tests" include("integrators/event_repeat_tests.jl")
+        @time @safetestset "Step Limiter Tests" include("integrators/step_limiter_test.jl")
     end
 
     if !is_APPVEYOR &&
