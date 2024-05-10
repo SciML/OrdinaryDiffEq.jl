@@ -108,6 +108,8 @@ import ADTypes: AbstractADType,
 import Polyester
 using MacroTools, Adapt
 
+using SciMLStructures: canonicalize, Tunable
+
 const CompiledFloats = Union{Float32, Float64,
     ForwardDiff.Dual{
         ForwardDiff.Tag{T, W},
