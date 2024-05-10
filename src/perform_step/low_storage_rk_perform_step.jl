@@ -68,8 +68,8 @@ end
         end
         integrator.stats.nf += 1
     end
-    stage_limiter!(u, integrator, p, t + dt) 
-    step_limiter!(u, integrator, p, t + dt) # I think step_limiter is in the wrong place here! -cwittens
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
 end
 
 # 2C low storage methods
