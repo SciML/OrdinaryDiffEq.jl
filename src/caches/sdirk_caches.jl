@@ -304,55 +304,7 @@ function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPSDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, nlsolver)
 end
 
-mutable struct Kvaerno3ConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
-    nlsolver::N
-    tab::Tab
-end
 
-function alg_cache(alg::Kvaerno3, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
-        uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = Kvaerno3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, 2tab.γ
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(false))
-    Kvaerno3ConstantCache(nlsolver, tab)
-end
-
-@cache mutable struct Kvaerno3Cache{uType, rateType, uNoUnitsType, Tab, N} <:
-                      SDIRKMutableCache
-    u::uType
-    uprev::uType
-    fsalfirst::rateType
-    z₁::uType
-    z₂::uType
-    z₃::uType
-    z₄::uType
-    atmp::uNoUnitsType
-    nlsolver::N
-    tab::Tab
-end
-
-function alg_cache(alg::Kvaerno3, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tab = Kvaerno3Tableau(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    γ, c = tab.γ, 2tab.γ
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
-    fsalfirst = zero(rate_prototype)
-
-    z₁ = zero(u)
-    z₂ = zero(u)
-    z₃ = zero(u)
-    z₄ = nlsolver.z
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    Kvaerno3Cache(u, uprev, fsalfirst, z₁, z₂, z₃, z₄, atmp, nlsolver, tab)
-end
 
 mutable struct Cash4ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
     nlsolver::N
