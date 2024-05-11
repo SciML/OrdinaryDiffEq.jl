@@ -24,7 +24,7 @@ end
 
 
     # test the step_limiter! function 
-    alg_types = [KenCarp3, KenCarp4, KenCarp5, Kvaerno3, Kvaerno4, Kvaerno5,
+    alg_types = [Feagin10, Feagin12, Feagin14, KenCarp3, KenCarp4, KenCarp5, Kvaerno3, Kvaerno4, Kvaerno5,
                 Rosenbrock23, Rosenbrock32, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, 
                 Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr,
                 RadauIIA5, RadauIIA3, SIR54, Alshina2, Alshina3, Heun, Ralston, Midpoint, RK4,

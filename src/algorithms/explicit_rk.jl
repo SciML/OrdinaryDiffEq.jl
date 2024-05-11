@@ -388,7 +388,9 @@ publisher={Neural, Parallel \\& Scientific Computations}
 Feagin10: Explicit Runge-Kutta Method
 Feagin's 10th-order Runge-Kutta method.
 """
-struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@kwdef struct Feagin10{StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm 
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 """
 @article{feagin2012high,
@@ -401,7 +403,9 @@ publisher={Neural, Parallel \\& Scientific Computations}
 Feagin12: Explicit Runge-Kutta Method
 Feagin's 12th-order Runge-Kutta method.
 """
-struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@kwdef struct Feagin12{StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm 
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 """
 Feagin, T., “An Explicit Runge-Kutta Method of Order Fourteen,” Numerical
@@ -410,7 +414,9 @@ Algorithms, 2009
 Feagin14: Explicit Runge-Kutta Method
 Feagin's 14th-order Runge-Kutta method.
 """
-struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@kwdef struct Feagin14{StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm 
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 @doc explicit_rk_docstring("Zero Dissipation Runge-Kutta of 6th order.", "FRK65",
     extra_keyword_description = """- `omega`: a periodicity phase estimate,
