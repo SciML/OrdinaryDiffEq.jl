@@ -1424,7 +1424,7 @@ Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
 
 See also `QNDF`.
 """
-struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
+struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -1432,22 +1432,24 @@ struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
     extrapolant::Symbol
     kappa::κType
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function QNDF1(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -0.1850,
-        controller = :Standard)
+        controller = :Standard, step_limiter! = trivial_limiter!)
     QNDF1{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa)}(linsolve,
+        typeof(kappa), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
         kappa,
-        controller)
+        controller, 
+        step_limiter!)
 end
 
 """
@@ -1463,7 +1465,7 @@ An adaptive order 2 quasi-constant timestep L-stable numerical differentiation f
 
 See also `QNDF`.
 """
-struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
+struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -1471,22 +1473,24 @@ struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
     extrapolant::Symbol
     kappa::κType
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function QNDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -1 // 9,
-        controller = :Standard)
+        controller = :Standard, step_limiter! = trivial_limiter!)
     QNDF2{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa)}(linsolve,
+        typeof(kappa), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
         kappa,
-        controller)
+        controller, 
+        step_limiter!)
 end
 
 """
@@ -1512,7 +1516,7 @@ year={1997},
 publisher={SIAM}
 }
 """
-struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType} <:
+struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -1523,6 +1527,7 @@ struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType} <:
     extrapolant::Symbol
     kappa::κType
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
@@ -1531,12 +1536,12 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, kappa = promote(-0.1850, -1 // 9, -0.0823, -0.0415, 0),
-        controller = :Standard) where {MO}
+        controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
     QNDF{MO, _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(kappa)}(max_order, linsolve, nlsolve, precs, κ, tol,
-        extrapolant, kappa, controller)
+        typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!)}(max_order, linsolve, nlsolve, precs, κ, tol,
+        extrapolant, kappa, controller, step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace QNDF
@@ -1561,7 +1566,7 @@ year={2002},
 publisher={Walter de Gruyter GmbH \\& Co. KG}
 }
 """
-struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
+struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -1571,6 +1576,7 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
     tol::T
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
@@ -1578,12 +1584,12 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard) where {MO}
+        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
     FBDF{MO, _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller)
+        typeof(κ), typeof(tol), typeof(step_limiter!)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
+        controller, step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace FBDF
