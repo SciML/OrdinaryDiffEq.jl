@@ -24,7 +24,8 @@ end
 
 
     # test the step_limiter! function 
-    alg_types = [Feagin10, Feagin12, Feagin14, KenCarp3, KenCarp4, KenCarp5, Kvaerno3, Kvaerno4, Kvaerno5,
+    alg_types = [ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, Feagin10, Feagin12, Feagin14, 
+                KenCarp3, KenCarp4, KenCarp5, Kvaerno3, Kvaerno4, Kvaerno5,
                 Rosenbrock23, Rosenbrock32, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, 
                 Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr,
                 RadauIIA5, RadauIIA3, SIR54, Alshina2, Alshina3, Heun, Ralston, Midpoint, RK4,
@@ -42,7 +43,7 @@ end
                 CKLLSRK43_2, CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M, CKLLSRK54_3C_3R, 
                 CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R, 
                  CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R] #Stepanov5           
-    alg_types = []
+    alg_types = [ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2,]
     for alg_type in alg_types
         test_step_limiter(alg_type)
     end

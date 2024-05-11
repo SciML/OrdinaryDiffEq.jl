@@ -1,6 +1,6 @@
 abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
 
-@cache mutable struct ImplicitEulerCache{uType, rateType, uNoUnitsType, N, AV} <:
+@cache mutable struct ImplicitEulerCache{uType, rateType, uNoUnitsType, N, AV, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -9,6 +9,7 @@ abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
     atmp::uNoUnitsType
     nlsolver::N
     algebraic_vars::AV
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -26,7 +27,7 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars)
+    ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!)
 end
 
 mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
@@ -57,11 +58,12 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
     ImplicitMidpointConstantCache(nlsolver)
 end
 
-@cache mutable struct ImplicitMidpointCache{uType, rateType, N} <: SDIRKMutableCache
+@cache mutable struct ImplicitMidpointCache{uType, rateType, N, StepLimiter} <: SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
     nlsolver::N
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -72,7 +74,7 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
     nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
     fsalfirst = zero(rate_prototype)
-    ImplicitMidpointCache(u, uprev, fsalfirst, nlsolver)
+    ImplicitMidpointCache(u, uprev, fsalfirst, nlsolver, alg.step_limiter!)
 end
 
 mutable struct TrapezoidConstantCache{uType, tType, N} <: OrdinaryDiffEqConstantCache
@@ -95,7 +97,7 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
     TrapezoidConstantCache(uprev3, tprev2, nlsolver)
 end
 
-@cache mutable struct TrapezoidCache{uType, rateType, uNoUnitsType, tType, N} <:
+@cache mutable struct TrapezoidCache{uType, rateType, uNoUnitsType, tType, N, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -105,6 +107,7 @@ end
     uprev3::uType
     tprev2::tType
     nlsolver::N
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -121,7 +124,7 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    TrapezoidCache(u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver)
+    TrapezoidCache(u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, alg.step_limiter!)
 end
 
 mutable struct TRBDF2ConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
@@ -140,7 +143,7 @@ function alg_cache(alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     TRBDF2ConstantCache(nlsolver, tab)
 end
 
-@cache mutable struct TRBDF2Cache{uType, rateType, uNoUnitsType, Tab, N} <:
+@cache mutable struct TRBDF2Cache{uType, rateType, uNoUnitsType, Tab, N, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -150,6 +153,7 @@ end
     atmp::uNoUnitsType
     nlsolver::N
     tab::Tab
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -167,7 +171,7 @@ function alg_cache(alg::TRBDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     zprev = zero(u)
     zᵧ = zero(u)
 
-    TRBDF2Cache(u, uprev, fsalfirst, zprev, zᵧ, atmp, nlsolver, tab)
+    TRBDF2Cache(u, uprev, fsalfirst, zprev, zᵧ, atmp, nlsolver, tab, alg.step_limiter!)
 end
 
 mutable struct SDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache

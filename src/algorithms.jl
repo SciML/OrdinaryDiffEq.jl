@@ -2003,7 +2003,7 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
     RadauIIA3{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff),typeof(step_limiter!)}(linsolve,
+        typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
         precs,
         extrapolant,
         κ,
@@ -2077,13 +2077,14 @@ ImplicitEuler: SDIRK Method
 A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
 Strong-stability preserving (SSP).
 """
-struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function ImplicitEuler(; chunk_size = Val{0}(), autodiff = Val{true}(),
@@ -2091,36 +2092,38 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = Val{true}(),
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     ImplicitEuler{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
-        nlsolve, precs, extrapolant, controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
+        nlsolve, precs, extrapolant, controller, step_limiter!)
 end
 """
 ImplicitMidpoint: SDIRK Method
 A second order A-stable symplectic and symmetric implicit solver.
 Good for highly stiff equations which need symplectic integration.
 """
-struct ImplicitMidpoint{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct ImplicitMidpoint{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    step_limiter!::StepLimiter
 end
 
 function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear)
+        extrapolant = :linear, step_limiter! = trivial_limiter!)
     ImplicitMidpoint{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        step_limiter!)
 end
 
 """
@@ -2134,13 +2137,14 @@ Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via div
 differences approximation to the second derivative terms in the local truncation error
 estimate (the SPICE approximation strategy).
 """
-struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function Trapezoid(; chunk_size = Val{0}(), autodiff = Val{true}(),
@@ -2148,14 +2152,15 @@ function Trapezoid(; chunk_size = Val{0}(), autodiff = Val{true}(),
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     Trapezoid{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
-        controller)
+        controller,
+        step_limiter!)
 end
 
 """
@@ -2174,7 +2179,7 @@ TRBDF2: SDIRK Method
 A second order A-B-L-S-stable one-step ESDIRK method.
 Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
 """
-struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2182,17 +2187,18 @@ struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function TRBDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     TRBDF2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace TRBDF2
