@@ -3004,16 +3004,12 @@ University of Geneva, Switzerland.
 =#
 
 for Alg in [
-    :Rosenbrock23,
-    :Rosenbrock32,
     :ROS2,
     :ROS2PR,
     :ROS2S,
     :ROS3,
     :ROS3PR,
     :Scholz4_7,
-    :ROS3P,
-    :Rodas3,
     :ROS34PW1a,
     :ROS34PW1b,
     :ROS34PW2,
@@ -3026,18 +3022,8 @@ for Alg in [
     :Velds4,
     :GRK4T,
     :GRK4A,
-    :Ros4LStab,
-    :Rodas23W,
-    :Rodas3P,
-    :Rodas4,
-    :Rodas42,
-    :Rodas4P,
-    :Rodas4P2,
-    :Rodas5,
-    :Rodas5P,
-    :Rodas5Pe,
-    :Rodas5Pr
-]
+    :Ros4LStab,]
+
     @eval begin
         struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -3057,6 +3043,43 @@ for Alg in [
     @eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
 end
 
+# for Rosenbrock methods with step_limiter
+for Alg in [
+    :Rosenbrock23,
+    :Rosenbrock32,
+    :ROS3P,
+    :Rodas3,
+    :Rodas23W,
+    :Rodas3P,
+    :Rodas4,
+    :Rodas42,
+    :Rodas4P,
+    :Rodas4P2,
+    :Rodas5,
+    :Rodas5P,
+    :Rodas5Pe,
+    :Rodas5Pr]
+
+@eval begin
+    struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter} <:
+            OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+        linsolve::F
+        precs::P
+        step_limiter!::StepLimiter
+    end
+    function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
+            standardtag = Val{true}(), concrete_jac = nothing,
+            diff_type = Val{:forward}, linsolve = nothing, 
+            precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!)
+        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+            typeof(precs), diff_type, _unwrap_val(standardtag),
+            _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve,
+            precs, step_limiter!)
+    end
+end
+
+@eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
+end
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
     tableau::TabType

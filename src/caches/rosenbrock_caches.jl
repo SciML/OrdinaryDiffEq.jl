@@ -5,7 +5,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A, AV} <: RosenbrockMutableCache
+    RTolType, A, AV, StepLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
     k₁::rateType
@@ -32,13 +32,14 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
     reltol::RTolType
     alg::A
     algebraic_vars::AV
+    step_limiter!::StepLimiter
 end
 
 TruncatedStacktraces.@truncate_stacktrace Rosenbrock23Cache 1
 
 @cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A, AV} <: RosenbrockMutableCache
+    RTolType, A, AV, StepLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
     k₁::rateType
@@ -65,6 +66,7 @@ TruncatedStacktraces.@truncate_stacktrace Rosenbrock23Cache 1
     reltol::RTolType
     alg::A
     algebraic_vars::AV
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -108,7 +110,7 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     Rosenbrock23Cache(u, uprev, k₁, k₂, k₃, du1, du2, f₁,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg, algebraic_vars)
+        linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!)
 end
 
 function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -151,7 +153,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     Rosenbrock32Cache(u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
-        grad_config, reltol, alg, algebraic_vars)
+        grad_config, reltol, alg, algebraic_vars, alg.step_limiter!)
 end
 
 struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
@@ -230,7 +232,7 @@ end
 
 @cache mutable struct Rosenbrock33Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A} <: RosenbrockMutableCache
+    RTolType, A, StepLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
     du::rateType
@@ -257,6 +259,7 @@ end
     grad_config::GCType
     reltol::RTolType
     alg::A
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -295,7 +298,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     Rosenbrock33Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -313,7 +316,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache mutable struct Rosenbrock34Cache{uType, rateType, uNoUnitsType, JType, WType,
-    TabType, TFType, UFType, F, JCType, GCType} <:
+    TabType, TFType, UFType, F, JCType, GCType, StepLimiter} <:
                       RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -339,6 +342,7 @@ end
     linsolve::F
     jac_config::JCType
     grad_config::GCType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -378,7 +382,7 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     Rosenbrock34Cache(u, uprev, du, du1, du2, k1, k2, k3, k4,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
-        linsolve, jac_config, grad_config)
+        linsolve, jac_config, grad_config, alg.step_limiter!)
 end
 
 struct Rosenbrock34ConstantCache{TF, UF, Tab, JType, WType, F} <:
@@ -456,7 +460,7 @@ struct Rodas3PConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqC
 end
 
 @cache mutable struct Rodas23WCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A} <:
+    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter} <:
                       RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -488,10 +492,11 @@ end
     grad_config::GCType
     reltol::RTolType
     alg::A
+    step_limiter!::StepLimiter
 end
 
 @cache mutable struct Rodas3PCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A} <:
+    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter} <:
                       RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -523,6 +528,7 @@ end
     grad_config::GCType
     reltol::RTolType
     alg::A
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -565,7 +571,7 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rodas23WCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace Rodas23WCache 1
@@ -609,7 +615,7 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
     Rodas3PCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace Rodas3PCache 1
@@ -657,7 +663,7 @@ struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqCo
 end
 
 @cache mutable struct Rodas4Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A} <:
+    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter} <:
                       RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -689,6 +695,7 @@ end
     grad_config::GCType
     reltol::RTolType
     alg::A
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -732,7 +739,7 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
         k5, k6,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace Rodas4Cache 1
@@ -793,7 +800,7 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
         k5, k6,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -852,7 +859,7 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
         k5, k6,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -911,7 +918,7 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
         k5, k6,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -944,7 +951,7 @@ end
 
 @cache mutable struct Rosenbrock5Cache{
     uType, rateType, uNoUnitsType, JType, WType, TabType,
-    TFType, UFType, F, JCType, GCType, RTolType, A} <:
+    TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter} <:
                       RosenbrockMutableCache
     u::uType
     uprev::uType
@@ -979,6 +986,7 @@ end
     grad_config::GCType
     reltol::RTolType
     alg::A
+    step_limiter!::StepLimiter
 end
 
 TruncatedStacktraces.@truncate_stacktrace Rosenbrock5Cache 1
@@ -1028,7 +1036,7 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         k5, k6, k7, k8,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -1090,7 +1098,7 @@ function alg_cache(alg::Union{Rodas5P, Rodas5Pe, Rodas5Pr}, u, rate_prototype, :
         k5, k6, k7, k8,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
-        linsolve, jac_config, grad_config, reltol, alg)
+        linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!)
 end
 
 function alg_cache(alg::Union{Rodas5P, Rodas5Pe, Rodas5Pr}, u, rate_prototype, ::Type{uEltypeNoUnits},
