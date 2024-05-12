@@ -113,6 +113,66 @@ function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
     RKM(stage_limiter!, step_limiter!, False())
 end
 
+@doc explicit_rk_docstring("4-stage Pseudo-Symplectic Explicit RK method.", "3p5q(4)",
+    references = "@article{Aubry1998,
+    author = {A. Aubry and P. Chartier},
+    journal = {BIT Numer. Math.},
+    title =  {Pseudo-symplectic {R}unge-{K}utta methods},
+    year = {1998},
+    },
+    @article{Capuano2017,
+    title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
+    journal = {J. Comput. Phys.},
+    year = {2017},
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}")
+Base.@kwdef struct PSRK3p5q4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+@doc explicit_rk_docstring("5-stage Pseudo-Symplectic Explicit RK method.", "3p6q(5)",
+    references = "@article{Aubry1998,
+    author = {A. Aubry and P. Chartier},
+    journal = {BIT Numer. Math.},
+    title =  {Pseudo-symplectic {R}unge-{K}utta methods},
+    year = {1998},
+    },
+    @article{Capuano2017,
+    title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
+    journal = {J. Comput. Phys.},
+    year = {2017},
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}")
+Base.@kwdef struct PSRK3p6q5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+@doc explicit_rk_docstring("6-stage Pseudo-Symplectic Explicit RK method.", "4p7q(6)",
+    references = "@article{Aubry1998,
+    author = {A. Aubry and P. Chartier},
+    journal = {BIT Numer. Math.},
+    title =  {Pseudo-symplectic {R}unge-{K}utta methods},
+    volume = {38},
+    PAGES = {439-461},
+    year = {1998},
+    },
+    @article{Capuano2017,
+    title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
+    journal = {J. Comput. Phys.},
+    volume = {328},
+    pages = {86-94},
+    year = {2017},
+    issn = {0021-9991},
+    doi = {https://doi.org/10.1016/j.jcp.2016.10.040},
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}")
+Base.@kwdef struct PSRK4p7q6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
 @doc explicit_rk_docstring("5th order Explicit RK method.", "MSRK5",
     references = "Misha Stepanov - https://arxiv.org/pdf/2202.08443.pdf : Figure 3.")
 Base.@kwdef struct MSRK5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm

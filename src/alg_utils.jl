@@ -78,6 +78,10 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
+isfsal(alg::PSRK3p5q4) = false
+isfsal(alg::PSRK3p6q5) = false
+isfsal(alg::PSRK4p7q6) = false
+
 get_current_isfsal(alg, cache) = isfsal(alg)
 
 # evaluates f(t[i])
@@ -568,6 +572,9 @@ alg_order(alg::MSRK5) = 5
 alg_order(alg::MSRK6) = 6
 alg_order(alg::Stepanov5) = 5
 alg_order(alg::SIR54) = 5
+alg_order(alg::PSRK4p7q6) = 4
+alg_order(alg::PSRK3p6q5) = 3
+alg_order(alg::PSRK3p5q4) = 3
 
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5

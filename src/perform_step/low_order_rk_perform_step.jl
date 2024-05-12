@@ -1467,6 +1467,255 @@ end
     return nothing
 end
 
+function initialize!(integrator, cache::PSRK4p7q6ConstantCache)
+    integrator.kshortsize = 6
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = zero(integrator.fsalfirst)
+    integrator.k[3] = zero(integrator.fsalfirst)
+    integrator.k[4] = zero(integrator.fsalfirst)
+    integrator.k[5] = zero(integrator.fsalfirst)
+    integrator.k[6] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::PSRK4p7q6ConstantCache, repeat_step = false)
+    @unpack u, uprev, f, p, dt, t = integrator
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, b6, c2, c3, c4, c5, c6 = cache
+
+    k1 = f(uprev, p, t)
+    tmp = uprev + dt * (a21 * k1)
+    k2 = f(tmp, p, t + c2 * dt)
+    tmp = uprev + dt * (a31 * k1 + a32 * k2)
+    k3 = f(tmp, p, t + c3 * dt)
+    tmp = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    k4 = f(tmp, p, t + dt * c4)
+    tmp = uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    k5 = f(tmp, p, t + dt * c5)
+    tmp = uprev + dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5)
+    k6 = f(tmp, p, t + dt * c6)
+    u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5 + b6 * k6)
+
+    integrator.stats.nf += 6
+    integrator.fsallast = k6
+
+    integrator.k[1] = k1
+    integrator.k[2] = k2
+    integrator.k[3] = k3
+    integrator.k[4] = k4
+    integrator.k[5] = k5
+    integrator.k[6] = k6
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::PSRK4p7q6Cache)
+    @unpack uprev, f, p, t = integrator
+
+    integrator.kshortsize = 6
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2
+    integrator.k[3] = cache.k3
+    integrator.k[4] = cache.k4
+    integrator.k[5] = cache.k5
+    integrator.k[6] = cache.k6
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k6
+end
+
+function perform_step!(integrator, cache::PSRK4p7q6Cache, repeat_step = false)
+    @unpack k1, k2, k3, k4, k5, k6, tmp, stage_limiter!, step_limiter!, thread = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, b1, b2, b3, b4, b5, b6, c2, c3, c4, c5, c6 = cache.tab
+    @unpack u, uprev, t, dt, f, p = integrator
+
+    f(k1, uprev, p, t)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a21 * k1)
+    stage_limiter!(tmp, integrator, p, t + c2 * dt)
+    f(k2, tmp, p, t + c2 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    stage_limiter!(tmp, integrator, p, t + c3 * dt)
+    f(k3, tmp, p, t + c3 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    stage_limiter!(tmp, integrator, p, t + c4 * dt)
+    f(k4, tmp, p, t + c4 * dt)
+    @.. broadcast=false thread=thread tmp=uprev +
+                                          dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    stage_limiter!(tmp, integrator, p, t + c5 * dt)
+    f(k5, tmp, p, t + c5 * dt)
+    @.. broadcast=false thread=thread tmp=uprev +
+                                          dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 +
+                                           a65 * k5)
+    stage_limiter!(tmp, integrator, p, t + c6 * dt)
+    f(k6, tmp, p, t + c6 * dt)
+    @.. broadcast=false thread=thread u=uprev +
+                                        dt *
+                                        (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5 +
+                                         b6 * k6)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    integrator.stats.nf += 6
+    integrator.fsallast = k6
+    return nothing
+end
+
+function initialize!(integrator, cache::PSRK3p6q5ConstantCache)
+    integrator.kshortsize = 5
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = zero(integrator.fsalfirst)
+    integrator.k[3] = zero(integrator.fsalfirst)
+    integrator.k[4] = zero(integrator.fsalfirst)
+    integrator.k[5] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::PSRK3p6q5ConstantCache, repeat_step = false)
+    @unpack u, uprev, f, p, dt, t = integrator
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, b1, b2, b3, b4, b5, c2, c3, c4, c5 = cache
+
+    k1 = f(uprev, p, t)
+    tmp = uprev + dt * (a21 * k1)
+    k2 = f(tmp, p, t + c2 * dt)
+    tmp = uprev + dt * (a31 * k1 + a32 * k2)
+    k3 = f(tmp, p, t + c3 * dt)
+    tmp = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    k4 = f(tmp, p, t + dt * c4)
+    tmp = uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    k5 = f(tmp, p, t + dt * c5)
+    u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5)
+
+    integrator.stats.nf += 5
+    integrator.fsallast = k5
+
+    integrator.k[1] = k1
+    integrator.k[2] = k2
+    integrator.k[3] = k3
+    integrator.k[4] = k4
+    integrator.k[5] = k5
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::PSRK3p6q5Cache)
+    @unpack uprev, f, p, t = integrator
+
+    integrator.kshortsize = 5
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2
+    integrator.k[3] = cache.k3
+    integrator.k[4] = cache.k4
+    integrator.k[5] = cache.k5
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k5
+end
+
+function perform_step!(integrator, cache::PSRK3p6q5Cache, repeat_step = false)
+    @unpack k1, k2, k3, k4, k5, tmp, stage_limiter!, step_limiter!, thread = cache
+    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, b1, b2, b3, b4, b5, c2, c3, c4, c5 = cache.tab
+    @unpack u, uprev, t, dt, f, p = integrator
+
+    f(k1, uprev, p, t)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a21 * k1)
+    stage_limiter!(tmp, integrator, p, t + c2 * dt)
+    f(k2, tmp, p, t + c2 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    stage_limiter!(tmp, integrator, p, t + c3 * dt)
+    f(k3, tmp, p, t + c3 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    stage_limiter!(tmp, integrator, p, t + c4 * dt)
+    f(k4, tmp, p, t + c4 * dt)
+    @.. broadcast=false thread=thread tmp=uprev +
+                                          dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    stage_limiter!(tmp, integrator, p, t + c5 * dt)
+    f(k5, tmp, p, t + c5 * dt)
+    @.. broadcast=false thread=thread u=uprev +
+                                        dt *
+                                        (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4 + b5 * k5)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    integrator.stats.nf += 5
+    integrator.fsallast = k5
+    return nothing
+end
+
+function initialize!(integrator, cache::PSRK3p5q4ConstantCache)
+    integrator.kshortsize = 4
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = zero(integrator.fsalfirst)
+    integrator.k[3] = zero(integrator.fsalfirst)
+    integrator.k[4] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::PSRK3p5q4ConstantCache, repeat_step = false)
+    @unpack u, uprev, f, p, dt, t = integrator
+    @unpack a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, c2, c3, c4 = cache
+
+    k1 = f(uprev, p, t)
+    tmp = uprev + dt * (a21 * k1)
+    k2 = f(tmp, p, t + c2 * dt)
+    tmp = uprev + dt * (a31 * k1 + a32 * k2)
+    k3 = f(tmp, p, t + c3 * dt)
+    tmp = uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    k4 = f(tmp, p, t + dt * c4)
+    u = uprev + dt * (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4)
+
+    integrator.fsallast = k4
+    integrator.stats.nf += 4
+
+    integrator.k[1] = k1
+    integrator.k[2] = k2
+    integrator.k[3] = k3
+    integrator.k[4] = k4
+    integrator.u = u
+end
+
+function initialize!(integrator, cache::PSRK3p5q4Cache)
+    @unpack uprev, f, p, t = integrator
+
+    integrator.kshortsize = 4
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2
+    integrator.k[3] = cache.k3
+    integrator.k[4] = cache.k4
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k4
+end
+
+function perform_step!(integrator, cache::PSRK3p5q4Cache, repeat_step = false)
+    @unpack k1, k2, k3, k4, tmp, stage_limiter!, step_limiter!, thread = cache
+    @unpack a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, c2, c3, c4 = cache.tab
+    @unpack u, uprev, t, dt, f, p = integrator
+
+    f(k1, uprev, p, t)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a21 * k1)
+    stage_limiter!(tmp, integrator, p, t + c2 * dt)
+    f(k2, tmp, p, t + c2 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    stage_limiter!(tmp, integrator, p, t + c3 * dt)
+    f(k3, tmp, p, t + c3 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    stage_limiter!(tmp, integrator, p, t + c4 * dt)
+    f(k4, tmp, p, t + c4 * dt)
+    @.. broadcast=false thread=thread u=uprev +
+                                        dt *
+                                        (b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+
+    integrator.stats.nf += 4
+    integrator.fsallast = k4
+    return nothing
+end
+
 function initialize!(integrator, cache::MSRK5ConstantCache)
     integrator.kshortsize = 9
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
