@@ -161,7 +161,7 @@ end
 
     @.. broadcast=false u=tmp + γ * z₄
 
-    step_limiter!(u, integrator, p, t)
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
@@ -410,7 +410,7 @@ end
                               eb2 * k2 + eb3 * k3 + eb4 * k4
     end
 
-    step_limiter!(u, integrator, p, t)
+    step_limiter!(u, integrator, p, t + dt)
 
     ################################### Finalize
 
@@ -798,7 +798,7 @@ end
 
     @.. broadcast=false u=tmp + γ * z₅
 
-    step_limiter!(u, integrator, p, t)
+    step_limiter!(u, integrator, p, t + dt)
 
     ################################### Finalize
 
@@ -1142,7 +1142,7 @@ end
                               eb1 * k1 + eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6
     end
 
-    step_limiter!(u, integrator, p, t)
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
@@ -1361,7 +1361,7 @@ end
 
     @.. broadcast=false u=tmp + γ * z₇
 
-    step_limiter!(u, integrator, p, t)
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
@@ -1788,7 +1788,7 @@ end
                               eb7 * k7 + eb8 * k8
     end
 
-    step_limiter!(u, integrator, p, t)
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
