@@ -614,7 +614,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack z₁, z₂, atmp, nlsolver = cache
+    @unpack z₁, z₂, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
     W = isnewton(nlsolver) ? get_W(nlsolver) : nothing
     alg = unwrap_alg(integrator, true)
@@ -650,6 +650,8 @@ end
 
     @.. broadcast=false u=uprev + z₁ / 2 + z₂ / 2
 
+    step_limiter!(u, integrator, p, t + dt)
+    
     ################################### Finalize
 
     if integrator.opts.adaptive
@@ -748,7 +750,7 @@ end
 
 @muladd function perform_step!(integrator, cache::SDIRK22Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack atmp, nlsolver = cache
+    @unpack atmp, nlsolver, step_limiter! = cache
     @unpack z, tmp = nlsolver
     @unpack a, α, β = cache.tab
     alg = unwrap_alg(integrator, true)
@@ -774,6 +776,8 @@ end
     z = nlsolve!(nlsolver, integrator, cache, repeat_step)
     nlsolvefail(nlsolver) && return
     @.. broadcast=false u=nlsolver.tmp
+
+    step_limiter!(u, integrator, p, t + dt)
 
     if integrator.opts.adaptive
         if integrator.iter > 2

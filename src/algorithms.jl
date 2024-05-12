@@ -2224,7 +2224,7 @@ publisher={ACM}
 SDIRK2: SDIRK Method
 An A-B-L stable 2nd order SDIRK method
 """
-struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2232,26 +2232,29 @@ struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function SDIRK2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     SDIRK2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
+        controller,
+        step_limiter!)
 end
 
-struct SDIRK22{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct SDIRK22{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function SDIRK22(;
@@ -2259,14 +2262,15 @@ function SDIRK22(;
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     Trapezoid{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
-        controller)
+        controller,
+        step_limiter!)
 end
 
 struct SSPSDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -3206,7 +3210,7 @@ an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Compute
 ABDF2: Multistep Method
 An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
 """
-struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
+struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -3216,18 +3220,19 @@ struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function ABDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         κ = nothing, tol = nothing, linsolve = nothing, precs = DEFAULT_PRECS,
         nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :Standard)
+        controller = :Standard, step_limiter! = trivial_limiter!)
     ABDF2{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol)}(linsolve, nlsolve, precs, κ, tol, smooth_est, extrapolant,
-        controller)
+        typeof(κ), typeof(tol), typeof(step_limiter!)}(linsolve, nlsolve, precs, κ, tol, 
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 #########################################

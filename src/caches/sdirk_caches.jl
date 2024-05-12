@@ -188,7 +188,7 @@ function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SDIRK2ConstantCache(nlsolver)
 end
 
-@cache mutable struct SDIRK2Cache{uType, rateType, uNoUnitsType, N} <: SDIRKMutableCache
+@cache mutable struct SDIRK2Cache{uType, rateType, uNoUnitsType, N, StepLimiter} <: SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -196,6 +196,7 @@ end
     z₂::uType
     atmp::uNoUnitsType
     nlsolver::N
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -212,7 +213,7 @@ function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    SDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, atmp, nlsolver)
+    SDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, atmp, nlsolver, alg.step_limiter!)
 end
 
 struct SDIRK22ConstantCache{uType, tType, N, Tab} <: OrdinaryDiffEqConstantCache
@@ -237,7 +238,7 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     SDIRK22ConstantCache(uprev3, tprev2, nlsolver)
 end
 
-@cache mutable struct SDIRK22Cache{uType, rateType, uNoUnitsType, tType, N, Tab} <:
+@cache mutable struct SDIRK22Cache{uType, rateType, uNoUnitsType, tType, N, Tab, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -248,6 +249,7 @@ end
     tprev2::tType
     nlsolver::N
     tab::Tab
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -265,7 +267,7 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    SDIRK22(u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab)
+    SDIRK22Cache(u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!) # shouldn't this be SDIRK22Cache instead of SDIRK22?
 end
 
 mutable struct SSPSDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache

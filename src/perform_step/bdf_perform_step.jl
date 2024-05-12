@@ -99,7 +99,7 @@ end
 @muladd function perform_step!(integrator, cache::ABDF2Cache, repeat_step = false)
     @unpack t, dt, f, p = integrator
     #TODO: remove zₙ₋₁ from the cache
-    @unpack atmp, dtₙ₋₁, zₙ₋₁, nlsolver = cache
+    @unpack atmp, dtₙ₋₁, zₙ₋₁, nlsolver, step_limiter! = cache
     @unpack z, tmp, ztmp = nlsolver
     alg = unwrap_alg(integrator, true)
     uₙ, uₙ₋₁, uₙ₋₂, dtₙ = integrator.u, integrator.uprev, integrator.uprev2, integrator.dt
@@ -148,6 +148,8 @@ end
     nlsolvefail(nlsolver) && return
 
     @.. broadcast=false uₙ=z
+
+    step_limiter!(uₙ, integrator, p, t + dtₙ)
 
     f(integrator.fsallast, uₙ, p, t + dtₙ)
     integrator.stats.nf += 1

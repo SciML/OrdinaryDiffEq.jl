@@ -21,7 +21,7 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     ABDF2ConstantCache(nlsolver, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
-@cache mutable struct ABDF2Cache{uType, rateType, uNoUnitsType, N, dtType} <:
+@cache mutable struct ABDF2Cache{uType, rateType, uNoUnitsType, N, dtType, StepLimiter} <:
                       OrdinaryDiffEqMutableCache
     uₙ::uType
     uₙ₋₁::uType
@@ -33,6 +33,7 @@ end
     nlsolver::N
     eulercache::ImplicitEulerCache
     dtₙ₋₁::dtType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -51,13 +52,13 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
     eulercache = ImplicitEulerCache(
-        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars)
+        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!)
 
     dtₙ₋₁ = one(dt)
     zₙ₋₁ = zero(u)
 
     ABDF2Cache(u, uprev, uprev2, fsalfirst, fsalfirstprev, zₙ₋₁, atmp,
-        nlsolver, eulercache, dtₙ₋₁)
+        nlsolver, eulercache, dtₙ₋₁, alg.step_limiter!)
 end
 
 # SBDF
