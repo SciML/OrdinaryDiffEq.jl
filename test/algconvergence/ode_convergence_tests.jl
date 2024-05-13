@@ -249,9 +249,9 @@ end
     sim23 = test_convergence(dts, prob, MEBDF2(nlsolve = NLAnderson()), reltol = 1e-2)
     @test sim23.𝒪est[:final]≈2 atol=testTol
 
-    sim24 = test_convergence(dts, prob, MEBDF2(nlsolve = NonlinearSolveAlg()), reltol = 1e-2)
+    sim24 = test_convergence(
+        dts, prob, MEBDF2(nlsolve = NonlinearSolveAlg()), reltol = 1e-2)
     @test sim24.𝒪est[:final]≈2 atol=testTol
-
 
     #FBDF
     @test_nowarn solve(prob, FBDF())

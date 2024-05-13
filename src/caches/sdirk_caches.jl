@@ -1,6 +1,7 @@
 abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
 
-@cache mutable struct ImplicitEulerCache{uType, rateType, uNoUnitsType, N, AV, StepLimiter} <:
+@cache mutable struct ImplicitEulerCache{
+    uType, rateType, uNoUnitsType, N, AV, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -27,7 +28,8 @@ function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits}
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    ImplicitEulerCache(u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!)
+    ImplicitEulerCache(
+        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!)
 end
 
 mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
@@ -58,7 +60,8 @@ function alg_cache(alg::ImplicitMidpoint, u, rate_prototype, ::Type{uEltypeNoUni
     ImplicitMidpointConstantCache(nlsolver)
 end
 
-@cache mutable struct ImplicitMidpointCache{uType, rateType, N, StepLimiter} <: SDIRKMutableCache
+@cache mutable struct ImplicitMidpointCache{uType, rateType, N, StepLimiter} <:
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -97,7 +100,8 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
     TrapezoidConstantCache(uprev3, tprev2, nlsolver)
 end
 
-@cache mutable struct TrapezoidCache{uType, rateType, uNoUnitsType, tType, N, StepLimiter} <:
+@cache mutable struct TrapezoidCache{
+    uType, rateType, uNoUnitsType, tType, N, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -124,7 +128,8 @@ function alg_cache(alg::Trapezoid, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    TrapezoidCache(u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, alg.step_limiter!)
+    TrapezoidCache(
+        u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, alg.step_limiter!)
 end
 
 mutable struct TRBDF2ConstantCache{Tab, N} <: OrdinaryDiffEqConstantCache
@@ -188,7 +193,8 @@ function alg_cache(alg::SDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
     SDIRK2ConstantCache(nlsolver)
 end
 
-@cache mutable struct SDIRK2Cache{uType, rateType, uNoUnitsType, N, StepLimiter} <: SDIRKMutableCache
+@cache mutable struct SDIRK2Cache{uType, rateType, uNoUnitsType, N, StepLimiter} <:
+                      SDIRKMutableCache
     u::uType
     uprev::uType
     fsalfirst::rateType
@@ -238,7 +244,8 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     SDIRK22ConstantCache(uprev3, tprev2, nlsolver)
 end
 
-@cache mutable struct SDIRK22Cache{uType, rateType, uNoUnitsType, tType, N, Tab, StepLimiter} <:
+@cache mutable struct SDIRK22Cache{
+    uType, rateType, uNoUnitsType, tType, N, Tab, StepLimiter} <:
                       SDIRKMutableCache
     u::uType
     uprev::uType
@@ -267,7 +274,8 @@ function alg_cache(alg::SDIRK22, u, rate_prototype, ::Type{uEltypeNoUnits},
     atmp = similar(u, uEltypeNoUnits)
     recursivefill!(atmp, false)
 
-    SDIRK22Cache(u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!) # shouldn't this be SDIRK22Cache instead of SDIRK22?
+    SDIRK22Cache(
+        u, uprev, uprev2, fsalfirst, atmp, uprev3, tprev2, nlsolver, tab, alg.step_limiter!) # shouldn't this be SDIRK22Cache instead of SDIRK22?
 end
 
 mutable struct SSPSDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
@@ -309,8 +317,6 @@ function alg_cache(alg::SSPSDIRK2, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     SSPSDIRK2Cache(u, uprev, fsalfirst, z₁, z₂, nlsolver)
 end
-
-
 
 mutable struct Cash4ConstantCache{N, Tab} <: OrdinaryDiffEqConstantCache
     nlsolver::N

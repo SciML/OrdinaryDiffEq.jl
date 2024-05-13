@@ -147,7 +147,8 @@ function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
         uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
 end
 
-function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+function build_nlsolver(
+        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
         u, uprev, p, t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -204,7 +205,6 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, No
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))
 
-
         if nlalg isa NonlinearSolveAlg
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
@@ -217,7 +217,8 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, No
             else
                 nlf = (ztmp, z, p) -> begin
                     tmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f = p
-                    _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
+                    _compute_rhs!(
+                        tmp, ztmp, ustep, γ, α, tstep, k, invγdt, method, _p, dt, f, z)[1]
                 end
                 nlp_params = (tmp, ustep, γ, α, tstep, k, invγdt, DIRK, p, dt, f)
             end
@@ -254,7 +255,9 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, No
         Divergence, nlcache)
 end
 
-function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg}, u, uprev, p,
+function build_nlsolver(
+        alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, NonlinearSolveAlg},
+        u, uprev, p,
         t, dt,
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
@@ -291,13 +294,13 @@ function build_nlsolver(alg, nlalg::Union{NLFunctional, NLAnderson, NLNewton, No
             α = tTypeNoUnits(α)
             dt = tTypeNoUnits(dt)
             if isdae
-                nlf = (z, p)-> begin
+                nlf = (z, p) -> begin
                     tmp, α, tstep, invγdt, _p, dt, uprev, f = p
                     _compute_rhs(tmp, α, tstep, invγdt, p, dt, uprev, f, z)[1]
                 end
                 nlp_params = (tmp, α, tstep, invγdt, _p, dt, uprev, f)
             else
-                nlf = (z, p)-> begin
+                nlf = (z, p) -> begin
                     tmp, γ, α, tstep, invγdt, method, _p, dt, f = p
                     _compute_rhs(tmp, γ, α, tstep, invγdt, method, _p, dt, f, z)[1]
                 end

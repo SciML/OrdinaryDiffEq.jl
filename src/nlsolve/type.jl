@@ -75,13 +75,15 @@ struct NonlinearSolveAlg{K, C1, C2, A} <: AbstractNLSolverAlgorithm
     alg::A
 end
 
-function NonlinearSolveAlg(alg=NewtonRaphson(autodiff=AutoFiniteDiff()); κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
+function NonlinearSolveAlg(alg = NewtonRaphson(autodiff = AutoFiniteDiff());
+        κ = 1 // 100, max_iter = 10, fast_convergence_cutoff = 1 // 5,
         new_W_dt_cutoff = 1 // 5, always_new = false, check_div = true)
     if relax isa Number && !(0 <= relax < 1)
         throw(ArgumentError("The relaxation parameter must be in [0, 1), got `relax = $relax`"))
     end
 
-    NonlinearSolveAlg(κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
+    NonlinearSolveAlg(
+        κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff, always_new, check_div,
         alg)
 end
 
@@ -122,7 +124,7 @@ function NLSolver{iip, tType}(z, tmp, ztmp, γ, c, α, alg, κ, fast_convergence
         convert(tType, c),
         convert(tType, α),
         alg,
-        convert(tType,  κ),
+        convert(tType, κ),
         convert(tType, fast_convergence_cutoff),
         convert(tType, ηold),
         iter,
@@ -230,7 +232,8 @@ mutable struct NLAndersonConstantCache{uType, tType, uEltypeNoUnits} <:
     droptol::Union{Nothing, tType}
 end
 
-mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <: AbstractNLSolverCache
+mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <:
+               AbstractNLSolverCache
     ustep::uType
     tstep::tType
     k::rateType

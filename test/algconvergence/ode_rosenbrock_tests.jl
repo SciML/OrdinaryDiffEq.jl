@@ -629,7 +629,7 @@ import LinearSolve
 
     sol = solve(prob, Rodas5P())
     @test length(sol) < 20
-    
+
     println("Rodas5Pe")
 
     prob = prob_ode_linear

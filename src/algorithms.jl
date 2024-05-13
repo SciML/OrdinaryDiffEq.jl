@@ -1217,6 +1217,7 @@ struct ERKN7 <: OrdinaryDiffEqAdaptivePartitionedAlgorithm end
 Does not include an adaptive method. Solves for for d-dimensional differential systems of second order linear inhomogeneous equations.
 
 !!! warn
+
     This method is only fourth order for these systems, the method is second order otherwise!
 
 ## References
@@ -1448,7 +1449,7 @@ function QNDF1(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Va
         precs,
         extrapolant,
         kappa,
-        controller, 
+        controller,
         step_limiter!)
 end
 
@@ -1489,7 +1490,7 @@ function QNDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Va
         precs,
         extrapolant,
         kappa,
-        controller, 
+        controller,
         step_limiter!)
 end
 
@@ -1540,7 +1541,8 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
     QNDF{MO, _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!)}(max_order, linsolve, nlsolve, precs, κ, tol,
+        typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!)}(
+        max_order, linsolve, nlsolve, precs, κ, tol,
         extrapolant, kappa, controller, step_limiter!)
 end
 
@@ -1588,7 +1590,8 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
     FBDF{MO, _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(step_limiter!)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
+        typeof(κ), typeof(tol), typeof(step_limiter!)}(
+        max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
         controller, step_limiter!)
 end
 
@@ -2062,7 +2065,7 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
     RadauIIA5{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff),typeof(step_limiter!)}(linsolve,
+        typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
         precs,
         smooth_est,
         extrapolant,
@@ -2242,7 +2245,8 @@ function SDIRK2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = V
         controller = :PI, step_limiter! = trivial_limiter!)
     SDIRK2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(
+        linsolve, nlsolve, precs, smooth_est, extrapolant,
         controller,
         step_limiter!)
 end
@@ -2328,8 +2332,8 @@ function Kvaerno3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller = :PI, step_limiter! = trivial_limiter!)
     Kvaerno3{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve, nlsolve, precs, 
-        smooth_est, extrapolant, controller,step_limiter!)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 """
@@ -2361,8 +2365,8 @@ function KenCarp3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller = :PI, step_limiter! = trivial_limiter!)
     KenCarp3{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve, nlsolve, precs, 
-        smooth_est, extrapolant, controller,step_limiter!)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 struct CFNLIRK3{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -2622,7 +2626,7 @@ function Kvaerno4(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller = :PI, step_limiter! = trivial_limiter!)
     Kvaerno4{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
@@ -2659,7 +2663,7 @@ function Kvaerno5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller = :PI, step_limiter! = trivial_limiter!)
     Kvaerno5{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
@@ -2692,7 +2696,7 @@ function KenCarp4(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller = :PI, step_limiter! = trivial_limiter!)
     KenCarp4{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
@@ -2762,7 +2766,7 @@ function KenCarp5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller = :PI, step_limiter! = trivial_limiter!)
     KenCarp5{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
         smooth_est, extrapolant, controller, step_limiter!)
 end
 """
@@ -3044,8 +3048,7 @@ for Alg in [
     :Velds4,
     :GRK4T,
     :GRK4A,
-    :Ros4LStab,]
-
+    :Ros4LStab]
     @eval begin
         struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -3081,26 +3084,25 @@ for Alg in [
     :Rodas5P,
     :Rodas5Pe,
     :Rodas5Pr]
-
-@eval begin
-    struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter} <:
-            OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
-        linsolve::F
-        precs::P
-        step_limiter!::StepLimiter
+    @eval begin
+        struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter} <:
+               OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+            linsolve::F
+            precs::P
+            step_limiter!::StepLimiter
+        end
+        function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
+                standardtag = Val{true}(), concrete_jac = nothing,
+                diff_type = Val{:forward}, linsolve = nothing,
+                precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!)
+            $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+                typeof(precs), diff_type, _unwrap_val(standardtag),
+                _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
+                precs, step_limiter!)
+        end
     end
-    function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
-            standardtag = Val{true}(), concrete_jac = nothing,
-            diff_type = Val{:forward}, linsolve = nothing, 
-            precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!)
-        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
-            typeof(precs), diff_type, _unwrap_val(standardtag),
-            _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve,
-            precs, step_limiter!)
-    end
-end
 
-@eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
+    @eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
 end
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
@@ -3231,7 +3233,7 @@ function ABDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true}
     ABDF2{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(step_limiter!)}(linsolve, nlsolve, precs, κ, tol, 
+        typeof(κ), typeof(tol), typeof(step_limiter!)}(linsolve, nlsolve, precs, κ, tol,
         smooth_est, extrapolant, controller, step_limiter!)
 end
 
