@@ -1,4 +1,4 @@
-@cache struct Feagin10Cache{uType, uNoUnitsType, rateType, TabType} <:
+@cache struct Feagin10Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -23,6 +23,7 @@
     atmp::uNoUnitsType
     k::rateType
     tab::TabType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -53,7 +54,7 @@ function alg_cache(alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
     k = zero(rate_prototype)
 
     Feagin10Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
-        k15, k16, k17, tmp, atmp, k, tab)
+        k15, k16, k17, tmp, atmp, k, tab, alg.step_limiter!)
 end
 
 function alg_cache(alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -63,7 +64,7 @@ function alg_cache(alg::Feagin10, u, rate_prototype, ::Type{uEltypeNoUnits},
     Feagin10ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Feagin12Cache{uType, uNoUnitsType, rateType, TabType} <:
+@cache struct Feagin12Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -96,6 +97,7 @@ end
     atmp::uNoUnitsType
     k::rateType
     tab::TabType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -134,7 +136,7 @@ function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
     k = zero(rate_prototype)
 
     Feagin12Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
-        k15, k16, k17, k18, k19, k20, k21, k22, k23, k24, k25, tmp, atmp, k, tab)
+        k15, k16, k17, k18, k19, k20, k21, k22, k23, k24, k25, tmp, atmp, k, tab, alg.step_limiter!)
 end
 
 function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -144,7 +146,7 @@ function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
     Feagin12ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct Feagin14Cache{uType, uNoUnitsType, rateType, TabType} <:
+@cache struct Feagin14Cache{uType, uNoUnitsType, rateType, TabType, StepLimiter} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
@@ -187,6 +189,7 @@ end
     atmp::uNoUnitsType
     k::rateType
     tab::TabType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::Feagin14, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -237,7 +240,7 @@ function alg_cache(alg::Feagin14, u, rate_prototype, ::Type{uEltypeNoUnits},
     Feagin14Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
         k15, k16,
         k17, k18, k19, k20, k21, k22, k23, k24, k25, k26, k27, k28, k29, k30,
-        k31, k32, k33, k34, k35, tmp, atmp, k, tab)
+        k31, k32, k33, k34, k35, tmp, atmp, k, tab, alg.step_limiter!)
 end
 
 function alg_cache(alg::Feagin14, u, rate_prototype, ::Type{uEltypeNoUnits},

@@ -21,7 +21,7 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     ABDF2ConstantCache(nlsolver, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
-@cache mutable struct ABDF2Cache{uType, rateType, uNoUnitsType, N, dtType} <:
+@cache mutable struct ABDF2Cache{uType, rateType, uNoUnitsType, N, dtType, StepLimiter} <:
                       OrdinaryDiffEqMutableCache
     uₙ::uType
     uₙ₋₁::uType
@@ -33,6 +33,7 @@ end
     nlsolver::N
     eulercache::ImplicitEulerCache
     dtₙ₋₁::dtType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -51,13 +52,13 @@ function alg_cache(alg::ABDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
     eulercache = ImplicitEulerCache(
-        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars)
+        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!)
 
     dtₙ₋₁ = one(dt)
     zₙ₋₁ = zero(u)
 
     ABDF2Cache(u, uprev, uprev2, fsalfirst, fsalfirstprev, zₙ₋₁, atmp,
-        nlsolver, eulercache, dtₙ₋₁)
+        nlsolver, eulercache, dtₙ₋₁, alg.step_limiter!)
 end
 
 # SBDF
@@ -163,7 +164,7 @@ end
 end
 
 @cache mutable struct QNDF1Cache{uType, rateType, coefType, coefType1, coefType2,
-    uNoUnitsType, N, dtType} <: OrdinaryDiffEqMutableCache
+    uNoUnitsType, N, dtType, StepLimiter} <: OrdinaryDiffEqMutableCache
     uprev2::uType
     fsalfirst::rateType
     D::coefType1
@@ -174,6 +175,7 @@ end
     utilde::uType
     nlsolver::N
     dtₙ₋₁::dtType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::QNDF1, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -224,7 +226,7 @@ function alg_cache(alg::QNDF1, u, rate_prototype, ::Type{uEltypeNoUnits},
     uprev2 = zero(u)
     dtₙ₋₁ = zero(dt)
 
-    QNDF1Cache(uprev2, fsalfirst, D, D2, R, U, atmp, utilde, nlsolver, dtₙ₋₁)
+    QNDF1Cache(uprev2, fsalfirst, D, D2, R, U, atmp, utilde, nlsolver, dtₙ₋₁, alg.step_limiter!)
 end
 
 # QNDF2
@@ -249,7 +251,7 @@ end
 end
 
 @cache mutable struct QNDF2Cache{uType, rateType, coefType, coefType1, coefType2,
-    uNoUnitsType, N, dtType} <: OrdinaryDiffEqMutableCache
+    uNoUnitsType, N, dtType, StepLimiter} <: OrdinaryDiffEqMutableCache
     uprev2::uType
     uprev3::uType
     fsalfirst::rateType
@@ -262,6 +264,7 @@ end
     nlsolver::N
     dtₙ₋₁::dtType
     dtₙ₋₂::dtType
+    step_limiter!::StepLimiter
 end
 
 function alg_cache(alg::QNDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -317,7 +320,7 @@ function alg_cache(alg::QNDF2, u, rate_prototype, ::Type{uEltypeNoUnits},
     dtₙ₋₁ = zero(dt)
     dtₙ₋₂ = zero(dt)
 
-    QNDF2Cache(uprev2, uprev3, fsalfirst, D, D2, R, U, atmp, utilde, nlsolver, dtₙ₋₁, dtₙ₋₂)
+    QNDF2Cache(uprev2, uprev3, fsalfirst, D, D2, R, U, atmp, utilde, nlsolver, dtₙ₋₁, dtₙ₋₂, alg.step_limiter!)
 end
 
 @cache mutable struct QNDFConstantCache{
@@ -377,7 +380,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 @cache mutable struct QNDFCache{MO, UType, RUType, rateType, N, coefType, dtType, EEstType,
-    gammaType, uType, uNoUnitsType} <:
+    gammaType, uType, uNoUnitsType, StepLimiter} <:
                       OrdinaryDiffEqMutableCache
     fsalfirst::rateType
     dd::uType
@@ -405,6 +408,7 @@ end
     atmp::uNoUnitsType
     atmpm1::uNoUnitsType
     atmpp1::uNoUnitsType
+    step_limiter!::StepLimiter
 end
 
 TruncatedStacktraces.@truncate_stacktrace QNDFCache 1
@@ -452,7 +456,7 @@ function alg_cache(alg::QNDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
 
     QNDFCache(fsalfirst, dd, utilde, utildem1, utildep1, ϕ, u₀, nlsolver, U, RU, D, Dtmp,
         tmp2, prevD, 1, 1, Val(max_order), dtprev, 0, 0, EEst1, EEst2, γₖ, atmp,
-        atmpm1, atmpp1)
+        atmpm1, atmpp1, alg.step_limiter!)
 end
 
 @cache mutable struct MEBDF2Cache{uType, rateType, uNoUnitsType, N} <:
@@ -567,7 +571,7 @@ end
 
 @cache mutable struct FBDFCache{
     MO, N, rateType, uNoUnitsType, tsType, tType, uType, uuType,
-    coeffType, EEstType, rType, wType} <:
+    coeffType, EEstType, rType, wType, StepLimiter} <:
                       OrdinaryDiffEqMutableCache
     fsalfirst::rateType
     nlsolver::N
@@ -595,6 +599,7 @@ end
     weights::wType #weights of Lagrangian formula
     equi_ts::tsType
     iters_from_event::Int
+    step_limiter!::StepLimiter
 end
 
 TruncatedStacktraces.@truncate_stacktrace FBDFCache 1
@@ -647,5 +652,5 @@ function alg_cache(alg::FBDF{MO}, u, rate_prototype, ::Type{uEltypeNoUnits},
     FBDFCache(fsalfirst, nlsolver, ts, ts_tmp, t_old, u_history, order, prev_order,
         u_corrector, u₀, bdf_coeffs, Val(5), nconsteps, consfailcnt, tmp, atmp,
         terkm2, terkm1, terk, terkp1, terk_tmp, terkp1_tmp, r, weights, equi_ts,
-        iters_from_event)
+        iters_from_event, alg.step_limiter!)
 end

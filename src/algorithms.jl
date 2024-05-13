@@ -1424,7 +1424,7 @@ Optional parameter kappa defaults to Shampine's accuracy-optimal -0.1850.
 
 See also `QNDF`.
 """
-struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
+struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -1432,22 +1432,24 @@ struct QNDF1{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
     extrapolant::Symbol
     kappa::κType
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function QNDF1(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -0.1850,
-        controller = :Standard)
+        controller = :Standard, step_limiter! = trivial_limiter!)
     QNDF1{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa)}(linsolve,
+        typeof(kappa), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
         kappa,
-        controller)
+        controller, 
+        step_limiter!)
 end
 
 """
@@ -1463,7 +1465,7 @@ An adaptive order 2 quasi-constant timestep L-stable numerical differentiation f
 
 See also `QNDF`.
 """
-struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
+struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -1471,22 +1473,24 @@ struct QNDF2{CS, AD, F, F2, P, FDT, ST, CJ, κType} <:
     extrapolant::Symbol
     kappa::κType
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function QNDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear, kappa = -1 // 9,
-        controller = :Standard)
+        controller = :Standard, step_limiter! = trivial_limiter!)
     QNDF2{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(kappa)}(linsolve,
+        typeof(kappa), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
         kappa,
-        controller)
+        controller, 
+        step_limiter!)
 end
 
 """
@@ -1512,7 +1516,7 @@ year={1997},
 publisher={SIAM}
 }
 """
-struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType} <:
+struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -1523,6 +1527,7 @@ struct QNDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, κType} <:
     extrapolant::Symbol
     kappa::κType
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
@@ -1531,12 +1536,12 @@ function QNDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
         extrapolant = :linear, kappa = promote(-0.1850, -1 // 9, -0.0823, -0.0415, 0),
-        controller = :Standard) where {MO}
+        controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
     QNDF{MO, _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol), typeof(kappa)}(max_order, linsolve, nlsolve, precs, κ, tol,
-        extrapolant, kappa, controller)
+        typeof(κ), typeof(tol), typeof(kappa), typeof(step_limiter!)}(max_order, linsolve, nlsolve, precs, κ, tol,
+        extrapolant, kappa, controller, step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace QNDF
@@ -1561,7 +1566,7 @@ year={2002},
 publisher={Walter de Gruyter GmbH \\& Co. KG}
 }
 """
-struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
+struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
     linsolve::F
@@ -1571,6 +1576,7 @@ struct FBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
     tol::T
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
@@ -1578,12 +1584,12 @@ function FBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(), κ = nothing,
         tol = nothing,
-        extrapolant = :linear, controller = :Standard) where {MO}
+        extrapolant = :linear, controller = :Standard, step_limiter! = trivial_limiter!) where {MO}
     FBDF{MO, _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
         _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
-        controller)
+        typeof(κ), typeof(tol), typeof(step_limiter!)}(max_order, linsolve, nlsolve, precs, κ, tol, extrapolant,
+        controller, step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace FBDF
@@ -2003,7 +2009,7 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
     RadauIIA3{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
-        typeof(new_W_γdt_cutoff),typeof(step_limiter!)}(linsolve,
+        typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
         precs,
         extrapolant,
         κ,
@@ -2077,13 +2083,14 @@ ImplicitEuler: SDIRK Method
 A 1st order implicit solver. A-B-L-stable. Adaptive timestepping through a divided differences estimate via memory.
 Strong-stability preserving (SSP).
 """
-struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct ImplicitEuler{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function ImplicitEuler(; chunk_size = Val{0}(), autodiff = Val{true}(),
@@ -2091,36 +2098,38 @@ function ImplicitEuler(; chunk_size = Val{0}(), autodiff = Val{true}(),
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :constant,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     ImplicitEuler{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
-        nlsolve, precs, extrapolant, controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
+        nlsolve, precs, extrapolant, controller, step_limiter!)
 end
 """
 ImplicitMidpoint: SDIRK Method
 A second order A-stable symplectic and symmetric implicit solver.
 Good for highly stiff equations which need symplectic integration.
 """
-struct ImplicitMidpoint{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct ImplicitMidpoint{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
+    step_limiter!::StepLimiter
 end
 
 function ImplicitMidpoint(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
-        extrapolant = :linear)
+        extrapolant = :linear, step_limiter! = trivial_limiter!)
     ImplicitMidpoint{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
-        extrapolant)
+        extrapolant,
+        step_limiter!)
 end
 
 """
@@ -2134,13 +2143,14 @@ Also known as Crank-Nicolson when applied to PDEs. Adaptive timestepping via div
 differences approximation to the second derivative terms in the local truncation error
 estimate (the SPICE approximation strategy).
 """
-struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct Trapezoid{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function Trapezoid(; chunk_size = Val{0}(), autodiff = Val{true}(),
@@ -2148,14 +2158,15 @@ function Trapezoid(; chunk_size = Val{0}(), autodiff = Val{true}(),
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     Trapezoid{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
-        controller)
+        controller,
+        step_limiter!)
 end
 
 """
@@ -2174,7 +2185,7 @@ TRBDF2: SDIRK Method
 A second order A-B-L-S-stable one-step ESDIRK method.
 Includes stiffness-robust error estimates for accurate adaptive timestepping, smoothed derivatives for highly stiff and oscillatory problems.
 """
-struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2182,17 +2193,18 @@ struct TRBDF2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function TRBDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     TRBDF2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs,
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace TRBDF2
@@ -2212,7 +2224,7 @@ publisher={ACM}
 SDIRK2: SDIRK Method
 An A-B-L stable 2nd order SDIRK method
 """
-struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2220,26 +2232,29 @@ struct SDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function SDIRK2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     SDIRK2{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
+        controller,
+        step_limiter!)
 end
 
-struct SDIRK22{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct SDIRK22{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
     precs::P
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function SDIRK22(;
@@ -2247,14 +2262,15 @@ function SDIRK22(;
         concrete_jac = nothing, diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     Trapezoid{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve,
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve,
         nlsolve,
         precs,
         extrapolant,
-        controller)
+        controller,
+        step_limiter!)
 end
 
 struct SSPSDIRK2{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -2294,7 +2310,7 @@ publisher={Springer}
 Kvaerno3: SDIRK Method
 An A-L stable stiffly-accurate 3rd order ESDIRK method
 """
-struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2302,17 +2318,18 @@ struct Kvaerno3{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function Kvaerno3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     Kvaerno3{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        smooth_est, extrapolant, controller,step_limiter!)
 end
 
 """
@@ -2326,7 +2343,7 @@ publisher={National Aeronautics and Space Administration, Langley Research Cente
 KenCarp3: SDIRK Method
 An A-L stable stiffly-accurate 3rd order ESDIRK method with splitting
 """
-struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2334,17 +2351,18 @@ struct KenCarp3{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function KenCarp3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     KenCarp3{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        smooth_est, extrapolant, controller,step_limiter!)
 end
 
 struct CFNLIRK3{CS, AD, F, F2, P, FDT, ST, CJ} <:
@@ -2586,7 +2604,7 @@ publisher={Springer}
 Kvaerno4: SDIRK Method
 An A-L stable stiffly-accurate 4th order ESDIRK method.
 """
-struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2594,17 +2612,18 @@ struct Kvaerno4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function Kvaerno4(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     Kvaerno4{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 """
@@ -2622,7 +2641,7 @@ publisher={Springer}
 Kvaerno5: SDIRK Method
 An A-L stable stiffly-accurate 5th order ESDIRK method
 """
-struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2630,17 +2649,18 @@ struct Kvaerno5{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function Kvaerno5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     Kvaerno5{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 """
@@ -2654,7 +2674,7 @@ publisher={National Aeronautics and Space Administration, Langley Research Cente
 KenCarp4: SDIRK Method
 An A-L stable stiffly-accurate 4th order ESDIRK method with splitting
 """
-struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2662,17 +2682,18 @@ struct KenCarp4{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function KenCarp4(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     KenCarp4{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 TruncatedStacktraces.@truncate_stacktrace KenCarp4
@@ -2723,7 +2744,7 @@ publisher={National Aeronautics and Space Administration, Langley Research Cente
 KenCarp5: SDIRK Method
 An A-L stable stiffly-accurate 5th order ESDIRK method with splitting
 """
-struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ} <:
+struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -2731,17 +2752,18 @@ struct KenCarp5{CS, AD, F, F2, P, FDT, ST, CJ} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function KenCarp5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS, nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :PI)
+        controller = :PI, step_limiter! = trivial_limiter!)
     KenCarp5{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(nlsolve), typeof(precs), diff_type, _unwrap_val(standardtag),
-        _unwrap_val(concrete_jac)}(linsolve, nlsolve, precs, smooth_est, extrapolant,
-        controller)
+        _unwrap_val(concrete_jac), typeof(step_limiter!)}(linsolve, nlsolve, precs, 
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 """
 @article{kennedy2019higher,
@@ -3004,16 +3026,12 @@ University of Geneva, Switzerland.
 =#
 
 for Alg in [
-    :Rosenbrock23,
-    :Rosenbrock32,
     :ROS2,
     :ROS2PR,
     :ROS2S,
     :ROS3,
     :ROS3PR,
     :Scholz4_7,
-    :ROS3P,
-    :Rodas3,
     :ROS34PW1a,
     :ROS34PW1b,
     :ROS34PW2,
@@ -3026,18 +3044,8 @@ for Alg in [
     :Velds4,
     :GRK4T,
     :GRK4A,
-    :Ros4LStab,
-    :Rodas23W,
-    :Rodas3P,
-    :Rodas4,
-    :Rodas42,
-    :Rodas4P,
-    :Rodas4P2,
-    :Rodas5,
-    :Rodas5P,
-    :Rodas5Pe,
-    :Rodas5Pr
-]
+    :Ros4LStab,]
+
     @eval begin
         struct $Alg{CS, AD, F, P, FDT, ST, CJ} <:
                OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
@@ -3057,6 +3065,43 @@ for Alg in [
     @eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
 end
 
+# for Rosenbrock methods with step_limiter
+for Alg in [
+    :Rosenbrock23,
+    :Rosenbrock32,
+    :ROS3P,
+    :Rodas3,
+    :Rodas23W,
+    :Rodas3P,
+    :Rodas4,
+    :Rodas42,
+    :Rodas4P,
+    :Rodas4P2,
+    :Rodas5,
+    :Rodas5P,
+    :Rodas5Pe,
+    :Rodas5Pr]
+
+@eval begin
+    struct $Alg{CS, AD, F, P, FDT, ST, CJ, StepLimiter} <:
+            OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+        linsolve::F
+        precs::P
+        step_limiter!::StepLimiter
+    end
+    function $Alg(; chunk_size = Val{0}(), autodiff = Val{true}(),
+            standardtag = Val{true}(), concrete_jac = nothing,
+            diff_type = Val{:forward}, linsolve = nothing, 
+            precs = DEFAULT_PRECS, step_limiter! = trivial_limiter!)
+        $Alg{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+            typeof(precs), diff_type, _unwrap_val(standardtag),
+            _unwrap_val(concrete_jac),typeof(step_limiter!)}(linsolve,
+            precs, step_limiter!)
+    end
+end
+
+@eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
+end
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
     tableau::TabType
@@ -3165,7 +3210,7 @@ an Adaptive BDF2 Formula and Comparison with The MATLAB Ode15s. Procedia Compute
 ABDF2: Multistep Method
 An adaptive order 2 L-stable fixed leading coefficient multistep BDF method.
 """
-struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
+struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     nlsolve::F2
@@ -3175,18 +3220,19 @@ struct ABDF2{CS, AD, F, F2, P, FDT, ST, CJ, K, T} <:
     smooth_est::Bool
     extrapolant::Symbol
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 function ABDF2(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{true}(),
         concrete_jac = nothing, diff_type = Val{:forward},
         κ = nothing, tol = nothing, linsolve = nothing, precs = DEFAULT_PRECS,
         nlsolve = NLNewton(),
         smooth_est = true, extrapolant = :linear,
-        controller = :Standard)
+        controller = :Standard, step_limiter! = trivial_limiter!)
     ABDF2{
         _unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve), typeof(nlsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(tol)}(linsolve, nlsolve, precs, κ, tol, smooth_est, extrapolant,
-        controller)
+        typeof(κ), typeof(tol), typeof(step_limiter!)}(linsolve, nlsolve, precs, κ, tol, 
+        smooth_est, extrapolant, controller, step_limiter!)
 end
 
 #########################################
