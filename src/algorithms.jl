@@ -3250,8 +3250,7 @@ if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
 end
 
-mutable struct AutoSwitchCache{Trait, nAlg, sAlg, tolType, T}
-    algtrait::Trait
+mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
     count::Int
     successive_switches::Int
     nonstiffalg::nAlg
@@ -3267,8 +3266,7 @@ mutable struct AutoSwitchCache{Trait, nAlg, sAlg, tolType, T}
     current::Int
 end
 
-struct AutoSwitch{Trait, nAlg, sAlg, tolType, T}
-    algtrait::Trait
+struct AutoSwitch{nAlg, sAlg, tolType, T}
     nonstiffalg::nAlg
     stiffalg::sAlg
     maxstiffstep::Int
@@ -3279,10 +3277,6 @@ struct AutoSwitch{Trait, nAlg, sAlg, tolType, T}
     stiffalgfirst::Bool
     switch_max::Int
 end
-
-struct DefaultODESolver end
-const DefaultSolverAlgorithm = Union{CompositeAlgorithm{<:Tuple, <:AutoSwitch{DefaultODESolver}},
-CompositeAlgorithm{<:Tuple, <:AutoSwitchCache{DefaultODESolver}}}
 
 ################################################################################
 """

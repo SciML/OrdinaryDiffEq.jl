@@ -136,7 +136,7 @@ function DiffEqBase.__init(
     if alg isa CompositeAlgorithm && alg.choice_function isa AutoSwitch
         auto = alg.choice_function
         _alg = CompositeAlgorithm(alg.algs,
-            AutoSwitchCache(auto.algtrait, 0, 0,
+            AutoSwitchCache(0, 0,
                 auto.nonstiffalg,
                 auto.stiffalg,
                 auto.stiffalgfirst,

@@ -1,12 +1,12 @@
 ### AutoSwitch
 ### Designed to switch between two solvers, stiff and non-stiff
 
-function AutoSwitch(nonstiffalg, stiffalg, algtrait = nothing;
+function AutoSwitch(nonstiffalg, stiffalg;
         maxstiffstep = 10, maxnonstiffstep = 3,
         nonstifftol = 9 // 10, stifftol = 9 // 10, dtfac = 2,
         stiffalgfirst = false,
         switch_max = 5)
-    AutoSwitch(algtrait, nonstiffalg, stiffalg, maxstiffstep, maxnonstiffstep,
+    AutoSwitch(nonstiffalg, stiffalg, maxstiffstep, maxnonstiffstep,
         promote(nonstifftol, stifftol)..., dtfac, stiffalgfirst, switch_max)
 end
 
@@ -30,6 +30,11 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
 end
 
 function (AS::AutoSwitchCache)(integrator)
+    #horrible awful hack
+    isdefault = integrator.alg isa CompositeAlgorithm{<:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}
+    if isdefault
+        return default_autoswitch(AS, integrator)
+    end
     if AS.current == 0
         AS.current = Int(AS.stiffalgfirst) + 1
         return AS.current
@@ -53,13 +58,13 @@ function (AS::AutoSwitchCache)(integrator)
     return AS.current
 end
 
-function AutoAlgSwitch(nonstiffalg::OrdinaryDiffEqAlgorithm, stiffalg::OrdinaryDiffEqAlgorithm, algtrait = nothing; kwargs...)
-    AS = AutoSwitch(nonstiffalg, stiffalg, algtrait; kwargs...)
+function AutoAlgSwitch(nonstiffalg::OrdinaryDiffEqAlgorithm, stiffalg::OrdinaryDiffEqAlgorithm; kwargs...)
+    AS = AutoSwitch(nonstiffalg, stiffalg; kwargs...)
     CompositeAlgorithm((nonstiffalg, stiffalg), AS)
 end
 
-function AutoAlgSwitch(nonstiffalg::Tuple, stiffalg::Tuple, algtrait; kwargs...)
-    AS = AutoSwitch(nonstiffalg, stiffalg, algtrait; kwargs...)
+function AutoAlgSwitch(nonstiffalg::Tuple, stiffalg::Tuple; kwargs...)
+    AS = AutoSwitch(nonstiffalg, stiffalg; kwargs...)
     CompositeAlgorithm((nonstiffalg..., stiffalg...), AS)
 end
 
@@ -100,7 +105,7 @@ current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF,current,current-NUM_S
 function DefaultODEAlgorithm(; lazy = true, stiffalgfirst = false, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (Rosenbrock23(;kwargs...), Rodas5P(;kwargs...), FBDF(;kwargs...), FBDF(;linsolve = LinearSolve.KrylovJL_GMRES()))
-    AutoAlgSwitch(nonstiff, stiff, DefaultODESolver(); stiffalgfirst)
+    AutoAlgSwitch(nonstiff, stiff; stiffalgfirst)
 end
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
@@ -146,8 +151,7 @@ function stiffchoice(reltol, len)
     Int(x)
 end
 
-function (AS::AutoSwitchCache{DefaultODESolver})(integrator)
-
+function default_autoswitch(AS::AutoSwitchCache, integrator)
     len = length(integrator.u)
     reltol = integrator.opts.reltol
 

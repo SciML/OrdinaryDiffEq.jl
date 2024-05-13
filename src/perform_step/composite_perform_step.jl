@@ -145,24 +145,6 @@ function choose_algorithm!(integrator, cache::CompositeCache)
     old_current = cache.current
     @inbounds if new_current != old_current
         cache.current = new_current
-        initialize!(integrator, @inbounds(cache.caches[new_current]))
-
-        controller.beta2 = beta2_default(alg2)
-        controller.beta1 = beta2_default(alg2)
-        DEFAULTBETA2S
-
-        reset_alg_dependent_opts!(integrator, integrator.alg.algs[old_current],
-        integrator.alg.algs[new_current])
-        transfer_cache!(integrator, integrator.cache.caches[old_current],
-        integrator.cache.caches[new_current])
-    end
-end
-
-function choose_algorithm!(integrator, cache::CompositeCache{<:Any, <:AutoSwitchCache{DefaultODESolver}})
-    new_current = cache.choice_function(integrator)
-    old_current = cache.current
-    @inbounds if new_current != old_current
-        cache.current = new_current
         if new_current == 1
             initialize!(integrator, @inbounds(cache.caches[1]))
         elseif new_current == 2
@@ -179,11 +161,15 @@ function choose_algorithm!(integrator, cache::CompositeCache{<:Any, <:AutoSwitch
             initialize!(integrator, @inbounds(cache.caches[new_current]))
         end
 
-        # dtchangable, qmin_default, qmax_default, and isadaptive ignored since all same
-        integrator.opts.controller.beta1 = DEFAULTBETA1S[new_current]
-        integrator.opts.controller.beta2 = DEFAULTBETA2S[new_current]
+        controller.beta2 = beta2_default(alg2)
+        controller.beta1 = beta2_default(alg2)
+        DEFAULTBETA2S
+
+        reset_alg_dependent_opts!(integrator, integrator.alg.algs[old_current],
+        integrator.alg.algs[new_current])
+        transfer_cache!(integrator, integrator.cache.caches[old_current],
+        integrator.cache.caches[new_current])
     end
-    nothing
 end
 
 """
