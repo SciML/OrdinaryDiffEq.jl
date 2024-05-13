@@ -136,7 +136,8 @@ function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},
     k = zero(rate_prototype)
 
     Feagin12Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14,
-        k15, k16, k17, k18, k19, k20, k21, k22, k23, k24, k25, tmp, atmp, k, tab, alg.step_limiter!)
+        k15, k16, k17, k18, k19, k20, k21, k22, k23, k24,
+        k25, tmp, atmp, k, tab, alg.step_limiter!)
 end
 
 function alg_cache(alg::Feagin12, u, rate_prototype, ::Type{uEltypeNoUnits},

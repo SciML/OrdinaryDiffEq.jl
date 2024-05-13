@@ -188,7 +188,7 @@ function get_differential_vars(f, u)
         mm = f.mass_matrix
         mm = mm isa MatrixOperator ? mm.A : mm
 
-        if mm isa UniformScaling
+        if mm isa UniformScaling || all(!iszero, mm)
             return nothing
         elseif !(mm isa SciMLOperators.AbstractSciMLOperator) && isdiag(mm)
             differential_vars = reshape(diag(mm) .!= 0, size(u))

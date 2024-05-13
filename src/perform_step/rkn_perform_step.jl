@@ -1840,12 +1840,12 @@ end
     duprev, uprev = integrator.uprev.x
     u, du = integrator.u.x
     #define dt values
-    halfdt = dt/2
+    halfdt = dt / 2
     dtsq = dt^2
-    eightdtsq = dtsq/8
-    halfdtsq = dtsq/2
-    sixthdtsq = dtsq/6
-    sixthdt = dt/6
+    eightdtsq = dtsq / 8
+    halfdtsq = dtsq / 2
+    sixthdtsq = dtsq / 6
+    sixthdt = dt / 6
     ttmp = t + halfdt
 
     #perform operations to find k values
@@ -1860,13 +1860,13 @@ end
     k₃ = f.f1(kdu, ku, p, t + dt)
 
     #perform final calculations to determine new y and y'.
-    u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
-    du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
+    u = uprev + sixthdtsq * (1 * k₁ + 2 * k₂ + 0 * k₃) + dt * duprev
+    du = duprev + sixthdt * (1 * k₁ + 4 * k₂ + 1 * k₃)
 
     integrator.u = ArrayPartition((du, u))
     integrator.fsallast = ArrayPartition((f.f1(du, u, p, t + dt), f.f2(du, u, p, t + dt)))
     integrator.stats.nf += 2
-    integrator.stats.nf2 += 1    
+    integrator.stats.nf2 += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
 end
@@ -1879,28 +1879,28 @@ end
     kdu, ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
 
     #define dt values
-    halfdt = dt/2
+    halfdt = dt / 2
     dtsq = dt^2
-    eightdtsq = dtsq/8
-    halfdtsq = dtsq/2
-    sixthdtsq = dtsq/6
-    sixthdt = dt/6
+    eightdtsq = dtsq / 8
+    halfdtsq = dtsq / 2
+    sixthdtsq = dtsq / 6
+    sixthdt = dt / 6
     ttmp = t + halfdt
 
     #perform operations to find k values
     k₁ = integrator.fsalfirst.x[1]
-    @.. broadcast=false ku = uprev + halfdt * duprev + eightdtsq * k₁
-    @.. broadcast=false kdu = duprev + halfdt * k₁
+    @.. broadcast=false ku=uprev + halfdt * duprev + eightdtsq * k₁
+    @.. broadcast=false kdu=duprev + halfdt * k₁
 
     f.f1(k₂, kdu, ku, p, ttmp)
-    @.. broadcast=false ku = uprev + dt * duprev + halfdtsq * k₂
-    @.. broadcast=false kdu = duprev + dt * k₂
+    @.. broadcast=false ku=uprev + dt * duprev + halfdtsq * k₂
+    @.. broadcast=false kdu=duprev + dt * k₂
 
     f.f1(k₃, kdu, ku, p, t + dt)
 
     #perform final calculations to determine new y and y'.
-    @.. broadcast=false u = uprev + sixthdtsq* (1*k₁ + 2*k₂ + 0*k₃) + dt * duprev
-    @.. broadcast=false du = duprev + sixthdt * (1*k₁ + 4*k₂ + 1*k₃)
+    @.. broadcast=false u=uprev + sixthdtsq * (1 * k₁ + 2 * k₂ + 0 * k₃) + dt * duprev
+    @.. broadcast=false du=duprev + sixthdt * (1 * k₁ + 4 * k₂ + 1 * k₃)
 
     f.f1(k.x[1], du, u, p, t + dt)
     f.f2(k.x[2], du, u, p, t + dt)
