@@ -83,7 +83,12 @@ end
     nlcache = nlsolver.cache.cache
     step!(nlcache)
     nlsolver.ztmp = nlcache.u
-    ndz = opts.internalnorm(nlcache.fu, t)
+
+    ustep = compute_ustep(tmp, γ, z, method)
+    atmp = calculate_residuals(nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
+        opts.internalnorm, t)
+    ndz = opts.internalnorm(atmp, t)
+    #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
     if integrator.alg isa QNDF
@@ -95,12 +100,17 @@ end
 @muladd function compute_step!(nlsolver::NLSolver{<:NonlinearSolveAlg, true}, integrator)
     @unpack uprev, t, p, dt, opts = integrator
     @unpack z, tmp, ztmp, γ, α, cache, method = nlsolver
-    @unpack tstep, invγdt, ustep = cache
+    @unpack tstep, invγdt, atmp, ustep = cache
 
     nlcache = nlsolver.cache.cache
     step!(nlcache)
     @.. broadcast=false ztmp=nlcache.u
-    ndz = opts.internalnorm(nlcache.fu, t)
+
+    ustep = compute_ustep!(ustep, tmp, γ, z, method)
+    calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
+        opts.internalnorm, t)
+    ndz = opts.internalnorm(atmp, t)
+    #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
     if integrator.alg isa QNDF
