@@ -993,7 +993,7 @@ function unwrap_alg(integrator, is_stiff)
     if !iscomp
         return alg
     elseif alg.choice_function isa AutoSwitchCache
-        if ralse
+        if length(alg.algs) > 2
             alg.algs[alg.choice_function.current]
         else
             if is_stiff === nothing
