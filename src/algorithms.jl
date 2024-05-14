@@ -3264,6 +3264,34 @@ mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
     stiffalgfirst::Bool
     switch_max::Int
     current::Int
+    function AutoSwitchCache(count::Int,
+                             successive_switches::Int,
+                             nonstiffalg::nAlg,
+                             stiffalg::sAlg,
+                             is_stiffalg::Bool,
+                             maxstiffstep::Int,
+                             maxnonstiffstep::Int,
+                             nonstifftol::tolType,
+                             stifftol::tolType,
+                             dtfac::T,
+                             stiffalgfirst::Bool,
+                             switch_max::Int,
+                             current::Int=0) where {nAlg, sAlg, tolType, T}
+        new{nAlg, sAlg, tolType, T}(count,
+                             successive_switches,
+                             nonstiffalg,
+                             stiffalg,
+                             is_stiffalg,
+                             maxstiffstep,
+                             maxnonstiffstep,
+                             nonstifftol,
+                             stifftol,
+                             dtfac,
+                             stiffalgfirst,
+                             switch_max,
+                             current)
+    end
+
 end
 
 struct AutoSwitch{nAlg, sAlg, tolType, T}
