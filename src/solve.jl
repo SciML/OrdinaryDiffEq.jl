@@ -532,6 +532,13 @@ function DiffEqBase.__init(
     integrator
 end
 
+function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.__init(prob, DefaultODEAlgorithm(), args...; kwargs...)
+end
+function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.__solve(prob, DefaultODEAlgorithm(), args...; kwargs...)
+end
+
 function DiffEqBase.solve!(integrator::ODEIntegrator)
     @inbounds while !isempty(integrator.opts.tstops)
         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
