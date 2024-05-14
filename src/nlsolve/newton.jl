@@ -484,7 +484,7 @@ function relax!(dz, nlsolver::AbstractNLSolver, integrator::DEIntegrator, f::TF,
         linesearch = linesearch
 
         @unpack uprev, t, p, dt, opts, isdae = integrator
-        @unpack z, tmp, ztmp, γ, iter, α, cache, method  = nlsolver
+        @unpack z, tmp, ztmp, γ, iter, α, cache, method = nlsolver
         @unpack ustep, atmp, tstep, k, invγdt, tstep, k, invγdt = cache
         function resid(z)
             # recompute residual (rhs)
