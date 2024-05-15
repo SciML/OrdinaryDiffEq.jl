@@ -1,9 +1,10 @@
 function initialize!(integrator, cache::NewmarkBetaCache)
     duprev, uprev = integrator.uprev.x
     integrator.f(cache.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-    integrator.fsalfirst = cache.fsalfirst
-    integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
     integrator.stats.nf += 1
+    integrator.fsalfirst = cache.fsalfirst
+    integrator.fsallast  = cache.fsalfirst
+    # integrator.fsallast = du_alias_or_new(cache.nlsolver, integrator.fsalfirst)
     return
 end
 
@@ -37,28 +38,33 @@ end
     # nlsolve!(...) solves for
     #   dt⋅f(innertmp + γ̂⋅z, p, t + c⋅dt) + outertmp = z
     # So we rewrite the problem
-    #     u(tₙ₊₁)'' - f(ũ(tₙ₊₁) + u(tₙ₊₁)'' β Δtₙ², ũ(tₙ₊₁)' + u(tₙ₊₁)'' γ Δtₙ,t) = 0
+    #     u(tₙ₊₁)'' - f₁(ũ(tₙ₊₁) + u(tₙ₊₁)'' β Δtₙ², ũ(tₙ₊₁)' + u(tₙ₊₁)'' γ Δtₙ,t) = 0
     #   z = Δtₙ u(tₙ₊₁)'':
-    #     z         - Δtₙ f(ũ(tₙ₊₁) +         z β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = 0
-    #                 Δtₙ f(ũ(tₙ₊₁) +         z β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = z
+    #     z         - Δtₙ f₁(ũ(tₙ₊₁) +         z β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = 0
+    #                 Δtₙ f₁(ũ(tₙ₊₁) +         z β Δtₙ, ũ(tₙ₊₁)' +         z γ,t) = z
     #   γ̂ = [γ, β Δtₙ]:
-    #                 Δtₙ f(ũ(tₙ₊₁) +         z γ̂₂    , ũ(tₙ₊₁)' +         z γ̂₁   ,t) = z
+    #                 Δtₙ f₁(ũ(tₙ₊₁) +         z γ̂₂    , ũ(tₙ₊₁)' +         z γ̂₁   ,t) = z
     #   innertmp = [ũ(tₙ₊₁)', ũ(tₙ₊₁)]:
-    #                 Δtₙ f(innertmp₂ +         z β Δtₙ², innertmp₁ +         z γ Δtₙ,t) = z
+    #                 Δtₙ f₁(innertmp₂ +         z β Δtₙ², innertmp₁ +         z γ Δtₙ,t) = z
     # Note: innertmp = nlsolve.tmp
     nlsolver.γ = ArrayPartitionNLSolveHelper(γ, β * dt) # = γ̂
     nlsolver.tmp .= upred_full # TODO check f tmp is potentially modified and if not elimiate the allocation of upred_full
 
     # Use the linear extrapolation Δtₙ u(tₙ)'' as initial guess for the nonlinear solve
-    nlsolver.z .= dt*dduprev
+    @show nlsolver.z
+    @show dduprev
+    nlsolver.z = dt*dduprev
     ddu = nlsolve!(nlsolver, integrator, cache, repeat_step) / dt
     nlsolvefail(nlsolver) && return
 
     # Apply corrector
-    u .= ArrayPartition(
+    @. u = ArrayPartition(
         upred_full.x[1] + ddu*β*dt*dt,
         upred_full.x[2] + ddu*γ*dt
     )
+
+    f(integrator.fsallast, u, p, t + dt)
+    integrator.stats.nf += 1
 
     #
     if integrator.opts.adaptive
@@ -66,13 +72,10 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            δddu = (ddu - dduprev)
+            @. δddu = (integrator.fsallast - ddu)
             integrator.EEst = dt*dt/2 * (2*β - 1/3) * integrator.opts.internalnorm(δddu, t)
         end
     end
-
-    f(integrator.fsallast, u, p, t + dt)
-    integrator.stats.nf += 1
 
     return
 end

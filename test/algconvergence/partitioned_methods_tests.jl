@@ -19,6 +19,11 @@ prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
 sol = solve(prob, SymplecticEuler(), dt = 1 / 2)
 sol_verlet = solve(prob, VelocityVerlet(), dt = 1 / 100)
 sol_ruth3 = solve(prob, Ruth3(), dt = 1 / 100)
+
+harmonic_jac_f1!(J, v, u, p, t) = J[1,1] = -1.0
+ff_f1 = ODEFunction{false}(ODEFunction{false}(f1_harmonic); jac=harmonic_jac_f1!)
+ff_harmonic = DynamicalODEFunction(ff_f1, f2_harmonic; analytic = harmonic_analytic)
+prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
 sol_newmark = solve(prob, NewmarkBeta(0.5,0.25))
 
 interp_time = 0:0.001:5
@@ -387,26 +392,48 @@ sol = solve(prob, ERKN5(), reltol = 1e-8)
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
 
+# Newmark methods with damped oscillator
+
+ff_harmonic_damped = DynamicalODEFunction((ddu, v, u, p, t) -> ddu = -u - 0.5 * v,
+    (du, v, u, p, t) -> du = v,
+    analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition(
+        [
+            exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
+            sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
+        ], # du
+        [
+            exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
+            sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
+        ])
+)
+
+prob = DynamicalODEProblem(ff_harmonic_damped, [0.0], [1.0], (0.0, 10.0))
+sol_newmark = solve(prob, NewmarkBeta(0.5,0.25))
+
+ff_harmonic_damped = DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
+    (du, u, p, t) -> du,
+    analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition(
+        [
+            exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
+            sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
+        ], # du
+        [
+            exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
+            sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
+        ])
+)
+
 # Testing generalized Runge-Kutte-Nyström methods on velocity dependend ODEs with the damped oscillator
 println("Out of Place")
 
 # Damped oscillator
 prob = ODEProblem(
-    DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
-        (du, u, p, t) -> du,
-        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition(
-            [
-                exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
-                 sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
-            ], # du
-            [
-                exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
-                 sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
-            ])),
+    ff_harmonic_damped,
     OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
     DiffEqBase.NullParameters(), # p
-    SecondOrderODEProblem{false}())
+    SecondOrderODEProblem{false}()
+)
 
 dts = 1.0 ./ 2.0 .^ (5:-1:0)
 sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)

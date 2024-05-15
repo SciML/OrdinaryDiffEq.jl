@@ -212,3 +212,9 @@ end
 function Base.:*(γ::ArrayPartitionNLSolveHelper{T1}, z::ArrayPartition{T2, <: Tuple{<:Any, <:Any}}) where {T1, T2}
     ArrayPartition(γ.γ₁*z.x[1], γ.γ₂*z.x[2])
 end
+
+Base.:*(γ::ArrayPartitionNLSolveHelper{T}, scalar::T) where T = scalar*γ
+
+function Base.:*(scalar::T, γ::ArrayPartitionNLSolveHelper{T}) where T
+    ArrayPartitionNLSolveHelper(scalar*γ.γ₁, scalar*γ.γ₂)
+end
