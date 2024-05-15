@@ -23,7 +23,9 @@ function rober(u, p, t)
       k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
       k₂ * y₂^2]
 end
-
 prob_rober = ODEProblem(rober, [1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4))
 sol = solve(prob_rober)
 rosensol = solve(prob_rober, Rosenbrock23())
+# test that default isn't much worse than Rosenbrock23 (we expect it to use Rosenbrock23 for this).
+@test sol.stats.naccept < rosensol.stats.naccept + 2
+@test sol.stats.nf < rosensol.stats.nf + 20

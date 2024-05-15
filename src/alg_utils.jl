@@ -966,8 +966,7 @@ alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
-    iscomp = alg isa CompositeAlgorithm
-    if !iscomp
+    if !(alg isa CompositeAlgorithm)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
         if length(alg.algs) >2
@@ -989,8 +988,7 @@ end
 
 function unwrap_alg(integrator, is_stiff)
     alg = integrator.alg
-    iscomp = alg isa CompositeAlgorithm
-    if !iscomp
+    if !(alg isa CompositeAlgorithm)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
         if length(alg.algs) > 2
