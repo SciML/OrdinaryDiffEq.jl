@@ -2,15 +2,15 @@ using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
 
 u0 = fill(0.0, 2)
 v0 = ones(2)
-function f1_harmonic(dv, v, u, p, t)
+function f1_harmonic(dv, u, v, p, t)
     dv .= -u
 end
-function f2_harmonic(du, v, u, p, t)
+function f2_harmonic(du, u, v, p, t)
     du .= v
 end
 function harmonic_analytic(y0, p, x)
-    v0, u0 = y0.x
-    ArrayPartition(-u0 * sin(x) + v0 * cos(x), u0 * cos(x) + v0 * sin(x))
+    u0, v0 = y0.x
+    ArrayPartition(u0 * cos(x) + v0 * sin(x), -u0 * sin(x) + v0 * cos(x))
 end
 ff_harmonic = DynamicalODEFunction(f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
 prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
@@ -20,11 +20,16 @@ sol = solve(prob, SymplecticEuler(), dt = 1 / 2)
 sol_verlet = solve(prob, VelocityVerlet(), dt = 1 / 100)
 sol_ruth3 = solve(prob, Ruth3(), dt = 1 / 100)
 
-harmonic_jac_f1!(J, v, u, p, t) = J[1,1] = -1.0
-ff_f1 = ODEFunction{false}(ODEFunction{false}(f1_harmonic); jac=harmonic_jac_f1!)
+# We need these to trick ODEFunction into accepting the split function
+f1_harmonic(dv, vu::ArrayPartition, p, t) = f1_harmonic(dv, vu.x[1], vu.x[2], p, t)
+f2_harmonic(du, vu::ArrayPartition, p, t) = f2_harmonic(du, vu.x[1], vu.x[2], p, t)
+# We use these to trick the Newton into computing the right Jacobian
+harmonic_jac_f1!(J, vu::ArrayPartition, p, t) = harmonic_jac_f1!(J, vu.x[1], vu.x[2], p, t)
+harmonic_jac_f1!(J, u, v, p, t) = J[1,1] = -1.0
+ff_f1 = ODEFunction(f1_harmonic; jac=harmonic_jac_f1!)
 ff_harmonic = DynamicalODEFunction(ff_f1, f2_harmonic; analytic = harmonic_analytic)
-prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
-sol_newmark = solve(prob, NewmarkBeta(0.5,0.25))
+prob = DynamicalODEProblem(ff_harmonic, u0, v0, (0.0, 5.0))
+sol_newmark = solve(prob, NewmarkBeta(0.5,0.25), dt = 1 / 2)
 
 interp_time = 0:0.001:5
 interp = sol(0.5)

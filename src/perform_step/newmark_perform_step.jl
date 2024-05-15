@@ -51,14 +51,12 @@ end
     nlsolver.tmp .= upred_full # TODO check f tmp is potentially modified and if not elimiate the allocation of upred_full
 
     # Use the linear extrapolation Δtₙ u(tₙ)'' as initial guess for the nonlinear solve
-    @show nlsolver.z
-    @show dduprev
     nlsolver.z = dt*dduprev
     ddu = nlsolve!(nlsolver, integrator, cache, repeat_step) / dt
     nlsolvefail(nlsolver) && return
 
     # Apply corrector
-    @. u = ArrayPartition(
+    u = ArrayPartition(
         upred_full.x[1] + ddu*β*dt*dt,
         upred_full.x[2] + ddu*γ*dt
     )
@@ -72,7 +70,7 @@ end
             integrator.EEst = one(integrator.EEst)
         else
             # Zienkiewicz and Xie (1991) Eq. 21
-            @. δddu = (integrator.fsallast - ddu)
+            δddu = (integrator.fsallast.x[1] - ddu)
             integrator.EEst = dt*dt/2 * (2*β - 1/3) * integrator.opts.internalnorm(δddu, t)
         end
     end

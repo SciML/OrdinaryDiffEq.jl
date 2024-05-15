@@ -42,6 +42,7 @@ get_new_W!(::AbstractNLSolverCache)::Bool = true
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}) = nlcache.W
 
+set_W_γdt!(nlsolver::AbstractNLSolver, W_γdt::ArrayPartitionNLSolveHelper) = set_W_γdt!(nlsolver, W_γdt.γ₁ + W_γdt.γ₂)
 set_W_γdt!(nlsolver::AbstractNLSolver, W_γdt) = set_W_γdt!(nlsolver.cache, W_γdt)
 function set_W_γdt!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, W_γdt)
     nlcache.W_γdt = W_γdt

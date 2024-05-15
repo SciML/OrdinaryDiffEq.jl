@@ -222,3 +222,5 @@ Base.:*(γ::ArrayPartitionNLSolveHelper{T}, scalar::T) where T = scalar*γ
 function Base.:*(scalar::T, γ::ArrayPartitionNLSolveHelper{T}) where T
     ArrayPartitionNLSolveHelper(scalar*γ.γ₁, scalar*γ.γ₂)
 end
+
+Base.inv(γ::ArrayPartitionNLSolveHelper) = 1/(γ.γ₁+γ.γ₂)
