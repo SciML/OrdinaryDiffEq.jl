@@ -16,4 +16,14 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol=1e-10)
 @test sol.stats.naccept < tsitsol.stats.naccept + 2
 @test sol.stats.nf < tsitsol.stats.nf + 20
 
-prob_ode_2Dlinear_stiff = ODEProblem(f_2dlinear, rand(4, 2), (0.0, 1.0), -1.01)
+function rober(u, p, t)
+    y₁, y₂, y₃ = u
+    k₁, k₂, k₃ = p
+    [-k₁ * y₁ + k₃ * y₂ * y₃,
+      k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
+      k₂ * y₂^2]
+end
+
+prob_rober = ODEProblem(rober, [1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4))
+sol = solve(prob_rober)
+rosensol = solve(prob_rober, Rosenbrock23())
