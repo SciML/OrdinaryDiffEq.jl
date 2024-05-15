@@ -2,15 +2,15 @@ using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
 
 u0 = fill(0.0, 2)
 v0 = ones(2)
-function f1_harmonic(dv, u, v, p, t)
+function f1_harmonic(dv, v, u, p, t)
     dv .= -u
 end
-function f2_harmonic(du, u, v, p, t)
+function f2_harmonic(du, v, u, p, t)
     du .= v
 end
 function harmonic_analytic(y0, p, x)
-    u0, v0 = y0.x
-    ArrayPartition(u0 * cos(x) + v0 * sin(x), -u0 * sin(x) + v0 * cos(x))
+    v0, u0 = y0.x
+    ArrayPartition(-u0 * sin(x) + v0 * cos(x), u0 * cos(x) + v0 * sin(x))
 end
 ff_harmonic = DynamicalODEFunction(f1_harmonic, f2_harmonic; analytic = harmonic_analytic)
 prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
@@ -28,8 +28,8 @@ harmonic_jac_f1!(J, vu::ArrayPartition, p, t) = harmonic_jac_f1!(J, vu.x[1], vu.
 harmonic_jac_f1!(J, u, v, p, t) = J[1,1] = -1.0
 ff_f1 = ODEFunction(f1_harmonic; jac=harmonic_jac_f1!)
 ff_harmonic = DynamicalODEFunction(ff_f1, f2_harmonic; analytic = harmonic_analytic)
-prob = DynamicalODEProblem(ff_harmonic, u0, v0, (0.0, 5.0))
-sol_newmark = solve(prob, NewmarkBeta(0.5,0.25), dt = 1 / 2)
+prob = DynamicalODEProblem(ff_harmonic, v0, u0, (0.0, 5.0))
+sol_newmark = solve(prob, NewmarkBeta(0.5,0.25), dt = 1 / 100, adaptive=false)
 
 interp_time = 0:0.001:5
 interp = sol(0.5)

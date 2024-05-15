@@ -48,6 +48,7 @@ end
     #                 Δtₙ f₁(innertmp₂ +         z β Δtₙ², innertmp₁ +         z γ Δtₙ,t) = z
     # Note: innertmp = nlsolve.tmp
     nlsolver.γ = ArrayPartitionNLSolveHelper(γ, β * dt) # = γ̂
+    # nlsolver.γ = ArrayPartitionNLSolveHelper(0.0, β * dt)
     nlsolver.tmp .= upred_full # TODO check f tmp is potentially modified and if not elimiate the allocation of upred_full
 
     # Use the linear extrapolation Δtₙ u(tₙ)'' as initial guess for the nonlinear solve
@@ -57,12 +58,13 @@ end
 
     # Apply corrector
     u = ArrayPartition(
-        upred_full.x[1] + ddu*β*dt*dt,
-        upred_full.x[2] + ddu*γ*dt
+        upred_full.x[1] + ddu*γ*dt,
+        upred_full.x[2] + ddu*β*dt*dt,
     )
 
     f(integrator.fsallast, u, p, t + dt)
     integrator.stats.nf += 1
+    integrator.u = u
 
     #
     if integrator.opts.adaptive
