@@ -12,10 +12,10 @@ tsitsol = solve(prob_ode_2Dlinear, Tsit5())
 @test all(isequal(1), sol.alg_choice)
 
 sol = solve(prob_ode_2Dlinear, reltol=1e-10)
-vernsol = solve(prob_ode_2Dlinear, AutoVern7(Rodas5P()), reltol=1e-10)
+vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol=1e-10)
 # test that default isn't much worse than Tsit5 (we expect it to use Tsit5 for this).
-@test sol.stats.naccept < tsitsol.stats.naccept + 2
-@test sol.stats.nf < tsitsol.stats.nf + 20
+@test sol.stats.naccept == vernsol.stats.naccept
+@test sol.stats.nf == vernsol.stats.nf
 @test all(isequal(2), sol.alg_choice)
 
 function rober(u, p, t)
