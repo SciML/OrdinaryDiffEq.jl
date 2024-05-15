@@ -206,6 +206,13 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 qmax_default(alg::Union{RadauIIA3, RadauIIA5}) = 8
 
+function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
+    return alg isa Union{OrdinaryDiffEqExponentialAlgorithm,
+                         OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+                         OrdinaryDiffEqImplicitAlgorithm,
+                         OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+                         DAEAlgorithm}
+end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
