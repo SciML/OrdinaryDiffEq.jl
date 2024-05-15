@@ -31,7 +31,7 @@ end
 
 function (AS::AutoSwitchCache)(integrator)
     #horrible awful hack
-    isdefault = integrator.alg isa CompositeAlgorithm{<:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}
+    isdefault = integrator.alg isa CompositeAlgorithm{<:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}
     if isdefault
         return default_autoswitch(AS, integrator)
     end

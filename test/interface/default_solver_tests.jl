@@ -25,7 +25,7 @@ function rober(u, p, t)
 end
 prob_rober = ODEProblem(rober, [1.0,0.0,0.0],(0.0,1e5),(0.04,3e7,1e4))
 sol = solve(prob_rober)
-rosensol = solve(prob_rober, Rosenbrock23())
-# test that default isn't much worse than Rosenbrock23 (we expect it to use Rosenbrock23 for this).
-@test sol.stats.naccept < rosensol.stats.naccept + 2
-@test sol.stats.nf < rosensol.stats.nf + 20
+rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23()))
+# test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
+@test sol.stats.naccept == rosensol.stats.naccept
+@test sol.stats.nf == rosensol.stats.nf

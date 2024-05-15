@@ -209,28 +209,22 @@ qmax_default(alg::Union{RadauIIA3, RadauIIA5}) = 8
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-get_chunksize(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}}) where {
-        CS,
-        AD
-}
+function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
+                                  OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+                                  OrdinaryDiffEqImplicitAlgorithm{CS},
+                                  OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+                                  DAEAlgorithm{CS}}) where {CS}
     Val(CS)
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-get_chunksize_int(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = CS
-get_chunksize_int(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = CS
-get_chunksize_int(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = CS
-function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}}) where {
-        CS,
-        AD
-}
+function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
+                                      OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+                                      OrdinaryDiffEqImplicitAlgorithm{CS},
+                                      OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+                                      DAEAlgorithm{CS}}) where {CS}
     CS
 end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])

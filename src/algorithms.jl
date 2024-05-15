@@ -3239,9 +3239,12 @@ end
 
 #########################################
 
-struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
+struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
+    function CompositeAlgorithm(algs::T, choice_function::F) where {T,F}
+        new{get_chunksize_int(algs[end]), T, F}(algs, choice_function)
+    end
 end
 
 TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
