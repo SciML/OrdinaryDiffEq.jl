@@ -213,6 +213,10 @@ function Base.:*(γ::ArrayPartitionNLSolveHelper{T1}, z::ArrayPartition{T2, <: T
     ArrayPartition(γ.γ₁*z.x[1], γ.γ₂*z.x[2])
 end
 
+function Base.:*(γ::ArrayPartitionNLSolveHelper{T1}, z::Vector{T2}) where {T1, T2}
+    ArrayPartition(γ.γ₁*z, γ.γ₂*z)
+end
+
 Base.:*(γ::ArrayPartitionNLSolveHelper{T}, scalar::T) where T = scalar*γ
 
 function Base.:*(scalar::T, γ::ArrayPartitionNLSolveHelper{T}) where T
