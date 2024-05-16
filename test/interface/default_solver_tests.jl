@@ -36,7 +36,7 @@ rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23()))
 @test sol.alg_choice[end] == 3
 
 sol = solve(prob_rober, reltol=1e-7, abstol=1e-7)
-rosensol = solve(prob_rober, AutoVern7(Rodas5P(), lazy=false), reltol=1e-7, abstol=1e-7)
+rosensol = solve(prob_rober, AutoVern7(Rodas5P()), reltol=1e-7, abstol=1e-7)
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
