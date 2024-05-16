@@ -533,10 +533,12 @@ function DiffEqBase.__init(
 end
 
 function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.__init(prob, DefaultODEAlgorithm(), args...; kwargs...)
+    alg = DiffEqBase.prepare_alg(DefaultODEAlgorithm(), prob.u0, prob.p, prob)
+    DiffEqBase.__init(prob, alg, args...; kwargs...)
 end
 function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.__solve(prob, DefaultODEAlgorithm(), args...; kwargs...)
+    alg = DiffEqBase.prepare_alg(DefaultODEAlgorithm(), prob.u0, prob.p, prob)
+    DiffEqBase.__solve(prob, alg, args...; kwargs...)
 end
 
 function DiffEqBase.solve!(integrator::ODEIntegrator)

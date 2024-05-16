@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, LinearSolve
+using OrdinaryDiffEq, Test, LinearSolve, LinearAlgebra, SparseArrays
 
 f_2dlinear = (du, u, p, t) -> (@. du = p * u)
 
@@ -52,10 +52,13 @@ function exrober(du, u, p, t)
       k₂ * y₂^2, ], u[4:end])
 end
 
-for n in (100, 1000)
+for n in (100, 600)
     stiffalg = n < 500 ? 5 : 6
     linsolve = n < 500 ? nothing : KrylovJL_GMRES()
-    prob_ex_rober = ODEProblem(exrober, vcat([1.0,0.0,0.0], ones(n)),(0.0,100.0),(0.04,3e7,1e4))
+    jac_prototype = sparse(I(n+3))
+    jac_prototype[1:3, 1:3] .= 1.0
+
+    prob_ex_rober = ODEProblem(ODEFunction(exrober; jac_prototype), vcat([1.0,0.0,0.0], ones(n)),(0.0,100.0),(0.04,3e7,1e4))
     sol = solve(prob_ex_rober)
     fsol = solve(prob_ex_rober, AutoTsit5(FBDF(;linsolve)))
     # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
