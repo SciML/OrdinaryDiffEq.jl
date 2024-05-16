@@ -211,7 +211,8 @@ function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
                          OrdinaryDiffEqAdaptiveExponentialAlgorithm,
                          OrdinaryDiffEqImplicitAlgorithm,
                          OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-                         DAEAlgorithm}
+                         DAEAlgorithm,
+                         CompositeAlgorithm}
 end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
@@ -220,7 +221,8 @@ function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
                                   OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
                                   OrdinaryDiffEqImplicitAlgorithm{CS},
                                   OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-                                  DAEAlgorithm{CS}}) where {CS}
+                                  DAEAlgorithm{CS},
+                                  CompositeAlgorithm{CS}}) where {CS}
     Val(CS)
 end
 
@@ -231,7 +233,8 @@ function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
                                       OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
                                       OrdinaryDiffEqImplicitAlgorithm{CS},
                                       OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-                                      DAEAlgorithm{CS}}) where {CS}
+                                      DAEAlgorithm{CS},
+                                      CompositeAlgorithm{CS}}) where {CS}
     CS
 end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
@@ -970,7 +973,7 @@ function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
     if !(alg isa CompositeAlgorithm)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
-        if length(alg.algs) >2
+        if length(alg.algs) > 2
             return alg.algs[alg.choice_function.current]
         end
         if is_stiff === nothing
