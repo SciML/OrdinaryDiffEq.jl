@@ -748,6 +748,14 @@ end
                                        Θ * dt * k[2])
 end
 
+@muladd function hermite_interpolant!(
+    out, Θ, dt, y₀, y₁, k, idxs::Nothing, T::Type{Val{0}}, differential_vars::FillArrays.Trues{1, Tuple{Base.OneTo{Int}}}) # Default interpolant is Hermite
+@inbounds @.. broadcast=false out=(1 - Θ) * y₀ + Θ * y₁ +
+                                  Θ * (Θ - 1) *
+                                  ((1 - 2Θ) * (y₁ - y₀) + (Θ - 1) * dt * k[1] +
+                                   Θ * dt * k[2])
+end
+
 @muladd function hermite_interpolant!(out::Array, Θ, dt, y₀, y₁, k, idxs::Nothing,
         T::Type{Val{0}}, differential_vars) # Default interpolant is Hermite
     @inbounds @simd ivdep for i in eachindex(out)
