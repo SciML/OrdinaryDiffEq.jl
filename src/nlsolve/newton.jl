@@ -107,7 +107,7 @@ end
     @.. broadcast=false ztmp=nlcache.u
 
     ustep = compute_ustep!(ustep, tmp, γ, z, method)
-    calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
+    calculate_residuals!(atmp, nlcache.fu, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
     #ndz = opts.internalnorm(nlcache.fu, t)
