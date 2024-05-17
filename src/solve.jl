@@ -536,8 +536,7 @@ function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff=false), args...; kwargs...)
 end
 function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    alg = DiffEqBase.prepare_alg(DefaultODEAlgorithm(), prob.u0, prob.p, prob)
-    DiffEqBase.solve(prob, alg, args...; kwargs...)
+    DiffEqBase.solve(prob, DefaultODEAlgorithm(autodiff=false), args...; kwargs...)
 end
 
 function DiffEqBase.solve!(integrator::ODEIntegrator)
