@@ -27,7 +27,7 @@ function rober(u, p, t)
 end
 prob_rober = ODEProblem(rober, [1.0,0.0,0.0],(0.0,1e3),(0.04,3e7,1e4))
 sol = solve(prob_rober)
-rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23()))
+rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23(autodiff=false)))
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
@@ -36,7 +36,7 @@ rosensol = solve(prob_rober, AutoTsit5(Rosenbrock23()))
 @test sol.alg_choice[end] == 3
 
 sol = solve(prob_rober, reltol=1e-7, abstol=1e-7)
-rosensol = solve(prob_rober, AutoVern7(Rodas5P()), reltol=1e-7, abstol=1e-7)
+rosensol = solve(prob_rober, AutoVern7(Rodas5P(autodiff=false)), reltol=1e-7, abstol=1e-7)
 # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
 @test sol.stats.naccept == rosensol.stats.naccept
 @test sol.stats.nf == rosensol.stats.nf
@@ -60,7 +60,7 @@ for n in (100, ) # 600 should be added but currently is broken for unknown reaso
 
     prob_ex_rober = ODEProblem(ODEFunction(exrober; jac_prototype), vcat([1.0,0.0,0.0], ones(n)),(0.0,100.0),(0.04,3e7,1e4))
     sol = solve(prob_ex_rober)
-    fsol = solve(prob_ex_rober, AutoTsit5(FBDF(;linsolve)))
+    fsol = solve(prob_ex_rober, AutoTsit5(FBDF(;autodiff=false, linsolve)))
     # test that default has the same performance as AutoTsit5(Rosenbrock23()) (which we expect it to use for this).
     @test sol.stats.naccept == fsol.stats.naccept
     @test sol.stats.nf == fsol.stats.nf
