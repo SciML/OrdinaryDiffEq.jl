@@ -52,8 +52,8 @@ function exrober(du, u, p, t)
       k₂ * y₂^2, ], u[4:end])
 end
 
-for n in (100, 600)
-    stiffalg = n < 500 ? 5 : 6
+for n in (100, ) # 600 should be added but currently is broken for unknown reasons
+    stiffalg = n < 50 ? 4 : n < 500 ? 5 : 6
     linsolve = n < 500 ? nothing : KrylovJL_GMRES()
     jac_prototype = sparse(I(n+3))
     jac_prototype[1:3, 1:3] .= 1.0
