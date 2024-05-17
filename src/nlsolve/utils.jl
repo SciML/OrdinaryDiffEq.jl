@@ -224,7 +224,7 @@ function build_nlsolver(
             end
             prob = NonlinearProblem(NonlinearFunction(nlf), ztmp, nlp_params)
             cache = init(prob, nlalg.alg)
-            nlcache = NonlinearSolveCache(ustep, tstep, k, invγdt, prob, cache)
+            nlcache = NonlinearSolveCache(ustep, tstep, k, atmp, invγdt, prob, cache)
         else
             nlcache = NLNewtonCache(ustep, tstep, k, atmp, dz, J, W, true,
                 true, true, tType(dt), du1, uf, jac_config,
@@ -308,7 +308,7 @@ function build_nlsolver(
             end
             prob = NonlinearProblem(NonlinearFunction(nlf), copy(ztmp), nlp_params)
             cache = init(prob, nlalg.alg)
-            nlcache = NonlinearSolveCache(nothing, tstep, nothing, invγdt, prob, cache)
+            nlcache = NonlinearSolveCache(nothing, tstep, nothing, nothing, invγdt, prob, cache)
         else
             nlcache = NLNewtonConstantCache(tstep, J, W, true, true, true, tType(dt), uf,
                 invγdt, tType(nlalg.new_W_dt_cutoff), t)

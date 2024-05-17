@@ -237,8 +237,8 @@ mutable struct NonlinearSolveCache{uType, tType, rateType, tType2, P, C} <:
     ustep::uType
     tstep::tType
     k::rateType
+    atmp::uType
     invγdt::tType2
     prob::P
     cache::C
-    atmp::uType
 end
