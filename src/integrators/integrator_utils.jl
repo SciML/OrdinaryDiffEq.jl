@@ -507,6 +507,7 @@ nlsolve_f(f, alg::DAEAlgorithm) = f
 function nlsolve_f(integrator::ODEIntegrator)
     nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 end
+nlsolve_f(f::DynamicalODEFunction, alg::NewmarkBeta) = f.f1 # FIXME
 
 function (integrator::ODEIntegrator)(t, ::Type{deriv} = Val{0};
         idxs = nothing) where {deriv}

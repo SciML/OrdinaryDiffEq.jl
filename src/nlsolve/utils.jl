@@ -42,6 +42,7 @@ get_new_W!(::AbstractNLSolverCache)::Bool = true
 get_W(nlsolver::AbstractNLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}) = nlcache.W
 
+set_W_γdt!(nlsolver::AbstractNLSolver, W_γdt::ArrayPartitionNLSolveHelper) = set_W_γdt!(nlsolver, W_γdt.γ₁ + W_γdt.γ₂)
 set_W_γdt!(nlsolver::AbstractNLSolver, W_γdt) = set_W_γdt!(nlsolver.cache, W_γdt)
 function set_W_γdt!(nlcache::Union{NLNewtonCache, NLNewtonConstantCache}, W_γdt)
     nlcache.W_γdt = W_γdt
@@ -132,19 +133,19 @@ function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c,
-        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        iip; tmp = zero(u)) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
         uBottomEltypeNoUnits,
-        tTypeNoUnits, γ, c, 1, iip)
+        tTypeNoUnits, γ, c, 1, iip; tmp=tmp)
 end
 
 function build_nlsolver(alg, u, uprev, p, t, dt, f::F, rate_prototype,
         ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, γ, c, α,
-        iip) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+        iip; tmp = zero(u)) where {F, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     build_nlsolver(alg, alg.nlsolve, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip)
+        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, α, iip; tmp=tmp)
 end
 
 function build_nlsolver(
@@ -153,7 +154,7 @@ function build_nlsolver(
         f::F, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
         γ, c, α,
-        ::Val{true}) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
+        ::Val{true}; tmp = zero(u)) where {F, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits}
     #TODO
     #nlalg = DiffEqBase.handle_defaults(alg, nlalg)
@@ -163,7 +164,6 @@ function build_nlsolver(
 
     # define fields of non-linear solver
     z = zero(u)
-    tmp = zero(u)
     ztmp = zero(u)
 
     # build cache of non-linear solver

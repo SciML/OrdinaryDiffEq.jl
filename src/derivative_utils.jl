@@ -629,6 +629,19 @@ function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
     return W
 end
 
+# The addition here does just work for the given example. We need to split up the jacobian into its blocks.
+function jacobian2W(mass_matrix, dtgamma::ArrayPartitionNLSolveHelper, 
+    J::AbstractMatrix, W_transform::Bool)
+    @unpack γ₁, γ₂ = dtgamma
+    jacobian2W(mass_matrix,γ₁+γ₂,J,W_transform)
+end
+
+function jacobian2W!(W::AbstractMatrix, mass_matrix, dtgamma::ArrayPartitionNLSolveHelper, 
+    J::AbstractMatrix, W_transform::Bool)
+    @unpack γ₁, γ₂ = dtgamma
+    jacobian2W!(W,mass_matrix,γ₁+γ₂,J,W_transform)
+end
+
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
         repeat_step, W_transform = false, newJW = nothing)
     @unpack t, dt, uprev, u, f, p = integrator

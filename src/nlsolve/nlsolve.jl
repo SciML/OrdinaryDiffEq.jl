@@ -10,6 +10,9 @@ dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 ```
 
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
+
+Whether `innertmp` and `outertmp` is used for the evaluation is controlled by setting `nlsolver.method`.
+In both cases the variable name is actually `nlsolver.tmp`.
 """
 function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator,
         cache = nothing, repeat_step = false)

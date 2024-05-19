@@ -313,7 +313,7 @@ end
     # page 54.
     γdt = isdae ? α * invγdt : γ * dt
 
-    !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
+    # !(W_γdt ≈ γdt) && (rmul!(dz, 2 / (1 + γdt / W_γdt)))
     relax!(dz, nlsolver, integrator, f)
 
     calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
@@ -362,6 +362,17 @@ function compute_ustep!(ustep, tmp, γ, z, method)
         ustep = z
     else
         @.. ustep = tmp + γ * z
+    end
+    ustep
+end
+
+# Dispatch for Newmark-type solvers
+function compute_ustep!(ustep::ArrayPartition, tmp::ArrayPartition, γ::ArrayPartitionNLSolveHelper, z, method)
+    if method === COEFFICIENT_MULTISTEP
+        # ustep = z
+        @error "Multistep for second order ODEs does not work yet."
+    else
+        @.. ustep = ArrayPartition(tmp.x[1] + γ.γ₁ * z, tmp.x[1] + γ.γ₂ * z)
     end
     ustep
 end
@@ -418,6 +429,21 @@ function _compute_rhs!(tmp, ztmp, ustep, γ, α, tstep, k,
             mul!(_vec(ztmp), mass_matrix, _vec(z))
             @.. ztmp = (dt * k - ztmp) * invγdt
         end
+    end
+    return _vec(ztmp), ustep
+end
+
+function _compute_rhs!(tmp, ztmp, ustep, γ::ArrayPartitionNLSolveHelper, α, tstep, k,
+    invγdt, method::MethodType, p, dt, f, z)
+    mass_matrix = f.mass_matrix
+    ustep = tmp + γ * z
+    f(k, ustep, p, tstep)
+    if mass_matrix === I
+        @.. ztmp=(dt * k - z) * invγdt
+    else
+        update_coefficients!(mass_matrix, ustep, p, tstep)
+        mul!(_vec(ztmp), mass_matrix, _vec(z))
+        @.. ztmp=(dt * k - ztmp) * invγdt
     end
     return _vec(ztmp), ustep
 end
