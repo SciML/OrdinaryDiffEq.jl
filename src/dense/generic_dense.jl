@@ -591,6 +591,7 @@ function ode_interpolant(Θ, dt, y₀, y₁, k, cache::OrdinaryDiffEqMutableCach
         T::Type{Val{TI}}, differential_vars) where {TI}
     if idxs isa Number || y₀ isa Union{Number, SArray}
         # typeof(y₀) can be these if saveidxs gives a single value
+        @show Main.@which _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
         _ode_interpolant(Θ, dt, y₀, y₁, k, cache, idxs, T, differential_vars)
     elseif idxs isa Nothing
         if y₁ isa Array{<:Number}
