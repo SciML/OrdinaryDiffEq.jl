@@ -1,6 +1,7 @@
-using ComponentArrays, CUDA, Adapt, RecursiveArrayTools, FastBroadcast, FillArrays, OrdinaryDiffEq, Test
+using ComponentArrays, CUDA, Adapt, RecursiveArrayTools, FastBroadcast, FillArrays,
+      OrdinaryDiffEq, Test
 
-a = ComponentArray((a=rand(Float32, 5,5), b=rand(Float32, 5, 5)))
+a = ComponentArray((a = rand(Float32, 5, 5), b = rand(Float32, 5, 5)))
 a = adapt(CuArray, a)
 pa = ArrayPartition(a)
 pb = deepcopy(pa)
