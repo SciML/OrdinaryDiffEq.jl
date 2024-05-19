@@ -1077,7 +1077,7 @@ end
                       12 * y₁[idxs]) /
                      (dt * dt * dt)
     else
-        @views out = differential_vars[idxs] .*
+        @views out = differential_vars .*
                      (6 * dt * k[1][idxs] + 6 * dt * k[2][idxs] + 12 * y₀[idxs] -
                       12 * y₁[idxs]) /
                      (dt * dt * dt)
