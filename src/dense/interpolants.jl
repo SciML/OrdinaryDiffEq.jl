@@ -3000,23 +3000,26 @@ end
     @dprkn6pre0
     halfsize = length(y₀) ÷ 2
     isfirsthalf = idxs .<= halfsize
-    secondhalf =  idxs .> halfsize
+    secondhalf = idxs .> halfsize
     firstidxs = idxs[isfirsthalf]
     secondidxs_shifted = idxs[secondhalf]
     secondidxs = secondidxs_shifted .- halfsize
 
     @views @.. broadcast=false out[secondhalf]=uprev[secondidxs] +
-                                           dt * Θ *
-                                           (duprev[secondidxs] +
-                                            dt * Θ *
-                                            (b1Θ * k1[secondidxs] +
-                                             b3Θ * k3[secondidxs] +
-                                             b4Θ * k4[secondidxs] + b5Θ * k5[secondidxs] +
-                                             b6Θ * k6[secondidxs]))
+                                               dt * Θ *
+                                               (duprev[secondidxs] +
+                                                dt * Θ *
+                                                (b1Θ * k1[secondidxs] +
+                                                 b3Θ * k3[secondidxs] +
+                                                 b4Θ * k4[secondidxs] +
+                                                 b5Θ * k5[secondidxs] +
+                                                 b6Θ * k6[secondidxs]))
     @views @.. broadcast=false out[isfirsthalf]=duprev[firstidxs] +
-                                           dt * Θ *
-                                           (bp1Θ * k1[firstidxs] + bp3Θ * k3[firstidxs] +
-                                            bp4Θ * k4[firstidxs] + bp5Θ * k5[firstidxs] +
-                                            bp6Θ * k6[firstidxs])
+                                                dt * Θ *
+                                                (bp1Θ * k1[firstidxs] +
+                                                 bp3Θ * k3[firstidxs] +
+                                                 bp4Θ * k4[firstidxs] +
+                                                 bp5Θ * k5[firstidxs] +
+                                                 bp6Θ * k6[firstidxs])
     out
 end

@@ -63,7 +63,7 @@ sol = solve(prob, DPRKN6())
 @test sol(0.5) isa RecursiveArrayTools.ArrayPartition
 @test sol(0.5; idxs = 1) isa Number
 @test sol(0.5; idxs = [1]) isa Vector
-@test sol(0.5; idxs = [1,2]) isa Vector
-@test Vector(sol(0.5)) == sol(0.5; idxs = [1,2])
-@test reverse(Vector(sol(0.5))) == sol(0.5; idxs = [2,1])
+@test sol(0.5; idxs = [1, 2]) isa Vector
+@test Vector(sol(0.5)) == sol(0.5; idxs = [1, 2])
+@test reverse(Vector(sol(0.5))) == sol(0.5; idxs = [2, 1])
 @test Vector(sol(0.5)) == [sol(0.5; idxs = 1); sol(0.5; idxs = 2)]
