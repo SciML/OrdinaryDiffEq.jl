@@ -2969,7 +2969,7 @@ Scientific Computing, 18 (1), pp. 1-22.
   differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 
 #### ROS2PR, ROS2S, ROS3PR, Scholz4_7
--Rang, Joachim (2014): The Prothero and Robinson example: 
+-Rang, Joachim (2014): The Prothero and Robinson example:
  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
  https://doi.org/10.24355/dbbs.084-201408121139-0
 
@@ -3014,16 +3014,16 @@ University of Geneva, Switzerland.
  https://doi.org/10.1016/j.cam.2015.03.010
 
 #### ROS3PRL, ROS3PRL2
--Rang, Joachim (2014): The Prothero and Robinson example: 
+-Rang, Joachim (2014): The Prothero and Robinson example:
  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
  https://doi.org/10.24355/dbbs.084-201408121139-0
 
 #### Rodas5P
-- Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package. 
+- Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package.
  In: BIT Numerical Mathematics, 63(2), 2023
 
  #### Rodas23W, Rodas3P, Rodas5Pe, Rodas5Pr
-- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications - 
+- Steinebach G. Rosenbrock methods within OrdinaryDiffEq.jl - Overview, recent developments and applications -
  Preprint 2024
  https://github.com/hbrs-cse/RosenbrockMethods/blob/main/paper/JuliaPaper.pdf
 
@@ -3239,15 +3239,75 @@ end
 
 #########################################
 
-struct CompositeAlgorithm{T, F} <: OrdinaryDiffEqCompositeAlgorithm
+struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
+    function CompositeAlgorithm(algs::T, choice_function::F) where {T,F}
+        CS = mapreduce(alg->has_chunksize(alg) ? get_chunksize_int(alg) : 0, max, algs)
+        new{CS, T, F}(algs, choice_function)
+    end
 end
 
 TruncatedStacktraces.@truncate_stacktrace CompositeAlgorithm 1
 
 if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
     Base.Experimental.silence!(CompositeAlgorithm)
+end
+
+mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
+    count::Int
+    successive_switches::Int
+    nonstiffalg::nAlg
+    stiffalg::sAlg
+    is_stiffalg::Bool
+    maxstiffstep::Int
+    maxnonstiffstep::Int
+    nonstifftol::tolType
+    stifftol::tolType
+    dtfac::T
+    stiffalgfirst::Bool
+    switch_max::Int
+    current::Int
+    function AutoSwitchCache(count::Int,
+                             successive_switches::Int,
+                             nonstiffalg::nAlg,
+                             stiffalg::sAlg,
+                             is_stiffalg::Bool,
+                             maxstiffstep::Int,
+                             maxnonstiffstep::Int,
+                             nonstifftol::tolType,
+                             stifftol::tolType,
+                             dtfac::T,
+                             stiffalgfirst::Bool,
+                             switch_max::Int,
+                             current::Int=0) where {nAlg, sAlg, tolType, T}
+        new{nAlg, sAlg, tolType, T}(count,
+                             successive_switches,
+                             nonstiffalg,
+                             stiffalg,
+                             is_stiffalg,
+                             maxstiffstep,
+                             maxnonstiffstep,
+                             nonstifftol,
+                             stifftol,
+                             dtfac,
+                             stiffalgfirst,
+                             switch_max,
+                             current)
+    end
+
+end
+
+struct AutoSwitch{nAlg, sAlg, tolType, T}
+    nonstiffalg::nAlg
+    stiffalg::sAlg
+    maxstiffstep::Int
+    maxnonstiffstep::Int
+    nonstifftol::tolType
+    stifftol::tolType
+    dtfac::T
+    stiffalgfirst::Bool
+    switch_max::Int
 end
 
 ################################################################################

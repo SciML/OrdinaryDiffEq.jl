@@ -52,6 +52,7 @@ end
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
+        @time @safetestset "Default Solver Tests" include("interface/default_solver_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")

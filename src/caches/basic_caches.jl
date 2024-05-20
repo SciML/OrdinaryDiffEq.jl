@@ -12,24 +12,26 @@ end
 
 TruncatedStacktraces.@truncate_stacktrace CompositeCache 1
 
-if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
-    Base.Experimental.silence!(CompositeCache)
+mutable struct DefaultCache{T1, T2, T3, T4, T5, T6, A, F} <: OrdinaryDiffEqCache
+    args::A
+    choice_function::F
+    current::Int
+    cache1::T1
+    cache2::T2
+    cache3::T3
+    cache4::T4
+    cache5::T5
+    cache6::T6
+    function DefaultCache{T1, T2, T3, T4, T5, T6, F}(args, choice_function, current) where {T1, T2, T3, T4, T5, T6, F}
+        new{T1, T2, T3, T4, T5, T6, typeof(args), F}(args, choice_function, current)
+    end
 end
 
-function alg_cache(alg::CompositeAlgorithm{Tuple{T1, T2}, F}, u, rate_prototype,
-        ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev,
-        uprev2, f, t, dt, reltol, p, calck,
-        ::Val{V}) where {T1, T2, F, V, uEltypeNoUnits, uBottomEltypeNoUnits,
-        tTypeNoUnits}
-    caches = (
-        alg_cache(alg.algs[1], u, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)),
-        alg_cache(alg.algs[2], u, rate_prototype, uEltypeNoUnits,
-            uBottomEltypeNoUnits,
-            tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V)))
-    CompositeCache(caches, alg.choice_function, 1)
+TruncatedStacktraces.@truncate_stacktrace DefaultCache 1
+
+if isdefined(Base, :Experimental) && isdefined(Base.Experimental, :silence!)
+    Base.Experimental.silence!(CompositeCache)
+    Base.Experimental.silence!(DefaultCache)
 end
 
 function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -39,6 +41,24 @@ function alg_cache(alg::CompositeAlgorithm, u, rate_prototype, ::Type{uEltypeNoU
     caches = __alg_cache(alg.algs, u, rate_prototype, uEltypeNoUnits, uBottomEltypeNoUnits,
         tTypeNoUnits, uprev, uprev2, f, t, dt, reltol, p, calck, Val(V))
     CompositeCache(caches, alg.choice_function, 1)
+end
+
+function alg_cache(alg::CompositeAlgorithm{CS, Tuple{A1, A2, A3, A4, A5, A6}}, u,
+    rate_prototype, ::Type{uEltypeNoUnits}, ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits},
+    uprev, uprev2, f, t, dt, reltol, p, calck,
+    ::Val{V}) where {CS, V, uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits, A1, A2, A3, A4, A5, A6}
+
+    args = (u, rate_prototype, uEltypeNoUnits,
+            uBottomEltypeNoUnits, tTypeNoUnits, uprev, uprev2, f, t, dt,
+            reltol, p, calck, Val(V))
+    argT = map(typeof, args)
+    T1 = Base.promote_op(alg_cache, A1, argT...)
+    T2 = Base.promote_op(alg_cache, A2, argT...)
+    T3 = Base.promote_op(alg_cache, A3, argT...)
+    T4 = Base.promote_op(alg_cache, A4, argT...)
+    T5 = Base.promote_op(alg_cache, A5, argT...)
+    T6 = Base.promote_op(alg_cache, A6, argT...)
+    DefaultCache{T1, T2, T3, T4, T5, T6, typeof(alg.choice_function)}(args, alg.choice_function, 1)
 end
 
 # map + closure approach doesn't infer

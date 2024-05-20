@@ -172,6 +172,7 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
+
 function isdtchangeable(alg::Union{LawsonEuler, NorsettEuler, LieEuler, MagnusGauss4,
         CayleyEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2})
     false
@@ -205,31 +206,35 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 qmax_default(alg::Union{RadauIIA3, RadauIIA5}) = 8
 
+function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
+    return alg isa Union{OrdinaryDiffEqExponentialAlgorithm,
+                         OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+                         OrdinaryDiffEqImplicitAlgorithm,
+                         OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+                         DAEAlgorithm,
+                         CompositeAlgorithm}
+end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-get_chunksize(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}}) where {
-        CS,
-        AD
-}
+function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
+                                  OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+                                  OrdinaryDiffEqImplicitAlgorithm{CS},
+                                  OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+                                  DAEAlgorithm{CS},
+                                  CompositeAlgorithm{CS}}) where {CS}
     Val(CS)
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-get_chunksize_int(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = CS
-get_chunksize_int(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = CS
-get_chunksize_int(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = CS
-function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}}) where {
-        CS,
-        AD
-}
+function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
+                                      OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+                                      OrdinaryDiffEqImplicitAlgorithm{CS},
+                                      OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+                                      DAEAlgorithm{CS},
+                                      CompositeAlgorithm{CS}}) where {CS}
     CS
 end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
@@ -965,10 +970,12 @@ alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
-    iscomp = alg isa CompositeAlgorithm
-    if !iscomp
+    if !(alg isa CompositeAlgorithm)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
+        if length(alg.algs) > 2
+            return alg.algs[alg.choice_function.current]
+        end
         if is_stiff === nothing
             throwautoswitch(alg)
         end
@@ -985,18 +992,21 @@ end
 
 function unwrap_alg(integrator, is_stiff)
     alg = integrator.alg
-    iscomp = alg isa CompositeAlgorithm
-    if !iscomp
+    if !(alg isa CompositeAlgorithm)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
-        if is_stiff === nothing
-            throwautoswitch(alg)
-        end
-        num = is_stiff ? 2 : 1
-        if num == 1
-            return alg.algs[1]
+        if length(alg.algs) > 2
+            alg.algs[alg.choice_function.current]
         else
-            return alg.algs[2]
+            if is_stiff === nothing
+                throwautoswitch(alg)
+            end
+            num = is_stiff ? 2 : 1
+            if num == 1
+                return alg.algs[1]
+            else
+                return alg.algs[2]
+            end
         end
     else
         return _eval_index(identity, alg.algs, integrator.cache.current)
@@ -1071,3 +1081,5 @@ is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
+# hack for the default alg
+is_mass_matrix_alg(alg::CompositeAlgorithm{<:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}) = true

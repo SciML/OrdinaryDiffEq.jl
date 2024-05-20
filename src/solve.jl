@@ -146,7 +146,7 @@ function DiffEqBase.__init(
                 auto.stifftol,
                 auto.dtfac,
                 auto.stiffalgfirst,
-                auto.switch_max))
+                auto.switch_max, 0))
     else
         _alg = alg
     end
@@ -415,11 +415,9 @@ function DiffEqBase.__init(
     differential_vars = prob isa DAEProblem ? prob.differential_vars :
                         get_differential_vars(f, u)
 
-    id = InterpolationData(
-        f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
+    id = InterpolationData(f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
     sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-        dense = dense, k = ks, interp = id,
-        alg_choice = alg_choice,
+        dense = dense, k = ks, interp = id, alg_choice = alg_choice,
         calculate_error = false, stats = stats)
 
     if recompile_flag == true
@@ -532,6 +530,13 @@ function DiffEqBase.__init(
 
     handle_dt!(integrator)
     integrator
+end
+
+function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff=false), args...; kwargs...)
+end
+function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.solve(prob, DefaultODEAlgorithm(autodiff=false), args...; kwargs...)
 end
 
 function DiffEqBase.solve!(integrator::ODEIntegrator)
