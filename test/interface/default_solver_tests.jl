@@ -18,6 +18,11 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol=1e-10)
 @test sol.stats.nf == vernsol.stats.nf
 @test all(isequal(2), sol.alg_choice)
 
+prob_ode_linear_fast = ODEProblem(ODEFunction(f_2dlinear, mass_matrix=2*I(2)), rand(2), (0.0, 1.0), 1.01)
+sol = solve(prob_ode_linear_fast)
+@test all(isequal(3), sol.alg_choice)
+# for some reason the timestepping here is different from regular Rosenbrock23 (including the initial timestep)
+
 function rober(u, p, t)
     y₁, y₂, y₃ = u
     k₁, k₂, k₃ = p
@@ -68,3 +73,12 @@ for n in (100, ) # 600 should be added but currently is broken for unknown reaso
     @test sol.alg_choice[1] == 1
     @test sol.alg_choice[end] == stiffalg
 end
+
+function swaplinear(u, p, t)
+    [u[2], u[1]].*p
+end
+swaplinearf = ODEFunction(swaplinear, mass_matrix=ones(2,2)-I(2))
+prob_swaplinear = ODEProblem(swaplinearf, rand(2), (0., 1.) 1.01)
+sol = solve(prob_swaplinear, reltol=1e-7) # reltol must be set to avoid running into a bug with Rosenbrock23
+@test all(isequal(4), sol.alg_choice)
+# for some reason the timestepping here is different from regular Rodas5P (including the initial timestep)
