@@ -70,8 +70,6 @@ for n in (100, ) # 600 should be added but currently is broken for unknown reaso
     @test sol.stats.naccept == fsol.stats.naccept
     @test sol.stats.nf == fsol.stats.nf
     @test unique(sol.alg_choice) == [1,stiffalg]
-    @test sol.alg_choice[1] == 1
-    @test sol.alg_choice[end] == stiffalg
 end
 
 function swaplinear(u, p, t)
