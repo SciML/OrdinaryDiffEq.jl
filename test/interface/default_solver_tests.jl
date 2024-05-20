@@ -54,13 +54,12 @@ rosensol = solve(
 function exrober(du, u, p, t)
     y₁, y₂, y₃ = u
     k₁, k₂, k₃ = p
-    du .= vcat(
-        [-k₁ * y₁ + k₃ * y₂ * y₃,
-            k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
-            k₂ * y₂^2], u[4:end])
+    du .= vcat([-k₁ * y₁ + k₃ * y₂ * y₃,
+      k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
+      k₂ * y₂^2, ], u[4:end])
 end
 
-for n in (100,) # 600 should be added but currently is broken for unknown reasons
+for n in (100, 600)
     stiffalg = n < 50 ? 4 : n < 500 ? 5 : 6
     linsolve = n < 500 ? nothing : KrylovJL_GMRES()
     jac_prototype = sparse(I(n + 3))
