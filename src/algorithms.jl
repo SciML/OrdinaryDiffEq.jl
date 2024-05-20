@@ -3243,12 +3243,7 @@ struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
     function CompositeAlgorithm(algs::T, choice_function::F) where {T,F}
-        CS = 0
-        for alg in algs
-            if has_chunksize(alg)
-                CS = get_chunksize_int(alg)
-            end
-        end
+        CS = mapreduce(alg->has_chunksize(alg) ? get_chunksize_int(alg) : 0, max, algs)
         new{CS, T, F}(algs, choice_function)
     end
 end
