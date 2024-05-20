@@ -294,7 +294,7 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 # In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma/transform and don't update them in that case.
-# This helps support partial updating logic used with Newton solvers. 
+# This helps support partial updating logic used with Newton solvers.
 function SciMLOperators.update_coefficients!(W::WOperator,
         u = nothing,
         p = nothing,
