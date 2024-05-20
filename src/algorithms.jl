@@ -3242,8 +3242,8 @@ end
 struct CompositeAlgorithm{CS, T, F} <: OrdinaryDiffEqCompositeAlgorithm
     algs::T
     choice_function::F
-    function CompositeAlgorithm(algs::T, choice_function::F) where {T,F}
-        CS = mapreduce(alg->has_chunksize(alg) ? get_chunksize_int(alg) : 0, max, algs)
+    function CompositeAlgorithm(algs::T, choice_function::F) where {T, F}
+        CS = mapreduce(alg -> has_chunksize(alg) ? get_chunksize_int(alg) : 0, max, algs)
         new{CS, T, F}(algs, choice_function)
     end
 end
@@ -3269,33 +3269,32 @@ mutable struct AutoSwitchCache{nAlg, sAlg, tolType, T}
     switch_max::Int
     current::Int
     function AutoSwitchCache(count::Int,
-                             successive_switches::Int,
-                             nonstiffalg::nAlg,
-                             stiffalg::sAlg,
-                             is_stiffalg::Bool,
-                             maxstiffstep::Int,
-                             maxnonstiffstep::Int,
-                             nonstifftol::tolType,
-                             stifftol::tolType,
-                             dtfac::T,
-                             stiffalgfirst::Bool,
-                             switch_max::Int,
-                             current::Int=0) where {nAlg, sAlg, tolType, T}
+            successive_switches::Int,
+            nonstiffalg::nAlg,
+            stiffalg::sAlg,
+            is_stiffalg::Bool,
+            maxstiffstep::Int,
+            maxnonstiffstep::Int,
+            nonstifftol::tolType,
+            stifftol::tolType,
+            dtfac::T,
+            stiffalgfirst::Bool,
+            switch_max::Int,
+            current::Int = 0) where {nAlg, sAlg, tolType, T}
         new{nAlg, sAlg, tolType, T}(count,
-                             successive_switches,
-                             nonstiffalg,
-                             stiffalg,
-                             is_stiffalg,
-                             maxstiffstep,
-                             maxnonstiffstep,
-                             nonstifftol,
-                             stifftol,
-                             dtfac,
-                             stiffalgfirst,
-                             switch_max,
-                             current)
+            successive_switches,
+            nonstiffalg,
+            stiffalg,
+            is_stiffalg,
+            maxstiffstep,
+            maxnonstiffstep,
+            nonstifftol,
+            stifftol,
+            dtfac,
+            stiffalgfirst,
+            switch_max,
+            current)
     end
-
 end
 
 struct AutoSwitch{nAlg, sAlg, tolType, T}

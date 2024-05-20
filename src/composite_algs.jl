@@ -31,7 +31,8 @@ end
 
 function (AS::AutoSwitchCache)(integrator)
     #horrible awful hack
-    isdefault = integrator.alg isa CompositeAlgorithm{<:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}
+    isdefault = integrator.alg isa CompositeAlgorithm{
+        <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}
     if isdefault
         return default_autoswitch(AS, integrator)
     end
@@ -58,7 +59,8 @@ function (AS::AutoSwitchCache)(integrator)
     return AS.current
 end
 
-function AutoAlgSwitch(nonstiffalg::OrdinaryDiffEqAlgorithm, stiffalg::OrdinaryDiffEqAlgorithm; kwargs...)
+function AutoAlgSwitch(
+        nonstiffalg::OrdinaryDiffEqAlgorithm, stiffalg::OrdinaryDiffEqAlgorithm; kwargs...)
     AS = AutoSwitch(nonstiffalg, stiffalg; kwargs...)
     CompositeAlgorithm((nonstiffalg, stiffalg), AS)
 end
@@ -94,23 +96,29 @@ const EXTREME_TOL = 1e-9
 const SMALLSIZE = 50
 const MEDIUMSIZE = 500
 const STABILITY_SIZES = (alg_stability_size(Tsit5()), alg_stability_size(Vern7()))
-const DEFAULTBETA2S = (beta2_default(Tsit5()), beta2_default(Vern7()), beta2_default(Rosenbrock23()), beta2_default(Rodas5P()), beta2_default(FBDF()), beta2_default(FBDF()))
-const DEFAULTBETA1S = (beta1_default(Tsit5(),DEFAULTBETA2S[1]), beta1_default(Vern7(),DEFAULTBETA2S[2]),
-                      beta1_default(Rosenbrock23(), DEFAULTBETA2S[3]), beta1_default(Rodas5P(), DEFAULTBETA2S[4]),
-                      beta1_default(FBDF(), DEFAULTBETA2S[5]), beta1_default(FBDF(), DEFAULTBETA2S[6]))
+const DEFAULTBETA2S = (
+    beta2_default(Tsit5()), beta2_default(Vern7()), beta2_default(Rosenbrock23()),
+    beta2_default(Rodas5P()), beta2_default(FBDF()), beta2_default(FBDF()))
+const DEFAULTBETA1S = (
+    beta1_default(Tsit5(), DEFAULTBETA2S[1]), beta1_default(Vern7(), DEFAULTBETA2S[2]),
+    beta1_default(Rosenbrock23(), DEFAULTBETA2S[3]), beta1_default(
+        Rodas5P(), DEFAULTBETA2S[4]),
+    beta1_default(FBDF(), DEFAULTBETA2S[5]), beta1_default(FBDF(), DEFAULTBETA2S[6]))
 
 callbacks_exists(integrator) = !isempty(integrator.opts.callbacks)
-current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF,current,current-NUM_STIFF)
+current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF, current, current - NUM_STIFF)
 
 function DefaultODEAlgorithm(; lazy = true, stiffalgfirst = false, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
-    stiff = (Rosenbrock23(;kwargs...), Rodas5P(;kwargs...), FBDF(;kwargs...), FBDF(;linsolve = LinearSolve.KrylovJL_GMRES()))
+    stiff = (Rosenbrock23(; kwargs...), Rodas5P(; kwargs...), FBDF(; kwargs...),
+        FBDF(; linsolve = LinearSolve.KrylovJL_GMRES()))
     AutoAlgSwitch(nonstiff, stiff; stiffalgfirst)
 end
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
     eigen_est, dt = integrator.eigen_est, integrator.dt
-    stiffness = abs(eigen_est * dt / STABILITY_SIZES[nonstiffchoice(integrator.opts.reltol)]) # `abs` here is just for safety
+    stiffness = abs(eigen_est * dt /
+                    STABILITY_SIZES[nonstiffchoice(integrator.opts.reltol)]) # `abs` here is just for safety
     tol = is_stiffalg ? stol : ntol
     os = oneunit(stiffness)
     bool = stiffness > os * tol

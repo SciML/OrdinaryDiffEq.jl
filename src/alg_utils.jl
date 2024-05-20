@@ -208,21 +208,21 @@ qmax_default(alg::Union{RadauIIA3, RadauIIA5}) = 8
 
 function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
     return alg isa Union{OrdinaryDiffEqExponentialAlgorithm,
-                         OrdinaryDiffEqAdaptiveExponentialAlgorithm,
-                         OrdinaryDiffEqImplicitAlgorithm,
-                         OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-                         DAEAlgorithm,
-                         CompositeAlgorithm}
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        OrdinaryDiffEqImplicitAlgorithm,
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+        DAEAlgorithm,
+        CompositeAlgorithm}
 end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
 function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
-                                  OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-                                  OrdinaryDiffEqImplicitAlgorithm{CS},
-                                  OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-                                  DAEAlgorithm{CS},
-                                  CompositeAlgorithm{CS}}) where {CS}
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+        OrdinaryDiffEqImplicitAlgorithm{CS},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+        DAEAlgorithm{CS},
+        CompositeAlgorithm{CS}}) where {CS}
     Val(CS)
 end
 
@@ -230,11 +230,11 @@ function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
 function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
-                                      OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
-                                      OrdinaryDiffEqImplicitAlgorithm{CS},
-                                      OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
-                                      DAEAlgorithm{CS},
-                                      CompositeAlgorithm{CS}}) where {CS}
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+        OrdinaryDiffEqImplicitAlgorithm{CS},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+        DAEAlgorithm{CS},
+        CompositeAlgorithm{CS}}) where {CS}
     CS
 end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
@@ -1082,4 +1082,7 @@ is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
 # hack for the default alg
-is_mass_matrix_alg(alg::CompositeAlgorithm{<:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}) = true
+function is_mass_matrix_alg(alg::CompositeAlgorithm{
+        <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
+    true
+end
