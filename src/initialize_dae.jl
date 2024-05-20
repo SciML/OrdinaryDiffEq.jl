@@ -528,7 +528,7 @@ function _initialize_dae!(integrator, prob::ODEProblem,
     if isAD
         csize = count(algebraic_vars)
         if !(p isa SciMLBase.NullParameters) && typeof(_u) !== typeof(u)
-            if SciMLSturctures.isscimlstructure(p)
+            if SciMLStructures.isscimlstructure(p)
                 csize = max(csize, length(canonicalize(Tunable(), p)[1]))
             else
                 csize = max(csize, length(p))
