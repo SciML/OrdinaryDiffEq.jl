@@ -271,3 +271,87 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt,
         Convergence)
 end
+
+mutable struct RadauIIA7ConstantCache{F, Tab, Tol, Dt, U, JType} <:
+    OrdinaryDiffEqConstantCache
+    uf::F
+    tab::Tab
+    κ::Tol
+    ηold::Tol
+    iter::Int
+    cont1::U
+    cont2::U
+    cont3::U
+    dtprev::Dt
+    W_γdt::Dt
+    status::NLStatus
+    J::JType
+end
+
+function alg_cache(alg::RadauIIA7, u, rate_prototype, ::Type{uEltypeNoUnits},
+    ::Type{uBottomEltypeNoUnits},
+    ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
+    ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+uf = UDerivativeWrapper(f, t, p)
+uToltype = constvalue(uBottomEltypeNoUnits)
+tab = RadauIIA7Tableau(uToltype, constvalue(tTypeNoUnits))
+
+κ = convert(uToltype, 1 // 100)
+J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
+
+RadauIIA7ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt,
+    Convergence, J)
+end
+
+mutable struct RadauIIA7Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
+    UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol} <:
+               OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    z1::uType
+    z2::uType
+    z3::uType
+    z4::uType
+    z5::uType
+    w1::uType
+    w2::uType
+    w3::uType
+    w4::uType
+    w5::uType
+    dw1::uType
+    ubuff::uType
+    dw23::cuType
+    cubuff::cuType
+    cont1::uType
+    cont2::uType
+    cont3::uType
+    du1::rateType
+    fsalfirst::rateType
+    k::rateType
+    k2::rateType
+    k3::rateType
+    k4::rateType
+    fw1::rateType
+    fw2::rateType
+    fw3::rateType
+    fw4::rateType
+    J::JType
+    W1::W1Type
+    W2::W2Type # complex
+    uf::UF
+    tab::Tab
+    κ::Tol
+    ηold::Tol
+    iter::Int
+    tmp::uType
+    atmp::uNoUnitsType
+    jac_config::JC
+    linsolve1::F1
+    linsolve2::F2
+    rtol::rTol
+    atol::aTol
+    dtprev::Dt
+    W_γdt::Dt
+    status::NLStatus
+end
+TruncatedStacktraces.@truncate_stacktrace RadauIIA7Cache 1
