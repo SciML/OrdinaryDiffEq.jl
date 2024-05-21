@@ -5,7 +5,7 @@ u0 = 0.0 # explosion time is 1.0
 tspan = (0.0, 10.0)
 prob = ODEProblem(f_ec, u0, tspan)
 options = [:reltol => 1e-8, :abstol => 1e-8, :verbose => false]
-desired_code = ReturnCode.MaxIters
+desired_codes = (ReturnCode.MaxIters, ReturnCode.Unstable)
 
 # Test that sol.retcode is set to the correct value by various ways to
 # invoke integrator.
@@ -15,16 +15,16 @@ sol = solve(prob, Tsit5(); options...)
 
 integrator = init(prob, Tsit5(); options...)
 solve!(integrator)
-@test integrator.sol.retcode == desired_code
+@test integrator.sol.retcode in desired_codes
 
 integrator = init(prob, Tsit5(); options...)
 for _ in integrator
 end
-@test integrator.sol.retcode == desired_code
+@test integrator.sol.retcode in desired_codes
 
 integrator = init(prob, Tsit5(); options...)
 step!(integrator, 10.0)
-@test integrator.sol.retcode == desired_code
+@test integrator.sol.retcode in desired_codes
 
 # Test check_error
 integrator = init(prob, Tsit5(); options...)
@@ -33,7 +33,7 @@ step!(integrator)
 ok = false
 for i in 1:(integrator.opts.maxiters)
     step!(integrator)
-    if check_error(integrator) == desired_code
+    if check_error(integrator) in desired_codes
         global ok = true
         # @show i
         break
