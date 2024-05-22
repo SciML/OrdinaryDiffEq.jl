@@ -152,11 +152,6 @@ end
     (cache.k,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-        alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.utilde)
-end
-@inline function DiffEqBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)

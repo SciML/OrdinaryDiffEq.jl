@@ -165,7 +165,6 @@ include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/bdf_caches.jl")
 include("caches/rkc_caches.jl")
-include("caches/extrapolation_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
 include("caches/dae_caches.jl")
@@ -213,7 +212,6 @@ include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
 include("perform_step/bdf_perform_step.jl")
 include("perform_step/rkc_perform_step.jl")
-include("perform_step/extrapolation_perform_step.jl")
 include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
 include("perform_step/dae_perform_step.jl")
@@ -238,6 +236,9 @@ include("constants.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
+
+include("../lib/OrdinaryDiffEqExtrapolation/src/OrdinaryDiffEqExtrapolation.jl")
+@reexport using OrdinaryDiffEqExtrapolation
 
 import PrecompileTools
 
@@ -454,11 +455,6 @@ export Alshina2, Alshina3, Alshina6
 
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
-
-export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
-       ImplicitEulerExtrapolation,
-       ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
-       ImplicitEulerBarycentricExtrapolation
 
 export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2, DFBDF
 

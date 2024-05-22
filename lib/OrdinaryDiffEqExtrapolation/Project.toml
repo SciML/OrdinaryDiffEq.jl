@@ -1,0 +1,4 @@
+name = "OrdinaryDiffEqExtrapolation"
+uuid = "becaefa8-8ca2-5cf9-886d-c06f3d2bd2c4"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
+version = "1.0.0"
