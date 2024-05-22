@@ -11,7 +11,7 @@ desired_codes = (ReturnCode.MaxIters, ReturnCode.Unstable)
 # invoke integrator.
 
 sol = solve(prob, Tsit5(); options...)
-@test sol.retcode == desired_code
+@test sol.retcode in desired_codes
 
 integrator = init(prob, Tsit5(); options...)
 solve!(integrator)
