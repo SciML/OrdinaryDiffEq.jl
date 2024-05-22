@@ -134,7 +134,16 @@ end
 function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
     initializeprob = prob.f.initializeprob
-
+    if initializeprob.f.sys !== nothing && prob.f.sys !== nothing
+        initu0vars = variable_symbols(initializeprob)
+        initu0order = variable_index.((initializeprob,), initu0vars)
+        # Variable symbols are not guaranteed to be in order
+        invpermute!(initu0vars, initu0order)
+        initu0 = getu(prob.f.initializeprob, initu0vars)(prob)
+        initp = remake_buffer(initializeprob, parameter_values(initializeprob),
+            Dict(sym => getu(prob, sym)(prob) for sym in parameter_symbols(initializeprob)))
+        initializeprob = remake(initializeprob; u0 = initu0, p = initp)
+    end
     # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
     # Since then it's the case of not a DAE but has initializeprob
     # In which case, it should be differentiable
