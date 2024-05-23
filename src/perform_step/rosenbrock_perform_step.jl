@@ -909,10 +909,6 @@ end
     f(du, u, p, t + dt) #-- c4 = 1
     integrator.stats.nf += 1
 
-    @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
-    f(du, u, p, t + dt) #-- c4 = 1
-    integrator.stats.nf += 1
-
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 +
                                          dtC43 * k3
