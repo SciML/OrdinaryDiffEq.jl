@@ -487,7 +487,9 @@ function reset_fsal!(integrator)
     if !(integrator.sol.prob isa DAEProblem)
         if integrator.cache isa OrdinaryDiffEqMutableCache ||
            (integrator.cache isa CompositeCache &&
-            integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache)
+            integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache) ||
+           (integrator.cache isa DefaultCache &&
+            integrator.cache.cache1 isa OrdinaryDiffEqMutableCache)
             integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
         else
             integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)
