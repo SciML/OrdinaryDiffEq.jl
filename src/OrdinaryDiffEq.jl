@@ -28,7 +28,7 @@ using LineSearches
 
 import EnumX
 
-import FillArrays: Trues
+import FillArrays: Trues, Falses
 
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive

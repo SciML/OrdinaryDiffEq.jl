@@ -620,77 +620,51 @@ end
 
 ##################### Hermite Interpolants
 
-const HERMITE_CASE_NOT_DEFINED_MESSAGE = """
-                                         Hermite interpolation is not defined in this case. The Hermite interpolation
-                                         fallback only supports diagonal mass matrices. If you have a DAE with a
-                                         non-diagonal mass matrix, then the dense output is not supported with this
-                                         ODE solver. Either use a method which has a specialized interpolation,
-                                         such as Rodas5P, or use `dense=false`
-
-                                         You can find the list of available DAE solvers with their documented interpolations at:
-                                         https://docs.sciml.ai/DiffEqDocs/stable/solvers/dae_solve/
-                                         """
-
-struct HermiteInterpolationNonDiagonalError <: Exception end
-
-function Base.showerror(io::IO, e::HermiteInterpolationNonDiagonalError)
-    print(io, HERMITE_CASE_NOT_DEFINED_MESSAGE)
-    println(io, TruncatedStacktraces.VERBOSE_MSG)
+function interpolation_differential_vars(differential_vars, y₀, idxs)
+    if isnothing(differential_vars)
+        if y₀ isa Number
+            return true
+        elseif idxs === nothing
+            return  Trues(size(y₀))
+        elseif idxs isa Number
+            return  true
+        else
+            return  Trues(size(idxs))
+        end
+    elseif differential_vars isa DifferentialVarsUndefined #for non diagonal mass matrices, use linear interpolation.
+        if y₀ isa Number
+            return  false
+        elseif idxs === nothing
+            return  Falses(size(y₀))
+        elseif idxs isa Number
+            return  false
+        else
+            return  Falses(size(idxs))
+        end
+    elseif idxs isa Number
+        return return differential_vars[idxs]
+    elseif idxs === nothing
+        return differential_vars
+    else
+        return @view differential_vars[idxs]
+    end
 end
 
 # If no dispatch found, assume Hermite
 function _ode_interpolant(
         Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
-    differential_vars isa DifferentialVarsUndefined &&
-        throw(HermiteInterpolationNonDiagonalError())
     TI > 3 && throw(DerivativeOrderNotPossibleError())
 
-    differential_vars = if differential_vars === nothing
-        if y₀ isa Number
-            differential_vars = true
-        elseif idxs === nothing
-            differential_vars = Trues(size(y₀))
-        elseif idxs isa Number
-            differential_vars = true
-        else
-            differential_vars = Trues(size(idxs))
-        end
-    elseif idxs isa Number
-        differential_vars[idxs]
-    elseif idxs === nothing
-        differential_vars
-    else
-        @view differential_vars[idxs]
-    end
-
+    differential_vars = interpolation_differential_vars(differential_vars, y₀, idxs)
     hermite_interpolant(Θ, dt, y₀, y₁, k, Val{cache isa OrdinaryDiffEqMutableCache},
         idxs, T, differential_vars)
 end
 
 function _ode_interpolant!(
         out, Θ, dt, y₀, y₁, k, cache, idxs, T::Type{Val{TI}}, differential_vars) where {TI}
-    differential_vars isa DifferentialVarsUndefined &&
-        throw(HermiteInterpolationNonDiagonalError())
     TI > 3 && throw(DerivativeOrderNotPossibleError())
 
-    differential_vars = if differential_vars === nothing
-        if y₀ isa Number
-            differential_vars = true
-        elseif idxs === nothing
-            differential_vars = Trues(size(out))
-        elseif idxs isa Number
-            differential_vars = true
-        else
-            differential_vars = Trues(size(idxs))
-        end
-    elseif idxs isa Number
-        differential_vars[idxs]
-    elseif idxs === nothing
-        differential_vars
-    else
-        @view differential_vars[idxs]
-    end
-
+    differential_vars = interpolation_differential_vars(differential_vars, y₀, idxs)
     hermite_interpolant!(out, Θ, dt, y₀, y₁, k, idxs, T, differential_vars)
 end
 
