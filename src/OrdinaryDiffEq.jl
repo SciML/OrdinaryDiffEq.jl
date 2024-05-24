@@ -262,7 +262,11 @@ PrecompileTools.@compile_workload begin
 
     default_ode = [
         DefaultODEAlgorithm(autodiff = false),
-        DefaultODEAlgorithm()
+    ]
+
+    
+    default_autodiff_ode = [
+        DefaultODEAlgorithm(),
     ]
 
     autoswitch = [
@@ -283,16 +287,21 @@ PrecompileTools.@compile_workload begin
     solver_list = []
     solver_list_nonadaptive = []
 
-    if Preferences.@load_preference("PrecompileNonStiff", true)
-        append!(solver_list, nonstiff)
-    end
-
-    if Preferences.@load_preference("PrecompileStiff", true)
-        append!(solver_list, stiff)
-    end
 
     if Preferences.@load_preference("PrecompileDefault", true)
         append!(solver_list, default_ode)
+    end
+
+    if Preferences.@load_preference("PrecompileAutodiffDefault", true)
+        append!(solver_list, default_autodiff_ode)
+    end
+   
+    if Preferences.@load_preference("PrecompileNonStiff", false)
+        append!(solver_list, nonstiff)
+    end
+
+    if Preferences.@load_preference("PrecompileStiff", false)
+        append!(solver_list, stiff)
     end
 
     if Preferences.@load_preference("PrecompileAutoSwitch", false)
