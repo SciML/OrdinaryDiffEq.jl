@@ -534,11 +534,13 @@ function DiffEqBase.__init(
     integrator
 end
 
+if !Sys.iswindows() #TODO delete this once https://github.com/JuliaLang/julia/pull/54572 is released
 function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
 end
 function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
     DiffEqBase.solve(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
+end
 end
 
 function DiffEqBase.solve!(integrator::ODEIntegrator)
