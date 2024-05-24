@@ -5,37 +5,6 @@ function Base.show(io::IO, alg::OrdinaryDiffEqAlgorithm)
     end
     print(io, ")")
 end
-function explicit_rk_docstring(description::String,
-        name::String;
-        references::String = "",
-        extra_keyword_description = "",
-        extra_keyword_default = "")
-    if !isempty(extra_keyword_default)
-        extra_keyword_default = "\n" * repeat(" ", 8) * extra_keyword_default
-    end
-    start_docstring = """
-       ```julia
-       $name(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-               thread = OrdinaryDiffEq.False(),$extra_keyword_default)
-       ```
-
-       Explicit Runge-Kutta Method.
-       """
-    keyword_docstring = """
-
-        ### Keyword Arguments
-
-         - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
-         - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
-         - `thread`: determines whether internal broadcasting on
-            appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-            default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-            Julia is started with multiple threads.
-        """
-    start_docstring * description * keyword_docstring * extra_keyword_description *
-    "## References\n" * references
-end
 
 @doc explicit_rk_docstring(
     "The second order Heun's method. Uses embedded Euler method for adaptivity.",
