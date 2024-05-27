@@ -250,10 +250,10 @@ function RadauIIA7Tableau(T,T2)
 
     RadauIIA7Tableau{T, T2}(T11, T12, T13, T14, T15, 
     T21, T22, T23, T24, T25, T31, T32, T33, T34, T35, 
-    T41, T42, T43, T44, T45, T51, T52, T53, T54, T55,
+    T41, T42, T43, T44, T45, T51, #=T52, T53, T54, T55=#
     TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25,
     TI31, TI32, TI33,TI34, TI35, TI41, TI42, TI43, TI44, TI45,
-    TI51, #=TI52, TI53, TI54, TI55 =#
+    TI51, TI52, TI53, TI54, TI55,
     c1, c2, c3, c4 #= c5 = 1 =#, 
     γ, α1, β1, α2, β2, 
     e1, e2, e3, e4, e5)
