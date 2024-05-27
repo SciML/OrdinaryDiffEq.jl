@@ -5,37 +5,6 @@ function Base.show(io::IO, alg::OrdinaryDiffEqAlgorithm)
     end
     print(io, ")")
 end
-function explicit_rk_docstring(description::String,
-        name::String;
-        references::String = "",
-        extra_keyword_description = "",
-        extra_keyword_default = "")
-    if !isempty(extra_keyword_default)
-        extra_keyword_default = "\n" * repeat(" ", 8) * extra_keyword_default
-    end
-    start_docstring = """
-       ```julia
-       $name(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
-               step_limiter! = OrdinaryDiffEq.trivial_limiter!,
-               thread = OrdinaryDiffEq.False(),$extra_keyword_default)
-       ```
-
-       Explicit Runge-Kutta Method.
-       """
-    keyword_docstring = """
-
-        ### Keyword Arguments
-
-         - `stage_limiter!`: function of the form `limiter!(u, integrator, p, t)`
-         - `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`
-         - `thread`: determines whether internal broadcasting on
-            appropriate CPU arrays should be serial (`thread = OrdinaryDiffEq.False()`,
-            default) or use multiple threads (`thread = OrdinaryDiffEq.True()`) when
-            Julia is started with multiple threads.
-        """
-    start_docstring * description * keyword_docstring * extra_keyword_description *
-    "## References\n" * references
-end
 
 @doc explicit_rk_docstring(
     "The second order Heun's method. Uses embedded Euler method for adaptivity.",
@@ -111,6 +80,66 @@ end
 # for backwards compatibility
 function RKM(stage_limiter!, step_limiter! = trivial_limiter!)
     RKM(stage_limiter!, step_limiter!, False())
+end
+
+@doc explicit_rk_docstring("4-stage Pseudo-Symplectic Explicit RK method.", "3p5q(4)",
+    references = "@article{Aubry1998,
+    author = {A. Aubry and P. Chartier},
+    journal = {BIT Numer. Math.},
+    title =  {Pseudo-symplectic {R}unge-{K}utta methods},
+    year = {1998},
+    },
+    @article{Capuano2017,
+    title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
+    journal = {J. Comput. Phys.},
+    year = {2017},
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}")
+Base.@kwdef struct PSRK3p5q4{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+@doc explicit_rk_docstring("5-stage Pseudo-Symplectic Explicit RK method.", "3p6q(5)",
+    references = "@article{Aubry1998,
+    author = {A. Aubry and P. Chartier},
+    journal = {BIT Numer. Math.},
+    title =  {Pseudo-symplectic {R}unge-{K}utta methods},
+    year = {1998},
+    },
+    @article{Capuano2017,
+    title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
+    journal = {J. Comput. Phys.},
+    year = {2017},
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}")
+Base.@kwdef struct PSRK3p6q5{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+
+@doc explicit_rk_docstring("6-stage Pseudo-Symplectic Explicit RK method.", "4p7q(6)",
+    references = "@article{Aubry1998,
+    author = {A. Aubry and P. Chartier},
+    journal = {BIT Numer. Math.},
+    title =  {Pseudo-symplectic {R}unge-{K}utta methods},
+    volume = {38},
+    PAGES = {439-461},
+    year = {1998},
+    },
+    @article{Capuano2017,
+    title = {Explicit {R}unge–{K}utta schemes for incompressible flow with improved energy-conservation properties},
+    journal = {J. Comput. Phys.},
+    volume = {328},
+    pages = {86-94},
+    year = {2017},
+    issn = {0021-9991},
+    doi = {https://doi.org/10.1016/j.jcp.2016.10.040},
+    author = {F. Capuano and G. Coppola and L. Rández and L. {de Luca}},}")
+Base.@kwdef struct PSRK4p7q6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
 end
 
 @doc explicit_rk_docstring("5th order Explicit RK method.", "MSRK5",
@@ -401,7 +430,9 @@ publisher={Neural, Parallel \\& Scientific Computations}
 Feagin10: Explicit Runge-Kutta Method
 Feagin's 10th-order Runge-Kutta method.
 """
-struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@kwdef struct Feagin10{StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 """
 @article{feagin2012high,
@@ -414,7 +445,9 @@ publisher={Neural, Parallel \\& Scientific Computations}
 Feagin12: Explicit Runge-Kutta Method
 Feagin's 12th-order Runge-Kutta method.
 """
-struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@kwdef struct Feagin12{StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 """
 Feagin, T., “An Explicit Runge-Kutta Method of Order Fourteen,” Numerical
@@ -423,7 +456,9 @@ Algorithms, 2009
 Feagin14: Explicit Runge-Kutta Method
 Feagin's 14th-order Runge-Kutta method.
 """
-struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@kwdef struct Feagin14{StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+    step_limiter!::StepLimiter = trivial_limiter!
+end
 
 @doc explicit_rk_docstring("Zero Dissipation Runge-Kutta of 6th order.", "FRK65",
     extra_keyword_description = """- `omega`: a periodicity phase estimate,

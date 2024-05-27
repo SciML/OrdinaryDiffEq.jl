@@ -44,11 +44,11 @@
     else
         # TODO: use more caches
         if u0 isa Array && eltype(u0) isa Number
-            T = eltype(first(u0) / t)
+            T = eltype(first(u0) / oneunit_tType)
             f₀ = similar(u0, T)
             fill!(f₀, zero(T))
         else
-            f₀ = zero.(u0 ./ t)
+            f₀ = zero.(u0 ./ oneunit_tType)
         end
         f(f₀, u0, p, t)
     end

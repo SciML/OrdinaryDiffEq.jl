@@ -1384,6 +1384,123 @@ function alg_cache(alg::MSRK6, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.stage_limiter!, alg.step_limiter!, alg.thread)
 end
 
+@cache struct PSRK4p7q6Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k1::rateType
+    k2::rateType
+    k3::rateType
+    k4::rateType
+    k5::rateType
+    k6::rateType
+    tmp::uType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(alg::PSRK4p7q6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return PSRK4p7q6ConstantCache(
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+function alg_cache(alg::PSRK4p7q6, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    k4 = zero(rate_prototype)
+    k5 = zero(rate_prototype)
+    k6 = zero(rate_prototype)
+    tmp = zero(u)
+    tab = PSRK4p7q6ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    PSRK4p7q6Cache(u, uprev, k1, k2, k3, k4, k5, k6, tmp, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+@cache struct PSRK3p6q5Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k1::rateType
+    k2::rateType
+    k3::rateType
+    k4::rateType
+    k5::rateType
+    tmp::uType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(alg::PSRK3p6q5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return PSRK3p6q5ConstantCache(
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+function alg_cache(alg::PSRK3p6q5, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    k4 = zero(rate_prototype)
+    k5 = zero(rate_prototype)
+    tmp = zero(u)
+    tab = PSRK3p6q5ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    PSRK3p6q5Cache(u, uprev, tmp, k1, k2, k3, k4, k5, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+@cache struct PSRK3p5q4Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k1::rateType
+    k2::rateType
+    k3::rateType
+    k4::rateType
+    tmp::uType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+function alg_cache(alg::PSRK3p5q4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    return PSRK3p5q4ConstantCache(
+        constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+function alg_cache(alg::PSRK3p5q4, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    k4 = zero(rate_prototype)
+    tmp = zero(u)
+    tab = PSRK3p5q4ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    PSRK3p5q4Cache(u, uprev, tmp, k1, k2, k3, k4, tab,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
 @cache struct Stepanov5Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType

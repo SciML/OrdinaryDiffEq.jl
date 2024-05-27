@@ -133,7 +133,7 @@ end
         integrator.stats.nf += 1
         @.. broadcast=false thread=thread u=u + B2end[i] * dt * k
     end
-
+    step_limiter!(u, integrator, p, t + dt)
     f(k, u, p, t + dt)
     integrator.stats.nf += 1
 end
@@ -203,6 +203,7 @@ end
                                             β2end[i] * dt * k
     end
 
+    step_limiter!(u, integrator, p, t + dt)
     f(k, u, p, t + dt)
     integrator.stats.nf += 1
 end
@@ -495,6 +496,7 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
+    step_limiter!(u, integrator, p, t + dt)
     f(k, u, p, t + dt)
     integrator.stats.nf += 1
 end
@@ -590,6 +592,8 @@ end
     integrator.opts.adaptive &&
         (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
+
+    step_limiter!(u, integrator, p, t + dt)
 
     #Error estimate
     if integrator.opts.adaptive
@@ -705,6 +709,8 @@ end
     integrator.opts.adaptive &&
         (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
+
+    step_limiter!(u, integrator, p, t + dt)
 
     #Error estimate
     if integrator.opts.adaptive
@@ -828,6 +834,8 @@ end
     integrator.opts.adaptive &&
         (@.. broadcast=false thread=thread tmp=tmp + (Bₗ - B̂ₗ) * dt * k)
     @.. broadcast=false thread=thread u=u + Bₗ * dt * k
+
+    step_limiter!(u, integrator, p, t + dt)
 
     #Error estimate
     if integrator.opts.adaptive

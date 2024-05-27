@@ -39,37 +39,42 @@ end
 sol = solve(prob_forward, RK4(), dt = 1 / 2^(2), save_everystep = true, adaptive = false)
 sol2 = solve(prob_forward, RK4(), dt = 1 / 2^(2), save_everystep = true, adaptive = false,
     saveat = [0.125, 0.6, 0.61, 0.8])
-
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.125, 0.6, 0.61, 0.8]
 
 sol = solve(prob_forward, Rosenbrock32(), dt = 1 / 2^(2), save_everystep = true)
 sol2 = solve(prob_forward, Rosenbrock32(), dt = 1 / 2^(2), save_everystep = true,
     saveat = [0.125, 0.6, 0.61, 0.8])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.125, 0.6, 0.61, 0.8]
 
 sol = solve(prob_forward, Trapezoid(), dt = 1 / 2^(2), save_everystep = true)
 sol2 = solve(prob_forward, Trapezoid(), dt = 1 / 2^(2), save_everystep = true,
     saveat = [0.125, 0.6, 0.61, 0.8])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.125, 0.6, 0.61, 0.8]
 
 sol = solve(prob_reverse, RK4(), dt = 1 / 2^(2), save_everystep = true, adaptive = false)
 sol2 = solve(prob_reverse, RK4(), dt = 1 / 2^(2), save_everystep = true, adaptive = false,
     saveat = [0.8, 0.61, 0.6, 0.125])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.8, 0.61, 0.6, 0.125]
 
 sol = solve(prob_reverse, Rosenbrock32(), dt = 1 / 2^(2), save_everystep = true)
 sol2 = solve(prob_reverse, Rosenbrock32(), dt = 1 / 2^(2), save_everystep = true,
     saveat = [0.8, 0.61, 0.6, 0.125])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.8, 0.61, 0.6, 0.125]
 
 sol = solve(prob_reverse, Trapezoid(), dt = 1 / 2^(2), save_everystep = true)
 sol2 = solve(prob_reverse, Trapezoid(), dt = 1 / 2^(2), save_everystep = true,
     saveat = [0.8, 0.61, 0.6, 0.125])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.8, 0.61, 0.6, 0.125]
 
 prob = prob_ode_2Dlinear
@@ -78,28 +83,33 @@ sol = solve(prob, DP5(), dt = 1 // 2^(2), save_everystep = true)
 sol2 = solve(prob, DP5(), dt = 1 // 2^(2), save_everystep = true,
     saveat = [0.0, 1 / 2, 1.0])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [1 / 2]
 
 sol = solve(prob, RK4(), dt = 1 / 2^(2), save_everystep = true, adaptive = false)
 sol2 = solve(prob, RK4(), dt = 1 / 2^(2), save_everystep = true, adaptive = false,
     saveat = [0.0, 0.125, 0.6, 0.61, 0.8, 1.0])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.125, 0.6, 0.61, 0.8]
 
 sol = solve(prob, Rosenbrock32(), dt = 1 / 2^(2), save_everystep = true)
 sol2 = solve(prob, Rosenbrock32(), dt = 1 / 2^(2), save_everystep = true,
     saveat = [0.125, 0.6, 0.61, 0.8])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test symdiff(sol.t, sol2.t) == [0.125, 0.6, 0.61, 0.8]
 
 sol = solve(prob, Trapezoid(), dt = 1 / 2^(2), save_everystep = false)
 sol2 = solve(prob, Trapezoid(), dt = 1 / 2^(2), saveat = [0.125, 0.6, 0.61, 0.8])
 
+@test sol.retcode == sol2.retcode == ReturnCode.Success
 @test sort!(symdiff(sol.t, sol2.t)) == [0.0, 0.125, 0.6, 0.61, 0.8, 1.0]
 
 sol = solve(prob, Trapezoid(), dt = 1 / 2^(2), save_everystep = true, dense = false,
     saveat = [0, 0.125, 0.6, 0.61, 0.8])
 
+@test sol.retcode == ReturnCode.Success
 @test !(sol.t[2] ≈ 0)
 
 # Test Iterators
@@ -107,11 +117,13 @@ sol = solve(prob, Trapezoid(), dt = 1 / 2^(2), save_everystep = true, dense = fa
 sol2 = solve(prob, DP5(), dt = 1 // 2^(2), save_everystep = false, dense = false,
     saveat = 0:(1 // 100):1)
 
+@test sol2.retcode == ReturnCode.Success
 @test sol2.t ≈ collect(0:(1 // 100):1)
 
 sol2 = solve(prob, DP5(), dt = 1 // 2^(2), save_everystep = false, dense = false,
     saveat = range(0, stop = 1, length = 100))
 
+@test sol2.retcode == ReturnCode.Success
 @test sol2.t ≈ range(0, stop = 1, length = 100)
 
 f = (du, u, p, t) -> prob.f(du, u, p, t)

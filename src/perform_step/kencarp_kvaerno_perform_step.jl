@@ -108,7 +108,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack z₁, z₂, z₃, z₄, atmp, nlsolver = cache
+    @unpack z₁, z₂, z₃, z₄, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32 = cache.tab
     alg = unwrap_alg(integrator, true)
@@ -161,6 +161,7 @@ end
 
     @.. broadcast=false u=tmp + γ * z₄
 
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
@@ -311,7 +312,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver = cache
+    @unpack z₁, z₂, z₃, z₄, k1, k2, k3, k4, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, btilde1, btilde2, btilde3, btilde4, c3, α31, α32 = cache.tab
     @unpack ea21, ea31, ea32, ea41, ea42, ea43, eb1, eb2, eb3, eb4 = cache.tab
@@ -408,6 +409,8 @@ end
         @.. broadcast=false u=uprev + a41 * z₁ + a42 * z₂ + a43 * z₃ + γ * z₄ + eb1 * k1 +
                               eb2 * k2 + eb3 * k3 + eb4 * k4
     end
+
+    step_limiter!(u, integrator, p, t + dt)
 
     ################################### Finalize
 
@@ -733,7 +736,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack z₁, z₂, z₃, z₄, z₅, atmp, nlsolver = cache
+    @unpack z₁, z₂, z₃, z₄, z₅, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, c3, c4 = cache.tab
     @unpack α21, α31, α32, α41, α42 = cache.tab
@@ -794,6 +797,8 @@ end
     nlsolvefail(nlsolver) && return
 
     @.. broadcast=false u=tmp + γ * z₅
+
+    step_limiter!(u, integrator, p, t + dt)
 
     ################################### Finalize
 
@@ -993,7 +998,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver = cache
+    @unpack z₁, z₂, z₃, z₄, z₅, z₆, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
     @unpack k1, k2, k3, k4, k5, k6 = cache
     @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, c3, c4, c5 = cache.tab
@@ -1137,6 +1142,7 @@ end
                               eb1 * k1 + eb3 * k3 + eb4 * k4 + eb5 * k5 + eb6 * k6
     end
 
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
@@ -1273,7 +1279,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver = cache
+    @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, atmp, nlsolver, step_limiter! = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, c3, c4, c5, c6 = cache.tab
     @unpack btilde1, btilde3, btilde4, btilde5, btilde6, btilde7 = cache.tab
@@ -1355,6 +1361,7 @@ end
 
     @.. broadcast=false u=tmp + γ * z₇
 
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
@@ -1595,7 +1602,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
-    @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver = cache
+    @unpack z₁, z₂, z₃, z₄, z₅, z₆, z₇, z₈, atmp, nlsolver, step_limiter! = cache
     @unpack k1, k2, k3, k4, k5, k6, k7, k8 = cache
     @unpack tmp = nlsolver
     @unpack γ, a31, a32, a41, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, c3, c4, c5, c6, c7 = cache.tab
@@ -1781,6 +1788,7 @@ end
                               eb7 * k7 + eb8 * k8
     end
 
+    step_limiter!(u, integrator, p, t + dt)
     ################################### Finalize
 
     if integrator.opts.adaptive
