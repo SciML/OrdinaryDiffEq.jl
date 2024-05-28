@@ -2057,7 +2057,7 @@ function perform_step!(integrator, cache::Stepanov5Cache, repeat_step = false)
                   btilde6 * k6 +
                   btilde7 * k7)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t, thread)
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
 
