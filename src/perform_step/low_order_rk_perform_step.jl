@@ -762,7 +762,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g7 = u
         # Hairer II, page 22 modified to use the Inf norm
-        integrator.eigen_est = maximum(abs.(k7 .- k6) ./ (g7 .- g6))
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.(k7 .- k6) ./ (g7 .- g6)), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -837,7 +837,7 @@ end
         g6 = tmp
         # Hairer II, page 22 modified to use Inf norm
         @.. broadcast=false thread=thread utilde=abs((k7 - k6) / (g7 - g6))
-        integrator.eigen_est = maximum(utilde)
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(utilde), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
@@ -886,7 +886,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g7 = u
         # Hairer II, page 22 modified to use the Inf norm
-        integrator.eigen_est = maximum(abs.(k7 .- k6) ./ (g7 .- g6))
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.(k7 .- k6) ./ (g7 .- g6)), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -954,7 +954,7 @@ end
         g7 = u
         # Hairer II, page 22 modified to use Inf norm
         @.. broadcast=false thread=thread utilde=abs((k7 - k6) / (g7 - g6))
-        integrator.eigen_est = maximum(utilde) * oneunit(t)
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(utilde) * oneunit(t), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 +

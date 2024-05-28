@@ -40,7 +40,7 @@ end
     integrator.stats.nf += 8
     if integrator.alg isa CompositeAlgorithm
         g9 = u
-        integrator.eigen_est = maximum(abs.((k9 .- k8) ./ (g9 .- g8)))
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k9 .- k8) ./ (g9 .- g8))), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -162,7 +162,7 @@ end
         g9 = u
         g8 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k9 - k8) / (g9 - g8))
-        integrator.eigen_est = maximum(rtmp)
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
@@ -247,7 +247,7 @@ end
     integrator.stats.nf += 10
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = maximum(abs.((k10 .- k9) ./ (g10 .- g9)))
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k10 .- k9) ./ (g10 .- g9))), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -409,7 +409,7 @@ end
         g10 = u
         g9 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k10 - k9) / (g10 - g9))
-        integrator.eigen_est = maximum(rtmp)
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
@@ -537,7 +537,7 @@ end
         dt * (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12)
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = maximum(abs.((k13 .- k12) ./ (g13 .- g12)))
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k13 .- k12) ./ (g13 .- g12))), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -728,7 +728,7 @@ end
         g13 = u
         g12 = tmp
         @.. broadcast=false thread=thread rtmp = abs((k13 - k12) / (g13 - g12))
-        integrator.eigen_est = maximum(rtmp)
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
     end
     @.. broadcast=false thread=thread u=uprev +
                                         dt *
@@ -903,7 +903,7 @@ end
         dt * (b1 * k1 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 + b12 * k12 + b13 * k13 +
          b14 * k14 + b15 * k15)
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = maximum(abs.((k16 .- k15) ./ (g16 .- g15)))
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k16 .- k15) ./ (g16 .- g15))), t)
     end
     if integrator.opts.adaptive
         utilde = dt * (btilde1 * k1 + btilde8 * k8 + btilde9 * k9 + btilde10 * k10 +
@@ -1132,7 +1132,7 @@ end
         g16 = u
         g15 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k16 - k15) / (g16 - g15))
-        integrator.eigen_est = maximum(rtmp)
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
     end
     @.. broadcast=false thread=thread u=uprev +
                                         dt *
