@@ -15,7 +15,7 @@ function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
     stiffness = abs(eigen_est * dt / alg_stability_size(alg)) # `abs` here is just for safety
     tol = is_stiffalg ? stol : ntol
     os = oneunit(stiffness)
-    bool = stiffness > os * tol
+    bool = !(stiffness <= os * tol)
 
     if !bool
         integrator.alg.choice_function.successive_switches += 1
@@ -111,7 +111,7 @@ current_nonstiff(current) = ifelse(current <= NUM_NONSTIFF, current, current - N
 function DefaultODEAlgorithm(; lazy = true, stiffalgfirst = false, kwargs...)
     nonstiff = (Tsit5(), Vern7(lazy = lazy))
     stiff = (Rosenbrock23(; kwargs...), Rodas5P(; kwargs...), FBDF(; kwargs...),
-        FBDF(; linsolve = LinearSolve.KrylovJL_GMRES()))
+        FBDF(; linsolve = LinearSolve.KrylovJL_GMRES(), kwargs...))
     AutoAlgSwitch(nonstiff, stiff; stiffalgfirst)
 end
 
