@@ -103,8 +103,10 @@ dependent_M2 = MatrixOperator(ones(3, 3), update_func = update_func2,
         @test _norm_dsol(QNDF(), prob, prob2)≈0 atol=1e-12
 
         println("Rosenbrocks")
-        @test _norm_dsol(Rosenbrock23(), prob, prob2)≈0 atol=1e-11
-        @test _norm_dsol(Rosenbrock32(), prob, prob2)≈0 atol=1e-11
+        if mm == almost_I
+            @test _norm_dsol(Rosenbrock23(), prob, prob2)≈0 atol=1e-11
+            @test _norm_dsol(Rosenbrock32(), prob, prob2)≈0 atol=1e-11
+        end
         @test _norm_dsol(ROS3P(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(Rodas3(), prob, prob2)≈0 atol=1e-11
         @test _norm_dsol(ROS2(), prob, prob2)≈0 atol=1e-11
@@ -207,7 +209,7 @@ end
 
     m_ode_prob = ODEProblem(ODEFunction(f2!; mass_matrix = M), u0, tspan)
     println("Rosenbrocks")
-    sol1 = @test_nowarn solve(m_ode_prob, Rosenbrock23(), reltol = 1e-10, abstol = 1e-10)
+    sol1 = @test_nowarn solve(m_ode_prob, Rodas5P(), reltol = 1e-10, abstol = 1e-10)
     sol2 = @test_nowarn solve(m_ode_prob, RadauIIA5(), reltol = 1e-10, abstol = 1e-10)
     sol3 = @test_nowarn solve(m_ode_prob, Cash4(), reltol = 1e-10, abstol = 1e-10)
     println("SDIRKs")

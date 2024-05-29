@@ -109,6 +109,12 @@ function DiffEqBase.__init(
         end
     end
 
+    if alg isa Union{Rosenbrock23, Rosenbrock32} &&
+       prob.f.mass_matrix isa AbstractMatrix &&
+       !isdiag(prob.f.mass_matrix)
+        error("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)")
+    end
+
     if !isempty(saveat) && dense
         @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
