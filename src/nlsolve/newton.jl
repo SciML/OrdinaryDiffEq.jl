@@ -34,9 +34,9 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, false},
 
     @unpack ustep, tstep, k, invγdt = cache
     if DiffEqBase.has_stats(integrator)
-        integrator.stats.nf += cache.cache.nf
-        integrator.stats.nnonliniter += cache.cache.nsteps
-        integrator.stats.njacs += cache.cache.jac_cache.njacs
+        integrator.stats.nf += cache.cache.stats.nf
+        integrator.stats.nnonliniter += cache.cache.stats.nsteps
+        integrator.stats.njacs += cache.cache.stats.njacs
     end
     if f isa DAEFunction
         nlp_params = (tmp, α, tstep, invγdt, p, dt, uprev, f)
@@ -59,9 +59,9 @@ function initialize!(nlsolver::NLSolver{<:NonlinearSolveAlg, true},
     @unpack ustep, tstep, k, invγdt = cache
 
     if DiffEqBase.has_stats(integrator)
-        integrator.stats.nf += cache.cache.nf
-        integrator.stats.nnonliniter += cache.cache.nsteps
-        integrator.stats.njacs += cache.cache.jac_cache.njacs
+        integrator.stats.nf += cache.cache.stats.nf
+        integrator.stats.nnonliniter += cache.cache.stats.nsteps
+        integrator.stats.njacs += cache.cache.stats.njacs
     end
     if f isa DAEFunction
         nlp_params = (tmp, ztmp, ustep, γ, α, tstep, k, invγdt, p, dt, f)
