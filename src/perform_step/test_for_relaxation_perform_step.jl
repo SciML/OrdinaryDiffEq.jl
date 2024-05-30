@@ -101,3 +101,99 @@ function finalize_step!(integrator, cache::Tsit5ConstantCache_for_relaxation)
 
     integrator.stats.nf += 7
 end
+
+
+## Non Constant cache
+function initialize!(integrator, cache::Tsit5Cache_for_relaxation)
+    integrator.kshortsize = 7
+    integrator.fsalfirst = cache.k1
+    integrator.fsallast = cache.k7 # setup pointers
+    resize!(integrator.k, integrator.kshortsize)
+    # Setup k pointers
+    integrator.k[1] = cache.k1
+    integrator.k[2] = cache.k2
+    integrator.k[3] = cache.k3
+    integrator.k[4] = cache.k4
+    integrator.k[5] = cache.k5
+    integrator.k[6] = cache.k6
+    integrator.k[7] = cache.k7
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+    return nothing
+end
+
+
+function perform_step!(integrator, cache::Tsit5Cache_for_relaxation, repeat_step = false)
+
+    # Variable to know if dt has changed during perform_step
+    integrator.dt_has_changed = false
+
+    # computations! will only contain the mathematical scheme
+    # i.e the computations of the u(t+dt)
+    # the result is store not in integrator.u but integrator.u_propose
+    computations!(integrator, cache, repeat_step)
+
+    # modif_step! enables to modify the step like when we want to perform a relaxation
+    # for this we give a new struture that can be defined either by us for already known
+    # modification we want to do or by a user (see below)
+    modif_step!(integrator)
+
+    # finalize_step! will do staff related to the solver like integrator.stats, register integrator.fsal
+    # and register integrator.u
+    finalize_step!(integrator, cache)
+end
+
+@muladd functioncomputations!(integrator, cache::Tsit5Cache_for_relaxation, repeat_step = false)
+    @unpack t, dt, uprev, u_propose, f, p = integrator
+    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T2 = constvalue(typeof(one(t)))
+    @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
+    @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
+    a = dt * a21
+    @.. broadcast=false thread=thread tmp=uprev + a * k1
+    stage_limiter!(tmp, f, p, t + c1 * dt)
+    f(k2, tmp, p, t + c1 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a31 * k1 + a32 * k2)
+    stage_limiter!(tmp, f, p, t + c2 * dt)
+    f(k3, tmp, p, t + c2 * dt)
+    @.. broadcast=false thread=thread tmp=uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3)
+    stage_limiter!(tmp, f, p, t + c3 * dt)
+    f(k4, tmp, p, t + c3 * dt)
+    @.. broadcast=false thread=thread tmp=uprev +
+                                          dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4)
+    stage_limiter!(tmp, f, p, t + c4 * dt)
+    f(k5, tmp, p, t + c4 * dt)
+    @.. broadcast=false thread=thread tmp=uprev +
+                                          dt * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 +
+                                           a65 * k5)
+    stage_limiter!(tmp, f, p, t + dt)
+    f(k6, tmp, p, t + dt)
+    @.. broadcast=false thread=thread u_propose = uprev +
+                                        dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 +
+                                         a75 * k5 + a76 * k6)
+    stage_limiter!(u_propose, integrator, p, t + dt)
+    step_limiter!(u_propose, integrator, p, t + dt)
+
+    f(k7, u_propose, p, t + dt)
+
+    if integrator.opts.adaptive
+        @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
+                                                  btilde3 * k3 + btilde4 * k4 +
+                                                  btilde5 * k5 + btilde6 * k6 +
+                                                  btilde7 * k7)
+        calculate_residuals!(atmp, utilde, uprev, u_propose, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t,
+            thread)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    return nothing
+end
+
+function finalize_step!(integrator, ::Tsit5Cache_for_relaxation)
+    @unpack t, dt, uprev, u_propose, f, p = integrator
+    @.. broadcast=false thread=thread u = u_propose 
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    f(k7, u_propose, p, t + dt)
+    integrator.stats.nf += 7
+end
