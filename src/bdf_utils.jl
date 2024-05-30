@@ -259,8 +259,14 @@ function estimate_terk(integrator, cache, k, ::Val{max_order}, u) where {max_ord
         terk *= abs(dt^(k - 1))
     else
         vc = _vec(terk)
-        for i in 2:k
-            @.. broadcast=false vc += fd_weights[i, k]*@view(u_history[:, i - 1])
+        if ArrayInterface.ismutable(vc)
+            for i in 2:k
+                @.. broadcast=false vc+=fd_weights[i, k] * @view(u_history[:, i - 1])
+            end
+        else
+            for i in 2:k
+                vc = @. vc + fd_weights[i, k] * @view(u_history[:, i - 1])
+            end
         end
         terk = reshape(vc, size(terk))
         terk *= abs(dt^(k - 1))
