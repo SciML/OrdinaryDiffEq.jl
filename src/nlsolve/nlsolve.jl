@@ -58,12 +58,13 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
             nlsolver.nfails += 1
             break
         end
-
-        prev_θ = hasfield(NL, :prev_θ) ? nlsolver.prev_θ : one(ndz)
+        
+        has_prev_θ = hasfield(NL, :prev_θ)
+        prev_θ = has_prev_θ ? nlsolver.prev_θ : one(ndz)
 
         # check divergence (not in initial step)
         if iter > 1
-            θ = prev_θ = max(0.3 * prev_θ, ndz / ndzprev)
+            θ = prev_θ = has_prev_θ ? max(0.3 * prev_θ, ndz / ndzprev) : ndz/ndzprev
 
             # When one Newton iteration basically does nothing, it's likely that we
             # are at the precision limit of floating point number. Thus, we just call
@@ -90,7 +91,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
             θ = min(one(prev_θ), prev_θ)
         end
 
-        if hasfield(NL, :prev_θ)
+        if has_prev_θ
             nlsolver.prev_θ = prev_θ
         end
 
