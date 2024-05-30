@@ -143,9 +143,9 @@ function perform_step!(integrator, cache::Tsit5Cache_for_relaxation, repeat_step
     finalize_step!(integrator, cache)
 end
 
-@muladd functioncomputations!(integrator, cache::Tsit5Cache_for_relaxation, repeat_step = false)
+@muladd function computations!(integrator, cache::Tsit5Cache_for_relaxation, repeat_step = false)
     @unpack t, dt, uprev, u_propose, f, p = integrator
-    T = constvalue(recursive_unitless_bottom_eltype(u))
+    T = constvalue(recursive_unitless_bottom_eltype(u_propose))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, utilde, tmp, atmp, stage_limiter!, step_limiter!, thread = cache
@@ -189,8 +189,9 @@ end
     return nothing
 end
 
-function finalize_step!(integrator, ::Tsit5Cache_for_relaxation)
-    @unpack t, dt, uprev, u_propose, f, p = integrator
+function finalize_step!(integrator, cache::Tsit5Cache_for_relaxation)
+    @unpack t, dt, u_propose, u, f, p = integrator
+    @unpack k7, stage_limiter!, step_limiter!, thread = cache
     @.. broadcast=false thread=thread u = u_propose 
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
