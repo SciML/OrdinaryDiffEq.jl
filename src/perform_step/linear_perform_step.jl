@@ -14,7 +14,6 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = fal
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
 
     L = integrator.f.f
     update_coefficients!(L, u, p, t + dt / 2)
@@ -24,7 +23,7 @@ function perform_step!(integrator, cache::MagnusMidpointCache, repeat_step = fal
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
     else
         A = convert(AbstractMatrix, L)
-        u .= exponential!(dt * A, exp_method, exp_cache) * u
+        u .= exponential!(dt * A, ExpMethodDiagonalization(), exp_cache) * u
     end
 
     integrator.f(integrator.fsallast, u, p, t + dt)
@@ -46,7 +45,7 @@ function perform_step!(integrator, cache::LieRK4Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
 
@@ -99,7 +98,7 @@ function perform_step!(integrator, cache::RKMK4Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
@@ -143,7 +142,7 @@ function perform_step!(integrator, cache::RKMK2Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
@@ -176,7 +175,7 @@ function perform_step!(integrator, cache::CG3Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
@@ -212,7 +211,7 @@ function perform_step!(integrator, cache::CG2Cache, repeat_step = false)
     @unpack t, dt, uprev, u, p = integrator
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
@@ -241,7 +240,7 @@ function perform_step!(integrator, cache::CG4aCache, repeat_step = false)
     @unpack t, dt, uprev, u, p, alg = integrator
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
@@ -289,7 +288,7 @@ function perform_step!(integrator, cache::MagnusAdapt4Cache, repeat_step = false
     @unpack t, dt, uprev, u, p = integrator
     @unpack W, k, tmp, utilde, atmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
@@ -359,7 +358,7 @@ function perform_step!(integrator, cache::MagnusNC8Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
 
@@ -435,7 +434,7 @@ function perform_step!(integrator, cache::MagnusGL4Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t + dt * (1 / 2 - sqrt(3) / 6))
@@ -471,7 +470,7 @@ function perform_step!(integrator, cache::MagnusGL8Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     v1 = (1 / 2) * sqrt((3 + 2 * sqrt(6 / 5)) / 7)
@@ -539,7 +538,7 @@ function perform_step!(integrator, cache::MagnusNC6Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t)
@@ -587,7 +586,7 @@ function perform_step!(integrator, cache::MagnusGL6Cache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t - dt * (sqrt(3 / 20)) + dt / 2)
@@ -631,7 +630,7 @@ function perform_step!(integrator, cache::MagnusGauss4Cache, repeat_step = false
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, uprev, p, t + dt * (1 / 2 + sqrt(3) / 6))
@@ -669,7 +668,7 @@ function perform_step!(integrator, cache::LieEulerCache, repeat_step = false)
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
 
     L = integrator.f.f
     update_coefficients!(L, u, p, t)
@@ -702,7 +701,7 @@ function perform_step!(integrator, cache::MagnusLeapfrogCache, repeat_step = fal
     alg = unwrap_alg(integrator, nothing)
     @unpack W, k, tmp, exp_cache = cache
     mass_matrix = integrator.f.mass_matrix
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
     # println("iter   : $iter")
     if iter == 1
         L = integrator.f.f
@@ -754,7 +753,7 @@ function perform_step!(integrator, cache::LinearExponentialConstantCache,
     A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator
 
     if alg.krylov == :off
-        u = exponential!(dt * A, ExpMethodGeneric()) * integrator.u
+        u = exponential!(dt * A, ExpMethodDiagonalization()) * integrator.u
     elseif alg.krylov == :simple
         u = expv(dt, A, integrator.u; m = min(alg.m, size(A, 1)),
             opnorm = integrator.opts.internalopnorm, iop = alg.iop)
@@ -790,7 +789,7 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step = 
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tmp, KsCache, exp_cache = cache
     alg = unwrap_alg(integrator, nothing)
-    exp_method = ExpMethodGeneric()
+    exp_method = ExpMethodDiagonalization()
     A = convert(AbstractMatrix, f.f) # assume f to be an ODEFunction wrapped around a linear operator
 
     if alg.krylov == :off
