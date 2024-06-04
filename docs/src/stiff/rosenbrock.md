@@ -3,6 +3,13 @@
 ## Standard Rosenbrock Methods
 
 ```@docs
+ROS2
+ROS3
+ROS2PR
+ROS3PR
+Scholz47
+ROS3PRL
+ROS3PRL2
 ROS3P
 Rodas3
 Rodas3P
@@ -31,13 +38,6 @@ ROS34PW1b
 ROS34PW2
 ROS34PW3
 ROS34PRw
-ROS2
-ROS3
 ROS2S
 RosenbrockW6S4OS
-ROS2PR
-ROS3PR
-Scholz4_7
-ROS3PRL
-ROS3PRL2
 ```
