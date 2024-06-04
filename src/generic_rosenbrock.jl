@@ -894,7 +894,7 @@ end
 # 2 step ROS Methods
 """
     ROS2Tableau()
-2nd order stiffly accurate Rosenbrock-Wanner method with 2 internal stages with (Rinf=0).
+2nd order stiffly accurate Rosenbrock method with 2 internal stages with (Rinf=0).
 The embedded method is taken from Kinetic PreProcessor (KPP).
 J. G. Verwer et al. (1999): A second-order Rosenbrock method applied to photochemical dispersion problems
 https://doi.org/10.1137/S1064827597326651
@@ -1210,9 +1210,9 @@ macro ROS2(part)
     end
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
-A 2nd order L-stable Rosenbrock-Wanner method with 2 internal stages.
+A 2nd order L-stable Rosenbrock method with 2 internal stages.
 """,
 "ROS2",
 references = """
@@ -1224,7 +1224,7 @@ references = """
 """
     ROS2PRTableau()
 
-2nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with (Rinf=0).
+2nd order stiffly accurate Rosenbrock method with 3 internal stages with (Rinf=0).
 For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use 
 [`ROS2S`](@ref) instead.
 
@@ -1245,9 +1245,9 @@ function ROS2PRTableau() # 2nd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
-2nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with (Rinf=0).
+2nd order stiffly accurate Rosenbrock method with 3 internal stages with (Rinf=0).
 For problems with medium stiffness the convergence behaviour is very poor and it is recommended to use 
 [`ROS2S`](@ref) instead.
 """,
@@ -1318,9 +1318,9 @@ function ROS3Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
-3rd order L-stable Rosenbrock-Wanner method with 3 internal stages with an embedded strongly
+3rd order L-stable Rosenbrock method with 3 internal stages with an embedded strongly
 A-stable 2nd order method.
 """,
 "ROS3",
@@ -1352,9 +1352,9 @@ function ROS3PRTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
-3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
+3nd order stiffly accurate Rosenbrock method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
 """,
 "ROS3PR",
 references = """
@@ -1368,7 +1368,7 @@ references = """
 """
     Scholz4_7Tableau()
 
-3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
+3nd order stiffly accurate Rosenbrock method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73
 Convergence with order 4 for the stiff case, but has a poor accuracy.
 
 Rang, Joachim (2014): The Prothero and Robinson example: 
@@ -1388,9 +1388,9 @@ function Scholz4_7Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
-3nd order stiffly accurate Rosenbrock-Wanner method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
+3nd order stiffly accurate Rosenbrock method with 3 internal stages with B_PR consistent of order 3, which is strongly A-stable with Rinf~=-0.73.
 Convergence with order 4 for the stiff case, but has a poor accuracy.
 """,
 "Scholz4_7",
@@ -1618,9 +1618,9 @@ function ROS3PRLTableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
-3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+3rd order stiffly accurate Rosenbrock method with 4 internal stages,
 B_PR consistent of order 2 with Rinf=0.
 The order of convergence decreases if medium stiff problems are considered, but it has good results for very stiff cases.
 """,
@@ -1635,7 +1635,7 @@ references = """
 """
     ROS3PRL2Tableau()
 
-3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+3rd order stiffly accurate Rosenbrock method with 4 internal stages,
 B_PR consistent of order 3.
 The order of convergence does NOT decreases if medium stiff problems are considered as it does for [`ROS3PRL`](@ref).
 
@@ -1658,9 +1658,9 @@ function ROS3PRL2Tableau() # 3rd order
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
 
-@doc rosenbrock_wanner_docstring(
+@doc rosenbrock_docstring(
 """
-3rd order stiffly accurate Rosenbrock-Wanner method with 4 internal stages,
+3rd order stiffly accurate Rosenbrock method with 4 internal stages,
 B_PR consistent of order 3.
 The order of convergence does NOT decreases if medium stiff problems are considered as it does for [`ROS3PRL`](@ref).
 """,
