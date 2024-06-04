@@ -797,12 +797,12 @@ end
         c1′ = c1 * c5′
         c2′ = c2 * c5′
         c3′ = c3 * c5′
-        c4' = c4 * c5′
-        z1 = @.. broadcast=false c1'*(cont1 + (c1' - c3m1) * (cont2 + (c1' - c2m1) * (cont3 + (c1' - c1m1) * cont4)))
-        z2 = @.. broadcast=false c2'*(cont1 + (c2' - c3m1) * (cont2 + (c2' - c2m1) * (cont3 + (c2' - c1m1) * cont4)))
-        z3 = @.. broadcast=false c3'*(cont1 + (c3' - c3m1) * (cont2 + (c3' - c2m1) * (cont3 + (c3' - c1m1) * cont4)))
-        z4 = @.. broadcast=false c4'*(cont1 + (c4' - c3m1) * (cont2 + (c4' - c2m1) * (cont3 + (c4' - c1m1) * cont4)))
-        z5 = @.. broadcast=false c5'*(cont1 + (c5' - c3m1) * (cont2 + (c5' - c2m1) * (cont3 + (c5' - c1m1) * cont4)))
+        c4′ = c4 * c5′
+        z1 = @.. broadcast=false c1′*(cont1 + (c1′ - c3m1) * (cont2 + (c1′ - c2m1) * (cont3 + (c1′ - c1m1) * cont4)))
+        z2 = @.. broadcast=false c2′*(cont1 + (c2′ - c3m1) * (cont2 + (c2′ - c2m1) * (cont3 + (c2′ - c1m1) * cont4)))
+        z3 = @.. broadcast=false c3′*(cont1 + (c3′ - c3m1) * (cont2 + (c3′ - c2m1) * (cont3 + (c3′ - c1m1) * cont4)))
+        z4 = @.. broadcast=false c4′*(cont1 + (c4′ - c3m1) * (cont2 + (c4′ - c2m1) * (cont3 + (c4′ - c1m1) * cont4)))
+        z5 = @.. broadcast=false c5′*(cont1 + (c5′ - c3m1) * (cont2 + (c5′ - c2m1) * (cont3 + (c5′ - c1m1) * cont4)))
         w1 = @.. broadcast=false TI11*z1 + TI12*z2 + TI13*z3 + TI14*z4 + TI15*z5
         w2 = @.. broadcast=false TI21*z1 + TI22*z2 + TI23*z3 + TI24*z4 + TI25*z5
         w3 = @.. broadcast=false TI31*z1 + TI32*z2 + TI33*z3 + TI34*z4 + TI35*z5
@@ -939,10 +939,13 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            cache.cont1 = @.. broadcast=false (z2 - z3)/c2m1
-            tmp = @.. broadcast=false (z1 - z2)/c1mc2
-            cache.cont2 = @.. broadcast=false (tmp - cache.cont1)/c1m1
-            cache.cont3 = @.. broadcast=false cache.cont2-(tmp - z1 / c1) / c2
+            @.. broadcast=false cache.cont1=(z4 - z5) / c4m1
+            @.. broadcast=false tmp1=(z3 - z4) / c3mc4
+            @.. broadcast=false cache.cont2=(tmp1 - cache.cont1) / c3m1
+            @.. broadcast=false cache.cont3=cache.cont2 - (tmp1 - z3 / c3) / c4
+            @.. broadcast=false tmp2 = (z1 - z2) / c1mc2
+            @.. broadcast=false cache.cont4=(tmp2 - cache.cont1) / c2m1
+            @.. broadcast=false cache.cont5=cache.cont4 - (tmp2 - z1/c1) / c2
         end
     end
 
@@ -1010,11 +1013,11 @@ end
         c2′ = c2 * c5′
         c3′ = c3 * c5′
         c4′ = c4 * c5′
-        z1 = @.. broadcast=false c1'*(cont1 + (c1' - c3m1) * (cont2 + (c1' - c2m1) * (cont3 + (c1' - c1m1) * cont4)))
-        z2 = @.. broadcast=false c2'*(cont1 + (c2' - c3m1) * (cont2 + (c2' - c2m1) * (cont3 + (c2' - c1m1) * cont4)))
-        z3 = @.. broadcast=false c3'*(cont1 + (c3' - c3m1) * (cont2 + (c3' - c2m1) * (cont3 + (c3' - c1m1) * cont4)))
-        z4 = @.. broadcast=false c4'*(cont1 + (c4' - c3m1) * (cont2 + (c4' - c2m1) * (cont3 + (c4' - c1m1) * cont4)))
-        z5 = @.. broadcast=false c5'*(cont1 + (c5' - c3m1) * (cont2 + (c5' - c2m1) * (cont3 + (c5' - c1m1) * cont4)))
+        z1 = @.. broadcast=false c1′*(cont1 + (c1′ - c3m1) * (cont2 + (c1′ - c2m1) * (cont3 + (c1′ - c1m1) * cont4)))
+        z2 = @.. broadcast=false c2′*(cont1 + (c2′ - c3m1) * (cont2 + (c2′ - c2m1) * (cont3 + (c2′ - c1m1) * cont4)))
+        z3 = @.. broadcast=false c3′*(cont1 + (c3′ - c3m1) * (cont2 + (c3′ - c2m1) * (cont3 + (c3′ - c1m1) * cont4)))
+        z4 = @.. broadcast=false c4′*(cont1 + (c4′ - c3m1) * (cont2 + (c4′ - c2m1) * (cont3 + (c4′ - c1m1) * cont4)))
+        z5 = @.. broadcast=false c5′*(cont1 + (c5′ - c3m1) * (cont2 + (c5′ - c2m1) * (cont3 + (c5′ - c1m1) * cont4)))
         w1 = @.. broadcast=false TI11*z1 + TI12*z2 + TI13*z3 + TI14*z4 + TI15*z5
         w2 = @.. broadcast=false TI21*z1 + TI22*z2 + TI23*z3 + TI24*z4 + TI25*z5
         w3 = @.. broadcast=false TI31*z1 + TI32*z2 + TI33*z3 + TI34*z4 + TI35*z5
@@ -1080,8 +1083,6 @@ end
             Mw4 = z4
             Mw5 = z5
         end
-
-        #LEFT OFF HERE
 
         @.. broadcast=false ubuff=fw1 - γdt * Mw1
         needfactor = iter == 1 && new_W
@@ -1190,7 +1191,7 @@ end
     cache.iter = iter
 
     @.. broadcast=false u=uprev + z5
-
+    #=
     if adaptive
         utilde = w2
         e1dt, e2dt, e3dt = e1 / dt, e2 / dt, e3 / dt
@@ -1228,16 +1229,21 @@ end
             integrator.EEst = internalnorm(atmp, t)
         end
     end
-    # NEED TO FINISH THIS
+    =#
+
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            @.. broadcast=false cache.cont1=(z2 - z3) / c2m1
-            @.. broadcast=false tmp=(z1 - z2) / c1mc2
-            @.. broadcast=false cache.cont2=(tmp - cache.cont1) / c1m1
-            @.. broadcast=false cache.cont3=cache.cont2 - (tmp - z1 / c1) / c2
+            @.. broadcast=false cache.cont1=(z4 - z5) / c4m1
+            @.. broadcast=false tmp1=(z3 - z4) / c3mc4
+            @.. broadcast=false cache.cont2=(tmp1 - cache.cont1) / c3m1
+            @.. broadcast=false cache.cont3=cache.cont2 - (tmp1 - z3 / c3) / c4
+            @.. broadcast=false tmp2 = (z1 - z2) / c1mc2
+            @.. broadcast=false cache.cont4=(tmp2 - cache.cont1) / c2m1
+            @.. broadcast=false cache.cont5=cache.cont4 - (tmp2 - z1/c1) / c2
         end
     end
+
 
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
