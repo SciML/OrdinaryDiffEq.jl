@@ -2754,13 +2754,13 @@ function GeneralRosenbrock(; chunk_size = Val{0}(), autodiff = true,
 end
 
 @doc rosenbrock_wanner_docstring(
-"""
-A 4th order L-stable Rosenbrock-W method (fixed step only).
-""",
-"RosenbrockW6S4OS",
-references = """
-https://doi.org/10.1016/j.cam.2009.09.017
-""")
+    """
+    A 4th order L-stable Rosenbrock-W method (fixed step only).
+    """,
+    "RosenbrockW6S4OS",
+    references = """
+    https://doi.org/10.1016/j.cam.2009.09.017
+    """)
 struct RosenbrockW6S4OS{CS, AD, F, P, FDT, ST, CJ} <:
        OrdinaryDiffEqRosenbrockAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F

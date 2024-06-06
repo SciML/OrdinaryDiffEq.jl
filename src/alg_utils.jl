@@ -390,7 +390,7 @@ alg_extrapolates(alg::MagnusLeapfrog) = true
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     error("Order is not defined for this algorithm")
 end
-alg_order(alg::CompositeAlgorithm) = maximum(alg_order,alg.algs)
+alg_order(alg::CompositeAlgorithm) = maximum(alg_order, alg.algs)
 
 function get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, cache)
     alg_order(alg)

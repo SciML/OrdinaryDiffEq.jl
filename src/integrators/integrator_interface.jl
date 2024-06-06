@@ -202,7 +202,8 @@ function full_cache(cache::CompositeCache)
     Iterators.flatten(full_cache(c) for c in cache.caches)
 end
 function full_cache(cache::DefaultCache)
-    caches = (cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
+    caches = (
+        cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
     Iterators.flatten(full_cache(c) for c in caches)
 end
 

@@ -1,32 +1,33 @@
-OrdinaryDiffEq.alg_order(alg::AitkenNeville) = alg.init_order
-OrdinaryDiffEq.alg_maximum_order(alg::MidpointDeuflhard) = 2(alg.max_order + 1)
+alg_order(alg::AitkenNeville) = alg.init_order
+alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.max_order + 1)
 
-function OrdinaryDiffEq.get_current_adaptive_order(
+function get_current_adaptive_order(
         alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,
         cache)
     cache.cur_order
 end
-function OrdinaryDiffEq.get_current_alg_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,
+function get_current_alg_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,
         cache)
     cache.cur_order
 end
-OrdinaryDiffEq.get_current_alg_order(alg::ExtrapolationMidpointDeuflhard, cache) = 2(cache.n_curr + 1)
-OrdinaryDiffEq.get_current_alg_order(alg::ImplicitDeuflhardExtrapolation, cache) = 2(cache.n_curr + 1)
-OrdinaryDiffEq.get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard, cache) = 2cache.n_curr
-OrdinaryDiffEq.get_current_adaptive_order(alg::ImplicitDeuflhardExtrapolation, cache) = 2cache.n_curr
-OrdinaryDiffEq.get_current_alg_order(alg::ExtrapolationMidpointHairerWanner, cache) = 2(cache.n_curr + 1)
-OrdinaryDiffEq.get_current_alg_order(alg::ImplicitHairerWannerExtrapolation, cache) = 2(cache.n_curr + 1)
-OrdinaryDiffEq.get_current_alg_order(alg::ImplicitEulerBarycentricExtrapolation, cache) = cache.n_curr
-OrdinaryDiffEq.get_current_alg_order(alg::ImplicitEulerExtrapolation, cache) = cache.n_curr + 1
-OrdinaryDiffEq.get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner, cache) = 2cache.n_curr
-OrdinaryDiffEq.get_current_adaptive_order(alg::ImplicitHairerWannerExtrapolation, cache) = 2cache.n_curr
-OrdinaryDiffEq.get_current_adaptive_order(alg::ImplicitEulerExtrapolation, cache) = cache.n_curr - 1
-function OrdinaryDiffEq.get_current_adaptive_order(alg::ImplicitEulerBarycentricExtrapolation, cache)
+get_current_alg_order(alg::ExtrapolationMidpointDeuflhard, cache) = 2(cache.n_curr + 1)
+get_current_alg_order(alg::ImplicitDeuflhardExtrapolation, cache) = 2(cache.n_curr + 1)
+get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard, cache) = 2cache.n_curr
+get_current_adaptive_order(alg::ImplicitDeuflhardExtrapolation, cache) = 2cache.n_curr
+get_current_alg_order(alg::ExtrapolationMidpointHairerWanner, cache) = 2(cache.n_curr + 1)
+get_current_alg_order(alg::ImplicitHairerWannerExtrapolation, cache) = 2(cache.n_curr + 1)
+get_current_alg_order(alg::ImplicitEulerBarycentricExtrapolation, cache) = cache.n_curr
+get_current_alg_order(alg::ImplicitEulerExtrapolation, cache) = cache.n_curr + 1
+get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner, cache) = 2cache.n_curr
+get_current_adaptive_order(alg::ImplicitHairerWannerExtrapolation, cache) = 2cache.n_curr
+get_current_adaptive_order(alg::ImplicitEulerExtrapolation, cache) = cache.n_curr - 1
+function get_current_adaptive_order(
+        alg::ImplicitEulerBarycentricExtrapolation, cache)
     cache.n_curr - 2
 end
 
-OrdinaryDiffEq.alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.max_order + 1)
-OrdinaryDiffEq.alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.max_order + 1)
+alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.max_order + 1)
+alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.max_order + 1)
 alg_maximum_order(alg::ImplicitHairerWannerExtrapolation) = 2(alg.max_order + 1)
 alg_maximum_order(alg::ImplicitEulerExtrapolation) = 2(alg.max_order + 1)
 alg_maximum_order(alg::ImplicitEulerBarycentricExtrapolation) = alg.max_order

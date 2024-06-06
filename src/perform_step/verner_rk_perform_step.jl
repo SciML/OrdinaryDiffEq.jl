@@ -40,7 +40,8 @@ end
     integrator.stats.nf += 8
     if integrator.alg isa CompositeAlgorithm
         g9 = u
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k9 .- k8) ./ (g9 .- g8))), t)
+        integrator.eigen_est = integrator.opts.internalnorm(
+            maximum(abs.((k9 .- k8) ./ (g9 .- g8))), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -247,7 +248,8 @@ end
     integrator.stats.nf += 10
     u = uprev + dt * (b1 * k1 + b4 * k4 + b5 * k5 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9)
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k10 .- k9) ./ (g10 .- g9))), t)
+        integrator.eigen_est = integrator.opts.internalnorm(
+            maximum(abs.((k10 .- k9) ./ (g10 .- g9))), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -537,7 +539,8 @@ end
         dt * (b1 * k1 + b6 * k6 + b7 * k7 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 +
          b12 * k12)
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k13 .- k12) ./ (g13 .- g12))), t)
+        integrator.eigen_est = integrator.opts.internalnorm(
+            maximum(abs.((k13 .- k12) ./ (g13 .- g12))), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
@@ -727,7 +730,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         g13 = u
         g12 = tmp
-        @.. broadcast=false thread=thread rtmp = abs((k13 - k12) / (g13 - g12))
+        @.. broadcast=false thread=thread rtmp=abs((k13 - k12) / (g13 - g12))
         integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
     end
     @.. broadcast=false thread=thread u=uprev +
@@ -903,7 +906,8 @@ end
         dt * (b1 * k1 + b8 * k8 + b9 * k9 + b10 * k10 + b11 * k11 + b12 * k12 + b13 * k13 +
          b14 * k14 + b15 * k15)
     if integrator.alg isa CompositeAlgorithm
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(abs.((k16 .- k15) ./ (g16 .- g15))), t)
+        integrator.eigen_est = integrator.opts.internalnorm(
+            maximum(abs.((k16 .- k15) ./ (g16 .- g15))), t)
     end
     if integrator.opts.adaptive
         utilde = dt * (btilde1 * k1 + btilde8 * k8 + btilde9 * k9 + btilde10 * k10 +

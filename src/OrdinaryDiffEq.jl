@@ -238,7 +238,11 @@ include("initdt.jl")
 include("interp_func.jl")
 
 include("../lib/OrdinaryDiffEqExtrapolation/src/OrdinaryDiffEqExtrapolation.jl")
-@reexport using OrdinaryDiffEqExtrapolation
+using ..OrdinaryDiffEqExtrapolation
+export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
+       ImplicitEulerExtrapolation,
+       ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
+       ImplicitEulerBarycentricExtrapolation
 
 import PrecompileTools
 
@@ -263,12 +267,11 @@ PrecompileTools.@compile_workload begin
     ]
 
     default_ode = [
-        DefaultODEAlgorithm(autodiff = false),
+        DefaultODEAlgorithm(autodiff = false)
     ]
 
-    
     default_autodiff_ode = [
-        DefaultODEAlgorithm(),
+        DefaultODEAlgorithm()
     ]
 
     autoswitch = [
@@ -289,7 +292,6 @@ PrecompileTools.@compile_workload begin
     solver_list = []
     solver_list_nonadaptive = []
 
-
     if Preferences.@load_preference("PrecompileDefault", true)
         append!(solver_list, default_ode)
     end
@@ -297,7 +299,7 @@ PrecompileTools.@compile_workload begin
     if Preferences.@load_preference("PrecompileAutodiffDefault", true)
         append!(solver_list, default_autodiff_ode)
     end
-   
+
     if Preferences.@load_preference("PrecompileNonStiff", false)
         append!(solver_list, nonstiff)
     end

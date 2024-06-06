@@ -14,11 +14,11 @@ function generic_solver_docstring(description::String,
         keywords_split = [kw for kw in kws if !isempty(rstrip(kw))]
 
         # Indent the keywords properly
-        indentation = repeat(" ", length(name)+3)
+        indentation = repeat(" ", length(name) + 3)
         # We do not indent the first kw and no newline for the last one
         if length(keyword_default) > 1
             keywords_split[1] = keywords_split[1] * "\n"
-            for i in 2:(length(keywords_split)-1)
+            for i in 2:(length(keywords_split) - 1)
                 keywords_split[i] = indentation * keywords_split[i] * "\n"
             end
             keywords_split[end] = indentation * keywords_split[end]
@@ -35,13 +35,13 @@ function generic_solver_docstring(description::String,
 
         $solver_class
         """ :
-        """
-        ```julia
-        $name()
-        ```
+                      """
+                      ```julia
+                      $name()
+                      ```
 
-        $solver_class
-    """
+                      $solver_class
+                  """
 
     keyword_docstring = """
 
@@ -49,9 +49,9 @@ function generic_solver_docstring(description::String,
 
         $keyword_description
         """
-    
+
     return start_docstring * description * keyword_docstring *
-    "## References\n" * references
+           "## References\n" * references
 end
 
 function explicit_rk_docstring(description::String,

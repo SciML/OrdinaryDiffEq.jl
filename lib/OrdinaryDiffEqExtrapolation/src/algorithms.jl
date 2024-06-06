@@ -1,7 +1,7 @@
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
-    OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm end
+              OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} <:
-    OrdinaryDiffEq.OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
+              OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 
 """
 AitkenNeville: Parallelized Explicit Extrapolation Method
