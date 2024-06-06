@@ -171,7 +171,7 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "Extrapolation"
-        @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/runtests.jl")
+        @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"
