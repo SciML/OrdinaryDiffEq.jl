@@ -71,6 +71,12 @@ function DiffEqBase.initialize_dae!(integrator::ODEIntegrator,
         Val(DiffEqBase.isinplace(integrator.sol.prob)))
 end
 
+function DiffEqBase.initialize_dae!(integrator::DiffEqBase.NullODEIntegrator)
+    _initialize_dae!(integrator, integrator.sol.prob,
+        OverrideInit(),
+        Val(DiffEqBase.isinplace(integrator.sol.prob)))
+end
+
 ## Default algorithms
 
 function _initialize_dae!(integrator, prob::ODEProblem,
@@ -134,19 +140,24 @@ end
 function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
     initializeprob = prob.f.initializeprob
-
+    prob.f.initializeprob_init!(initializeprob, integrator)
     # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
     # Since then it's the case of not a DAE but has initializeprob
     # In which case, it should be differentiable
-    isAD = has_autodiff(integrator.alg) ? alg_autodiff(integrator.alg) isa AutoForwardDiff :
-           true
+    isAD = if !isdefined(integrator, :alg)
+        false
+    elseif has_autodiff(integrator.alg)
+        alg_autodiff(integrator.alg) isa AutoForwardDiff
+    else
+       true
+    end
 
     alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
     nlsol = solve(initializeprob, alg)
     if isinplace === Val{true}()
-        integrator.u .= prob.f.initializeprobmap(nlsol)
+        prob.f.initializeprob_update!(integrator, nlsol)
     elseif isinplace === Val{false}()
-        integrator.u = prob.f.initializeprobmap(nlsol)
+        prob.f.initializeprob_update!(integrator, nlsol)
     else
         error("Unreachable reached. Report this error.")
     end
