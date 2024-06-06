@@ -1,5 +1,5 @@
 # Import packages
-using OrdinaryDiffEqExtrapolation, DiffEqDevTools, Test, Random
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 
 # Define test problems
 # Note that the time span in ODEProblemLibrary is given by
