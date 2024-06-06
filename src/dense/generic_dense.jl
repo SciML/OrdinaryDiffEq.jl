@@ -648,21 +648,21 @@ function interpolation_differential_vars(differential_vars, y₀, idxs)
         if y₀ isa Number
             return true
         elseif idxs === nothing
-            return  Trues(size(y₀))
+            return Trues(size(y₀))
         elseif idxs isa Number
-            return  true
+            return true
         else
-            return  Trues(size(idxs))
+            return Trues(size(idxs))
         end
     elseif differential_vars isa DifferentialVarsUndefined #for non diagonal mass matrices, use linear interpolation.
         if y₀ isa Number
-            return  false
+            return false
         elseif idxs === nothing
-            return  Falses(size(y₀))
+            return Falses(size(y₀))
         elseif idxs isa Number
-            return  false
+            return false
         else
-            return  Falses(size(idxs))
+            return Falses(size(idxs))
         end
     elseif idxs isa Number
         return return differential_vars[idxs]

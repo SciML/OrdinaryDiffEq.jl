@@ -34,7 +34,7 @@ macro cache(expr)
         end
     end
     quote
-        $expr
+        $(esc(expr))
         $(esc(:full_cache))(c::$name) = tuple($(cache_vars...))
     end
 end

@@ -152,11 +152,6 @@ end
     (cache.k,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-        alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.utilde)
-end
-@inline function DiffEqBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)
@@ -207,7 +202,8 @@ function full_cache(cache::CompositeCache)
     Iterators.flatten(full_cache(c) for c in cache.caches)
 end
 function full_cache(cache::DefaultCache)
-    caches = (cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
+    caches = (
+        cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
     Iterators.flatten(full_cache(c) for c in caches)
 end
 

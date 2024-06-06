@@ -55,8 +55,9 @@ function exrober(du, u, p, t)
     y₁, y₂, y₃ = u
     k₁, k₂, k₃ = p
     du .= vcat([-k₁ * y₁ + k₃ * y₂ * y₃,
-      k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
-      k₂ * y₂^2, ], fill(t, length(u)-3))
+            k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2,
+            k₂ * y₂^2],
+        fill(t, length(u) - 3))
 end
 
 for n in (100, 600)

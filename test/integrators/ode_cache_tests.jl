@@ -7,7 +7,7 @@ CACHE_TEST_ALGS = [Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK43(), 
     CFRLDDRK64(), TSLDDRK74(), CKLLSRK43_2(), ParsaniKetchesonDeconinck3S32(),
     BS3(), BS5(), DP5(), DP8(), Feagin10(), Feagin12(), Feagin14(), TanYam7(),
     Tsit5(), TsitPap8(), Vern6(), Vern7(), Vern8(), Vern9(), OwrenZen3(), OwrenZen4(),
-    OwrenZen5(),  AutoTsit5(Rosenbrock23()), TRBDF2(), KenCarp4(), ABDF2(),
+    OwrenZen5(), AutoTsit5(Rosenbrock23()), TRBDF2(), KenCarp4(), ABDF2(),
     OrdinaryDiffEq.DefaultODEAlgorithm()]
 broken_CACHE_TEST_ALGS = [
     QNDF(),
