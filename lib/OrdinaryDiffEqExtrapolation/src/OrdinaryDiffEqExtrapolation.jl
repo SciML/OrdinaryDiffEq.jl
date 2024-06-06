@@ -8,7 +8,7 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order, get_current_adaptive_order,
                        reset_alg_dependent_opts!, AbstractController,
                        step_accept_controller!, step_reject_controller!,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-                       alg_cache, CompiledFloats, @threaded
+                       alg_cache, CompiledFloats, @threaded, stepsize_controller!
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro
 
 macro cache(expr)
