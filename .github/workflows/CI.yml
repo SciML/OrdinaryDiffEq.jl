@@ -22,6 +22,7 @@ jobs:
           - AlgConvergence_II
           - AlgConvergence_III
           - Downstream
+          - Extrapolation
           - ODEInterfaceRegression
           - Multithreading
         version:
