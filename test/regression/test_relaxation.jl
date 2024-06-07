@@ -70,25 +70,18 @@ function (r::Relaxation)(integrator)
     γmin = integrator.opts.dtmin / integrator.dt  
     γmax = min(integrator.opts.dtmax / first(integrator.opts.tstops)) / integrator.dt
 
-
+    
     S_u = integrator.dt*(integrator.u_propose-integrator.uprev) 
 
-    ## minimization
+    ## Minimization
     target_fun(γ,p) = norm(r.invariant(γ[1]*S_u .+ integrator.uprev) .- r.invariant(integrator.uprev))
     γ0 = [1.0]
     prob_optim = OptimizationProblem(target_fun, γ0; lb = [γmin], ub = [γmax])
     γ_opt = solve(prob_optim, r.opt).u[1]
 
-    # new dt
-    # instead of explicit change a parameter like dt_changed, because there can be many confusion,
-    # it should be a better solution to just have a set function
-    # for exemple propose_dt!(integrator, dt)
-     
-    integrator.dt_changed = integrator.dt * γ_opt
-    integrator.dt_has_changed = true
-
-    # update u
-    integrator.u_changed = integrator.uprev + integrator.dt_changed*S_u
+     # Updates
+    change_dt!(integrator, integrator.dt * γ_opt)
+    changed_u!(integrator, integrator.uprev + γ_opt*S_u)
 end
 
 

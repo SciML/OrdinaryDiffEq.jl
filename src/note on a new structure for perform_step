@@ -11,10 +11,7 @@ New DEOptions
 - modif : a callable object to custom computation right after perform_step
 
 Possible function to implement
-- modify_dt(integrator, dt)  --> set dt_has_changed to true by the same occasion
-- dt_has_changed(integrator) -> to set true for dt_has_changed  
-- u_has_changed(integrator)  -> to set true for u_has_changed
-- 
+- change_u, change_dt
 
 Note :
 - Prefer "modified" as kee word instead of "changed"

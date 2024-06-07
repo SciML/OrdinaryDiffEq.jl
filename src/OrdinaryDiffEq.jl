@@ -77,6 +77,8 @@ import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, 
                    add_saveat!, set_reltol!,
                    set_abstol!, postamble!, last_step_failed,
                    isautodifferentiable
+                   
+export change_u!, change_dt!
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 

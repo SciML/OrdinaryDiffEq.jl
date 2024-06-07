@@ -506,3 +506,17 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
 end
 
 DiffEqBase.has_stats(i::ODEIntegrator) = true
+
+
+function change_dt!(integrator::ODEIntegrator, dt)
+    integrator.dt_has_changed = true
+    integrator.dt_changed = dt
+end
+
+function change_u!(integrator::ODEIntegrator, u)
+    integrator.u_has_changed = true
+    integrator.u_changed = u
+end
+
+
+
