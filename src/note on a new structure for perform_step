@@ -3,15 +3,16 @@ Here is few notes about having a new structure of the code concerning the step p
 News parameters to integrator:
 -   u_propose
 -   u_changed        
--   dt_has_changed -> just a bool
--   dt_changed     -> 
--   u_has_changed  (not implemented yet) -> just a bool
+-   dt_has_changed 
+-   dt_changed  
+-   u_has_changed
 
 New DEOptions
 - modif : a callable object to custom computation right after perform_step
 
 Possible function to implement
-- change_u, change_dt
+- change_u, change_dt  DONE
+- dt_interval should be implemented
 
 Note :
 - Prefer "modified" as kee word instead of "changed"

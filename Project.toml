@@ -44,6 +44,7 @@ SparseDiffTools = "47a9eef4-7e08-11e9-0b38-333d64bd3804"
 StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
+UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
 ADTypes = "0.2, 1"
