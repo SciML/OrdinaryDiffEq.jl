@@ -81,7 +81,8 @@ function modif_step!(integrator)
         changed_valid = true
         if integrator.dt_has_changed
             # check dt in [dtmin, dtmax]
-            # things related to tstops
+
+
             # surely other things
             if changed_valid
                 integrator.u_propose = integrator.u_changed
@@ -197,4 +198,15 @@ function finalize_step!(integrator, cache::Tsit5Cache_for_relaxation)
     step_limiter!(u, integrator, p, t + dt)
     f(k7, u_propose, p, t + dt)
     integrator.stats.nf += 7
+end
+
+
+function apriori_bounds_dt(integrator)
+    dt_sup = if has_tstop(integrator)
+         integrator.tdir * min(abs(integrator.opts.dtmax) , abs(first_tstop(integrator) - integrator.t))
+    else
+        integrator.tdir * abs(integrator.opts.dtmax)
+    end
+    dt_inf = integrator.tdir * timedepentdtmin(integrator)
+    (dt_inf,dt_sup)
 end

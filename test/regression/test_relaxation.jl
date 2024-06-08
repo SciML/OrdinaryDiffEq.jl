@@ -63,21 +63,14 @@ end
 
 function (r::Relaxation)(integrator)
 
-    @unpack dt, uprev, u_propose = integrator
-    @unpack dtmin, dtmax, tstops = integrator.opts
+    @unpack t, dt, uprev, u_propose = integrator
 
     # We fix here the bounds of interval where we are going to look for the relaxation
-    # and taking accound the bounds [dtmin, dtmax] and the presence of tstops
+    (gamma_min, gamma_max) = apriori_bounds_dt(integrator)
     
-    # Fix of dt interval
-    # should be good to have a function that gives good bound for dt taking accound dtmin explicit
-    # and not 
-    gamma_min = dtmin  
-    gamma_max = min(dtmax, first(tstops))
+    @. S_u = u_propose-uprev
 
-    S_u = dt*(u_propose-uprev) 
-
-    ## Minimization
+    # Minimization
     prob_optim = OptimizationProblem(
         (gamma,p) -> norm(r.invariant(gamma[1]*S_u .+ uprev) .- r.invariant(uprev)), 
         [dt];
@@ -86,7 +79,7 @@ function (r::Relaxation)(integrator)
     gamma_opt = solve(prob_optim, r.opt).u[1]
 
      # Updates
-    change_dt!(integrator, dt * gamma_opt)
+    change_dt!(integrator, gamma_opt)
     changed_u!(integrator, uprev + gamma_opt*S_u)
 end
 
