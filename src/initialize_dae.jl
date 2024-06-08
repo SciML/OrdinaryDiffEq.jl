@@ -21,6 +21,10 @@ end
 BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = nothing)
 
 default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
+
+function default_nlsolve(::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
+    nothing
+end
 function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
     FastShortcutNonlinearPolyalg(;
         autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
@@ -30,6 +34,10 @@ function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
     SimpleTrustRegion(autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
 end
 
+function default_nlsolve(
+    ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+    nothing
+end
 function default_nlsolve(
         ::Nothing, isinplace, u, ::NonlinearLeastSquaresProblem, autodiff = false)
     FastShortcutNLLSPolyalg(; autodiff = autodiff ? AutoForwardDiff() : AutoFiniteDiff())
@@ -138,8 +146,13 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
     # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
     # Since then it's the case of not a DAE but has initializeprob
     # In which case, it should be differentiable
-    isAD = has_autodiff(integrator.alg) ? alg_autodiff(integrator.alg) isa AutoForwardDiff :
-           true
+    isAD = if initializeprob.u0 === nothing
+        AutoForwardDiff
+    elseif has_autodiff(integrator.alg)
+        alg_autodiff(integrator.alg) isa AutoForwardDiff
+    else
+        true
+    end
 
     alg = default_nlsolve(alg.nlsolve, isinplace, initializeprob.u0, initializeprob, isAD)
     nlsol = solve(initializeprob, alg)
