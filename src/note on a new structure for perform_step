@@ -9,6 +9,7 @@ News parameters to integrator:
 
 New DEOptions
 - modif : a callable object to custom computation right after perform_step
+--> a beter name could be "modif_step"
 
 Possible function to implement
 - change_u, change_dt  DONE

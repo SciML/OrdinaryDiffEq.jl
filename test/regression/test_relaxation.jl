@@ -52,6 +52,7 @@ plot!(sol4, label = "New")
 
 using Optimization
 using OptimizationOptimJL
+using Roots
 using LinearAlgebra
 using UnPack
 
@@ -68,19 +69,25 @@ function (r::Relaxation)(integrator)
     # We fix here the bounds of interval where we are going to look for the relaxation
     (gamma_min, gamma_max) = apriori_bounds_dt(integrator)
     
-    @. S_u = u_propose-uprev
+    S_u = u_propose - uprev
 
     # Minimization
+    # first method tried (seems to not work)
+    #=
     prob_optim = OptimizationProblem(
         (gamma,p) -> norm(r.invariant(gamma[1]*S_u .+ uprev) .- r.invariant(uprev)), 
         [dt];
         lb = [gamma_min], 
         ub = [gamma_max])
     gamma_opt = solve(prob_optim, r.opt).u[1]
+    =#
+    # second method
+    gamma_opt = find_zero(  gamma -> norm(r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev)),
+                           r.opt())
 
      # Updates
     change_dt!(integrator, gamma_opt)
-    changed_u!(integrator, uprev + gamma_opt*S_u)
+    change_u!(integrator, uprev + gamma_opt*S_u)
 end
 
 
@@ -100,12 +107,21 @@ function (r::Relaxation)(dtmin, dtmax, dt, tstops, u_propose, uprev)
     @show uprev + dt_changed*S_u
 end
 
-r = Relaxation(SAMIN(), x->x.^2)
+#r = Relaxation(SAMIN(), x->x.^2)
 
-#x = r(0.1, 0.2, 0.15, [1], 0.8, 0.9)
+r = Relaxation(AlefeldPotraShi(), x-> norm(x))
+
+## Tests relaxation on problem
+
+# Harmonic Oscillator
+
+f_oscillator = (u, p, t) -> [-u[2],u[1]]
+prob_oscillator = ODEProblem(
+    ODEFunction(f_oscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
+    [1.0, 0.0],
+    (0.0, 1.0))
+
+sol_oscillator = solve(probnum, Tsit5_for_relaxation(); modif = r)
 
 
-## Tests relaxation
-
-dts = BigFloat.(1 .// 2 .^ (6:-1:2))
-testTol = 0.35
+# 
