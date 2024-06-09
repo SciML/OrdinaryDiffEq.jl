@@ -50,8 +50,8 @@ plot!(sol4, label = "New")
 #########################################################################
 ##                            Trying relaxation step
 
-using Optimization
-using OptimizationOptimJL
+#using Optimization
+#using OptimizationOptimJL
 using Roots
 using LinearAlgebra
 using UnPack
@@ -67,7 +67,7 @@ function (r::Relaxation)(integrator)
     @unpack t, dt, uprev, u_propose = integrator
 
     # We fix here the bounds of interval where we are going to look for the relaxation
-    (gamma_min, gamma_max) = apriori_bounds_dt(integrator)
+    @show (gamma_min, gamma_max) = apriori_bounds_dt(integrator) ./ dt
     
     S_u = u_propose - uprev
 
@@ -82,12 +82,25 @@ function (r::Relaxation)(integrator)
     gamma_opt = solve(prob_optim, r.opt).u[1]
     =#
     # second method
-    gamma_opt = find_zero(  gamma -> norm(r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev)),
-                           r.opt())
+    gamma_min = 0.5
+    gamma_max = 1.5
+    terminate_integrator = false
+    if (r.invariant(gamma_min*S_u .+ uprev) .- r.invariant(uprev)) * (r.invariant(gamma_max*S_u .+ uprev) .- r.invariant(uprev)) > 0
+        gamma_opt = one(td)
+        terminate_integrator = true
+    else
+        @show gamma_opt = find_zero(  gamma -> r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev),
+                            (max(gamma_min,0.5), min(gamma_max,1.5)),
+                            r.opt())
+    end
 
      # Updates
-    change_dt!(integrator, gamma_opt)
+    change_dt!(integrator, gamma_opt*dt)
     change_u!(integrator, uprev + gamma_opt*S_u)
+
+    #if terminate_integrator
+    #    terminate!(integrator)
+    #end
 end
 
 
@@ -109,7 +122,7 @@ end
 
 #r = Relaxation(SAMIN(), x->x.^2)
 
-r = Relaxation(AlefeldPotraShi(), x-> norm(x))
+r = Relaxation(AlefeldPotraShi, x-> norm(x))
 
 ## Tests relaxation on problem
 
@@ -121,7 +134,7 @@ prob_oscillator = ODEProblem(
     [1.0, 0.0],
     (0.0, 1.0))
 
-sol_oscillator = solve(probnum, Tsit5_for_relaxation(); modif = r)
+sol_oscillator = solve(prob_oscillator, Tsit5_for_relaxation(); modif = r, maxiters = 5)
 
 
-# 
+plot(sol_oscillator.u)
