@@ -67,7 +67,7 @@ function (r::Relaxation)(integrator)
     @unpack t, dt, uprev, u_propose = integrator
 
     # We fix here the bounds of interval where we are going to look for the relaxation
-    @show (gamma_min, gamma_max) = apriori_bounds_dt(integrator) ./ dt
+    (gamma_min, gamma_max) = apriori_bounds_dt(integrator) ./ dt
     
     S_u = u_propose - uprev
 
@@ -89,7 +89,7 @@ function (r::Relaxation)(integrator)
         gamma_opt = one(td)
         terminate_integrator = true
     else
-        @show gamma_opt = find_zero(  gamma -> r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev),
+        gamma_opt = find_zero(  gamma -> r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev),
                             (max(gamma_min,0.5), min(gamma_max,1.5)),
                             r.opt())
     end
@@ -103,31 +103,12 @@ function (r::Relaxation)(integrator)
     #end
 end
 
-
-function (r::Relaxation)(dtmin, dtmax, dt, tstops, u_propose, uprev)
-
-    @show gamma_min = dtmin / dt  
-    @show gamma_max = min(dtmax, first(tstops)) / dt
-    @show S_u = dt*(u_propose-uprev) 
-    target_fun(gamma_,p) = norm(r.invariant(gamma_[1]*S_u .+ uprev) .- r.invariant(uprev))
-    gamma_0 = [1.0]
-    @show prob_optim = OptimizationProblem(target_fun, gamma_0; lb = [gamma_min], ub = [gamma_max])
-    @show gamma__opt = solve(prob_optim, r.opt).u[1]
-    # new dt
-    @show dt_changed = dt * gamma__opt
-    @show dt_has_changed = true
-    # update u
-    @show uprev + dt_changed*S_u
-end
-
 #r = Relaxation(SAMIN(), x->x.^2)
-
 r = Relaxation(AlefeldPotraShi, x-> norm(x))
 
 ## Tests relaxation on problem
 
 # Harmonic Oscillator
-
 f_oscillator = (u, p, t) -> [-u[2],u[1]]
 prob_oscillator = ODEProblem(
     ODEFunction(f_oscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
@@ -135,6 +116,9 @@ prob_oscillator = ODEProblem(
     (0.0, 1.0))
 
 sol_oscillator = solve(prob_oscillator, Tsit5_for_relaxation(); modif = r, maxiters = 5)
+sol_exact = [prob_oscillator.f.analytic(prob_oscillator.u0, prob_oscillator.p, t) for t in sol_oscillator.t]
+niter = length(sol_oscillator.t)
 
-
-plot(sol_oscillator.u)
+plot(sol_oscillator)
+plot!(sol_oscillator.t, [sol_exact[i][1] for i in 1:niter], label = "exact u[1]", lw = 4)
+plot!(sol_oscillator.t, [sol_exact[i][2] for i in 1:niter], label = "exact u[2]", lw = 4)
