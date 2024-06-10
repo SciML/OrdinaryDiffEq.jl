@@ -78,6 +78,10 @@ isfsal(alg::SSPRK932) = false
 isfsal(alg::SSPRK54) = false
 isfsal(alg::SSPRK104) = false
 
+isfsal(alg::PSRK3p5q4) = false
+isfsal(alg::PSRK3p6q5) = false
+isfsal(alg::PSRK4p7q6) = false
+
 get_current_isfsal(alg, cache) = isfsal(alg)
 
 # evaluates f(t[i])
@@ -168,6 +172,7 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
+
 function isdtchangeable(alg::Union{LawsonEuler, NorsettEuler, LieEuler, MagnusGauss4,
         CayleyEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2})
     false
@@ -201,31 +206,35 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 qmax_default(alg::Union{RadauIIA3, RadauIIA5, RadauIIA7}) = 8
 
+function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
+    return alg isa Union{OrdinaryDiffEqExponentialAlgorithm,
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm,
+        OrdinaryDiffEqImplicitAlgorithm,
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+        DAEAlgorithm,
+        CompositeAlgorithm}
+end
 function get_chunksize(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-get_chunksize(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = Val(CS)
-function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}}) where {
-        CS,
-        AD
-}
+function get_chunksize(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+        OrdinaryDiffEqImplicitAlgorithm{CS},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+        DAEAlgorithm{CS},
+        CompositeAlgorithm{CS}}) where {CS}
     Val(CS)
 end
 
 function get_chunksize_int(alg::OrdinaryDiffEqAlgorithm)
     error("This algorithm does not have a chunk size defined.")
 end
-get_chunksize_int(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = CS
-get_chunksize_int(alg::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = CS
-get_chunksize_int(alg::DAEAlgorithm{CS, AD}) where {CS, AD} = CS
-function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
-        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}}) where {
-        CS,
-        AD
-}
+function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
+        OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS},
+        OrdinaryDiffEqImplicitAlgorithm{CS},
+        OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS},
+        DAEAlgorithm{CS},
+        CompositeAlgorithm{CS}}) where {CS}
     CS
 end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
@@ -381,6 +390,8 @@ alg_extrapolates(alg::MagnusLeapfrog) = true
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     error("Order is not defined for this algorithm")
 end
+alg_order(alg::CompositeAlgorithm) = maximum(alg_order, alg.algs)
+
 function get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, cache)
     alg_order(alg)
 end
@@ -397,29 +408,6 @@ get_current_alg_order(alg::QNDF, cache) = cache.order
 get_current_alg_order(alg::FBDF, cache) = cache.order
 get_current_adaptive_order(alg::QNDF, cache) = cache.order
 get_current_adaptive_order(alg::FBDF, cache) = cache.order
-function get_current_adaptive_order(
-        alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,
-        cache)
-    cache.cur_order
-end
-function get_current_alg_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,
-        cache)
-    cache.cur_order
-end
-get_current_alg_order(alg::ExtrapolationMidpointDeuflhard, cache) = 2(cache.n_curr + 1)
-get_current_alg_order(alg::ImplicitDeuflhardExtrapolation, cache) = 2(cache.n_curr + 1)
-get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard, cache) = 2cache.n_curr
-get_current_adaptive_order(alg::ImplicitDeuflhardExtrapolation, cache) = 2cache.n_curr
-get_current_alg_order(alg::ExtrapolationMidpointHairerWanner, cache) = 2(cache.n_curr + 1)
-get_current_alg_order(alg::ImplicitHairerWannerExtrapolation, cache) = 2(cache.n_curr + 1)
-get_current_alg_order(alg::ImplicitEulerBarycentricExtrapolation, cache) = cache.n_curr
-get_current_alg_order(alg::ImplicitEulerExtrapolation, cache) = cache.n_curr + 1
-get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner, cache) = 2cache.n_curr
-get_current_adaptive_order(alg::ImplicitHairerWannerExtrapolation, cache) = 2cache.n_curr
-get_current_adaptive_order(alg::ImplicitEulerExtrapolation, cache) = cache.n_curr - 1
-function get_current_adaptive_order(alg::ImplicitEulerBarycentricExtrapolation, cache)
-    cache.n_curr - 2
-end
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 function get_current_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
@@ -432,7 +420,6 @@ end
 
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
-alg_order(alg::AitkenNeville) = alg.init_order
 alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
@@ -568,6 +555,9 @@ alg_order(alg::MSRK5) = 5
 alg_order(alg::MSRK6) = 6
 alg_order(alg::Stepanov5) = 5
 alg_order(alg::SIR54) = 5
+alg_order(alg::PSRK4p7q6) = 4
+alg_order(alg::PSRK3p6q5) = 3
+alg_order(alg::PSRK3p5q4) = 3
 
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5
@@ -727,13 +717,7 @@ alg_order(alg::QPRK98) = 9
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
-alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.max_order + 1)
-alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.max_order + 1)
-alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.max_order + 1)
-alg_maximum_order(alg::ImplicitHairerWannerExtrapolation) = 2(alg.max_order + 1)
-alg_maximum_order(alg::ImplicitEulerExtrapolation) = 2(alg.max_order + 1)
 
-alg_maximum_order(alg::ImplicitEulerBarycentricExtrapolation) = alg.max_order
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
 alg_adaptive_order(alg::Feagin10) = 8
@@ -769,20 +753,6 @@ function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = not
         beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
         return PIController(beta1, beta2)
     end
-end
-
-function default_controller(
-        alg::Union{ExtrapolationMidpointDeuflhard,
-            ImplicitDeuflhardExtrapolation,
-            ExtrapolationMidpointHairerWanner,
-            ImplicitHairerWannerExtrapolation,
-            ImplicitEulerExtrapolation,
-            ImplicitEulerBarycentricExtrapolation},
-        cache,
-        qoldinit, _beta1 = nothing, _beta2 = nothing)
-    QT = typeof(qoldinit)
-    beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
-    return ExtrapolationController(beta1)
 end
 
 function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
@@ -839,12 +809,6 @@ end
 beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0 // 1
 beta2_default(alg::DP5) = 4 // 100
-beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0 // 1
-beta2_default(alg::ImplicitDeuflhardExtrapolation) = 0 // 1
-beta2_default(alg::ExtrapolationMidpointHairerWanner) = 0 // 1
-beta2_default(alg::ImplicitHairerWannerExtrapolation) = 0 // 1
-beta2_default(alg::ImplicitEulerExtrapolation) = 0 // 1
-beta2_default(alg::ImplicitEulerBarycentricExtrapolation) = 0 // 1
 
 function beta1_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, beta2)
     isadaptive(alg) ? 7 // (10alg_order(alg)) : 0
@@ -852,12 +816,6 @@ end
 beta1_default(alg::FunctionMap, beta2) = 0
 beta1_default(alg::DP8, beta2) = typeof(beta2)(1 // alg_order(alg)) - beta2 / 5
 beta1_default(alg::DP5, beta2) = typeof(beta2)(1 // alg_order(alg)) - 3beta2 / 4
-beta1_default(alg::ExtrapolationMidpointDeuflhard, beta2) = 1 // (2alg.init_order + 1)
-beta1_default(alg::ImplicitDeuflhardExtrapolation, beta2) = 1 // (2alg.init_order + 1)
-beta1_default(alg::ExtrapolationMidpointHairerWanner, beta2) = 1 // (2alg.init_order + 1)
-beta1_default(alg::ImplicitHairerWannerExtrapolation, beta2) = 1 // (2alg.init_order + 1)
-beta1_default(alg::ImplicitEulerExtrapolation, beta2) = 1 // (alg.init_order + 1)
-beta1_default(alg::ImplicitEulerBarycentricExtrapolation, beta2) = 1 // (alg.init_order - 1)
 
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
@@ -865,25 +823,6 @@ end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 gamma_default(alg::RKC) = 8 // 10
 gamma_default(alg::IRKC) = 8 // 10
-function gamma_default(alg::ExtrapolationMidpointDeuflhard)
-    (1 // 4)^beta1_default(alg, beta2_default(alg))
-end
-function gamma_default(alg::ImplicitDeuflhardExtrapolation)
-    (1 // 4)^beta1_default(alg, beta2_default(alg))
-end
-function gamma_default(alg::ExtrapolationMidpointHairerWanner)
-    (65 // 100)^beta1_default(alg, beta2_default(alg))
-end
-function gamma_default(alg::ImplicitHairerWannerExtrapolation)
-    (65 // 100)^beta1_default(alg, beta2_default(alg))
-end
-function gamma_default(alg::ImplicitEulerExtrapolation)
-    (65 // 100)^beta1_default(alg, beta2_default(alg))
-end
-
-function gamma_default(alg::ImplicitEulerBarycentricExtrapolation)
-    (80 // 100)^beta1_default(alg, beta2_default(alg))
-end
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_min_default(alg::FBDF) = 9 // 10
@@ -959,10 +898,12 @@ alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
-    iscomp = alg isa CompositeAlgorithm
-    if !iscomp
+    if !(alg isa CompositeAlgorithm)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
+        if length(alg.algs) > 2
+            return alg.algs[alg.choice_function.current]
+        end
         if is_stiff === nothing
             throwautoswitch(alg)
         end
@@ -979,18 +920,21 @@ end
 
 function unwrap_alg(integrator, is_stiff)
     alg = integrator.alg
-    iscomp = alg isa CompositeAlgorithm
-    if !iscomp
+    if !(alg isa CompositeAlgorithm)
         return alg
     elseif alg.choice_function isa AutoSwitchCache
-        if is_stiff === nothing
-            throwautoswitch(alg)
-        end
-        num = is_stiff ? 2 : 1
-        if num == 1
-            return alg.algs[1]
+        if length(alg.algs) > 2
+            alg.algs[alg.choice_function.current]
         else
-            return alg.algs[2]
+            if is_stiff === nothing
+                throwautoswitch(alg)
+            end
+            num = is_stiff ? 2 : 1
+            if num == 1
+                return alg.algs[1]
+            else
+                return alg.algs[2]
+            end
         end
     else
         return _eval_index(identity, alg.algs, integrator.cache.current)
@@ -1065,3 +1009,8 @@ is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
+# hack for the default alg
+function is_mass_matrix_alg(alg::CompositeAlgorithm{
+        <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
+    true
+end

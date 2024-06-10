@@ -7,7 +7,7 @@ ROS2
 ROS3
 ROS2PR
 ROS3PR
-Scholz47
+Scholz4_7
 ROS3PRL
 ROS3PRL2
 ROS3P
@@ -25,7 +25,6 @@ Rodas4P
 Rodas4P2
 Rodas5
 Rodas5P
-GeneralRosenbrock
 ```
 
 ## Rosenbrock W-Methods

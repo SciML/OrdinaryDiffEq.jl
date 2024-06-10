@@ -152,11 +152,6 @@ end
     (cache.k,)
 end
 @inline function DiffEqBase.get_tmp_cache(integrator,
-        alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.utilde)
-end
-@inline function DiffEqBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.utilde)
@@ -180,14 +175,36 @@ end
         cache::CompositeCache)
     get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 end
+@inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
+        cache::DefaultCache)
+    get_tmp_cache(integrator, integrator.alg.algs[1], cache.cache1)
+end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.cache.dz, cache.atmp)
 end
 
-full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
-function full_cache(integrator::CompositeCache)
-    Iterators.flatten(full_cache(c) for c in integrator.caches)
+function full_cache(integrator::ODEIntegrator)
+    # for DefaultCache, we need to make sure to initialize all the caches in case they get switched to later
+    if integrator.cache isa DefaultCache
+        @unpack alg, cache = integrator
+        algs = alg.algs
+        init_ith_default_cache(cache, algs, 1)
+        init_ith_default_cache(cache, algs, 2)
+        init_ith_default_cache(cache, algs, 3)
+        init_ith_default_cache(cache, algs, 4)
+        init_ith_default_cache(cache, algs, 5)
+        init_ith_default_cache(cache, algs, 6)
+    end
+    full_cache(integrator.cache)
+end
+function full_cache(cache::CompositeCache)
+    Iterators.flatten(full_cache(c) for c in cache.caches)
+end
+function full_cache(cache::DefaultCache)
+    caches = (
+        cache.cache1, cache.cache2, cache.cache3, cache.cache4, cache.cache5, cache.cache6)
+    Iterators.flatten(full_cache(c) for c in caches)
 end
 
 function DiffEqBase.add_tstop!(integrator::ODEIntegrator, t)
@@ -209,7 +226,7 @@ end
 function resize!(integrator::ODEIntegrator, i::Int)
     @unpack cache = integrator
 
-    for c in full_cache(cache)
+    for c in full_cache(integrator)
         # Skip nothings which may exist in the cache since extra variables
         # may be required for things like units
         c !== nothing && resize!(c, i)

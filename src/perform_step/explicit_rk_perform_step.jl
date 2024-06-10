@@ -48,10 +48,9 @@ end
     u = uprev + dt * accum
 
     if integrator.alg isa CompositeAlgorithm
-        # Hairer II, page 22
-        ϱu = integrator.opts.internalnorm(kk[end] - kk[end - 1], t)
-        ϱd = integrator.opts.internalnorm(u - u_beforefinal, t)
-        integrator.eigen_est = ϱu / ϱd
+        # Hairer II, page 22 modified to use Inf norm
+        n = maximum(abs.((kk[end] .- kk[end - 1]) / (u .- u_beforefinal)))
+        integrator.eigen_est = integrator.opts.internalnorm(n, t)
     end
 
     if integrator.opts.adaptive
@@ -221,12 +220,9 @@ end
     end
 
     if integrator.alg isa CompositeAlgorithm
-        # Hairer II, page 22
-        @.. broadcast=false utilde=kk[end] - kk[end - 1]
-        ϱu = integrator.opts.internalnorm(utilde, t)
-        @.. broadcast=false utilde=u - tmp
-        ϱd = integrator.opts.internalnorm(utilde, t)
-        integrator.eigen_est = ϱu / ϱd
+        # Hairer II, page 22 modified to use Inf norm
+        @.. broadcast=false utilde=abs((kk[end] - kk[end - 1]) / (u - tmp))
+        integrator.eigen_est = integrator.opts.internalnorm(maximum(utilde), t)
     end
 
     if integrator.opts.adaptive

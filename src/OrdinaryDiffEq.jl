@@ -26,7 +26,9 @@ using LinearSolve, SimpleNonlinearSolve
 
 using LineSearches
 
-import FillArrays: Trues
+import EnumX
+
+import FillArrays: Trues, Falses
 
 # Interfaces
 import DiffEqBase: solve!, step!, initialize!, isadaptive
@@ -108,6 +110,8 @@ import ADTypes: AbstractADType,
 import Polyester
 using MacroTools, Adapt
 
+using SciMLStructures: canonicalize, Tunable, isscimlstructure
+
 const CompiledFloats = Union{Float32, Float64,
     ForwardDiff.Dual{
         ForwardDiff.Tag{T, W},
@@ -124,6 +128,7 @@ import Preferences
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 
+include("doc_utils.jl")
 include("misc_utils.jl")
 
 include("algorithms.jl")
@@ -139,6 +144,7 @@ include("nlsolve/functional.jl")
 include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
+include("composite_algs.jl")
 
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
@@ -159,7 +165,6 @@ include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/bdf_caches.jl")
 include("caches/rkc_caches.jl")
-include("caches/extrapolation_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
 include("caches/dae_caches.jl")
@@ -207,7 +212,6 @@ include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
 include("perform_step/bdf_perform_step.jl")
 include("perform_step/rkc_perform_step.jl")
-include("perform_step/extrapolation_perform_step.jl")
 include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
 include("perform_step/dae_perform_step.jl")
@@ -232,7 +236,13 @@ include("constants.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
-include("composite_algs.jl")
+
+include("../lib/OrdinaryDiffEqExtrapolation/src/OrdinaryDiffEqExtrapolation.jl")
+using ..OrdinaryDiffEqExtrapolation
+export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
+       ImplicitEulerExtrapolation,
+       ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
+       ImplicitEulerBarycentricExtrapolation
 
 import PrecompileTools
 
@@ -251,9 +261,17 @@ PrecompileTools.@compile_workload begin
         Tsit5(), Vern7()
     ]
 
-    stiff = [Rosenbrock23(), Rosenbrock23(autodiff = false),
-        Rodas5P(), Rodas5P(autodiff = false),
-        FBDF(), FBDF(autodiff = false)
+    stiff = [Rosenbrock23(),
+        Rodas5P(),
+        FBDF()
+    ]
+
+    default_ode = [
+        DefaultODEAlgorithm(autodiff = false)
+    ]
+
+    default_autodiff_ode = [
+        DefaultODEAlgorithm()
     ]
 
     autoswitch = [
@@ -274,15 +292,23 @@ PrecompileTools.@compile_workload begin
     solver_list = []
     solver_list_nonadaptive = []
 
-    if Preferences.@load_preference("PrecompileNonStiff", true)
+    if Preferences.@load_preference("PrecompileDefault", true)
+        append!(solver_list, default_ode)
+    end
+
+    if Preferences.@load_preference("PrecompileAutodiffDefault", true)
+        append!(solver_list, default_autodiff_ode)
+    end
+
+    if Preferences.@load_preference("PrecompileNonStiff", false)
         append!(solver_list, nonstiff)
     end
 
-    if Preferences.@load_preference("PrecompileStiff", true)
+    if Preferences.@load_preference("PrecompileStiff", false)
         append!(solver_list, stiff)
     end
 
-    if Preferences.@load_preference("PrecompileAutoSwitch", true)
+    if Preferences.@load_preference("PrecompileAutoSwitch", false)
         append!(solver_list, autoswitch)
     end
 
@@ -354,7 +380,7 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        OwrenZen5,
        BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
        Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
-       RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98
+       RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
 
 export SSPRK22, SSPRK33, KYKSSPRK42, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63,
        SSPRK73, SSPRK83, SSPRK43, SSPRK432,
@@ -406,7 +432,8 @@ export SplitEuler
 
 export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
        Nystrom5VelocityIndependent,
-       IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7, RKN4
+       IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
+       RKN4
 
 export ROCK2, ROCK4, RKC, IRKC, ESERK4, ESERK5, SERK2
 
@@ -431,16 +458,11 @@ export Alshina2, Alshina3, Alshina6
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
-       ImplicitEulerExtrapolation,
-       ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
-       ImplicitEulerBarycentricExtrapolation
-
 export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2, DFBDF
 
 export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
-export NLNewton, NLAnderson, NLFunctional
+export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 export IController, PIController, PIDController
 end # module

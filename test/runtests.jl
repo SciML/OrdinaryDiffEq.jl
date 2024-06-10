@@ -23,6 +23,12 @@ function activate_odeinterface_env()
     Pkg.instantiate()
 end
 
+function activate_extrapolation_env()
+    Pkg.activate("../lib/OrdinaryDiffEqExtrapolation")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -52,6 +58,7 @@ end
         @time @safetestset "Controller Tests" include("interface/controllers.jl")
         @time @safetestset "Inplace Interpolation Tests" include("interface/inplace_interpolation.jl")
         @time @safetestset "Algebraic Interpolation Tests" include("interface/algebraic_interpolation.jl")
+        @time @safetestset "Default Solver Tests" include("interface/default_solver_tests.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceII" || GROUP == "Interface")
@@ -104,6 +111,7 @@ end
         @time @safetestset "Error Check Tests" include("integrators/check_error.jl")
         @time @safetestset "Event Detection Tests" include("integrators/event_detection_tests.jl")
         @time @safetestset "Event Repetition Detection Tests" include("integrators/event_repeat_tests.jl")
+        @time @safetestset "Step Limiter Tests" include("integrators/step_limiter_test.jl")
     end
 
     if !is_APPVEYOR &&
@@ -158,9 +166,12 @@ end
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
         @time @safetestset "Feagin Tests" include("algconvergence/ode_feagin_tests.jl")
-        @time @safetestset "Extrapolation Tests" include("algconvergence/ode_extrapolation_tests.jl")
         @time @safetestset "Symplectic Tests" include("algconvergence/symplectic_tests.jl")
         @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "Extrapolation"
+        @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"
@@ -191,5 +202,6 @@ end
         @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")
         @time @safetestset "Linear LSRK GPU" include("gpu/linear_lsrk.jl")
         @time @safetestset "Reaction-Diffusion Stiff Solver GPU" include("gpu/reaction_diffusion_stiff.jl")
+        @time @safetestset "Scalar indexing bug bypass" include("gpu/hermite_test.jl")
     end
 end # @time

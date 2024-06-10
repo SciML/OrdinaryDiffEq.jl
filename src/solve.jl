@@ -109,6 +109,12 @@ function DiffEqBase.__init(
         end
     end
 
+    if alg isa Union{Rosenbrock23, Rosenbrock32} &&
+       prob.f.mass_matrix isa AbstractMatrix &&
+       !isdiag(prob.f.mass_matrix)
+        error("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)")
+    end
+
     if !isempty(saveat) && dense
         @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
     end
@@ -146,7 +152,7 @@ function DiffEqBase.__init(
                 auto.stifftol,
                 auto.dtfac,
                 auto.stiffalgfirst,
-                auto.switch_max))
+                auto.switch_max, 0))
     else
         _alg = alg
     end
@@ -418,8 +424,7 @@ function DiffEqBase.__init(
     id = InterpolationData(
         f, timeseries, ts, ks, alg_choice, dense, cache, differential_vars, false)
     sol = DiffEqBase.build_solution(prob, _alg, ts, timeseries,
-        dense = dense, k = ks, interp = id,
-        alg_choice = alg_choice,
+        dense = dense, k = ks, interp = id, alg_choice = alg_choice,
         calculate_error = false, stats = stats)
 
     if recompile_flag == true
@@ -502,11 +507,12 @@ function DiffEqBase.__init(
             integrator.saveiter += 1 # Starts at 1 so first save is at 2
             integrator.saveiter_dense += 1
             copyat_or_push!(ts, 1, t)
+            # N.B.: integrator.u can be modified by initialized_dae!
             if save_idxs === nothing
                 copyat_or_push!(timeseries, 1, integrator.u)
                 copyat_or_push!(ks, 1, [rate_prototype])
             else
-                copyat_or_push!(timeseries, 1, u_initial, Val{false})
+                copyat_or_push!(timeseries, 1, integrator.u[save_idxs], Val{false})
                 copyat_or_push!(ks, 1, [ks_prototype])
             end
         else
@@ -532,6 +538,13 @@ function DiffEqBase.__init(
 
     handle_dt!(integrator)
     integrator
+end
+
+function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
+end
+function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.solve(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
 end
 
 function DiffEqBase.solve!(integrator::ODEIntegrator)

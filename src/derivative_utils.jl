@@ -140,7 +140,6 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
             if !(p isa DiffEqBase.NullParameters)
                 uf.p = p
             end
-
             jacobian!(J, uf, uprev, du1, integrator, jac_config)
         end
     end
@@ -294,7 +293,7 @@ SciMLBase.isinplace(::WOperator{IIP}, i) where {IIP} = IIP
 Base.eltype(W::WOperator) = eltype(W.J)
 
 # In WOperator update_coefficients!, accept both missing u/p/t and missing dtgamma/transform and don't update them in that case.
-# This helps support partial updating logic used with Newton solvers. 
+# This helps support partial updating logic used with Newton solvers.
 function SciMLOperators.update_coefficients!(W::WOperator,
         u = nothing,
         p = nothing,
@@ -483,8 +482,8 @@ end
 end
 
 function jacobian2W!(
-        W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
-        W_transform::Bool)::Nothing where {MT}
+        W::AbstractMatrix, mass_matrix, dtgamma::Number, J::AbstractMatrix,
+        W_transform::Bool)::Nothing
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -492,7 +491,7 @@ function jacobian2W!(
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
     @inbounds if W_transform
         invdtgamma = inv(dtgamma)
-        if MT <: UniformScaling
+        if mass_matrix isa UniformScaling
             copyto!(W, J)
             idxs = diagind(W)
             λ = -mass_matrix.λ
@@ -508,28 +507,9 @@ function jacobian2W!(
             @.. broadcast=false W=muladd(-mass_matrix, invdtgamma, J)
         end
     else
-        if MT <: UniformScaling
+        if mass_matrix isa UniformScaling
             λ = -mass_matrix.λ
-            if W isa AbstractSparseMatrix && !(W isa SparseMatrixCSC)
-                # This is specifically to catch the GPU sparse matrix cases
-                # Which do not support diagonal indexing
-                # https://github.com/JuliaGPU/CUDA.jl/issues/1395
-
-                Wn = nonzeros(W)
-                Jn = nonzeros(J)
-
-                # I would hope to check this generically, but `CuSparseMatrixCSC` has `colPtr`
-                # and `rowVal` while SparseMatrixCSC is colptr and rowval, and there is no
-                # standard for checking sparsity patterns in general. So for now, write it for
-                # the convention of CUDA.jl and handle the case of some other convention when
-                # it comes up.
-
-                @assert J.colPtr == W.colPtr
-                @assert J.rowVal == W.rowVal
-
-                @.. broadcast=false Wn=dtgamma * Jn
-                W .= W + λ * I
-            elseif W isa SparseMatrixCSC
+            if W isa SparseMatrixCSC
                 #=
                 using LinearAlgebra, SparseArrays, FastBroadcast
                 J = sparse(Diagonal(ones(4)))
@@ -553,6 +533,25 @@ function jacobian2W!(
                 @.. broadcast=false W.nzval=dtgamma * J.nzval
                 idxs = diagind(W)
                 @.. broadcast=false @view(W[idxs])=@view(W[idxs]) + λ
+            elseif W isa AbstractSparseMatrix
+                # This is specifically to catch the GPU sparse matrix cases
+                # Which do not support diagonal indexing
+                # https://github.com/JuliaGPU/CUDA.jl/issues/1395
+
+                Wn = nonzeros(W)
+                Jn = nonzeros(J)
+
+                # I would hope to check this generically, but `CuSparseMatrixCSC` has `colPtr`
+                # and `rowVal` while SparseMatrixCSC is colptr and rowval, and there is no
+                # standard for checking sparsity patterns in general. So for now, write it for
+                # the convention of CUDA.jl and handle the case of some other convention when
+                # it comes up.
+
+                @assert J.colPtr == W.colPtr
+                @assert J.rowVal == W.rowVal
+
+                @.. broadcast=false Wn=dtgamma * Jn
+                W .= W + λ * I
             else # Anything not a sparse matrix
                 @.. broadcast=false W=dtgamma * J
                 idxs = diagind(W)
@@ -565,8 +564,8 @@ function jacobian2W!(
     return nothing
 end
 
-function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix,
-        W_transform::Bool)::Nothing where {MT}
+function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix,
+        W_transform::Bool)::Nothing
     # check size and dimension
     iijj = axes(W)
     @boundscheck (iijj == axes(J) && length(iijj) == 2) || _throwWJerror(W, J)
@@ -574,7 +573,7 @@ function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix,
         @boundscheck axes(mass_matrix) == axes(W) || _throwWMerror(W, mass_matrix)
     @inbounds if W_transform
         invdtgamma = inv(dtgamma)
-        if MT <: UniformScaling
+        if mass_matrix isa UniformScaling
             copyto!(W, J)
             idxs = diagind(W)
             λ = -mass_matrix.λ
@@ -587,7 +586,7 @@ function jacobian2W!(W::Matrix, mass_matrix::MT, dtgamma::Number, J::Matrix,
             end
         end
     else
-        if MT <: UniformScaling
+        if mass_matrix isa UniformScaling
             idxs = diagind(W)
             @inbounds @simd ivdep for i in eachindex(W)
                 W[i] = dtgamma * J[i]
@@ -750,7 +749,8 @@ end
         if J isa StaticArray &&
            integrator.alg isa
            Union{
-            Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
+            Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2,
+            Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
         else
@@ -775,7 +775,8 @@ end
                 W_full
             elseif len !== nothing &&
                    integrator.alg isa
-                   Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
+                   Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P,
+                Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
                 StaticWOperator(W_full)
             else
                 DiffEqBase.default_factorize(W_full)
@@ -923,7 +924,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             len = StaticArrayInterface.known_length(typeof(J))
             if len !== nothing &&
                alg isa
-               Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
+               Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P,
+                Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
                 StaticWOperator(J, false)
             else
                 ArrayInterface.lu_instance(J)

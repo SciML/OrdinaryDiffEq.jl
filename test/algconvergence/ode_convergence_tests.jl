@@ -12,6 +12,13 @@ dts5 = 1 .// 2 .^ (3:-1:1)
 dts6 = 1 .// 10 .^ (5:-1:1)
 testTol = 0.2
 
+f = (u, p, t) -> sin(u)
+prob_ode_nonlinear = ODEProblem(
+    ODEFunction(f;
+        analytic = (u0, p, t) -> 2 * acot(exp(-t) *
+                                          cot(0.5))), 1.0,
+    (0.0, 0.5))
+
 @testset "Explicit Solver Convergence Tests ($(["out-of-place", "in-place"][i]))" for i in 1:2
     prob = (ODEProblemLibrary.prob_ode_linear,
         ODEProblemLibrary.prob_ode_2Dlinear)[i]
@@ -45,6 +52,15 @@ testTol = 0.2
 
     sim3 = test_convergence(dts, prob, RKM())
     @test sim3.𝒪est[:l∞]≈4 atol=0.2
+
+    sim_ps6 = test_convergence(dts2, prob_ode_nonlinear, PSRK4p7q6())
+    @test sim_ps6.𝒪est[:l∞]≈4 atol=testTol
+
+    sim_ps5 = test_convergence(dts2, prob_ode_nonlinear, PSRK3p6q5())
+    @test sim_ps5.𝒪est[:l∞]≈3 atol=testTol
+
+    sim_ps4 = test_convergence(dts2, prob_ode_nonlinear, PSRK3p5q4())
+    @test sim_ps4.𝒪est[:l∞]≈3 atol=testTol
 
     sim_ms5 = test_convergence(dts2, prob, MSRK5())
     @test sim_ms5.𝒪est[:l∞]≈5 atol=testTol
@@ -117,6 +133,10 @@ end
         reltol = 1e-2)
     @test sim113.𝒪est[:final]≈1 atol=testTol
 
+    sim114 = test_convergence(dts, prob, ImplicitEuler(nlsolve = NonlinearSolveAlg()),
+        reltol = 1e-2)
+    @test sim114.𝒪est[:final]≈1 atol=testTol
+
     sim13 = test_convergence(dts, prob, ImplicitMidpoint())
     @test sim13.𝒪est[:final]≈2 atol=testTol
 
@@ -126,6 +146,9 @@ end
     sim134 = test_convergence(dts, prob, ImplicitMidpoint(nlsolve = NLAnderson()))
     @test sim134.𝒪est[:final]≈2 atol=testTol
 
+    sim136 = test_convergence(dts, prob, ImplicitMidpoint(nlsolve = NonlinearSolveAlg()))
+    @test sim136.𝒪est[:final]≈2 atol=testTol
+
     sim13 = test_convergence(dts, prob, Trapezoid())
     @test sim13.𝒪est[:final]≈2 atol=testTol
 
@@ -134,6 +157,9 @@ end
 
     sim135 = test_convergence(dts, prob, Trapezoid(nlsolve = NLAnderson()))
     @test sim135.𝒪est[:final]≈2 atol=testTol
+
+    sim137 = test_convergence(dts, prob, Trapezoid(nlsolve = NonlinearSolveAlg()))
+    @test sim137.𝒪est[:final]≈2 atol=testTol
 
     sim14 = test_convergence(dts, prob, TRBDF2())
     @test sim14.𝒪est[:final]≈2 atol=testTol
@@ -222,6 +248,10 @@ end
 
     sim23 = test_convergence(dts, prob, MEBDF2(nlsolve = NLAnderson()), reltol = 1e-2)
     @test sim23.𝒪est[:final]≈2 atol=testTol
+
+    sim24 = test_convergence(
+        dts, prob, MEBDF2(nlsolve = NonlinearSolveAlg()), reltol = 1e-2)
+    @test sim24.𝒪est[:final]≈2 atol=testTol
 
     #FBDF
     @test_nowarn solve(prob, FBDF())

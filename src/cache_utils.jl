@@ -8,6 +8,21 @@ function DiffEqBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
     iscomp = alg isa CompositeAlgorithm
     if !iscomp
         return cache
+    elseif cache isa DefaultCache
+        current = integrator.cache.current
+        if current == 1
+            return cache.cache1
+        elseif current == 2
+            return cache.cache2
+        elseif current == 3
+            return cache.cache3
+        elseif current == 4
+            return cache.cache4
+        elseif current == 5
+            return cache.cache5
+        elseif current == 6
+            return cache.cache6
+        end
     elseif alg.choice_function isa AutoSwitch
         num = is_stiff ? 2 : 1
         return cache.caches[num]

@@ -381,8 +381,6 @@ function update_uprev!(integrator)
 end
 
 function apply_step!(integrator)
-    integrator.accept_step = false # yay we got here, don't need this no more
-
     update_uprev!(integrator)
 
     #Update dt if adaptive or if fixed and the dt is allowed to change
@@ -489,7 +487,9 @@ function reset_fsal!(integrator)
     if !(integrator.sol.prob isa DAEProblem)
         if integrator.cache isa OrdinaryDiffEqMutableCache ||
            (integrator.cache isa CompositeCache &&
-            integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache)
+            integrator.cache.caches[1] isa OrdinaryDiffEqMutableCache) ||
+           (integrator.cache isa DefaultCache &&
+            integrator.cache.cache1 isa OrdinaryDiffEqMutableCache)
             integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
         else
             integrator.fsalfirst = integrator.f(integrator.u, integrator.p, integrator.t)

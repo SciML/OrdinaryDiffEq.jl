@@ -118,8 +118,8 @@ working_rosenbrock_algs = [Rosenbrock23(), ROS3P(), Rodas3(),
     Ros4LStab(), Rodas4(), Rodas42(), Rodas4P(), Rodas5(),
     Rodas23W(), Rodas3P(), Rodas5Pe(), Rodas5P(),
     ROS2(), ROS2PR(), ROS2S(), ROS3(), ROS3PR(), Scholz4_7(),
-    ROS34PW1a(), ROS34PW1b(), ROS34PW2(), ROS34PW3(), 
-    ROS34PRw(), ROS3PRL(), ROS3PRL2()] 
+    ROS34PW1a(), ROS34PW1b(), ROS34PW2(), ROS34PW3(),
+    ROS34PRw(), ROS3PRL(), ROS3PRL2()]
 
 rosenbrock_algs = [Rosenbrock32()
 ]
