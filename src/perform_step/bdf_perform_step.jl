@@ -891,7 +891,7 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
     end
     @.. broadcast=false ϕ=zero(u)
     for i in 1:k
-        @views @.. broadcast=false ϕ+=γₖ[i] * D[:, i]
+        @views @.. ϕ+=γₖ[i] * D[:, i]
     end
     markfirststage!(nlsolver)
     @.. broadcast=false nlsolver.z=u₀
