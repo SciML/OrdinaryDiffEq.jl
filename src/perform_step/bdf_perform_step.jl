@@ -890,8 +890,9 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
         u₀[i] = s + uprev[i]
     end
     @.. broadcast=false ϕ=zero(u)
+    vecϕ = _vec(ϕ)
     for i in 1:k
-        @views @.. ϕ+=γₖ[i] * D[:, i]
+        @views @.. broadcast=false vecϕ+=γₖ[i] * D[:, i]
     end
     markfirststage!(nlsolver)
     @.. broadcast=false nlsolver.z=u₀
@@ -929,12 +930,12 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
         end
         integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
         if k > 1
-            @views calculate_residuals!(atmpm1, D[:, k], _vec(uprev), _vec(u), abstol,
+            @views calculate_residuals!(atmpm1, reshape(D[:, k], size(u)), uprev, u, abstol,
                 reltol, internalnorm, t)
             cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
         end
         if k < max_order
-            @views calculate_residuals!(atmpp1, D[:, k + 2], _vec(uprev), _vec(u), abstol,
+            @views calculate_residuals!(atmpp1, reshape(D[:, k + 2], size(u)), uprev, u, abstol,
                 reltol, internalnorm, t)
             cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
         end
