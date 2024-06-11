@@ -34,17 +34,18 @@ sim = test_convergence(dts, prob, Tsit5_for_relaxation())
 
 ### Compareason of interpolation
 
+using Plots
+
 sol1 = solve(probnum, Tsit5())
 sol2 = solve(probnum, Tsit5_for_relaxation())
 
 sol3 = solve(prob, Tsit5())
 sol4 = solve(prob, Tsit5_for_relaxation())
 
-using Plots
+
 plot(sol1, label = "Old")
 plot!(sol2, label = "New")
-plot(sol3, label = "Old")
-plot!(sol4, label = "New")
+
 
 
 #########################################################################
@@ -104,9 +105,10 @@ function (r::Relaxation)(integrator)
 end
 
 #r = Relaxation(SAMIN(), x->x.^2)
-r_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
 
 ## Tests relaxation on problem
+
+#=
 
 # Harmonic Oscillator
 f_oscillator = (u, p, t) -> [-u[2],u[1]]
@@ -124,6 +126,8 @@ niter = length(sol_oscillator.t)
 plot(sol_oscillator)
 plot!(sol_oscillator.t, [sol_exact[i][1] for i in 1:niter], label = "exact u[1]", lw = 4)
 plot!(sol_oscillator.t, [sol_exact[i][2] for i in 1:niter], label = "exact u[2]", lw = 4)
+
+=#
 
 # Non Linear Oscillator
 #=

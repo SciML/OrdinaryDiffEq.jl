@@ -14,7 +14,7 @@ function initialize!(integrator, ::Tsit5ConstantCache_for_relaxation)
 end
 
 
-function perform_step!(integrator, cache::Tsit5ConstantCache_for_relaxation, repeat_step = false)
+function perform_step!(integrator, cache::Union{Tsit5Cache_for_relaxation,Tsit5ConstantCache_for_relaxation}, repeat_step = false)
 
     # Variable to know if dt has changed during perform_step
     integrator.dt_has_changed = false
@@ -72,34 +72,65 @@ end
 
 function modif_step!(integrator)
     
-    # Perform the modifications
     if !(integrator.opts.modif isa Nothing)
+
+        # Perform the modifications
         integrator.opts.modif(integrator)
 
-        # Here we check the validity of chaging dt if it has changed
-        # if it is valid integrator.changed_valid will be true, if not it will be false
-        changed_valid = true
+        # Here we carry of the dt modified by the user in this step, if it has been changed.
+
         if integrator.dt_has_changed
-            # check dt in [dtmin, dtmax]
 
+            # Memory of the current user dt_changed
+            tmp = integrator.dt_changed
 
-            # surely other things
-            if changed_valid
-                integrator.u_propose = integrator.u_changed
-                integrator.dt = integrator.dt_changed
+            # match dt in [dtmin, dtmax]
+            if integrator.tdir > 0
+                integrator.dt_changed = min(integrator.opts.dtmax, integrator.dt_changed)
             else
-                # print error or warning
+                integrator.dt_changed = max(integrator.opts.dtmax, integrator.dt_changed)
             end
+            dtmin = timedepentdtmin(integrator)
+            if integrator.tdir > 0
+                integrator.dt_changed = max(integrator.dt_changed, dtmin)
+            else
+                integrator.dt_changed = min(integrator.dt_changed, dtmin)
+            end
+            
+            if tmp != integrator.dt_has_changed
+                @warning "The modification of dt during the user modification step was not in [dtmin, dtmax].
+                As a consequence, it has been projected onto [dtmin, dtmax]."
+            end
+
+            # Memory of the current user dt_changed
+            tmp = integrator.dt_changed
+
+            # match dt with tstops
+            if has_tstop(integrator)
+                tdir_t = integrator.tdir * integrator.t
+                tdir_tstop = first_tstop(integrator)
+                integrator.dt_changed = integrator.tdir * min(abs(integrator.dt_changed), abs(tdir_tstop - tdir_t)) 
+            end
+            
+            if tmp != integrator.dt_has_changed
+                @warning "The modification of dt during the user modification step "
+            end
+            
+            integrator.dt = integrator.dt_changed
+        end
+
+        if integrator.u_has_changed
+            integrator.u = integrator.u_changed
+        else
+            integrator.u = integrator.u_propose
         end
     end
 end
 
 
-function finalize_step!(integrator, cache::Tsit5ConstantCache_for_relaxation)
-    @unpack t, dt, uprev, u_propose, f, p = integrator
-    integrator.u = u_propose
-    integrator.fsallast = f(u_propose, p, t + dt)
-
+function finalize_step!(integrator, ::Tsit5ConstantCache_for_relaxation)
+    @unpack t, dt, u, f, p = integrator
+    integrator.fsallast = f(u, p, t + dt)
     integrator.stats.nf += 7
 end
 
@@ -123,26 +154,6 @@ function initialize!(integrator, cache::Tsit5Cache_for_relaxation)
     return nothing
 end
 
-
-function perform_step!(integrator, cache::Tsit5Cache_for_relaxation, repeat_step = false)
-
-    # Variable to know if dt has changed during perform_step
-    integrator.dt_has_changed = false
-
-    # computations! will only contain the mathematical scheme
-    # i.e the computations of the u(t+dt)
-    # the result is store not in integrator.u but integrator.u_propose
-    computations!(integrator, cache, repeat_step)
-
-    # modif_step! enables to modify the step like when we want to perform a relaxation
-    # for this we give a new struture that can be defined either by us for already known
-    # modification we want to do or by a user (see below)
-    modif_step!(integrator)
-
-    # finalize_step! will do staff related to the solver like integrator.stats, register integrator.fsal
-    # and register integrator.u
-    finalize_step!(integrator, cache)
-end
 
 @muladd function computations!(integrator, cache::Tsit5Cache_for_relaxation, repeat_step = false)
     @unpack t, dt, uprev, u_propose, f, p = integrator
@@ -191,12 +202,11 @@ end
 end
 
 function finalize_step!(integrator, cache::Tsit5Cache_for_relaxation)
-    @unpack t, dt, u_propose, u, f, p = integrator
-    @unpack k7, stage_limiter!, step_limiter!, thread = cache
-    @.. broadcast=false thread=thread u = u_propose 
+    @unpack t, dt, u, f, p = integrator
+    @unpack k7, stage_limiter!, step_limiter!, thread = cache 
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
-    f(k7, u_propose, p, t + dt)
+    f(k7, u_cache, p, t + dt)
     integrator.stats.nf += 7
 end
 
