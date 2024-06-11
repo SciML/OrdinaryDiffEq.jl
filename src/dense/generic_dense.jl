@@ -1,6 +1,6 @@
 const DERIVATIVE_ORDER_NOT_POSSIBLE_MESSAGE = """
                                          Derivative order too high for interpolation order. An interpolation derivative is
-                                         only accurate to a certain deriative. For example, a second order interpolation
+                                         only accurate to a certain derivative. For example, a second order interpolation
                                          is a quadratic polynomial, and thus third derivatives cannot be computed (will be
                                          incorrectly zero). Thus use a solver with a higher order interpolation or compute
                                          the higher order derivative through other means.

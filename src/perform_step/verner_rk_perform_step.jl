@@ -917,7 +917,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
-    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
+    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we don't need their pointers.
     # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
     integrator.k[1] = k1
     integrator.k[2] = k8
@@ -1021,7 +1021,7 @@ function initialize!(integrator, cache::Vern9Cache)
     alg = unwrap_alg(integrator, false)
     cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
     resize!(k, integrator.kshortsize)
-    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
+    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we don't need their pointers.
     # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
     k[1] = k1
     k[2] = k8

@@ -95,7 +95,7 @@ mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
     C <: AbstractNLSolverCache} <: AbstractNLSolver{algType, iip}
     z::uType
     tmp::uType # DIRK and multistep methods only use tmp
-    tmp2::tmpType # for GLM if neccssary
+    tmp2::tmpType # for GLM if necessary
     ztmp::uType
     γ::gamType
     c::tType

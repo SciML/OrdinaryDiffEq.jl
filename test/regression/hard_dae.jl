@@ -116,7 +116,7 @@ function vsm(dx, x, p, t)
     dx[i__q_oc] = ωf * (qe - q_oc)                                               #docs:(2c)
 
     #INNER LOOP CONTROL
-    #reference transormations
+    #reference transformations
     vd_filt_olc = sin(θ_oc + pi / 2) * vr_filter - cos(θ_oc + pi / 2) * vi_filter
     vq_filt_olc = cos(θ_oc + pi / 2) * vr_filter + sin(θ_oc + pi / 2) * vi_filter
     id_filt_olc = sin(θ_oc + pi / 2) * ir_filter - cos(θ_oc + pi / 2) * ii_filter
