@@ -18,6 +18,7 @@ function perform_step!(integrator, cache::Union{Tsit5Cache_for_relaxation,Tsit5C
 
     # Variable to know if dt has changed during perform_step
     integrator.dt_has_changed = false
+    integrator.u_has_changed = false
 
     # computations! will only contain the mathematical scheme
     # i.e the computations of the u(t+dt)
@@ -98,7 +99,7 @@ function modif_step!(integrator)
             end
             
             if tmp != integrator.dt_has_changed
-                @warning "The modification of dt during the user modification step was not in [dtmin, dtmax].
+                @warn "The modification of dt during the user modification step was not in [dtmin, dtmax].
                 As a consequence, it has been projected onto [dtmin, dtmax]."
             end
 
@@ -113,18 +114,18 @@ function modif_step!(integrator)
             end
             
             if tmp != integrator.dt_has_changed
-                @warning "The modification of dt during the user modification step "
+                @warn "The modification of dt during the user modification step "
             end
             
             integrator.dt = integrator.dt_changed
         end
-
-        if integrator.u_has_changed
-            integrator.u = integrator.u_changed
-        else
-            integrator.u = integrator.u_propose
-        end
     end
+    if integrator.u_has_changed
+        integrator.u = integrator.u_changed
+    else
+        integrator.u = integrator.u_propose
+    end
+    
 end
 
 
@@ -206,7 +207,7 @@ function finalize_step!(integrator, cache::Tsit5Cache_for_relaxation)
     @unpack k7, stage_limiter!, step_limiter!, thread = cache 
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
-    f(k7, u_cache, p, t + dt)
+    f(k7, u, p, t + dt)
     integrator.stats.nf += 7
 end
 
