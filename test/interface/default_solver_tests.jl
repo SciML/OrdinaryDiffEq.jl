@@ -6,17 +6,19 @@ prob_ode_2Dlinear = ODEProblem(f_2dlinear, rand(4, 2), (0.0, 1.0), 1.01)
 sol = @inferred solve(prob_ode_2Dlinear)
 
 tsitsol = solve(prob_ode_2Dlinear, Tsit5())
-# test that default isn't much worse than Tsit5 (we expect it to use Tsit5 for this).
+# test that default is the same as Tsit5 (we expect it to use Tsit5 for this).
 @test sol.stats.naccept == tsitsol.stats.naccept
 @test sol.stats.nf == tsitsol.stats.nf
 @test all(isequal(1), sol.alg_choice)
+@test sol(.5) == sol([.5]) == tsitsol(.5)
 
 sol = solve(prob_ode_2Dlinear, reltol = 1e-10)
 vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
-# test that default isn't much worse than Tsit5 (we expect it to use Tsit5 for this).
+# test that default is the same as Vern7 (we expect it to use Vern7 for this).
 @test sol.stats.naccept == vernsol.stats.naccept
 @test sol.stats.nf == vernsol.stats.nf
 @test all(isequal(2), sol.alg_choice)
+@test sol(.5) == sol([.5]) == vernsol(.5)
 
 prob_ode_linear_fast = ODEProblem(
     ODEFunction(f_2dlinear, mass_matrix = 2 * I(2)), rand(2), (0.0, 1.0), 1.01)
