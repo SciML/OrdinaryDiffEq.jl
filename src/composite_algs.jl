@@ -163,7 +163,7 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
     len = length(integrator.u)
     reltol = integrator.opts.reltol
 
-    # Chooose the starting method
+    # Choose the starting method
     if AS.current == 0
         choice = if AS.stiffalgfirst || integrator.f.mass_matrix != I
             stiffchoice(reltol, len, integrator.f.mass_matrix)

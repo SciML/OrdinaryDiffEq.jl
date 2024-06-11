@@ -89,7 +89,7 @@ function ghh(resid, u, p)
 end
 
 # energy conserving callback:
-# important to use save = false, I dont want rescaling points
+# important to use save = false, I don't want rescaling points
 cb = ManifoldProjection(ghh, abstol = 1e-13, save = false)
 
 # Callback for Poincare surface of section

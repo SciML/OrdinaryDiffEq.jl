@@ -79,7 +79,7 @@ function derivative!(df::AbstractArray{<:Number}, f,
         x::Union{Number, AbstractArray{<:Number}}, fx::AbstractArray{<:Number},
         integrator, grad_config)
     alg = unwrap_alg(integrator, true)
-    tmp = length(x) # We calculate derivtive for all elements in gradient
+    tmp = length(x) # We calculate derivative for all elements in gradient
     if alg_autodiff(alg) isa AutoForwardDiff
         T = if standardtag(alg)
             typeof(ForwardDiff.Tag(OrdinaryDiffEqTag(), eltype(df)))
