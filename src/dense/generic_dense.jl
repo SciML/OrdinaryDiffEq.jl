@@ -608,6 +608,8 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
         elseif current_alg == 6
             cache_i₊ = cache.cache6
         end
+    else
+        cache_i₊ = cache
     end
     @inbounds for j in idx
         t = tvals[j]
@@ -668,13 +670,13 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
             end
         end
         _ode_addsteps!(ks[i₊], ts[i₋], timeseries[i₋], timeseries[i₊], dt, f, p,
-            cache) # update the kcurrent
+            cache_i₊) # update the kcurrent
         if eltype(vals) <: AbstractArray
             ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                cache, idxs, deriv, differential_vars)
+                cache_i₊, idxs, deriv, differential_vars)
         else
             vals[j] = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], ks[i₊],
-                cache, idxs, deriv, differential_vars)
+                cache_i₊, idxs, deriv, differential_vars)
         end
     end
 
