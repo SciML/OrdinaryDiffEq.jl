@@ -104,7 +104,7 @@ function (r::Relaxation)(integrator)
 end
 
 #r = Relaxation(SAMIN(), x->x.^2)
-r = Relaxation(AlefeldPotraShi, x-> norm(x))
+r_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
 
 ## Tests relaxation on problem
 
@@ -115,6 +115,8 @@ prob_oscillator = ODEProblem(
     [1.0, 0.0],
     (0.0, 1.0))
 
+r_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
+
 sol_oscillator = solve(prob_oscillator, Tsit5_for_relaxation(); modif = r, maxiters = 5)
 sol_exact = [prob_oscillator.f.analytic(prob_oscillator.u0, prob_oscillator.p, t) for t in sol_oscillator.t]
 niter = length(sol_oscillator.t)
@@ -122,3 +124,34 @@ niter = length(sol_oscillator.t)
 plot(sol_oscillator)
 plot!(sol_oscillator.t, [sol_exact[i][1] for i in 1:niter], label = "exact u[1]", lw = 4)
 plot!(sol_oscillator.t, [sol_exact[i][2] for i in 1:niter], label = "exact u[2]", lw = 4)
+
+# Non Linear Oscillator
+#=
+f_nonlinear_oscillator = (u, p, t) -> [-u[2]/(u[1]^2 + u[2]^2),u[1]/(u[1]^2 + u[2]^2)]
+prob_nonlinear_oscillator = ODEProblem(
+    ODEFunction(f_nonlinear_oscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
+    [1.0, 0.0],
+    (0.0, 1.0))
+
+r_nonlinear_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
+
+sol_nonlinear_oscillator = solve(prob_nonlinear_oscillator, Tsit5_for_relaxation())
+sol_exact = [prob_oscillator.f.analytic(prob_nonlinear_oscillator.u0, prob_nonlinear_oscillator.p, t) for t in sol_nonlinear_oscillator.t]
+niter = length(sol_nonlinear_oscillator.t)
+
+
+# Non Linear Pendulum
+f_nonlinear_pendulum = (u, p, t) -> [-sin(u[2]), u[1]]
+prob_nonlinear_pendulum = ODEProblem(
+    f_nonlinear_pendulum,
+    [1.0, 0.0],
+    (0.0, 1.0))
+
+r_nonlinear_pendulum = Relaxation(AlefeldPotraShi, x-> x[1]^2/2 -  cos(x[2]))
+
+sol_nonlinear_pendulum = solve(prob_nonlinear_pendulum, Tsit5_for_relaxation())
+
+sol_ref = solve(prob_nonlinear_pendulum, Vern9())
+
+niter = length(sol_nonlinear_pendulum.t)
+=#
