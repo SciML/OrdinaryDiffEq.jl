@@ -601,7 +601,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
             cache_i₊ = cache.cache2
         elseif current_alg == 3
             cache_i₊ = cache.cache3
-        elseif cerrent_alg == 4
+        elseif current_alg == 4
             cache_i₊ = cache.cache4
         elseif current_alg == 5
             cache_i₊ = cache.cache5
