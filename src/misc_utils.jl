@@ -81,8 +81,7 @@ macro threaded(option, ex)
 end
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-        du = nothing, u = nothing, p = nothing, t = nothing,
-        weight = nothing, solverdata = nothing,
+        p = nothing, weight = nothing, solverdata = nothing,
         reltol = integrator === nothing ? nothing : integrator.opts.reltol)
     A !== nothing && (linsolve.A = A)
     b !== nothing && (linsolve.b = b)
@@ -95,8 +94,12 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 
     _alg = unwrap_alg(integrator, true)
 
-    _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
-        solverdata)
+    du, u, p, t = if isnothing(integrator)
+        nothing, nothing, nothing, nothing
+    else
+        integrator.du, integrator.u, integrator.p, integrator.t
+    end
+    _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev, solverdata)
     if (_Pl !== nothing || _Pr !== nothing)
         __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
         __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
