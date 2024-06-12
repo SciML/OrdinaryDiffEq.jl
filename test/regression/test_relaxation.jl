@@ -51,8 +51,7 @@ plot!(sol2, label = "New")
 #########################################################################
 ##                            Trying relaxation step
 
-#using Optimization
-#using OptimizationOptimJL
+
 using Roots
 using LinearAlgebra
 using UnPack
@@ -68,94 +67,104 @@ function (r::Relaxation)(integrator)
     @unpack t, dt, uprev, u_propose = integrator
 
     # We fix here the bounds of interval where we are going to look for the relaxation
-    (gamma_min, gamma_max) = apriori_bounds_dt(integrator) ./ dt
+    #(gamma_min, gamma_max) = apriori_bounds_dt(integrator) ./ dt
     
     S_u = u_propose - uprev
 
-    # Minimization
-    # first method tried (seems to not work)
-    #=
-    prob_optim = OptimizationProblem(
-        (gamma,p) -> norm(r.invariant(gamma[1]*S_u .+ uprev) .- r.invariant(uprev)), 
-        [dt];
-        lb = [gamma_min], 
-        ub = [gamma_max])
-    gamma_opt = solve(prob_optim, r.opt).u[1]
-    =#
-    # second method
+    # Find relaxation paramter gamma
     gamma_min = 0.5
     gamma_max = 1.5
-    terminate_integrator = false
-    if (r.invariant(gamma_min*S_u .+ uprev) .- r.invariant(uprev)) * (r.invariant(gamma_max*S_u .+ uprev) .- r.invariant(uprev)) > 0
-        gamma_opt = one(td)
-        terminate_integrator = true
-    else
-        gamma_opt = find_zero(  gamma -> r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev),
-                            (max(gamma_min,0.5), min(gamma_max,1.5)),
+
+    if (r.invariant(gamma_min*S_u .+ uprev) .- r.invariant(uprev)) * (r.invariant(gamma_max*S_u .+ uprev) .- r.invariant(uprev)) ≤ 0
+        gamma = find_zero(gamma -> r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev),
+                            (gamma_min, gamma_max),
                             r.opt())
+
+        change_dt!(integrator, gamma*dt)
+        change_u!(integrator, uprev + gamma*S_u)
     end
 
-     # Updates
-    change_dt!(integrator, gamma_opt*dt)
-    change_u!(integrator, uprev + gamma_opt*S_u)
+    # println("######################  Print of dt time")
+    # @show integrator.dt
+    # @show integrator.dt_changed
+    # @show integrator.opts.dtmin
+    # @show integrator.opts.dtmax
+    # if has_tstop(integrator)
+    #     @show first_tstop(integrator) - integrator.t
+    # end
 
-    #if terminate_integrator
-    #    terminate!(integrator)
-    #end
 end
 
-#r = Relaxation(SAMIN(), x->x.^2)
 
-## Tests relaxation on problem
+########################################################
+# TEST  1 : Harmonic Oscillator
+printstyled("Harmonic Oscillator\n"; bold = true)
 
-#=
-
-# Harmonic Oscillator
 f_oscillator = (u, p, t) -> [-u[2],u[1]]
 prob_oscillator = ODEProblem(
     ODEFunction(f_oscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
     [1.0, 0.0],
     (0.0, 1.0))
-
 r_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
 
-sol_oscillator = solve(prob_oscillator, Tsit5_for_relaxation(); modif = r, maxiters = 5)
-sol_exact = [prob_oscillator.f.analytic(prob_oscillator.u0, prob_oscillator.p, t) for t in sol_oscillator.t]
-niter = length(sol_oscillator.t)
+#sol_oscillator = solve(prob_oscillator, Tsit5_for_relaxation(); modif = r_oscillator)
+#sol_exact = [prob_oscillator.f.analytic(prob_oscillator.u0, prob_oscillator.p, t) for t in sol_oscillator.t]
+#plot(sol_oscillator)
+#plot!(sol_oscillator.t, [sol_exact[i][1] for i ∈ 1:length(sol_oscillator.t)], label = "exact u[1]", lw = 4)
+#plot!(sol_oscillator.t, [sol_exact[i][2] for i ∈ 1:length(sol_oscillator.t)], label = "exact u[2]", lw = 4)
 
-plot(sol_oscillator)
-plot!(sol_oscillator.t, [sol_exact[i][1] for i in 1:niter], label = "exact u[1]", lw = 4)
-plot!(sol_oscillator.t, [sol_exact[i][2] for i in 1:niter], label = "exact u[2]", lw = 4)
+sim = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation())
+println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
+sim = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation())
+println("order of convergence of new perform_step! without relaxation: "*string(sim.𝒪est[:final]))
+sim = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation(); modif = r_oscillator)
+println("order of convergence of new perform_step! with relaxation: "*string(sim.𝒪est[:final]))
 
+
+
+########################################################
+# TEST  2 : Non Linear Oscillator
+printstyled("Non linear Harmonic Oscillator\n"; bold = true)
+
+f_nloscillator = (u, p, t) -> [-u[2]/(u[1]^2 + u[2]^2),u[1]/(u[1]^2 + u[2]^2)]
+prob_nloscillator = ODEProblem(
+    ODEFunction(f_nloscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
+    [1.0, 0.0],
+    (0.0, 1.0))
+r_nloscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
+
+sol_nloscillator = solve(prob_nloscillator, Tsit5_for_relaxation())
+sol_exact = [prob_oscillator.f.analytic(prob_nloscillator.u0, prob_nloscillator.p, t) for t in sol_nloscillator.t]
+
+sim = test_convergence(dts, prob_nloscillator, Tsit5_for_relaxation())
+println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
+sim = test_convergence(dts, prob_nloscillator, Tsit5_for_relaxation())
+println("order of convergence of new perform_step! without relaxation: "*string(sim.𝒪est[:final]))
+sim = test_convergence(dts, prob_nloscillator, Tsit5_for_relaxation(); modif = r_nloscillator)
+println("order of convergence of new perform_step! with relaxation: "*string(sim.𝒪est[:final]))
+
+
+########################################################
+# TEST  3 : Non Linear Pendulum
+printstyled("Non linear Pendulum\n"; bold = true)
+
+f_nlpendulum = (u, p, t) -> [-sin(u[2]), u[1]]
+prob_nlpendulum = ODEProblem(
+    f_nlpendulum,
+    [1.0, 0.0],
+    (0.0, 1.0))
+r_nlpendulum = Relaxation(AlefeldPotraShi, x-> x[1]^2/2 -  cos(x[2]))
+
+#sol_nlpendulum = solve(prob_nlpendulum, Tsit5_for_relaxation(); modif = f_nlpendulum)
+#sol_ref = solve(prob_nlpendulum, Vern9())
+
+#=
+sim = analyticless_test_convergence(dts, prob_nlpendulum, Tsit5_for_relaxation())
+println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
+sim = analyticless_test_convergence(dts, prob_nlpendulum, Tsit5_for_relaxation())
+println("order of convergence of new perform_step! without relaxation: "*string(sim.𝒪est[:final]))
+sim = analyticless_test_convergence(dts, prob_nlpendulum, Tsit5_for_relaxation(); modif = r_nlpendulum)
+println("order of convergence of new perform_step! with relaxation: "*string(sim.𝒪est[:final]))
 =#
 
-# Non Linear Oscillator
-#=
-f_nonlinear_oscillator = (u, p, t) -> [-u[2]/(u[1]^2 + u[2]^2),u[1]/(u[1]^2 + u[2]^2)]
-prob_nonlinear_oscillator = ODEProblem(
-    ODEFunction(f_nonlinear_oscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
-    [1.0, 0.0],
-    (0.0, 1.0))
-
-r_nonlinear_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
-
-sol_nonlinear_oscillator = solve(prob_nonlinear_oscillator, Tsit5_for_relaxation())
-sol_exact = [prob_oscillator.f.analytic(prob_nonlinear_oscillator.u0, prob_nonlinear_oscillator.p, t) for t in sol_nonlinear_oscillator.t]
-niter = length(sol_nonlinear_oscillator.t)
-
-
-# Non Linear Pendulum
-f_nonlinear_pendulum = (u, p, t) -> [-sin(u[2]), u[1]]
-prob_nonlinear_pendulum = ODEProblem(
-    f_nonlinear_pendulum,
-    [1.0, 0.0],
-    (0.0, 1.0))
-
-r_nonlinear_pendulum = Relaxation(AlefeldPotraShi, x-> x[1]^2/2 -  cos(x[2]))
-
-sol_nonlinear_pendulum = solve(prob_nonlinear_pendulum, Tsit5_for_relaxation())
-
-sol_ref = solve(prob_nonlinear_pendulum, Vern9())
-
-niter = length(sol_nonlinear_pendulum.t)
 =#

@@ -98,9 +98,8 @@ function modif_step!(integrator)
                 integrator.dt_changed = min(integrator.dt_changed, dtmin)
             end
             
-            if tmp != integrator.dt_has_changed
-                @warn "The modification of dt during the user modification step was not in [dtmin, dtmax].
-                As a consequence, it has been projected onto [dtmin, dtmax]."
+            if tmp != integrator.dt_changed
+                @warn "The modification of dt during the user modification step was not in [dtmin, dtmax]. As a consequence, it has been projected onto [dtmin, dtmax]."
             end
 
             # Memory of the current user dt_changed
@@ -113,7 +112,7 @@ function modif_step!(integrator)
                 integrator.dt_changed = integrator.tdir * min(abs(integrator.dt_changed), abs(tdir_tstop - tdir_t)) 
             end
             
-            if tmp != integrator.dt_has_changed
+            if tmp != integrator.dt_changed
                 @warn "The modification of dt during the user modification step "
             end
             

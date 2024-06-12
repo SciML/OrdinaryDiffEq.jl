@@ -21,3 +21,17 @@ Note :
 --> in that way it could be possible to run once the user modification to get basic element of the cas as u_changed, instead of storing it directly
 
 
+
+####
+    #using Optimization
+    #using OptimizationOptimJL
+    # first method tried (seems to not work)
+    #=
+    prob_optim = OptimizationProblem(
+        (gamma,p) -> norm(r.invariant(gamma[1]*S_u .+ uprev) .- r.invariant(uprev)), 
+        [dt];
+        lb = [gamma_min], 
+        ub = [gamma_max])
+    gamma_opt = solve(prob_optim, r.opt).u[1]
+    #r = Relaxation(SAMIN(), x->x.^2)
+    =#
