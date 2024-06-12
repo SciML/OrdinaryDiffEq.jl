@@ -10,7 +10,7 @@ tsitsol = solve(prob_ode_2Dlinear, Tsit5())
 @test sol.stats.naccept == tsitsol.stats.naccept
 @test sol.stats.nf == tsitsol.stats.nf
 @test all(isequal(1), sol.alg_choice)
-@test sol(.5) == sol([.5]).u == tsitsol(.5)
+@test sol(.5) == only(sol([.5]).u) == tsitsol(.5)
 
 sol = solve(prob_ode_2Dlinear, reltol = 1e-10)
 vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
@@ -18,7 +18,7 @@ vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
 @test sol.stats.naccept == vernsol.stats.naccept
 @test sol.stats.nf == vernsol.stats.nf
 @test all(isequal(2), sol.alg_choice)
-@test sol(.5) == sol([.5]).u == vernsol(.5)
+@test sol(.5) == only(sol([.5]).u) == vernsol(.5)
 
 prob_ode_linear_fast = ODEProblem(
     ODEFunction(f_2dlinear, mass_matrix = 2 * I(2)), rand(2), (0.0, 1.0), 1.01)
