@@ -493,8 +493,7 @@ function evaluate_composite_cache(f, Θ, dt, timeseries, i₋, i₊,
 end
 
 function evaluate_default_cache(f, Θ, dt, timeseries, i₋, i₊,
-        cache, idxs, deriv, ks, ts, p, cacheid, differential_vars) where {C}
-
+        cache::DefaultCache, idxs, deriv, ks, ts, p, cacheid, differential_vars)
     if cacheid == 1
         return _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
             cache.cache1, idxs, deriv, ks, ts, p, differential_vars)
