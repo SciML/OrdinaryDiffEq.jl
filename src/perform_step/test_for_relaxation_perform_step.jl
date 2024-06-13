@@ -41,9 +41,9 @@ end
     T = constvalue(recursive_unitless_bottom_eltype(u))
     T2 = constvalue(typeof(one(t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
+
     k1 = integrator.fsalfirst
-    a = dt * a21
-    k2 = f(uprev + a * k1, p, t + c1 * dt)
+    k2 = f(uprev + dt * a21 * k1, p, t + c1 * dt)
     k3 = f(uprev + dt * (a31 * k1 + a32 * k2), p, t + c2 * dt)
     k4 = f(uprev + dt * (a41 * k1 + a42 * k2 + a43 * k3), p, t + c3 * dt)
     k5 = f(uprev + dt * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4), p, t + c4 * dt)
@@ -51,6 +51,9 @@ end
     k6 = f(g6, p, t + dt)
     u = uprev + dt * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6)
     k7 = f(u, p, t + dt)
+    
+    integrator.fsallast = k7
+
     integrator.k[1] = k1
     integrator.k[2] = k2
     integrator.k[3] = k3
@@ -58,8 +61,9 @@ end
     integrator.k[5] = k5
     integrator.k[6] = k6
     integrator.k[7] = k7
-    integrator.u_propose = u
 
+    integrator.u_propose = u
+    
     if integrator.opts.adaptive
         utilde = dt *
                  (btilde1 * integrator.k[1] + btilde2 * integrator.k[2] + btilde3 * integrator.k[3] + btilde4 * integrator.k[4] + btilde5 * integrator.k[5] +
@@ -68,8 +72,9 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
-end
 
+    integrator.stats.nf += 6
+end
 
 function modif_step!(integrator)
     
@@ -127,11 +132,10 @@ function modif_step!(integrator)
     
 end
 
-
 function finalize_step!(integrator, ::Tsit5ConstantCache_for_relaxation)
-    @unpack t, dt, u, f, p = integrator
-    integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 7
+    
+    
+    
 end
 
 
