@@ -13,7 +13,7 @@ include("relaxation.jl")
 probnum = prob_ode_linear
 prob = prob_ode_2Dlinear
 
-dts = (1 / 2) .^ (7:-1:4)
+
 testTol = 0.2
 
 ### Tsit5()
@@ -38,6 +38,8 @@ sim = test_convergence(dts, prob, Tsit5_for_relaxation())
 #########################################################################
 ##                            With Relaxation 
 
+dts = (1 / 2) .^ (6:-1:4)
+
 ########################################################
 # TEST  1 : Harmonic Oscillator
 printstyled("Harmonic Oscillator\n"; bold = true)
@@ -55,12 +57,12 @@ r_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
 #plot!(sol_oscillator.t, [sol_exact[i][1] for i ∈ 1:length(sol_oscillator.t)], label = "exact u[1]", lw = 4)
 #plot!(sol_oscillator.t, [sol_exact[i][2] for i ∈ 1:length(sol_oscillator.t)], label = "exact u[2]", lw = 4)
 
-sim = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation())
-println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
-sim = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation())
-println("order of convergence of new perform_step! without relaxation: "*string(sim.𝒪est[:final]))
-sim = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation(); modif = r_oscillator)
-println("order of convergence of new perform_step! with relaxation: "*string(sim.𝒪est[:final]))
+sim_oscillator_old = test_convergence(dts, prob_oscillator, Tsit5())
+println("order of convergence of older perform_step! : "*string(sim_oscillator_old.𝒪est[:final]))
+sim_oscillator_new = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation())
+println("order of convergence of new perform_step! without relaxation: "*string(sim_oscillator_new.𝒪est[:final]))
+sim_oscillator_relax = test_convergence(dts, prob_oscillator, Tsit5_for_relaxation(); modif = r_oscillator)
+println("order of convergence of new perform_step! with relaxation: "*string(sim_oscillator_relax.𝒪est[:final]))
 
 ########################################################
 # TEST  2 : Non Linear Oscillator
@@ -73,10 +75,10 @@ prob_nloscillator = ODEProblem(
     (0.0, 1.0))
 r_nloscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
 
-sol_nloscillator = solve(prob_nloscillator, Tsit5_for_relaxation())
-sol_exact = [prob_oscillator.f.analytic(prob_nloscillator.u0, prob_nloscillator.p, t) for t in sol_nloscillator.t]
+#sol_nloscillator = solve(prob_nloscillator, Tsit5_for_relaxation(); modif = r_nloscillator)
+#sol_exact = [prob_oscillator.f.analytic(prob_nloscillator.u0, prob_nloscillator.p, t) for t in sol_nloscillator.t]
 
-sim = test_convergence(dts, prob_nloscillator, Tsit5_for_relaxation())
+sim = test_convergence(dts, prob_nloscillator, Tsit5())
 println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
 sim = test_convergence(dts, prob_nloscillator, Tsit5_for_relaxation())
 println("order of convergence of new perform_step! without relaxation: "*string(sim.𝒪est[:final]))
@@ -94,7 +96,7 @@ prob_nlpendulum = ODEProblem(
     (0.0, 1.0))
 r_nlpendulum = Relaxation(AlefeldPotraShi, x-> x[1]^2/2 -  cos(x[2]))
 
-#sol_nlpendulum = solve(prob_nlpendulum, Tsit5_for_relaxation(); modif = f_nlpendulum)
+#sol_nlpendulum = solve(prob_nlpendulum, Tsit5_for_relaxation(); modif = r_nlpendulum)
 #sol_ref = solve(prob_nlpendulum, Vern9())
 
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
@@ -105,3 +107,48 @@ sim = analyticless_test_convergence(dts, prob_nlpendulum, Tsit5_for_relaxation()
 println("order of convergence of new perform_step! without relaxation: "*string(sim.𝒪est[:final]))
 sim = analyticless_test_convergence(dts, prob_nlpendulum, Tsit5_for_relaxation(), test_setup; modif = r_nlpendulum)
 println("order of convergence of new perform_step! with relaxation: "*string(sim.𝒪est[:final]))
+
+
+@benchmark solve(prob_nloscillator, Tsit5_for_relaxation())
+
+############################################################################
+# TEST  4 : Time dependent harmonic oscillator with bounded angular velocity
+
+printstyled("Time dependent harmonic oscillator\n"; bold = true)
+
+f_td_oscillator = (u, p, t) -> [-(1+0.5 * sin(t))*u[2], (1+0.5 * sin(t))*u[1]]
+prob_td_oscillator = ODEProblem(
+    ODEFunction(f_td_oscillator; 
+                analytic = (u0, p, t)->[cos(0.5)*cos(t-0.5*cos(t))-sin(0.5)*sin(t-0.5*cos(t)), 
+                                        sin(0.5)*cos(t-0.5*cos(t))+cos(0.5)*sin(t-0.5*cos(t))]),
+    [1.0, 0.0],
+    (0.0, 1.0))
+r_td_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
+
+sim_td_oscillator_old = test_convergence(dts, prob_td_oscillator, Tsit5())
+println("order of convergence of older perform_step! : "*string(sim_td_oscillator_old.𝒪est[:final]))
+sim_td_oscillator_new = test_convergence(dts, prob_td_oscillator, Tsit5_for_relaxation())
+println("order of convergence of new perform_step! without relaxation: "*string(sim_td_oscillator_new.𝒪est[:final]))
+sim_td_oscillator_relax = test_convergence(dts, prob_td_oscillator, Tsit5_for_relaxation(); modif = r_oscillator)
+println("order of convergence of new perform_step! with relaxation: "*string(sim_td_oscillator_relax.𝒪est[:final]))
+
+############################################################################
+# TEST  5 : Conserved exponential entropy
+
+printstyled("Conserved exponential entropy\n"; bold = true)
+
+f_cee = (u, p, t) -> [-exp(u[2]), exp(u[1])]
+prob_cee  = ODEProblem(
+    ODEFunction(f_cee ; 
+                analytic = (u0, p, t)->[log(exp(1) + exp(0.5)) - log(exp(0.5) + exp((exp(0.5)+exp(1))*t)), 
+                                        log(exp((exp(0.5)+exp(1))*t)*(exp(0.5)+exp(1)))/(exp(0.5) + exp((exp(0.5)+exp(1))*t))]),
+    [1.0, 0.5],
+    (0.0, 1.0))
+r_cee  = Relaxation(AlefeldPotraShi, x-> exp(x[1]) + exp(x[2]))
+
+sim_cee_old = test_convergence(dts, prob_cee, Tsit5())
+println("order of convergence of older perform_step! : "*string(sim_cee_old.𝒪est[:final]))
+sim_cee_new = test_convergence(dts, prob_cee, Tsit5_for_relaxation())
+println("order of convergence of new perform_step! without relaxation: "*string(sim_cee_new.𝒪est[:final]))
+sim_cee_relax = test_convergence(dts, prob_cee, Tsit5_for_relaxation(); modif = r_oscillator)
+println("order of convergence of new perform_step! with relaxation: "*string(sim_cee_relax.𝒪est[:final]))
