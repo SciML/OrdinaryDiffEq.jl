@@ -58,7 +58,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
             nlsolver.nfails += 1
             break
         end
-        
+
         has_prev_θ = hasfield(NL, :prev_θ)
         prev_θ = has_prev_θ ? nlsolver.prev_θ : one(ndz)
 
@@ -88,7 +88,10 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
                 break
             end
         else
-            θ = min(one(prev_θ), prev_θ)
+            if has_prev_θ && !integrator.accept_step
+                prev_θ = one(prev_θ)
+            end
+            θ = prev_θ
         end
 
         if has_prev_θ
