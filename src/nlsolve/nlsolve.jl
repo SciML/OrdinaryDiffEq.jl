@@ -11,8 +11,8 @@ dt⋅f(innertmp + γ⋅z, p, t + c⋅dt) + outertmp = z
 
 where `dt` is the step size and `γ` and `c` are constants, and return the solution `z`.
 """
-function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrator,
-        cache = nothing, repeat_step = false)
+function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
+        cache = nothing, repeat_step = false) where {NL <: AbstractNLSolver}
     always_new = is_always_new(nlsolver)
     check_div′ = check_div(nlsolver)
     @label REDO
@@ -59,9 +59,12 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
             break
         end
 
+        has_prev_θ = hasfield(NL, :prev_θ)
+        prev_θ = has_prev_θ ? nlsolver.prev_θ : one(ndz)
+
         # check divergence (not in initial step)
         if iter > 1
-            θ = ndz / ndzprev
+            θ = prev_θ = has_prev_θ ? max(0.3 * prev_θ, ndz / ndzprev) : ndz/ndzprev
 
             # When one Newton iteration basically does nothing, it's likely that we
             # are at the precision limit of floating point number. Thus, we just call
@@ -84,13 +87,23 @@ function nlsolve!(nlsolver::AbstractNLSolver, integrator::DiffEqBase.DEIntegrato
                 nlsolver.nfails += 1
                 break
             end
+        else
+            if has_prev_θ && !integrator.accept_step
+                prev_θ = one(prev_θ)
+            end
+            θ = prev_θ
+        end
+
+        if has_prev_θ
+            nlsolver.prev_θ = prev_θ
         end
 
         apply_step!(nlsolver, integrator)
 
         # check for convergence
-        iter > 1 && (η = DiffEqBase.value(θ / (1 - θ)))
-        if (iter == 1 && ndz < 1e-5) || (iter > 1 && (η >= zero(η) && η * ndz < κ))
+        η = DiffEqBase.value(θ / (1 - θ))
+        if (iter == 1 && ndz < 1e-5) ||
+           ((iter > 1 || isnewton(nlsolver)) && η >= zero(η) && η * ndz < κ)
             nlsolver.status = Convergence
             nlsolver.nfails = 0
             break
