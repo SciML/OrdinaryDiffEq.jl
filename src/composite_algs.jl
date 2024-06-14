@@ -181,7 +181,9 @@ function default_autoswitch(AS::AutoSwitchCache, integrator)
         AS.is_stiffalg, AS.current) ?
                AS.count < 0 ? 1 : AS.count + 1 :
                AS.count > 0 ? -1 : AS.count - 1
-    if integrator.f.mass_matrix != I || (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
+    if integrator.f.mass_matrix != I
+        #don't change anything
+    elseif (!AS.is_stiffalg && AS.count > AS.maxstiffstep)
         integrator.dt = dt * AS.dtfac
         AS.is_stiffalg = true
         AS.current = stiffchoice(reltol, len, integrator.f.mass_matrix)

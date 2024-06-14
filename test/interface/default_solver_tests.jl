@@ -85,4 +85,20 @@ swaplinearf = ODEFunction(swaplinear, mass_matrix = ones(2, 2) - I(2))
 prob_swaplinear = ODEProblem(swaplinearf, rand(2), (0.0, 1.0), 1.01)
 sol = solve(prob_swaplinear)
 @test all(isequal(4), sol.alg_choice)
+@test sol(.5) isa Vector{Float64} # test dense output
 # for some reason the timestepping here is different from regular Rodas5P (including the initial timestep)
+
+# test mass matrix DAE where we have to initialize algebraic variables
+function rober_mm(du, u, p, t)
+    y₁, y₂, y₃ = u
+    k₁, k₂, k₃ = p
+    du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+    du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+    du[3] = y₁ + y₂ + y₃ - 1
+    nothing
+end
+f = ODEFunction(rober_mm, mass_matrix=[1 0 0; 0 1 0; 0 0 0])
+prob_rober_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5), (0.04, 3e7, 1e4))
+sol = solve(prob_rober_mm)
+@test all(isequal(3), sol.alg_choice)
+@test sol(.5) isa Vector{Float64} # test dense output
