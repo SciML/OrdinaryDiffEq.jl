@@ -188,7 +188,8 @@ end
         get_tmp_cache(integrator, alg.algs[4], cache.cache4)
     elseif cache.current == 5
         get_tmp_cache(integrator, alg.algs[5], cache.cache5)
-    else# cache.current == 6
+    else
+        @assert cache.current == 6
         get_tmp_cache(integrator, alg.algs[6], cache.cache6)
     end
 end
