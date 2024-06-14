@@ -500,7 +500,7 @@ function evaluate_default_cache(f, Θ, dt, timeseries, i₋, i₊,
     elseif cacheid == 2
         return _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
             cache.cache2, idxs, deriv, ks, ts, p, differential_vars)
-    elseif alg_choice == 3
+    elseif cacheid == 3
         return _evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊,
             cache.cache3, idxs, deriv, ks, ts, p, differential_vars)
     elseif cacheid == 4
