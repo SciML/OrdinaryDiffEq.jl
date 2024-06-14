@@ -173,12 +173,26 @@ end
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
         cache::CompositeCache)
-    get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
+    get_tmp_cache(integrator, alg.algs[1], cache.caches[1])
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
         cache::DefaultCache)
-    get_tmp_cache(integrator, integrator.alg.algs[1], cache.cache1)
+    init_ith_default_cache(cache, alg.algs, cache.current)
+    if cache.current == 1
+        get_tmp_cache(integrator, alg.algs[1], cache.cache1)
+    elseif cache.current == 2
+        get_tmp_cache(integrator, alg.algs[2], cache.cache2)
+    elseif cache.current == 3
+        get_tmp_cache(integrator, alg.algs[3], cache.cache3)
+    elseif cache.current == 4
+        get_tmp_cache(integrator, alg.algs[4], cache.cache4)
+    elseif cache.current == 5
+        get_tmp_cache(integrator, alg.algs[5], cache.cache5)
+    else# cache.current == 6
+        get_tmp_cache(integrator, alg.algs[6], cache.cache6)
+    end
 end
+
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.cache.dz, cache.atmp)

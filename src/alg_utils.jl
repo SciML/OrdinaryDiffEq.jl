@@ -309,7 +309,7 @@ end
 _alg_autodiff(::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
 _alg_autodiff(::DAEAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
 _alg_autodiff(::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
-_alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[2])
+_alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
 function _alg_autodiff(::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
         OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}
 }) where {
