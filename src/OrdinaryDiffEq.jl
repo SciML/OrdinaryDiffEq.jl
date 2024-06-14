@@ -130,6 +130,10 @@ import Preferences
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 
+export AbstractPerformStepCallback, NoPerformStepCallback, PerformStepCallback
+
+include("performstep_callback.jl")
+
 include("doc_utils.jl")
 include("misc_utils.jl")
 

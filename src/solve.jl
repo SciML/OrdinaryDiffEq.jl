@@ -72,7 +72,7 @@ function DiffEqBase.__init(
         alias_u0 = false,
         alias_du0 = false,
         initializealg = DefaultInit(),
-        modif = nothing,
+        modif = NoPerformStepCallback(),
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")

@@ -1,3 +1,4 @@
+
 function initialize!(integrator, ::Tsit5ConstantCache_for_relaxation)
     integrator.kshortsize = 7
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -30,19 +31,24 @@ function initialize!(integrator, cache::Tsit5Cache_for_relaxation)
     return nothing
 end
 
-
 function perform_step!(integrator, cache::Union{Tsit5Cache_for_relaxation,Tsit5ConstantCache_for_relaxation}, repeat_step = false)
-
-    # Variable to know if dt has changed during perform_step
-    integrator.dt_has_changed = false
-    integrator.u_has_changed = false
 
     # Caculate uₙ₊₁
     calculate_nextstep!(integrator, cache, repeat_step)
 
+    # Perform customize modification right after the step, i.e modify uₙ₊₁
+    if has_poststep_callback(integrator)
+        apply_poststep_callback(integrator)
+    end
+
     # Calculate f(uₙ₊₁) if the aglortihm has the FSAL property
     if isfsal(integrator.alg)
         calculate_fsal!(integrator, cache)
+    end
+
+    # Perform customize modification right after fsal, i.e modify f(uₙ₊₁)
+    if has_postfsal_callback(integrator)
+        apply_postfsal_callback(integrator)
     end
 
     # Calculate the error estimate needed for PID controller
@@ -50,17 +56,102 @@ function perform_step!(integrator, cache::Union{Tsit5Cache_for_relaxation,Tsit5C
         calculate_EEst!(integrator, cache)
     end
 
+    #Perform customized modification right after error estimate
+    if has_postEEst_callback(integrator)
+        apply_postEEst_callback(integrator)
+    end
 
-    # modif_step! enables to modify the step like when we want to perform a relaxation
-    # for this we give a new struture that can be defined either by us for already known
-    # modification we want to do or by a user (see below)
-    modif_step!(integrator)
-
-    # finalize_step! will do staff related to the solver like integrator.stats, register integrator.fsal
-    # and register integrator.u
+    # finalize_step (useless for the moment)
     finalize_step!(integrator, cache)
 end
 
+function apply_poststep_callback!(integrator)
+
+    # Variable to know if dt has changed during perform_step
+    integrator.dt_has_changed = false
+    integrator.u_has_changed = false
+
+    integrator.opts.performstepcallback.poststep(integrator)
+
+    handle_dt_bound_and_tstop!(integrator)
+    update_u_changed!(integrator)
+end
+
+function apply_postfsal_callback!(integrator)
+
+    # Variable to know if dt has changed during perform_step
+    integrator.dt_has_changed = false
+    integrator.u_has_changed = false
+
+    integrator.opts.performstepcallback.postfsal(integrator)
+
+    handle_dt_bound_and_tstop!(integrator)
+    update_u_changed!(integrator)
+end
+
+function apply_postEEst_callback!(integrator)
+
+    # Variable to know if dt has changed during perform_step
+    integrator.dt_has_changed = false
+    integrator.u_has_changed = false
+
+    integrator.opts.performstepcallback.postEEst(integrator)
+
+    handle_dt_bound_and_tstop!(integrator)
+    update_u_changed!(integrator)
+end
+
+function handle_dt_bound_and_tstop!(integrator)
+    
+    # Here we carry of the dt modified by the user in this step, if it has been changed.
+
+    if integrator.dt_has_changed
+
+        # Memory of the current user dt_changed
+        tmp = integrator.dt_changed
+
+        # match dt in [dtmin, dtmax]
+        if integrator.tdir > 0
+            integrator.dt_changed = min(integrator.opts.dtmax, integrator.dt_changed)
+        else
+            integrator.dt_changed = max(integrator.opts.dtmax, integrator.dt_changed)
+        end
+        dtmin = timedepentdtmin(integrator)
+        if integrator.tdir > 0
+            integrator.dt_changed = max(integrator.dt_changed, dtmin)
+        else
+            integrator.dt_changed = min(integrator.dt_changed, dtmin)
+        end
+            
+        #if tmp != integrator.dt_changed
+        #    @warn "The modification of dt during the user modification step was not in [dtmin, dtmax]. As a consequence, it has been projected onto [dtmin, dtmax]."
+        #end
+
+        # Memory of the current user dt_changed
+        tmp = integrator.dt_changed
+
+        # Match dt with tstops
+        if has_tstop(integrator)
+            tdir_t = integrator.tdir * integrator.t
+            tdir_tstop = first_tstop(integrator)
+            integrator.dt_changed = integrator.tdir * min(abs(integrator.dt_changed), abs(tdir_tstop - tdir_t)) 
+        end
+            
+        if tmp != integrator.dt_changed
+            @warn "The modification of dt during the user modification step "
+        end
+            
+        integrator.dt = integrator.dt_changed
+    end
+end
+
+function update_u_changed!(integrator)
+    if integrator.u_has_changed
+        integrator.u = integrator.u_changed
+    else
+        integrator.u = integrator.u_propose
+    end
+end
 
 @muladd function calculate_nextstep!(integrator, ::Tsit5ConstantCache_for_relaxation, repeat_step = false)
     
@@ -107,62 +198,6 @@ end
     atmp = calculate_residuals(utilde, integrator.uprev, integrator.u, integrator.opts.abstol,
     integrator.opts.reltol, integrator.opts.internalnorm, integrator.t)
     integrator.EEst = integrator.opts.internalnorm(atmp, integrator.t)
-end
-
-function modif_step!(integrator)
-    
-    if !(integrator.opts.modif isa Nothing)
-
-        # Perform the modifications
-        integrator.opts.modif(integrator)
-
-        # Here we carry of the dt modified by the user in this step, if it has been changed.
-
-        if integrator.dt_has_changed
-
-            # Memory of the current user dt_changed
-            tmp = integrator.dt_changed
-
-            # match dt in [dtmin, dtmax]
-            if integrator.tdir > 0
-                integrator.dt_changed = min(integrator.opts.dtmax, integrator.dt_changed)
-            else
-                integrator.dt_changed = max(integrator.opts.dtmax, integrator.dt_changed)
-            end
-            dtmin = timedepentdtmin(integrator)
-            if integrator.tdir > 0
-                integrator.dt_changed = max(integrator.dt_changed, dtmin)
-            else
-                integrator.dt_changed = min(integrator.dt_changed, dtmin)
-            end
-            
-            if tmp != integrator.dt_changed
-                @warn "The modification of dt during the user modification step was not in [dtmin, dtmax]. As a consequence, it has been projected onto [dtmin, dtmax]."
-            end
-
-            # Memory of the current user dt_changed
-            tmp = integrator.dt_changed
-
-            # match dt with tstops
-            if has_tstop(integrator)
-                tdir_t = integrator.tdir * integrator.t
-                tdir_tstop = first_tstop(integrator)
-                integrator.dt_changed = integrator.tdir * min(abs(integrator.dt_changed), abs(tdir_tstop - tdir_t)) 
-            end
-            
-            if tmp != integrator.dt_changed
-                @warn "The modification of dt during the user modification step "
-            end
-            
-            integrator.dt = integrator.dt_changed
-        end
-    end
-    if integrator.u_has_changed
-        integrator.u = integrator.u_changed
-    else
-        integrator.u = integrator.u_propose
-    end
-    
 end
 
 function finalize_step!(integrator, ::Tsit5ConstantCache_for_relaxation)

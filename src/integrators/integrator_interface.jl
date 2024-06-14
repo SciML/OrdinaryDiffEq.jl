@@ -518,5 +518,7 @@ function change_u!(integrator::ODEIntegrator, u)
     integrator.u_changed = u
 end
 
-
+has_poststep_callback(integrator::ODEIntegrator) = has_poststep_callback(integrator.opts.performstepcallback)
+has_postfsal_callback(integrator::ODEIntegrator) = has_postfsal_callback(integrator.opts.performstepcallback)
+has_postEEst_callback(integrator::ODEIntegrator) = has_postEEst_callback(integrator.opts.performstepcallback)
 
