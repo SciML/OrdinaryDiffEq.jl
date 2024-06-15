@@ -165,7 +165,7 @@ end
     utilde = integrator.dt * (btilde1 * integrator.k[1] + btilde2 * integrator.k[2] 
             + btilde3 * integrator.k[3] + btilde4 * integrator.k[4] 
             + btilde5 * integrator.k[5] + btilde6 * integrator.k[6] 
-            + btilde7 * integrator.k[7])
+            + btilde7 * integrator.fsallast)
     atmp = calculate_residuals(utilde, integrator.uprev, integrator.u, integrator.opts.abstol,
     integrator.opts.reltol, integrator.opts.internalnorm, integrator.t)
     integrator.EEst = integrator.opts.internalnorm(atmp, integrator.t)

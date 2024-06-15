@@ -161,9 +161,6 @@ function DiffEqBase.__init(
     else
         u = recursivecopy(prob.u0)
     end
-    u_propose = recursivecopy(u)
-    u_changed = recursivecopy(u)
-    u_has_changed = false
 
     if _alg isa DAEAlgorithm
         if alias_du0
@@ -496,7 +493,7 @@ function DiffEqBase.__init(
         last_event_error, accept_step,
         isout, reeval_fsal,
         u_modified, reinitiailize, isdae,
-        opts, stats, initializealg, differential_vars, u_propose, u_changed, u_has_changed, dt_has_changed, dt_changed)
+        opts, stats, initializealg, differential_vars, dt_has_changed, dt_changed)
 
     if initialize_integrator
         if isdae || SciMLBase.has_initializeprob(prob.f)

@@ -136,9 +136,6 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
     initializealg::IA
     differential_vars::DV
 
-    u_propose::uType
-    u_changed::uType
-    u_has_changed::Bool
     dt_has_changed::Bool
     dt_changed::tType
 
