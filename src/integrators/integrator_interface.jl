@@ -514,8 +514,11 @@ function change_dt!(integrator::ODEIntegrator, dt)
 end
 
 function change_u!(integrator::ODEIntegrator, u)
-    integrator.u_has_changed = true
     integrator.u = u
+end
+
+function change_fsallast!(integrator::ODEIntegrator, fsallast)
+    integrator.fsallast = fsallast
 end
 
 has_poststep_callback(integrator::ODEIntegrator) = has_poststep_callback(integrator.opts.performstepcallback)

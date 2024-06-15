@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools,  Test, BenchmarkTools
+using OrdinaryDiffEq, DiffEqDevTools
 
 include("relaxation.jl")
 
@@ -12,8 +12,6 @@ prob = ODEProblem(
     [1.0, 0.0],
     (0.0, 1.0))
 
-
-
 # Convergence with the old method Tsit5()
 sim = test_convergence(dts, prob, Tsit5())
 println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
@@ -23,21 +21,23 @@ sim = test_convergence(dts, prob, Tsit5_for_relaxation())
 println("order of convergence of new perform_step! without relaxation: "*string(sim.𝒪est[:final]))
 
 # Convergence with relaxation without FSAL modification, i.e f(uₙ₊₁) ≈ f(uᵧ,ₙ₊₁), before EEst
-r = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> norm(x)), false)
+r = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> norm(x)))
 sim = test_convergence(dts, prob, Tsit5_for_relaxation(); modif = r)
 println("order with relaxation without FSAL modification before EEst: "*string(sim.𝒪est[:final]))
 
 # Convergence with relaxation without FSAL modification, i.e f(uᵧ,ₙ₊₁) ≈ f(uₙ₊₁) , after EEst
-r = PerformStepCallback(;postEEst = Relaxation(AlefeldPotraShi, x-> norm(x)), false)
+r = PerformStepCallback(;postEEst = Relaxation(AlefeldPotraShi, x-> norm(x)))
 sim = test_convergence(dts, prob, Tsit5_for_relaxation(); modif = r)
 println("order with relaxation without FSAL modification after EEst: "*string(sim.𝒪est[:final]))
 
 # Convergence with relaxation with FSAL-R, i.e  f(uᵧ,ₙ₊₁) ≈ f(uᵧ,ₙ) + γ ( f(uₙ₊₁) - f(uᵧ,ₙ)) 
-r = PerformStepCallback(;postfEEst = Relaxation(AlefeldPotraShi, x-> norm(x)), true)
+fsal_r(gamma, fsalfirst, fsallast) = fsalfirst + gamma * (fsallast - fsalfirst)
+r = PerformStepCallback(;postEEst = Relaxation(AlefeldPotraShi, x-> norm(x), fsal_r))
 sim = test_convergence(dts, prob, Tsit5_for_relaxation(); modif = r)
 println("order with relaxation with FSAL-R modification: "*string(sim.𝒪est[:final]))
 
-# Convergence with relaxation with R-FSAL, i.e f(uₙ₊₁) ≈ f(uᵧ,ₙ₊₁) + 1/γ ( f(uᵧ,ₙ₊₁) - f(uᵧ) )
-r = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> norm(x)))
+# Convergence with relaxation with R-FSAL, i.e f(uₙ₊₁) ≈ f(uᵧ,ₙ) + 1/γ ( f(uᵧ,ₙ₊₁) - f(uᵧ,ₙ) )
+r_fsal(gamma, fsalfirst, fsallast) = fsalfirst + 1/gamma * (fsallast - fsalfirst)
+r = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> norm(x), r_fsal), postEEst = fsal_r)
 sim = test_convergence(dts, prob, Tsit5_for_relaxation(); modif = r)
 println("order with relaxation with R-FSAL modification: "*string(sim.𝒪est[:final]))

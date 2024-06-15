@@ -160,8 +160,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
             accept_step, isout, reeval_fsal, u_modified,
             reinitialize, isdae,
             opts, stats,
-            initializealg, differential_vars, 
-            u_propose, u_changed, u_has_changed, dt_has_changed, dt_changed) where {algType, IIP, uType,
+            initializealg, differential_vars, dt_has_changed, dt_changed) where {algType, IIP, uType,
             duType, tType, pType,
             eigenType, EEstT,
             tTypeNoUnits, tdirType,
@@ -183,7 +182,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
             do_error_check,
             event_last_time, vector_event_last_time, last_event_error,
             accept_step, isout, reeval_fsal, u_modified, reinitialize, isdae,
-            opts, stats, initializealg, differential_vars, u_propose, u_changed, u_has_changed, dt_has_changed, dt_changed) # Leave off fsalfirst and last
+            opts, stats, initializealg, differential_vars, dt_has_changed, dt_changed) # Leave off fsalfirst and last
     end
 end
 
