@@ -2,13 +2,13 @@ using Roots
 using LinearAlgebra
 using UnPack
 
-struct Relaxation{OPT, INV, FSAL}
+mutable struct Relaxation{OPT, INV, FSAL}
     opt::OPT
     invariant::INV
     has_fsal::Bool
     update_fsal::FSAL
-
-    Relaxation(opt, inv, fsal = nothing) = new{typeof(opt), typeof(inv), typeof(fsal)}(opt, inv, fsal isa Nothing ? false : true, fsal)
+    γ
+    Relaxation(opt, inv, fsal = nothing) = new{typeof(opt), typeof(inv), typeof(fsal)}(opt, inv, fsal isa Nothing ? false : true, fsal, 1.0)
 end
 
 function (r::Relaxation)(integrator)
@@ -28,7 +28,7 @@ function (r::Relaxation)(integrator)
         gamma = find_zero(gamma -> r.invariant(gamma*S_u .+ uprev) .- r.invariant(uprev),
                             (gamma_min, gamma_max),
                             r.opt())
-
+        r.γ = gamma
         change_dt!(integrator, gamma*dt)
         change_u!(integrator, uprev + gamma*S_u)
 
@@ -41,5 +41,5 @@ end
 
 fsal_r(gamma, fsalfirst, fsallast) = fsalfirst + gamma * (fsallast - fsalfirst)
 r_fsal(gamma, fsalfirst, fsallast) = fsalfirst + 1/gamma * (fsallast - fsalfirst)
-fsal_r_int(integrator) = integrator.fsalllast = fsal_r(gamma, fsalfirst, fsallast)
+fsal_r_int(integrator) = integrator.fsallast = fsal_r(integrator.opts.performstepcallback.poststep_cb.γ, integrator.fsalfirst, integrator.fsallast)
 
