@@ -5,16 +5,17 @@ using UnPack
 struct Relaxation{OPT, INV}
     opt::OPT
     invariant::INV
+    fsal::Bool
 end
 
 function (r::Relaxation)(integrator)
 
-    @unpack t, dt, uprev, u_propose = integrator
+    @unpack t, dt, uprev, u = integrator
 
     # We fix here the bounds of interval where we are going to look for the relaxation
     #(gamma_min, gamma_max) = apriori_bounds_dt(integrator) ./ dt
     
-    S_u = u_propose - uprev
+    S_u = u - uprev
 
     # Find relaxation paramter gamma
     gamma_min = 0.5
@@ -28,8 +29,10 @@ function (r::Relaxation)(integrator)
         change_dt!(integrator, gamma*dt)
         change_u!(integrator, uprev + gamma*S_u)
 
-        #integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
+        if r.fsal
+            integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
     end
-    
 end
+
+
 
