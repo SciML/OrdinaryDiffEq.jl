@@ -49,7 +49,7 @@ prob_oscillator = ODEProblem(
     ODEFunction(f_oscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
     [1.0, 0.0],
     (0.0, 1.0))
-r_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
+r_oscillator = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> norm(x)))
 
 #sol_oscillator = solve(prob_oscillator, Tsit5_for_relaxation(); modif = r_oscillator)
 #sol_exact = [prob_oscillator.f.analytic(prob_oscillator.u0, prob_oscillator.p, t) for t in sol_oscillator.t]
@@ -73,7 +73,7 @@ prob_nloscillator = ODEProblem(
     ODEFunction(f_nloscillator; analytic = (u0, p, t) -> [cos(t), sin(t)]),
     [1.0, 0.0],
     (0.0, 1.0))
-r_nloscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
+r_nloscillator = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> norm(x)))
 
 #sol_nloscillator = solve(prob_nloscillator, Tsit5_for_relaxation(); modif = r_nloscillator)
 #sol_exact = [prob_oscillator.f.analytic(prob_nloscillator.u0, prob_nloscillator.p, t) for t in sol_nloscillator.t]
@@ -94,7 +94,7 @@ prob_nlpendulum = ODEProblem(
     f_nlpendulum,
     [1.0, 0.0],
     (0.0, 1.0))
-r_nlpendulum = Relaxation(AlefeldPotraShi, x-> x[1]^2/2 -  cos(x[2]))
+r_nlpendulum = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> x[1]^2/2 -  cos(x[2])))
 
 #sol_nlpendulum = solve(prob_nlpendulum, Tsit5_for_relaxation(); modif = r_nlpendulum)
 #sol_ref = solve(prob_nlpendulum, Vern9())
@@ -123,7 +123,7 @@ prob_td_oscillator = ODEProblem(
                                         sin(0.5)*cos(t-0.5*cos(t))+cos(0.5)*sin(t-0.5*cos(t))]),
     [1.0, 0.0],
     (0.0, 1.0))
-r_td_oscillator = Relaxation(AlefeldPotraShi, x-> norm(x))
+r_td_oscillator = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> norm(x)))
 
 sim_td_oscillator_old = test_convergence(dts, prob_td_oscillator, Tsit5())
 println("order of convergence of older perform_step! : "*string(sim_td_oscillator_old.𝒪est[:final]))
@@ -144,7 +144,7 @@ prob_cee  = ODEProblem(
                                         log(exp((exp(0.5)+exp(1))*t)*(exp(0.5)+exp(1)))/(exp(0.5) + exp((exp(0.5)+exp(1))*t))]),
     [1.0, 0.5],
     (0.0, 1.0))
-r_cee  = Relaxation(AlefeldPotraShi, x-> exp(x[1]) + exp(x[2]))
+r_cee  = PerformStepCallback(;poststep = Relaxation(AlefeldPotraShi, x-> exp(x[1]) + exp(x[2])))
 
 sim_cee_old = test_convergence(dts, prob_cee, Tsit5())
 println("order of convergence of older perform_step! : "*string(sim_cee_old.𝒪est[:final]))

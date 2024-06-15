@@ -28,16 +28,8 @@ function (r::Relaxation)(integrator)
         change_dt!(integrator, gamma*dt)
         change_u!(integrator, uprev + gamma*S_u)
 
-        integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
+        #integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
     end
-
-    # println("######################  Print of dt time")
-    # @show integrator.dt
-    # @show integrator.dt_changed
-    # @show integrator.opts.dtmin
-    # @show integrator.opts.dtmax
-    # if has_tstop(integrator)
-    #     @show first_tstop(integrator) - integrator.t
-    # end
-
+    
 end
+

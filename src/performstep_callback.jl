@@ -14,11 +14,11 @@ struct PerformStepCallback <: AbstractPerformStepCallback
     postEEst_cb
     has_postEEst_cb::Bool
 
-    function PerformStepCallBack(;poststep = nothing, postfsal = nothing, postEEst = nothing)
+    function PerformStepCallback(;poststep = nothing, postfsal = nothing, postEEst = nothing)
         has_poststep_cb = poststep isa Nothing ? false : true
         has_postfsal_cb = postfsal isa Nothing ? false : true
         has_postEEst_cb = postEEst isa Nothing ? false : true
-        new(poststep, has_poststep_cb, postfsal_cb, has_postfsal_cb, postEEst_cb, has_postEEst_cb)
+        new(poststep, has_poststep_cb, postfsal, has_postfsal_cb, postEEst, has_postEEst_cb)
     end
 end
 
