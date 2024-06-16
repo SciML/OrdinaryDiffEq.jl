@@ -2,11 +2,11 @@ using OrdinaryDiffEq, DiffEqDevTools
 
 include("relaxation.jl")
 
-printstyled("Harmonic Oscillator\n"; bold = true)
+printstyled("Non linear harmonic oscillator\n"; bold = true)
 
 dts = (1 / 2) .^ (6:-1:4)
 
-f = (u, p, t) -> [-u[2],u[1]]
+f = (u, p, t) -> [-u[2]/(u[1]^2 + u[2]^2),u[1]/(u[1]^2 + u[2]^2)]
 prob = ODEProblem(
     ODEFunction(f; analytic = (u0, p, t) -> [cos(t), sin(t)]),
     [1.0, 0.0],

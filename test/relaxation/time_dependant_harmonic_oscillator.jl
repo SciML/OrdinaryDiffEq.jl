@@ -2,13 +2,15 @@ using OrdinaryDiffEq, DiffEqDevTools
 
 include("relaxation.jl")
 
-printstyled("Harmonic Oscillator\n"; bold = true)
+printstyled("Time-dependent harmonic oscillator\n"; bold = true)
 
 dts = (1 / 2) .^ (6:-1:4)
 
-f = (u, p, t) -> [-u[2],u[1]]
+f = (u, p, t) -> [-(1+0.5 * sin(t))*u[2], (1+0.5 * sin(t))*u[1]]
 prob = ODEProblem(
-    ODEFunction(f; analytic = (u0, p, t) -> [cos(t), sin(t)]),
+    ODEFunction(f; 
+                analytic = (u0, p, t)->[cos(0.5)*cos(t-0.5*cos(t))-sin(0.5)*sin(t-0.5*cos(t)), 
+                                        sin(0.5)*cos(t-0.5*cos(t))+cos(0.5)*sin(t-0.5*cos(t))]),
     [1.0, 0.0],
     (0.0, 1.0))
 

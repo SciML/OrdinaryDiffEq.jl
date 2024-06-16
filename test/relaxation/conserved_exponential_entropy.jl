@@ -2,17 +2,19 @@ using OrdinaryDiffEq, DiffEqDevTools
 
 include("relaxation.jl")
 
-printstyled("Harmonic Oscillator\n"; bold = true)
+printstyled("Conserved exponential entropy\n"; bold = true)
 
 dts = (1 / 2) .^ (6:-1:4)
 
-f = (u, p, t) -> [-u[2],u[1]]
-prob = ODEProblem(
-    ODEFunction(f; analytic = (u0, p, t) -> [cos(t), sin(t)]),
-    [1.0, 0.0],
+f = (u, p, t) -> [-exp(u[2]), exp(u[1])]
+prob  = ODEProblem(
+    ODEFunction(f ; 
+                analytic = (u0, p, t)->[log(exp(1) + exp(0.5)) - log(exp(0.5) + exp((exp(0.5)+exp(1))*t)), 
+                                        log(exp((exp(0.5)+exp(1))*t)*(exp(0.5)+exp(1)))/(exp(0.5) + exp((exp(0.5)+exp(1))*t))]),
+    [1.0, 0.5],
     (0.0, 1.0))
 
-invariant(x) = norm(x)
+invariant(x) = exp(x[1]) + exp(x[2])
 
 # Convergence with the old method Tsit5()
 sim = test_convergence(dts, prob, Tsit5())
