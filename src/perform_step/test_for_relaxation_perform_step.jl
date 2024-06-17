@@ -219,8 +219,8 @@ end
 end
 
 @muladd function calculate_EEst!(integrator, cache::Tsit5Cache_for_relaxation)
-    T = constvalue(recursive_unitless_bottom_eltype(u))
-    T2 = constvalue(typeof(one(t)))
+    T = constvalue(recursive_unitless_bottom_eltype(integrator.u))
+    T2 = constvalue(typeof(one(integrator.t)))
     @OnDemandTableauExtract Tsit5ConstantCacheActual T T2
     @unpack k1, k2, k3, k4, k5, k6, k7, utilde, atmp, thread = cache
     @.. broadcast = false thread = threa utilde = integrator.dt * 
