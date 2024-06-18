@@ -1,4 +1,4 @@
-module OrdinaryDiffEqExtrapolation
+module OrdinaryDiffEqRKC
 
 import OrdinaryDiffEq: alg_order, alg_maximum_order, get_current_adaptive_order,
                        get_current_alg_order, calculate_residuals!, accept_step_controller,
@@ -14,7 +14,8 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order, get_current_adaptive_order,
                        _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
                        TimeDerivativeWrapper, UDerivativeWrapper, calc_J, _reshape, _vec,
                        WOperator, TimeGradientWrapper, UJacobianWrapper, build_grad_config,
-                       build_jac_config, calc_J!, jacobian2W!, dolinsolve         
+                       build_jac_config, calc_J!, jacobian2W!, dolinsolve
+                       
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
 
 macro cache(expr)
@@ -37,21 +38,11 @@ macro cache(expr)
     end
 end
 
+include("rkc_caches.jl")
+include("rkc_perform_step.jl")
+include("rkc_utils.jl")
 include("algorithms.jl")
-include("alg_utils.jl")
-include("controllers.jl")
-include("extrapolation_caches.jl")
-include("extrapolation_perform_step.jl")
 
-@inline function DiffEqBase.get_tmp_cache(integrator,
-        alg::OrdinaryDiffEqImplicitExtrapolationAlgorithm,
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.utilde)
-end
-
-export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
-       ImplicitEulerExtrapolation,
-       ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
-       ImplicitEulerBarycentricExtrapolation
+export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, IRKC
 
 end

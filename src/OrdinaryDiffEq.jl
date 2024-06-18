@@ -164,7 +164,6 @@ include("caches/rkn_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/bdf_caches.jl")
-include("caches/rkc_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
 include("caches/dae_caches.jl")
@@ -211,7 +210,6 @@ include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
 include("perform_step/bdf_perform_step.jl")
-include("perform_step/rkc_perform_step.jl")
 include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
 include("perform_step/dae_perform_step.jl")
@@ -229,7 +227,6 @@ include("derivative_utils.jl")
 include("nordsieck_utils.jl")
 include("adams_utils.jl")
 include("bdf_utils.jl")
-include("rkc_utils.jl")
 include("derivative_wrappers.jl")
 include("iterator_interface.jl")
 include("constants.jl")
@@ -243,6 +240,10 @@ export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHaire
        ImplicitEulerExtrapolation,
        ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
        ImplicitEulerBarycentricExtrapolation
+
+include("../lib/OrdinaryDiffEqRKC/src/OrdinaryDiffEqRKC.jl")
+using ..OrdinaryDiffEqRKC
+export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, IRKC
 
 import PrecompileTools
 
@@ -434,8 +435,6 @@ export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
        Nystrom5VelocityIndependent,
        IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
        RKN4
-
-export ROCK2, ROCK4, RKC, IRKC, ESERK4, ESERK5, SERK2
 
 export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
