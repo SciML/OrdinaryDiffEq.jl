@@ -240,8 +240,8 @@ export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHaire
        ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
        ImplicitEulerBarycentricExtrapolation
 
-include("../lib/OrdinaryDiffEqRKC/src/OrdinaryDiffEqRKC.jl")
-using ..OrdinaryDiffEqRKC
+include("../lib/OrdinaryDiffEqStabilizedRK/src/OrdinaryDiffEqStabilizedRK.jl")
+using ..OrdinaryDiffEqStabilizedRK
 export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, IRKC
 
 import PrecompileTools
