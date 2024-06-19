@@ -1,4 +1,4 @@
-name = "OrdinaryDiffEqRKC"
+name = "OrdinaryDiffEqStabilizedRK"
 uuid = "88b61a33-750e-4510-8c8e-e221d3f10a54"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.0.0"
