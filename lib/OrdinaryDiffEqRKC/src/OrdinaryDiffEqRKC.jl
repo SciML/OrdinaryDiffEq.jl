@@ -41,6 +41,7 @@ include("rkc_caches.jl")
 include("rkc_perform_step.jl")
 include("rkc_utils.jl")
 include("algorithms.jl")
+include("rkc_tableaus.jl")
 
 export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, IRKC
 
