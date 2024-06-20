@@ -240,6 +240,7 @@ export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHaire
        ImplicitEulerBarycentricExtrapolation
 
 include("../lib/OrdinaryDiffEqStabilizedRK/src/OrdinaryDiffEqStabilizedRK.jl")
+include("../lib/OrdinaryDiffEqStabilizedRK/src/algorithms.jl")
 using ..OrdinaryDiffEqStabilizedRK
 export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, IRKC
 
