@@ -30,8 +30,8 @@ function activate_extrapolation_env()
 end
 
 function activate_stabilized_rk()
-    Pkg.activate("../lib/OrdinaryDiffEqStabilizedRK/")
-    Pkg.develop(PackageSpec(path= dirname(@__DIR__)))
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     Pkg.instantiate()
 end
 
