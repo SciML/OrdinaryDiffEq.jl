@@ -37,37 +37,6 @@ const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-# Partitioned ODE Specific Algorithms
-abstract type OrdinaryDiffEqPartitionedAlgorithm <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqAdaptivePartitionedAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
-const PartitionedAlgorithm = Union{OrdinaryDiffEqPartitionedAlgorithm,
-    OrdinaryDiffEqAdaptivePartitionedAlgorithm}
-
-struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
-FunctionMap(; scale_by_time = false) = FunctionMap{scale_by_time}()
-
-function DiffEqBase.remake(thing::OrdinaryDiffEqAlgorithm; kwargs...)
-    T = SciMLBase.remaker_of(thing)
-    T(; SciMLBase.struct_as_namedtuple(thing)..., kwargs...)
-end
-
-function DiffEqBase.remake(
-        thing::Union{
-            OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT,
-                ST, CJ},
-            OrdinaryDiffEqImplicitAlgorithm{CS, AD, FDT, ST, CJ
-            },
-            DAEAlgorithm{CS, AD, FDT, ST, CJ}};
-        kwargs...) where {CS, AD, FDT, ST, CJ}
-    T = SciMLBase.remaker_of(thing)
-    T(; SciMLBase.struct_as_namedtuple(thing)...,
-        chunk_size = Val{CS}(), autodiff = Val{AD}(), standardtag = Val{ST}(),
-        concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
-        kwargs...)
-end
-
-###########################################################################################
-# ROCK methods
 
 """
 Assyr Abdulle, Alexei A. Medovikov. Second Order Chebyshev Methods based on Orthogonal Polynomials.
