@@ -366,8 +366,6 @@ const DEPRECATED_ADDSTEPS = true
 #General Functions
 export solve, solve!, init, step!
 
-export OrdinaryDiffEqAlgorithm
-
 #Callback Necessary
 export addsteps!, ode_interpolant, terminate!, savevalues!, copyat_or_push!, isfsal
 
