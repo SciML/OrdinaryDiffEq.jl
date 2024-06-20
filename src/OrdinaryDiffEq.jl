@@ -131,7 +131,6 @@ DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothi
 include("doc_utils.jl")
 include("misc_utils.jl")
 
-include("algorithms.jl")
 include("algorithms/explicit_rk.jl")
 include("algorithms/explicit_rk_pde.jl")
 
