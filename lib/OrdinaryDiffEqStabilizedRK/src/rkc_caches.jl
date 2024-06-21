@@ -1,4 +1,3 @@
-
 mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
     ms::SVector{46, Int}
     fp1::SVector{46, T}
