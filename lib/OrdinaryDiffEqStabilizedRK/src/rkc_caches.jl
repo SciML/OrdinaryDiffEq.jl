@@ -1,4 +1,3 @@
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
 mutable struct ROCK2ConstantCache{T, T2, zType} <: OrdinaryDiffEqConstantCache
     ms::SVector{46, Int}
