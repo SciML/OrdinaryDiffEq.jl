@@ -1,5 +1,3 @@
-include("../../src/algorithms.jl")
-
 function Base.show(io::IO, alg::OrdinaryDiffEqAlgorithm)
     print(io, String(typeof(alg).name.name), "(;")
     for fieldname in fieldnames(typeof(alg))
