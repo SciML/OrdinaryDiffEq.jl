@@ -2846,7 +2846,7 @@ const MultistepAlgorithms = Union{IRKN3, IRKN4,
     ABDF2,
     AB3, AB4, AB5, ABM32, ABM43, ABM54}
 
-const SplitAlgorithms = Union{CNAB2, CNLF2, IRKC, SBDF,
+const SplitAlgorithms = Union{CNAB2, CNLF2, SBDF,
     KenCarp3, KenCarp4, KenCarp47, KenCarp5, KenCarp58, CFNLIRK3}
 
 #=
