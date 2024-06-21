@@ -31,7 +31,7 @@ import EnumX
 import FillArrays: Trues, Falses
 
 # Interfaces
-import DiffEqBase: solve!, step!, initialize!, isadaptive, OrdinaryDiffEqAlgorithm
+import DiffEqBase: solve!, step!, initialize!, isadaptive
 
 # Internal utils
 import DiffEqBase: ODE_DEFAULT_NORM,
