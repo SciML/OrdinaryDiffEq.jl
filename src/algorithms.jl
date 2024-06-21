@@ -68,7 +68,6 @@ function DiffEqBase.remake(
         concrete_jac = CJ === nothing ? CJ : Val{CJ}(),
         kwargs...)
 end
-include("../lib/OrdinaryDiffEqStabilizedRK/src/algorithms.jl")
 
 ###############################################################################
 
