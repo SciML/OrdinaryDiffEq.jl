@@ -17,6 +17,7 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order, get_current_adaptive_order,
                        WOperator, TimeGradientWrapper, UJacobianWrapper, build_grad_config,
                        build_jac_config, calc_J!, jacobian2W!, dolinsolve 
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
+import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
 macro cache(expr)
     name = expr.args[2].args[1].args[1]
