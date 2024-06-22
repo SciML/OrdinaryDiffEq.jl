@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: nlsolve!
+using OrdinaryDiffEq: nlsolve!, isnewton
 
 function initialize!(integrator, cache::ROCK2ConstantCache)
     integrator.kshortsize = 2
