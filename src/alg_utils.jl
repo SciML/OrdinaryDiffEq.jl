@@ -691,16 +691,6 @@ alg_order(alg::FBDF) = 1 #dummy value
 
 alg_order(alg::SBDF) = alg.order
 
-alg_order(alg::ROCK2) = 2
-alg_order(alg::ROCK4) = 4
-
-alg_order(alg::ESERK4) = 4
-alg_order(alg::ESERK5) = 5
-alg_order(alg::SERK2) = 2
-
-alg_order(alg::RKC) = 2
-alg_order(alg::IRKC) = 2
-
 alg_order(alg::MEBDF2) = 2
 alg_order(alg::PDIRK44) = 4
 
@@ -727,8 +717,6 @@ alg_adaptive_order(alg::Rosenbrock32) = 2
 
 alg_adaptive_order(alg::RadauIIA3) = 1
 alg_adaptive_order(alg::RadauIIA5) = 3
-alg_adaptive_order(alg::RKC) = 2
-alg_adaptive_order(alg::IRKC) = 1
 
 alg_adaptive_order(alg::ImplicitEuler) = 0
 alg_adaptive_order(alg::Trapezoid) = 1
@@ -820,8 +808,6 @@ function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
 end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
-gamma_default(alg::RKC) = 8 // 10
-gamma_default(alg::IRKC) = 8 // 10
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_min_default(alg::FBDF) = 9 // 10
@@ -894,7 +880,6 @@ alg_stability_size(alg::Vern9) = 4.4762
 
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
-alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
     if !(alg isa CompositeAlgorithm)
@@ -976,8 +961,6 @@ uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
 
 ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-ispredictive(alg::Union{RKC}) = true
-ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
