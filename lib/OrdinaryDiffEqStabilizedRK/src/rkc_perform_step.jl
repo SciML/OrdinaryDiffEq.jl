@@ -1,3 +1,5 @@
+using OrdinaryDiffEq: nlsolve!
+
 function initialize!(integrator, cache::ROCK2ConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
