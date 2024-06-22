@@ -39,10 +39,10 @@ macro cache(expr)
     end
 end
 
+include("algorithms.jl")
 include("rkc_caches.jl")
 include("rkc_perform_step.jl")
 include("rkc_utils.jl")
-include("algorithms.jl")
 include("rkc_tableaus_serk2.jl")
 include("rkc_tableaus_rock4.jl")
 include("rkc_tableaus_rock2.jl")
