@@ -41,6 +41,7 @@ macro cache(expr)
 end
 
 include("algorithms.jl")
+include("alg_utils.jl")
 include("rkc_utils.jl")
 include("rkc_caches.jl")
 include("rkc_perform_step.jl")
