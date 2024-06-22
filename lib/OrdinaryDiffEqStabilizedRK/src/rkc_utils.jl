@@ -23,14 +23,6 @@ gamma_default(alg::IRKC) = 8 // 10
 
 alg_can_repeat_jac(alg::IRKC) = false
 
-function default_controller(
-    alg::Union{ROCK2, ROCK4, IRKC, ESERK4, ESERK5, SERK2, RKC},
-    cache,
-    qoldinit, _beta1 = nothing, _beta2 = nothing)
-QT = typeof(qoldinit)
-beta1, beta2 = _digest_beta1_beta2(alg, cache, Val(QT), _beta1, _beta2)
-return ExtrapolationController(beta1)
-end
 
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     isfirst = integrator.iter == 1 || integrator.u_modified
