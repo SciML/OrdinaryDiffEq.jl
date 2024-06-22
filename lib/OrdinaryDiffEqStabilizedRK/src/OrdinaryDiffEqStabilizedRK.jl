@@ -16,7 +16,7 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order, get_current_adaptive_order,
                        TimeDerivativeWrapper, UDerivativeWrapper, calc_J, _reshape, _vec,
                        WOperator, TimeGradientWrapper, UJacobianWrapper, build_grad_config,
                        build_jac_config, calc_J!, jacobian2W!, dolinsolve, NLNewton,
-                       build_nlsolver
+                       build_nlsolver, markfirststage!, du_alias_or_new
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
