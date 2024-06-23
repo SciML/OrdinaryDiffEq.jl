@@ -18,3 +18,4 @@ gamma_default(alg::RKC) = 8 // 10
 gamma_default(alg::IRKC) = 8 // 10
 
 alg_can_repeat_jac(alg::IRKC) = false
+issplit(alg::IRKC) = true

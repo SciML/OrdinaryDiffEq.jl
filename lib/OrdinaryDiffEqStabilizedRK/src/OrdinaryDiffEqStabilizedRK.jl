@@ -2,7 +2,7 @@ module OrdinaryDiffEqStabilizedRK
 
 import OrdinaryDiffEq: alg_order, alg_maximum_order, get_current_adaptive_order,
                        get_current_alg_order, calculate_residuals!, accept_step_controller,
-                       default_controller, beta2_default, beta1_default, gamma_default,
+                       default_controller, beta2_default, beta1_default, gamma_default, issplit,
                        initialize!, perform_step!, @unpack, unwrap_alg, isthreaded,
                        step_accept_controller!, calculate_residuals,
                        OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
