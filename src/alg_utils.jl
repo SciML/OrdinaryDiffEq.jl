@@ -675,36 +675,6 @@ function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     return convert(QT, beta1)::QT, convert(QT, beta2)::QT
 end
 
-function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
-end
-
-function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.70, -0.23, 0.00))...)
-end
-
-function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.00))...)
-end
-
-function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
-end
-
-function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.20, 0.06))...)
-end
-
-function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.00))...)
-end
-
 # other special cases in controllers.jl
 function default_controller(alg::Union{JVODE, QNDF, FBDF}, args...)
     DummyController()

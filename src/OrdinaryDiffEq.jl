@@ -177,6 +177,7 @@ include("tableaus/rosenbrock_tableaus.jl")
 include("tableaus/sdirk_tableaus.jl")
 include("tableaus/firk_tableaus.jl")
 include("tableaus/rkn_tableaus.jl")
+include("tableaus/rkc_tableaus.jl")
 include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")

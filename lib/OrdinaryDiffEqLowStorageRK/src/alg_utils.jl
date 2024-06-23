@@ -160,3 +160,33 @@ ssp_coefficient(alg::SSPRK104) = 6
 ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
 ssp_coefficient(alg::SSPRK33) = 1
 ssp_coefficient(alg::SSPRK22) = 1
+
+function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
+    QT = typeof(qoldinit)
+    return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
+    QT = typeof(qoldinit)
+    return PIDController(map(Base.Fix1(convert, QT), (0.70, -0.23, 0.00))...)
+end
+
+function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
+    QT = typeof(qoldinit)
+    return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.00))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
+    QT = typeof(qoldinit)
+    return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
+end
+
+function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
+    QT = typeof(qoldinit)
+    return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.20, 0.06))...)
+end
+
+function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
+    QT = typeof(qoldinit)
+    return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.00))...)
+end
