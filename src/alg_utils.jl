@@ -724,8 +724,6 @@ end
 # SSP coefficients
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
 ssp_coefficient(alg::Euler) = 1
-ssp_coefficient(alg::SSPRKMSVS32) = 0.5
-ssp_coefficient(alg::SSPRKMSVS43) = 0.33
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
