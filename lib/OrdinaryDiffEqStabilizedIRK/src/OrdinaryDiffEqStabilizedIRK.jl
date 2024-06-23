@@ -9,7 +9,7 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                        alg_cache, _unwrap_val, DEFAULT_PRECS,
-                        _reshape, _vec, NLNewton, update_W!,
+                        _reshape, _vec, NLNewton, update_W!, get_W,
                        build_nlsolver, markfirststage!, du_alias_or_new,
                        nlsolve!, isnewton, dolinsolve
 
