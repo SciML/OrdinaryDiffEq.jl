@@ -1,3 +1,5 @@
+using OrdinaryDiffEq, Test, LinearAlgebra, Random
+using OrdinaryDiffEq.OrdinaryDiffEqStabilizedRK: maxeig!
 
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
     Random.seed!(123)
