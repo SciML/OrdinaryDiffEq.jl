@@ -29,8 +29,6 @@ function activate_extrapolation_env()
     Pkg.instantiate()
 end
 
-<<<<<<< HEAD
-=======
 function activate_stabilized_rk()
     Pkg.activate("../lib/OrdinaryDiffEqStabilizedRK")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -43,7 +41,6 @@ function activate_low_storage_rk()
     Pkg.instantiate()
 end
 
->>>>>>> 5134aff1 (Added a separate package for Low Storage RK methods)
 #Start Test Script
 
 @time begin
