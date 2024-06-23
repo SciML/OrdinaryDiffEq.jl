@@ -180,6 +180,14 @@ end
         @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
     end
 
+    if !is_APPVEYOR && GROUP == "StabilizedRK"
+        @time @safetestset "StabilizedRK Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/runtests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "StabilizedIRK"
+        @time @safetestset "StabilizedIRK Tests" include("../lib/OrdinaryDiffEqStabilizedIRK/test/runtests.jl")
+    end
+
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")

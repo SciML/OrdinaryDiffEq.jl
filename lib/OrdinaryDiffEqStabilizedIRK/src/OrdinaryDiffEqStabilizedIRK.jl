@@ -1,14 +1,18 @@
 module OrdinaryDiffEqStabilizedRK
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
-                       beta2_default, beta1_default, gamma_default,
+import OrdinaryDiffEq: alg_order, alg_maximum_order,
+                       calculate_residuals!,                       
+                       beta2_default, beta1_default, gamma_default, issplit,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals,
-                       OrdinaryDiffEqAlgorithm, ispredictive,
+                       OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
-                       alg_cache,
-                       constvalue, _unwrap_val, du_alias_or_new
+                       alg_cache, _unwrap_val,
+                        _reshape, _vec, NLNewton, update_W!,
+                       build_nlsolver, markfirststage!, du_alias_or_new,
+                       nlsolve!, isnewton
+
 using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
@@ -34,15 +38,10 @@ end
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("rkc_utils.jl")
-include("rkc_caches.jl")
-include("rkc_perform_step.jl")
-include("rkc_tableaus_serk2.jl")
-include("rkc_tableaus_rock4.jl")
-include("rkc_tableaus_rock2.jl")
-include("rkc_tableaus_eserk5.jl")
-include("rkc_tableaus_eserk4.jl")
+include("irkc_utils.jl")
+include("irkc_caches.jl")
+include("irkc_perform_step.jl")
 
-export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2
+export IRKC
 
 end
