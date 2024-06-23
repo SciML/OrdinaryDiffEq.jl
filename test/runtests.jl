@@ -29,6 +29,21 @@ function activate_extrapolation_env()
     Pkg.instantiate()
 end
 
+<<<<<<< HEAD
+=======
+function activate_stabilized_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_low_storage_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqLowStorageRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+>>>>>>> 5134aff1 (Added a separate package for Low Storage RK methods)
 #Start Test Script
 
 @time begin
@@ -153,7 +168,7 @@ end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_II"
         @time @safetestset "SSPRK Tests" include("algconvergence/ode_ssprk_tests.jl")
-        @time @safetestset "Low Storage RK Tests" include("algconvergence/ode_low_storage_rk_tests.jl")
+        @time @safetestset "Low Storage RK Tests" include("../lib/OrdinaryDiffEqLowStorageRK/test/ode_low_storage_rk_tests.jl")
         @time @safetestset "OwrenZen Tests" include("algconvergence/owrenzen_tests.jl")
         @time @safetestset "Runge-Kutta-Chebyshev Tests" include("algconvergence/rkc_tests.jl")
     end

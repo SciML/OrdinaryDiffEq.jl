@@ -629,44 +629,6 @@ Euler - The canonical forward Euler method. Fixed timestep only.
 """
 struct Euler <: OrdinaryDiffEqAlgorithm end
 
-@doc explicit_rk_docstring(
-    "6-stage, fourth order low-stage, low-dissipation, low-dispersion scheme.
-Fixed timestep only.", "RK46NL",
-    references = "Julien Berland, Christophe Bogey, Christophe Bailly. Low-Dissipation and Low-Dispersion Fourth-Order Runge-Kutta Algorithm. Computers & Fluids, 35(10), pp 1459-1463, 2006. doi: https://doi.org/10.1016/j.compfluid.2005.04.003")
-Base.@kwdef struct RK46NL{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function RK46NL(stage_limiter!, step_limiter! = trivial_limiter!)
-    RK46NL(stage_limiter!, step_limiter!, False())
-end
-
-@doc explicit_rk_docstring(
-    "A second-order, five-stage explicit Runge-Kutta method for wave propagation
-equations. Fixed timestep only.", "ORK256",
-    references = "Matteo Bernardini, Sergio Pirozzoli.
-    A General Strategy for the Optimization of Runge-Kutta Schemes for Wave
-    Propagation Phenomena.
-    Journal of Computational Physics, 228(11), pp 4182-4199, 2009.
-    doi: https://doi.org/10.1016/j.jcp.2009.02.032",
-    extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
-                    """,
-    extra_keyword_default = "williamson_condition = true")
-Base.@kwdef struct ORK256{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-    williamson_condition::Bool = true
-end
-# for backwards compatibility
-function ORK256(stage_limiter!,
-        step_limiter! = trivial_limiter!;
-        williamson_condition = true)
-    ORK256(stage_limiter!, step_limiter!, False(), williamson_condition)
-end
-
 """
 KuttaPRK2p5: Parallel Explicit Runge-Kutta Method
 A 5 parallel, 2 processor explicit Runge-Kutta method of 5th order.
