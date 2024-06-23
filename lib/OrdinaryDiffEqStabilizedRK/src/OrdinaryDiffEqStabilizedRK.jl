@@ -7,7 +7,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
                        OrdinaryDiffEqAlgorithm, ispredictive,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqAdaptiveAlgorithm,
-                       alg_cache,
+                       alg_cache, _vec, _reshape,
                        constvalue, _unwrap_val, du_alias_or_new
 using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
