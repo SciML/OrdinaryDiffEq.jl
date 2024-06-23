@@ -241,8 +241,6 @@ export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHaire
        ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
        ImplicitEulerBarycentricExtrapolation
 
-<<<<<<< HEAD
-=======
 include("../lib/OrdinaryDiffEqStabilizedRK/src/OrdinaryDiffEqStabilizedRK.jl")
 using ..OrdinaryDiffEqStabilizedRK
 export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, IRKC
@@ -260,7 +258,6 @@ export ORK256, SSPRK53_2N1, SSPRK53_2N2, NDBLSRK124, CarpenterKennedy2N54, NDBLS
        SSPRK73, SSPRK63, SSPRK53_H, KYKSSPRK42, SSPRK53, SSPRK33, SSPRK22, YK2014DGSSPRK_3S2, NDBLSRK134, 
        SLDDRK64, SHLDDRK_2N, SHLDDRK52
 
->>>>>>> 5134aff1 (Added a separate package for Low Storage RK methods)
 import PrecompileTools
 
 PrecompileTools.@compile_workload begin
