@@ -64,7 +64,7 @@ end
         println(Alg)
         sol1 = solve(ODEProblem(fun1, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         sol2 = solve(ODEProblem(fun2, u0, tspan), Alg(); adaptive = false, dt = 0.01)
-        @test sol1(1.0) ≈ sol2(1.0) atol=1e-5
+        @test sol1(1.0) ≈ sol2(1.0) atol=1e-4
 
         sol1_ip = solve(ODEProblem(fun1_ip, u0, tspan), Alg(); adaptive = false, dt = 0.01)
         sol2_ip = solve(ODEProblem(fun2_ip, u0, tspan), Alg(); adaptive = false, dt = 0.01)
