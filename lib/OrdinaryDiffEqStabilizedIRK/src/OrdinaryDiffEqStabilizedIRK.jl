@@ -1,4 +1,4 @@
-module OrdinaryDiffEqStabilizedRK
+module OrdinaryDiffEqStabilizedIRK
 
 import OrdinaryDiffEq: alg_order, alg_maximum_order,
                        calculate_residuals!,                       
