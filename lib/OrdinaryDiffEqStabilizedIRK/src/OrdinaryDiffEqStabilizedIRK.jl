@@ -11,7 +11,7 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order,
                        alg_cache, _unwrap_val, DEFAULT_PRECS,
                         _reshape, _vec, NLNewton, update_W!,
                        build_nlsolver, markfirststage!, du_alias_or_new,
-                       nlsolve!, isnewton
+                       nlsolve!, isnewton, dolinsolve
 
 using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
