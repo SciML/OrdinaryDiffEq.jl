@@ -15,7 +15,6 @@ import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, S
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("doc_utils.jl")
 include("low_storage_rk_caches.jl")
 include("low_storage_rk_perform_step.jl")
 
