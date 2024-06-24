@@ -319,3 +319,17 @@ function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
     SSPRK33(stage_limiter!,
         step_limiter!, False())
 end
+
+@doc explicit_rk_docstring("TBD",
+    "KYKSSPRK42")
+Base.@kwdef struct KYKSSPRK42{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
+    KYKSSPRK42(stage_limiter!,
+        step_limiter!,
+        False())
+end

@@ -411,6 +411,7 @@ alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::LieEuler) = 1
+alg_order(alg::KYKSSPRK42) = 2
 alg_order(alg::SSPRKMSVS32) = 2
 alg_order(alg::SSPRK33) = 3
 alg_order(alg::CayleyEuler) = 2
@@ -756,6 +757,7 @@ ssp_coefficient(alg::SSPRK33) = 1
 ssp_coefficient(alg::SSPRK22) = 1
 ssp_coefficient(alg::SSPRKMSVS32) = 0.5
 ssp_coefficient(alg::SSPRKMSVS43) = 0.33
+ssp_coefficient(alg::KYKSSPRK42) = 2.459
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
