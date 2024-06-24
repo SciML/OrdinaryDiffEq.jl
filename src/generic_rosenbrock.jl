@@ -1741,7 +1741,7 @@ macro ROS34PW(part)
         push!(tabexprs,gen_tableau(ROS34PRwTableau(),tabstructexpr,ROS34PRwtabname))
         push!(tabexprs,gen_tableau(ROS3PRLTableau(),tabstructexpr,ROS3PRLtabname))
         push!(tabexprs,gen_tableau(ROS3PRL2Tableau(),tabstructexpr,ROS3PRL2tabname))
-        push!(tabexprs,gen_tableau(ROK4aTableau(),tabstructexpr,ROK4Atabname))
+        push!(tabexprs,gen_tableau(ROK4aTableau(),tabstructexpr,ROK4atabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
