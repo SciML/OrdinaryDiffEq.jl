@@ -13,10 +13,10 @@ using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
 
-include("low_storage_rk_caches.jl")
-include("low_storage_rk_perform_step.jl")
 include("algorithms.jl")
 include("alg_utils.jl")
+include("low_storage_rk_caches.jl")
+include("low_storage_rk_perform_step.jl")
 
 export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
        DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144, 
