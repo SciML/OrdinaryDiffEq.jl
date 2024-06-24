@@ -242,8 +242,6 @@ include("../lib/OrdinaryDiffEqStabilizedRK/src/OrdinaryDiffEqStabilizedRK.jl")
 using ..OrdinaryDiffEqStabilizedRK
 export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2, IRKC
 
-# SHLDDRK52 SHLDDRK_2N
-
 include("../lib/OrdinaryDiffEqLowStorageRK/src/OrdinaryDiffEqLowStorageRK.jl")
 using ..OrdinaryDiffEqLowStorageRK
 export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
@@ -425,6 +423,8 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
 export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
        McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
        CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
+
+export SHLDDRK52 SHLDDRK_2N
 
 export SplitEuler
 

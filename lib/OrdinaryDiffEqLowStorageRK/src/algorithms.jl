@@ -24,19 +24,6 @@ function ORK256(stage_limiter!,
     ORK256(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
 
-@doc explicit_rk_docstring("TBD", "SHLDDRK_2N")
-Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
-    SHLDDRK_2N(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
 @doc explicit_rk_docstring(
     "7-stage, third order low-storage low-dissipation, low-dispersion scheme for
 discontinuous Galerkin space discretizations applied to wave propagation problems.
