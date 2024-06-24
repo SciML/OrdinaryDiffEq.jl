@@ -29,6 +29,12 @@ function activate_extrapolation_env()
     Pkg.instantiate()
 end
 
+function activate_stabilized_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -155,7 +161,7 @@ end
         @time @safetestset "SSPRK Tests" include("algconvergence/ode_ssprk_tests.jl")
         @time @safetestset "Low Storage RK Tests" include("algconvergence/ode_low_storage_rk_tests.jl")
         @time @safetestset "OwrenZen Tests" include("algconvergence/owrenzen_tests.jl")
-        @time @safetestset "Runge-Kutta-Chebyshev Tests" include("algconvergence/rkc_tests.jl")
+        @time @safetestset "Runge-Kutta-Chebyshev Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/rkc_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_III"
@@ -172,6 +178,14 @@ end
 
     if !is_APPVEYOR && GROUP == "Extrapolation"
         @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "StabilizedRK"
+        @time @safetestset "StabilizedRK Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/runtests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "StabilizedIRK"
+        @time @safetestset "StabilizedIRK Tests" include("../lib/OrdinaryDiffEqStabilizedIRK/test/runtests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"

@@ -434,7 +434,7 @@ return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
 function islinearfunction(f, alg)::Tuple{Bool, Bool}
     isode = f isa ODEFunction && islinear(f.f)
-    islin = isode || (alg isa SplitAlgorithms && f isa SplitFunction && islinear(f.f1.f))
+    islin = isode || (issplit(alg) && f isa SplitFunction && islinear(f.f1.f))
     return islin, isode
 end
 

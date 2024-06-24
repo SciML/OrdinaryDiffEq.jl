@@ -14,7 +14,7 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order, get_current_adaptive_order,
                        _digest_beta1_beta2, timedepentdtmin, _unwrap_val,
                        TimeDerivativeWrapper, UDerivativeWrapper, calc_J, _reshape, _vec,
                        WOperator, TimeGradientWrapper, UJacobianWrapper, build_grad_config,
-                       build_jac_config, calc_J!, jacobian2W!, dolinsolve
+                       build_jac_config, calc_J!, jacobian2W!, dolinsolve         
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, LinearSolve
 
 
