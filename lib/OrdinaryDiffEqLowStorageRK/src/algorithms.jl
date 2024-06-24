@@ -25,6 +25,35 @@ function ORK256(stage_limiter!,
 end
 
 @doc explicit_rk_docstring(
+    "7-stage, third order low-storage low-dissipation, low-dispersion scheme for
+discontinuous Galerkin space discretizations applied to wave propagation problems.
+Optimized for PDE discretizations when maximum spatial step is small due to
+geometric features of computational domain. Fixed timestep only.",
+    "DGLDDRK73_C",
+    references = "T. Toulorge, W. Desmet.
+    Optimal Runge–Kutta Schemes for Discontinuous Galerkin Space Discretizations
+    Applied to Wave Propagation Problems.
+    Journal of Computational Physics, 231(4), pp 2067-2091, 2012.
+    doi: https://doi.org/10.1016/j.jcp.2011.11.024",
+    extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
+                    """,
+    extra_keyword_default = "williamson_condition = true")
+Base.@kwdef struct DGLDDRK73_C{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+    williamson_condition::Bool = true
+end
+# for backwards compatibility
+function DGLDDRK73_C(stage_limiter!, step_limiter! = trivial_limiter!;
+        williamson_condition = true)
+    DGLDDRK73_C(stage_limiter!,
+        step_limiter!,
+        False(),
+        williamson_condition)
+end
+
+@doc explicit_rk_docstring(
     "A fourth-order, five-stage explicit low-storage method of Carpenter and Kennedy
 (free 3rd order Hermite interpolant). Fixed timestep only. Designed for
 hyperbolic PDEs (stability properties).",
