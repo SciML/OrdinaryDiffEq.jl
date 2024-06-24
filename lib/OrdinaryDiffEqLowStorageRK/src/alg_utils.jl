@@ -1,13 +1,3 @@
-using OrdinaryDiffEq: ORK256, NDBLSRK124, CarpenterKennedy2N54, NDBLSRK134, NDBLSRK144,
-                      CFRLDDRK64, TSLDDRK74, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F, SHLDDRK64, RK46NL, ParsaniKetchesonDeconinck3S32,
-                      ParsaniKetchesonDeconinck3S82, ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173, ParsaniKetchesonDeconinck3S94,
-                      ParsaniKetchesonDeconinck3S184, ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205, CKLLSRK43_2,
-                      CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M, CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R,
-                      CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R, CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R,
-                      CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R, RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510,
-                      RDPK3SpFSAL510, KYK2014DGSSPRK_3S2, NDBLSRK134, 
-                      SLDDRK64, SHLDDRK_2N
-
 alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 alg_order(alg::ORK256) = 2
 alg_order(alg::CarpenterKennedy2N54) = 4
