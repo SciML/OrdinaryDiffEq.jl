@@ -779,7 +779,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
         vecu = _vec(linres.u)
         veck6 = _vec(k6)
         @.. broadcast=false veck6=-vecu
-        @.. broadcast=false tmp += k6
+        @.. broadcast=false tmp+=k6
         f(du, tmp, p, t + dt)
 
         if mass_matrix === I
@@ -797,7 +797,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
         vecu = _vec(linres.u)
         veck7 = _vec(k7)
         @.. broadcast=false veck7=-vecu
-        @.. broadcast=false tmp += k7
+        @.. broadcast=false tmp+=k7
         f(du, tmp, p, t + dt)
 
         if mass_matrix === I

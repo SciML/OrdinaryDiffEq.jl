@@ -738,7 +738,6 @@ end
     islin, isode = islinearfunction(integrator)
     !isdae && update_coefficients!(mass_matrix, uprev, p, t)
 
-
     if cache.W isa WOperator
         W = cache.W
         if isnewton(nlsolver)

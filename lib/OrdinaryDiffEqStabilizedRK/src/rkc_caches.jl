@@ -23,7 +23,6 @@ end
     constantcache::C
 end
 
-
 function alg_cache(alg::ROCK2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,

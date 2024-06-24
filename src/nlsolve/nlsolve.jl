@@ -64,7 +64,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
 
         # check divergence (not in initial step)
         if iter > 1
-            θ = prev_θ = has_prev_θ ? max(0.3 * prev_θ, ndz / ndzprev) : ndz/ndzprev
+            θ = prev_θ = has_prev_θ ? max(0.3 * prev_θ, ndz / ndzprev) : ndz / ndzprev
 
             # When one Newton iteration basically does nothing, it's likely that we
             # are at the precision limit of floating point number. Thus, we just call

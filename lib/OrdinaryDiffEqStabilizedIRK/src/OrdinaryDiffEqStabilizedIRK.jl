@@ -1,15 +1,16 @@
 module OrdinaryDiffEqStabilizedIRK
 
 import OrdinaryDiffEq: alg_order, alg_maximum_order,
-                       calculate_residuals!,                       
+                       calculate_residuals!,
                        beta2_default, beta1_default, gamma_default, issplit,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals,
                        OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                       OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm,
+                       OrdinaryDiffEqAdaptiveAlgorithm,
+                       OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                        alg_cache, _unwrap_val, DEFAULT_PRECS,
-                        _reshape, _vec, NLNewton, update_W!, get_W,
+                       _reshape, _vec, NLNewton, update_W!, get_W,
                        build_nlsolver, markfirststage!, du_alias_or_new,
                        nlsolve!, isnewton, dolinsolve
 
