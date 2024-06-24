@@ -394,7 +394,7 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
 
 export SSPRK22, SSPRK33, KYKSSPRK42, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63,
        SSPRK73, SSPRK83, SSPRK43, SSPRK432,
-       SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104, SHLDDRK52, SHLDDRK_2N
+       SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104
 
 export RadauIIA3, RadauIIA5
 
@@ -424,6 +424,7 @@ export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
        McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
        CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
 
+export SHLDDRK52, SHLDDRK_2N
 
 export SplitEuler
 

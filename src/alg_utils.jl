@@ -430,6 +430,7 @@ alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
 alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
+alg_order(alg::SHLDDRK_2N) = 4
 alg_order(alg::Anas5) = 5
 alg_order(alg::KuttaPRK2p5) = 5
 alg_order(alg::RKO65) = 5
