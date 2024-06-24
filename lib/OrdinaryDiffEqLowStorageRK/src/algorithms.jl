@@ -35,7 +35,7 @@ hyperbolic PDEs (stability properties).",
     extra_keyword_description = """- `williamson_condition`: allows for an optimization that allows fusing broadcast expressions with the function call `f`. However, it only works for `Array` types.
                     """,
     extra_keyword_default = "williamson_condition = true")
-Base.@kwdef struct CarpenterKennedy2N54{StageLimiter, StepLimiter, Thread} <:
+    Base.@kwdef struct CarpenterKennedy2N54{StageLimiter, StepLimiter, Thread} <:
                    OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
