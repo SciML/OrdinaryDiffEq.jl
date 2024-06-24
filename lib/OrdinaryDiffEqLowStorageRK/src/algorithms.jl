@@ -1,5 +1,7 @@
 using OrdinaryDiffEq: explicit_rk_docstring
 
+@inline trivial_limiter!(u, integrator, p, t) = nothing
+
 @doc explicit_rk_docstring(
     "A second-order, five-stage explicit Runge-Kutta method for wave propagation
 equations. Fixed timestep only.", "ORK256",
