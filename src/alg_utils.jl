@@ -598,6 +598,7 @@ alg_order(alg::Rodas5) = 5
 alg_order(alg::Rodas5P) = 5
 alg_order(alg::Rodas5Pr) = 5
 alg_order(alg::Rodas5Pe) = 5
+alg_order(alg::SHLDDRK52) = 2
 
 alg_order(alg::AB3) = 3
 alg_order(alg::AB4) = 4
