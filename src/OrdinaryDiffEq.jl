@@ -133,6 +133,7 @@ include("misc_utils.jl")
 
 include("algorithms.jl")
 include("algorithms/explicit_rk.jl")
+include("algorithms/explicit_rk_pde.jl")
 
 include("alg_utils.jl")
 
