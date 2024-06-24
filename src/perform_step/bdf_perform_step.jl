@@ -930,12 +930,14 @@ function perform_step!(integrator, cache::QNDFCache{max_order},
         end
         integrator.EEst = error_constant(integrator, k) * internalnorm(atmp, t)
         if k > 1
-            @views calculate_residuals!(atmpm1, reshape(D[:, k], size(u)), uprev, u, abstol,
+            @views calculate_residuals!(
+                atmpm1, reshape(D[:, k], size(u)), uprev, u, abstol,
                 reltol, internalnorm, t)
             cache.EEst1 = error_constant(integrator, k - 1) * internalnorm(atmpm1, t)
         end
         if k < max_order
-            @views calculate_residuals!(atmpp1, reshape(D[:, k + 2], size(u)), uprev, u, abstol,
+            @views calculate_residuals!(
+                atmpp1, reshape(D[:, k + 2], size(u)), uprev, u, abstol,
                 reltol, internalnorm, t)
             cache.EEst2 = error_constant(integrator, k + 1) * internalnorm(atmpp1, t)
         end

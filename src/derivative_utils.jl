@@ -434,7 +434,7 @@ return the tuple `(is_linear_wrt_odealg, islinearodefunction)`.
 """
 function islinearfunction(f, alg)::Tuple{Bool, Bool}
     isode = f isa ODEFunction && islinear(f.f)
-    islin = isode || (alg isa SplitAlgorithms && f isa SplitFunction && islinear(f.f1.f))
+    islin = isode || (issplit(alg) && f isa SplitFunction && islinear(f.f1.f))
     return islin, isode
 end
 
@@ -682,9 +682,7 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
     end
 
     # calculate W
-    if W isa AbstractSciMLOperator && !(W isa Union{WOperator, StaticWOperator})
-        update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
-    elseif W isa WOperator
+    if W isa WOperator
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
             update_coefficients!(W; transform = W_transform, dtgamma)
@@ -698,6 +696,8 @@ function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cach
             new_W && !isdae &&
                 jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)
         end
+    elseif W isa AbstractSciMLOperator && !(W isa StaticWOperator)
+        update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
     else # concrete W using jacobian from `calc_J!`
         islin, isode = islinearfunction(integrator)
         islin ? (J = isode ? f.f : f.f1.f) :
@@ -738,7 +738,21 @@ end
     islin, isode = islinearfunction(integrator)
     !isdae && update_coefficients!(mass_matrix, uprev, p, t)
 
-    if cache.W isa AbstractSciMLOperator && !(cache.W isa Union{WOperator, StaticWOperator})
+    if cache.W isa WOperator
+        W = cache.W
+        if isnewton(nlsolver)
+            # we will call `update_coefficients!` for u/p/t in NLNewton
+            update_coefficients!(W; transform = W_transform, dtgamma)
+        else
+            update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
+        end
+        if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
+            islin, isode = islinearfunction(integrator)
+            J = islin ? (isode ? f.f : f.f1.f) : calc_J(integrator, cache, next_step)
+            !isdae &&
+                jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)
+        end
+    elseif cache.W isa AbstractSciMLOperator && !(cache.W isa StaticWOperator)
         J = update_coefficients(cache.J, uprev, p, t)
         W = update_coefficients(cache.W, uprev, p, t; dtgamma, transform = W_transform)
     elseif islin
