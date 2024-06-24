@@ -899,3 +899,43 @@ end
     f(k, u, p, t + dt)
     integrator.stats.nf += 6
 end
+
+function initialize!(integrator, cache::RK46NLConstantCache)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+    integrator.kshortsize = 1
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator, cache::RK46NLConstantCache, repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6 = cache
+
+    # u1
+    tmp = dt * integrator.fsalfirst
+    u = uprev + β1 * tmp
+    # u2
+    tmp = α2 * tmp + dt * f(u, p, t + c2 * dt)
+    u = u + β2 * tmp
+    # u3
+    tmp = α3 * tmp + dt * f(u, p, t + c3 * dt)
+    u = u + β3 * tmp
+    # u4
+    tmp = α4 * tmp + dt * f(u, p, t + c4 * dt)
+    u = u + β4 * tmp
+    # u5 = u
+    tmp = α5 * tmp + dt * f(u, p, t + c5 * dt)
+    u = u + β5 * tmp
+    # u6
+    tmp = α6 * tmp + dt * f(u, p, t + c6 * dt)
+    u = u + β6 * tmp
+
+    integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
+    integrator.stats.nf += 6
+    integrator.k[1] = integrator.fsalfirst
+    integrator.u = u
+end
