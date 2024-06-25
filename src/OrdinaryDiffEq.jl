@@ -242,7 +242,7 @@ include("../lib/OrdinaryDiffEqStabilizedRK/src/OrdinaryDiffEqStabilizedRK.jl")
 using ..OrdinaryDiffEqStabilizedRK
 export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2
 
-include("..lib/OrdinaryDiffEqStabilizedIRK/src/OrdinaryDiffEqStabilizedIRK.jl")
+include("../lib/OrdinaryDiffEqStabilizedIRK/src/OrdinaryDiffEqStabilizedIRK.jl")
 using ..OrdinaryDiffEqStabilizedIRK
 export IRKC
 
