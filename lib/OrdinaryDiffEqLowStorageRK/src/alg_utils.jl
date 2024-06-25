@@ -97,7 +97,6 @@ julia> ssp_coefficient(SSPRK104())
 6
 ```
 """
-
 ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
 
 function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
