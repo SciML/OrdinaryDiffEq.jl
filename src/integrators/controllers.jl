@@ -1,3 +1,4 @@
+using OrdinaryDiffEq: IRKC, RKC, SERK2
 
 abstract type AbstractController end
 
