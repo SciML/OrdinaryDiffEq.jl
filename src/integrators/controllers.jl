@@ -1,6 +1,5 @@
-using OrdinaryDiffEq: IRKC, RKC, SERK2
-
 abstract type AbstractController end
+using OrdinaryDiffEq: IRKC
 
 @inline function stepsize_controller!(integrator, alg)
     stepsize_controller!(integrator, integrator.opts.controller, alg)
