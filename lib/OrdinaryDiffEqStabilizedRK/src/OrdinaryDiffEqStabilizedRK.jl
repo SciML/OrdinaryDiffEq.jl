@@ -2,11 +2,12 @@ module OrdinaryDiffEqStabilizedRK
 
 import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
                        beta2_default, beta1_default, gamma_default,
+                       fac_default_gamma, has_dtnew_modification,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals,
                        OrdinaryDiffEqAlgorithm, ispredictive,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                       OrdinaryDiffEqAdaptiveAlgorithm,
+                       OrdinaryDiffEqAdaptiveAlgorithm, calc_dt_propose!,
                        alg_cache, _vec, _reshape, @cache,
                        constvalue, _unwrap_val, du_alias_or_new
 using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools

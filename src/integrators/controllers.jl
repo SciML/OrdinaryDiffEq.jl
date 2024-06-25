@@ -400,7 +400,7 @@ end
     if iszero(EEst)
         q = inv(qmax)
     else
-        if alg isa Union{RKC, IRKC, SERK2}
+        if fac_default_gamma(alg)
             fac = gamma
         else
             if alg isa Union{RadauIIA3, RadauIIA5}
