@@ -1,7 +1,4 @@
-
 # 2N low storage methods
-using OrdinaryDiffEq: ArrayFuse
-
 function initialize!(integrator, cache::LowStorageRK2NConstantCache)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
     integrator.stats.nf += 1
