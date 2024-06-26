@@ -72,3 +72,7 @@ sol = solve(prob, alg = AutoVern7(Rodas5()))
 sol = solve(prob,
     alg = OrdinaryDiffEq.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
 @test sol.t[end] == 1000.0
+
+prob = remake(prob, u0=rand(ComplexF64, 2, 2))
+sol = solve(prob, AutoTsit5(Rosenbrock23))
+@test sol.retcode == ReturnCode.Success
