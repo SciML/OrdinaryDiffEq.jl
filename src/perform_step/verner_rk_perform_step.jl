@@ -163,7 +163,7 @@ end
         g9 = u
         g8 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k9 - k8) / (g9 - g8))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
@@ -411,7 +411,7 @@ end
         g10 = u
         g9 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k10 - k9) / (g10 - g9))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
@@ -731,7 +731,7 @@ end
         g13 = u
         g12 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k13 - k12) / (g13 - g12))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     @.. broadcast=false thread=thread u=uprev +
                                         dt *
@@ -1136,7 +1136,7 @@ end
         g16 = u
         g15 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k16 - k15) / (g16 - g15))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     @.. broadcast=false thread=thread u=uprev +
                                         dt *
