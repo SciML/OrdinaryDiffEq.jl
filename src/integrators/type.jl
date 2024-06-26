@@ -1,6 +1,6 @@
 mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4, F5, F6,
     F7, tstopsType, discType, ECType, SType, MI, tcache, savecache,
-    disccache}
+    disccache, MT}
     maxiters::MI
     save_everystep::Bool
     adaptive::Bool
@@ -46,6 +46,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     force_dtmin::Bool
     advance_to_tstop::Bool
     stop_at_next_tstop::Bool
+    performstepcallback::AbstractPerformStepCallback
 end
 
 TruncatedStacktraces.@truncate_stacktrace DEOptions
@@ -134,6 +135,10 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
     stats::SciMLBase.DEStats
     initializealg::IA
     differential_vars::DV
+
+    dt_has_changed::Bool
+    dt_changed::tType
+
     fsalfirst::FSALType
     fsallast::FSALType
 
@@ -155,7 +160,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
             accept_step, isout, reeval_fsal, u_modified,
             reinitialize, isdae,
             opts, stats,
-            initializealg, differential_vars) where {algType, IIP, uType,
+            initializealg, differential_vars, dt_has_changed, dt_changed) where {algType, IIP, uType,
             duType, tType, pType,
             eigenType, EEstT,
             tTypeNoUnits, tdirType,
@@ -177,7 +182,7 @@ mutable struct ODEIntegrator{algType <: Union{OrdinaryDiffEqAlgorithm, DAEAlgori
             do_error_check,
             event_last_time, vector_event_last_time, last_event_error,
             accept_step, isout, reeval_fsal, u_modified, reinitialize, isdae,
-            opts, stats, initializealg, differential_vars) # Leave off fsalfirst and last
+            opts, stats, initializealg, differential_vars, dt_has_changed, dt_changed) # Leave off fsalfirst and last
     end
 end
 

@@ -499,6 +499,7 @@ function OwrenZen5ConstantCache(T, T2)
 end
 
 struct Tsit5ConstantCache <: OrdinaryDiffEqConstantCache end
+struct Tsit5ConstantCache_for_relaxation <: OrdinaryDiffEqConstantCache end
 struct Tsit5ConstantCacheActual{T, T2}
     c1::T2
     c2::T2

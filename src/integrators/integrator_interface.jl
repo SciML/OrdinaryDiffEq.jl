@@ -517,3 +517,22 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
 end
 
 DiffEqBase.has_stats(i::ODEIntegrator) = true
+
+
+function change_dt!(integrator::ODEIntegrator, dt)
+    integrator.dt_has_changed = true
+    integrator.dt_changed = dt
+end
+
+function change_u!(integrator::ODEIntegrator, u)
+    integrator.u = u
+end
+
+function change_fsallast!(integrator::ODEIntegrator, fsallast)
+    integrator.fsallast = fsallast
+end
+
+has_poststep_callback(integrator::ODEIntegrator) = has_poststep_callback(integrator.opts.performstepcallback)
+has_postfsal_callback(integrator::ODEIntegrator) = has_postfsal_callback(integrator.opts.performstepcallback)
+has_postEEst_callback(integrator::ODEIntegrator) = has_postEEst_callback(integrator.opts.performstepcallback)
+

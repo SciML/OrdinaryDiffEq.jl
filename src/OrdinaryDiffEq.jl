@@ -77,6 +77,8 @@ import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, 
                    add_saveat!, set_reltol!,
                    set_abstol!, postamble!, last_step_failed,
                    isautodifferentiable
+                   
+export change_u!, change_dt!, apriori_bounds_dt
 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
@@ -127,6 +129,10 @@ import FunctionWrappersWrappers
 import Preferences
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
+
+export AbstractPerformStepCallback, NoPerformStepCallback, PerformStepCallback
+
+include("performstep_callback.jl")
 
 include("doc_utils.jl")
 include("misc_utils.jl")
@@ -213,6 +219,7 @@ include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
 include("perform_step/dae_perform_step.jl")
 include("perform_step/qprk_perform_step.jl")
+include("perform_step/test_for_relaxation_perform_step.jl")
 
 include("dense/generic_dense.jl")
 include("dense/interpolants.jl")
@@ -382,7 +389,7 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        OwrenZen5,
        BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
        Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
-       RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
+       RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4, Tsit5_for_relaxation
 
 export SSPRK22, SSPRK33, KYKSSPRK42, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63,
        SSPRK73, SSPRK83, SSPRK43, SSPRK432,
