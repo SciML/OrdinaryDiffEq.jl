@@ -6,7 +6,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
                        calculate_residuals, ssp_coefficient,
                        OrdinaryDiffEqAlgorithm, ispredictive,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                       OrdinaryDiffEqAdaptiveAlgorithm,
+                       OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
                        alg_cache, _vec, _reshape, @cache,
                        constvalue, _unwrap_val, du_alias_or_new
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
