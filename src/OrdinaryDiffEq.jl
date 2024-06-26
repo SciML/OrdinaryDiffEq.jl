@@ -149,7 +149,6 @@ include("composite_algs.jl")
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
 include("caches/high_order_rk_caches.jl")
-include("caches/low_storage_rk_caches.jl")
 include("caches/ssprk_caches.jl")
 include("caches/feagin_caches.jl")
 include("caches/verner_caches.jl")
@@ -199,7 +198,6 @@ include("perform_step/low_order_rk_perform_step.jl")
 include("perform_step/high_order_rk_perform_step.jl")
 include("perform_step/verner_rk_perform_step.jl")
 include("perform_step/feagin_rk_perform_step.jl")
-include("perform_step/low_storage_rk_perform_step.jl")
 include("perform_step/ssprk_perform_step.jl")
 include("perform_step/sdirk_perform_step.jl")
 include("perform_step/kencarp_kvaerno_perform_step.jl")
@@ -247,6 +245,20 @@ export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2
 include("../lib/OrdinaryDiffEqStabilizedIRK/src/OrdinaryDiffEqStabilizedIRK.jl")
 using ..OrdinaryDiffEqStabilizedIRK
 export IRKC
+
+include("../lib/OrdinaryDiffEqLowStorageRK/src/OrdinaryDiffEqLowStorageRK.jl")
+using ..OrdinaryDiffEqLowStorageRK
+export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
+       DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
+       CFRLDDRK64, TSLDDRK74, CKLLSRK43_2, CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M,
+       CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
+       CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R, 
+       ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
+       ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
+       ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
+       ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+       RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
+       KYK2014DGSSPRK_3S2, RK46NL
 
 import PrecompileTools
 
@@ -380,27 +392,13 @@ export constructDormandPrince
 
 export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4,
        OwrenZen5,
-       BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
+       BS3, BS5, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
        Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
        RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
 
 export SSPRK22, SSPRK33, KYKSSPRK42, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63,
        SSPRK73, SSPRK83, SSPRK43, SSPRK432,
        SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104
-
-export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
-       DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
-       CFRLDDRK64, TSLDDRK74, SHLDDRK52, SHLDDRK_2N,
-       CKLLSRK43_2, CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C, CKLLSRK95_4M,
-       CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R,
-       CKLLSRK85_4P_3R,
-       CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,
-       ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
-       ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
-       ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
-       ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
-       RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
-       KYK2014DGSSPRK_3S2
 
 export RadauIIA3, RadauIIA5
 
@@ -429,6 +427,8 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
 export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
        McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
        CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
+
+export SHLDDRK52, SHLDDRK_2N
 
 export SplitEuler
 
