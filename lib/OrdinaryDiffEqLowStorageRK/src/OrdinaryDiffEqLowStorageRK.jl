@@ -7,7 +7,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
                        OrdinaryDiffEqAlgorithm, ispredictive,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
-                       default_controller,
+                       default_controller, PIDController,
                        alg_cache, _vec, _reshape, @cache, isfsal,
                        constvalue, _unwrap_val, du_alias_or_new, ArrayFuse
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
