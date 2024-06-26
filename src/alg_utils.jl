@@ -192,6 +192,9 @@ isadaptive(alg::DFBDF) = true
 anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
 anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
 
+has_dtnew_modification(alg) = false
+dtnew_modification(integrator, alg, dtnew) = dtnew
+
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
@@ -808,6 +811,8 @@ function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
 end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
+
+fac_default_gamma(alg) = false
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_min_default(alg::FBDF) = 9 // 10
