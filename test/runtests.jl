@@ -53,6 +53,12 @@ function activate_ssprk()
     Pkg.instantiate()
 end
 
+function activate_feagin()
+    Pkg.activate("../lib/OrdinaryDiffEqFeagin")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -187,13 +193,16 @@ end
         @time @safetestset "FIRK Tests" include("algconvergence/ode_firk_tests.jl")
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
-        @time @safetestset "Feagin Tests" include("algconvergence/ode_feagin_tests.jl")
         @time @safetestset "Symplectic Tests" include("algconvergence/symplectic_tests.jl")
         @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Extrapolation"
         @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "Feagin"
+        @time @safetestset "Feagin Tests" include("../lib/OrdinaryDiffEqFeagin/test/ode_feagin_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "StabilizedRK"
