@@ -36,7 +36,19 @@ function activate_stabilized_rk()
 end
 
 function activate_low_storage_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_low_storage_rk()
     Pkg.activate("../lib/OrdinaryDiffEqLowStorageRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_low_storage_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqSSPRK")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     Pkg.instantiate()
 end
@@ -164,7 +176,7 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_II"
-        @time @safetestset "SSPRK Tests" include("algconvergence/ode_ssprk_tests.jl")
+        @time @safetestset "SSPRK Tests" include("../lib/OrdinaryDiffEqSSPRK/test/ode_ssprk_tests.jl")
         @time @safetestset "Low Storage RK Tests" include("../lib/OrdinaryDiffEqLowStorageRK/test/ode_low_storage_rk_tests.jl")
         @time @safetestset "OwrenZen Tests" include("algconvergence/owrenzen_tests.jl")
         @time @safetestset "Runge-Kutta-Chebyshev Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/rkc_tests.jl")
