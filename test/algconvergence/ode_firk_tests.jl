@@ -10,7 +10,7 @@ end
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
     sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA7())
-    @test sim21.𝒪est[:final]≈5 atol=testTol
+    @test sim21.𝒪est[:final]≈7 atol=testTol
 end
 
 # test adaptivity
