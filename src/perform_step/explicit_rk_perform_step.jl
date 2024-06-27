@@ -222,7 +222,7 @@ end
     if integrator.alg isa CompositeAlgorithm
         # Hairer II, page 22 modified to use Inf norm
         @.. broadcast=false utilde=abs((kk[end] - kk[end - 1]) / (u - tmp))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(utilde), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
 
     if integrator.opts.adaptive
