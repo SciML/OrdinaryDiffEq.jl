@@ -531,9 +531,6 @@ alg_order(alg::SFSDIRK7) = 4
 alg_order(alg::SFSDIRK8) = 4
 alg_order(alg::Hairer4) = 4
 alg_order(alg::Hairer42) = 4
-alg_order(alg::Feagin10) = 10
-alg_order(alg::Feagin12) = 12
-alg_order(alg::Feagin14) = 14
 alg_order(alg::PFRK87) = 8
 
 alg_order(alg::ROS2) = 2
