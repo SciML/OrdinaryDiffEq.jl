@@ -39,7 +39,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
                    ODE_DEFAULT_UNSTABLE_CHECK
 
 import SciMLOperators: SciMLOperators, AbstractSciMLOperator, AbstractSciMLScalarOperator,
-                       MatrixOperator, FunctionOperator,
+                       MatrixOperator, FunctionOperator, IdentityOperator
                        update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
                        isconstant
 
@@ -126,7 +126,7 @@ const CompiledFloats = Union{Float32, Float64,
 import FunctionWrappersWrappers
 import Preferences
 
-DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
+DEFAULT_PRECS(W, integrator) = (IdentityOperator(size(W, 1)), IdentityOperator(size(W, 2)))
 
 include("doc_utils.jl")
 include("misc_utils.jl")

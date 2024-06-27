@@ -90,12 +90,8 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
 
     if !isnothing(A)
         _Pl, _Pr = _alg.precs(linsolve.A, integrator)
-        if (_Pl !== nothing || _Pr !== nothing)
-            __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
-            __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
-            linsolve.Pl = __Pl
-            linsolve.Pr = __Pr
-        end
+        linsolve.Pl = _Pl
+        linsolve.Pr = _Pr
     end
 
     linres = solve!(linsolve; reltol)
