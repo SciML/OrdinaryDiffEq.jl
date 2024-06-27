@@ -417,7 +417,7 @@ handle_discontinuities!(integrator) = pop_discontinuity!(integrator)
 
 function calc_dt_propose!(integrator, dtnew)
     dtnew = if has_dtnew_modification(integrator.alg) &&
-       integrator.opts.adaptive && (integrator.iter >= 1)
+               integrator.opts.adaptive && (integrator.iter >= 1)
         dtnew_modification(integrator, integrator.alg, dtnew)
     else
         dtnew
