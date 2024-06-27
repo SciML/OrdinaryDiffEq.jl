@@ -39,7 +39,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
                    ODE_DEFAULT_UNSTABLE_CHECK
 
 import SciMLOperators: SciMLOperators, AbstractSciMLOperator, AbstractSciMLScalarOperator,
-                       MatrixOperator, FunctionOperator, IdentityOperator
+                       MatrixOperator, FunctionOperator, IdentityOperator,
                        update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
                        isconstant
 
