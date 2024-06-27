@@ -531,9 +531,6 @@ alg_order(alg::SFSDIRK7) = 4
 alg_order(alg::SFSDIRK8) = 4
 alg_order(alg::Hairer4) = 4
 alg_order(alg::Hairer42) = 4
-alg_order(alg::Feagin10) = 10
-alg_order(alg::Feagin12) = 12
-alg_order(alg::Feagin14) = 14
 alg_order(alg::PFRK87) = 8
 
 alg_order(alg::ROS2) = 2
@@ -621,8 +618,6 @@ alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.a
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
-alg_adaptive_order(alg::Feagin10) = 8
-alg_adaptive_order(alg::Feagin14) = 12
 
 alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
