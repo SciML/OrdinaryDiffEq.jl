@@ -81,30 +81,21 @@ macro threaded(option, ex)
 end
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-        p = nothing, weight = nothing, solverdata = nothing,
         reltol = integrator === nothing ? nothing : integrator.opts.reltol)
     A !== nothing && (linsolve.A = A)
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
 
-    Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer :
-             linsolve.Pl
-    Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer :
-             linsolve.Pr
-
     _alg = unwrap_alg(integrator, true)
 
-    du, u, p, t = if isnothing(integrator)
-        nothing, nothing, nothing, nothing
-    else
-        integrator.du, integrator.u, integrator.p, integrator.t
-    end
-    _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev, solverdata)
-    if (_Pl !== nothing || _Pr !== nothing)
-        __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
-        __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
-        linsolve.Pl = __Pl
-        linsolve.Pr = __Pr
+    if !isnothing(A)
+        _Pl, _Pr = _alg.precs(linsolve.A, integrator)
+        if (_Pl !== nothing || _Pr !== nothing)
+            __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
+            __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
+            linsolve.Pl = __Pl
+            linsolve.Pr = __Pr
+        end
     end
 
     linres = solve!(linsolve; reltol)
