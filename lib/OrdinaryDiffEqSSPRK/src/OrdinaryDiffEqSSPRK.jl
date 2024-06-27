@@ -1,6 +1,6 @@
 module OrdinaryDiffEqSSPRK
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
+import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals, ssp_coefficient,
                        OrdinaryDiffEqAlgorithm,
