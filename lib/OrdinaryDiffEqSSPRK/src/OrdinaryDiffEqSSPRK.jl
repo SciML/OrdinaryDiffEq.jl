@@ -18,6 +18,7 @@ include("ssprk_perform_step.jl")
 include("functions.jl")
 include("interpolants.jl")
 include("addsteps.jl")
+include("interp_func.jl")
 
 export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRKMSVS32,
        SSPRK54, SSPRK53_2N1, SSPRK104, SSPRK932, SSPRKMSVS43, SSPRK73, SSPRK53_H, 
