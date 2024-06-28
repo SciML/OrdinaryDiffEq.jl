@@ -5,6 +5,8 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        calculate_residuals, ssp_coefficient,
                        OrdinaryDiffEqAlgorithm,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+                       OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+                       OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                        OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new
