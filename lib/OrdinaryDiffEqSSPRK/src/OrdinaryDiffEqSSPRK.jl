@@ -9,6 +9,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using DiffEqBase: @def
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
 include("interpolants.jl")
