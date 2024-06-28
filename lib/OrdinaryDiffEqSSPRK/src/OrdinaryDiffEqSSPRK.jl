@@ -13,9 +13,9 @@ using DiffEqBase: @def
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
 include("algorithms.jl")
-include("interp_func.jl")
 include("alg_utils.jl")
 include("ssprk_caches.jl")
+include("interp_func.jl")
 include("ssprk_perform_step.jl")
 include("interpolants.jl")
 include("addsteps.jl")
