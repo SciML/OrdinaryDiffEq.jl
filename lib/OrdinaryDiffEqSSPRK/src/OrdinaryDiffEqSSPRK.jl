@@ -12,13 +12,13 @@ using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
-include("addsteps.jl")
 include("interp_func.jl")
 include("alg_utils.jl")
 include("algorithms.jl")
 include("ssprk_caches.jl")
 include("ssprk_perform_step.jl")
 include("interpolants.jl")
+include("addsteps.jl")
 include("functions.jl")
 
 export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRKMSVS32,
