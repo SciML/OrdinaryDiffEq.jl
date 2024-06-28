@@ -38,11 +38,6 @@ end
     nothing
 end
 
-@eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-    cache::OrdinaryDiffEqConstantCache)
-    nothing
-end
-
 @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
     cache::OrdinaryDiffEqConstantCache)
     nothing
