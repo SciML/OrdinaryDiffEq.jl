@@ -42,6 +42,12 @@ function activate_stabilized_irk()
 end
 
 function activate_low_storage_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_low_storage_rk()
     Pkg.activate("../lib/OrdinaryDiffEqLowStorageRK")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     Pkg.instantiate()
