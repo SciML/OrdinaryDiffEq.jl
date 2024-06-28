@@ -12,9 +12,9 @@ using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
-include("interp_func.jl")
 include("alg_utils.jl")
 include("algorithms.jl")
+include("interp_func.jl")
 include("ssprk_caches.jl")
 include("ssprk_perform_step.jl")
 include("interpolants.jl")
