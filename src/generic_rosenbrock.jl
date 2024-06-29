@@ -1672,11 +1672,46 @@ references = """
 """) ROS3PRL2
 
 
+"""
+    ROK4aTableau()
+
+4rd order L-stable Rosenbrock-Krylov method with 4 internal stages,
+with a 3rd order embedded method which is strongly A-stable with Rinf~=0.55. (when using exact Jacobians)
+Tranquilli, Paul and Sandu, Adrian (2014): Rosenbrock--Krylov Methods for Large Systems of Differential Equations 
+https://doi.org/10.1137/130923336
+"""
+function ROK4aTableau() # 4rd order
+    gamma=0.572816062482135
+    Alpha=[0                        0                       0                       0;
+           1                        0                       0                       0;
+           0.10845300169319391758   0.39154699830680608241  0                       0;
+           0.43453047756004477624   0.14484349252001492541 -0.07937397008005970166  0]
+    Gamma=[gamma                    0                       0                       0;
+           -1.91153192976055097824  gamma                   0                       0;
+            0.32881824061153522156  0.0                     gamma                   0;
+            0.03303644239795811290 -0.24375152376108235312 -0.17062602991994029834  gamma]
+    B=   [0.16666666666666666667, 0.16666666666666666667, 0.0, 0.66666666666666666667]
+    Bhat=[0.50269322573684235345, 0.27867551969005856226, 0.21863125457309908428, 0.0]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+@doc rosenbrock_wanner_docstring(
+"""
+4rd order L-stable Rosenbrock-Krylov method with 4 internal stages,
+with a 3rd order embedded method which is strongly A-stable with Rinf~=0.55. (when using exact Jacobians)
+""",
+"ROK4a",
+references = """
+- Tranquilli, Paul and Sandu, Adrian (2014): 
+  Rosenbrock--Krylov Methods for Large Systems of Differential Equations
+  https://doi.org/10.1137/130923336
+""") ROK4a
 
 """
     @ROS34PW(part)
 
-Generate code for the 4 steps ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL, ROS3PRL2.
+Generate code for the 4 steps ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL, ROS3PRL2, ROK4a.
 `part` should be one of `:tableau`, `:cache`, `:init`, `:performstep`.
 `@ROS34PW(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@ROS34PW(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
@@ -1694,6 +1729,7 @@ macro ROS34PW(part)
     ROS34PRwtabname=:ROS34PRwTableau
     ROS3PRLtabname=:ROS3PRLTableau
     ROS3PRL2tabname=:ROS3PRL2Tableau
+    ROK4atabname=:ROK4aTableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros34Tableau)
@@ -1705,6 +1741,7 @@ macro ROS34PW(part)
         push!(tabexprs,gen_tableau(ROS34PRwTableau(),tabstructexpr,ROS34PRwtabname))
         push!(tabexprs,gen_tableau(ROS3PRLTableau(),tabstructexpr,ROS3PRLtabname))
         push!(tabexprs,gen_tableau(ROS3PRL2Tableau(),tabstructexpr,ROS3PRL2tabname))
+        push!(tabexprs,gen_tableau(ROK4aTableau(),tabstructexpr,ROK4atabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
@@ -1716,6 +1753,7 @@ macro ROS34PW(part)
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS34PRw,ROS34PRwtabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL,ROS3PRLtabname))
         push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROS3PRL2,ROS3PRL2tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,constcachename,:ROK4a,ROK4atabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:init
         return esc(gen_initialize(cachename,constcachename))
