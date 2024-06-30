@@ -263,7 +263,7 @@ export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRK
        SSPRK33, SHLDDRK_2N, KYKSSPRK42, SHLDDRK52
 
 include("../lib/OrdinaryDiffEqFeagin/src/OrdinaryDiffEqFeagin.jl")
-using ..OrdinaryDiffFeagin
+using ..OrdinaryDiffEqFeagin
 export Feagin10, Feagin12, Feagin14
 
 import PrecompileTools
