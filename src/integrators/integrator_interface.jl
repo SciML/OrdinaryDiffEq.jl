@@ -112,15 +112,12 @@ end
     get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
 end
 # avoid method ambiguity
-for typ in (OrdinaryDiffEqAlgorithm, Union{RadauIIA3, RadauIIA5},
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-    Union{SSPRK22, SSPRK33, SSPRK53_2N1, SSPRK53_2N2, SSPRK43, SSPRK432, SSPRK932})
-    @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
-            cache::OrdinaryDiffEqConstantCache)
-        nothing
-    end
-end
+# for typ in (Union{RadauIIA3, RadauIIA5})
+#     @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
+#             cache::OrdinaryDiffEqConstantCache)
+#         nothing
+#     end
+# end
 
 # the ordering of the cache arrays is important!!!
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
@@ -145,13 +142,7 @@ end
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.linsolve_tmp)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
-        alg::Union{SSPRK22, SSPRK33, SSPRK53_2N1,
-            SSPRK53_2N2, SSPRK43, SSPRK432,
-            SSPRK932},
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.k,)
-end
+
 @inline function DiffEqBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)

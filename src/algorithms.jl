@@ -2494,6 +2494,11 @@ University of Geneva, Switzerland.
  Convergence studies for Runge-Kutta and Rosenbrock-Wanner methods.
  https://doi.org/10.24355/dbbs.084-201408121139-0
 
+#### ROK4a
+- Tranquilli, Paul and Sandu, Adrian (2014): 
+  Rosenbrock--Krylov Methods for Large Systems of Differential Equations
+  https://doi.org/10.1137/130923336
+
 #### Rodas5P
 - Steinebach G.   Construction of Rosenbrock–Wanner method Rodas5P and numerical benchmarks within the Julia Differential Equations package.
  In: BIT Numerical Mathematics, 63(2), 2023
@@ -2519,6 +2524,7 @@ for Alg in [
     :ROS34PRw,
     :ROS3PRL,
     :ROS3PRL2,
+    :ROK4a,
     :RosShamp4,
     :Veldd4,
     :Velds4,
