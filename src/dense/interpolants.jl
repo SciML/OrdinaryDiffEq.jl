@@ -251,29 +251,6 @@ end
     out
 end
 
-const NEGZERO = Float16(-0.0f0)
-"""
-Second order strong stability preserving (SSP) interpolant.
-
-Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017).
-"""
-@def ssprkpre0 begin
-    c00 = @evalpoly(Θ, 1, NEGZERO, -1)
-    c10 = Θ^2
-    b10dt = Θ * @evalpoly(Θ, 1, -1) * dt
-end
-
-@def ssprkpre1 begin
-    b10diff = @evalpoly(Θ, 1, -2)
-    c10diffinvdt = 2Θ * inv(dt) # = -c00diff * inv(dt)
-end
-
-@def ssprkpre2 begin
-    invdt = inv(dt)
-    b10diff2invdt = -2 * invdt
-    c10diff2invdt2 = 2 * invdt^2 # = -c00diff2 * inv(dt)^2
-end
-
 """
 Runge–Kutta pairs of order 5(4) satisfying only the first column
 simplifying assumption

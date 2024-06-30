@@ -1,3 +1,5 @@
+const NEGZERO = Float16(-0.0f0)
+
 @def ssprkpre0 begin
     c00 = @evalpoly(Θ, 1, NEGZERO, -1)
     c10 = Θ^2
