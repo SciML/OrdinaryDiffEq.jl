@@ -14,7 +14,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        _ode_interpolant, _ode_interpolant!,
                        _ode_addsteps!
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
-using DiffEqBase: @def
+using DiffEqBase: @def, @tight_loop_macros
 using Static: False
 
 include("algorithms.jl")
