@@ -133,7 +133,6 @@ include("misc_utils.jl")
 
 include("algorithms.jl")
 include("algorithms/explicit_rk.jl")
-include("algorithms/explicit_rk_pde.jl")
 
 include("alg_utils.jl")
 
@@ -149,7 +148,6 @@ include("composite_algs.jl")
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
 include("caches/high_order_rk_caches.jl")
-include("caches/ssprk_caches.jl")
 include("caches/feagin_caches.jl")
 include("caches/verner_caches.jl")
 include("caches/sdirk_caches.jl")
@@ -198,7 +196,6 @@ include("perform_step/low_order_rk_perform_step.jl")
 include("perform_step/high_order_rk_perform_step.jl")
 include("perform_step/verner_rk_perform_step.jl")
 include("perform_step/feagin_rk_perform_step.jl")
-include("perform_step/ssprk_perform_step.jl")
 include("perform_step/sdirk_perform_step.jl")
 include("perform_step/kencarp_kvaerno_perform_step.jl")
 include("perform_step/firk_perform_step.jl")
@@ -261,6 +258,12 @@ export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK8
        ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
        RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
        KYK2014DGSSPRK_3S2, RK46NL
+
+include("../lib/OrdinaryDiffEqSSPRK/src/OrdinaryDiffEqSSPRK.jl")
+using ..OrdinaryDiffEqSSPRK
+export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRKMSVS32,
+       SSPRK54, SSPRK53_2N1, SSPRK104, SSPRK932, SSPRKMSVS43, SSPRK73, SSPRK53_H, 
+       SSPRK33, SHLDDRK_2N, KYKSSPRK42, SHLDDRK52
 
 import PrecompileTools
 
@@ -397,10 +400,6 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        BS3, BS5, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
        Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
        RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
-
-export SSPRK22, SSPRK33, KYKSSPRK42, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK53_H, SSPRK63,
-       SSPRK73, SSPRK83, SSPRK43, SSPRK432,
-       SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104
 
 export RadauIIA3, RadauIIA5
 
