@@ -81,7 +81,6 @@ ExplicitRK(; tableau = ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 TruncatedStacktraces.@truncate_stacktrace ExplicitRK
 
 @inline trivial_limiter!(u, integrator, p, t) = nothing
-
 """
     SIR54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,
