@@ -88,7 +88,8 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
                 break
             end
         else
-            if has_prev_θ && !integrator.accept_step
+            # don't use prev_θ for non-adaptive because we own't know if it actually converged
+            if !integrator.opts.adaptive || !integrator.accept_step
                 prev_θ = one(prev_θ)
             end
             θ = prev_θ
