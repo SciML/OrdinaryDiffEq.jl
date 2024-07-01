@@ -1,6 +1,7 @@
 module OrdinaryDiffEqSymplecticRK
 
-using OrdinaryDiffEq: OrdinaryDiffEqPartitionedAlgorithm, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache
+import OrdinaryDiffEq: OrdinaryDiffEqPartitionedAlgorithm, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+                        @cache
 
 
 include("algorithms.jl")
