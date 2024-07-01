@@ -1,7 +1,7 @@
 module OrdinaryDiffEqSymplecticRK
 
 import OrdinaryDiffEq: OrdinaryDiffEqPartitionedAlgorithm, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                       @cache
+                       @cache, @unpack
 import MuladdMacro: @muladd
 
 
