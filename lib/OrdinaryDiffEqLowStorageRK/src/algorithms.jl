@@ -1,7 +1,5 @@
-using OrdinaryDiffEq: explicit_rk_docstring
+using OrdinaryDiffEq: explicit_rk_docstring, trivial_limiter!
 using Static: False
-
-@inline trivial_limiter!(u, integrator, p, t) = nothing
 
 @doc explicit_rk_docstring(
     "A second-order, five-stage explicit Runge-Kutta method for wave propagation

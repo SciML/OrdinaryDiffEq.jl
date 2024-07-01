@@ -1,6 +1,5 @@
-using OrdinaryDiffEq: explicit_rk_docstring
+using OrdinaryDiffEq: explicit_rk_docstring, trivial_limiter!
 using Static: False
-@inline trivial_limiter!(u, integrator, p, t) = nothing
 
 @doc explicit_rk_docstring(
     "A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
