@@ -1,7 +1,8 @@
 module OrdinaryDiffEqSymplecticRK
 
 import OrdinaryDiffEq: OrdinaryDiffEqPartitionedAlgorithm, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                        @cache
+                       @cache
+import MuladdMacro: @muladd
 
 
 include("algorithms.jl")
