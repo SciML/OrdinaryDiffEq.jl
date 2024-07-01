@@ -154,7 +154,6 @@ include("caches/firk_caches.jl")
 include("caches/kencarp_kvaerno_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
-include("caches/symplectic_caches.jl")
 include("caches/rosenbrock_caches.jl")
 include("caches/rkn_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
@@ -167,7 +166,6 @@ include("caches/qprk_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
-include("tableaus/symplectic_tableaus.jl")
 include("tableaus/verner_tableaus.jl")
 include("tableaus/rosenbrock_tableaus.jl")
 include("tableaus/sdirk_tableaus.jl")
@@ -184,7 +182,6 @@ include("initialize_dae.jl")
 include("wrappers.jl")
 
 include("perform_step/fixed_timestep_perform_step.jl")
-include("perform_step/symplectic_perform_step.jl")
 include("perform_step/rkn_perform_step.jl")
 include("perform_step/split_perform_step.jl")
 include("perform_step/linear_perform_step.jl")
@@ -265,6 +262,12 @@ export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRK
 include("../lib/OrdinaryDiffEqFeagin/src/OrdinaryDiffEqFeagin.jl")
 using ..OrdinaryDiffEqFeagin
 export Feagin10, Feagin12, Feagin14
+
+include("../lib/OrdinaryDiffEqSymplecticRK/src/OrdinaryDiffEqSymplecticRK.jl")
+using ..OrdinaryDiffEqSymplecticRK
+export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
+       McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
+       CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
 
 import PrecompileTools
 
@@ -425,10 +428,6 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
 export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A,
        EPIRK4s3B,
        EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43
-
-export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
-       McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
-       CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
 
 export SHLDDRK52, SHLDDRK_2N
 
