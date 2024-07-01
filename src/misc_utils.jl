@@ -89,9 +89,9 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     _alg = unwrap_alg(integrator, true)
 
     if !isnothing(A)
-        _Pl, _Pr = _alg.precs(linsolve.A, integrator)
-        linsolve.Pl = _Pl
-        linsolve.Pr = _Pr
+        (;du, u, p, t) = integrator
+        p = isnothing(integrator) ? nothing : (du, u, p, t)
+        reinit!(linsolve; A, p)
     end
 
     linres = solve!(linsolve; reltol)
