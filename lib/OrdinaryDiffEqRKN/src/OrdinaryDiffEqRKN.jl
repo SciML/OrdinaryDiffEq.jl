@@ -16,6 +16,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("rkn_tableaus.jl")
 include("rkn_caches.jl")
+include("interpolants.jl")
 include("rkn_perform_step.jl")
 
 export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
