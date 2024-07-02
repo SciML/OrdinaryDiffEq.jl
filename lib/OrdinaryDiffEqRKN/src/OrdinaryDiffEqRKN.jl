@@ -16,6 +16,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("rkn_tableaus.jl")
 include("rkn_caches.jl")
+include("interp_func.jl")
 include("interpolants.jl")
 include("rkn_perform_step.jl")
 
