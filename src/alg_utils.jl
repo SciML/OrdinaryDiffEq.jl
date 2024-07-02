@@ -421,24 +421,6 @@ alg_order(alg::KuttaPRK2p5) = 5
 alg_order(alg::RKO65) = 5
 alg_order(alg::FRK65) = 6
 
-alg_order(alg::SymplecticEuler) = 1
-alg_order(alg::VelocityVerlet) = 2
-alg_order(alg::VerletLeapfrog) = 2
-alg_order(alg::PseudoVerletLeapfrog) = 2
-alg_order(alg::McAte2) = 2
-alg_order(alg::Ruth3) = 3
-alg_order(alg::McAte3) = 3
-alg_order(alg::McAte4) = 4
-alg_order(alg::CandyRoz4) = 4
-alg_order(alg::CalvoSanz4) = 4
-alg_order(alg::McAte42) = 4
-alg_order(alg::McAte5) = 5
-alg_order(alg::Yoshida6) = 6
-alg_order(alg::KahanLi6) = 6
-alg_order(alg::McAte8) = 8
-alg_order(alg::KahanLi8) = 8
-alg_order(alg::SofSpa10) = 10
-
 alg_order(alg::IRKN3) = 3
 alg_order(alg::Nystrom4) = 4
 alg_order(alg::FineRKN4) = 4
