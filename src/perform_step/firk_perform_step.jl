@@ -51,6 +51,20 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
     nothing
 end
 
+function initialize!(integrator, cache::RadauIIA7ConstantCache)
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    nothing
+end
+
+
 function initialize!(integrator, cache::RadauIIA3Cache)
     integrator.kshortsize = 2
     integrator.fsalfirst = cache.fsalfirst
@@ -82,6 +96,18 @@ function initialize!(integrator, cache::RadauIIA5Cache)
             @.. broadcast=false cache.atol=cache.rtol * (abstol / reltol)
         end
     end
+    nothing
+end
+
+function initialize!(integrator, cache::RadauIIA7Cache)
+    integrator.kshortsize = 2
+    integrator.fsalfirst = cache.fsalfirst
+    integrator.fsallast = cache.k
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+    integrator.stats.nf += 1
     nothing
 end
 
@@ -756,7 +782,7 @@ end
     @unpack T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32, T33, T34, T35, T41, T42, T43, T44, T45, T51 = cache.tab #= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
     @unpack TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33,TI34, TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
     @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
-    @unpack κ, cont1, cont2, cont3 = cache
+    @unpack κ, cont1, cont2, cont3, cont4 = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -768,7 +794,14 @@ end
     c1m1 = c1 - 1
     c2m1 = c2 - 1
     c3m1 = c3 - 1
+    c4m1 = c4 - 1
     c1mc2 = c1 - c2
+    c1mc3 = c1 - c3
+    c1mc4 = c1 - c4
+    c2mc3 = c2 - c3
+    c2mc4 = c2 - c4
+    c3mc4 = c3 - c4
+
     γdt, α1dt, β1dt, α2dt, β2dt = γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
     J = calc_J(integrator, cache)
     if u isa Number
@@ -793,6 +826,7 @@ end
         cache.cont1 = map(zero, u)
         cache.cont2 = map(zero, u)
         cache.cont3 = map(zero, u)
+        cache.cont4 = map(zero, u)
     else # add cont4
         c5′ = dt / cache.dtprev
         c1′ = c1 * c5′
@@ -838,8 +872,8 @@ end
             Mw1 = @.. broadcast=false mass_matrix.λ*w1
             Mw2 = @.. broadcast=false mass_matrix.λ*w2
             Mw3 = @.. broadcast=false mass_matrix.λ*w3
-            MW4 = @.. broadcast=false mass_matrix.λ*w4
-            MW5 = @.. broadcast=false mass_matrix.λ*w5
+            Mw4 = @.. broadcast=false mass_matrix.λ*w4
+            Mw5 = @.. broadcast=false mass_matrix.λ*w5
         else
             Mw1 = mass_matrix * w1
             Mw2 = mass_matrix * w2
@@ -940,13 +974,16 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            @.. broadcast=false cache.cont1=(z4 - z5) / c4m1
-            @.. broadcast=false tmp1=(z3 - z4) / c3mc4
-            @.. broadcast=false cache.cont2=(tmp1 - cache.cont1) / c3m1
-            @.. broadcast=false cache.cont3=cache.cont2 - (tmp1 - z3 / c3) / c4
-            @.. broadcast=false tmp2 = (z1 - z2) / c1mc2
-            @.. broadcast=false cache.cont4=(tmp2 - cache.cont1) / c2m1
-            @.. broadcast=false cache.cont5=cache.cont4 - (tmp2 - z1/c1) / c2
+            cache.cont1 = @.. broadcast=false (z4 - z5) / c4m1 # first derivative on [c4, 1]
+            tmp1 = @.. broadcast=false (z3 - z4) / c3mc4 # first derivative on [c3, c4]
+            cache.cont2 = @.. broadcast=false (tmp1 - cache.cont1) / c3m1 # second derivative on [c3, 1]
+            tmp2 = @.. broadcast=false (z2 - z3) / c2mc3 # first derivative on [c2, c3]
+            tmp3 = @.. broadcast=false (tmp2 - tmp1) / c2mc4 # second derivative on [c2, c4]
+            cache.cont3 = @.. broadcast=false (tmp3 - cache.cont2) / c2m1 # third derivative on [c2, 1]
+            tmp4 = @.. broadcast=false (z1 - z2) / c1mc2 # first derivative on [c1, c2]
+            tmp5 = @.. broadcast=false (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
+            tmp6 = @.. broadcast=false (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
+            cache.cont4 = @.. broadcast=false (tmp6 - cache.cont3) / c1m1 #fourth derivative on [c1, 1]
         end
     end
 
@@ -964,11 +1001,11 @@ end
     @unpack TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33,TI34, TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
     @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
     @unpack κ, cont1, cont2, cont3, cont4 = cache
-    @unpack z1, z2, z3, z4, z5, w1, w2, w3, w4, w5, 
-    dw1, ubuff, dw23, dw45, cubuff,
-    k, k2, k3, k4, fw1, fw2, fw3, fw4, fw5
-    J, W1, W2, W3, 
-    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
+    @unpack z1, z2, z3, z4, z5, w1, w2, w3, w4, w5 = cache
+    @unpack dw1, ubuff, dw23, dw45, cubuff = cache
+    @unpack k, k2, k3, k4, fw1, fw2, fw3, fw4, fw5 = cache
+    @unpack J, W1, W2, W3 = cache
+    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -977,7 +1014,15 @@ end
     # precalculations
     c1m1 = c1 - 1
     c2m1 = c2 - 1
+    c3m1 = c3 - 1
+    c4m1 = c4 - 1
     c1mc2 = c1 - c2
+    c1mc3 = c1 - c3
+    c1mc4 = c1 - c4
+    c2mc3 = c2 - c3
+    c2mc4 = c2 - c4
+    c3mc4 = c3 - c4
+
     γdt, αdt, βdt = γ / dt, α / dt, β / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (calc_J!(J, integrator, cache); cache.W_γdt = dt)
@@ -1192,6 +1237,8 @@ end
     cache.iter = iter
 
     @.. broadcast=false u=uprev + z5
+    
+    step_limiter!(u, integrator, p, t + dt)
     #=
     if adaptive
         utilde = w2
@@ -1235,13 +1282,16 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            @.. broadcast=false cache.cont1=(z4 - z5) / c4m1
-            @.. broadcast=false tmp1=(z3 - z4) / c3mc4
-            @.. broadcast=false cache.cont2=(tmp1 - cache.cont1) / c3m1
-            @.. broadcast=false cache.cont3=cache.cont2 - (tmp1 - z3 / c3) / c4
-            @.. broadcast=false tmp2 = (z1 - z2) / c1mc2
-            @.. broadcast=false cache.cont4=(tmp2 - cache.cont1) / c2m1
-            @.. broadcast=false cache.cont5=cache.cont4 - (tmp2 - z1/c1) / c2
+            @.. broadcast=false cache.cont1 = (z4 - z5) / c4m1
+            @.. broadcast=false tmp1 = (z3 - z4) / c3mc4
+            @.. broadcast=false cache.cont2 = (tmp1 - cache.cont1) / c3m1
+            @.. broadcast=false tmp2 = (z2 - z3) / c2mc3
+            @.. broadcast=false tmp3 = (tmp2 - tmp) / c2mc4
+            @.. broadcast=false cache.cont3 = (tmp3 - cache.cont2) / c2m1
+            @.. broadcast=false tmp4 = (z1 - z2) / c1mc2
+            @.. broadcast=false tmp5 = (tmp4 - tmp2) / c1mc3
+            @.. broadcast=false tmp6 = (tmp5 - tmp3) / c1mc4
+            @.. broadcast=false cache.cont4 = (tmp6 - cache.cont3) / c1m1
         end
     end
 
