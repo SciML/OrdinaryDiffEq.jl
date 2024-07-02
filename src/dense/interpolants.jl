@@ -2733,26 +2733,3 @@ end
         @unpack r14, r13, r12, r11, r10, r34, r33, r32, r31, r44, r43, r42, r41, r54, r53, r52, r51, r64, r63, r62, r61, rp14, rp13, rp12, rp11, rp10, rp34, rp33, rp32, rp31, rp44, rp43, rp42, rp41, rp54, rp53, rp52, rp51, rp64, rp63, rp62, rp61 = cache
     end
 end
-
-@def dprkn6pre0 begin
-    @dprkn6unpack
-    b1Θ = @evalpoly(Θ, r10, r11, r12, r13, r14)
-    b3Θ = Θ * @evalpoly(Θ, r31, r32, r33, r34)
-    b4Θ = Θ * @evalpoly(Θ, r41, r42, r43, r44)
-    b5Θ = Θ * @evalpoly(Θ, r51, r52, r53, r54)
-    b6Θ = Θ * @evalpoly(Θ, r61, r62, r63, r64)
-
-    bp1Θ = @evalpoly(Θ, rp10, rp11, rp12, rp13, rp14)
-    bp3Θ = Θ * @evalpoly(Θ, rp31, rp32, rp33, rp34)
-    bp4Θ = Θ * @evalpoly(Θ, rp41, rp42, rp43, rp44)
-    bp5Θ = Θ * @evalpoly(Θ, rp51, rp52, rp53, rp54)
-    bp6Θ = Θ * @evalpoly(Θ, rp61, rp62, rp63, rp64)
-
-    kk1, kk2, kk3 = k
-    k1, k2 = kk1.x
-    k3, k4 = kk2.x
-    k5, k6 = kk3.x
-
-    duprev, uprev = y₀.x
-    dtsq = dt^2
-end
