@@ -2289,7 +2289,7 @@ function PDIRK44(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{tru
 end
 ### Algorithm Groups
 
-const MultistepAlgorithms = Union{IRKN3, IRKN4,
+const MultistepAlgorithms = Union{
     ABDF2,
     AB3, AB4, AB5, ABM32, ABM43, ABM54}
 
