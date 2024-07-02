@@ -128,7 +128,8 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         if mass_matrix !== I
-            @.. broadcast=false atmp=ifelse(cache.algebraic_vars, fsallast, false) /
+            algvar = reshape(cache.algebraic_vars, size(u))
+            @.. broadcast=false atmp=ifelse(algvar, fsallast, false) /
                                      integrator.opts.abstol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
