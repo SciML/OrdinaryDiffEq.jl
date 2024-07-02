@@ -71,16 +71,6 @@ end
     out
 end
 
-@muladd function _ode_interpolant!(
-        out, Θ, dt, y₀, y₁, k, cache::Rosenbrock23Cache{<:Array},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
-    @rosenbrock2332pre0
-    @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = y₀[i] + dt * (c1 * k[1][i] + c2 * k[2][i])
-    end
-    out
-end
-
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{Rosenbrock23ConstantCache,
             Rosenbrock23Cache,
@@ -169,16 +159,6 @@ end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{Rodas4Cache{<:Array}, Rodas23WCache{<:Array}, Rodas3PCache{<:Array}},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
-    Θ1 = 1 - Θ
-    @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = Θ1 * y₀[i] + Θ * (y₁[i] + Θ1 * (k[1][i] + Θ * k[2][i]))
-    end
-    out
-end
-
-@muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
         cache::Union{Rodas4ConstantCache, Rodas4Cache, Rodas23WConstantCache,
             Rodas23WCache, Rodas3PConstantCache, Rodas3PCache},
         idxs, T::Type{Val{0}}, differential_vars)
@@ -260,15 +240,6 @@ end
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     @.. broadcast=false out=Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * (k[2] + Θ * k[3])))
-    out
-end
-
-@muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k, cache::Rosenbrock5Cache{<:Array},
-        idxs::Nothing, T::Type{Val{0}}, differential_vars)
-    Θ1 = 1 - Θ
-    @inbounds @simd ivdep for i in eachindex(out)
-        out[i] = Θ1 * y₀[i] + Θ * (y₁[i] + Θ1 * (k[1][i] + Θ * (k[2][i] + Θ * k[3][i])))
-    end
     out
 end
 
