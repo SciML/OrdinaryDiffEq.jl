@@ -65,6 +65,12 @@ function activate_feagin()
     Pkg.instantiate()
 end
 
+function activate_symplectic_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqSymplecticRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin

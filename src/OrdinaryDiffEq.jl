@@ -155,7 +155,6 @@ include("caches/kencarp_kvaerno_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
 include("caches/rosenbrock_caches.jl")
-include("caches/rkn_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/bdf_caches.jl")
@@ -170,7 +169,6 @@ include("tableaus/verner_tableaus.jl")
 include("tableaus/rosenbrock_tableaus.jl")
 include("tableaus/sdirk_tableaus.jl")
 include("tableaus/firk_tableaus.jl")
-include("tableaus/rkn_tableaus.jl")
 include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")
@@ -182,7 +180,6 @@ include("initialize_dae.jl")
 include("wrappers.jl")
 
 include("perform_step/fixed_timestep_perform_step.jl")
-include("perform_step/rkn_perform_step.jl")
 include("perform_step/split_perform_step.jl")
 include("perform_step/linear_perform_step.jl")
 include("perform_step/exponential_rk_perform_step.jl")
@@ -268,6 +265,13 @@ using ..OrdinaryDiffEqSymplecticRK
 export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
        McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
        CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
+
+include("../lib/OrdinaryDiffEqRKN/src/OrdinaryDiffEqRKN.jl")
+using ..OrdinaryDiffEqRKN
+export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
+       Nystrom5VelocityIndependent,
+       IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
+       RKN4
 
 import PrecompileTools
 
@@ -432,11 +436,6 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
 export SHLDDRK52, SHLDDRK_2N
 
 export SplitEuler
-
-export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
-       Nystrom5VelocityIndependent,
-       IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
-       RKN4
 
 export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
