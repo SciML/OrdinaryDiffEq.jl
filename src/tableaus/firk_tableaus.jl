@@ -168,8 +168,8 @@ struct RadauIIA7Tableau{T, T2}
     c4::T2
     γ::T
     α1::T
-    α2::T
     β1::T    
+    α2::T
     β2::T
     e1::T
     e2::T
