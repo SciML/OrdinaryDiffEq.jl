@@ -890,7 +890,7 @@ end
         dw1 = LU1 \ rhs1
         dw23 = LU2 \ (@.. broadcast=false rhs2 + rhs3 * im)
         dw45 = LU3 \ (@.. broadcast=false rhs4 + rhs5 * im)
-        integrator.stats.nsolve += 4
+        integrator.stats.nsolve += 3
         dw2 = real(dw23)
         dw3 = imag(dw23)
         dw4 = real(dw45)
