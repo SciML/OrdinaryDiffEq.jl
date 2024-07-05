@@ -1,7 +1,7 @@
 ### AutoSwitch
 ### Designed to switch between two solvers, stiff and non-stiff
 
-using OrdinaryDiffEq
+using OrdinaryDiffEq: Vern6, Vern7, Vern8, Vern9
 function AutoSwitch(nonstiffalg, stiffalg;
         maxstiffstep = 10, maxnonstiffstep = 3,
         nonstifftol = 9 // 10, stifftol = 9 // 10, dtfac = 2,
