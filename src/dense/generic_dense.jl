@@ -595,6 +595,8 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
     if cache isa CompositeCache
         current_alg = id.alg_choice[i₊]
         cache_i₊ = cache.caches[current_alg]
+    elseif cache isa DefaultCache
+        current_alg = id.alg_choice[i₊]
     else
         cache_i₊ = cache
     end
