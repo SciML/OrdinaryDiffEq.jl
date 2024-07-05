@@ -11,6 +11,8 @@ tsitsol = solve(prob_ode_2Dlinear, Tsit5())
 @test sol.stats.nf == tsitsol.stats.nf
 @test all(isequal(1), sol.alg_choice)
 @test sol(0.5) == only(sol([0.5]).u) == tsitsol(0.5)
+x = [zeros(4,2) for _ in 1:5]
+@test sol(x, 0:.1:.4) == tsitsol(x, 0:.1:.4)
 
 sol = solve(prob_ode_2Dlinear, reltol = 1e-10)
 vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
