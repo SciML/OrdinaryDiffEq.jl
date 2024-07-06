@@ -1,6 +1,3 @@
-using OrdinaryDiffEq: explicit_rk_docstring, trivial_limiter!
-using Static: False
-
 @doc explicit_rk_docstring(
     "A third-order, five-stage explicit strong stability preserving (SSP) low-storage method.
 Fixed timestep only.",

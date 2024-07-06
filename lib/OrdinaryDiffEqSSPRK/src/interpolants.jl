@@ -128,6 +128,17 @@ end
         SSPRK33ConstantCache, SSPRK33Cache,
         SSPRK43ConstantCache, SSPRK43Cache,
         SSPRK432ConstantCache, SSPRK432Cache},
+    idxs, T::Type{Val{2}}, differential_vars::Nothing)
+@ssprkpre2
+@inbounds @.. broadcast=false out=(y₁[idxs] - y₀[idxs]) * c10diff2invdt2 + k[1][idxs] * b10diff2invdt
+out
+end
+
+@muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
+    cache::Union{SSPRK22ConstantCache, SSPRK22Cache,
+        SSPRK33ConstantCache, SSPRK33Cache,
+        SSPRK43ConstantCache, SSPRK43Cache,
+        SSPRK432ConstantCache, SSPRK432Cache},
     idxs::Nothing, T::Type{Val{2}}, differential_vars::Nothing)
 @ssprkpre2
 @inbounds @.. broadcast=false out=(y₁ - y₀) * c10diff2invdt2 + k[1] * b10diff2invdt
