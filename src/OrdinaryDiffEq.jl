@@ -143,7 +143,6 @@ include("nlsolve/functional.jl")
 include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
-include("composite_algs.jl")
 
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
@@ -173,7 +172,6 @@ include("integrators/type.jl")
 include("integrators/controllers.jl")
 include("integrators/integrator_utils.jl")
 include("cache_utils.jl")
-include("integrators/integrator_interface.jl")
 include("initialize_dae.jl")
 include("wrappers.jl")
 
@@ -273,6 +271,8 @@ include("../lib/OrdinaryDiffEqVerner/src/OrdinaryDiffEqVerner.jl")
 using ..OrdinaryDiffEqVerner
 export Vern6, Vern7, Vern8, Vern9
 
+include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
+using ..OrdinaryDiffEqDefault
 
 import PrecompileTools
 
