@@ -9,7 +9,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        OrdinaryDiffEqPartitionedAlgorithm,
                        OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                       constvalue, _unwrap_val, du_alias_or_new,
+                       constvalue, _unwrap_val, du_alias_or_new, _ode_interpolant,
                        trivial_limiter!, _ode_interpolant!, _ode_addsteps!
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
