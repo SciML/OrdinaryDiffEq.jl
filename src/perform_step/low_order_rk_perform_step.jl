@@ -956,7 +956,8 @@ end
         g7 = u
         # Hairer II, page 22 modified to use Inf norm
         @.. broadcast=false thread=thread utilde=abs((k7 - k6) / (g7 - g6))
-        integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf) * oneunit(t), t)
+        integrator.eigen_est = integrator.opts.internalnorm(
+            norm(utilde, Inf) * oneunit(t), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 +

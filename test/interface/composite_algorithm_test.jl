@@ -73,6 +73,6 @@ sol = solve(prob,
     alg = OrdinaryDiffEq.AutoAlgSwitch(ExplicitRK(constructVerner7()), Rodas5()))
 @test sol.t[end] == 1000.0
 
-prob = remake(prob_ode_2Dlinear, u0=rand(ComplexF64, 2, 2))
-sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff=false))) # Complex and AD don't mix
+prob = remake(prob_ode_2Dlinear, u0 = rand(ComplexF64, 2, 2))
+sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = false))) # Complex and AD don't mix
 @test sol.retcode == ReturnCode.Success

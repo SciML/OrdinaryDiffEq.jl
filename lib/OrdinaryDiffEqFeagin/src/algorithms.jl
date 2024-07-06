@@ -38,4 +38,3 @@ Feagin's 14th-order Runge-Kutta method.
 Base.@kwdef struct Feagin14{StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
     step_limiter!::StepLimiter = trivial_limiter!
 end
-

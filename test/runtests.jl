@@ -211,7 +211,7 @@ end
     if !is_APPVEYOR && GROUP == "Symplectic"
         @time @safetestset "Symplectic Tests" include("../lib/OrdinaryDiffEqSymplecticRK/test/symplectic_tests.jl")
     end
-    
+
     if !is_APPVEYOR && GROUP == "Extrapolation"
         @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
     end
@@ -235,7 +235,6 @@ end
     if !is_APPVEYOR && GROUP == "Low Storage RK"
         @time @safetestset "Low Storage RK Tests" include("../lib/OrdinaryDiffEqLowStorageRK/test/ode_low_storage_rk_tests.jl")
     end
-
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
