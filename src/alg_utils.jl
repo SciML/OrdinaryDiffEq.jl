@@ -355,8 +355,6 @@ alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::SDIRK22) = true
-alg_extrapolates(alg::IRKN4) = true
-alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
@@ -420,24 +418,6 @@ alg_order(alg::Anas5) = 5
 alg_order(alg::KuttaPRK2p5) = 5
 alg_order(alg::RKO65) = 5
 alg_order(alg::FRK65) = 6
-
-alg_order(alg::IRKN3) = 3
-alg_order(alg::Nystrom4) = 4
-alg_order(alg::FineRKN4) = 4
-alg_order(alg::FineRKN5) = 5
-alg_order(alg::Nystrom4VelocityIndependent) = 4
-alg_order(alg::IRKN4) = 4
-alg_order(alg::Nystrom5VelocityIndependent) = 5
-alg_order(alg::DPRKN4) = 4
-alg_order(alg::DPRKN5) = 5
-alg_order(alg::DPRKN6) = 6
-alg_order(alg::DPRKN6FM) = 6
-alg_order(alg::DPRKN8) = 8
-alg_order(alg::DPRKN12) = 12
-alg_order(alg::ERKN4) = 4
-alg_order(alg::ERKN5) = 5
-alg_order(alg::ERKN7) = 7
-alg_order(alg::RKN4) = 4
 
 alg_order(alg::Midpoint) = 2
 

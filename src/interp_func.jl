@@ -148,13 +148,6 @@ function DiffEqBase.interp_summary(::Type{cacheType},
     caches = fieldtype(cacheType, :caches)
     join([DiffEqBase.interp_summary(ct, dense) for ct in fieldtypes(caches)], ", ")
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{DPRKN6ConstantCache,
-        DPRKN6Cache}}
-    dense ? "specialized 6th order interpolation" : "1st order linear"
-end
 
 function (interp::InterpolationData)(tvals, idxs, deriv, p, continuity::Symbol = :left)
     ode_interpolation(tvals, interp, idxs, deriv, p, continuity)
