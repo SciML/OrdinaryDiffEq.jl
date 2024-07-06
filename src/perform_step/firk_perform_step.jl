@@ -788,8 +788,8 @@ end
     @unpack maxiters = alg
     mass_matrix = integrator.f.mass_matrix
 
-    # precalculations
-    rtol = @.. broadcast=false reltol^(2 / 3)/10
+    # precalculations rtol pow is (num stages + 1)/(2*num stages)
+    rtol = @.. broadcast=false reltol#^(5/8)/10
     atol = @.. broadcast=false rtol*(abstol / reltol)
     c1m1 = c1 - 1
     c2m1 = c2 - 1
@@ -927,7 +927,7 @@ end
         z2 = @.. broadcast=false T21*w1 + T22*w2 + T23*w3 + T24*w4 + T25*w5
         z3 = @.. broadcast=false T31*w1 + T32*w2 + T33*w3 + T34*w4 + T35*w5
         z4 = @.. broadcast=false T41*w1 + T42*w2 + T43*w3 + T44*w4 + T45*w5
-        z5 = @.. broadcast=false T51*w1 + w2 + w4 #= T52=1, T53 = 0, T54 = 1, T55 = 0=#
+        z5 = @.. broadcast=false T51*w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#
 
         # check stopping criterion
         iter > 1 && (η = θ / (1 - θ))
@@ -974,16 +974,16 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            cache.cont1 = @.. broadcast=false (z4 - z5) / c4m1 # first derivative on [c4, 1]
-            tmp1 = @.. broadcast=false (z3 - z4) / c3mc4 # first derivative on [c3, c4]
-            cache.cont2 = @.. broadcast=false (tmp1 - cache.cont1) / c3m1 # second derivative on [c3, 1]
-            tmp2 = @.. broadcast=false (z2 - z3) / c2mc3 # first derivative on [c2, c3]
-            tmp3 = @.. broadcast=false (tmp2 - tmp1) / c2mc4 # second derivative on [c2, c4]
-            cache.cont3 = @.. broadcast=false (tmp3 - cache.cont2) / c2m1 # third derivative on [c2, 1]
-            tmp4 = @.. broadcast=false (z1 - z2) / c1mc2 # first derivative on [c1, c2]
-            tmp5 = @.. broadcast=false (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
-            tmp6 = @.. broadcast=false (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
-            cache.cont4 = @.. broadcast=false (tmp6 - cache.cont3) / c1m1 #fourth derivative on [c1, 1]
+            cache.cont1 = @..  (z4 - z5) / c4m1 # first derivative on [c4, 1]
+            tmp1 = @..  (z3 - z4) / c3mc4 # first derivative on [c3, c4]
+            cache.cont2 = @..  (tmp1 - cache.cont1) / c3m1 # second derivative on [c3, 1]
+            tmp2 = @..  (z2 - z3) / c2mc3 # first derivative on [c2, c3]
+            tmp3 = @..  (tmp2 - tmp1) / c2mc4 # second derivative on [c2, c4]
+            cache.cont3 = @..  (tmp3 - cache.cont2) / c2m1 # third derivative on [c2, 1]
+            tmp4 = @..  (z1 - z2) / c1mc2 # first derivative on [c1, c2]
+            tmp5 = @..  (tmp4 - tmp2) / c1mc3 # second derivative on [c1, c3]
+            tmp6 = @..  (tmp5 - tmp3) / c1mc4 # third derivative on [c1, c4]
+            cache.cont4 = @..  (tmp6 - cache.cont3) / c1m1 #fourth derivative on [c1, 1]
         end
     end
 

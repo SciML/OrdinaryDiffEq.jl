@@ -397,7 +397,7 @@ end
         if alg isa Union{RKC, IRKC, SERK2}
             fac = gamma
         else
-            if alg isa Union{RadauIIA3, RadauIIA5}
+            if alg isa Union{RadauIIA3, RadauIIA5, RadauIIA7}
                 @unpack iter = integrator.cache
                 @unpack maxiters = alg
             else

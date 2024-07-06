@@ -1724,8 +1724,8 @@ publisher={Elsevier}
 RadauIIA7: Fully-Implicit Runge-Kutta Method
 An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA7{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2} <:
-       OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
+struct RadauIIA7{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
+    OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
     smooth_est::Bool
@@ -1735,26 +1735,30 @@ struct RadauIIA7{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2} <:
     fast_convergence_cutoff::C1
     new_W_γdt_cutoff::C2
     controller::Symbol
+    step_limiter!::StepLimiter
 end
 
 function RadauIIA7(; chunk_size = Val{0}(), autodiff = Val{true}(),
-        standardtag = Val{true}(), concrete_jac = nothing,
-        diff_type = Val{:forward},
-        linsolve = nothing, precs = DEFAULT_PRECS,
-        extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
-        new_W_γdt_cutoff = 1 // 5,
-        controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true)
-    RadauIIA7{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
-        typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(κ), typeof(fast_convergence_cutoff), typeof(new_W_γdt_cutoff)}(linsolve,
-        precs,
-        smooth_est,
-        extrapolant,
-        κ,
-        maxiters,
-        fast_convergence_cutoff,
-        new_W_γdt_cutoff,
-        controller)
+    standardtag = Val{true}(), concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing, precs = DEFAULT_PRECS,
+    extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
+    new_W_γdt_cutoff = 1 // 5,
+    controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
+    step_limiter! = trivial_limiter!)
+RadauIIA7{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+    typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
+    typeof(κ), typeof(fast_convergence_cutoff),
+    typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
+    precs,
+    smooth_est,
+    extrapolant,
+    κ,
+    maxiters,
+    fast_convergence_cutoff,
+    new_W_γdt_cutoff,
+    controller,
+    step_limiter!)
 end
 TruncatedStacktraces.@truncate_stacktrace RadauIIA7
 

@@ -299,7 +299,7 @@ uf = UDerivativeWrapper(f, t, p)
 uToltype = constvalue(uBottomEltypeNoUnits)
 tab = RadauIIA7Tableau(uToltype, constvalue(tTypeNoUnits))
 
-κ = convert(uToltype, 1 // 100)
+κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
 RadauIIA7ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, u, dt, dt,
