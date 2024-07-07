@@ -15,6 +15,7 @@ using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
 using TruncatedStacktraces
+using MacroTools
 
 include("algorithms.jl")
 include("alg_utils.jl")
