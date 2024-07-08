@@ -19,12 +19,12 @@ using TruncatedStacktraces
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("controllers.jl")
 include("verner_tableaus.jl")
 include("verner_caches.jl")
 include("verner_addsteps.jl")
 include("interp_func.jl")
 include("interpolants.jl")
+include("controllers.jl")
 include("verner_rk_perform_step.jl")
 
 export Vern6, Vern7, Vern8, Vern9
