@@ -4,7 +4,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals, alg_stability_size,
                        OrdinaryDiffEqAlgorithm,
-                       CompositeAlgorithm,
+                       CompositeAlgorithm, AbstractController, PIDController,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
@@ -19,6 +19,7 @@ using TruncatedStacktraces
 
 include("algorithms.jl")
 include("alg_utils.jl")
+include("controllers.jl")
 include("verner_tableaus.jl")
 include("verner_caches.jl")
 include("verner_addsteps.jl")
