@@ -116,11 +116,12 @@ const CompiledFloats = Union{Float32, Float64,
     ForwardDiff.Dual{
         ForwardDiff.Tag{T, W},
         K,
-        3
+        N
     } where {
         T,
         W <: Union{Float64, Float32},
-        K <: Union{Float64, Float32}
+        K <: Union{Float64, Float32},
+        N
     }}
 
 import FunctionWrappersWrappers
