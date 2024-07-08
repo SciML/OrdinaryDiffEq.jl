@@ -133,6 +133,7 @@ include("misc_utils.jl")
 
 include("algorithms.jl")
 include("algorithms/explicit_rk.jl")
+include("composite_algs.jl")
 
 include("alg_utils.jl")
 
@@ -171,6 +172,8 @@ include("tableaus/qprk_tableaus.jl")
 include("integrators/type.jl")
 include("integrators/controllers.jl")
 include("integrators/integrator_utils.jl")
+include("integrators/integrator_interface.jl")
+
 include("cache_utils.jl")
 include("initialize_dae.jl")
 include("wrappers.jl")
@@ -273,6 +276,7 @@ export Vern6, Vern7, Vern8, Vern9
 
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
+export DefaultODEAlgorithm
 
 import PrecompileTools
 

@@ -4,6 +4,8 @@ authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.0.0"
 
 [deps]
+EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 
 [extras]

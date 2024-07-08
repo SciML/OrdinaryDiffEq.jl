@@ -2,7 +2,7 @@ module OrdinaryDiffEqVerner
 
 import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
-                       calculate_residuals,
+                       calculate_residuals, alg_stability_size,
                        OrdinaryDiffEqAlgorithm,
                        CompositeAlgorithm,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
@@ -10,12 +10,12 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new,
                        explicit_rk_docstring, trivial_limiter!,
-                       _ode_interpolant!, _ode_addsteps!, @fold
+                       _ode_interpolant!, _ode_addsteps!, @fold,
+                       @OnDemandTableauExtract, AutoAlgSwitch
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
 using TruncatedStacktraces
-using MacroTools: @fold
 
 include("algorithms.jl")
 include("alg_utils.jl")
@@ -27,5 +27,6 @@ include("interpolants.jl")
 include("verner_rk_perform_step.jl")
 
 export Vern6, Vern7, Vern8, Vern9
+export AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
 end

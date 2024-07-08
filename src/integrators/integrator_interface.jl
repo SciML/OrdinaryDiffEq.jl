@@ -1,7 +1,7 @@
 # We want to make sure that the first argument of change_t_via_interpolation!
 # is specialized, yet, it needs to take both ODEIntegrator and DDEIntegrator.
 # Hence, we need to have two separate functions.
-using OrdinaryDiffEq
+
 function _change_t_via_interpolation!(integrator, t,
         modify_save_endpoint::Type{Val{T}}) where {T}
     # Can get rid of an allocation here with a function

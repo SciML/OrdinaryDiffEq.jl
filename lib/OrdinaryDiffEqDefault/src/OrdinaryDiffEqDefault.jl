@@ -1,9 +1,15 @@
 module OrdinaryDiffEqDefault
 
-using OrdinaryDiffEq: Vern7, Vern8, Vern9, Vern6, Tsit5, Rosenbrock23, Rodas5P, FBDF, Krylov, KrylovFBDF
+using OrdinaryDiffEq: Vern7, Vern8, Vern9, Vern6, Tsit5, Rosenbrock23, Rodas5P, FBDF,
+    alg_stability_size, beta2_default, beta1_default, AutoSwitchCache, ODEIntegrator,
+    CompositeAlgorithm, OrdinaryDiffEqAlgorithm, OrdinaryDiffEqMutableCache, AutoAlgSwitch
+import OrdinaryDiffEq: is_mass_matrix_alg, default_autoswitch
+import LinearSolve
+using LinearAlgebra: I
+using EnumX
 
-include("composite_algs.jl")
-include("AutoSwitch.jl")
-include("integrators/integrator_interface.jl")
+include("default_alg.jl")
+
+export DefaultODEAlgorithm
 
 end # module OrdinaryDiffEqDefault

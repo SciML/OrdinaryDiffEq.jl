@@ -11,8 +11,3 @@ alg_stability_size(alg::Vern6) = 4.8553
 alg_stability_size(alg::Vern7) = 4.6400
 alg_stability_size(alg::Vern8) = 5.8641
 alg_stability_size(alg::Vern9) = 4.4762
-
-function is_mass_matrix_alg(alg::CompositeAlgorithm{
-    <:Any, <:Tuple{Vern7}})
-true
-end
