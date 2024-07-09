@@ -9,9 +9,10 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new,
-                       explicit_rk_docstring, trivial_limiter!,
+                       explicit_rk_docstring, trivial_limiter!, _ode_interpolant,
                        _ode_interpolant!, _ode_addsteps!, @fold,
-                       @OnDemandTableauExtract, AutoAlgSwitch
+                       @OnDemandTableauExtract, AutoAlgSwitch,
+                       DerivativeOrderNotPossibleError
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
