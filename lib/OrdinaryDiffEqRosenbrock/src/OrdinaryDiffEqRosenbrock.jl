@@ -9,8 +9,8 @@ import OrdinaryDiffEq: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                        OrdinaryDiffEqAdaptiveAlgorithm
 using DiffEqBase, MuladdMacro
 
-include("algorithms.jl")
 include("generic_rosenbrock.jl")
+include("algorithms.jl")
 include("alg_utils.jl")
 include("rosenbrock_tableaus.jl")
 include("rosenbrock_caches.jl")
