@@ -46,6 +46,7 @@ mutable struct DEOptions{absType, relType, QT, tType, Controller, F1, F2, F3, F4
     force_dtmin::Bool
     advance_to_tstop::Bool
     stop_at_next_tstop::Bool
+    relaxation
 end
 
 TruncatedStacktraces.@truncate_stacktrace DEOptions

@@ -238,6 +238,7 @@ function _loopfooter!(integrator)
                 q)) *
                     oneunit(integrator.dt)
             integrator.tprev = integrator.t
+            ttmp = next_time_controller(integrator, integrator.opts.controller, ttmp, integrator.dt)
             integrator.t = if has_tstop(integrator)
                 tstop = integrator.tdir * first_tstop(integrator)
                 if abs(ttmp - tstop) <

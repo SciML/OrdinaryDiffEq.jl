@@ -64,6 +64,8 @@ using ExponentialUtilities
 
 using NonlinearSolve
 
+using Roots
+
 # Required by temporary fix in not in-place methods with 12+ broadcasts
 # `MVector` is used by Nordsieck forms
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
@@ -465,5 +467,8 @@ export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
 export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
-export IController, PIController, PIDController
+export IController, PIController, PIDController, RelaxationController
+
+export Relaxation
+
 end # module

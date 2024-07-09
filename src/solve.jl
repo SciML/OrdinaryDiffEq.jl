@@ -72,6 +72,7 @@ function DiffEqBase.__init(
         alias_u0 = false,
         alias_du0 = false,
         initializealg = DefaultInit(),
+        relaxation = nothing,
         kwargs...) where {recompile_flag}
     if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
         error("You cannot use an ODE Algorithm with a DAEProblem")
@@ -365,6 +366,10 @@ function DiffEqBase.__init(
 
     if controller === nothing
         controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
+    end
+
+    if relaxation !== nothing
+        controller = RelaxationController(controller, eltype(u))
     end
 
     save_end_user = save_end

@@ -28,6 +28,8 @@ reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 
 DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
 
+@inline next_time_controller(::ODEIntegrator, ::AbstractController, ttmp) = ttmp
+
 # Standard integral (I) step size controller
 """
     IController()
@@ -736,3 +738,77 @@ function step_accept_controller!(integrator, alg::Union{FBDF{max_order}, DFBDF{m
     integrator.cache.iters_from_event += 1
     return integrator.dt / q
 end
+
+
+
+# Relaxation step size controller
+"""
+    RelaxationController(controller, T)
+
+Controller to perform a relaxation on a step of a Runge-Kuttas method.  
+
+## References
+ - Sebastian Bleecke, Hendrik Ranocha (2023)
+    Step size control for explicit relaxation Runge-Kutta methods preserving invariants
+    [DOI: 10.1145/641876.641877](https://doi.org/10.1145/641876.641877)
+"""
+struct RelaxationController{CON, T} <: AbstractController
+    controller::CON
+    gamma::T
+end
+
+function RelaxationController(controller::AbstractController, T)
+    RelaxationController(controller, one(T))
+end
+
+mutable struct Relaxation{INV, OPT, T}
+    invariant::INV
+    opt::OPT
+    gamma_min::T
+    gamma_max::T
+    function Relaxation(invariant, opt = AlefeldPotraShi, gamma_min = 4//5, gamma_max = 6//5)
+        new{typeof(opt), typeof(invariant), typeof(gamma_min)}(opt, invariant, gamma_min, gamma_max)
+    end
+end
+
+@muladd function (r::Relaxation)(integrator)
+    @unpack t, dt, uprev, u = integrator
+    @unpack opt, invariant, gamma_min, gamma_max = integrator.opts.relaxation
+    gamma = one(t)
+    S_u = u .- uprev
+    if (invariant(gamma_min * S_u .+ uprev) .- invariant(uprev)) * (invariant(gamma_max * S_u .+ uprev) .- invariant(uprev)) ≤ 0 
+        gamma = find_zero(gamma -> invariant(gamma*S_u .+ uprev) .- invariant(uprev), (gamma_min, gamma_max), opt())
+        @. integrator.u =  uprev + gamma*S_u
+        @. integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
+    end
+    gamma
+end
+
+function Base.show(io::IO, controller::RelaxationController)
+    print(io, controller.controller)
+    print(io, "\n Relaxation parameters = ", controller.gamma)
+end
+
+@inline function next_time_controller(integrator::ODEIntegrator, controller::RelaxationController, ttmp, dt)
+    gamma = integrator.opts.relaxation(integrator)
+    integrator.dt *= oftype(dt, gamma)
+    controller.gamma = gamma
+    ttmp + integrator.dt - dt
+end
+
+@inline function stepsize_controller!(integrator, controller::RelaxationController, alg)
+    stepsize_controller!(integrator, controller.controller, alg)
+end
+
+@inline function accept_step_controller(integrator, controller::RelaxationController)
+    accept_step_controller(integrator, controller.controller)
+end
+
+function step_accept_controller!(integrator, controller::RelaxationController, alg, dt_factor)
+    step_accept_controller!(integrator, controller.controller, alg, dt_factor)
+end
+
+function step_reject_controller!(integrator, controller::RelaxationController, alg)
+    integrator.dt = integrator.dt * integrator.qold / controller.rprev
+end
+
