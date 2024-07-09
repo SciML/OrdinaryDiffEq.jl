@@ -91,7 +91,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 copyat_or_push!(integrator.sol.u, integrator.saveiter,
                     integrator.u[integrator.opts.save_idxs], false)
             end
-            if isdiscretealg(integrator.alg) || integrator.opts.dense
+            if integrator.alg isa FunctionMap || integrator.opts.dense
                 integrator.saveiter_dense += 1
                 if integrator.opts.dense
                     if integrator.opts.save_idxs === nothing
@@ -124,7 +124,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 integrator.u[integrator.opts.save_idxs], false)
         end
         copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
-        if isdiscretealg(integrator.alg) || integrator.opts.dense
+        if integrator.alg isa FunctionMap || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
@@ -238,6 +238,7 @@ function _loopfooter!(integrator)
                 q)) *
                     oneunit(integrator.dt)
             integrator.tprev = integrator.t
+            ttmp = next_time_controller(integrator, integrator.opts.controller, ttmp, integrator.dt)
             integrator.t = fixed_t_for_floatingpoint_error!(integrator, ttmp)
             calc_dt_propose!(integrator, dtnew)
             handle_callbacks!(integrator)
