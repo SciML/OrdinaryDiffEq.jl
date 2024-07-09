@@ -144,8 +144,6 @@ include("nlsolve/nlsolve.jl")
 include("nlsolve/functional.jl")
 include("nlsolve/newton.jl")
 
-include("generic_rosenbrock.jl")
-
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
 include("caches/high_order_rk_caches.jl")
@@ -154,7 +152,6 @@ include("caches/firk_caches.jl")
 include("caches/kencarp_kvaerno_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
-include("caches/rosenbrock_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/bdf_caches.jl")
@@ -165,7 +162,6 @@ include("caches/qprk_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
-include("tableaus/rosenbrock_tableaus.jl")
 include("tableaus/sdirk_tableaus.jl")
 include("tableaus/firk_tableaus.jl")
 include("tableaus/qprk_tableaus.jl")
@@ -189,7 +185,6 @@ include("perform_step/high_order_rk_perform_step.jl")
 include("perform_step/sdirk_perform_step.jl")
 include("perform_step/kencarp_kvaerno_perform_step.jl")
 include("perform_step/firk_perform_step.jl")
-include("perform_step/rosenbrock_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
@@ -201,8 +196,6 @@ include("perform_step/qprk_perform_step.jl")
 
 include("dense/generic_dense.jl")
 include("dense/interpolants.jl")
-include("dense/rosenbrock_interpolants.jl")
-include("dense/stiff_addsteps.jl")
 include("dense/low_order_rk_addsteps.jl")
 include("dense/high_order_rk_addsteps.jl")
 
@@ -278,6 +271,15 @@ export Vern6, Vern7, Vern8, Vern9
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
+
+include("../lib/OrdinaryDiffEqRosenbrock/src/OrdinaryDiffEqRosenbrock.jl")
+using ..OrdinaryDiffEqRosenbrock
+export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
+       Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
+       Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr,
+       RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
+       ROS3PRL2, ROK4a,
+       ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 
 import PrecompileTools
 
@@ -427,13 +429,6 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
        MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3, CG4a
-
-export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-       Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
-       Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr,
-       RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
-       ROS3PRL2, ROK4a,
-       ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 
 export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A,
        EPIRK4s3B,
