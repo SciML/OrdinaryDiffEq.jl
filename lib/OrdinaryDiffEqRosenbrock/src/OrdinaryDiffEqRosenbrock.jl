@@ -1,7 +1,8 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEq: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm, OrdinaryDiffEqRosenbrockAlgorithm, rosenbrock_docstring, 
-                       rosenbrock_wanner_docstring, 
+import OrdinaryDiffEq: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+                       OrdinaryDiffEqRosenbrockAlgorithm, rosenbrock_docstring,
+                       rosenbrock_wanner_docstring,
                        OrdinaryDiffEqMutableCache, alg_order, alg_adaptive_order,
                        OrdinaryDiffEqAlgorithm,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
