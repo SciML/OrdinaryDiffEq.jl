@@ -28,7 +28,7 @@ reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 
 DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
 
-@inline next_time_controller(::ODEIntegrator, ::AbstractController, ttmp) = ttmp
+@inline next_time_controller(::ODEIntegrator, ::AbstractController, ttmp, dt) = ttmp
 
 # Standard integral (I) step size controller
 """

@@ -420,7 +420,8 @@ function DiffEqBase.__init(
         unstable_check,
         verbose, calck, force_dtmin,
         advance_to_tstop,
-        stop_at_next_tstop)
+        stop_at_next_tstop,
+        relaxation)
 
     stats = SciMLBase.DEStats(0)
     differential_vars = prob isa DAEProblem ? prob.differential_vars :
