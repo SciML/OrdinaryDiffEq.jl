@@ -5,11 +5,6 @@ using OrdinaryDiffEq
     stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
 
-# checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller::AbstractController)
-    return integrator.EEst <= 1
-end
-
 @inline function step_accept_controller!(integrator, alg, q)
     step_accept_controller!(integrator, integrator.opts.controller, alg, q)
 end
@@ -311,6 +306,11 @@ end
     # See Söderlind, Wang (2006), Section 6.
     integrator.qold = dt_factor
     return dt_factor
+end
+
+# checks whether the controller should accept a step based on the error estimate
+@inline function accept_step_controller(integrator, controller::AbstractController)
+    return integrator.EEst <= 1
 end
 
 @inline function accept_step_controller(integrator, controller::PIDController)

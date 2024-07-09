@@ -134,6 +134,7 @@ include("misc_utils.jl")
 
 include("algorithms.jl")
 include("algorithms/explicit_rk.jl")
+include("composite_algs.jl")
 
 include("alg_utils.jl")
 
@@ -144,12 +145,10 @@ include("nlsolve/functional.jl")
 include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
-include("composite_algs.jl")
 
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
 include("caches/high_order_rk_caches.jl")
-include("caches/verner_caches.jl")
 include("caches/sdirk_caches.jl")
 include("caches/firk_caches.jl")
 include("caches/kencarp_kvaerno_caches.jl")
@@ -166,7 +165,6 @@ include("caches/qprk_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
-include("tableaus/verner_tableaus.jl")
 include("tableaus/rosenbrock_tableaus.jl")
 include("tableaus/sdirk_tableaus.jl")
 include("tableaus/firk_tableaus.jl")
@@ -175,8 +173,9 @@ include("tableaus/qprk_tableaus.jl")
 include("integrators/type.jl")
 include("integrators/controllers.jl")
 include("integrators/integrator_utils.jl")
-include("cache_utils.jl")
 include("integrators/integrator_interface.jl")
+
+include("cache_utils.jl")
 include("initialize_dae.jl")
 include("wrappers.jl")
 
@@ -187,7 +186,6 @@ include("perform_step/exponential_rk_perform_step.jl")
 include("perform_step/explicit_rk_perform_step.jl")
 include("perform_step/low_order_rk_perform_step.jl")
 include("perform_step/high_order_rk_perform_step.jl")
-include("perform_step/verner_rk_perform_step.jl")
 include("perform_step/sdirk_perform_step.jl")
 include("perform_step/kencarp_kvaerno_perform_step.jl")
 include("perform_step/firk_perform_step.jl")
@@ -206,7 +204,6 @@ include("dense/interpolants.jl")
 include("dense/rosenbrock_interpolants.jl")
 include("dense/stiff_addsteps.jl")
 include("dense/low_order_rk_addsteps.jl")
-include("dense/verner_addsteps.jl")
 include("dense/high_order_rk_addsteps.jl")
 
 include("derivative_utils.jl")
@@ -273,6 +270,14 @@ export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
        Nystrom5VelocityIndependent,
        IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
        RKN4
+
+include("../lib/OrdinaryDiffEqVerner/src/OrdinaryDiffEqVerner.jl")
+using ..OrdinaryDiffEqVerner
+export Vern6, Vern7, Vern8, Vern9
+
+include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
+using ..OrdinaryDiffEqDefault
+export DefaultODEAlgorithm
 
 import PrecompileTools
 
@@ -406,8 +411,8 @@ export constructDormandPrince
 
 export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4,
        OwrenZen5,
-       BS3, BS5, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
-       Vern9, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
+       BS3, BS5, DP5, Tsit5, DP8, TanYam7, TsitPap8, CompositeAlgorithm, Anas5, RKO65,
+       FRK65, PFRK87,
        RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
 
 export RadauIIA3, RadauIIA5
