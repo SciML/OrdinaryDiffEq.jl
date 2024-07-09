@@ -410,7 +410,8 @@ export constructDormandPrince
 
 export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4,
        OwrenZen5,
-       BS3, BS5, DP5, Tsit5, DP8, TanYam7, TsitPap8, CompositeAlgorithm, Anas5, RKO65, FRK65, PFRK87,
+       BS3, BS5, DP5, Tsit5, DP8, TanYam7, TsitPap8, CompositeAlgorithm, Anas5, RKO65,
+       FRK65, PFRK87,
        RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
 
 export RadauIIA3, RadauIIA5

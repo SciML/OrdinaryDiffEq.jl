@@ -4,7 +4,7 @@ RK_WITH_SPECIAL_INTERPOLATIONS = Union{FunctionMapConstantCache, FunctionMapCach
     OwrenZen3ConstantCache, OwrenZen3Cache,
     OwrenZen4ConstantCache, OwrenZen4Cache,
     OwrenZen5ConstantCache, OwrenZen5Cache,
-    BS5ConstantCache, BS5Cache,
+    BS5ConstantCache, BS5Cache
 }
 function _ode_interpolant(Θ, dt, y₀, y₁, k,
         cache::RK_WITH_SPECIAL_INTERPOLATIONS,
