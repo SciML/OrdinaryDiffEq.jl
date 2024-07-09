@@ -30,16 +30,6 @@ isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
 
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
-isfsal(alg::Rodas3P) = false
-isfsal(alg::Rodas23W) = false
-isfsal(alg::Rodas5) = false
-isfsal(alg::Rodas5P) = false
-isfsal(alg::Rodas5Pr) = false
-isfsal(alg::Rodas5Pe) = false
-isfsal(alg::Rodas4) = false
-isfsal(alg::Rodas42) = false
-isfsal(alg::Rodas4P) = false
-isfsal(alg::Rodas4P2) = false
 # Pseudo Non-FSAL
 isfsal(alg::PDIRK44) = false
 isfsal(alg::DImplicitEuler) = false
@@ -713,7 +703,3 @@ is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
 # hack for the default alg
-function is_mass_matrix_alg(alg::CompositeAlgorithm{
-        <:Any, <:Tuple{Tsit5, Rosenbrock23, Rodas5P, FBDF, FBDF}})
-    true
-end

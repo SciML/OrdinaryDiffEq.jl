@@ -34,6 +34,17 @@ alg_order(alg::Rodas5P) = 5
 alg_order(alg::Rodas5Pr) = 5
 alg_order(alg::Rodas5Pe) = 5
 
+isfsal(alg::Rodas3P) = false
+isfsal(alg::Rodas23W) = false
+isfsal(alg::Rodas5) = false
+isfsal(alg::Rodas5P) = false
+isfsal(alg::Rodas5Pr) = false
+isfsal(alg::Rodas5Pe) = false
+isfsal(alg::Rodas4) = false
+isfsal(alg::Rodas42) = false
+isfsal(alg::Rodas4P) = false
+isfsal(alg::Rodas4P2) = false
+
 isWmethod(alg::Rosenbrock23) = true
 isWmethod(alg::Rosenbrock32) = true
 isWmethod(alg::Rodas23W) = true
@@ -50,3 +61,8 @@ alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
 
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
+
+function is_mass_matrix_alg(alg::CompositeAlgorithm{
+        <:Any, <:Tuple{Tsit5, Rosenbrock23, Rodas5P, FBDF, FBDF}})
+    true
+end
