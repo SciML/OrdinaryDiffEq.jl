@@ -71,6 +71,18 @@ function activate_symplectic_rk()
     Pkg.instantiate()
 end
 
+function activate_default()
+    Pkg.activate("../lib/OrdinaryDiffEqDefault")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_rosenbrock()
+    Pkg.activate("../lib/OrdinaryDiffEqRosenbrock")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
