@@ -105,13 +105,13 @@ end
             _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
                 integrator.u,
                 integrator.dt, f, integrator.p,
-                cache.cache5,
+                cache.cache4,
                 always_calc_begin, allow_calc_end, force_calc_end)
         elseif cache_current == 5
             _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
                 integrator.u,
                 integrator.dt, f, integrator.p,
-                cache.cache1,
+                cache.cache5,
                 always_calc_begin, allow_calc_end, force_calc_end)
         elseif cache_current == 6
             _ode_addsteps!(integrator.k, integrator.tprev, integrator.uprev,
