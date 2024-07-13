@@ -231,57 +231,33 @@ function _loopfooter!(integrator)
                                  (integrator.opts.force_dtmin &&
                                   abs(integrator.dt) <= timedepentdtmin(integrator))
         if integrator.accept_step # Accept
-            integrator.stats.naccept += 1
+            increment_accept!(integrator.stats)
             integrator.last_stepfail = false
             dtnew = DiffEqBase.value(step_accept_controller!(integrator,
                 integrator.alg,
                 q)) *
                     oneunit(integrator.dt)
             integrator.tprev = integrator.t
-            integrator.t = if has_tstop(integrator)
-                tstop = integrator.tdir * first_tstop(integrator)
-                if abs(ttmp - tstop) <
-                   100eps(float(max(integrator.t, tstop) / oneunit(integrator.t))) *
-                   oneunit(integrator.t)
-                    tstop
-                else
-                    ttmp
-                end
-            else
-                ttmp
-            end
+            integrator.t = fixed_t_for_floatingpoint_error!(integrator, ttmp)
             calc_dt_propose!(integrator, dtnew)
             handle_callbacks!(integrator)
         else # Reject
+            increment_reject!(integrator.stats)
             integrator.stats.nreject += 1
         end
     elseif !integrator.opts.adaptive #Not adaptive
-        integrator.stats.naccept += 1
+        increment_accept!(integrator.stats)
         integrator.tprev = integrator.t
-        integrator.t = if has_tstop(integrator)
-            tstop = integrator.tdir * first_tstop(integrator)
-            if abs(ttmp - tstop) <
-               100eps(float(integrator.t / oneunit(integrator.t))) * oneunit(integrator.t)
-                tstop
-            else
-                ttmp
-            end
-        else
-            ttmp
-        end
+        integrator.t = fixed_t_for_floatingpoint_error!(integrator, ttmp)
         integrator.last_stepfail = false
         integrator.accept_step = true
         integrator.dtpropose = integrator.dt
         handle_callbacks!(integrator)
     end
     if integrator.opts.progress && integrator.iter % integrator.opts.progress_steps == 0
-        t1, t2 = integrator.sol.prob.tspan
-        @logmsg(LogLevel(-1),
-            integrator.opts.progress_name,
-            _id=integrator.opts.progress_id,
-            message=integrator.opts.progress_message(integrator.dt, integrator.u,
-                integrator.p, integrator.t),
-            progress=(integrator.t - t1) / (t2 - t1))
+        log_step!(integrator.opts.progress_name, integrator.opts.progress_id,
+                  integrator.opts.progress_message, integrator.dt, integrator.u,
+                  integrator.p, integrator.t, integrator.sol.prob.tspan)
     end
 
     # Take value because if t is dual then maxeig can be dual
@@ -293,6 +269,37 @@ function _loopfooter!(integrator)
             (integrator.stats.maxeig = cur_eigen_est)
     end
     nothing
+end
+
+function increment_accept!(stats)
+    stats.naccept += 1
+end
+
+function increment_reject!(stats)
+    stats.nreject += 1
+end
+
+function log_step!(progress_name, progress_id, progress_message, dt, u, p, t, tspan)
+    t1, t2 = tspan
+    @logmsg(LogLevel(-1),progress_name,
+    _id=progress_id,
+    message=progress_message(dt, u, p, t),
+    progress=(t - t1) / (t2 - t1))
+end
+
+function fixed_t_for_floatingpoint_error!(integrator, ttmp)
+    if has_tstop(integrator)
+        tstop = integrator.tdir * first_tstop(integrator)
+        if abs(ttmp - tstop) <
+        100eps(float(max(integrator.t, tstop) / oneunit(integrator.t))) *
+        oneunit(integrator.t)
+            tstop
+        else
+            ttmp
+        end
+    else
+        ttmp
+    end
 end
 
 # Use a generated function to call apply_callback! in a type-stable way
