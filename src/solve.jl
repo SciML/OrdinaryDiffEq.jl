@@ -368,9 +368,7 @@ function DiffEqBase.__init(
         controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
     end
 
-    if relaxation !== nothing
-        controller = RelaxationController(controller, eltype(u))
-    end
+    controller = relaxation !== nothing ? RelaxationController(controller, eltype(u)) : controller
 
     save_end_user = save_end
     save_end = save_end === nothing ?
