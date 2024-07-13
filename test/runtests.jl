@@ -83,6 +83,42 @@ function activate_rosenbrock()
     Pkg.instantiate()
 end
 
+function activate_firk()
+    Pkg.activate("../lib/OrdinaryDiffEqFIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_sdirk()
+    Pkg.activate("../lib/OrdinaryDiffEqSDIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_explicit_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqExplicitRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_bdf()
+    Pkg.activate("../lib/OrdinaryDiffEqBDF")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function low_order_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqLowOrderRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function high_order_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqHighOrderRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -206,18 +242,22 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_II"
-        @time @safetestset "OwrenZen Tests" include("algconvergence/owrenzen_tests.jl")
+        @time @safetestset "OwrenZen Tests" include("../lib/OrdinaryLowOrderRK/test/owrenzen_tests.jl")
         @time @safetestset "Runge-Kutta-Chebyshev Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/rkc_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_III"
         @time @safetestset "Linear Methods Tests" include("algconvergence/linear_method_tests.jl")
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
-        @time @safetestset "FIRK Tests" include("algconvergence/ode_firk_tests.jl")
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
         @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
     end
+
+    if !is_APPVEYOR && GROUP == "FIRK"
+        @time @safetestset "FIRK Tests" include("../lib/OrdinaryDiffEqFIRK/test/ode_firk_tests.jl")
+    end
+
 
     if !is_APPVEYOR && GROUP == "Rosenbrock"
         @time @safetestset "Rosenbrock Tests" include("../lib/OrdinaryDiffEqRosenbrock/test/ode_rosenbrock_tests.jl")

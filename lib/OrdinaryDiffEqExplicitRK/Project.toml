@@ -1,0 +1,4 @@
+name = "OrdinaryDiffEqExplicitRK"
+uuid = "a6f9a3f1-1c5b-4457-b8d8-bad5275751bf"
+authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
+version = "0.1.0"

@@ -26,20 +26,11 @@ SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 ## OrdinaryDiffEq Internal Traits
 
 isfsal(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
-isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
 
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
-isfsal(alg::FunctionMap) = false
 # Pseudo Non-FSAL
 isfsal(alg::PDIRK44) = false
 isfsal(alg::DImplicitEuler) = false
-isfsal(alg::RKO65) = false
-isfsal(alg::FRK65) = true
-#isfsal(alg::RKM) = false
-
-isfsal(alg::PSRK3p5q4) = false
-isfsal(alg::PSRK3p6q5) = false
-isfsal(alg::PSRK4p7q6) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
 
@@ -161,12 +152,9 @@ function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 1 // 5 : 0
 end
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
-qmin_default(alg::DP8) = 1 // 3
 
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
-qmax_default(alg::DP8) = 6
-qmax_default(alg::Union{RadauIIA3, RadauIIA5}) = 8
 
 function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
     return alg isa Union{OrdinaryDiffEqExponentialAlgorithm,
@@ -337,14 +325,8 @@ end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
-alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
-alg_extrapolates(alg::Trapezoid) = true
-alg_extrapolates(alg::SDIRK22) = true
-alg_extrapolates(alg::ABDF2) = true
-alg_extrapolates(alg::SBDF) = true
-alg_extrapolates(alg::MEBDF2) = true
 alg_extrapolates(alg::MagnusLeapfrog) = true
 
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
@@ -364,10 +346,6 @@ function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgor
     cache.order
 end
 get_current_alg_order(alg::JVODE, cache) = get_current_adaptive_order(alg, cache)
-get_current_alg_order(alg::QNDF, cache) = cache.order
-get_current_alg_order(alg::FBDF, cache) = cache.order
-get_current_adaptive_order(alg::QNDF, cache) = cache.order
-get_current_adaptive_order(alg::FBDF, cache) = cache.order
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 function get_current_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
@@ -378,10 +356,6 @@ function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
     _eval_index(alg_adaptive_order, alg.algs, cache.current)::Int
 end
 
-alg_order(alg::FunctionMap) = 0
-alg_order(alg::Euler) = 1
-alg_order(alg::Heun) = 2
-alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::LieEuler) = 1
@@ -397,41 +371,11 @@ alg_order(alg::EPIRK5s3) = 5
 alg_order(alg::EPIRK5P1) = 5
 alg_order(alg::EPIRK5P2) = 5
 alg_order(alg::EXPRB53s3) = 5
-alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
 alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
-alg_order(alg::Anas5) = 5
 alg_order(alg::KuttaPRK2p5) = 5
-alg_order(alg::RKO65) = 5
-alg_order(alg::FRK65) = 6
 
-alg_order(alg::Midpoint) = 2
-
-alg_order(alg::RK4) = 4
-alg_order(alg::RKM) = 4
-alg_order(alg::ExplicitRK) = alg.tableau.order
-alg_order(alg::MSRK5) = 5
-alg_order(alg::MSRK6) = 6
-alg_order(alg::Stepanov5) = 5
-alg_order(alg::SIR54) = 5
-alg_order(alg::PSRK4p7q6) = 4
-alg_order(alg::PSRK3p6q5) = 3
-alg_order(alg::PSRK3p5q4) = 3
-
-alg_order(alg::BS3) = 3
-alg_order(alg::BS5) = 5
-alg_order(alg::OwrenZen3) = 3
-alg_order(alg::OwrenZen4) = 4
-alg_order(alg::OwrenZen5) = 5
-alg_order(alg::DP5) = 5
-alg_order(alg::Tsit5) = 5
-alg_order(alg::DP8) = 8
-alg_order(alg::TanYam7) = 7
-alg_order(alg::TsitPap8) = 8
-alg_order(alg::RadauIIA3) = 3
-alg_order(alg::RadauIIA5) = 5
-alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::RKMK2) = 2
 alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
@@ -448,35 +392,6 @@ alg_order(alg::MagnusGL4) = 4
 alg_order(alg::MagnusAdapt4) = 4
 alg_order(alg::LinearExponential) = 1
 alg_order(alg::MagnusLeapfrog) = 2
-alg_order(alg::Trapezoid) = 2
-alg_order(alg::ImplicitMidpoint) = 2
-alg_order(alg::TRBDF2) = 2
-alg_order(alg::SSPSDIRK2) = 2
-alg_order(alg::SDIRK2) = 2
-alg_order(alg::SDIRK22) = 2
-alg_order(alg::Kvaerno3) = 3
-alg_order(alg::Kvaerno4) = 4
-alg_order(alg::Kvaerno5) = 5
-alg_order(alg::ESDIRK54I8L2SA) = 5
-alg_order(alg::ESDIRK436L2SA2) = 4
-alg_order(alg::ESDIRK437L2SA) = 4
-alg_order(alg::ESDIRK547L2SA2) = 5
-alg_order(alg::ESDIRK659L2SA) = 6
-alg_order(alg::KenCarp3) = 3
-alg_order(alg::CFNLIRK3) = 3
-alg_order(alg::KenCarp4) = 4
-alg_order(alg::KenCarp47) = 4
-alg_order(alg::KenCarp5) = 5
-alg_order(alg::KenCarp58) = 5
-alg_order(alg::Cash4) = 4
-alg_order(alg::SFSDIRK4) = 4
-alg_order(alg::SFSDIRK5) = 4
-alg_order(alg::SFSDIRK6) = 4
-alg_order(alg::SFSDIRK7) = 4
-alg_order(alg::SFSDIRK8) = 4
-alg_order(alg::Hairer4) = 4
-alg_order(alg::Hairer42) = 4
-alg_order(alg::PFRK87) = 8
 
 alg_order(alg::AB3) = 3
 alg_order(alg::AB4) = 4
@@ -500,42 +415,20 @@ alg_order(alg::CNLF2) = 2
 alg_order(alg::AN5) = 5
 alg_order(alg::JVODE) = 1  #dummy value
 
-alg_order(alg::ABDF2) = 2
-alg_order(alg::QNDF1) = 1
-alg_order(alg::QNDF2) = 2
-
-alg_order(alg::QNDF) = 1 #dummy value
-alg_order(alg::FBDF) = 1 #dummy value
-
-alg_order(alg::SBDF) = alg.order
-
-alg_order(alg::MEBDF2) = 2
 alg_order(alg::PDIRK44) = 4
 
 alg_order(alg::DImplicitEuler) = 1
 alg_order(alg::DABDF2) = 2
 alg_order(alg::DFBDF) = 1#dummy value
-
-alg_order(alg::Alshina2) = 2
-alg_order(alg::Alshina3) = 3
-alg_order(alg::Alshina6) = 6
-
 alg_order(alg::QPRK98) = 9
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
-alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
 
-alg_adaptive_order(alg::RadauIIA3) = 1
-alg_adaptive_order(alg::RadauIIA5) = 3
-
-alg_adaptive_order(alg::ImplicitEuler) = 0
-alg_adaptive_order(alg::Trapezoid) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
-alg_adaptive_order(alg::ImplicitMidpoint) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
@@ -576,16 +469,10 @@ end
 function beta2_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 2 // (5alg_order(alg)) : 0
 end
-beta2_default(alg::FunctionMap) = 0
-beta2_default(alg::DP8) = 0 // 1
-beta2_default(alg::DP5) = 4 // 100
 
 function beta1_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, beta2)
     isadaptive(alg) ? 7 // (10alg_order(alg)) : 0
 end
-beta1_default(alg::FunctionMap, beta2) = 0
-beta1_default(alg::DP8, beta2) = typeof(beta2)(1 // alg_order(alg)) - beta2 / 5
-beta1_default(alg::DP5, beta2) = typeof(beta2)(1 // alg_order(alg)) - 3beta2 / 4
 
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
@@ -595,17 +482,12 @@ gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 fac_default_gamma(alg) = false
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
-qsteady_min_default(alg::FBDF) = 9 // 10
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
 qsteady_max_default(alg::AN5) = 3 // 2
 qsteady_max_default(alg::JVODE) = 3 // 2
-qsteady_max_default(alg::QNDF1) = 2 // 1
-qsteady_max_default(alg::QNDF2) = 2 // 1
-qsteady_max_default(alg::QNDF) = 2 // 1
-qsteady_max_default(alg::FBDF) = 2 // 1
 
 #TODO
 #DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
@@ -616,16 +498,11 @@ end
 
 # SSP coefficients
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
-ssp_coefficient(alg::Euler) = 1
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
-ssp_coefficient(alg::SSPSDIRK2) = 4
 
 # stability regions
-alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
-alg_stability_size(alg::DP5) = 3.3066
-alg_stability_size(alg::Tsit5) = 3.5068
 
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
@@ -689,14 +566,6 @@ isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Sta
 isstandard(alg::VCABM) = true
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-
-isesdirk(alg::TRBDF2) = true
-function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
-        Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
-        ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
-        ESDIRK659L2SA, CFNLIRK3})
-    true
-end
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 
 is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false

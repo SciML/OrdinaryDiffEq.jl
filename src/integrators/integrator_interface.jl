@@ -104,10 +104,6 @@ end
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5},
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.tmp, cache.atmp)
-end
 @inline function DiffEqBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,
         cache::OrdinaryDiffEqMutableCache)

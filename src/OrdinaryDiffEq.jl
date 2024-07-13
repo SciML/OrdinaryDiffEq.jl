@@ -145,25 +145,15 @@ include("nlsolve/functional.jl")
 include("nlsolve/newton.jl")
 
 include("caches/basic_caches.jl")
-include("caches/low_order_rk_caches.jl")
-include("caches/high_order_rk_caches.jl")
-include("caches/sdirk_caches.jl")
-include("caches/firk_caches.jl")
-include("caches/kencarp_kvaerno_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
-include("caches/bdf_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
 include("caches/dae_caches.jl")
 include("caches/qprk_caches.jl")
 
-include("tableaus/low_order_rk_tableaus.jl")
-include("tableaus/high_order_rk_tableaus.jl")
-include("tableaus/sdirk_tableaus.jl")
-include("tableaus/firk_tableaus.jl")
 include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")
@@ -176,28 +166,18 @@ include("initialize_dae.jl")
 include("wrappers.jl")
 
 include("perform_step/fixed_timestep_perform_step.jl")
-include("perform_step/split_perform_step.jl")
 include("perform_step/linear_perform_step.jl")
 include("perform_step/exponential_rk_perform_step.jl")
 include("perform_step/explicit_rk_perform_step.jl")
-include("perform_step/low_order_rk_perform_step.jl")
-include("perform_step/high_order_rk_perform_step.jl")
-include("perform_step/sdirk_perform_step.jl")
-include("perform_step/kencarp_kvaerno_perform_step.jl")
-include("perform_step/firk_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
-include("perform_step/bdf_perform_step.jl")
 include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
 include("perform_step/dae_perform_step.jl")
 include("perform_step/qprk_perform_step.jl")
 
 include("dense/generic_dense.jl")
-include("dense/interpolants.jl")
-include("dense/low_order_rk_addsteps.jl")
-include("dense/high_order_rk_addsteps.jl")
 
 include("derivative_utils.jl")
 include("nordsieck_utils.jl")
@@ -280,6 +260,40 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
        ROS3PRL2, ROK4a,
        ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
+
+include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
+using ..OrdinaryDiffEqBDF
+export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF, SBDF
+       MEBDF2
+
+include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
+using ..OrdinaryDiffEqFIRK
+export RadauIIA3, RadauIIA5
+
+include("../lib/OrdinaryDiffEqLowOrderRK/src/OrdinaryDiffEqLowOrderRK.jl")
+using ..OrdinaryDiffEqLowOrderRK
+export Heun, Ralston, Midpoint, OwrenZen3, OwrenZen4,
+       OwrenZen5, RK4, BS3, BS5, Tsit5, DP5, Anas5, RKO65,
+       FRK65, RKM, MSRK5, MSRK6, PSRK4p7q6, PSRK3p6q5,
+       Stepanov5, SIR54, Alshina2, Alshina3, Alshina6, Euler,
+       PSRK3p5q4, SplitEuler
+
+include("../lib/OrdinaryDiffEqSDIRK/src/OrdinaryDiffEqSDIRK.jl")
+using ..OrdinaryDiffEqSDIRK
+export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
+       Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
+       Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
+       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
+       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
+       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
+
+include("../lib/OrdinaryDiffEqHighOrderRK/src/OrdinaryDiffEqHighOrderRK.jl")
+using ..OrdinaryDiffEqHighOrderRK
+export TanYam7, DP8, Tsitpap8, PFRK87
+
+include("../lib/OrdinaryDiffEqExplicitRK/src/OrdinaryDiffEqExplicitRK.jl")
+using ..OrdinaryDiffEqExplicitRK
+export ExplicitRK
 
 import PrecompileTools
 
@@ -411,20 +425,8 @@ export constructDormandPrince
 
 # Reexport the Alg Types
 
-export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4,
-       OwrenZen5,
-       BS3, BS5, DP5, Tsit5, DP8, TanYam7, TsitPap8, CompositeAlgorithm, Anas5, RKO65,
-       FRK65, PFRK87,
-       RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
-
-export RadauIIA3, RadauIIA5
-
-export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
-       Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
-       Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
-       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
-       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
-       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
+export FunctionMap, CompositeAlgorithm,
+       QPRK98
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
@@ -436,8 +438,6 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
 
 export SHLDDRK52, SHLDDRK_2N
 
-export SplitEuler
-
 export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
 export VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5
@@ -448,13 +448,7 @@ export IMEXEuler, IMEXEulerARK, CNAB2, CNLF2
 
 export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
-export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF
-
 export SBDF2, SBDF3, SBDF4
-
-export MEBDF2
-
-export Alshina2, Alshina3, Alshina6
 
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9

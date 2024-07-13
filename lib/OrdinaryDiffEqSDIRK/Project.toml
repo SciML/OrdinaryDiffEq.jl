@@ -1,0 +1,4 @@
+name = "OrdinaryDiffEqSDIRK"
+uuid = "b2cb2727-2d56-444c-bf6a-1484cae16977"
+authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
+version = "1.0.0"
