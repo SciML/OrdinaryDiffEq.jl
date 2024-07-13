@@ -20,4 +20,6 @@ include("alg_utils.jl")
 include("bdf_caches.jl")
 include("bdf_perform_step.jl")
 
+export SBDF, ABDF2, QNDF1, QNDF2, QNDF, MEBDF2
+
 end

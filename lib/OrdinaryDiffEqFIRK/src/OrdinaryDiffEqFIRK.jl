@@ -22,4 +22,6 @@ include("firk_tableaus.jl")
 include("firk_caches.jl")
 include("firk_perform_step.jl")
 
+export RadauIIA3, RadauIIA5
+
 end
