@@ -20,6 +20,8 @@ function SciMLBase.forwarddiffs_model(alg::Union{OrdinaryDiffEqAdaptiveImplicitA
     alg_autodiff(alg) isa AutoForwardDiff
 end
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
+struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
+FunctionMap(; scale_by_time = false) = FunctionMap{scale_by_time}()
 
 # isadaptive is defined below.
 
