@@ -20,5 +20,5 @@ println("order of convergence of older perform_step! : "*string(sim.𝒪est[:fin
 
 # Convergence with relaxation with FSAL-R, i.e  f(uᵧ,ₙ₊₁) ≈ f(uᵧ,ₙ) + γ ( f(uₙ₊₁) - f(uᵧ,ₙ)) 
 r = Relaxation(invariant)
-sim = analyticless_test_convergence(dts, prob, Tsit5(); relaxation = r)
+sim = analyticless_test_convergence(dts, prob, Tsit5(), test_setup; relaxation = r)
 println("order with relaxation with FSAL-R modification: "*string(sim.𝒪est[:final]))

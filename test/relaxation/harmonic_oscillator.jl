@@ -18,6 +18,6 @@ println("order of convergence of Tsit5 without relaxation : "*string(sim.𝒪est
 
 # Convergence with relaxation with FSAL-R, i.e  f(uᵧ,ₙ₊₁) ≈ f(uᵧ,ₙ) + γ ( f(uₙ₊₁) - f(uᵧ,ₙ)) 
 r = Relaxation(invariant)
-sim = test_convergence(dts, prob, Tsit5(); relaxation = r)
-println("order with relaxation with FSAL-R modification: "*string(sim.𝒪est[:final]))
+sim_relax = test_convergence(dts, prob, Tsit5(); relaxation = r)
+println("order with relaxation with FSAL-R modification: "*string(sim_relax.𝒪est[:final]))
 
