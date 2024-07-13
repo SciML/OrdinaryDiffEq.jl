@@ -33,6 +33,7 @@ jobs:
           - {user: SciML, repo: ModelingToolkit.jl, group: All}
           - {user: SciML, repo: DiffEqDevTools.jl, group: Core}
           - {user: nathanaelbosch, repo: ProbNumDiffEq.jl, group: Downstream}
+          - {user: SKopecz, repo: PositiveIntegrators.jl, group: Downstream}
 
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +60,7 @@ jobs:
             err isa Pkg.Resolve.ResolverError || rethrow()
             # If we can't resolve that means this is incompatible by SemVer and this is fine
             # It means we marked this as a breaking change, so we don't need to worry about
-            # Mistakenly introducing a breaking change, as we have intentionally made one
+            # mistakenly introducing a breaking change, as we have intentionally made one
             @info "Not compatible with this release. No problem." exception=err
             exit(0)  # Exit immediately, as a success
           end
