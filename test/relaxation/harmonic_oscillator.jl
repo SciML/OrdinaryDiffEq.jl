@@ -14,7 +14,7 @@ invariant(x) = norm(x)
 
 # Convergence with the old method Tsit5()
 sim = test_convergence(dts, prob, Tsit5())
-println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
+println("order of convergence of Tsit5 without relaxation : "*string(sim.𝒪est[:final]))
 
 # Convergence with relaxation with FSAL-R, i.e  f(uᵧ,ₙ₊₁) ≈ f(uᵧ,ₙ) + γ ( f(uₙ₊₁) - f(uᵧ,ₙ)) 
 r = Relaxation(invariant)
