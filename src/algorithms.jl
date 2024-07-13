@@ -608,12 +608,11 @@ function PDIRK44(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{tru
 end
 ### Algorithm Groups
 
-#ABDF2
+#ABDF2 SBDF SBDF, KenCarp3, KenCarp4, KenCarp47, KenCarp5, KenCarp58,
 const MultistepAlgorithms = Union{
     AB3, AB4, AB5, ABM32, ABM43, ABM54}
 
-const SplitAlgorithms = Union{CNAB2, CNLF2, SBDF,
-    KenCarp3, KenCarp4, KenCarp47, KenCarp5, KenCarp58, CFNLIRK3}
+const SplitAlgorithms = Union{CNAB2, CNLF2, CFNLIRK3}
 
 #=
 struct DBDF{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}

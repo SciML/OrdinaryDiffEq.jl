@@ -3,3 +3,20 @@ uuid = "34d55129-80d4-4dd1-bb14-71372a5ab94f"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.0.0"
 
+[deps]
+FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+
+[compat]
+julia = "1.10"
+
+[extras]
+DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test"]
