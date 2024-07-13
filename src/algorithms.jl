@@ -608,8 +608,8 @@ function PDIRK44(; chunk_size = Val{0}(), autodiff = true, standardtag = Val{tru
 end
 ### Algorithm Groups
 
+#ABDF2
 const MultistepAlgorithms = Union{
-    ABDF2,
     AB3, AB4, AB5, ABM32, ABM43, ABM54}
 
 const SplitAlgorithms = Union{CNAB2, CNLF2, SBDF,
