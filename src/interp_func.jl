@@ -30,6 +30,85 @@ function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{
 }
     DiffEqBase.interp_summary(cacheType, interp.dense)
 end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {cacheType <:
+                            FunctionMapConstantCache}
+    "left-endpoint piecewise constant"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {cacheType <: FunctionMapCache}
+    "left-endpoint piecewise constant"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{DP5ConstantCache, DP5Cache}}
+    dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{Rosenbrock23ConstantCache,
+        Rosenbrock32ConstantCache,
+        Rosenbrock23Cache,
+        Rosenbrock32Cache}}
+    dense ? "specialized 2nd order \"free\" stiffness-aware interpolation" :
+    "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{Rodas4ConstantCache, Rodas23WConstantCache, Rodas3PConstantCache,
+        Rodas4Cache, Rodas23WCache, Rodas3PCache}}
+    dense ? "specialized 3rd order \"free\" stiffness-aware interpolation" :
+    "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{Rosenbrock5ConstantCache,
+        Rosenbrock5Cache}}
+    dense ? "specialized 4rd order \"free\" stiffness-aware interpolation" :
+    "1st order linear"
+end
+
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <: Union{OwrenZen3Cache,
+        OwrenZen3ConstantCache}}
+    dense ? "specialized 3rd order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <: Union{OwrenZen4Cache,
+        OwrenZen4ConstantCache}}
+    dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <: Union{OwrenZen5Cache,
+        OwrenZen5ConstantCache}}
+    dense ? "specialized 5th order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{Tsit5Cache, Tsit5ConstantCache
+}}
+    dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{BS5ConstantCache, BS5Cache}}
+    dense ? "specialized 5th order lazy interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
+        Union{DP8ConstantCache, DP8Cache}}
+    dense ? "specialized 7th order interpolation" : "1st order linear"
+end
 function DiffEqBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType}
     dense ? "3rd order Hermite" : "1st order linear"
 end
