@@ -1,39 +1,3 @@
-@cache mutable struct ImplicitEulerCache{
-    uType, rateType, uNoUnitsType, N, AV, StepLimiter} <:
-                      SDIRKMutableCache
-    u::uType
-    uprev::uType
-    uprev2::uType
-    fsalfirst::rateType
-    atmp::uNoUnitsType
-    nlsolver::N
-    algebraic_vars::AV
-    step_limiter!::StepLimiter
-end
-
-function alg_cache(alg::ImplicitEuler, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits},
-        ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    γ, c = 1, 1
-    nlsolver = build_nlsolver(alg, u, uprev, p, t, dt, f, rate_prototype, uEltypeNoUnits,
-        uBottomEltypeNoUnits, tTypeNoUnits, γ, c, Val(true))
-    fsalfirst = zero(rate_prototype)
-
-    atmp = similar(u, uEltypeNoUnits)
-    recursivefill!(atmp, false)
-
-    algebraic_vars = f.mass_matrix === I ? nothing :
-                     [all(iszero, x) for x in eachcol(f.mass_matrix)]
-
-    ImplicitEulerCache(
-        u, uprev, uprev2, fsalfirst, atmp, nlsolver, algebraic_vars, alg.step_limiter!)
-end
-
-mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
-    nlsolver::N
-end
-
 @cache mutable struct ABDF2ConstantCache{N, dtType, rate_prototype} <:
                       OrdinaryDiffEqConstantCache
     nlsolver::N
