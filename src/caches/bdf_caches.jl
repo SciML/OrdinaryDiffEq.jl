@@ -1,6 +1,4 @@
-mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
-    nlsolver::N
-end
+using OrdinaryDiffEq: ImplicitEulerCache, ImplicitEulerConstantCache
 
 @cache mutable struct ABDF2ConstantCache{N, dtType, rate_prototype} <:
                       OrdinaryDiffEqConstantCache
