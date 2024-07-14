@@ -116,6 +116,6 @@ end
 
 # hack for the default alg
 function is_mass_matrix_alg(alg::CompositeAlgorithm{
-    <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
+        <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
     true
 end

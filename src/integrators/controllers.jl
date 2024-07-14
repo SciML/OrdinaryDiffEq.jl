@@ -32,7 +32,7 @@ DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = 
     NothingController()
 
 This Controller exists to match the interface when one does not want to use a controller,
-basically if you want to keep a fixed time step. 
+basically if you want to keep a fixed time step.
 """
 struct NothingController <: AbstractController
 end

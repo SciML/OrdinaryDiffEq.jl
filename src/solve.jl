@@ -363,7 +363,7 @@ function DiffEqBase.__init(
         Base.depwarn(message, :solve)
     end
 
-    if controller === nothing 
+    if controller === nothing
         if adaptive
             controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
         else
