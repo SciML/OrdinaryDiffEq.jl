@@ -777,10 +777,7 @@ end
     S_u = u .- uprev
     if (invariant(gamma_min * S_u .+ uprev) .- invariant(uprev)) * (invariant(gamma_max * S_u .+ uprev) .- invariant(uprev)) ≤ 0 
         gamma = find_zero(gamma -> invariant(gamma*S_u .+ uprev) .- invariant(uprev), (gamma_min, gamma_max), opt())
-        @. integrator.u =  uprev + gamma*S_u
-        @. integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
     end
-    println("gamma = $gamma")
     gamma
 end
 
@@ -792,7 +789,13 @@ end
 @inline function next_time_controller(integrator::ODEIntegrator, controller::RelaxationController, ttmp, dt)
     gamma = integrator.opts.relaxation(integrator)
     integrator.dt *= oftype(dt, gamma)
+    vdt = integrator.dt
     modify_dt_for_tstops!(integrator)
+    if integrator.dt != vdt
+        gamma = integrator.dt/dt
+    end
+    @. integrator.u =  integrator.uprev + gamma*(integrator.u .- integrator.uprev)
+    @. integrator.fsallast = integrator.fsalfirst + gamma*(integrator.fsallast - integrator.fsalfirst)
     controller.gamma = gamma
     ttmp + integrator.dt - dt
 end
