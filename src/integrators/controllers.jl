@@ -65,7 +65,7 @@ end
         q = inv(qmax)
     else
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = DiffEqBase.fastpow(EEst, expo) / gamma
+        qtmp = ^(EEst, expo) / gamma
         @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         # TODO: Shouldn't this be in `step_accept_controller!` as for the PI controller?
         integrator.qold = DiffEqBase.value(integrator.dt) / q
@@ -138,8 +138,8 @@ end
     if iszero(EEst)
         q = inv(qmax)
     else
-        q11 = DiffEqBase.fastpow(EEst, float(beta1))
-        q = q11 / DiffEqBase.fastpow(qold, float(beta2))
+        q11 = ^(EEst, float(beta1))
+        q = q11 / ^(qold, float(beta2))
         integrator.q11 = q11
         @fastmath q = max(inv(qmax), min(inv(qmin), q / gamma))
     end
@@ -412,7 +412,7 @@ end
             fac = min(gamma, (1 + 2 * maxiters) * gamma / (iter + 2 * maxiters))
         end
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
-        qtmp = DiffEqBase.fastpow(EEst, expo) / fac
+        qtmp = ^(EEst, expo) / fac
         @fastmath q = DiffEqBase.value(max(inv(qmax), min(inv(qmin), qtmp)))
         integrator.qold = q
     end
@@ -426,7 +426,7 @@ function step_accept_controller!(integrator, controller::PredictiveController, a
     if integrator.success_iter > 0
         expo = 1 / (get_current_adaptive_order(alg, integrator.cache) + 1)
         qgus = (integrator.dtacc / integrator.dt) *
-               DiffEqBase.fastpow((EEst^2) / integrator.erracc, expo)
+               ^((EEst^2) / integrator.erracc, expo)
         qgus = max(inv(qmax), min(inv(qmin), qgus / gamma))
         qacc = max(q, qgus)
     else
