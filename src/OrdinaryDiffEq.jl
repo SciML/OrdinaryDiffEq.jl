@@ -149,9 +149,7 @@ include("generic_rosenbrock.jl")
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
 include("caches/high_order_rk_caches.jl")
-include("caches/sdirk_caches.jl")
 include("caches/firk_caches.jl")
-include("caches/kencarp_kvaerno_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
 include("caches/rosenbrock_caches.jl")
@@ -166,7 +164,6 @@ include("caches/qprk_caches.jl")
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
 include("tableaus/rosenbrock_tableaus.jl")
-include("tableaus/sdirk_tableaus.jl")
 include("tableaus/firk_tableaus.jl")
 include("tableaus/qprk_tableaus.jl")
 
@@ -186,7 +183,6 @@ include("perform_step/exponential_rk_perform_step.jl")
 include("perform_step/explicit_rk_perform_step.jl")
 include("perform_step/low_order_rk_perform_step.jl")
 include("perform_step/high_order_rk_perform_step.jl")
-include("perform_step/sdirk_perform_step.jl")
 include("perform_step/kencarp_kvaerno_perform_step.jl")
 include("perform_step/firk_perform_step.jl")
 include("perform_step/rosenbrock_perform_step.jl")
@@ -278,6 +274,15 @@ export Vern6, Vern7, Vern8, Vern9
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
+
+include("../lib/OrdinaryDiffEqSDIRK/src/OrdinaryDiffEqSDIRK.jl")
+using ..OrdinaryDiffEqSDIRK
+export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
+       Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
+       Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
+       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
+       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
+       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
 import PrecompileTools
 
@@ -416,13 +421,6 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
 
 export RadauIIA3, RadauIIA5
-
-export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
-       Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
-       Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
-       SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
-       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
-       SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,

@@ -71,6 +71,12 @@ function activate_symplectic_rk()
     Pkg.instantiate()
 end
 
+function activate_sdirk()
+    Pkg.activate("../lib/OrdinaryDiffEqSDIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
