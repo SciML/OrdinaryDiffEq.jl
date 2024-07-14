@@ -347,11 +347,8 @@ end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
-alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
-alg_extrapolates(alg::Trapezoid) = true
-alg_extrapolates(alg::SDIRK22) = true
 alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
@@ -441,7 +438,6 @@ alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
 alg_order(alg::RadauIIA3) = 3
 alg_order(alg::RadauIIA5) = 5
-alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::RKMK2) = 2
 alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
@@ -458,34 +454,6 @@ alg_order(alg::MagnusGL4) = 4
 alg_order(alg::MagnusAdapt4) = 4
 alg_order(alg::LinearExponential) = 1
 alg_order(alg::MagnusLeapfrog) = 2
-alg_order(alg::Trapezoid) = 2
-alg_order(alg::ImplicitMidpoint) = 2
-alg_order(alg::TRBDF2) = 2
-alg_order(alg::SSPSDIRK2) = 2
-alg_order(alg::SDIRK2) = 2
-alg_order(alg::SDIRK22) = 2
-alg_order(alg::Kvaerno3) = 3
-alg_order(alg::Kvaerno4) = 4
-alg_order(alg::Kvaerno5) = 5
-alg_order(alg::ESDIRK54I8L2SA) = 5
-alg_order(alg::ESDIRK436L2SA2) = 4
-alg_order(alg::ESDIRK437L2SA) = 4
-alg_order(alg::ESDIRK547L2SA2) = 5
-alg_order(alg::ESDIRK659L2SA) = 6
-alg_order(alg::KenCarp3) = 3
-alg_order(alg::CFNLIRK3) = 3
-alg_order(alg::KenCarp4) = 4
-alg_order(alg::KenCarp47) = 4
-alg_order(alg::KenCarp5) = 5
-alg_order(alg::KenCarp58) = 5
-alg_order(alg::Cash4) = 4
-alg_order(alg::SFSDIRK4) = 4
-alg_order(alg::SFSDIRK5) = 4
-alg_order(alg::SFSDIRK6) = 4
-alg_order(alg::SFSDIRK7) = 4
-alg_order(alg::SFSDIRK8) = 4
-alg_order(alg::Hairer4) = 4
-alg_order(alg::Hairer42) = 4
 alg_order(alg::PFRK87) = 8
 
 alg_order(alg::ROS2) = 2
@@ -580,11 +548,8 @@ alg_adaptive_order(alg::Rosenbrock32) = 2
 alg_adaptive_order(alg::RadauIIA3) = 1
 alg_adaptive_order(alg::RadauIIA5) = 3
 
-alg_adaptive_order(alg::ImplicitEuler) = 0
-alg_adaptive_order(alg::Trapezoid) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
-alg_adaptive_order(alg::ImplicitMidpoint) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
@@ -669,7 +634,6 @@ ssp_coefficient(alg::Euler) = 1
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
-ssp_coefficient(alg::SSPSDIRK2) = 4
 
 # stability regions
 alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
@@ -750,13 +714,6 @@ isWmethod(alg::ROS34PRw) = true
 isWmethod(alg::ROK4a) = true
 isWmethod(alg::RosenbrockW6S4OS) = true
 
-isesdirk(alg::TRBDF2) = true
-function isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5, KenCarp58,
-        Kvaerno3, Kvaerno4, Kvaerno5, ESDIRK437L2SA,
-        ESDIRK54I8L2SA, ESDIRK436L2SA2, ESDIRK547L2SA2,
-        ESDIRK659L2SA, CFNLIRK3})
-    true
-end
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 
 is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
