@@ -37,7 +37,7 @@ basically if you want to keep a fixed time step.
 struct NothingController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::IController, alg)
+@inline function stepsize_controller!(integrator, controller::NothingController, alg)
     nothing
 end
 
