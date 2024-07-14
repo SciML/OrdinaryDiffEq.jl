@@ -15,10 +15,10 @@ prob = ODEProblem(
 invariant(x) = norm(x)
 
 # Convergence with the method Tsit5()
-sim = test_convergence(dts, prob, Tsit5())
+sim = test_convergence(dts, prob, Tsit5(), adaptative = true)
 println("order of convergence of older perform_step! : "*string(sim.𝒪est[:final]))
 
 # Convergence with relaxation with FSAL-R, i.e  f(uᵧ,ₙ₊₁) ≈ f(uᵧ,ₙ) + γ ( f(uₙ₊₁) - f(uᵧ,ₙ)) 
 r = Relaxation(invariant)
-sim = test_convergence(dts, prob, Tsit5(); relaxation = r)
+sim = test_convergence(dts, prob, Tsit5(); relaxation = r, adaptative = true)
 println("order with relaxation with FSAL-R modification: "*string(sim.𝒪est[:final]))
