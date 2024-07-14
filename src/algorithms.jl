@@ -715,3 +715,5 @@ function DFBDF(; max_order::Val{MO} = Val{5}(), chunk_size = Val{0}(),
 end
 
 TruncatedStacktraces.@truncate_stacktrace DFBDF
+
+end
