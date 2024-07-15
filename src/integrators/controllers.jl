@@ -28,27 +28,27 @@ reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
 
 """
-    NothingController()
+    NonAdaptiveController()
 
 This Controller exists to match the interface when one does not want to use a controller,
 basically if you want to keep a fixed time step.
 """
-struct NothingController <: AbstractController
+struct NonAdaptiveController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::NothingController, alg)
+@inline function stepsize_controller!(integrator, controller::NonAdaptiveController, alg)
     nothing
 end
 
-@inline function accept_step_controller(integrator, ::NothingController)
+@inline function accept_step_controller(integrator, ::NonAdaptiveController)
     return true
 end
 
-function step_accept_controller!(integrator, ::NothingController, alg, q)
+function step_accept_controller!(integrator, ::NonAdaptiveController, alg, q)
     integrator.dt
 end
 
-function step_reject_controller!(integrator, ::NothingController, alg)
+function step_reject_controller!(integrator, ::NonAdaptiveController, alg)
 end
 
 # Standard integral (I) step size controller

@@ -367,7 +367,7 @@ function DiffEqBase.__init(
         if adaptive
             controller = default_controller(_alg, cache, qoldinit, beta1, beta2)
         else
-            controller = NothingController()
+            controller = NonAdaptiveController()
         end
     end
 
