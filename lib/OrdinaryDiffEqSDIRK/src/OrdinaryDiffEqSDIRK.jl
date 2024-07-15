@@ -2,8 +2,8 @@ module OrdinaryDiffEqSDIRK
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("sdirk_caches.jl")
 include("kencarp_kvaerno_caches.jl")
+include("sdirk_caches.jl")
 include("sdirk_perform_step.jl")
 include("kencarp_kvaerno_perform_step.jl")
 include("sdirk_tableaus.jl")
