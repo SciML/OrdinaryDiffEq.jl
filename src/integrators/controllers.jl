@@ -36,7 +36,7 @@ basically if you want to keep a fixed time step.
 struct NonAdaptiveController <: AbstractController
 end
 
-@inline function stepsize_controller!(integrator, controller::NonAdaptiveController, alg)
+@inline function stepsize_controller!(integrator, ::NonAdaptiveController, alg)
     nothing
 end
 
