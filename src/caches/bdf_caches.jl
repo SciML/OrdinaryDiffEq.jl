@@ -1,3 +1,4 @@
+using OrdinaryDiffEq
 @cache mutable struct ABDF2ConstantCache{N, dtType, rate_prototype} <:
                       OrdinaryDiffEqConstantCache
     nlsolver::N
