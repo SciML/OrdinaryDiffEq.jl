@@ -1430,7 +1430,6 @@ const MultistepAlgorithms = Union{
     ABDF2,
     AB3, AB4, AB5, ABM32, ABM43, ABM54}
 
-#KenCarp3, KenCarp4, KenCarp47, KenCarp5, KenCarp58, CFNLIRK3
 const SplitAlgorithms = Union{CNAB2, CNLF2, SBDF}
 
 #=

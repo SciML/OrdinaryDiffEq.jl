@@ -46,3 +46,10 @@ alg_adaptive_order(alg::ImplicitEuler) = 0
 ssp_coefficient(alg::SSPSDIRK2) = 4
 
 isesdirk(alg::TRBDF2) = true
+
+issplit(alg::KenCarp3) = true
+issplit(alg::KenCarp4) = true
+issplit(alg::KenCarp47) = true
+issplit(alg::KenCarp5) = true
+issplit(alg::KenCarp58) = true
+issplit(alg::CFNLIRK3) = true
