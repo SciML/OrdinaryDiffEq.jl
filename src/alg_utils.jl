@@ -528,9 +528,6 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
 
-alg_adaptive_order(alg::RadauIIA3) = 1
-alg_adaptive_order(alg::RadauIIA5) = 3
-
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 # this is actually incorrect and is purposefully decreased as this tends
