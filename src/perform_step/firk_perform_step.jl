@@ -108,6 +108,16 @@ function initialize!(integrator, cache::RadauIIA7Cache)
     integrator.k[2] = integrator.fsallast
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
     integrator.stats.nf += 1
+    if integrator.opts.adaptive
+        @unpack abstol, reltol = integrator.opts
+        if reltol isa Number
+            cache.rtol = reltol^(2 / 3) / 10
+            cache.atol = cache.rtol * (abstol / reltol)
+        else
+            @.. broadcast=false cache.rtol=reltol^(2 / 3) / 10
+            @.. broadcast=false cache.atol=cache.rtol * (abstol / reltol)
+        end
+    end
     nothing
 end
 
@@ -459,7 +469,6 @@ end
         atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
         atmp3 = calculate_residuals(dw3, uprev, u, atol, rtol, internalnorm, t)
         ndw = internalnorm(atmp1, t) + internalnorm(atmp2, t) + internalnorm(atmp3, t)
-
         # check divergence (not in initial step)
         if iter > 1
             θ = ndw / ndwprev
@@ -789,7 +798,7 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # precalculations rtol pow is (num stages + 1)/(2*num stages)
-    rtol = @.. broadcast=false reltol#^(5/8)/10
+    rtol = @.. broadcast=false reltol^(5/8)/10
     atol = @.. broadcast=false rtol*(abstol / reltol)
     c1m1 = c1 - 1
     c2m1 = c2 - 1
@@ -859,7 +868,7 @@ end
         ff2 = f(uprev + z2, p, t + c2 * dt)
         ff3 = f(uprev + z3, p, t + c3 * dt)
         ff4 = f(uprev + z4, p, t + c4 * dt)
-        ff5 = f(uprev + z4, p, t + dt) # c5 = 1
+        ff5 = f(uprev + z5, p, t + dt) # c5 = 1
         integrator.stats.nf += 5
 
         fw1 = @.. broadcast=false TI11*ff1 + TI12*ff2 + TI13*ff3 + TI14*ff4 + TI15*ff5
@@ -904,7 +913,6 @@ end
         atmp4 = calculate_residuals(dw4, uprev, u, atol, rtol, internalnorm, t)
         atmp5 = calculate_residuals(dw5, uprev, u, atol, rtol, internalnorm, t)
         ndw = internalnorm(atmp1, t) + internalnorm(atmp2, t) + internalnorm(atmp3, t) + internalnorm(atmp4, t) + internalnorm(atmp5, t)
-
         # check divergence (not in initial step)
         if iter > 1
             θ = ndw / ndwprev
@@ -939,6 +947,7 @@ end
             break
         end
     end
+    
     if fail_convergence
         integrator.force_stepfail = true
         integrator.stats.nnonlinconvfail += 1
@@ -948,15 +957,13 @@ end
     cache.iter = iter
 
     u = @.. broadcast=false uprev + z5
-    #=
+    
     if adaptive
-        e1dt, e2dt, e3dt = e1 / dt, e2 / dt, e3 / dt
-        tmp = @.. broadcast=false e1dt*z1+e2dt*z2+e3dt*z3
+        e1dt, e2dt, e3dt, e4dt, e5dt = e1 / dt, e2 / dt, e3 / dt, e4/dt, e5/dt
+        tmp = @.. broadcast=false e1dt*z1+e2dt*z2+e3dt*z3+e4dt*z4 + e5dt*z5
         mass_matrix != I && (tmp = mass_matrix * tmp)
         utilde = @.. broadcast=false integrator.fsalfirst+tmp
         alg.smooth_est && (utilde = LU1 \ utilde; integrator.stats.nsolve += 1)
-        # RadauIIA5 needs a transformed rtol and atol see
-        # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
 
@@ -970,7 +977,7 @@ end
             integrator.EEst = internalnorm(atmp, t)
         end
     end
-    =#
+    
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
@@ -1002,10 +1009,10 @@ end
     @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
     @unpack κ, cont1, cont2, cont3, cont4 = cache
     @unpack z1, z2, z3, z4, z5, w1, w2, w3, w4, w5 = cache
-    @unpack dw1, ubuff, dw23, dw45, cubuff = cache
-    @unpack k, k2, k3, k4, fw1, fw2, fw3, fw4, fw5 = cache
+    @unpack dw1, ubuff, dw23, dw45, cubuff1, cubuff2 = cache
+    @unpack k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5 = cache
     @unpack J, W1, W2, W3 = cache
-    tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
+    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1023,7 +1030,7 @@ end
     c2mc4 = c2 - c4
     c3mc4 = c3 - c4
 
-    γdt, αdt, βdt = γ / dt, α / dt, β / dt
+    γdt, α1dt, β1dt, α2dt, β2dt= γ / dt, α1 / dt, β1 / dt, α2 / dt, β2 / dt
     (new_jac = do_newJ(integrator, alg, cache, repeat_step)) &&
         (calc_J!(J, integrator, cache); cache.W_γdt = dt)
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
@@ -1130,7 +1137,7 @@ end
             Mw5 = z5
         end
 
-        @.. broadcast=false ubuff=fw1 - γdt * Mw1
+        @.. broadcast=false ubuff = fw1 - γdt * Mw1
         needfactor = iter == 1 && new_W
 
         linsolve1 = cache.linsolve1
@@ -1145,26 +1152,29 @@ end
 
         cache.linsolve1 = linres1.cache
 
-        @.. broadcast=false cubuff=complex(fw2 - αdt * Mw2 + βdt * Mw3,
-            fw3 - βdt * Mw2 - αdt * Mw3)
+        @.. broadcast=false cubuff1 = complex(fw2 - α1dt * Mw2 + β1dt * Mw3, fw3 - β1dt * Mw2 - α1dt * Mw3)
 
         linsolve2 = cache.linsolve2
 
         if needfactor
-            linres2 = dolinsolve(integrator, linsolve2; A = W2, b = _vec(cubuff),
+            linres2 = dolinsolve(integrator, linsolve2; A = W2, b = _vec(cubuff1),
                 linu = _vec(dw23))
         else
-            linres2 = dolinsolve(integrator, linsolve2; A = nothing, b = _vec(cubuff),
+            linres2 = dolinsolve(integrator, linsolve2; A = nothing, b = _vec(cubuff1),
                 linu = _vec(dw23))
         end
 
         cache.linsolve2 = linres2.cache
 
+        @.. broadcast=false cubuff2 = complex(fw4 - α2dt * Mw4 + β2dt * Mw5, fw5 - β2dt * Mw4 - α2dt * Mw5)
+
+        linsolve3 = cache.linsolve3
+
         if needfactor
-            linres3 = dolinsolve(integrator, linsolve2; A = W3, b = _vec(cubuff),
+            linres3 = dolinsolve(integrator, linsolve3; A = W3, b = _vec(cubuff2),
                 linu = _vec(dw45))
         else
-            linres3 = dolinsolve(integrator, linsolve2; A = nothing, b = _vec(cubuff),
+            linres3 = dolinsolve(integrator, linsolve3; A = nothing, b = _vec(cubuff2),
                 linu = _vec(dw45))
         end
 
@@ -1242,8 +1252,8 @@ end
     #=
     if adaptive
         utilde = w2
-        e1dt, e2dt, e3dt = e1 / dt, e2 / dt, e3 / dt
-        @.. broadcast=false tmp=e1dt * z1 + e2dt * z2 + e3dt * z3
+        e1dt, e2dt, e3dt, e4dt, e5dt = e1 / dt, e2 / dt, e3 / dt, e4 / dt, e5 / dt
+        @.. broadcast=false tmp=e1dt * z1 + e2dt * z2 + e3dt * z3 + e4dt * z4 + e5dt * z5
         mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
         @.. broadcast=false ubuff=integrator.fsalfirst + tmp
 
@@ -1282,16 +1292,16 @@ end
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            @.. broadcast=false cache.cont1 = (z4 - z5) / c4m1
-            @.. broadcast=false tmp1 = (z3 - z4) / c3mc4
-            @.. broadcast=false cache.cont2 = (tmp1 - cache.cont1) / c3m1
-            @.. broadcast=false tmp2 = (z2 - z3) / c2mc3
-            @.. broadcast=false tmp3 = (tmp2 - tmp) / c2mc4
-            @.. broadcast=false cache.cont3 = (tmp3 - cache.cont2) / c2m1
-            @.. broadcast=false tmp4 = (z1 - z2) / c1mc2
-            @.. broadcast=false tmp5 = (tmp4 - tmp2) / c1mc3
-            @.. broadcast=false tmp6 = (tmp5 - tmp3) / c1mc4
-            @.. broadcast=false cache.cont4 = (tmp6 - cache.cont3) / c1m1
+            @.. cache.cont1 = (z4 - z5) / c4m1
+            @.. tmp1 = (z3 - z4) / c3mc4
+            @.. cache.cont2 = (tmp1 - cache.cont1) / c3m1
+            @.. tmp2 = (z2 - z3) / c2mc3
+            @.. tmp3 = (tmp2 - tmp) / c2mc4
+            @.. cache.cont3 = (tmp3 - cache.cont2) / c2m1
+            @.. tmp4 = (z1 - z2) / c1mc2
+            @.. tmp5 = (tmp4 - tmp2) / c1mc3
+            @.. tmp6 = (tmp5 - tmp3) / c1mc4
+            @.. cache.cont4 = (tmp6 - cache.cont3) / c1m1
         end
     end
 

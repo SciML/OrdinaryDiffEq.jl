@@ -111,7 +111,7 @@ end
     get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
 end
 # avoid method ambiguity
-for typ in (OrdinaryDiffEqAlgorithm, Union{RadauIIA3, RadauIIA5},
+for typ in (OrdinaryDiffEqAlgorithm, Union{RadauIIA3, RadauIIA5, RadauIIA7},
     OrdinaryDiffEqNewtonAdaptiveAlgorithm,
     OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
     Union{SSPRK22, SSPRK33, SSPRK53_2N1, SSPRK53_2N2, SSPRK43, SSPRK432, SSPRK932})
@@ -126,7 +126,7 @@ end
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5},
+@inline function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5, RadauIIA7},
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.atmp)
 end

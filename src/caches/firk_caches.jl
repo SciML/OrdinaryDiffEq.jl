@@ -325,7 +325,8 @@ dw1::uType
 ubuff::uType
 dw23::cuType
 dw45::cuType
-cubuff::cuType
+cubuff1::cuType
+cubuff2::cuType
 cont1::uType
 cont2::uType
 cont3::uType
@@ -392,8 +393,10 @@ dw23 = similar(u, Complex{eltype(u)})
 dw45 = similar(u, Complex{eltype(u)})
 recursivefill!(dw23, false)
 recursivefill!(dw45, false)
-cubuff = similar(u, Complex{eltype(u)})
-recursivefill!(cubuff, false)
+cubuff1 = similar(u, Complex{eltype(u)})
+cubuff2 = similar(u, Complex{eltype(u)})
+recursivefill!(cubuff1, false)
+recursivefill!(cubuff2, false)
 cont1 = zero(u)
 cont2 = zero(u)
 cont3 = zero(u)
@@ -432,12 +435,12 @@ linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
 assumptions = LinearSolve.OperatorAssumptions(true))
 #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
 #Pr = Diagonal(_vec(weight)))
-linprob = LinearProblem(W2, _vec(cubuff); u0 = _vec(dw23))
+linprob = LinearProblem(W2, _vec(cubuff1); u0 = _vec(dw23))
 linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
 assumptions = LinearSolve.OperatorAssumptions(true))
 #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
 #Pr = Diagonal(_vec(weight)))
-linprob = LinearProblem(W3, _vec(cubuff); u0 = _vec(dw45))
+linprob = LinearProblem(W3, _vec(cubuff2); u0 = _vec(dw45))
 linsolve3 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
 assumptions = LinearSolve.OperatorAssumptions(true))
 #Pl = LinearSolve.InvPreconditioner(Diagonal(_vec(weight))),
@@ -449,7 +452,7 @@ atol = reltol isa Number ? reltol : zero(reltol)
 
 RadauIIA7Cache(u, uprev,
 z1, z2, z3, z4, z5, w1, w2, w3, w4, w5, 
-dw1, ubuff, dw23, dw45, cubuff, cont1, cont2, cont3, cont4, 
+dw1, ubuff, dw23, dw45, cubuff1, cubuff2, cont1, cont2, cont3, cont4, 
 du1, fsalfirst, k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
 J, W1, W2, W3,
 uf, tab, κ, one(uToltype), 10000,
