@@ -155,7 +155,6 @@ include("caches/linear_nonlinear_caches.jl")
 include("caches/rosenbrock_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
-include("caches/bdf_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
 include("caches/dae_caches.jl")
@@ -188,7 +187,6 @@ include("perform_step/rosenbrock_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
-include("perform_step/bdf_perform_step.jl")
 include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
 include("perform_step/dae_perform_step.jl")
@@ -204,7 +202,6 @@ include("dense/high_order_rk_addsteps.jl")
 include("derivative_utils.jl")
 include("nordsieck_utils.jl")
 include("adams_utils.jl")
-include("bdf_utils.jl")
 include("derivative_wrappers.jl")
 include("iterator_interface.jl")
 include("constants.jl")
@@ -282,6 +279,10 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
        SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
        SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
+
+include("caches/bdf_caches.jl")
+include("perform_step/bdf_perform_step.jl")
+include("bdf_utils.jl")
 
 import PrecompileTools
 
