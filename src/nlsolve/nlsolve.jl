@@ -88,8 +88,7 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
                 break
             end
         else
-            # don't use prev_θ for non-adaptive because we own't know if it actually converged
-            if !integrator.opts.adaptive || !integrator.accept_step
+            if !integrator.accept_step
                 prev_θ = one(prev_θ)
             end
             θ = prev_θ
@@ -103,8 +102,11 @@ function nlsolve!(nlsolver::NL, integrator::DiffEqBase.DEIntegrator,
 
         # check for convergence
         η = DiffEqBase.value(θ / (1 - θ))
+        # don't trust θ for non-adaptive on first iter because the solver doesn't provide feedback
+        # for us to know whether our previous nlsolve converged sufficiently well
+        check_η_convergance = (iter > 1 || (isnewton(nlsolver) && isadaptive(solver)))
         if (iter == 1 && ndz < 1e-5) ||
-           ((iter > 1 || isnewton(nlsolver)) && η >= zero(η) && η * ndz < κ)
+           (check_η_convergance && η >= zero(η) && η * ndz < κ)
             nlsolver.status = Convergence
             nlsolver.nfails = 0
             break
