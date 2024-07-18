@@ -189,7 +189,6 @@ include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
 include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
-include("perform_step/dae_perform_step.jl")
 include("perform_step/qprk_perform_step.jl")
 
 include("dense/generic_dense.jl")
@@ -285,6 +284,8 @@ export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
+
+include("perform_step/dae_perform_step.jl")
 
 import PrecompileTools
 
