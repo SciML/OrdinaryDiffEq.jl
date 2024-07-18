@@ -6,12 +6,12 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        OrdinaryDiffEqAlgorithm,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-                       OrdinaryDiffEqPartitionedAlgorithm,
                        OrdinaryDiffEqNewtonAlgorithm,
                        OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new, _ode_interpolant,
                        trivial_limiter!, _ode_interpolant!, _ode_addsteps!
+using TruncatedStacktraces
 
 include("algorithms.jl")
 include("alg_utils.jl")
