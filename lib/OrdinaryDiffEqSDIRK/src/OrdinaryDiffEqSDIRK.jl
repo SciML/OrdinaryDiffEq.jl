@@ -12,7 +12,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new, _ode_interpolant,
                        markfirststage!, trivial_limiter!, _ode_interpolant!, 
-                       UJacobianWrapper, set_new_W!,
+                       UJacobianWrapper, set_new_W!, dolinsolve,
                        _ode_addsteps!, build_nlsolver, nlsolve!, nlsolvefail, isnewton
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
