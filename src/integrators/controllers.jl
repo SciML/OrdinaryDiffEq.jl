@@ -472,98 +472,7 @@ function step_reject_controller!(integrator, alg::JVODE)
     integrator.dt *= integrator.qold
 end
 
-# QNBDF
-stepsize_controller!(integrator, alg::QNDF) = nothing
-
-# this stepsize and order controller is taken from
-# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
-# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
-
-function step_accept_controller!(integrator, alg::QNDF{max_order}, q) where {max_order}
-    #step is accepted, reset count of consecutive failed steps
-    integrator.cache.consfailcnt = 0
-    integrator.cache.nconsteps += 1
-    if iszero(integrator.EEst)
-        return integrator.dt * integrator.opts.qmax
-    else
-        est = integrator.EEst
-        estₖ₋₁ = integrator.cache.EEst1
-        estₖ₊₁ = integrator.cache.EEst2
-        h = integrator.dt
-        k = integrator.cache.order
-        cache = integrator.cache
-        prefer_const_step = integrator.cache.nconsteps < integrator.cache.order + 2
-        zₛ = 1.2 # equivalent to integrator.opts.gamma
-        zᵤ = 0.1
-        Fᵤ = 10
-        expo = 1 / (k + 1)
-        z = zₛ * ((est)^expo)
-        F = inv(z)
-        hₙ = h
-        kₙ = k
-        if z <= zᵤ
-            hₖ = Fᵤ * h
-        else
-            hₖ = F * h
-        end
-        hₖ₋₁ = 0.0
-        hₖ₊₁ = 0.0
-
-        if k > 1
-            expo = 1 / k
-            zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
-            Fₖ₋₁ = inv(zₖ₋₁)
-            if zₖ₋₁ <= 0.1
-                hₖ₋₁ = 10 * h
-            elseif 1 / 10 < zₖ₋₁ <= 1.3
-                hₖ₋₁ = Fₖ₋₁ * h
-            end
-            if hₖ₋₁ > hₖ
-                hₙ = hₖ₋₁
-                kₙ = k - 1
-            else
-                hₙ = hₖ
-                kₙ = k
-            end
-        else
-            hₙ = hₖ
-            kₙ = k
-        end
-
-        if k < max_order
-            expo = 1 / (k + 2)
-            zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
-            Fₖ₊₁ = inv(zₖ₊₁)
-
-            if zₖ₊₁ <= 0.1
-                hₖ₊₁ = 10 * h
-            elseif 0.1 < zₖ₊₁ <= 1.4
-                hₖ₊₁ = Fₖ₊₁ * h
-            end
-            if hₖ₊₁ > hₙ
-                hₙ = hₖ₊₁
-                kₙ = k + 1
-            end
-        end
-        cache.order = kₙ
-        q = integrator.dt / hₙ
-    end
-    if prefer_const_step
-        if q < 1.2 && q > 0.6
-            return integrator.dt
-        end
-    end
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-        return integrator.dt
-    end
-    return integrator.dt / q
-end
-
-function step_reject_controller!(integrator, ::QNDF)
-    bdf_step_reject_controller!(integrator, integrator.cache.EEst1)
-end
-
-function step_reject_controller!(integrator, ::Union{FBDF, DFBDF})
+function step_reject_controller!(integrator, ::DFBDF)
     bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
 end
 
@@ -613,7 +522,7 @@ function post_newton_controller!(integrator, alg)
     nothing
 end
 
-function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
+function post_newton_controller!(integrator, alg::DFBDF)
     @unpack cache = integrator
     if cache.order > 1 && cache.nlsolver.nfails >= 3
         cache.order -= 1
@@ -624,7 +533,7 @@ function post_newton_controller!(integrator, alg::Union{FBDF, DFBDF})
     nothing
 end
 
-function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
+function choose_order!(alg::DFBDF, integrator,
         cache::OrdinaryDiffEqMutableCache,
         ::Val{max_order}) where {max_order}
     @unpack t, dt, u, cache, uprev = integrator
@@ -660,7 +569,7 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
     return k, terk
 end
 
-function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
+function choose_order!(alg::DFBDF, integrator,
         cache::OrdinaryDiffEqConstantCache,
         ::Val{max_order}) where {max_order}
     @unpack t, dt, u, cache, uprev = integrator
@@ -705,7 +614,7 @@ function choose_order!(alg::Union{FBDF, DFBDF}, integrator,
 end
 
 function stepsize_controller!(integrator,
-        alg::Union{FBDF{max_order}, DFBDF{max_order}}) where {
+        alg::DFBDF{max_order}) where {
         max_order,
 }
     @unpack cache = integrator
@@ -724,7 +633,7 @@ function stepsize_controller!(integrator,
     q
 end
 
-function step_accept_controller!(integrator, alg::Union{FBDF{max_order}, DFBDF{max_order}},
+function step_accept_controller!(integrator, alg::DFBDF{max_order},
         q) where {max_order}
     integrator.cache.consfailcnt = 0
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
