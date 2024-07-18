@@ -11,12 +11,13 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        CompiledFloats, uses_uprev,
                        NLNewton, alg_cache, _vec, _reshape, @cache, 
                        isfsal, full_cache, build_nlsolver,
-                       constvalue, _unwrap_val, du_alias_or_new, _ode_interpolant,
-                       trivial_limiter!, _ode_interpolant!,
-                       ImplicitEulerConstantCache, ImplicitEulerCache,
+                       constvalue, _unwrap_val, du_alias_or_new,
+                       trivial_limiter!, ImplicitEulerConstantCache, 
+                       ImplicitEulerCache,
                        markfirststage!, UJacobianWrapper
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+using LinearAlgebra: I
 
 include("algorithms.jl")
 include("alg_utils.jl")

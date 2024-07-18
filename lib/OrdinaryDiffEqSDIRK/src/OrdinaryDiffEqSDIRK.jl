@@ -16,6 +16,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        build_nlsolver, nlsolve!, nlsolvefail, isnewton
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
+using LinearAlgebra: I
 
 include("algorithms.jl")
 include("alg_utils.jl")
