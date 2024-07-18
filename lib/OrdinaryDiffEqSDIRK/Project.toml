@@ -7,6 +7,7 @@ version = "1.0.0"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 
 [compat]
 julia = "1.10"
