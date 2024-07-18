@@ -1,24 +1,7 @@
-is_constant_cache(cache::OrdinaryDiffEqConstantCache) = true
-is_constant_cache(cache::OrdinaryDiffEqCache) = false
-is_constant_cache(cache::CompositeCache) = is_constant_cache(cache.caches[1])
-function is_constant_cache(cache::DefaultCache)
-    current = cache.current
-    if current == 1
-        is_constant_cache(cache.cache1)
-    elseif current == 2
-        is_constant_cache(cache.cache2)
-    elseif current == 3
-        is_constant_cache(cache.cache3)
-    elseif current == 4
-        is_constant_cache(cache.cache4)
-    elseif current == 5
-        is_constant_cache(cache.cache5)
-    elseif current == 6
-        is_constant_cache(cache.cache6)
-    else
-        error("This should not occur (please report a bug)")
-    end
-end
+is_constant_cache(::OrdinaryDiffEqConstantCache) = true
+is_constant_cache(::OrdinaryDiffEqCache) = false
+is_constant_cache(::CompositeCache) = is_constant_cache(cache.caches[1])
+is_constant_cache(cache::DefaultCache) = Base.fieldtype(cache :cache1) isa OrdinaryDiffEqConstantCache
 
 function DiffEqBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
     alg = integrator.alg
