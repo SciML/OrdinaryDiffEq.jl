@@ -16,7 +16,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        du_alias_or_new, trivial_limiter!, 
                        ImplicitEulerConstantCache, 
                        ImplicitEulerCache, COEFFICIENT_MULTISTEP,
-                       markfirststage!, UJacobianWrapper
+                       markfirststage!, UJacobianWrapper, mul!
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: I
