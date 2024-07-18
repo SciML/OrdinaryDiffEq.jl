@@ -12,7 +12,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new, _ode_interpolant,
                        markfirststage!, trivial_limiter!, _ode_interpolant!, 
-                       _ode_addsteps!
+                       _ode_addsteps!, build_nlsolver
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 
 include("algorithms.jl")
