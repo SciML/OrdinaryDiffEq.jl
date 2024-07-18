@@ -16,7 +16,7 @@ function is_constant_cache(cache::DefaultCache)
     elseif current == 6
         is_constant_cache(cache.cache6)
     else
-        errror("This should not occur (please report a bug)")
+        error("This should not occur (please report a bug)")
     end
 end
 
@@ -40,6 +40,8 @@ function DiffEqBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
             return cache.cache5
         elseif current == 6
             return cache.cache6
+        else
+            error("This should not occur (please report a bug)")
         end
     elseif alg.choice_function isa AutoSwitch
         num = is_stiff ? 2 : 1
