@@ -8,7 +8,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                        OrdinaryDiffEqNewtonAlgorithm,
                        AbstractController,
-                       OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
+                       CompiledFloats, uses_uprev,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new, _ode_interpolant,
                        trivial_limiter!, _ode_interpolant!, _ode_addsteps!
@@ -16,8 +16,8 @@ using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast
 
 include("algorithms.jl")
 include("alg_utils.jl")
-include("controllers.jl")
 include("bdf_caches.jl")
+include("controllers.jl")
 include("bdf_utils.jl")
 include("bdf_perform_step.jl")
 
