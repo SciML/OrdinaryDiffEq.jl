@@ -14,6 +14,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        trivial_limiter!, _ode_interpolant!, _ode_addsteps!,
                        ImplicitEulerConstantCache, ImplicitEulerCache
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast
+import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
 include("algorithms.jl")
 include("alg_utils.jl")
