@@ -11,7 +11,9 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new, _ode_interpolant,
                        trivial_limiter!, _ode_interpolant!, _ode_addsteps!
-using TruncatedStacktraces, MuladdMacro, MacroTools, RecursiveArrayTools
+using TruncatedStacktraces, MuladdMacro, MacroTools
+using DiffEqBase: @def, @tight_loop_macros
+using Static: False
 
 include("algorithms.jl")
 include("alg_utils.jl")
