@@ -13,7 +13,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        isfsal, full_cache, build_nlsolver,
                        constvalue, _unwrap_val, du_alias_or_new,
                        trivial_limiter!, ImplicitEulerConstantCache, 
-                       ImplicitEulerCache,
+                       ImplicitEulerCache, COEFFICIENT_MULTISTEP,
                        markfirststage!, UJacobianWrapper
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
