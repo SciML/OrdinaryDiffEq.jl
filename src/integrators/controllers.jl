@@ -448,8 +448,6 @@ end
 # Dummy controller without any method implementations.
 # This is used to transfer the special controllers associated to certain
 # algorithms to the new controller infrastructure with
-struct DummyController <: AbstractController
-end
 
 # JVODE
 function stepsize_controller!(integrator, alg::JVODE)

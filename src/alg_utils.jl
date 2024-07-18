@@ -567,7 +567,7 @@ function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
 end
 
 # other special cases in controllers.jl
-function default_controller(alg::Union{JVODE, QNDF, FBDF}, args...)
+function default_controller(alg::Union{JVODE}, args...)
     DummyController()
 end
 
@@ -699,8 +699,3 @@ is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::CompositeAlgorithm) = all(is_mass_matrix_alg, alg.algs)
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
-# hack for the default alg
-function is_mass_matrix_alg(alg::CompositeAlgorithm{
-        <:Any, <:Tuple{Tsit5, Rosenbrock23, Rodas5P, FBDF, FBDF}})
-    true
-end

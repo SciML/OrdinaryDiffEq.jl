@@ -15,6 +15,7 @@ using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast
 
 include("algorithms.jl")
 include("alg_utils.jl")
+include("controllers.jl")
 include("bdf_caches.jl")
 include("bdf_utils.jl")
 include("bdf_perform_step.jl")
