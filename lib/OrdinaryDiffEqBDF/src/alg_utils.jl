@@ -10,6 +10,8 @@ alg_order(alg::QNDF) = 1 #dummy value
 alg_order(alg::MEBDF2) = 2
 alg_order(alg::FBDF) = 1 #dummy value
 
+issplit(alg::SBDF) = true
+
 qsteady_min_default(alg::FBDF) = 9 // 10
 
 qsteady_max_default(alg::QNDF) = 2 // 1

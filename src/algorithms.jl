@@ -1040,7 +1040,7 @@ end
 const MultistepAlgorithms = Union{
     AB3, AB4, AB5, ABM32, ABM43, ABM54}
 
-const SplitAlgorithms = Union{CNAB2, CNLF2, SBDF}
+const SplitAlgorithms = Union{CNAB2, CNLF2}
 
 #=
 struct DBDF{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
