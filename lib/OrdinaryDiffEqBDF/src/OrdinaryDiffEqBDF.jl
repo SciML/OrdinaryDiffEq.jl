@@ -11,9 +11,10 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        CompiledFloats, uses_uprev,
                        NLNewton, alg_cache, _vec, _reshape, @cache, 
                        isfsal, full_cache, build_nlsolver,
-                       nlsolve!, constvalue, _unwrap_val, 
-                       du_alias_or_new, error_constant,
-                       trivial_limiter!, ImplicitEulerConstantCache, 
+                       error_constant, nlsolve!, 
+                       constvalue, _unwrap_val, 
+                       du_alias_or_new, trivial_limiter!, 
+                       ImplicitEulerConstantCache, 
                        ImplicitEulerCache, COEFFICIENT_MULTISTEP,
                        markfirststage!, UJacobianWrapper
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools

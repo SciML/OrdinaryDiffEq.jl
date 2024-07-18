@@ -14,7 +14,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        markfirststage!, trivial_limiter!, _ode_interpolant!, 
                        UJacobianWrapper, set_new_W!, dolinsolve, get_W,
                        build_nlsolver, nlsolve!, nlsolvefail, isnewton,
-                       COEFFICIENT_MULTISTEP
+                       COEFFICIENT_MULTISTEP, mul!
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 using SciMLBase: SplitFunction
 using LinearAlgebra: I
