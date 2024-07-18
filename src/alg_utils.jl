@@ -1,5 +1,5 @@
 ## SciMLBase Trait Definitions
-
+using OrdinaryDiffEq: AbstractController
 function SciMLBase.isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm,
         FunctionMap})
     true
