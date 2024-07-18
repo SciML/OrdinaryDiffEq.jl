@@ -57,6 +57,9 @@ the predicted step size.
 struct IController <: AbstractController
 end
 
+struct DummyController <: AbstractController
+end
+
 @inline function stepsize_controller!(integrator, controller::IController, alg)
     @unpack qmin, qmax, gamma = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
