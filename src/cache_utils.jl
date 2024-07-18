@@ -1,7 +1,7 @@
 is_constant_cache(::OrdinaryDiffEqConstantCache) = true
 is_constant_cache(::OrdinaryDiffEqCache) = false
 is_constant_cache(::CompositeCache) = is_constant_cache(cache.caches[1])
-is_constant_cache(cache::DefaultCache) = Base.fieldtype(cache :cache1) isa OrdinaryDiffEqConstantCache
+is_constant_cache(::D) where {D<:DefaultCache} = Base.fieldtype(D :cache1) isa OrdinaryDiffEqConstantCache
 
 function DiffEqBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
     alg = integrator.alg
