@@ -110,4 +110,4 @@ sol = solve(prob_rober_mm)
 using StaticArrays
 cb = ContinuousCallback((u, t, integrator) -> t - 1, (integrator) -> nothing)
 SA_ode_problem = ODEProblem((u, p, t) -> zero(u), SA[0], 2)
-@test solve(SA_ode_problem; callback=cb).retcode = ReturnCode.Success
+@test solve(SA_ode_problem; callback=cb).retcode == ReturnCode.Success
