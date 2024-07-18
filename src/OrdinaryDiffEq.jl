@@ -267,10 +267,6 @@ include("../lib/OrdinaryDiffEqVerner/src/OrdinaryDiffEqVerner.jl")
 using ..OrdinaryDiffEqVerner
 export Vern6, Vern7, Vern8, Vern9
 
-include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
-using ..OrdinaryDiffEqDefault
-export DefaultODEAlgorithm
-
 include("../lib/OrdinaryDiffEqSDIRK/src/OrdinaryDiffEqSDIRK.jl")
 using ..OrdinaryDiffEqSDIRK
 export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
@@ -284,6 +280,10 @@ include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
 using ..OrdinaryDiffEqBDF
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
        SBDF2, SBDF3, SBDF4, MEBDF2
+
+include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
+using ..OrdinaryDiffEqDefault
+export DefaultODEAlgorithm
 
 import PrecompileTools
 
