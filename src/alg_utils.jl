@@ -349,9 +349,6 @@ alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
-alg_extrapolates(alg::ABDF2) = true
-alg_extrapolates(alg::SBDF) = true
-alg_extrapolates(alg::MEBDF2) = true
 alg_extrapolates(alg::MagnusLeapfrog) = true
 
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
@@ -371,10 +368,6 @@ function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgor
     cache.order
 end
 get_current_alg_order(alg::JVODE, cache) = get_current_adaptive_order(alg, cache)
-get_current_alg_order(alg::QNDF, cache) = cache.order
-get_current_alg_order(alg::FBDF, cache) = cache.order
-get_current_adaptive_order(alg::QNDF, cache) = cache.order
-get_current_adaptive_order(alg::FBDF, cache) = cache.order
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 function get_current_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
@@ -514,16 +507,7 @@ alg_order(alg::CNLF2) = 2
 alg_order(alg::AN5) = 5
 alg_order(alg::JVODE) = 1  #dummy value
 
-alg_order(alg::ABDF2) = 2
-alg_order(alg::QNDF1) = 1
-alg_order(alg::QNDF2) = 2
 
-alg_order(alg::QNDF) = 1 #dummy value
-alg_order(alg::FBDF) = 1 #dummy value
-
-alg_order(alg::SBDF) = alg.order
-
-alg_order(alg::MEBDF2) = 2
 alg_order(alg::PDIRK44) = 4
 
 alg_order(alg::DImplicitEuler) = 1
@@ -609,17 +593,12 @@ gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
 fac_default_gamma(alg) = false
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
-qsteady_min_default(alg::FBDF) = 9 // 10
 qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
 qsteady_max_default(alg::AN5) = 3 // 2
 qsteady_max_default(alg::JVODE) = 3 // 2
-qsteady_max_default(alg::QNDF1) = 2 // 1
-qsteady_max_default(alg::QNDF2) = 2 // 1
-qsteady_max_default(alg::QNDF) = 2 // 1
-qsteady_max_default(alg::FBDF) = 2 // 1
 
 #TODO
 #DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2

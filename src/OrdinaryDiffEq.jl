@@ -280,9 +280,10 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
        SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
-include("caches/bdf_caches.jl")
-include("perform_step/bdf_perform_step.jl")
-include("bdf_utils.jl")
+include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
+using ..OrdinaryDiffEqBDF
+export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
+       SBDF2, SBDF3, SBDF4, MEBDF2
 
 import PrecompileTools
 
@@ -450,12 +451,6 @@ export VCABM
 export IMEXEuler, IMEXEulerARK, CNAB2, CNLF2
 
 export AN5, JVODE, JVODE_Adams, JVODE_BDF
-
-export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF
-
-export SBDF2, SBDF3, SBDF4
-
-export MEBDF2
 
 export Alshina2, Alshina3, Alshina6
 
