@@ -789,7 +789,7 @@ end
     repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32, T33, T34, T35, T41, T42, T43, T44, T45, T51 = cache.tab #= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
-    @unpack TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33,TI34, TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
+    @unpack TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33, TI34, TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab
     @unpack c1, c2, c3, c4, γ, α1, β1, α2, β2, e1, e2, e3, e4, e5 = cache.tab
     @unpack κ, cont1, cont2, cont3, cont4 = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
@@ -836,7 +836,7 @@ end
         cache.cont2 = map(zero, u)
         cache.cont3 = map(zero, u)
         cache.cont4 = map(zero, u)
-    else # add cont4
+    else 
         c5′ = dt / cache.dtprev
         c1′ = c1 * c5′
         c2′ = c2 * c5′
@@ -850,7 +850,7 @@ end
         w1 = @.. broadcast=false TI11*z1 + TI12*z2 + TI13*z3 + TI14*z4 + TI15*z5
         w2 = @.. broadcast=false TI21*z1 + TI22*z2 + TI23*z3 + TI24*z4 + TI25*z5
         w3 = @.. broadcast=false TI31*z1 + TI32*z2 + TI33*z3 + TI34*z4 + TI35*z5
-        w4 = @.. broadcast=false TI41*z1 + TI42*z2 + TI43*z3 + TI34*z4 + TI45*z5
+        w4 = @.. broadcast=false TI41*z1 + TI42*z2 + TI43*z3 + TI44*z4 + TI45*z5
         w5 = @.. broadcast=false TI51*z1 + TI52*z2 + TI53*z3 + TI54*z4 + TI55*z5
     end
 
@@ -913,7 +913,9 @@ end
         atmp4 = calculate_residuals(dw4, uprev, u, atol, rtol, internalnorm, t)
         atmp5 = calculate_residuals(dw5, uprev, u, atol, rtol, internalnorm, t)
         ndw = internalnorm(atmp1, t) + internalnorm(atmp2, t) + internalnorm(atmp3, t) + internalnorm(atmp4, t) + internalnorm(atmp5, t)
+
         # check divergence (not in initial step)
+        
         if iter > 1
             θ = ndw / ndwprev
             (diverge = θ > 1) && (cache.status = Divergence)
@@ -993,7 +995,7 @@ end
             cache.cont4 = @..  (tmp6 - cache.cont3) / c1m1 #fourth derivative on [c1, 1]
         end
     end
-
+    
     integrator.fsallast = f(u, p, t + dt)
     integrator.stats.nf += 1
     integrator.k[1] = integrator.fsalfirst
@@ -1012,7 +1014,7 @@ end
     @unpack dw1, ubuff, dw23, dw45, cubuff1, cubuff2 = cache
     @unpack k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5 = cache
     @unpack J, W1, W2, W3 = cache
-    @unpack tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
+    @unpack tmp, tmp2, tmp3, tmp4, tmp5, tmp6, atmp, jac_config, linsolve1, linsolve2, rtol, atol, step_limiter! = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
     @unpack maxiters = alg
@@ -1074,7 +1076,7 @@ end
         w1 = @.. broadcast=false TI11*z1 + TI12*z2 + TI13*z3 + TI14*z4 + TI15*z5
         w2 = @.. broadcast=false TI21*z1 + TI22*z2 + TI23*z3 + TI24*z4 + TI25*z5
         w3 = @.. broadcast=false TI31*z1 + TI32*z2 + TI33*z3 + TI34*z4 + TI35*z5
-        w4 = @.. broadcast=false TI41*z1 + TI42*z2 + TI43*z3 + TI34*z4 + TI45*z5
+        w4 = @.. broadcast=false TI41*z1 + TI42*z2 + TI43*z3 + TI44*z4 + TI45*z5
         w5 = @.. broadcast=false TI51*z1 + TI52*z2 + TI53*z3 + TI54*z4 + TI55*z5    
     end
 
@@ -1249,7 +1251,8 @@ end
     @.. broadcast=false u=uprev + z5
     
     step_limiter!(u, integrator, p, t + dt)
-    #=
+    
+    
     if adaptive
         utilde = w2
         e1dt, e2dt, e3dt, e4dt, e5dt = e1 / dt, e2 / dt, e3 / dt, e4 / dt, e5 / dt
@@ -1287,14 +1290,13 @@ end
             integrator.EEst = internalnorm(atmp, t)
         end
     end
-    =#
-
+    
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
             @.. cache.cont1 = (z4 - z5) / c4m1
-            @.. tmp1 = (z3 - z4) / c3mc4
-            @.. cache.cont2 = (tmp1 - cache.cont1) / c3m1
+            @.. tmp = (z3 - z4) / c3mc4
+            @.. cache.cont2 = (tmp - cache.cont1) / c3m1
             @.. tmp2 = (z2 - z3) / c2mc3
             @.. tmp3 = (tmp2 - tmp) / c2mc4
             @.. cache.cont3 = (tmp3 - cache.cont2) / c2m1
@@ -1304,7 +1306,6 @@ end
             @.. cache.cont4 = (tmp6 - cache.cont3) / c1m1
         end
     end
-
 
     f(fsallast, u, p, t + dt)
     integrator.stats.nf += 1
