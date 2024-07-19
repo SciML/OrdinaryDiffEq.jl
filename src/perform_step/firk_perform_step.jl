@@ -111,10 +111,10 @@ function initialize!(integrator, cache::RadauIIA7Cache)
     if integrator.opts.adaptive
         @unpack abstol, reltol = integrator.opts
         if reltol isa Number
-            cache.rtol = reltol^(2 / 3) / 10
+            cache.rtol = reltol^(5 / 8) / 10
             cache.atol = cache.rtol * (abstol / reltol)
         else
-            @.. broadcast=false cache.rtol=reltol^(2 / 3) / 10
+            @.. broadcast=false cache.rtol=reltol^(5 / 8) / 10
             @.. broadcast=false cache.atol=cache.rtol * (abstol / reltol)
         end
     end
@@ -1207,6 +1207,7 @@ end
         ndw = ndw1 + ndw2 + ndw3 + ndw4 + ndw5
 
         # check divergence (not in initial step)
+        
         if iter > 1
             θ = ndw / ndwprev
             (diverge = θ > 1) && (cache.status = Divergence)
@@ -1226,11 +1227,12 @@ end
         # transform `w` to `z`
         @.. broadcast=false z1=T11 * w1 + T12 * w2 + T13 * w3 + T14 * w4 + T15 * w5
         @.. broadcast=false z2=T21 * w1 + T22 * w2 + T23 * w3 + T24 * w4 + T25 * w5
-        @.. broadcast=false z3=T31 * w1 + T22 * w2 + T23 * w3 + T34 * w4 + T35 * w5
+        @.. broadcast=false z3=T31 * w1 + T32 * w2 + T33 * w3 + T34 * w4 + T35 * w5
         @.. broadcast=false z4=T41 * w1 + T42 * w2 + T43 * w3 + T44 * w4 + T45 * w5
         @.. broadcast=false z5=T51 * w1 + w2 + w4 #= T52=1, T53=0, T54=1, T55=0 =#       
 
         # check stopping criterion
+        
         iter > 1 && (η = θ / (1 - θ))
         if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
             # Newton method converges
@@ -1239,12 +1241,14 @@ end
             fail_convergence = false
             break
         end
+        
     end
     if fail_convergence
         integrator.force_stepfail = true
         integrator.stats.nnonlinconvfail += 1
         return
     end
+    
     cache.ηold = η
     cache.iter = iter
 

@@ -9,7 +9,7 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
 end
 
 for prob in [prob_ode_linear, prob_ode_2Dlinear]
-    sim21 = test_convergence(1 .// 2 .^ (6:-1:3), prob, RadauIIA7())
+    sim21 = test_convergence(1 ./ 2 .^ (2.777:-1:0.777), prob, RadauIIA7())
     @test sim21.𝒪est[:final]≈7 atol=testTol
 end
 
