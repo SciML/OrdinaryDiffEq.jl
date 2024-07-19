@@ -22,7 +22,10 @@ jobs:
           - AlgConvergence_II
           - AlgConvergence_III
           - Downstream
+          - Symplectic
           - Extrapolation
+          - StabilizedRK
+          - StabilizedIRK
           - ODEInterfaceRegression
           - Multithreading
         version:

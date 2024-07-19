@@ -1,6 +1,7 @@
 # We want to make sure that the first argument of change_t_via_interpolation!
 # is specialized, yet, it needs to take both ODEIntegrator and DDEIntegrator.
 # Hence, we need to have two separate functions.
+
 function _change_t_via_interpolation!(integrator, t,
         modify_save_endpoint::Type{Val{T}}) where {T}
     # Can get rid of an allocation here with a function
@@ -110,16 +111,14 @@ end
 @inline function DiffEqBase.get_tmp_cache(integrator::ODEIntegrator)
     get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
 end
+
 # avoid method ambiguity
-for typ in (OrdinaryDiffEqAlgorithm, Union{RadauIIA3, RadauIIA5, RadauIIA7},
-    OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-    Union{SSPRK22, SSPRK33, SSPRK53_2N1, SSPRK53_2N2, SSPRK43, SSPRK432, SSPRK932})
-    @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
-            cache::OrdinaryDiffEqConstantCache)
-        nothing
-    end
-end
+# for typ in (Union{RadauIIA3, RadauIIA5, RadauIIA7})
+#     @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
+#             cache::OrdinaryDiffEqConstantCache)
+#         nothing
+#     end
+# end
 
 # the ordering of the cache arrays is important!!!
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::OrdinaryDiffEqAlgorithm,
@@ -144,13 +143,7 @@ end
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.linsolve_tmp)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator,
-        alg::Union{SSPRK22, SSPRK33, SSPRK53_2N1,
-            SSPRK53_2N2, SSPRK43, SSPRK432,
-            SSPRK932},
-        cache::OrdinaryDiffEqMutableCache)
-    (cache.k,)
-end
+
 @inline function DiffEqBase.get_tmp_cache(integrator,
         alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
@@ -173,12 +166,27 @@ end
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
         cache::CompositeCache)
-    get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
+    get_tmp_cache(integrator, alg.algs[1], cache.caches[1])
 end
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::CompositeAlgorithm,
         cache::DefaultCache)
-    get_tmp_cache(integrator, integrator.alg.algs[1], cache.cache1)
+    init_ith_default_cache(cache, alg.algs, cache.current)
+    if cache.current == 1
+        get_tmp_cache(integrator, alg.algs[1], cache.cache1)
+    elseif cache.current == 2
+        get_tmp_cache(integrator, alg.algs[2], cache.cache2)
+    elseif cache.current == 3
+        get_tmp_cache(integrator, alg.algs[3], cache.cache3)
+    elseif cache.current == 4
+        get_tmp_cache(integrator, alg.algs[4], cache.cache4)
+    elseif cache.current == 5
+        get_tmp_cache(integrator, alg.algs[5], cache.cache5)
+    else
+        @assert cache.current == 6
+        get_tmp_cache(integrator, alg.algs[6], cache.cache6)
+    end
 end
+
 @inline function DiffEqBase.get_tmp_cache(integrator, alg::DAEAlgorithm,
         cache::OrdinaryDiffEqMutableCache)
     (cache.nlsolver.cache.dz, cache.atmp)

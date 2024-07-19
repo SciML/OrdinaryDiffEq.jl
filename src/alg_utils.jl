@@ -40,43 +40,12 @@ isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas4P2) = false
-isfsal(alg::Vern7) = false
-isfsal(alg::Vern8) = false
-isfsal(alg::Vern9) = false
 # Pseudo Non-FSAL
-isfsal(alg::ORK256) = false
-isfsal(alg::CarpenterKennedy2N54) = false
-isfsal(alg::SHLDDRK64) = false
-isfsal(alg::DGLDDRK73_C) = false
-isfsal(alg::DGLDDRK84_C) = false
-isfsal(alg::DGLDDRK84_F) = false
-isfsal(alg::NDBLSRK124) = false
-isfsal(alg::NDBLSRK134) = false
-isfsal(alg::NDBLSRK144) = false
 isfsal(alg::PDIRK44) = false
 isfsal(alg::DImplicitEuler) = false
 isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
-
-isfsal(alg::RDPK3Sp35) = false
-isfsal(alg::RDPK3Sp49) = false
-isfsal(alg::RDPK3Sp510) = false
-
-isfsal(alg::SSPRK22) = false
-isfsal(alg::SSPRK33) = false
-isfsal(alg::SSPRK53) = false
-isfsal(alg::SSPRK53_2N1) = false
-isfsal(alg::SSPRK53_2N2) = false
-isfsal(alg::SSPRK53_H) = false
-isfsal(alg::SSPRK63) = false
-isfsal(alg::SSPRK73) = false
-isfsal(alg::SSPRK83) = false
-isfsal(alg::SSPRK43) = false
-isfsal(alg::SSPRK432) = false
-isfsal(alg::SSPRK932) = false
-isfsal(alg::SSPRK54) = false
-isfsal(alg::SSPRK104) = false
 
 isfsal(alg::PSRK3p5q4) = false
 isfsal(alg::PSRK3p6q5) = false
@@ -191,6 +160,9 @@ isadaptive(alg::DFBDF) = true
 
 anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
 anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
+
+has_dtnew_modification(alg) = false
+dtnew_modification(integrator, alg, dtnew) = dtnew
 
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
@@ -309,7 +281,7 @@ end
 _alg_autodiff(::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
 _alg_autodiff(::DAEAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
 _alg_autodiff(::OrdinaryDiffEqImplicitAlgorithm{CS, AD}) where {CS, AD} = Val{AD}()
-_alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[2])
+_alg_autodiff(alg::CompositeAlgorithm) = _alg_autodiff(alg.algs[end])
 function _alg_autodiff(::Union{OrdinaryDiffEqExponentialAlgorithm{CS, AD},
         OrdinaryDiffEqAdaptiveExponentialAlgorithm{CS, AD}
 }) where {
@@ -380,8 +352,6 @@ alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::SDIRK22) = true
-alg_extrapolates(alg::IRKN4) = true
-alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
@@ -442,111 +412,11 @@ alg_order(alg::ETD2) = 2
 alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 alg_order(alg::Anas5) = 5
-alg_order(alg::RK46NL) = 4
 alg_order(alg::KuttaPRK2p5) = 5
 alg_order(alg::RKO65) = 5
 alg_order(alg::FRK65) = 6
 
-alg_order(alg::SymplecticEuler) = 1
-alg_order(alg::VelocityVerlet) = 2
-alg_order(alg::VerletLeapfrog) = 2
-alg_order(alg::PseudoVerletLeapfrog) = 2
-alg_order(alg::McAte2) = 2
-alg_order(alg::Ruth3) = 3
-alg_order(alg::McAte3) = 3
-alg_order(alg::McAte4) = 4
-alg_order(alg::CandyRoz4) = 4
-alg_order(alg::CalvoSanz4) = 4
-alg_order(alg::McAte42) = 4
-alg_order(alg::McAte5) = 5
-alg_order(alg::Yoshida6) = 6
-alg_order(alg::KahanLi6) = 6
-alg_order(alg::McAte8) = 8
-alg_order(alg::KahanLi8) = 8
-alg_order(alg::SofSpa10) = 10
-
-alg_order(alg::IRKN3) = 3
-alg_order(alg::Nystrom4) = 4
-alg_order(alg::FineRKN4) = 4
-alg_order(alg::FineRKN5) = 5
-alg_order(alg::Nystrom4VelocityIndependent) = 4
-alg_order(alg::IRKN4) = 4
-alg_order(alg::Nystrom5VelocityIndependent) = 5
-alg_order(alg::DPRKN4) = 4
-alg_order(alg::DPRKN5) = 5
-alg_order(alg::DPRKN6) = 6
-alg_order(alg::DPRKN6FM) = 6
-alg_order(alg::DPRKN8) = 8
-alg_order(alg::DPRKN12) = 12
-alg_order(alg::ERKN4) = 4
-alg_order(alg::ERKN5) = 5
-alg_order(alg::ERKN7) = 7
-alg_order(alg::RKN4) = 4
-
 alg_order(alg::Midpoint) = 2
-
-alg_order(alg::ORK256) = 2
-alg_order(alg::CarpenterKennedy2N54) = 4
-alg_order(alg::SHLDDRK52) = 2
-alg_order(alg::SHLDDRK_2N) = 4
-alg_order(alg::SHLDDRK64) = 4
-alg_order(alg::DGLDDRK73_C) = 3
-alg_order(alg::DGLDDRK84_C) = 4
-alg_order(alg::DGLDDRK84_F) = 4
-alg_order(alg::NDBLSRK124) = 4
-alg_order(alg::NDBLSRK134) = 4
-alg_order(alg::NDBLSRK144) = 4
-alg_order(alg::CFRLDDRK64) = 4
-alg_order(alg::TSLDDRK74) = 4
-alg_order(alg::CKLLSRK43_2) = 3
-alg_order(alg::CKLLSRK54_3C) = 4
-alg_order(alg::CKLLSRK95_4S) = 5
-alg_order(alg::CKLLSRK95_4C) = 5
-alg_order(alg::CKLLSRK95_4M) = 5
-alg_order(alg::CKLLSRK54_3C_3R) = 4
-alg_order(alg::CKLLSRK54_3M_3R) = 4
-alg_order(alg::CKLLSRK54_3N_3R) = 4
-alg_order(alg::CKLLSRK85_4C_3R) = 5
-alg_order(alg::CKLLSRK85_4M_3R) = 5
-alg_order(alg::CKLLSRK85_4P_3R) = 5
-alg_order(alg::CKLLSRK54_3N_4R) = 4
-alg_order(alg::CKLLSRK54_3M_4R) = 4
-alg_order(alg::CKLLSRK65_4M_4R) = 5
-alg_order(alg::CKLLSRK85_4FM_4R) = 5
-alg_order(alg::CKLLSRK75_4M_5R) = 5
-alg_order(alg::ParsaniKetchesonDeconinck3S32) = 2
-alg_order(alg::ParsaniKetchesonDeconinck3S82) = 2
-alg_order(alg::ParsaniKetchesonDeconinck3S53) = 3
-alg_order(alg::ParsaniKetchesonDeconinck3S173) = 3
-alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4
-alg_order(alg::ParsaniKetchesonDeconinck3S184) = 4
-alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
-alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
-alg_order(alg::RDPK3Sp35) = 3
-alg_order(alg::RDPK3SpFSAL35) = 3
-alg_order(alg::RDPK3Sp49) = 4
-alg_order(alg::RDPK3SpFSAL49) = 4
-alg_order(alg::RDPK3Sp510) = 5
-alg_order(alg::RDPK3SpFSAL510) = 5
-alg_order(alg::KYK2014DGSSPRK_3S2) = 2
-
-alg_order(alg::SSPRK22) = 2
-alg_order(alg::SSPRKMSVS32) = 2
-alg_order(alg::SSPRK33) = 3
-alg_order(alg::KYKSSPRK42) = 2
-alg_order(alg::SSPRK53) = 3
-alg_order(alg::SSPRK53_2N1) = 3
-alg_order(alg::SSPRK53_2N2) = 3
-alg_order(alg::SSPRK53_H) = 3
-alg_order(alg::SSPRK63) = 3
-alg_order(alg::SSPRK73) = 3
-alg_order(alg::SSPRK83) = 3
-alg_order(alg::SSPRK43) = 3
-alg_order(alg::SSPRK432) = 3
-alg_order(alg::SSPRKMSVS43) = 3
-alg_order(alg::SSPRK932) = 3
-alg_order(alg::SSPRK54) = 4
-alg_order(alg::SSPRK104) = 4
 
 alg_order(alg::RK4) = 4
 alg_order(alg::RKM) = 4
@@ -567,10 +437,6 @@ alg_order(alg::OwrenZen5) = 5
 alg_order(alg::DP5) = 5
 alg_order(alg::Tsit5) = 5
 alg_order(alg::DP8) = 8
-alg_order(alg::Vern6) = 6
-alg_order(alg::Vern7) = 7
-alg_order(alg::Vern8) = 8
-alg_order(alg::Vern9) = 9
 alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
 alg_order(alg::RadauIIA3) = 3
@@ -621,9 +487,6 @@ alg_order(alg::SFSDIRK7) = 4
 alg_order(alg::SFSDIRK8) = 4
 alg_order(alg::Hairer4) = 4
 alg_order(alg::Hairer42) = 4
-alg_order(alg::Feagin10) = 10
-alg_order(alg::Feagin12) = 12
-alg_order(alg::Feagin14) = 14
 alg_order(alg::PFRK87) = 8
 
 alg_order(alg::ROS2) = 2
@@ -645,6 +508,7 @@ alg_order(alg::ROS34PW3) = 4
 alg_order(alg::ROS34PRw) = 3
 alg_order(alg::ROS3PRL) = 3
 alg_order(alg::ROS3PRL2) = 3
+alg_order(alg::ROK4a) = 4
 alg_order(alg::RosShamp4) = 4
 alg_order(alg::Veldd4) = 4
 alg_order(alg::Velds4) = 4
@@ -692,16 +556,6 @@ alg_order(alg::FBDF) = 1 #dummy value
 
 alg_order(alg::SBDF) = alg.order
 
-alg_order(alg::ROCK2) = 2
-alg_order(alg::ROCK4) = 4
-
-alg_order(alg::ESERK4) = 4
-alg_order(alg::ESERK5) = 5
-alg_order(alg::SERK2) = 2
-
-alg_order(alg::RKC) = 2
-alg_order(alg::IRKC) = 2
-
 alg_order(alg::MEBDF2) = 2
 alg_order(alg::PDIRK44) = 4
 
@@ -720,16 +574,12 @@ alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.a
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
-alg_adaptive_order(alg::Feagin10) = 8
-alg_adaptive_order(alg::Feagin14) = 12
 
 alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
 
 alg_adaptive_order(alg::RadauIIA3) = 1
 alg_adaptive_order(alg::RadauIIA5) = 3
-alg_adaptive_order(alg::RKC) = 2
-alg_adaptive_order(alg::IRKC) = 1
 
 alg_adaptive_order(alg::ImplicitEuler) = 0
 alg_adaptive_order(alg::Trapezoid) = 1
@@ -768,36 +618,6 @@ function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
     return convert(QT, beta1)::QT, convert(QT, beta2)::QT
 end
 
-function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
-end
-
-function default_controller(alg::RDPK3SpFSAL35, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.70, -0.23, 0.00))...)
-end
-
-function default_controller(alg::RDPK3Sp49, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.25, -0.12, 0.00))...)
-end
-
-function default_controller(alg::RDPK3SpFSAL49, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.38, -0.18, 0.01))...)
-end
-
-function default_controller(alg::RDPK3Sp510, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.47, -0.20, 0.06))...)
-end
-
-function default_controller(alg::RDPK3SpFSAL510, cache, qoldinit, args...)
-    QT = typeof(qoldinit)
-    return PIDController(map(Base.Fix1(convert, QT), (0.45, -0.13, 0.00))...)
-end
-
 # other special cases in controllers.jl
 function default_controller(alg::Union{JVODE, QNDF, FBDF}, args...)
     DummyController()
@@ -821,8 +641,8 @@ function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
 end
 gamma_default(alg::CompositeAlgorithm) = maximum(gamma_default, alg.algs)
-gamma_default(alg::RKC) = 8 // 10
-gamma_default(alg::IRKC) = 8 // 10
+
+fac_default_gamma(alg) = false
 
 qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_min_default(alg::FBDF) = 9 // 10
@@ -845,40 +665,8 @@ function FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale
 end
 
 # SSP coefficients
-"""
-    ssp_coefficient(alg)
-
-Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
-`dt` with `alg` can be written as a convex combination of explicit Euler steps
-with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
-
-# Examples
-
-```julia-repl
-julia> ssp_coefficient(SSPRK104())
-6
-```
-"""
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
 ssp_coefficient(alg::Euler) = 1
-ssp_coefficient(alg::SSPRK22) = 1
-ssp_coefficient(alg::SSPRK33) = 1
-ssp_coefficient(alg::KYKSSPRK42) = 2.459
-ssp_coefficient(alg::SSPRK53) = 2.65
-ssp_coefficient(alg::SSPRK53_2N1) = 2.18
-ssp_coefficient(alg::SSPRK53_2N2) = 2.148
-ssp_coefficient(alg::SSPRK53_H) = 2.65
-ssp_coefficient(alg::SSPRK63) = 3.518
-ssp_coefficient(alg::SSPRK73) = 4.2879
-ssp_coefficient(alg::SSPRK83) = 5.107
-ssp_coefficient(alg::SSPRK43) = 2
-ssp_coefficient(alg::SSPRK432) = 2
-ssp_coefficient(alg::SSPRKMSVS32) = 0.5
-ssp_coefficient(alg::SSPRKMSVS43) = 0.33
-ssp_coefficient(alg::SSPRK932) = 6
-ssp_coefficient(alg::SSPRK54) = 1.508
-ssp_coefficient(alg::SSPRK104) = 6
-ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
@@ -888,14 +676,9 @@ ssp_coefficient(alg::SSPSDIRK2) = 4
 alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
 alg_stability_size(alg::DP5) = 3.3066
 alg_stability_size(alg::Tsit5) = 3.5068
-alg_stability_size(alg::Vern6) = 4.8553
-alg_stability_size(alg::Vern7) = 4.6400
-alg_stability_size(alg::Vern8) = 5.8641
-alg_stability_size(alg::Vern9) = 4.4762
 
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
-alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(alg::SciMLBase.DEAlgorithm, is_stiff)
     if !(alg isa CompositeAlgorithm)
@@ -947,38 +730,9 @@ end
 
 # Whether `uprev` is used in the algorithm directly.
 uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, adaptive::Bool) = true
-uses_uprev(alg::ORK256, adaptive::Bool) = false
-uses_uprev(alg::CarpenterKennedy2N54, adaptive::Bool) = false
-uses_uprev(alg::SHLDDRK64, adaptive::Bool) = false
-uses_uprev(alg::DGLDDRK73_C, adaptive::Bool) = false
-uses_uprev(alg::DGLDDRK84_C, adaptive::Bool) = false
-uses_uprev(alg::DGLDDRK84_F, adaptive::Bool) = false
-uses_uprev(alg::NDBLSRK124, adaptive::Bool) = false
-uses_uprev(alg::NDBLSRK134, adaptive::Bool) = false
-uses_uprev(alg::NDBLSRK144, adaptive::Bool) = false
-uses_uprev(alg::CFRLDDRK64, adaptive::Bool) = false
-uses_uprev(alg::TSLDDRK74, adaptive::Bool) = false
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
-uses_uprev(alg::CKLLSRK43_2, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK54_3C, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK95_4S, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK95_4C, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK95_4M, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK54_3C_3R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK54_3M_3R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK54_3N_3R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK85_4C_3R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK85_4M_3R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK85_4P_3R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK54_3N_4R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK54_3M_4R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK65_4M_4R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
-uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
 
 ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-ispredictive(alg::Union{RKC}) = true
-ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
@@ -994,6 +748,7 @@ isWmethod(alg::ROS34PW1b) = true
 isWmethod(alg::ROS34PW2) = true
 isWmethod(alg::ROS34PW3) = true
 isWmethod(alg::ROS34PRw) = true
+isWmethod(alg::ROK4a) = true
 isWmethod(alg::RosenbrockW6S4OS) = true
 
 isesdirk(alg::TRBDF2) = true
@@ -1011,6 +766,6 @@ is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
 # hack for the default alg
 function is_mass_matrix_alg(alg::CompositeAlgorithm{
-        <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
+        <:Any, <:Tuple{Tsit5, Rosenbrock23, Rodas5P, FBDF, FBDF}})
     true
 end

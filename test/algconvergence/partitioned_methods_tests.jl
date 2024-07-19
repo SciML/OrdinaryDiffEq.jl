@@ -384,7 +384,7 @@ sol = solve(prob, ERKN5(), reltol = 1e-8)
 sol = solve(prob, ERKN7(), reltol = 1e-8)
 @test length(sol.u) < 38
 
-# Testing generalized Runge-Kutte-Nyström methods on velocity dependend ODEs with the damped oscillator
+# Testing generalized Runge-Kutte-Nyström methods on velocity dependent ODEs with the damped oscillator
 println("Out of Place")
 
 # Damped oscillator

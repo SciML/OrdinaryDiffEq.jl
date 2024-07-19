@@ -1,13 +1,8 @@
-
 abstract type AbstractController end
+using OrdinaryDiffEq
 
 @inline function stepsize_controller!(integrator, alg)
     stepsize_controller!(integrator, integrator.opts.controller, alg)
-end
-
-# checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller::AbstractController)
-    return integrator.EEst <= 1
 end
 
 @inline function step_accept_controller!(integrator, alg, q)
@@ -16,6 +11,12 @@ end
 
 @inline function step_reject_controller!(integrator, alg)
     step_reject_controller!(integrator, integrator.opts.controller, alg)
+    cache = integrator.cache
+    if hasfield(typeof(cache), :nlsolve)
+        nlsolve = cache.nlsolve
+        nlsolve.prev_θ = one(nlsolve.prev_θ)
+    end
+    return nothing
 end
 
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
@@ -307,6 +308,11 @@ end
     return dt_factor
 end
 
+# checks whether the controller should accept a step based on the error estimate
+@inline function accept_step_controller(integrator, controller::AbstractController)
+    return integrator.EEst <= 1
+end
+
 @inline function accept_step_controller(integrator, controller::PIDController)
     return integrator.qold >= controller.accept_safety
 end
@@ -394,7 +400,7 @@ end
     if iszero(EEst)
         q = inv(qmax)
     else
-        if alg isa Union{RKC, IRKC, SERK2}
+        if fac_default_gamma(alg)
             fac = gamma
         else
             if alg isa Union{RadauIIA3, RadauIIA5, RadauIIA7}

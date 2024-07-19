@@ -29,6 +29,48 @@ function activate_extrapolation_env()
     Pkg.instantiate()
 end
 
+function activate_stabilized_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_stabilized_irk()
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_low_storage_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqStabilizedIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_low_storage_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqLowStorageRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_ssprk()
+    Pkg.activate("../lib/OrdinaryDiffEqSSPRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_feagin()
+    Pkg.activate("../lib/OrdinaryDiffEqFeagin")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_symplectic_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqSymplecticRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -152,10 +194,8 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_II"
-        @time @safetestset "SSPRK Tests" include("algconvergence/ode_ssprk_tests.jl")
-        @time @safetestset "Low Storage RK Tests" include("algconvergence/ode_low_storage_rk_tests.jl")
         @time @safetestset "OwrenZen Tests" include("algconvergence/owrenzen_tests.jl")
-        @time @safetestset "Runge-Kutta-Chebyshev Tests" include("algconvergence/rkc_tests.jl")
+        @time @safetestset "Runge-Kutta-Chebyshev Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/rkc_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_III"
@@ -165,13 +205,35 @@ end
         @time @safetestset "FIRK Tests" include("algconvergence/ode_firk_tests.jl")
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
-        @time @safetestset "Feagin Tests" include("algconvergence/ode_feagin_tests.jl")
-        @time @safetestset "Symplectic Tests" include("algconvergence/symplectic_tests.jl")
         @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "Symplectic"
+        @time @safetestset "Symplectic Tests" include("../lib/OrdinaryDiffEqSymplecticRK/test/symplectic_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Extrapolation"
         @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "Feagin"
+        @time @safetestset "Feagin Tests" include("../lib/OrdinaryDiffEqFeagin/test/ode_feagin_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "StabilizedRK"
+        @time @safetestset "StabilizedRK Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/runtests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "StabilizedIRK"
+        @time @safetestset "StabilizedIRK Tests" include("../lib/OrdinaryDiffEqStabilizedIRK/test/runtests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "SSPRK"
+        @time @safetestset "SSPRK Tests" include("../lib/OrdinaryDiffEqSSPRK/test/ode_ssprk_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "Low Storage RK"
+        @time @safetestset "Low Storage RK Tests" include("../lib/OrdinaryDiffEqLowStorageRK/test/ode_low_storage_rk_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"

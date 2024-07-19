@@ -22,7 +22,8 @@ BrownFullBasicInit(abstol) = BrownFullBasicInit(; abstol = abstol, nlsolve = not
 
 default_nlsolve(alg, isinplace, u, initprob, autodiff = false) = alg
 
-function default_nlsolve(::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
+function default_nlsolve(
+        ::Nothing, isinplace, u::Nothing, ::NonlinearProblem, autodiff = false)
     nothing
 end
 function default_nlsolve(::Nothing, isinplace, u, ::NonlinearProblem, autodiff = false)
@@ -35,7 +36,7 @@ function default_nlsolve(::Nothing, isinplace::Val{false}, u::StaticArray,
 end
 
 function default_nlsolve(
-    ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
+        ::Nothing, isinplace, u::Nothing, ::NonlinearLeastSquaresProblem, autodiff = false)
     nothing
 end
 function default_nlsolve(

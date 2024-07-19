@@ -6,17 +6,21 @@ prob_ode_2Dlinear = ODEProblem(f_2dlinear, rand(4, 2), (0.0, 1.0), 1.01)
 sol = @inferred solve(prob_ode_2Dlinear)
 
 tsitsol = solve(prob_ode_2Dlinear, Tsit5())
-# test that default isn't much worse than Tsit5 (we expect it to use Tsit5 for this).
+# test that default is the same as Tsit5 (we expect it to use Tsit5 for this).
 @test sol.stats.naccept == tsitsol.stats.naccept
 @test sol.stats.nf == tsitsol.stats.nf
 @test all(isequal(1), sol.alg_choice)
+@test sol(0.5) == only(sol([0.5]).u) == tsitsol(0.5)
+x = [zeros(4, 2) for _ in 1:5]
+@test sol(x, 0:0.1:0.4) == tsitsol(x, 0:0.1:0.4)
 
 sol = solve(prob_ode_2Dlinear, reltol = 1e-10)
 vernsol = solve(prob_ode_2Dlinear, Vern7(), reltol = 1e-10)
-# test that default isn't much worse than Tsit5 (we expect it to use Tsit5 for this).
+# test that default is the same as Vern7 (we expect it to use Vern7 for this).
 @test sol.stats.naccept == vernsol.stats.naccept
 @test sol.stats.nf == vernsol.stats.nf
 @test all(isequal(2), sol.alg_choice)
+@test sol(0.5) == only(sol([0.5]).u) == vernsol(0.5)
 
 prob_ode_linear_fast = ODEProblem(
     ODEFunction(f_2dlinear, mass_matrix = 2 * I(2)), rand(2), (0.0, 1.0), 1.01)
@@ -83,4 +87,20 @@ swaplinearf = ODEFunction(swaplinear, mass_matrix = ones(2, 2) - I(2))
 prob_swaplinear = ODEProblem(swaplinearf, rand(2), (0.0, 1.0), 1.01)
 sol = solve(prob_swaplinear)
 @test all(isequal(4), sol.alg_choice)
+@test sol(0.5) isa Vector{Float64} # test dense output
 # for some reason the timestepping here is different from regular Rodas5P (including the initial timestep)
+
+# test mass matrix DAE where we have to initialize algebraic variables
+function rober_mm(du, u, p, t)
+    y₁, y₂, y₃ = u
+    k₁, k₂, k₃ = p
+    du[1] = -k₁ * y₁ + k₃ * y₂ * y₃
+    du[2] = k₁ * y₁ - k₃ * y₂ * y₃ - k₂ * y₂^2
+    du[3] = y₁ + y₂ + y₃ - 1
+    nothing
+end
+f = ODEFunction(rober_mm, mass_matrix = [1 0 0; 0 1 0; 0 0 0])
+prob_rober_mm = ODEProblem(f, [1.0, 0.0, 1.0], (0.0, 1e5), (0.04, 3e7, 1e4))
+sol = solve(prob_rober_mm)
+@test all(isequal(3), sol.alg_choice)
+@test sol(0.5) isa Vector{Float64} # test dense output

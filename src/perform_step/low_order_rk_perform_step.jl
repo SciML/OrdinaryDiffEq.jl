@@ -838,7 +838,7 @@ end
         g6 = tmp
         # Hairer II, page 22 modified to use Inf norm
         @.. broadcast=false thread=thread utilde=abs((k7 - k6) / (g7 - g6))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(utilde), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(utilde, Inf), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde2 * k2 +
@@ -956,7 +956,8 @@ end
         g7 = u
         # Hairer II, page 22 modified to use Inf norm
         @.. broadcast=false thread=thread utilde=abs((k7 - k6) / (g7 - g6))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(utilde) * oneunit(t), t)
+        integrator.eigen_est = integrator.opts.internalnorm(
+            norm(utilde, Inf) * oneunit(t), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde3 * k3 +
@@ -978,69 +979,6 @@ end
         # k6 === integrator.k[3] === k2
         @.. broadcast=false thread=thread integrator.k[3]=update - k7 - bspl
     end
-    return nothing
-end
-
-function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache)
-    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
-    integrator.kshortsize = 2
-    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-    # Avoid undefined entries if k is an array of arrays
-    integrator.fsallast = zero(integrator.fsalfirst)
-    return nothing
-end
-
-@muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache,
-        repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache
-    u_1 = α_10 * uprev + dt * β_10 * integrator.fsalfirst
-    u_2 = (α_20 * uprev +
-           α_21 * u_1 + dt * β_21 * f(u_1, p, t + c_1 * dt))
-    integrator.u = (α_30 * uprev + dt * β_30 * integrator.fsalfirst +
-                    α_32 * u_2 + dt * β_32 * f(u_2, p, t + c_2 * dt))
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = f(integrator.u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.stats.nf += 3
-    integrator.fsallast = integrator.k[2]
-    return nothing
-end
-
-function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_Cache)
-    @unpack k, fsalfirst = cache
-    integrator.fsalfirst = fsalfirst
-    integrator.fsallast = k
-    integrator.kshortsize = 2
-    resize!(integrator.k, integrator.kshortsize)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
-    integrator.stats.nf += 1
-    return nothing
-end
-
-@muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_Cache,
-        repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack k, fsalfirst, u_1, u_2, kk_1, kk_2, stage_limiter!, step_limiter!, thread = cache
-    @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache.tab
-
-    @.. broadcast=false thread=thread u_1=α_10 * uprev + dt * β_10 * integrator.fsalfirst
-    stage_limiter!(u_1, integrator, p, t + c_1 * dt)
-    f(kk_1, u_1, p, t + c_1 * dt)
-    @.. broadcast=false thread=thread u_2=(α_20 * uprev +
-                                           α_21 * u_1 + dt * β_21 * kk_1)
-    stage_limiter!(u_2, integrator, p, t + c_2 * dt)
-    f(kk_2, u_2, p, t + c_2 * dt)
-    @.. broadcast=false thread=thread u=(α_30 * uprev +
-                                         dt * β_30 * integrator.fsalfirst +
-                                         α_32 * u_2 + dt * β_32 * kk_2)
-    stage_limiter!(u, integrator, p, t + dt)
-    step_limiter!(u, integrator, p, t + dt)
-    f(integrator.k[2], u, p, t + dt) # For interpolation, then FSAL'd
-    integrator.stats.nf += 3
     return nothing
 end
 

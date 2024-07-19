@@ -71,16 +71,7 @@ function DiffEqBase.interp_summary(::Type{cacheType},
     dense ? "specialized 4rd order \"free\" stiffness-aware interpolation" :
     "1st order linear"
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{SSPRK22, SSPRK22ConstantCache,
-        SSPRK33, SSPRK33ConstantCache,
-        SSPRK43, SSPRK43ConstantCache,
-        SSPRK432, SSPRK432ConstantCache
-}}
-    dense ? "2nd order \"free\" SSP interpolation" : "1st order linear"
-end
+
 function DiffEqBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <: Union{OwrenZen3Cache,
@@ -115,34 +106,6 @@ end
 function DiffEqBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
-        Union{Vern6Cache, Vern6ConstantCache
-}}
-    dense ? "specialized 6th order lazy interpolation" : "1st order linear"
-end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{Vern7Cache, Vern7ConstantCache
-}}
-    dense ? "specialized 7th order lazy interpolation" : "1st order linear"
-end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{Vern8Cache, Vern8ConstantCache
-}}
-    dense ? "specialized 8th order lazy interpolation" : "1st order linear"
-end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{Vern9Cache, Vern9ConstantCache
-}}
-    dense ? "specialized 9th order lazy interpolation" : "1st order linear"
-end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
         Union{DP8ConstantCache, DP8Cache}}
     dense ? "specialized 7th order interpolation" : "1st order linear"
 end
@@ -156,13 +119,6 @@ function DiffEqBase.interp_summary(::Type{cacheType},
     end
     caches = fieldtype(cacheType, :caches)
     join([DiffEqBase.interp_summary(ct, dense) for ct in fieldtypes(caches)], ", ")
-end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{DPRKN6ConstantCache,
-        DPRKN6Cache}}
-    dense ? "specialized 6th order interpolation" : "1st order linear"
 end
 
 function (interp::InterpolationData)(tvals, idxs, deriv, p, continuity::Symbol = :left)

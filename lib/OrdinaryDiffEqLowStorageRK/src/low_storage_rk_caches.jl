@@ -71,6 +71,154 @@ function alg_cache(alg::ORK256, u, rate_prototype, ::Type{uEltypeNoUnits},
     ORK256ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
+function alg_cache(alg::RK46NL, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    RK46NLConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+end
+
+struct RK46NLConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    α2::T
+    α3::T
+    α4::T
+    α5::T
+    α6::T
+    β1::T
+    β2::T
+    β3::T
+    β4::T
+    β5::T
+    β6::T
+    c2::T2
+    c3::T2
+    c4::T2
+    c5::T2
+    c6::T2
+
+    function RK46NLConstantCache(T, T2)
+        α2 = T(-0.737101392796)
+        α3 = T(-1.634740794343)
+        α4 = T(-0.744739003780)
+        α5 = T(-1.469897351522)
+        α6 = T(-2.813971388035)
+        β1 = T(0.032918605146)
+        β2 = T(0.823256998200)
+        β3 = T(0.381530948900)
+        β4 = T(0.200092213184)
+        β5 = T(1.718581042715)
+        β6 = T(0.27)
+        c2 = T2(0.032918605146)
+        c3 = T2(0.249351723343)
+        c4 = T2(0.466911705055)
+        c5 = T2(0.582030414044)
+        c6 = T2(0.847252983783)
+        new{T, T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6)
+    end
+end
+
+@cache struct KYK2014DGSSPRK_3S2_Cache{uType, rateType, TabType, StageLimiter, StepLimiter,
+    Thread} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k::rateType
+    fsalfirst::rateType
+    tab::TabType
+    #temporary values for Shu-Osher
+    u_1::uType
+    u_2::uType
+    kk_1::rateType
+    kk_2::rateType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
+struct KYK2014DGSSPRK_3S2_ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    #These are not α and β for RK but for Shu-Osher
+    #see top of page 317 in
+    #Optimal Strong-Stability-Preserving Runge–Kutta Time Discretizations for
+    #Discontinuous Garlekin Methods, Kubatko, Yaeger, Ketcheson 2014
+    α_10::T
+    α_20::T
+    α_21::T
+    α_30::T
+    α_32::T
+    β_10::T
+    β_21::T
+    β_30::T
+    β_32::T
+    #Shu-Osher is normally stated for autonomous systems, the times
+    #are calculated by hand for this scheme
+    c_1::T
+    c_2::T
+
+    function KYK2014DGSSPRK_3S2_ConstantCache(T, T2)
+        α_10 = T(1.0)
+        α_20 = T(0.087353119859156)
+        α_21 = T(0.912646880140844)
+        α_30 = T(0.344956917166841)
+        α_32 = T(0.655043082833159)
+        β_10 = T(0.528005024856522)
+        β_21 = T(0.481882138633993)
+        β_30 = T(0.022826837460491)
+        β_32 = T(0.345866039233415)
+        c_1 = β_10
+        c_2 = α_21 * β_10 + β_21 # ==0.96376427726
+        new{T, T2}(α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2)
+    end
+end
+
+function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    u_1 = zero(u)
+    u_2 = zero(u)
+    kk_1 = zero(rate_prototype)
+    kk_2 = zero(rate_prototype)
+    k = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    tab = KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits))
+    KYK2014DGSSPRK_3S2_Cache(u, uprev, k, fsalfirst, tab, u_1, u_2, kk_1, kk_2,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits))
+end
+
+function alg_cache(alg::RK46NL, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    tmp = zero(u)
+    k = zero(rate_prototype)
+    fsalfirst = zero(rate_prototype)
+    tab = RK46NLConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
+    RK46NLCache(u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
+        alg.thread)
+end
+
+@cache struct RK46NLCache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+              OrdinaryDiffEqMutableCache
+    u::uType
+    uprev::uType
+    k::rateType
+    tmp::uType
+    fsalfirst::rateType
+    tab::TabType
+    stage_limiter!::StageLimiter
+    step_limiter!::StepLimiter
+    thread::Thread
+end
+
 function CarpenterKennedy2N54ConstantCache(T, T2)
     A2 = convert(T, -567301805773 // 1357537059087)
     A3 = convert(T, -2404267990393 // 2016746695238)

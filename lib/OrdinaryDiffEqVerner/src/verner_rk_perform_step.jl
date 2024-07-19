@@ -163,7 +163,7 @@ end
         g9 = u
         g8 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k9 - k8) / (g9 - g8))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
@@ -411,7 +411,7 @@ end
         g10 = u
         g9 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k10 - k9) / (g10 - g9))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     if integrator.opts.adaptive
         @.. broadcast=false thread=thread utilde=dt * (btilde1 * k1 + btilde4 * k4 +
@@ -731,7 +731,7 @@ end
         g13 = u
         g12 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k13 - k12) / (g13 - g12))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     @.. broadcast=false thread=thread u=uprev +
                                         dt *
@@ -917,7 +917,7 @@ end
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
-    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
+    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we don't need their pointers.
     # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
     integrator.k[1] = k1
     integrator.k[2] = k8
@@ -1021,7 +1021,7 @@ function initialize!(integrator, cache::Vern9Cache)
     alg = unwrap_alg(integrator, false)
     cache.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
     resize!(k, integrator.kshortsize)
-    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
+    # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we don't need their pointers.
     # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
     k[1] = k1
     k[2] = k8
@@ -1136,7 +1136,7 @@ end
         g16 = u
         g15 = tmp
         @.. broadcast=false thread=thread rtmp=abs((k16 - k15) / (g16 - g15))
-        integrator.eigen_est = integrator.opts.internalnorm(maximum(rtmp), t)
+        integrator.eigen_est = integrator.opts.internalnorm(norm(rtmp, Inf), t)
     end
     @.. broadcast=false thread=thread u=uprev +
                                         dt *
