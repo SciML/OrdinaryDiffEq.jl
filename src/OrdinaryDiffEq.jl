@@ -112,6 +112,8 @@ using MacroTools, Adapt
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
+using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant
+
 const CompiledFloats = Union{Float32, Float64,
     ForwardDiff.Dual{
         ForwardDiff.Tag{T, W},
@@ -137,6 +139,12 @@ include("algorithms/explicit_rk.jl")
 include("composite_algs.jl")
 
 include("alg_utils.jl")
+
+include("nlsolve/type.jl")
+include("nlsolve/utils.jl")
+include("nlsolve/nlsolve.jl")
+include("nlsolve/functional.jl")
+include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
 
@@ -279,14 +287,7 @@ include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
-using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant
 include("perform_step/dae_perform_step.jl")
-
-include("nlsolve/type.jl")
-include("nlsolve/utils.jl")
-include("nlsolve/nlsolve.jl")
-include("nlsolve/functional.jl")
-include("nlsolve/newton.jl")
 
 import PrecompileTools
 
