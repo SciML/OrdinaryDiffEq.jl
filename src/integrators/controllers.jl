@@ -479,47 +479,6 @@ function step_reject_controller!(integrator, ::DFBDF)
     bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
 end
 
-function bdf_step_reject_controller!(integrator, EEst1)
-    k = integrator.cache.order
-    h = integrator.dt
-    integrator.cache.consfailcnt += 1
-    integrator.cache.nconsteps = 0
-    if integrator.cache.consfailcnt > 1
-        h = h / 2
-    end
-    zₛ = 1.2  # equivalent to integrator.opts.gamma
-    expo = 1 / (k + 1)
-    z = zₛ * ((integrator.EEst)^expo)
-    F = inv(z)
-    if z <= 10
-        hₖ = F * h
-    else # z > 10
-        hₖ = 0.1 * h
-    end
-    hₙ = hₖ
-    kₙ = k
-    if k > 1
-        expo = 1 / k
-        zₖ₋₁ = 1.3 * (EEst1^expo)
-        Fₖ₋₁ = inv(zₖ₋₁)
-        if zₖ₋₁ <= 10
-            hₖ₋₁ = Fₖ₋₁ * h
-        elseif zₖ₋₁ > 10
-            hₖ₋₁ = 0.1 * h
-        end
-        if integrator.cache.consfailcnt > 2 || hₖ₋₁ > hₖ
-            hₙ = min(h, hₖ₋₁)
-            kₙ = k - 1
-        end
-    end
-    # Restart BDf (clear history) when we failed repeatedly
-    if kₙ == 1 && integrator.cache.consfailcnt > 3
-        u_modified!(integrator, true)
-    end
-    integrator.dt = hₙ
-    integrator.cache.order = kₙ
-end
-
 function post_newton_controller!(integrator, alg)
     integrator.dt = integrator.dt / integrator.opts.failfactor
     nothing
