@@ -105,9 +105,8 @@ sol = solve(prob_rober_mm)
 @test all(isequal(3), sol.alg_choice)
 @test sol(0.5) isa Vector{Float64} # test dense output
 
-
 # test callback on ConstantCache (https://github.com/SciML/OrdinaryDiffEq.jl/issues/2287)
 using StaticArrays
 cb = ContinuousCallback((u, t, integrator) -> t - 1, (integrator) -> nothing)
 SA_ode_problem = ODEProblem((u, p, t) -> zero(u), SA[0], 2)
-@test solve(SA_ode_problem; callback=cb).retcode == ReturnCode.Success
+@test solve(SA_ode_problem; callback = cb).retcode == ReturnCode.Success

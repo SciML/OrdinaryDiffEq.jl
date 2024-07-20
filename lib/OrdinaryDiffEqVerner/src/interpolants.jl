@@ -6,15 +6,15 @@ RK_WITH_SPECIAL_INTERPOLATIONS = Union{
 }
 
 function _ode_interpolant(Θ, dt, y₀, y₁, k,
-    cache::RK_WITH_SPECIAL_INTERPOLATIONS,
-    idxs, T::Type{Val{D}}, differential_vars) where {D}
-throw(DerivativeOrderNotPossibleError())
+        cache::RK_WITH_SPECIAL_INTERPOLATIONS,
+        idxs, T::Type{Val{D}}, differential_vars) where {D}
+    throw(DerivativeOrderNotPossibleError())
 end
 
 function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-    cache::RK_WITH_SPECIAL_INTERPOLATIONS,
-    idxs, T::Type{Val{D}}, differential_vars) where {D}
-throw(DerivativeOrderNotPossibleError())
+        cache::RK_WITH_SPECIAL_INTERPOLATIONS,
+        idxs, T::Type{Val{D}}, differential_vars) where {D}
+    throw(DerivativeOrderNotPossibleError())
 end
 
 ## Vern6
