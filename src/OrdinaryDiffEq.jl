@@ -140,8 +140,8 @@ include("alg_utils.jl")
 
 include("nlsolve/type.jl")
 include("nlsolve/utils.jl")
+include("nlsolve/nlsolve.jl")
 include("nlsolve/functional.jl")
-include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
 
@@ -285,7 +285,7 @@ using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
 using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant
-include("nlsolve/nlsolve.jl")
+include("nlsolve/newton.jl")
 include("perform_step/dae_perform_step.jl")
 
 import PrecompileTools
