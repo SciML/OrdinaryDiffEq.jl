@@ -265,6 +265,11 @@ include("../lib/OrdinaryDiffEqVerner/src/OrdinaryDiffEqVerner.jl")
 using ..OrdinaryDiffEqVerner
 export Vern6, Vern7, Vern8, Vern9
 
+include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
+using ..OrdinaryDiffEqBDF
+export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
+       SBDF2, SBDF3, SBDF4, MEBDF2
+
 include("../lib/OrdinaryDiffEqSDIRK/src/OrdinaryDiffEqSDIRK.jl")
 using ..OrdinaryDiffEqSDIRK
 import .OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
@@ -272,13 +277,8 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
        Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
        SFSDIRK5, CFNLIRK3, SFSDIRK6, SFSDIRK7, SFSDIRK8, Kvaerno5, KenCarp4, KenCarp5,
-       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
+       SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6, IMEXEuler, IMEXEulerARK,
        SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
-
-include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
-using ..OrdinaryDiffEqBDF
-export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
-       SBDF2, SBDF3, SBDF4, MEBDF2
 
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
@@ -452,7 +452,7 @@ export VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5
 
 export VCABM
 
-export IMEXEuler, IMEXEulerARK, CNAB2, CNLF2
+export CNAB2, CNLF2
 
 export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
