@@ -138,12 +138,6 @@ include("composite_algs.jl")
 
 include("alg_utils.jl")
 
-include("nlsolve/type.jl")
-include("nlsolve/utils.jl")
-include("nlsolve/nlsolve.jl")
-include("nlsolve/functional.jl")
-include("nlsolve/newton.jl")
-
 include("generic_rosenbrock.jl")
 
 include("caches/basic_caches.jl")
@@ -285,8 +279,14 @@ include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
-using ..OrdinaryDiffEqBDF: reinitFBDF!
+using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant
 include("perform_step/dae_perform_step.jl")
+
+include("nlsolve/type.jl")
+include("nlsolve/utils.jl")
+include("nlsolve/nlsolve.jl")
+include("nlsolve/functional.jl")
+include("nlsolve/newton.jl")
 
 import PrecompileTools
 
