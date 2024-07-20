@@ -36,6 +36,6 @@ include("controllers.jl")
 include("bdf_perform_step.jl")
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
-       SBDF2, SBDF3, SBDF4, MEBDF2
+       SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK
 
 end
