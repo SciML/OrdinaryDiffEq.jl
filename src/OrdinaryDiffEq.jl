@@ -284,8 +284,10 @@ include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
-using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!, calc_Lagrange_interp!,
-                           calc_finite_difference_weights, estimate_terk, calc_Lagrange_interp,
+using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
+                           calc_Lagrange_interp!,
+                           calc_finite_difference_weights, estimate_terk,
+                           calc_Lagrange_interp,
                            bdf_step_reject_controller!
 include("nlsolve/newton.jl")
 include("perform_step/dae_perform_step.jl")

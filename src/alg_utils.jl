@@ -507,7 +507,6 @@ alg_order(alg::CNLF2) = 2
 alg_order(alg::AN5) = 5
 alg_order(alg::JVODE) = 1  #dummy value
 
-
 alg_order(alg::PDIRK44) = 4
 
 alg_order(alg::DImplicitEuler) = 1
