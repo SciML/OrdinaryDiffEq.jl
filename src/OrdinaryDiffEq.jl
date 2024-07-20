@@ -166,6 +166,7 @@ include("tableaus/firk_tableaus.jl")
 include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")
+include("integrators/controllers.jl")
 include("integrators/integrator_utils.jl")
 include("integrators/integrator_interface.jl")
 
@@ -286,7 +287,6 @@ export DefaultODEAlgorithm
 using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!, calc_Lagrange_interp!
                            calc_finite_difference_weights
 include("nlsolve/newton.jl")
-include("integrators/controllers.jl")
 include("perform_step/dae_perform_step.jl")
 
 import PrecompileTools
