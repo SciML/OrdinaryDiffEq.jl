@@ -415,7 +415,7 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        FRK65, PFRK87,
        RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
 
-export RadauIIA3, RadauIIA5
+export RadauIIA3, RadauIIA5, RadauIIA7
 
 export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,

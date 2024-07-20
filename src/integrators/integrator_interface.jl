@@ -111,8 +111,9 @@ end
 @inline function DiffEqBase.get_tmp_cache(integrator::ODEIntegrator)
     get_tmp_cache(integrator::ODEIntegrator, integrator.alg, integrator.cache)
 end
+
 # avoid method ambiguity
-# for typ in (Union{RadauIIA3, RadauIIA5})
+# for typ in (Union{RadauIIA3, RadauIIA5, RadauIIA7})
 #     @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
 #             cache::OrdinaryDiffEqConstantCache)
 #         nothing
@@ -124,7 +125,7 @@ end
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp,)
 end
-@inline function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5},
+@inline function DiffEqBase.get_tmp_cache(integrator, alg::Union{RadauIIA3, RadauIIA5, RadauIIA7},
         cache::OrdinaryDiffEqMutableCache)
     (cache.tmp, cache.atmp)
 end
