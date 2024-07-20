@@ -285,6 +285,7 @@ include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
+using ..OrdinaryDiffEqBDF: reinitFBDF!
 include("perform_step/dae_perform_step.jl")
 
 import PrecompileTools
