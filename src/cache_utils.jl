@@ -1,6 +1,7 @@
-is_constant_cache(cache::OrdinaryDiffEqConstantCache) = true
-is_constant_cache(cache::OrdinaryDiffEqCache) = false
+is_constant_cache(::OrdinaryDiffEqConstantCache) = true
+is_constant_cache(::OrdinaryDiffEqCache) = false
 is_constant_cache(cache::CompositeCache) = is_constant_cache(cache.caches[1])
+is_constant_cache(::DefaultCache{Cache1}) where {Cache1} = Cache1 <: OrdinaryDiffEqConstantCache
 
 function DiffEqBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
     alg = integrator.alg
@@ -22,6 +23,8 @@ function DiffEqBase.unwrap_cache(integrator::ODEIntegrator, is_stiff)
             return cache.cache5
         elseif current == 6
             return cache.cache6
+        else
+            error("This should not occur (please report a bug)")
         end
     elseif alg.choice_function isa AutoSwitch
         num = is_stiff ? 2 : 1
