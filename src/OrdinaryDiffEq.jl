@@ -284,7 +284,7 @@ include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
-using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!
+using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!, calc_Lagrange_interp!
 include("nlsolve/newton.jl")
 include("perform_step/dae_perform_step.jl")
 
