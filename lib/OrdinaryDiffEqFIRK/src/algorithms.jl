@@ -50,8 +50,6 @@ function RadauIIA3(; chunk_size = Val{0}(), autodiff = Val{true}(),
         step_limiter!)
 end
 
-TruncatedStacktraces.@truncate_stacktrace RadauIIA3
-
 """
 @article{hairer1999stiff,
 title={Stiff differential equations solved by Radau methods},
@@ -103,4 +101,3 @@ function RadauIIA5(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller,
         step_limiter!)
 end
-TruncatedStacktraces.@truncate_stacktrace RadauIIA5
