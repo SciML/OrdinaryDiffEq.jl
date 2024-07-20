@@ -12,6 +12,7 @@ FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"

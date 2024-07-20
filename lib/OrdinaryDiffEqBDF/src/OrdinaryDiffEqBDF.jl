@@ -21,6 +21,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: I
+using ArrayInterface
 
 include("algorithms.jl")
 include("alg_utils.jl")
