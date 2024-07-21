@@ -5,6 +5,7 @@ version = "1.0.0"
 
 [deps]
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 
 [compat]
 julia = "1.10"
