@@ -1,6 +1,9 @@
 abstract type AbstractController end
 using OrdinaryDiffEq
 
+struct PredictiveController <: AbstractController
+end
+
 @inline function stepsize_controller!(integrator, alg)
     stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
