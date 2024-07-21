@@ -272,6 +272,10 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
        SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
+include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
+using ..OrdinaryDiffEqDefault
+export DefaultODEAlgorithm
+
 include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
 using ..OrdinaryDiffEqBDF
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
