@@ -9,7 +9,8 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, du_alias_or_new,
                        explicit_rk_docstring, trivial_limiter!,
-                       _ode_interpolant!, _ode_addsteps!, AbstractController
+                       _ode_interpolant!, _ode_addsteps!, AbstractController,
+                       NLStatus
 
 include("algorithms.jl")
 include("alg_utils.jl")
