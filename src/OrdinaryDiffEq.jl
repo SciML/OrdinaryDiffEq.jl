@@ -272,10 +272,22 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
        SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
-export RadauIIA3, RadauIIA5, RadauIIA7
+include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
+using ..OrdinaryDiffEqBDF
+export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
+       SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK
+
 include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
 using ..OrdinaryDiffEqFIRK
 export RadauIIA3, RadauIIA5, RadauIIA7
+
+using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
+                           calc_Lagrange_interp!,
+                           calc_finite_difference_weights, estimate_terk,
+                           calc_Lagrange_interp,
+                           bdf_step_reject_controller!
+include("nlsolve/newton.jl")
+include("perform_step/dae_perform_step.jl")
 
 import PrecompileTools
 
