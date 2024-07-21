@@ -11,6 +11,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        explicit_rk_docstring, trivial_limiter!,
                        _ode_interpolant!, _ode_addsteps!, AbstractController,
                        NLStatus, qmax_default, alg_adaptive_order
+using MuladdMacro
 import FastBroadcast: @..
 include("algorithms.jl")
 include("alg_utils.jl")
