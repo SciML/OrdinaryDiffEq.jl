@@ -10,7 +10,8 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        constvalue, _unwrap_val, du_alias_or_new,
                        explicit_rk_docstring, trivial_limiter!,
                        _ode_interpolant!, _ode_addsteps!, AbstractController,
-                       NLStatus, qmax_default, alg_adaptive_order, DEFAULT_PRECS
+                       NLStatus, qmax_default, alg_adaptive_order, DEFAULT_PRECS,
+                       UJacobianWrapper
 using MuladdMacro, DiffEqBase
 import FastBroadcast: @..
 include("algorithms.jl")
