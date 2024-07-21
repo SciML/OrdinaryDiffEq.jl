@@ -10,7 +10,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        constvalue, _unwrap_val, du_alias_or_new,
                        explicit_rk_docstring, trivial_limiter!,
                        _ode_interpolant!, _ode_addsteps!, AbstractController,
-                       NLStatus
+                       NLStatus, qmax_default, alg_adaptive_order
 
 include("algorithms.jl")
 include("alg_utils.jl")
