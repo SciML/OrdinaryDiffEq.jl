@@ -15,6 +15,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        Convergence, calc_J!
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using SciMLOperators: AbstractSciMLOperator
+using LinearAlgebra: I
 import LinearSolve
 import FastBroadcast: @..
 include("algorithms.jl")
