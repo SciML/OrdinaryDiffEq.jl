@@ -740,9 +740,9 @@ end
         W = cache.W
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
-            W = update_coefficients(W; transform = W_transform, dtgamma)
+            W = update_coefficients!(W; transform = W_transform, dtgamma)
         else
-            W = update_coefficients(W, uprev, p, t; transform = W_transform, dtgamma)
+            W = update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
         end
         if W.J !== nothing
             J = islin ? (isode ? f.f : f.f1.f) : calc_J(integrator, cache, next_step)
