@@ -147,9 +147,15 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
+<<<<<<< HEAD
         @time @safetestset "DAE AD Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_ad_tests.jl")
         @time @safetestset "Newton Tests" include("interface/newton_tests.jl")
         @time @safetestset "DAE Initialize Integration" include("../lib/OrdinaryDiffEqBDF/test/dae_initialize_integration.jl")
+=======
+        @time @safetestset "DAE AD Tests" include("../lib/OrdinaryDiffEqDAE/test/dae_ad_tests.jl")
+        @time @safetestset "Newton Tests" include("interface/newton_tests.jl")
+        @time @safetestset "DAE Initialize Integration" include("../lib/OrdinaryDiffEqDAE/test/dae_initialize_integration.jl")
+>>>>>>> 09f9af8c (@unpack)
     end
 
     if !is_APPVEYOR &&
@@ -173,8 +179,13 @@ end
         @time @safetestset "Reverse Directioned Event Tests" include("integrators/rev_events_tests.jl")
         @time @safetestset "Differentiation Direction Tests" include("integrators/diffdir_tests.jl")
         @time @safetestset "Resize Tests" include("integrators/resize_tests.jl")
+<<<<<<< HEAD
         @time @safetestset "DAE Initialization Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_initialization_tests.jl")
         @time @safetestset "DAE Event Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_event.jl")
+=======
+        @time @safetestset "DAE Initialization Tests" include("../lib/OrdinaryDiffEqDAE/test/dae_initialization_tests.jl")
+        @time @safetestset "DAE Event Tests" include("../lib/OrdinaryDiffEqDAE/test/dae_event.jl")
+>>>>>>> 09f9af8c (@unpack)
         @time @safetestset "Cache Tests" include("integrators/ode_cache_tests.jl")
         @time @safetestset "Add Steps Tests" include("integrators/ode_add_steps_tests.jl")
         @time @safetestset "IMEX Split Function Tests" include("integrators/split_ode_tests.jl")
@@ -185,7 +196,11 @@ end
         @time @safetestset "Special Interp Tests" include("regression/special_interps.jl")
         @time @safetestset "Inplace Tests" include("regression/ode_inplace_tests.jl")
         @time @safetestset "Adaptive Tests" include("regression/ode_adaptive_tests.jl")
+<<<<<<< HEAD
         @time @safetestset "Hard DAE Tests" include("../lib/OrdinaryDiffEqBDF/test/hard_dae.jl")
+=======
+        @time @safetestset "Hard DAE Tests" include("../lib/OrdinaryDiffEqDAE/test/hard_dae.jl")
+>>>>>>> 09f9af8c (@unpack)
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II" || GROUP == "Regression")
@@ -199,7 +214,11 @@ end
     if !is_APPVEYOR && GROUP == "AlgConvergence_I"
         @time @safetestset "Partitioned Methods Tests" include("algconvergence/partitioned_methods_tests.jl")
         @time @safetestset "Convergence Tests" include("algconvergence/ode_convergence_tests.jl")
+<<<<<<< HEAD
         @time @safetestset "DAE Convergence Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_convergence_tests.jl")
+=======
+        @time @safetestset "DAE Convergence Tests" include("../lib/OrdinaryDiffEqDAE/test/dae_convergence_tests.jl")
+>>>>>>> 09f9af8c (@unpack)
         @time @safetestset "Non-autonomous Convergence Tests" include("algconvergence/non-autonomous_convergence_tests.jl")
         @time @safetestset "Adams Variable Coefficients Tests" include("algconvergence/adams_tests.jl")
         @time @safetestset "Nordsieck Tests" include("algconvergence/nordsieck_tests.jl")
