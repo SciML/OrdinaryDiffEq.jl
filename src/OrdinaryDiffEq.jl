@@ -466,7 +466,7 @@ export Alshina2, Alshina3, Alshina6
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2, DFBDF
+export KuttaPRK2p5, PDIRK44
 
 export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
