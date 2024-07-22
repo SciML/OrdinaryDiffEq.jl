@@ -90,13 +90,12 @@ function calc_J(integrator, cache, next_step::Bool = false)
             J = jacobian(uf, uprev, integrator)
         end
 
-        integrator.stats.njacs += 1
-
         if alg isa CompositeAlgorithm
             integrator.eigen_est = constvalue(opnorm(J, Inf))
         end
     end
 
+    integrator.stats.njacs += 1
     J
 end
 
@@ -144,12 +143,11 @@ function calc_J!(J, integrator, cache, next_step::Bool = false)
         end
     end
 
-    integrator.stats.njacs += 1
-
     if alg isa CompositeAlgorithm
         integrator.eigen_est = constvalue(opnorm(J, Inf))
     end
 
+    integrator.stats.njacs += 1
     return nothing
 end
 
@@ -604,21 +602,21 @@ function jacobian2W!(W::Matrix, mass_matrix, dtgamma::Number, J::Matrix,
     return nothing
 end
 
-function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix,
-        W_transform::Bool)::Nothing where {MT}
+function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix,
+        W_transform::Bool)
     # check size and dimension
     mass_matrix isa UniformScaling ||
         @boundscheck axes(mass_matrix) == axes(J) || _throwJMerror(J, mass_matrix)
     @inbounds if W_transform
         invdtgamma = inv(dtgamma)
-        if MT <: UniformScaling
+        if mass_matrix isa UniformScaling
             λ = -mass_matrix.λ
             W = J + (λ * invdtgamma) * I
         else
             W = muladd(-mass_matrix, invdtgamma, J)
         end
     else
-        if MT <: UniformScaling
+        if mass_matrix isa UniformScaling
             λ = -mass_matrix.λ
             W = dtgamma * J + λ * I
         else
@@ -742,15 +740,16 @@ end
         W = cache.W
         if isnewton(nlsolver)
             # we will call `update_coefficients!` for u/p/t in NLNewton
-            update_coefficients!(W; transform = W_transform, dtgamma)
+            W = update_coefficients(W; transform = W_transform, dtgamma)
         else
-            update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
+            W = update_coefficients(W, uprev, p, t; transform = W_transform, dtgamma)
         end
-        if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
-            islin, isode = islinearfunction(integrator)
+        if W.J !== nothing
             J = islin ? (isode ? f.f : f.f1.f) : calc_J(integrator, cache, next_step)
-            !isdae &&
-                jacobian2W!(W._concrete_form, mass_matrix, dtgamma, J, W_transform)
+            if !isdae
+                integrator.stats.nw += 1
+                W = jacobian2W(mass_matrix, dtgamma, J, W_transform)
+            end
         end
     elseif cache.W isa AbstractSciMLOperator && !(cache.W isa StaticWOperator)
         J = update_coefficients(cache.J, uprev, p, t)
@@ -760,11 +759,9 @@ end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
     elseif DiffEqBase.has_jac(f)
         J = f.jac(uprev, p, t)
+        integrator.stats.njacs += 1
         if J isa StaticArray &&
-           integrator.alg isa
-           Union{
-            Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P, Rodas4P2,
-            Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
+           integrator.alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
                 dtgamma * J - mass_matrix
         else
@@ -788,9 +785,7 @@ end
             W = if W_full isa Number
                 W_full
             elseif len !== nothing &&
-                   integrator.alg isa
-                   Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P,
-                Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
+                   integrator.alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
                 StaticWOperator(W_full)
             else
                 DiffEqBase.default_factorize(W_full)
