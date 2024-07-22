@@ -11,7 +11,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        explicit_rk_docstring, trivial_limiter!,
                        _ode_interpolant!, _ode_addsteps!, AbstractController,
                        NLStatus, qmax_default, alg_adaptive_order, DEFAULT_PRECS,
-                       UJacobianWrapper, build_J_W
+                       UJacobianWrapper, build_J_W, build_jac_config
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 import FastBroadcast: @..
 include("algorithms.jl")
