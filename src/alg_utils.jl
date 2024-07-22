@@ -41,7 +41,6 @@ isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas4P2) = false
 # Pseudo Non-FSAL
 isfsal(alg::PDIRK44) = false
-isfsal(alg::DImplicitEuler) = false
 isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
@@ -153,9 +152,6 @@ ismultistep(alg::ETD2) = true
 isadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
-isadaptive(alg::DImplicitEuler) = true
-isadaptive(alg::DABDF2) = true
-isadaptive(alg::DFBDF) = true
 
 anyadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = isadaptive(alg)
 anyadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = any(isadaptive, alg.algs)
@@ -346,8 +342,6 @@ end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
-alg_extrapolates(alg::DImplicitEuler) = true
-alg_extrapolates(alg::DABDF2) = true
 alg_extrapolates(alg::MagnusLeapfrog) = true
 
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
@@ -508,10 +502,6 @@ alg_order(alg::AN5) = 5
 alg_order(alg::JVODE) = 1  #dummy value
 
 alg_order(alg::PDIRK44) = 4
-
-alg_order(alg::DImplicitEuler) = 1
-alg_order(alg::DABDF2) = 2
-alg_order(alg::DFBDF) = 1#dummy value
 
 alg_order(alg::Alshina2) = 2
 alg_order(alg::Alshina3) = 3
