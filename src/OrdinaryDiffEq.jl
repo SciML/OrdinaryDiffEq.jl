@@ -155,7 +155,6 @@ include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
-include("caches/dae_caches.jl")
 include("caches/qprk_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
@@ -290,9 +289,11 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
                            calc_finite_difference_weights, estimate_terk,
                            calc_Lagrange_interp,
                            bdf_step_reject_controller!
-                           
+
+include("../lib/OrdinaryDiffEqDAE/src/OrdinaryDiffEqDAE.jl")
+using ..OrdinaryDiffEqDAE
+export DImplicitEuler, DABDF2, DFBDF
 include("nlsolve/newton.jl")
-include("perform_step/dae_perform_step.jl")
 
 import PrecompileTools
 
