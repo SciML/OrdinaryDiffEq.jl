@@ -2,7 +2,8 @@ module OrdinaryDiffEqDAE
 
 import OrdinaryDiffEq: _unwrap_val, NLNewton, DAEAlgorithm,
                        DEFAULT_PRECS, OrdinaryDiffEqConstantCache,
-                       OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache
+                       OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
+                       @unpack
 using TruncatedStacktraces
 
 include("algorithms.jl")
