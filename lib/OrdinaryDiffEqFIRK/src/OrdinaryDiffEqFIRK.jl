@@ -12,7 +12,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        _ode_interpolant!, _ode_addsteps!, AbstractController,
                        NLStatus, qmax_default, alg_adaptive_order, DEFAULT_PRECS,
                        UJacobianWrapper, build_J_W, build_jac_config, UDerivativeWrapper,
-                       Convergence
+                       Convergence, calc_J!
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using SciMLOperators: AbstractSciMLOperator
 import LinearSolve
