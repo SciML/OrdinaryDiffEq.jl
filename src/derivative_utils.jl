@@ -744,7 +744,7 @@ end
         else
             W = update_coefficients!(W, uprev, p, t; transform = W_transform, dtgamma)
         end
-        if W.J !== nothing
+        if W.J !== nothing && !(W.J isa AbstractSciMLOperator)
             J = islin ? (isode ? f.f : f.f1.f) : calc_J(integrator, cache, next_step)
             if !isdae
                 integrator.stats.nw += 1
@@ -757,27 +757,15 @@ end
     elseif islin
         J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
-    elseif DiffEqBase.has_jac(f)
-        J = f.jac(uprev, p, t)
-        integrator.stats.njacs += 1
-        if J isa StaticArray &&
-           integrator.alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
-            W = W_transform ? J - mass_matrix * inv(dtgamma) :
-                dtgamma * J - mass_matrix
-        else
-            if !isa(J, AbstractSciMLOperator) && (!isnewton(nlsolver) ||
-                nlsolver.cache.W.J isa AbstractSciMLOperator)
-                J = MatrixOperator(J)
-            end
-            W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec;
-                transform = W_transform)
-        end
-        integrator.stats.nw += 1
     else
         integrator.stats.nw += 1
         J = calc_J(integrator, cache, next_step)
         if isdae
             W = J
+        elseif J isa StaticArray &&
+           integrator.alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+            W = W_transform ? J - mass_matrix * inv(dtgamma) :
+                dtgamma * J - mass_matrix
         else
             W_full = W_transform ? J - mass_matrix * inv(dtgamma) :
                      dtgamma * J - mass_matrix
@@ -912,29 +900,42 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
         W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
 
-    elseif islin || (!IIP && DiffEqBase.has_jac(f))
-        J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
-        if !isa(J, AbstractSciMLOperator)
-            J = MatrixOperator(J)
-        end
+    elseif islin
+        J = isode ? f.f : f.f1.f # unwrap the Jacobian accordingly
         W = WOperator{IIP}(f.mass_matrix, dt, J, u)
+    elseif DiffEqBase.has_jac(f)
+        J = islin ? (isode ? f.f : f.f1.f) : f.jac(uprev, p, t) # unwrap the Jacobian accordingly
+        if J isa AbstractSciMLOperator
+            W = WOperator{IIP}(f.mass_matrix, dt, J, u)
+        else
+            W = if alg isa DAEAlgorithm
+                J
+            elseif IIP
+                similar(J)
+            else
+                len = StaticArrayInterface.known_length(typeof(J))
+                if len !== nothing &&
+                   alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+                    StaticWOperator(J, false)
+                else
+                    ArrayInterface.lu_instance(J)
+                end
+            end
+        end
     else
         J = if f.jac_prototype === nothing
             ArrayInterface.undefmatrix(u)
         else
             deepcopy(f.jac_prototype)
         end
-        isdae = alg isa DAEAlgorithm
-        W = if isdae
+        W = if alg isa DAEAlgorithm
             J
         elseif IIP
             similar(J)
         else
             len = StaticArrayInterface.known_length(typeof(J))
             if len !== nothing &&
-               alg isa
-               Union{Rosenbrock23, Rodas23W, Rodas3P, Rodas4, Rodas4P,
-                Rodas4P2, Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr}
+               alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
                 StaticWOperator(J, false)
             else
                 ArrayInterface.lu_instance(J)
