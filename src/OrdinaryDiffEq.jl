@@ -166,7 +166,6 @@ include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")
 include("integrators/controllers.jl")
-include("integrators/integrator_utils.jl")
 include("integrators/integrator_interface.jl")
 
 include("cache_utils.jl")
@@ -292,6 +291,10 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
 include("../lib/OrdinaryDiffEqDAE/src/OrdinaryDiffEqDAE.jl")
 using ..OrdinaryDiffEqDAE
 export DImplicitEuler, DABDF2, DFBDF
+
+
+using ..OrdinaryDiffEqDAE: post_newton_controller!
+include("integrators/integrator_utils.jl")
 include("nlsolve/newton.jl")
 
 import PrecompileTools
