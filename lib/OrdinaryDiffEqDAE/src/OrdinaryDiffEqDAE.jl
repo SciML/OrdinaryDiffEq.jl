@@ -3,7 +3,7 @@ module OrdinaryDiffEqDAE
 import OrdinaryDiffEq: _unwrap_val, NLNewton, DAEAlgorithm,
                        DEFAULT_PRECS, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
-                       @unpack
+                       @unpack, @cache
 using TruncatedStacktraces
 import FastBroadcast: @..
 
