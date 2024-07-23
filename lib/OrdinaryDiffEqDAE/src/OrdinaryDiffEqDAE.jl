@@ -5,6 +5,7 @@ import OrdinaryDiffEq: _unwrap_val, NLNewton, DAEAlgorithm,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        @unpack
 using TruncatedStacktraces
+import FastBroadCast: @..
 
 include("algorithms.jl")
 include("alg_utils.jl")
