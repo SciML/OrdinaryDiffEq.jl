@@ -290,18 +290,8 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
                            calc_Lagrange_interp,
                            bdf_step_reject_controller!
 
-<<<<<<< HEAD
 using ..OrdinaryDiffEqBDF: post_newton_controller!
 include("integrators/integrator_utils.jl")
-=======
-include("../lib/OrdinaryDiffEqDAE/src/OrdinaryDiffEqDAE.jl")
-using ..OrdinaryDiffEqDAE
-export DImplicitEuler, DABDF2, DFBDF
->>>>>>> b150b887 (Added DAE solvers)
-include("nlsolve/newton.jl")
-
-import PrecompileTools
-
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
         du[1] = 10.0(u[2] - u[1])
