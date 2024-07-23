@@ -4,7 +4,7 @@ import OrdinaryDiffEq: _unwrap_val, NLNewton, DAEAlgorithm,
                        DEFAULT_PRECS, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        @unpack, @cache
-using TruncatedStacktraces
+using TruncatedStacktraces, MuladdMacro
 import FastBroadcast: @..
 
 include("algorithms.jl")
