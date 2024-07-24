@@ -1117,9 +1117,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
                 u_corrector[:, i])
         end
         tmp = -uprev * bdf_coeffs[k, 2]
-        vc = _vec(tmp)
         for i in 1:(k - 1)
-            @views vc = @.. vc - u_corrector[:, i] * bdf_coeffs[k, i + 2]
+            @views tmp = @.. tmp - u_corrector[:, i] * bdf_coeffs[k, i + 2]
         end
     end
 
@@ -1175,9 +1174,8 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
             end
             terk *= abs(dt^(k))
         else
-            vc = _vec(terk)
             for i in 2:(k + 1)
-                @views vc = @.. vc + fd_weights[i, k + 1] * u_history[:, i - 1]
+                @views terk = @.. terk + fd_weights[i, k + 1] * u_history[:, i - 1]
             end
             terk *= abs(dt^(k))
         end
