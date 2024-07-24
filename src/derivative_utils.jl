@@ -739,6 +739,7 @@ end
     if cache.W isa StaticWOperator
         integrator.stats.nw += 1
         J = calc_J(integrator, cache, next_step)
+        @assert J isa StaticArray
         W = StaticWOperator(W_transform ? J - mass_matrix * inv(dtgamma) : dtgamma * J - mass_matrix)
     elseif cache.W isa WOperator
         integrator.stats.nw += 1
@@ -770,8 +771,6 @@ end
             end
         end
     end
-    (W isa WOperator && unwrap_alg(integrator, true) isa NewtonAlgorithm) &&
-        (W = update_coefficients!(W, uprev, p, t)) # we will call `update_coefficients!` in NLNewton
     is_compos && (integrator.eigen_est = isarray ? constvalue(opnorm(J, Inf)) :
                             integrator.opts.internalnorm(J, t))
     return W
@@ -833,6 +832,7 @@ function update_W!(nlsolver::AbstractNLSolver,
     nothing
 end
 
+import StaticArrays: StaticMatrix
 function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
@@ -881,14 +881,20 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        __f = if IIP
-            (du, u, p, t) -> _f(du, u, p, t)
+        W = if J isa StaticMatrix && alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+            StaticWOperator(J, false)
+        elseif J isa StaticMatrix
+            ArrayInterface.lu_instance(J)
         else
-            (u, p, t) -> _f(u, p, t)
+            __f = if IIP
+                (du, u, p, t) -> _f(du, u, p, t)
+            else
+                (u, p, t) -> _f(u, p, t)
+            end
+            jacvec = JacVec(__f, copy(u), p, t;
+                autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
+            WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
         end
-        jacvec = JacVec(__f, copy(u), p, t;
-            autodiff = alg_autodiff(alg), tag = OrdinaryDiffEqTag())
-        W = WOperator{IIP}(f.mass_matrix, dt, J, u, jacvec)
     else
         J = if !IIP && DiffEqBase.has_jac(f)
             f.jac(uprev, p, t)
@@ -901,16 +907,13 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             J
         elseif IIP
             similar(J)
+        elseif J isa StaticMatrix && alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+            StaticWOperator(J, false)
         else
-            len = StaticArrayInterface.known_length(typeof(J))
-            if len !== nothing &&
-               alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
-                StaticWOperator(J, false)
-            else
-                ArrayInterface.lu_instance(J)
-            end
+            ArrayInterface.lu_instance(J)
         end
     end
+    @show W
     return J, W
 end
 
