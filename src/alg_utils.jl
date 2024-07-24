@@ -175,7 +175,7 @@ qmin_default(alg::DP8) = 1 // 3
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
-qmax_default(alg::Union{RadauIIA3, RadauIIA5, RadauIIA7}) = 8
+qmax_default(alg::Union{RadauIIA3, RadauIIA5, RadauIIA9}) = 8
 
 function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
     return alg isa Union{OrdinaryDiffEqExponentialAlgorithm,
@@ -430,7 +430,8 @@ alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
 alg_order(alg::RadauIIA3) = 3
 alg_order(alg::RadauIIA5) = 5
-alg_order(alg::RadauIIA7) = 7
+alg_order(alg::RadauIIA9) = 9
+alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::RKMK2) = 2
 alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
@@ -530,6 +531,7 @@ alg_adaptive_order(alg::Rosenbrock32) = 2
 
 alg_adaptive_order(alg::RadauIIA3) = 1
 alg_adaptive_order(alg::RadauIIA5) = 3
+alg_adaptive_order(alg::RadauIIA9) = 7
 
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
