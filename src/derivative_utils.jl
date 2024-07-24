@@ -739,35 +739,27 @@ end
     if cache.W isa StaticWOperator
         integrator.stats.nw += 1
         J = calc_J(integrator, cache, next_step)
-        @assert J isa StaticArray
         W = StaticWOperator(W_transform ? J - mass_matrix * inv(dtgamma) : dtgamma * J - mass_matrix)
     elseif cache.W isa WOperator
         integrator.stats.nw += 1
         J = if islin
-                isode ? f.f : f.f1.f
-            elseif cache.W.J === nothing
-                calc_J(integrator, cache, next_step)
-            else
-                J = update_coefficients(cache.W.J, uprev, p, t)
+            isode ? f.f : f.f1.f
+        else
+            calc_J(integrator, cache, next_step)
         end
         W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec; transform = W_transform)
     elseif cache.W isa AbstractSciMLOperator
         W = update_coefficients(cache.W, uprev, p, t; dtgamma, transform = W_transform)
-    elseif islin
-        J = isode ? f.f : f.f1.f
-        W = WOperator{false}(mass_matrix, dtgamma, J, uprev; transform = W_transform)
     else
         integrator.stats.nw += 1
         J = islin ? isode ? f.f : f.f1.f : calc_J(integrator, cache, next_step)
         if isdae
             W = J
         else
-            W_full = W_transform ? J - mass_matrix * inv(dtgamma) :
+            W = W_transform ? J - mass_matrix * inv(dtgamma) :
                      dtgamma * J - mass_matrix
-            W = if W_full isa Number
-                W_full
-            else
-                DiffEqBase.default_factorize(W_full)
+            if !isa(W, Number)
+                W = DiffEqBase.default_factorize(W)
             end
         end
     end
@@ -913,7 +905,6 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             ArrayInterface.lu_instance(J)
         end
     end
-    @show W
     return J, W
 end
 
