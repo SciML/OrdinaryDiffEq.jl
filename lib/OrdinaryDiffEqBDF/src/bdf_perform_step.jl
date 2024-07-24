@@ -47,12 +47,11 @@ end
     mass_matrix = f.mass_matrix
 
     if mass_matrix === I
-        nlsolver.tmp = @.. broadcast=false ((dtₙ * β₁) * fₙ₋₁ +
-                                            (α₁ * uₙ₋₁ + α₂ * uₙ₋₂))/(dtₙ *
-                                                                      β₀)
+        nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ +
+                            (α₁ * uₙ₋₁ + α₂ * uₙ₋₂))/(dtₙ * β₀)
     else
-        _tmp = mass_matrix * @.. broadcast=false (α₁ * uₙ₋₁+α₂ * uₙ₋₂)
-        nlsolver.tmp = @.. broadcast=false ((dtₙ * β₁) * fₙ₋₁ + _tmp)/(dtₙ * β₀)
+        _tmp = mass_matrix * @.. (α₁ * uₙ₋₁+α₂ * uₙ₋₂)
+        nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ + _tmp)/(dtₙ * β₀)
     end
     nlsolver.γ = β₀
     nlsolver.α = α₀
@@ -772,7 +771,7 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
         u₀ = reshape(sum(D[:, 1:k], dims = 2) .+ uprev, size(u))
         ϕ = zero(u)
         for i in 1:k
-            @.. broadcast=false ϕ+=γₖ[i] * D[:, i]
+            ϕ = @.. ϕ + γₖ[i] * D[:, i]
         end
     end
     markfirststage!(nlsolver)
@@ -780,9 +779,9 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
     mass_matrix = f.mass_matrix
 
     if mass_matrix === I
-        nlsolver.tmp = @.. broadcast=false (u₀ / β₀ - ϕ)/dt
+        nlsolver.tmp = @.. (u₀ / β₀ - ϕ)/dt
     else
-        nlsolver.tmp = mass_matrix * @.. broadcast=false (u₀ / β₀ - ϕ)/dt
+        nlsolver.tmp = mass_matrix * @.. (u₀ / β₀ - ϕ)/dt
     end
 
     nlsolver.γ = β₀
@@ -1110,18 +1109,17 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
         end
     else
         for i in 1:(k - 1)
-            @.. broadcast=false @views u_corrector[:, i] = $calc_Lagrange_interp(
+            @.. @views u_corrector[:, i] = $calc_Lagrange_interp(
                 k, weights,
                 equi_ts[i],
                 ts,
                 u_history,
-                u_corrector[:,
-                    i])
+                u_corrector[:, i])
         end
         tmp = -uprev * bdf_coeffs[k, 2]
         vc = _vec(tmp)
         for i in 1:(k - 1)
-            @.. broadcast=false @views vc -= u_corrector[:, i] * bdf_coeffs[k, i + 2]
+            @views vc = @.. vc - u_corrector[:, i] * bdf_coeffs[k, i + 2]
         end
     end
 
@@ -1179,7 +1177,7 @@ function perform_step!(integrator, cache::FBDFConstantCache{max_order},
         else
             vc = _vec(terk)
             for i in 2:(k + 1)
-                @.. broadcast=false @views vc += fd_weights[i, k + 1] * u_history[:, i - 1]
+                @views vc = @.. vc + fd_weights[i, k + 1] * u_history[:, i - 1]
             end
             terk *= abs(dt^(k))
         end
