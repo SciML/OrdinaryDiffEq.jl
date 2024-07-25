@@ -8,7 +8,7 @@
         if fac_default_gamma(alg)
             fac = gamma
         else
-            if isfirk(alg::Union{RadauIIA3, RadauIIA5, RadauIIA7})
+            if isfirk(alg)
                 @unpack iter = integrator.cache
                 @unpack maxiters = alg
             else
