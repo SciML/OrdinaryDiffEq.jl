@@ -797,8 +797,12 @@ function initialize!(integrator, cache::Tsit5Cache)
     integrator.k[6] = cache.k6
     integrator.k[7] = cache.k7
     integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-    integrator.stats.nf += 1
+    increment_nf!(integrator.stats)
     return nothing
+end
+
+function increment_nf!(stats)
+    stats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step = false)
@@ -832,7 +836,7 @@ end
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
     f(k7, u, p, t + dt)
-    integrator.stats.nf += 6
+    increment_nf_perform_step!(integrator.stats)
     if integrator.alg isa CompositeAlgorithm
         g7 = u
         g6 = tmp
@@ -851,6 +855,10 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     return nothing
+end
+
+function increment_nf_perform_step!(stats)
+    stats.nf += 6
 end
 
 function initialize!(integrator, cache::DP5ConstantCache)
