@@ -13,10 +13,11 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        NLStatus, qmax_default, alg_adaptive_order, DEFAULT_PRECS,
                        UJacobianWrapper, build_J_W, build_jac_config, UDerivativeWrapper,
                        Convergence, calc_J!, dolinsolve, FastConvergence, calc_J,
-                       mul!, PredictiveController
+                       stepsize_controller!, islinearfunction, step_accept_controller!, step_reject_controller!,
+                       PredictiveController
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using SciMLOperators: AbstractSciMLOperator
-using LinearAlgebra: I, UniformScaling
+using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve
 import FastBroadcast: @..
 include("algorithms.jl")
@@ -27,6 +28,6 @@ include("firk_tableaus.jl")
 include("firk_perform_step.jl")
 include("integrator_interface.jl")
 
-export RadauIIA3, RadauIIA5
+export RadauIIA3, RadauIIA5, RadauIIA7
 
 end
