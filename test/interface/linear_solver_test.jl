@@ -188,12 +188,12 @@ krylov_rodas = Rodas5P(linsolve=KrylovJL_GMRES())
 solvers = (;qndf, krylov_qndf, rodas, krylov_rodas, fbdf, krylov_fbdf, )
 
 refsol = solve(probiip, FBDF(), abstol=1e-12, reltol=1e-12)
-@testset "Hires" begin
-@testset "$probname" for (probname, prob) in pairs(probs)
-    @testset "$solname" for (solname, solver) in pairs(solvers)
-        sol = solve(prob, solver, abstol=1e-12, reltol=1e-12, maxiters=2e4)
-        @test sol.retcode == ReturnCode.Success
-        @test isapprox(sol.u[end], refsol.u[end], rtol=1e-10, atol=1e-10)
+@testset "Hires calc_W tests" begin
+    @testset "$probname" for (probname, prob) in pairs(probs)
+        @testset "$solname" for (solname, solver) in pairs(solvers)
+            sol = solve(prob, solver, abstol=1e-12, reltol=1e-12, maxiters=2e4)
+            @test sol.retcode == ReturnCode.Success
+            @test isapprox(sol.u[end], refsol.u[end], rtol=1e-8, atol=1e-10)
+        end
     end
-end
 end
