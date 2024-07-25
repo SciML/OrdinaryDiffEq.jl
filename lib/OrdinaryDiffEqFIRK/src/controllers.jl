@@ -1,6 +1,3 @@
-struct PredictiveController <: AbstractController
-end
-
 @inline function stepsize_controller!(integrator, controller::PredictiveController, alg)
     @unpack qmin, qmax, gamma = integrator.opts
     EEst = DiffEqBase.value(integrator.EEst)
@@ -11,7 +8,7 @@ end
         if fac_default_gamma(alg)
             fac = gamma
         else
-            if alg isa Union{RadauIIA3, RadauIIA5, RadauIIA7}
+            if isfirk(alg::Union{RadauIIA3, RadauIIA5, RadauIIA7})
                 @unpack iter = integrator.cache
                 @unpack maxiters = alg
             else

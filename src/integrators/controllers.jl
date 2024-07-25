@@ -1,9 +1,6 @@
 abstract type AbstractController end
 using OrdinaryDiffEq
 
-struct PredictiveController <: AbstractController
-end
-
 @inline function stepsize_controller!(integrator, alg)
     stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
@@ -396,6 +393,9 @@ else
 end
 ```
 """
+
+struct PredictiveController <: AbstractController
+end
 
 # Dummy controller without any method implementations.
 # This is used to transfer the special controllers associated to certain
