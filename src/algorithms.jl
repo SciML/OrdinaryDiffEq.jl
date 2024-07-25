@@ -673,10 +673,10 @@ year={1999},
 publisher={Elsevier}
 }
 
-RadauIIA7: Fully-Implicit Runge-Kutta Method
+RadauII97: Fully-Implicit Runge-Kutta Method
 An A-B-L stable fully implicit Runge-Kutta method with internal tableau complex basis transform for efficiency.
 """
-struct RadauIIA7{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
+struct RadauIIA9{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
        OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
     precs::P
@@ -690,7 +690,7 @@ struct RadauIIA7{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
     step_limiter!::StepLimiter
 end
 
-function RadauIIA7(; chunk_size = Val{0}(), autodiff = Val{true}(),
+function RadauIIA9(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward},
         linsolve = nothing, precs = DEFAULT_PRECS,
@@ -698,7 +698,7 @@ function RadauIIA7(; chunk_size = Val{0}(), autodiff = Val{true}(),
         new_W_γdt_cutoff = 1 // 5,
         controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
         step_limiter! = trivial_limiter!)
-    RadauIIA7{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+    RadauIIA9{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
         typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
         typeof(κ), typeof(fast_convergence_cutoff),
         typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -712,7 +712,7 @@ function RadauIIA7(; chunk_size = Val{0}(), autodiff = Val{true}(),
         controller,
         step_limiter!)
 end
-TruncatedStacktraces.@truncate_stacktrace RadauIIA7
+TruncatedStacktraces.@truncate_stacktrace RadauIIA9
 
 ################################################################################
 

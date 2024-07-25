@@ -51,7 +51,7 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
     nothing
 end
 
-function initialize!(integrator, cache::RadauIIA7ConstantCache)
+function initialize!(integrator, cache::RadauIIA9ConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -98,7 +98,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
     nothing
 end
 
-function initialize!(integrator, cache::RadauIIA7Cache)
+function initialize!(integrator, cache::RadauIIA9Cache)
     integrator.kshortsize = 2
     integrator.fsalfirst = cache.fsalfirst
     integrator.fsallast = cache.k
@@ -784,7 +784,7 @@ end
     return
 end
 
-@muladd function perform_step!(integrator, cache::RadauIIA7ConstantCache,
+@muladd function perform_step!(integrator, cache::RadauIIA9ConstantCache,
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32, T33, T34, T35, T41, T42, T43, T44, T45, T51 = cache.tab #= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
@@ -1014,7 +1014,7 @@ end
     return
 end
 
-@muladd function perform_step!(integrator, cache::RadauIIA7Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RadauIIA9Cache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
     @unpack T11, T12, T13, T14, T15, T21, T22, T23, T24, T25, T31, T32, T33, T34, T35, T41, T42, T43, T44, T45, T51 = cache.tab #= T52 = 1, T53 = 0, T54 = 1, T55 = 0=#
     @unpack TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25, TI31, TI32, TI33, TI34, TI35, TI41, TI42, TI43, TI44, TI45, TI51, TI52, TI53, TI54, TI55 = cache.tab

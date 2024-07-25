@@ -274,7 +274,7 @@ function alg_cache(alg::RadauIIA5, u, rate_prototype, ::Type{uEltypeNoUnits},
         Convergence, alg.step_limiter!)
 end
 
-mutable struct RadauIIA7ConstantCache{F, Tab, Tol, Dt, U, JType} <:
+mutable struct RadauIIA9ConstantCache{F, Tab, Tol, Dt, U, JType} <:
                OrdinaryDiffEqConstantCache
     uf::F
     tab::Tab
@@ -291,22 +291,22 @@ mutable struct RadauIIA7ConstantCache{F, Tab, Tol, Dt, U, JType} <:
     J::JType
 end
 
-function alg_cache(alg::RadauIIA7, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UDerivativeWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
-    tab = RadauIIA7Tableau(uToltype, constvalue(tTypeNoUnits))
+    tab = RadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
     J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
-    RadauIIA7ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, u, dt, dt,
+    RadauIIA9ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, u, dt, dt,
         Convergence, J)
 end
 
-mutable struct RadauIIA7Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
+mutable struct RadauIIA9Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Type, W2Type,
     UF, JC, F1, F2, Tab, Tol, Dt, rTol, aTol, StepLimiter} <:
                OrdinaryDiffEqMutableCache
     u::uType
@@ -370,15 +370,15 @@ mutable struct RadauIIA7Cache{uType, cuType, uNoUnitsType, rateType, JType, W1Ty
     status::NLStatus
     step_limiter!::StepLimiter
 end
-TruncatedStacktraces.@truncate_stacktrace RadauIIA7Cache 1
+TruncatedStacktraces.@truncate_stacktrace RadauIIA9Cache 1
 
-function alg_cache(alg::RadauIIA7, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits},
         ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     uf = UJacobianWrapper(f, t, p)
     uToltype = constvalue(uBottomEltypeNoUnits)
-    tab = RadauIIA7Tableau(uToltype, constvalue(tTypeNoUnits))
+    tab = RadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
 
     κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
@@ -459,7 +459,7 @@ function alg_cache(alg::RadauIIA7, u, rate_prototype, ::Type{uEltypeNoUnits},
     rtol = reltol isa Number ? reltol : zero(reltol)
     atol = reltol isa Number ? reltol : zero(reltol)
 
-    RadauIIA7Cache(u, uprev,
+    RadauIIA9Cache(u, uprev,
         z1, z2, z3, z4, z5, w1, w2, w3, w4, w5,
         dw1, ubuff, dw23, dw45, cubuff1, cubuff2, cont1, cont2, cont3, cont4,
         du1, fsalfirst, k, k2, k3, k4, k5, fw1, fw2, fw3, fw4, fw5,
