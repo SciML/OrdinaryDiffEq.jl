@@ -14,7 +14,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        UJacobianWrapper, build_J_W, build_jac_config, UDerivativeWrapper,
                        Convergence, calc_J!, dolinsolve, FastConvergence, calc_J,
                        stepsize_controller!, islinearfunction, step_accept_controller!, step_reject_controller!,
-                       PredictiveController, alg_can_repeat_jac
+                       PredictiveController, alg_can_repeat_jac, NewtonAlgorithm, fac_default_gamma
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
