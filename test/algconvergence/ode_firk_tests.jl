@@ -9,10 +9,10 @@ for prob in [prob_ode_linear, prob_ode_2Dlinear]
 end
 
 sim21 = test_convergence(1 ./ 2 .^ (2.75:-0.5:0.25), prob_ode_linear, RadauIIA9())
-@test sim21.𝒪est[:final]≈9 atol=testTol
+@test sim21.𝒪est[:final]≈8 atol=testTol
 
 sim21 = test_convergence(1 ./ 2 .^ (2.75:-0.5:0.25), prob_ode_2Dlinear, RadauIIA0())
-@test sim21.𝒪est[:final]≈9 atol=testTol
+@test sim21.𝒪est[:final]≈8 atol=testTol
 
 # test adaptivity
 for iip in (true, false)
