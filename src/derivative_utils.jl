@@ -824,7 +824,6 @@ function update_W!(nlsolver::AbstractNLSolver,
     nothing
 end
 
-import StaticArrays: StaticMatrix
 function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         ::Val{IIP}) where {IIP, uEltypeNoUnits, F}
     # TODO - make J, W AbstractSciMLOperators (lazily defined with scimlops functionality)
