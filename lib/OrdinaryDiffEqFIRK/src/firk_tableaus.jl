@@ -111,7 +111,7 @@ function RadauIIA5Tableau(T, T2)
         e1, e2, e3)
 end
 
-struct RadauIIA7Tableau{T, T2}
+struct RadauIIA9Tableau{T, T2}
     T11::T
     T12::T
     T13::T
@@ -178,7 +178,7 @@ struct RadauIIA7Tableau{T, T2}
     e5::T
 end
 
-function RadauIIA7Tableau(T, T2)
+function RadauIIA9Tableau(T, T2)
     T11 = convert(T, -1.251758622050104589014e-2)
     T12 = convert(T, -1.024204781790882707009e-2)
     T13 = convert(T, 4.767387729029572386318e-2)
@@ -248,7 +248,7 @@ function RadauIIA7Tableau(T, T2)
     e4 = convert(T, 5.920031671845428725662e-1)
     e5 = convert(T, -2.000000000000000000000e-1)
 
-    RadauIIA7Tableau{T, T2}(T11, T12, T13, T14, T15,
+    RadauIIA9Tableau{T, T2}(T11, T12, T13, T14, T15,
         T21, T22, T23, T24, T25, T31, T32, T33, T34, T35,
         T41, T42, T43, T44, T45, T51, #=T52, T53, T54, T55=#
         TI11, TI12, TI13, TI14, TI15, TI21, TI22, TI23, TI24, TI25,
