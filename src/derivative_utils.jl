@@ -896,7 +896,7 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
             J
         elseif IIP
             similar(J)
-        elseif J isa StaticMatrix && alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+        elseif J isa StaticMatrix
             StaticWOperator(J, false)
         else
             ArrayInterface.lu_instance(J)
