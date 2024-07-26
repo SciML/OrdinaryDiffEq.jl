@@ -273,7 +273,8 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
 include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
 using ..OrdinaryDiffEqBDF
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
-       SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK
+       SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
+       DImplicitEuler, DABDF2, DFBDF
 
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
@@ -289,12 +290,7 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
                            calc_Lagrange_interp,
                            bdf_step_reject_controller!
 
-include("../lib/OrdinaryDiffEqDAE/src/OrdinaryDiffEqDAE.jl")
-using ..OrdinaryDiffEqDAE
-export DImplicitEuler, DABDF2, DFBDF
-
-
-using ..OrdinaryDiffEqDAE: post_newton_controller!
+using ..OrdinaryDiffEqBDF: post_newton_controller!
 include("integrators/integrator_utils.jl")
 include("nlsolve/newton.jl")
 
