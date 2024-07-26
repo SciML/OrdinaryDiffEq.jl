@@ -283,7 +283,7 @@ export DefaultODEAlgorithm
 
 include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
 using ..OrdinaryDiffEqFIRK
-export RadauIIA3, RadauIIA5, RadauIIA7
+export RadauIIA3, RadauIIA5, RadauIIA9
 
 using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
                            calc_Lagrange_interp!,
