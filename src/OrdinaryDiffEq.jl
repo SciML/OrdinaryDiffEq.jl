@@ -292,12 +292,7 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
 <<<<<<< HEAD
 =======
 
-include("../lib/OrdinaryDiffEqDAE/src/OrdinaryDiffEqDAE.jl")
-using ..OrdinaryDiffEqDAE
-export DImplicitEuler, DABDF2, DFBDF
-
-
-using ..OrdinaryDiffEqDAE: post_newton_controller!
+using ..OrdinaryDiffEqBDF: post_newton_controller!
 include("integrators/integrator_utils.jl")
 include("nlsolve/newton.jl")
 
