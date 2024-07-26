@@ -22,7 +22,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        get_current_alg_order, get_current_adaptive_order,
                        default_controller, stepsize_controller!, step_accept_controller!,
                        step_reject_controller!, post_newton_controller!,
-                       u_modified!
+                       u_modified!, DAEAlgorithm, _unwrap_val
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: I
@@ -32,10 +32,13 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("bdf_utils.jl")
 include("bdf_caches.jl")
+include("dae_caches.jl")
 include("controllers.jl")
+include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
-       SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK
+       SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
+       DABDF2, DImplicitEuler, DFBDF
 
 end
