@@ -872,10 +872,8 @@ function build_J_W(alg, u, uprev, p, t, dt, f::F, ::Type{uEltypeNoUnits},
         else
             deepcopy(f.jac_prototype)
         end
-        W = if J isa StaticMatrix && alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm
+        W = if J isa StaticMatrix
             StaticWOperator(J, false)
-        elseif J isa StaticMatrix
-            ArrayInterface.lu_instance(J)
         else
             __f = if IIP
                 (du, u, p, t) -> _f(du, u, p, t)
