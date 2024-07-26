@@ -77,6 +77,12 @@ function activate_sdirk()
     Pkg.instantiate()
 end
 
+function activate_firk()
+    Pkg.activate("../lib/OrdinaryDiffEqFIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
@@ -208,10 +214,13 @@ end
         @time @safetestset "Linear Methods Tests" include("algconvergence/linear_method_tests.jl")
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
         @time @safetestset "Rosenbrock Tests" include("algconvergence/ode_rosenbrock_tests.jl")
-        @time @safetestset "FIRK Tests" include("algconvergence/ode_firk_tests.jl")
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
         @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "FIRK"
+        @time @safetestset "FIRK Tests" include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
     end
 
     if !is_APPVEYOR && GROUP == "Symplectic"

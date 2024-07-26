@@ -148,7 +148,6 @@ include("generic_rosenbrock.jl")
 include("caches/basic_caches.jl")
 include("caches/low_order_rk_caches.jl")
 include("caches/high_order_rk_caches.jl")
-include("caches/firk_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
 include("caches/rosenbrock_caches.jl")
@@ -162,7 +161,6 @@ include("caches/qprk_caches.jl")
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
 include("tableaus/rosenbrock_tableaus.jl")
-include("tableaus/firk_tableaus.jl")
 include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")
@@ -181,7 +179,6 @@ include("perform_step/exponential_rk_perform_step.jl")
 include("perform_step/explicit_rk_perform_step.jl")
 include("perform_step/low_order_rk_perform_step.jl")
 include("perform_step/high_order_rk_perform_step.jl")
-include("perform_step/firk_perform_step.jl")
 include("perform_step/rosenbrock_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
@@ -284,11 +281,16 @@ include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
+include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
+using ..OrdinaryDiffEqFIRK
+export RadauIIA3, RadauIIA5, RadauIIA7
+
 using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
                            calc_Lagrange_interp!,
                            calc_finite_difference_weights, estimate_terk,
                            calc_Lagrange_interp,
                            bdf_step_reject_controller!
+                           
 include("nlsolve/newton.jl")
 include("perform_step/dae_perform_step.jl")
 
@@ -427,8 +429,6 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        BS3, BS5, DP5, Tsit5, DP8, TanYam7, TsitPap8, CompositeAlgorithm, Anas5, RKO65,
        FRK65, PFRK87,
        RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
-
-export RadauIIA3, RadauIIA5, RadauIIA7
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
