@@ -289,15 +289,6 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
                            calc_finite_difference_weights, estimate_terk,
                            calc_Lagrange_interp,
                            bdf_step_reject_controller!
-<<<<<<< HEAD
-=======
-
-using ..OrdinaryDiffEqBDF: post_newton_controller!
-include("integrators/integrator_utils.jl")
-include("nlsolve/newton.jl")
-
-import PrecompileTools
->>>>>>> b150b887 (Added DAE solvers)
 
 using ..OrdinaryDiffEqBDF: post_newton_controller!
 include("integrators/integrator_utils.jl")
