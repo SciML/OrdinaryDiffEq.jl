@@ -155,7 +155,6 @@ include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
-include("caches/dae_caches.jl")
 include("caches/qprk_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
@@ -165,7 +164,6 @@ include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")
 include("integrators/controllers.jl")
-include("integrators/integrator_utils.jl")
 include("integrators/integrator_interface.jl")
 
 include("cache_utils.jl")
@@ -290,9 +288,15 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
                            calc_finite_difference_weights, estimate_terk,
                            calc_Lagrange_interp,
                            bdf_step_reject_controller!
-                           
+
+include("../lib/OrdinaryDiffEqDAE/src/OrdinaryDiffEqDAE.jl")
+using ..OrdinaryDiffEqDAE
+export DImplicitEuler, DABDF2, DFBDF
+
+
+using ..OrdinaryDiffEqDAE: post_newton_controller!
+include("integrators/integrator_utils.jl")
 include("nlsolve/newton.jl")
-include("perform_step/dae_perform_step.jl")
 
 import PrecompileTools
 
@@ -464,7 +468,7 @@ export Alshina2, Alshina3, Alshina6
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-export KuttaPRK2p5, PDIRK44, DImplicitEuler, DABDF2, DFBDF
+export KuttaPRK2p5, PDIRK44
 
 export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
