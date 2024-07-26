@@ -1,4 +1,4 @@
-qmax_default(alg::Union{RadauIIA3, RadauIIA5, RadauIIA7}) = 8
+qmax_default(alg::Union{RadauIIA3, RadauIIA5, RadauIIA9}) = 8
 
 alg_order(alg::RadauIIA3) = 3
 alg_order(alg::RadauIIA5) = 5
