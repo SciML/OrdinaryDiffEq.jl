@@ -16,7 +16,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        stepsize_controller!, islinearfunction, step_accept_controller!, step_reject_controller!,
                        PredictiveController, alg_can_repeat_jac, NewtonAlgorithm, fac_default_gamma,
                        get_new_W_γdt_cutoff, get_current_adaptive_order, VerySlowConvergence, 
-                       Divergence
+                       Divergence, isfirk
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu
