@@ -20,6 +20,8 @@ using LinearAlgebra
 
 import StaticArrayInterface
 
+using PrecompileTools
+
 import InteractiveUtils
 
 using LinearSolve, SimpleNonlinearSolve
@@ -292,6 +294,7 @@ using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
 
 using ..OrdinaryDiffEqBDF: post_newton_controller!
 include("integrators/integrator_utils.jl")
+
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
         du[1] = 10.0(u[2] - u[1])
