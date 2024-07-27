@@ -1,7 +1,7 @@
 module OrdinaryDiffEqQPRK
 
 import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
-                       explicit_rk_docstring
+                       explicit_rk_docstring, @cache, @unpack
 
 include("algorithms.jl")
 include("alg_utils.jl")
