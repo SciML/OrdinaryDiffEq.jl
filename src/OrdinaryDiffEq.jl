@@ -68,7 +68,8 @@ using NonlinearSolve
 
 # Required by temporary fix in not in-place methods with 12+ broadcasts
 # `MVector` is used by Nordsieck forms
-import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA, StaticMatrix
+import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
+                     StaticMatrix
 
 # Integrator Interface
 import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, du_cache,
@@ -144,6 +145,7 @@ include("nlsolve/type.jl")
 include("nlsolve/utils.jl")
 include("nlsolve/nlsolve.jl")
 include("nlsolve/functional.jl")
+include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
 
@@ -167,7 +169,7 @@ include("tableaus/qprk_tableaus.jl")
 include("integrators/type.jl")
 include("integrators/controllers.jl")
 include("integrators/integrator_interface.jl")
-
+include("integrators/integrator_utils.jl")
 include("cache_utils.jl")
 include("initialize_dae.jl")
 include("wrappers.jl")
@@ -285,8 +287,6 @@ export DefaultODEAlgorithm
 include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
 using ..OrdinaryDiffEqFIRK
 export RadauIIA3, RadauIIA5, RadauIIA9
-
-include("integrators/integrator_utils.jl")
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)

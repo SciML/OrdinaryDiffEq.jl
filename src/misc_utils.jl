@@ -57,6 +57,8 @@ function diffdir(integrator::DiffEqBase.DEIntegrator)
           integrator.t < integrator.sol.prob.tspan[2] + difference ? 1 : -1
 end
 
+error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
+
 abstract type AbstractThreadingOption end
 struct Sequential <: AbstractThreadingOption end
 struct BaseThreads <: AbstractThreadingOption end

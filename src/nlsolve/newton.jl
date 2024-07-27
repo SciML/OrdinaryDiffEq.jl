@@ -91,7 +91,7 @@ end
     #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
-    if integrator.alg isa QNDF
+    if has_special_newton_error(integrator.alg)
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end
     return ndz
@@ -113,7 +113,7 @@ end
     #ndz = opts.internalnorm(nlcache.fu, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
-    if integrator.alg isa QNDF
+    if has_special_newton_error(integrator.alg)
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end
     ndz
@@ -176,7 +176,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     ndz = opts.internalnorm(atmp, t)
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
-    if integrator.alg isa QNDF
+    if has_special_newton_error(integrator.alg)
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end
 
@@ -247,9 +247,10 @@ end
     calculate_residuals!(atmp, dz, uprev, ustep, opts.abstol, opts.reltol,
         opts.internalnorm, t)
     ndz = opts.internalnorm(atmp, t)
+
     # NDF and BDF are special because the truncation error is directly
     # proportional to the total displacement.
-    if integrator.alg isa QNDF
+    if has_special_newton_error(integrator.alg)
         ndz *= error_constant(integrator, alg_order(integrator.alg))
     end
 
