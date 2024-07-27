@@ -144,6 +144,7 @@ include("nlsolve/type.jl")
 include("nlsolve/utils.jl")
 include("nlsolve/nlsolve.jl")
 include("nlsolve/functional.jl")
+include("nlsolve/newton.jl")
 
 include("generic_rosenbrock.jl")
 
