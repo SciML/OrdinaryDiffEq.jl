@@ -426,6 +426,7 @@ function DABDF2(; chunk_size = Val{0}(), autodiff = Val{true}(), standardtag = V
         nlsolve, precs, extrapolant, controller)
 end
 
+<<<<<<< HEAD
 #=
 struct DBDF{CS,AD,F,F2,P,FDT,ST,CJ} <: DAEAlgorithm{CS,AD,FDT,ST,CJ}
   linsolve::F
@@ -439,6 +440,8 @@ DBDF(;chunk_size=Val{0}(),autodiff=Val{true}(), standardtag = Val{true}(), concr
      DBDF{_unwrap_val(chunk_size),_unwrap_val(autodiff),typeof(linsolve),typeof(nlsolve),typeof(precs),diff_type,_unwrap_val(standardtag),_unwrap_val(concrete_jac)}(
      linsolve,nlsolve,precs,extrapolant)
 =#
+=======
+>>>>>>> 1f834d6fb40fbbde3d4eb410403ef96f0b14b806
 
 struct DFBDF{MO, CS, AD, F, F2, P, FDT, ST, CJ, K, T} <: DAEAlgorithm{CS, AD, FDT, ST, CJ}
     max_order::Val{MO}
