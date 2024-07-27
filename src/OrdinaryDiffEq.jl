@@ -157,12 +157,10 @@ include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 include("caches/prk_caches.jl")
 include("caches/pdirk_caches.jl")
-include("caches/qprk_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
 include("tableaus/rosenbrock_tableaus.jl")
-include("tableaus/qprk_tableaus.jl")
 
 include("integrators/type.jl")
 include("integrators/controllers.jl")
@@ -185,7 +183,6 @@ include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
 include("perform_step/prk_perform_step.jl")
 include("perform_step/pdirk_perform_step.jl")
-include("perform_step/qprk_perform_step.jl")
 
 include("dense/generic_dense.jl")
 include("dense/interpolants.jl")
@@ -285,6 +282,10 @@ export DefaultODEAlgorithm
 include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
 using ..OrdinaryDiffEqFIRK
 export RadauIIA3, RadauIIA5, RadauIIA9
+
+include("../lib/OrdinaryDiffEqQPRK/src/OrdinaryDiffEqQPRK.jl")
+using ..OrdinaryDiffEqQPRK
+export QPRK98
 
 include("integrators/integrator_utils.jl")
 
@@ -420,7 +421,7 @@ export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, 
        OwrenZen5,
        BS3, BS5, DP5, Tsit5, DP8, TanYam7, TsitPap8, CompositeAlgorithm, Anas5, RKO65,
        FRK65, PFRK87,
-       RKM, MSRK5, MSRK6, Stepanov5, SIR54, QPRK98, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
+       RKM, MSRK5, MSRK6, Stepanov5, SIR54, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
