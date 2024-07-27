@@ -260,7 +260,6 @@ function step_accept_controller!(integrator, alg::FBDF{max_order},
     return integrator.dt / q
 end
 
-
 function step_reject_controller!(integrator, ::DFBDF)
     bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
 end
