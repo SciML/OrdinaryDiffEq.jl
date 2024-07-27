@@ -1,5 +1,7 @@
 module OrdinaryDiffEqQPRK
 
+import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("qprk_caches.jl")
