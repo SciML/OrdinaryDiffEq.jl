@@ -83,6 +83,12 @@ function activate_dae()
     Pkg.instantiate()
 end
 
+function activate_dae()
+    Pkg.activate("../lib/OrdinaryDiffEqDAE")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
 #Start Test Script
 
 @time begin
