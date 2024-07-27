@@ -22,12 +22,16 @@ jobs:
           - AlgConvergence_II
           - AlgConvergence_III
           - Downstream
-          - Symplectic
-          - Extrapolation
-          - StabilizedRK
-          - StabilizedIRK
           - ODEInterfaceRegression
           - Multithreading
+          - FIRK
+          - Symplectic
+          - Extrapolation
+          - Feagin
+          - StabilizedRK
+          - StabilizedIRK
+          - SSPRK
+          - LowStorageRK
         version:
           - '1'
     steps:

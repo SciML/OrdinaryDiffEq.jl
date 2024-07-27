@@ -247,7 +247,7 @@ end
         @time @safetestset "SSPRK Tests" include("../lib/OrdinaryDiffEqSSPRK/test/ode_ssprk_tests.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "Low Storage RK"
+    if !is_APPVEYOR && GROUP == "LowStorageRK"
         @time @safetestset "Low Storage RK Tests" include("../lib/OrdinaryDiffEqLowStorageRK/test/ode_low_storage_rk_tests.jl")
     end
 
