@@ -3,6 +3,7 @@ module OrdinaryDiffEqQPRK
 import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
                        explicit_rk_docstring, @cache, @unpack, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, @fold
+using MuladdMacro, FastBroadcast
 
 include("algorithms.jl")
 include("alg_utils.jl")
