@@ -44,7 +44,7 @@ end
         integrator.stats.nf += 1
     end
 
-    calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+    calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -156,7 +156,7 @@ end
         integrator.stats.nf += 1
     end
 
-    calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+    calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -444,7 +444,7 @@ end
     # Time derivative
     dT = calc_tderivative(integrator, cache)
 
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+    W = calc_W(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -515,7 +515,7 @@ end
     dtd3 = dt * d3
     dtgamma = dt * gamma
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -623,7 +623,7 @@ end
     tf.u = uprev
     dT = calc_tderivative(integrator, cache)
 
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+    W = calc_W(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -710,7 +710,7 @@ end
     dtd4 = dt * d4
     dtgamma = dt * gamma
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -876,7 +876,7 @@ end
     tf.u = uprev
     dT = calc_tderivative(integrator, cache)
 
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+    W = calc_W(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -1018,7 +1018,7 @@ end
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
     integrator.stats.nf += 1
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -1244,7 +1244,7 @@ end
     tf.u = uprev
     dT = calc_tderivative(integrator, cache)
 
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+    W = calc_W(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -1381,7 +1381,7 @@ end
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
     integrator.stats.nf += 1
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -1571,7 +1571,7 @@ end
     # Time derivative
     dT = calc_tderivative(integrator, cache)
 
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+    W = calc_W(integrator, cache, dtgamma, repeat_step)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
@@ -1784,7 +1784,7 @@ end
     f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
     integrator.stats.nf += 1
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
