@@ -286,13 +286,6 @@ include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
 using ..OrdinaryDiffEqFIRK
 export RadauIIA3, RadauIIA5, RadauIIA9
 
-using ..OrdinaryDiffEqBDF: reinitFBDF!, error_constant, estimate_terk!,
-                           calc_Lagrange_interp!,
-                           calc_finite_difference_weights, estimate_terk,
-                           calc_Lagrange_interp,
-                           bdf_step_reject_controller!
-
-using ..OrdinaryDiffEqBDF: post_newton_controller!
 include("integrators/integrator_utils.jl")
 
 PrecompileTools.@compile_workload begin

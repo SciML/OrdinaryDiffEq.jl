@@ -78,7 +78,7 @@ all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
 end
 
 issplit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-issplit(alg::SplitAlgorithms) = true
+issplit(alg::Union{CNAB2, CNLF2}) = true
 
 function _composite_beta1_default(algs::Tuple{T1, T2}, current, ::Val{QT},
         beta2) where {T1, T2, QT}

@@ -1,6 +1,3 @@
-struct DummyController <: AbstractController
-end
-
 function default_controller(alg::Union{QNDF, FBDF}, args...)
     DummyController()
 end
@@ -266,11 +263,6 @@ end
 
 function step_reject_controller!(integrator, ::DFBDF)
     bdf_step_reject_controller!(integrator, integrator.cache.terkm1)
-end
-
-function post_newton_controller!(integrator, alg)
-    integrator.dt = integrator.dt / integrator.opts.failfactor
-    nothing
 end
 
 function post_newton_controller!(integrator, alg::DFBDF)

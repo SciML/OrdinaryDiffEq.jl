@@ -12,7 +12,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        NLNewton, alg_cache, _vec, _reshape, @cache,
                        isfsal, full_cache, build_nlsolver,
                        nlsolve!, nlsolvefail, isnewton,
-                       constvalue, _unwrap_val,
+                       constvalue,
                        DIRK, set_new_W!,
                        du_alias_or_new, trivial_limiter!,
                        ImplicitEulerConstantCache,
@@ -23,7 +23,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        get_current_alg_order, get_current_adaptive_order,
                        default_controller, stepsize_controller!, step_accept_controller!,
                        step_reject_controller!, post_newton_controller!,
-                       u_modified!, DAEAlgorithm, _unwrap_val
+                       u_modified!, DAEAlgorithm, _unwrap_val, DummyController
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: I

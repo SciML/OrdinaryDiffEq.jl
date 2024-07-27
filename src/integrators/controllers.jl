@@ -400,6 +400,8 @@ end
 # Dummy controller without any method implementations.
 # This is used to transfer the special controllers associated to certain
 # algorithms to the new controller infrastructure with
+struct DummyController <: AbstractController
+end
 
 # JVODE
 function stepsize_controller!(integrator, alg::JVODE)
@@ -422,4 +424,9 @@ end
 
 function step_reject_controller!(integrator, alg::JVODE)
     integrator.dt *= integrator.qold
+end
+
+function post_newton_controller!(integrator, alg)
+    integrator.dt = integrator.dt / integrator.opts.failfactor
+    nothing
 end
