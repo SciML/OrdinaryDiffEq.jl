@@ -259,4 +259,61 @@ function RadauIIA9Tableau(T, T2)
         e1, e2, e3, e4, e5)
 end
 
+struct adaptiveRadau(T, T2)
+    T:: AbstractMatrix{T}
+    TI::AbstractMatrix{T}
+    γ::T
+    α::AbstractVector{T}
+    β::AbstractVector{T}
+    c::AbstractVector{T}
+    e::AbstractVector{T}
+end
 
+using Polynomials, GenericSchur, GenericLinearAlgebra, LinearAlgebra
+
+function adaptiveRadau(T, T2, s::Int64)
+    tmp = Vector{BigFloat}(undef, s-1)
+    for i in 1:(s-1)
+        tmp[i] = 0
+    end
+    tmp2 = Vector{BigFloat}(undef, s+1)
+    for i in 1:(s+1)
+       tmp2[i]=(-1)^(s+1-i) * binomial(s,s+1-i)
+    end
+    p = Polynomial{BigFloat}([tmp; tmp2])
+    for i in 1:s-1
+        p = derivative(p)
+    end
+    c = roots(p)
+    c[s] = 1
+    c_powers = Matrix{BigFloat}(undef, s, s)
+    for i in 1:s
+        for j in 1:s
+            c_powers[i,j] = c[i]^(j-1)
+        end
+    end
+    inverse_c_powers = c_powers^(-1)
+    c_q = Matrix{BigFloat}(undef, s, s)
+    for i in 1:s
+        for j in 1:s
+            c_q[i,j] = c[i]^(j) / j
+        end
+    end
+    a = c_q * inverse_c_powers
+    @show a
+    b = eigvals(a)
+    γ = real(b[s])
+    α = Vector{BigFloat}(undef, floor(Int, s/2))
+    β = Vector{BigFloat}(undef, floor(Int, s/2))
+    index = 1
+    i = 1
+    while i <= (s-1)
+        α[index] = real(b[i])
+        β[index] = imag(b[i])
+        index = index + 1
+        i = i + 2
+    end
+    f = eigvecs(a)
+end
+
+adaptiveRadau(0, 0, 2)
