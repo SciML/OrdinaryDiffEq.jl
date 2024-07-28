@@ -507,8 +507,6 @@ alg_order(alg::Alshina2) = 2
 alg_order(alg::Alshina3) = 3
 alg_order(alg::Alshina6) = 6
 
-alg_order(alg::QPRK98) = 9
-
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
