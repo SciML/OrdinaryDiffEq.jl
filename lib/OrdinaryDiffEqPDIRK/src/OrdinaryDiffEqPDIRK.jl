@@ -8,6 +8,7 @@ import OrdinaryDiffEq: isfsal, alg_order, _unwrap_val, DEFAULT_PRECS, NLNewton,
 import StaticArrays: SVector
 import MuladdMacro: @muladd
 import FastBroadcast: @..
+using Polyester
 
 include("algorithms.jl")
 include("alg_utils.jl")

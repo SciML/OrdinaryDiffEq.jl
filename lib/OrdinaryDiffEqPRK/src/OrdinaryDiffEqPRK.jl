@@ -3,7 +3,7 @@ module OrdinaryDiffEqPRK
 import OrdinaryDiffEq: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqConstantCache, constvalue, @unpack, @cache, alg_cache,
                        unwrap_alg, perform_step!, @threaded
-using MuladdMacro: @muladd
+import MuladdMacro: @muladd
 import FastBroadcast: @..
 
 include("algorithms.jl")
