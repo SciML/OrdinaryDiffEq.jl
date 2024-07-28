@@ -3,7 +3,7 @@ module OrdinaryDiffEqQPRK
 import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
                        explicit_rk_docstring, @cache, @unpack, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, @fold, @OnDemandTableauExtract,
-                       trivial_limiter!, alg_cache, alg_order
+                       trivial_limiter!, alg_cache, alg_order, initialize!, perform_step!
 using Static: False
 using MuladdMacro, FastBroadcast
 
