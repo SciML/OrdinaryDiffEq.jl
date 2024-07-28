@@ -6,7 +6,7 @@ import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCa
                        trivial_limiter!, alg_cache, alg_order, initialize!, perform_step!
 using Static: False
 using MuladdMacro, FastBroadcast
-
+using RecursiveArrayTools: recursive_unitless_bottom_eltype
 include("algorithms.jl")
 include("alg_utils.jl")
 include("qprk_caches.jl")
