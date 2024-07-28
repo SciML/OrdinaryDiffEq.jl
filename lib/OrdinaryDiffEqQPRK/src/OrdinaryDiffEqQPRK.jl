@@ -7,7 +7,7 @@ import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCa
                        constvalue, calculate_residuals
 using Static: False
 using MuladdMacro, FastBroadcast
-using RecursiveArrayTools: recursive_unitless_bottom_eltype
+using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivefill!
 include("algorithms.jl")
 include("alg_utils.jl")
 include("qprk_caches.jl")
