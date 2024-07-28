@@ -2,7 +2,8 @@ module OrdinaryDiffEqQPRK
 
 import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
                        explicit_rk_docstring, @cache, @unpack, OrdinaryDiffEqMutableCache,
-                       OrdinaryDiffEqAdaptiveAlgorithm, @fold, @OnDemandTableauExtract
+                       OrdinaryDiffEqAdaptiveAlgorithm, @fold, @OnDemandTableauExtract,
+                       trivial_limiter!
 using MuladdMacro, FastBroadcast
 
 include("algorithms.jl")
