@@ -29,6 +29,8 @@ isadaptive(alg::DImplicitEuler) = true
 isadaptive(alg::DABDF2) = true
 isadaptive(alg::DFBDF) = true
 
+has_special_newton_error(alg::QNDF) = true
+
 alg_extrapolates(alg::DImplicitEuler) = true
 alg_extrapolates(alg::DABDF2) = true
 

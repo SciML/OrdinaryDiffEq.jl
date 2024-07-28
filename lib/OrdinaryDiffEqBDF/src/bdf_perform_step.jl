@@ -48,10 +48,10 @@ end
 
     if mass_matrix === I
         nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ +
-                            (α₁ * uₙ₋₁ + α₂ * uₙ₋₂))/(dtₙ * β₀)
+                            (α₁ * uₙ₋₁ + α₂ * uₙ₋₂)) / (dtₙ * β₀)
     else
-        _tmp = mass_matrix * @.. (α₁ * uₙ₋₁+α₂ * uₙ₋₂)
-        nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ + _tmp)/(dtₙ * β₀)
+        _tmp = mass_matrix * @.. (α₁ * uₙ₋₁ + α₂ * uₙ₋₂)
+        nlsolver.tmp = @.. ((dtₙ * β₁) * fₙ₋₁ + _tmp) / (dtₙ * β₀)
     end
     nlsolver.γ = β₀
     nlsolver.α = α₀
@@ -779,9 +779,9 @@ function perform_step!(integrator, cache::QNDFConstantCache{max_order},
     mass_matrix = f.mass_matrix
 
     if mass_matrix === I
-        nlsolver.tmp = @.. (u₀ / β₀ - ϕ)/dt
+        nlsolver.tmp = @.. (u₀ / β₀ - ϕ) / dt
     else
-        nlsolver.tmp = mass_matrix * @.. (u₀ / β₀ - ϕ)/dt
+        nlsolver.tmp = mass_matrix * @.. (u₀ / β₀ - ϕ) / dt
     end
 
     nlsolver.γ = β₀

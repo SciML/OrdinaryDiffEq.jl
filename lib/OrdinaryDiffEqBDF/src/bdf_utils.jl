@@ -92,7 +92,6 @@ end
 
 const γₖ = @SVector[sum(1 // j for j in 1:k) for k in 1:6]
 
-error_constant(integrator, order) = error_constant(integrator, integrator.alg, order)
 function error_constant(integrator, alg::QNDF, k)
     @unpack γₖ = integrator.cache
     κ = alg.kappa[k]

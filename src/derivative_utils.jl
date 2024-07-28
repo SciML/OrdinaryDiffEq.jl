@@ -739,7 +739,8 @@ end
     if cache.W isa StaticWOperator
         integrator.stats.nw += 1
         J = calc_J(integrator, cache, next_step)
-        W = StaticWOperator(W_transform ? J - mass_matrix * inv(dtgamma) : dtgamma * J - mass_matrix)
+        W = StaticWOperator(W_transform ? J - mass_matrix * inv(dtgamma) :
+                            dtgamma * J - mass_matrix)
     elseif cache.W isa WOperator
         integrator.stats.nw += 1
         J = if islin
@@ -747,7 +748,8 @@ end
         else
             calc_J(integrator, cache, next_step)
         end
-        W = WOperator{false}(mass_matrix, dtgamma, J, uprev, cache.W.jacvec; transform = W_transform)
+        W = WOperator{false}(
+            mass_matrix, dtgamma, J, uprev, cache.W.jacvec; transform = W_transform)
     elseif cache.W isa AbstractSciMLOperator
         W = update_coefficients(cache.W, uprev, p, t; dtgamma, transform = W_transform)
     else
@@ -757,7 +759,7 @@ end
             W = J
         else
             W = W_transform ? J - mass_matrix * inv(dtgamma) :
-                     dtgamma * J - mass_matrix
+                dtgamma * J - mass_matrix
             if !isa(W, Number)
                 W = DiffEqBase.default_factorize(W)
             end
