@@ -5,6 +5,7 @@ import OrdinaryDiffEq: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutable
                        unwrap_alg, perform_step!, @threaded
 import MuladdMacro: @muladd
 import FastBroadcast: @..
+using Polyester
 
 include("algorithms.jl")
 include("alg_utils.jl")
