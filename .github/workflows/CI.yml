@@ -32,6 +32,7 @@ jobs:
           - StabilizedIRK
           - SSPRK
           - LowStorageRK
+          - QPRK
         version:
           - '1'
     steps:
