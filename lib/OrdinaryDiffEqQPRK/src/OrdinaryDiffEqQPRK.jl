@@ -4,6 +4,7 @@ import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCa
                        explicit_rk_docstring, @cache, @unpack, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, @fold, @OnDemandTableauExtract,
                        trivial_limiter!
+using Static: False
 using MuladdMacro, FastBroadcast
 
 include("algorithms.jl")
