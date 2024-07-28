@@ -4,7 +4,7 @@ import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCa
                        explicit_rk_docstring, @cache, @unpack, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, @fold, @OnDemandTableauExtract,
                        trivial_limiter!, alg_cache, alg_order, initialize!, perform_step!,
-                       constvalue, calculate_residuals
+                       constvalue, calculate_residuals!
 using Static: False
 using MuladdMacro, FastBroadcast
 using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivefill!
