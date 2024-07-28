@@ -40,7 +40,6 @@ isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas4P2) = false
 # Pseudo Non-FSAL
-isfsal(alg::PDIRK44) = false
 isfsal(alg::RKO65) = false
 isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
@@ -398,7 +397,6 @@ alg_order(alg::ETD2) = 2
 alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 alg_order(alg::Anas5) = 5
-alg_order(alg::KuttaPRK2p5) = 5
 alg_order(alg::RKO65) = 5
 alg_order(alg::FRK65) = 6
 
@@ -501,7 +499,6 @@ alg_order(alg::CNLF2) = 2
 alg_order(alg::AN5) = 5
 alg_order(alg::JVODE) = 1  #dummy value
 
-alg_order(alg::PDIRK44) = 4
 
 alg_order(alg::Alshina2) = 2
 alg_order(alg::Alshina3) = 3
