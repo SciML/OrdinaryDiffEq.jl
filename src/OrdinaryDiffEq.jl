@@ -289,7 +289,6 @@ include("../lib/OrdinaryDiffEqQPRK/src/OrdinaryDiffEqQPRK.jl")
 using ..OrdinaryDiffEqQPRK
 export QPRK98
 
-include("integrators/integrator_utils.jl")
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
         du[1] = 10.0(u[2] - u[1])
