@@ -9,7 +9,8 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
                        OrdinaryDiffEqAdaptiveAlgorithm, uses_uprev,
                        default_controller, PIDController,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                       constvalue, _unwrap_val, du_alias_or_new, ArrayFuse
+                       constvalue, _unwrap_val, du_alias_or_new, ArrayFuse,
+                       trivial_limiter!
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 
