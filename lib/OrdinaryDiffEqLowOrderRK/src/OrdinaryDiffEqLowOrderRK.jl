@@ -9,6 +9,7 @@ import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stab
 import DiffEqBase: @tight_loop_macros
 import MuladdMacro: @muladd
 import FastBroadcast: @..
+import RecursiveArrayTools: recursivefill!
 
 include("algorithms.jl")
 include("alg_utils.jl")

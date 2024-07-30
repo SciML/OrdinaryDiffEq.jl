@@ -8,6 +8,7 @@ import OrdinaryDiffEq: alg_order, qmax_default, qmin_default, beta2_default, bet
 import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
+import RecursiveArrayTools: recursivefill!
 
 include("algorithms.jl")
 include("alg_utils.jl")
