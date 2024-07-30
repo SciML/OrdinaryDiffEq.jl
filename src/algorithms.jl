@@ -82,6 +82,8 @@ TruncatedStacktraces.@truncate_stacktrace ExplicitRK
 
 ################################################################################
 
+@inline trivial_limiter!(u, integrator, p, t) = nothing
+
 # Adams Bashforth and Adams moulton methods
 
 """
