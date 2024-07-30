@@ -1,3 +1,3 @@
 using SafeTestsets
 
-@time @safetestset "Extrapolation Tests" include("owrenzen_tests.jl")
+@time @safetestset "OwrenZen Tests" include("owrenzen_tests.jl")
