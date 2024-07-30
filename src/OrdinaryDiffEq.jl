@@ -295,6 +295,10 @@ export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
        PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
        Alshina2, Alshina3, Alshina6
 
+include("../lib/OrdinaryDiffEqTsit5/src/OrdinaryDiffEqTsit.jl")
+using ..OrdinaryDiffEqTsit5
+export Tsit5
+
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
         du[1] = 10.0(u[2] - u[1])
