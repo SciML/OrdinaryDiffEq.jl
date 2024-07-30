@@ -42,10 +42,6 @@ isfsal(alg::Rodas4P2) = false
 # Pseudo Non-FSAL
 #isfsal(alg::RKM) = false
 
-isfsal(alg::PSRK3p5q4) = false
-isfsal(alg::PSRK3p6q5) = false
-isfsal(alg::PSRK4p7q6) = false
-
 isfirk(alg) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
@@ -390,13 +386,6 @@ alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 
 alg_order(alg::ExplicitRK) = alg.tableau.order
-
-alg_order(alg::MSRK6) = 6
-alg_order(alg::Stepanov5) = 5
-alg_order(alg::SIR54) = 5
-alg_order(alg::PSRK4p7q6) = 4
-alg_order(alg::PSRK3p6q5) = 3
-alg_order(alg::PSRK3p5q4) = 3
 
 alg_order(alg::RKMK2) = 2
 alg_order(alg::RKMK4) = 4
