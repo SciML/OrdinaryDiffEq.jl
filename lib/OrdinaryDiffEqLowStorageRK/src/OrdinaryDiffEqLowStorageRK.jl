@@ -13,6 +13,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
                        trivial_limiter!, perform_step!, initialize!
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+import Static: False
 
 include("algorithms.jl")
 include("alg_utils.jl")
