@@ -223,7 +223,7 @@ end
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "OwrenZen"
+    if !is_APPVEYOR && GROUP == "LowOrderRK"
         @time @safetestset "OwrenZen Tests" include("../lib/OrdinaryDiffEqLowOrderRK/test/owrenzen_tests.jl")
     end
 
