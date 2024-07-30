@@ -263,6 +263,10 @@ export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
        SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
        DImplicitEuler, DABDF2, DFBDF
 
+include("../lib/OrdinaryDiffEqTsit5/src/OrdinaryDiffEqTsit5.jl")
+using ..OrdinaryDiffEqTsit5
+export Tsit5
+
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
@@ -294,10 +298,6 @@ export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
        DP5, Anas5, RKO65, FRK65, RKM, MSRK5, MSRK6,
        PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
        Alshina2, Alshina3, Alshina6
-
-include("../lib/OrdinaryDiffEqTsit5/src/OrdinaryDiffEqTsit.jl")
-using ..OrdinaryDiffEqTsit5
-export Tsit5
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
