@@ -136,7 +136,6 @@ include("doc_utils.jl")
 include("misc_utils.jl")
 
 include("algorithms.jl")
-include("algorithms/explicit_rk.jl")
 include("composite_algs.jl")
 
 include("alg_utils.jl")
