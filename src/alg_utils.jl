@@ -40,8 +40,6 @@ isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas4P2) = false
 # Pseudo Non-FSAL
-isfsal(alg::RKO65) = false
-isfsal(alg::FRK65) = true
 #isfsal(alg::RKM) = false
 
 isfsal(alg::PSRK3p5q4) = false
@@ -169,11 +167,9 @@ function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 1 // 5 : 0
 end
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
-qmin_default(alg::DP8) = 1 // 3
 
 qmax_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
-qmax_default(alg::DP8) = 6
 
 function has_chunksize(alg::OrdinaryDiffEqAlgorithm)
     return alg isa Union{OrdinaryDiffEqExponentialAlgorithm,
@@ -247,7 +243,7 @@ end
 
 # Linear Exponential doesn't have any of the AD stuff
 function DiffEqBase.prepare_alg(
-        alg::Union{ETD2, SplitEuler, LinearExponential,
+        alg::Union{ETD2, LinearExponential,
             OrdinaryDiffEqLinearExponentialAlgorithm},
         u0::AbstractArray,
         p, prob)
@@ -374,9 +370,6 @@ function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
 end
 
 alg_order(alg::FunctionMap) = 0
-alg_order(alg::Euler) = 1
-alg_order(alg::Heun) = 2
-alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::LieEuler) = 1
@@ -392,20 +385,12 @@ alg_order(alg::EPIRK5s3) = 5
 alg_order(alg::EPIRK5P1) = 5
 alg_order(alg::EPIRK5P2) = 5
 alg_order(alg::EXPRB53s3) = 5
-alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
 alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
-alg_order(alg::Anas5) = 5
-alg_order(alg::RKO65) = 5
-alg_order(alg::FRK65) = 6
 
-alg_order(alg::Midpoint) = 2
-
-alg_order(alg::RK4) = 4
-alg_order(alg::RKM) = 4
 alg_order(alg::ExplicitRK) = alg.tableau.order
-alg_order(alg::MSRK5) = 5
+
 alg_order(alg::MSRK6) = 6
 alg_order(alg::Stepanov5) = 5
 alg_order(alg::SIR54) = 5
@@ -413,16 +398,6 @@ alg_order(alg::PSRK4p7q6) = 4
 alg_order(alg::PSRK3p6q5) = 3
 alg_order(alg::PSRK3p5q4) = 3
 
-alg_order(alg::BS3) = 3
-alg_order(alg::BS5) = 5
-alg_order(alg::OwrenZen3) = 3
-alg_order(alg::OwrenZen4) = 4
-alg_order(alg::OwrenZen5) = 5
-alg_order(alg::DP5) = 5
-alg_order(alg::Tsit5) = 5
-alg_order(alg::DP8) = 8
-alg_order(alg::TanYam7) = 7
-alg_order(alg::TsitPap8) = 8
 alg_order(alg::RKMK2) = 2
 alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
@@ -439,7 +414,6 @@ alg_order(alg::MagnusGL4) = 4
 alg_order(alg::MagnusAdapt4) = 4
 alg_order(alg::LinearExponential) = 1
 alg_order(alg::MagnusLeapfrog) = 2
-alg_order(alg::PFRK87) = 8
 
 alg_order(alg::ROS2) = 2
 alg_order(alg::ROS2PR) = 2
@@ -556,15 +530,11 @@ function beta2_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 2 // (5alg_order(alg)) : 0
 end
 beta2_default(alg::FunctionMap) = 0
-beta2_default(alg::DP8) = 0 // 1
-beta2_default(alg::DP5) = 4 // 100
 
 function beta1_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, beta2)
     isadaptive(alg) ? 7 // (10alg_order(alg)) : 0
 end
 beta1_default(alg::FunctionMap, beta2) = 0
-beta1_default(alg::DP8, beta2) = typeof(beta2)(1 // alg_order(alg)) - beta2 / 5
-beta1_default(alg::DP5, beta2) = typeof(beta2)(1 // alg_order(alg)) - 3beta2 / 4
 
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
@@ -590,15 +560,12 @@ end
 
 # SSP coefficients
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
-ssp_coefficient(alg::Euler) = 1
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
 
 # stability regions
 alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
-alg_stability_size(alg::DP5) = 3.3066
-alg_stability_size(alg::Tsit5) = 3.5068
 
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true

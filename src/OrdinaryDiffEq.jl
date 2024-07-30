@@ -150,16 +150,12 @@ include("nlsolve/newton.jl")
 include("generic_rosenbrock.jl")
 
 include("caches/basic_caches.jl")
-include("caches/low_order_rk_caches.jl")
-include("caches/high_order_rk_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
 include("caches/rosenbrock_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
 
-include("tableaus/low_order_rk_tableaus.jl")
-include("tableaus/high_order_rk_tableaus.jl")
 include("tableaus/rosenbrock_tableaus.jl")
 
 include("integrators/type.jl")
@@ -171,12 +167,9 @@ include("initialize_dae.jl")
 include("wrappers.jl")
 
 include("perform_step/fixed_timestep_perform_step.jl")
-include("perform_step/split_perform_step.jl")
 include("perform_step/linear_perform_step.jl")
 include("perform_step/exponential_rk_perform_step.jl")
 include("perform_step/explicit_rk_perform_step.jl")
-include("perform_step/low_order_rk_perform_step.jl")
-include("perform_step/high_order_rk_perform_step.jl")
 include("perform_step/rosenbrock_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
@@ -186,8 +179,6 @@ include("dense/generic_dense.jl")
 include("dense/interpolants.jl")
 include("dense/rosenbrock_interpolants.jl")
 include("dense/stiff_addsteps.jl")
-include("dense/low_order_rk_addsteps.jl")
-include("dense/high_order_rk_addsteps.jl")
 
 include("derivative_utils.jl")
 include("nordsieck_utils.jl")
@@ -292,6 +283,18 @@ export PDIRK44
 include("../lib/OrdinaryDiffEqPRK/src/OrdinaryDiffEqPRK.jl")
 using ..OrdinaryDiffEqPRK
 export KuttaPRK2p5
+
+include("../lib/OrdinaryDiffEqHighOrderRK/src/OrdinaryDiffEqHighOrderRK.jl")
+using ..OrdinaryDiffEqHighOrderRK
+export TanYam7, DP8, PFRK87, TsitPap8
+
+include("../lib/OrdinaryDiffEqLowOrderRK/src/OrdinaryDiffEqLowOrderRK.jl")
+using ..OrdinaryDiffEqLowOrderRK
+export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
+       BS3, OwrenZen3, OwrenZen4, OwrenZen5, BS5, Tsit5,
+       DP5, Anas5, RKO65, FRK65, RKM, MSRK5, MSRK6,
+       PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
+       Alshina2, Alshina3, Alshina6
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
@@ -421,11 +424,7 @@ export constructDormandPrince
 
 # Reexport the Alg Types
 
-export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4,
-       OwrenZen5,
-       BS3, BS5, DP5, Tsit5, DP8, TanYam7, TsitPap8, CompositeAlgorithm, Anas5, RKO65,
-       FRK65, PFRK87,
-       RKM, MSRK5, MSRK6, Stepanov5, SIR54, PSRK4p7q6, PSRK3p6q5, PSRK3p5q4
+export FunctionMap, ExplicitRK, CompositeAlgorithm
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
@@ -444,8 +443,6 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
 
 export SHLDDRK52, SHLDDRK_2N
 
-export SplitEuler
-
 export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
 export VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5
@@ -455,8 +452,6 @@ export VCABM
 export CNAB2, CNLF2
 
 export AN5, JVODE, JVODE_Adams, JVODE_BDF
-
-export Alshina2, Alshina3, Alshina6
 
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9

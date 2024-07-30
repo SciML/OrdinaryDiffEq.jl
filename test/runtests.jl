@@ -212,7 +212,6 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_II"
-        @time @safetestset "OwrenZen Tests" include("algconvergence/owrenzen_tests.jl")
         @time @safetestset "Runge-Kutta-Chebyshev Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/rkc_tests.jl")
     end
 
@@ -222,6 +221,10 @@ end
         @time @safetestset "Rosenbrock Tests" include("algconvergence/ode_rosenbrock_tests.jl")
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "OwrenZen"
+        @time @safetestset "OwrenZen Tests" include("../lib/OrdinaryDiffEqLowOrderRK/test/owrenzen_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "FIRK"
