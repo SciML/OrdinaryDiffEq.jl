@@ -17,4 +17,6 @@ include("tsit_tableaus.jl")
 include("interp_func.jl")
 include("tsit_perform_step.jl")
 
+export Tsit5
+
 end
