@@ -9,6 +9,7 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!
 import DiffEqBase: @def
+using TruncatedStacktraces
 
 include("algorithms.jl")
 include("alg_utils.jl")
