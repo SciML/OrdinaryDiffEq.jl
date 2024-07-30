@@ -19,6 +19,12 @@ end
 function DiffEqBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
+        Union{DP5ConstantCache, DP5Cache}}
+    dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary(::Type{cacheType},
+        dense::Bool) where {
+        cacheType <:
         Union{BS5ConstantCache, BS5Cache}}
     dense ? "specialized 5th order lazy interpolation" : "1st order linear"
 end
