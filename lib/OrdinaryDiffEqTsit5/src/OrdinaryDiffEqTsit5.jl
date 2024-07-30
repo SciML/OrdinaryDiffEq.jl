@@ -2,7 +2,7 @@ module OrdinaryDiffEqTsit5
 
 import OrdinaryDiffEq: alg_order, alg_stability_size, explicit_rk_docstring, trivial_limiter!,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache, alg_cache,
-                       constvalue, @unpack, perform_step!, calculate_residuals,
+                       constvalue, @unpack, perform_step!, calculate_residuals, @cache,
                        calculate_residuals!, _ode_interpolant, _ode_interpolant!
 import Static: False
 import MuladdMacro: @muladd
