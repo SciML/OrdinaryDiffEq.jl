@@ -157,8 +157,6 @@ include("caches/linear_nonlinear_caches.jl")
 include("caches/rosenbrock_caches.jl")
 include("caches/adams_bashforth_moulton_caches.jl")
 include("caches/nordsieck_caches.jl")
-include("caches/prk_caches.jl")
-include("caches/pdirk_caches.jl")
 
 include("tableaus/low_order_rk_tableaus.jl")
 include("tableaus/high_order_rk_tableaus.jl")
@@ -183,8 +181,6 @@ include("perform_step/rosenbrock_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
-include("perform_step/prk_perform_step.jl")
-include("perform_step/pdirk_perform_step.jl")
 
 include("dense/generic_dense.jl")
 include("dense/interpolants.jl")
@@ -288,6 +284,14 @@ export RadauIIA3, RadauIIA5, RadauIIA9
 include("../lib/OrdinaryDiffEqQPRK/src/OrdinaryDiffEqQPRK.jl")
 using ..OrdinaryDiffEqQPRK
 export QPRK98
+
+include("../lib/OrdinaryDiffEqPDIRK/src/OrdinaryDiffEqPDIRK.jl")
+using ..OrdinaryDiffEqPDIRK
+export PDIRK44
+
+include("../lib/OrdinaryDiffEqPRK/src/OrdinaryDiffEqPRK.jl")
+using ..OrdinaryDiffEqPRK
+export KuttaPRK2p5
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
@@ -456,8 +460,6 @@ export Alshina2, Alshina3, Alshina6
 
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
-
-export KuttaPRK2p5, PDIRK44
 
 export ShampineCollocationInit, BrownFullBasicInit, NoInit
 
