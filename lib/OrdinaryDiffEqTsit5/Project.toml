@@ -1,5 +1,5 @@
-name = "OrdinaryDiffEqHighOrderRK"
-uuid = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
+name = "OrdinaryDiffEqTsit5"
+uuid = "1344f307-1e59-4825-a18e-ace9aa3fa4c6"
 authors = ["ParamThakkar123 <paramthakkar864@gmail.com>"]
 version = "1.0.0"
 

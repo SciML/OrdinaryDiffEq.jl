@@ -8,7 +8,6 @@ alg_order(alg::OwrenZen3) = 3
 alg_order(alg::BS5) = 5
 alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
-alg_order(alg::Tsit5) = 5
 alg_order(alg::DP5) = 5
 alg_order(alg::Anas5) = 5
 alg_order(alg::RKO65) = 5
@@ -36,7 +35,6 @@ beta2_default(alg::DP5) = 4 // 100
 
 beta1_default(alg::DP5, beta2) = typeof(beta2)(1 // alg_order(alg)) - 3beta2 / 4
 
-alg_stability_size(alg::Tsit5) = 3.5068
 alg_stability_size(alg::DP5) = 3.3066
 
 ssp_coefficient(alg::Euler) = 1
