@@ -24,7 +24,6 @@ alg_order(alg::SIR54) = 5
 alg_order(alg::Alshina2) = 2
 alg_order(alg::Alshina3) = 3
 alg_order(alg::Alshina6) = 6
-alg_order(alg::FunctionMap) = 0
 
 isfsal(alg::FRK65) = true
 isfsal(alg::RKO65) = false
