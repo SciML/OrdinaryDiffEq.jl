@@ -7,6 +7,7 @@ import OrdinaryDiffEq: alg_order, qmax_default, qmin_default, beta2_default, bet
                        calculate_residuals!, calculate_residuals, CompiledFloats
 import Static: False
 import MuladdMacro: @muladd
+using DiffEqBase
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!
 
