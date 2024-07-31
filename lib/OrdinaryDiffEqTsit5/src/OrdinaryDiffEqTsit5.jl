@@ -5,7 +5,7 @@ import OrdinaryDiffEq: alg_order, alg_stability_size, explicit_rk_docstring,
                        OrdinaryDiffEqConstantCache, @fold,
                        constvalue, @unpack, perform_step!, calculate_residuals, @cache,
                        calculate_residuals!, _ode_interpolant, _ode_interpolant!,
-                       CompiledFloats
+                       CompiledFloats, @OnDemandTableauExtract
 import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
