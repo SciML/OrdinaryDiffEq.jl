@@ -1485,27 +1485,3 @@ function alg_cache(alg::Alshina6, u, rate_prototype, ::Type{uEltypeNoUnits},
     Alshina6Cache(u, uprev, k1, k2, k3, k4, k5, k6, k7, tmp, tab, alg.stage_limiter!,
         alg.step_limiter!, alg.thread)
 end
-
-@cache struct FunctionMapCache{uType, rateType} <: OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    tmp::rateType
-end
-
-function alg_cache(alg::FunctionMap, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    FunctionMapCache(u, uprev,
-        FunctionMap_scale_by_time(alg) ? rate_prototype :
-        (eltype(u) <: Enum ? copy(u) : zero(u)))
-end
-
-struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
-
-function alg_cache(alg::FunctionMap, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    FunctionMapConstantCache()
-end

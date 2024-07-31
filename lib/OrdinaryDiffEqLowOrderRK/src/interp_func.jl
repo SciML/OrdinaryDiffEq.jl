@@ -28,12 +28,3 @@ function DiffEqBase.interp_summary(::Type{cacheType},
         Union{BS5ConstantCache, BS5Cache}}
     dense ? "specialized 5th order lazy interpolation" : "1st order linear"
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {cacheType <:
-                            FunctionMapConstantCache}
-    "left-endpoint piecewise constant"
-end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {cacheType <: FunctionMapCache}
-    "left-endpoint piecewise constant"
-end
