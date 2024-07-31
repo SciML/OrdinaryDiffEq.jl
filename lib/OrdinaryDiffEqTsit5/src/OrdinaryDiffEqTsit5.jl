@@ -10,7 +10,7 @@ import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!
-import DiffEqBase: @def
+using DiffEqBase
 using TruncatedStacktraces
 
 include("algorithms.jl")
