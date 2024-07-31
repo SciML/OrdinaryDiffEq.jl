@@ -14,6 +14,7 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("high_order_rk_caches.jl")
 include("high_order_rk_tableaus.jl")
+include("interp_func.jl")
 include("high_order_rk_addsteps.jl")
 include("high_order_rk_perform_step.jl")
 

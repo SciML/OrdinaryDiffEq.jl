@@ -28,9 +28,3 @@ function DiffEqBase.interp_summary(::Type{cacheType},
         Union{BS5ConstantCache, BS5Cache}}
     dense ? "specialized 5th order lazy interpolation" : "1st order linear"
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{DP8ConstantCache, DP8Cache}}
-    dense ? "specialized 7th order interpolation" : "1st order linear"
-end
