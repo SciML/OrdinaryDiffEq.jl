@@ -1,17 +1,13 @@
 ## SciMLBase Trait Definitions
-function SciMLBase.isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm,
-        FunctionMap})
+function SciMLBase.isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     true
 end
-function SciMLBase.allows_arbitrary_number_types(alg::Union{OrdinaryDiffEqAlgorithm,
-        DAEAlgorithm, FunctionMap})
+function SciMLBase.allows_arbitrary_number_types(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     true
 end
-function SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm,
-        FunctionMap})
+function SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     true
 end
-SciMLBase.isdiscrete(alg::FunctionMap) = true
 function SciMLBase.forwarddiffs_model(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm,
         DAEAlgorithm,
         OrdinaryDiffEqImplicitAlgorithm,

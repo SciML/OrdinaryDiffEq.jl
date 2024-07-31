@@ -1,3 +1,15 @@
+function SciMLBase.isautodifferentiable(alg::FunctionMap)
+    true
+end
+function SciMLBase.allows_arbitrary_number_types(alg::FunctionMap)
+    true
+end
+function SciMLBase.allowscomplex(alg::FunctionMap)
+    true
+end
+
+SciMLBase.isdiscrete(alg::FunctionMap) = true
+
 alg_order(alg::Euler) = 1
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::Heun) = 2

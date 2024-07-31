@@ -7,7 +7,7 @@ import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stab
                        calculate_residuals!, _ode_addsteps!, @OnDemandTableauExtract, constvalue,
                        OrdinaryDiffEqMutableCache, uses_uprev, OrdinaryDiffEqConstantCache, @fold,
                        @cache, CompiledFloats
-using DiffEqBase
+using DiffEqBase, SciMLBase
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!
