@@ -5,7 +5,7 @@ import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stab
                        explicit_rk_docstring, trivial_limiter!, OrdinaryDiffEqAdaptiveAlgorithm,
                        unwrap_alg, @unpack, initialize!, perform_step!, calculate_residuals,
                        calculate_residuals!, _ode_addsteps!, @OnDemandTableauExtract, constvalue,
-                       OrdinaryDiffEqMutableCache, uses_uprev, OrdinaryDiffEqConstantCache
+                       OrdinaryDiffEqMutableCache, uses_uprev, OrdinaryDiffEqConstantCache, @fold
 import DiffEqBase: @tight_loop_macros
 import MuladdMacro: @muladd
 import FastBroadcast: @..
