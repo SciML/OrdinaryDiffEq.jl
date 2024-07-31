@@ -12,6 +12,7 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!
 import Static: False
+using DiffEqBase: @def, @tight_loop_macros
 
 include("algorithms.jl")
 include("alg_utils.jl")
