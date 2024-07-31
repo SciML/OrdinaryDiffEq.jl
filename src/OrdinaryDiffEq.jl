@@ -173,7 +173,6 @@ include("perform_step/composite_perform_step.jl")
 include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
 
-include("dense/generic_dense.jl")
 include("dense/rosenbrock_interpolants.jl")
 include("dense/stiff_addsteps.jl")
 
@@ -300,6 +299,8 @@ export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
 include("../lib/OrdinaryDiffEqFunctionMap/src/OrdinaryDiffEqFunctionMap.jl")
 using ..OrdinaryDiffEqFunctionMap
 export FunctionMap
+
+include("dense/generic_dense.jl")
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
