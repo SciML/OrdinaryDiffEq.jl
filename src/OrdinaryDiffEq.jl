@@ -174,7 +174,6 @@ include("perform_step/adams_bashforth_moulton_perform_step.jl")
 include("perform_step/nordsieck_perform_step.jl")
 
 include("dense/generic_dense.jl")
-include("dense/interpolants.jl")
 include("dense/rosenbrock_interpolants.jl")
 include("dense/stiff_addsteps.jl")
 
