@@ -28,7 +28,6 @@ isfsal(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isfsal(tab::DiffEqBase.ExplicitRKTableau) = tab.fsal
 
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
-isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas3P) = false
 isfsal(alg::Rodas23W) = false
 isfsal(alg::Rodas5) = false
@@ -365,7 +364,6 @@ function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
     _eval_index(alg_adaptive_order, alg.algs, cache.current)::Int
 end
 
-alg_order(alg::FunctionMap) = 0
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::LieEuler) = 1
@@ -513,12 +511,10 @@ end
 function beta2_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 2 // (5alg_order(alg)) : 0
 end
-beta2_default(alg::FunctionMap) = 0
 
 function beta1_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, beta2)
     isadaptive(alg) ? 7 // (10alg_order(alg)) : 0
 end
-beta1_default(alg::FunctionMap, beta2) = 0
 
 function gamma_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 9 // 10 : 0
@@ -537,10 +533,6 @@ qsteady_max_default(alg::JVODE) = 3 // 2
 
 #TODO
 #DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
-
-function FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time}
-    scale_by_time
-end
 
 # SSP coefficients
 ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")

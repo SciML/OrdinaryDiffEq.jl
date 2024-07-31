@@ -297,7 +297,7 @@ export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
        BS3, OwrenZen3, OwrenZen4, OwrenZen5, BS5, Tsit5,
        DP5, Anas5, RKO65, FRK65, RKM, MSRK5, MSRK6,
        PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
-       Alshina2, Alshina3, Alshina6
+       Alshina2, Alshina3, Alshina6, FunctionMap
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
@@ -427,7 +427,7 @@ export constructDormandPrince
 
 # Reexport the Alg Types
 
-export FunctionMap, ExplicitRK, CompositeAlgorithm
+export ExplicitRK, CompositeAlgorithm
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,

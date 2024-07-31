@@ -613,3 +613,6 @@ function Base.show(io::IO, alg::Alshina6)
         ", step_limiter! = ", alg.step_limiter!,
         ", thread = ", alg.thread, ")")
 end
+
+struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
+FunctionMap(; scale_by_time = false) = FunctionMap{scale_by_time}()
