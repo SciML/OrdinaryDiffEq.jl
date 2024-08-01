@@ -246,38 +246,39 @@ end
     @unpack c₃₂, d, tf, uf = cache
 
     # Precalculations
-    γ = dt * d
+    dtγ = dt * d
     dto2 = dt / 2
     dto6 = dt / 6
+    do2 = d/2
 
+    mass_matrix = integrator.f.mass_matrix
     if repeat_step
         integrator.fsalfirst = f(uprev, p, t)
         integrator.stats.nf += 1
     end
 
-    mass_matrix = integrator.f.mass_matrix
-
     # Time derivative
     dT = calc_tderivative(integrator, cache)
 
-    W = calc_W(integrator, cache, γ, repeat_step)
+    W = calc_W(integrator, cache, dtγ, repeat_step, true)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
     end
 
-    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
+    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dtγ*dT)), axes(uprev))
     integrator.stats.nsolve += 1
-    f₁ = f(uprev + dto2 * k₁, p, t + dto2)
+    f₁ = f(uprev + do2*k₁, p, t + dto2)
     integrator.stats.nf += 1
 
     if mass_matrix === I
-        k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
+        k₂ = _reshape(W \ -_vec(f₁ - k₁/dtγ), axes(uprev)) + k₁
     else
-        k₂ = _reshape(W \ -_vec(f₁ - mass_matrix * k₁), axes(uprev)) + k₁
+        linsolve_tmp = f₁ - mass_matrix/dtγ * k₁
+        k₂ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev)) + k₁
     end
     integrator.stats.nsolve += 1
-    u = uprev + dt * k₂
+    u = uprev + k₂/d
 
     if integrator.opts.adaptive
         integrator.fsallast = f(u, p, t + dt)
@@ -328,7 +329,6 @@ end
     dto6 = dt / 6
 
     mass_matrix = integrator.f.mass_matrix
-
     if repeat_step
         integrator.fsalfirst = f(uprev, p, t)
         integrator.stats.nf += 1
@@ -337,13 +337,13 @@ end
     # Time derivative
     dT = calc_tderivative(integrator, cache)
 
-    W = calc_W(integrator, cache, γ, repeat_step)
+    W = calc_W(integrator, cache, γ, repeat_step, true)
     if !issuccess_W(W)
         integrator.EEst = 2
         return nothing
     end
 
-    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
+    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dT)), axes(uprev))
     integrator.stats.nsolve += 1
     f₁ = f(uprev + dto2 * k₁, p, t + dto2)
     integrator.stats.nf += 1
@@ -354,21 +354,20 @@ end
         linsolve_tmp = f₁ - mass_matrix * k₁
         k₂ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev)) + k₁
     end
-
     integrator.stats.nsolve += 1
-    tmp = uprev + dt * k₂
-    integrator.fsallast = f(tmp, p, t + dt)
+    u = uprev + dt * k₂
+    integrator.fsallast = f(u, p, t + dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
         k₃ = _reshape(
             W \
             -_vec((integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                   2(k₁ - integrator.fsalfirst) + dt * dT)),
+                   2 * (k₁ - integrator.fsalfirst) + dt * dT)),
             axes(uprev))
     else
-        linsolve_tmp = integrator.fsallast - mass_matrix * (c₃₂ * k₂ + 2k₁) + c₃₂ * f₁ +
-                       2 * integrator.fsalfirst + dt * dT
+        linsolve_tmp = integrator.fsallast - mass_matrix * (c₃₂ * k₂ + 2 * k₁) +
+                           c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
         k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     end
     integrator.stats.nsolve += 1
@@ -386,7 +385,6 @@ end
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
-
     integrator.k[1] = k₁
     integrator.k[2] = k₂
     integrator.u = u
