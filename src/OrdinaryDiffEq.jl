@@ -182,7 +182,6 @@ include("adams_utils.jl")
 include("derivative_wrappers.jl")
 include("iterator_interface.jl")
 include("constants.jl")
-include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
 
@@ -301,6 +300,7 @@ using ..OrdinaryDiffEqFunctionMap
 export FunctionMap
 
 include("dense/generic_dense.jl")
+include("solve.jl")
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
