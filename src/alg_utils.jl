@@ -434,22 +434,6 @@ alg_order(alg::Rodas5P) = 5
 alg_order(alg::Rodas5Pr) = 5
 alg_order(alg::Rodas5Pe) = 5
 
-alg_order(alg::AB3) = 3
-alg_order(alg::AB4) = 4
-alg_order(alg::AB5) = 5
-alg_order(alg::ABM32) = 3
-alg_order(alg::ABM43) = 4
-alg_order(alg::ABM54) = 5
-
-alg_order(alg::VCAB3) = 3
-alg_order(alg::VCAB4) = 4
-alg_order(alg::VCAB5) = 5
-alg_order(alg::VCABM3) = 3
-alg_order(alg::VCABM4) = 4
-alg_order(alg::VCABM5) = 5
-
-alg_order(alg::VCABM) = 1  #dummy value
-
 alg_order(alg::CNAB2) = 2
 alg_order(alg::CNLF2) = 2
 
@@ -598,7 +582,6 @@ ispredictive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
-isstandard(alg::VCABM) = true
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isWmethod(alg::Rosenbrock23) = true

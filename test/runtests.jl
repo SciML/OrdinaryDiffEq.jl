@@ -207,7 +207,7 @@ end
         @time @safetestset "Convergence Tests" include("algconvergence/ode_convergence_tests.jl")
         @time @safetestset "DAE Convergence Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_convergence_tests.jl")
         @time @safetestset "Non-autonomous Convergence Tests" include("algconvergence/non-autonomous_convergence_tests.jl")
-        @time @safetestset "Adams Variable Coefficients Tests" include("algconvergence/adams_tests.jl")
+        @time @safetestset "Adams Variable Coefficients Tests" include("../lib/OrdinaryDiffEqAdamsBashforthMoulton/test/adams_tests.jl")
         @time @safetestset "Nordsieck Tests" include("algconvergence/nordsieck_tests.jl")
     end
 
