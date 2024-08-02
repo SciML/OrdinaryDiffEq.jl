@@ -374,7 +374,7 @@ end
         linsolve_tmp = @.. (integrator.fsallast - linsolve_tmp +
                        c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT)
     end
-    k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * invnegdtγ
+    k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
     integrator.stats.nsolve += 1
     u = @.. uprev + dto6 * (k₁ + 4k₂ + k₃)
 
