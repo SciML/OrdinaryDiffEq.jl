@@ -373,8 +373,6 @@ alg_order(alg::ETD2) = 2
 alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 
-alg_order(alg::ExplicitRK) = alg.tableau.order
-
 alg_order(alg::RKMK2) = 2
 alg_order(alg::RKMK4) = 4
 alg_order(alg::LieRK4) = 4
@@ -398,7 +396,6 @@ alg_order(alg::CNLF2) = 2
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
-alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_order(alg) - 1
 
 # this is actually incorrect and is purposefully decreased as this tends
@@ -463,9 +460,6 @@ ssp_coefficient(alg) = error("$alg is not a strong stability preserving method."
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
-
-# stability regions
-alg_stability_size(alg::ExplicitRK) = alg.tableau.stability_size
 
 alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true

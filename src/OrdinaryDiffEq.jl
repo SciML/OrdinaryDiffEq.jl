@@ -305,6 +305,10 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        ROS3PRL2, ROK4a,
        ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 
+include("../lib/OrdinaryDiffEqExplicitRK/src/OrdinaryDiffEqExplicitRK.jl")
+using ..OrdinaryDiffEqExplicitRK
+export ExplicitRK
+
 include("dense/generic_dense.jl")
 include("solve.jl")
 
@@ -436,7 +440,7 @@ export constructDormandPrince
 
 # Reexport the Alg Types
 
-export ExplicitRK, CompositeAlgorithm
+export CompositeAlgorithm
 
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
