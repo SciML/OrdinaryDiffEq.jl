@@ -36,6 +36,7 @@ end
 
     # Precalculations
     dtγ = dt * d
+    neginvdtγ = -inv(dtγ)
     dto2 = dt / 2
     dto6 = dt / 6
 
@@ -44,7 +45,7 @@ end
         integrator.stats.nf += 1
     end
 
-    calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtγ, dtγ, repeat_step, true)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
@@ -54,17 +55,17 @@ end
         linres = dolinsolve(
             integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
             du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ))/dtγ
+            solverdata = (; gamma = dtγ))
     else
         linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
             du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ))/dtγ
+            solverdata = (; gamma = dtγ))
     end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
 
-    @.. broadcast=false veck₁=-vecu
+    @.. veck₁ = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + dto2 * k₁
@@ -80,11 +81,11 @@ end
 
     @.. broadcast=false linsolve_tmp=f₁ - tmp
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))/dtγ
+    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
 
-    @.. broadcast=false veck2=-vecu
+    @.. veck2 = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
     @.. broadcast=false k₂+=k₁
@@ -106,10 +107,10 @@ end
                                              dt * dT
         end
 
-        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))/dtγ
+        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
         vecu = _vec(linres.u)
         veck3 = _vec(k₃)
-        @.. broadcast=false veck3=-vecu
+        @.. veck3 = vecu * neginvdtγ
 
         integrator.stats.nsolve += 1
 
@@ -129,8 +130,8 @@ end
 
         if mass_matrix !== I
             algvar = reshape(cache.algebraic_vars, size(u))
-            @.. broadcast=false atmp=ifelse(algvar, fsallast, false) /
-                                     integrator.opts.abstol
+            invatol = inv(integrator.opts.atol)
+            @.. atmp = ifelse(algvar, fsallast, false) * invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -148,6 +149,7 @@ end
 
     # Precalculations
     dtγ = dt * d
+    neginvdtγ = -inv(dtγ)
     dto2 = dt / 2
     dto6 = dt / 6
 
@@ -166,17 +168,17 @@ end
         linres = dolinsolve(
             integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
             du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ))/dtγ
+            solverdata = (; gamma = dtγ))
     else
         linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
             du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtγ))/dtγ
+            solverdata = (; gamma = dtγ))
     end
 
     vecu = _vec(linres.u)
     veck₁ = _vec(k₁)
 
-    @.. broadcast=false veck₁=-vecu
+    @.. veck₁ = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + dto2 * k₁
@@ -192,11 +194,11 @@ end
 
     @.. broadcast=false linsolve_tmp=f₁ - tmp
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))/dtγ
+    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck2 = _vec(k₂)
 
-    @.. broadcast=false veck2=-vecu
+    @.. veck2 = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
     @.. broadcast=false k₂+=k₁
@@ -214,11 +216,11 @@ end
         @.. broadcast=false linsolve_tmp=fsallast - du1 + c₃₂ * f₁ + 2fsalfirst + dt * dT
     end
 
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))/dtγ
+    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
     veck3 = _vec(k₃)
 
-    @.. broadcast=false veck3=-vecu
+    @.. veck3 = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + dto6 * (k₁ + 4k₂ + k₃)
@@ -247,6 +249,7 @@ end
 
     # Precalculations
     dtγ = dt * d
+    neginvdtγ = -inv(dtγ)
     dto2 = dt / 2
     dto6 = dt / 6
 
@@ -266,16 +269,18 @@ end
         return nothing
     end
 
-    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dtγ * dT)), axes(uprev))/dtγ
+    k₁ = _reshape(W \ _vec((integrator.fsalfirst + dtγ * dT)), axes(uprev)) * neginvdtγ
     integrator.stats.nsolve += 1
-    f₁ = f(uprev + dto2 * k₁, p, t + dto2)
+    tmp = @.. uprev + dto2 * k₁
+    f₁ = f(tmp, p, t + dto2)
     integrator.stats.nf += 1
 
     if mass_matrix === I
-        k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev))/dtγ + k₁
+        k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
     else
-        k₂ = _reshape(W \ -_vec(f₁ - mass_matrix * k₁), axes(uprev))/dtγ + k₁
+        k₂ = _reshape(W \ _vec(f₁ - mass_matrix * k₁), axes(uprev))
     end
+    k₂ = @.. k₂ * neginvdtγ + k₁
     integrator.stats.nsolve += 1
     u = uprev + dt * k₂
 
@@ -284,30 +289,28 @@ end
         integrator.stats.nf += 1
 
         if mass_matrix === I
-            k₃ = _reshape(
-                W \
-                -_vec((integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                       2 * (k₁ - integrator.fsalfirst) + dt * dT)),
-                axes(uprev))/dtγ
+            linsolve_tmp = @.. (integrator.fsallast - c₃₂ * (k₂ - f₁) -
+                       2 * (k₁ - integrator.fsalfirst) + dt * dT)
         else
-            linsolve_tmp = integrator.fsallast - mass_matrix * (c₃₂ * k₂ + 2 * k₁) +
-                           c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
-            k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))/dtγ
+            linsolve_tmp = mass_matrix * (@.. c₃₂ * k₂ + 2 * k₁)
+            linsolve_tmp = @.. (integrator.fsallast - linsolve_tmp +
+                           c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT)
         end
+        k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * neginvdtγ
         integrator.stats.nsolve += 1
 
         if u isa Number
             utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
         else
-            utilde = dto6 * f.mass_matrix * (k₁ - 2 * k₂ + k₃)
+            utilde = f.mass_matrix * (@.. dto6 * (k₁ - 2 * k₂ + k₃))
         end
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         if mass_matrix !== I
-            atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                      integrator.opts.abstol
+            invabstol = inv(integrator.opts.abstol)
+            atmp = ifelse(!integrator.differential_vars, integrator.fsallast, false) .* invabstol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -324,6 +327,7 @@ end
 
     # Precalculations
     dtγ = dt * d
+    neginvdtγ = -inv(dtγ)
     dto2 = dt / 2
     dto6 = dt / 6
 
@@ -345,35 +349,37 @@ end
 
     k₁ = _reshape(W \ -_vec((integrator.fsalfirst + dtγ * dT)), axes(uprev))/dtγ
     integrator.stats.nsolve += 1
-    f₁ = f(uprev + dto2 * k₁, p, t + dto2)
+    tmp = @.. uprev + dto2 * k₁
+    f₁ = f(tmp, p, t + dto2)
     integrator.stats.nf += 1
 
     if mass_matrix === I
-        k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev))/dtγ + k₁
+        k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
     else
         linsolve_tmp = f₁ - mass_matrix * k₁
-        k₂ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))/dtγ + k₁
+        k₂ = _reshape(W \ _vec(linsolve_tmp), axes(uprev))
     end
+    k₂ = @.. k₂ * neginvdtγ + k₁
 
     integrator.stats.nsolve += 1
-    tmp = uprev + dt * k₂
+    tmp = @.. uprev + dt * k₂
     integrator.fsallast = f(tmp, p, t + dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
-        linsolve_tmp = (integrator.fsallast - c₃₂ * (k₂ - f₁) -
+        linsolve_tmp = @.. (integrator.fsallast - c₃₂ * (k₂ - f₁) -
                    2(k₁ - integrator.fsalfirst) + dt * dT)
-        k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))/dtγ
     else
-        linsolve_tmp = integrator.fsallast - mass_matrix * (c₃₂ * k₂ + 2k₁) + c₃₂ * f₁ +
-                       2 * integrator.fsalfirst + dt * dT
-        k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))/dtγ
+        linsolve_tmp = mass_matrix * (@.. c₃₂ * k₂ + 2 * k₁)
+        linsolve_tmp = @.. (integrator.fsallast - linsolve_tmp +
+                       c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT)
     end
+    k₃ = _reshape(W \ _vec(linsolve_tmp), axes(uprev)) * invnegdtγ
     integrator.stats.nsolve += 1
-    u = uprev + dto6 * (k₁ + 4k₂ + k₃)
+    u = @.. uprev + dto6 * (k₁ + 4k₂ + k₃)
 
     if integrator.opts.adaptive
-        utilde = dto6 * (k₁ - 2k₂ + k₃)
+        utilde = @.. dto6 * (k₁ - 2k₂ + k₃)
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
