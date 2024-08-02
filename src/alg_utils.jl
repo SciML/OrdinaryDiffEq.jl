@@ -349,7 +349,6 @@ get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache) =
 function get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm, cache)
     cache.order
 end
-get_current_alg_order(alg::JVODE, cache) = get_current_adaptive_order(alg, cache)
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 function get_current_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm},
@@ -437,9 +436,6 @@ alg_order(alg::Rodas5Pe) = 5
 alg_order(alg::CNAB2) = 2
 alg_order(alg::CNLF2) = 2
 
-alg_order(alg::AN5) = 5
-alg_order(alg::JVODE) = 1  #dummy value
-
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
@@ -456,7 +452,6 @@ alg_adaptive_order(alg::Rosenbrock32) = 2
 
 alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
-alg_adaptive_order(alg::AN5) = 5
 
 function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
@@ -484,10 +479,6 @@ function _digest_beta1_beta2(alg, cache, ::Val{QT}, _beta1, _beta2) where {QT}
 end
 
 # other special cases in controllers.jl
-function default_controller(alg::Union{JVODE}, args...)
-    DummyController()
-end
-
 function beta2_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 2 // (5alg_order(alg)) : 0
 end
@@ -508,9 +499,6 @@ qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6 // 5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = isadaptive(alg) ? 1 // 1 : 0
-qsteady_max_default(alg::AN5) = 3 // 2
-qsteady_max_default(alg::JVODE) = 3 // 2
-
 #TODO
 #DiffEqBase.nlsolve_default(::QNDF, ::Val{κ}) = 1//2
 

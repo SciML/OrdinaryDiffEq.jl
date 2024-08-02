@@ -153,7 +153,6 @@ include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
 include("caches/imex_multistep_caches.jl")
 include("caches/rosenbrock_caches.jl")
-include("caches/nordsieck_caches.jl")
 
 include("tableaus/rosenbrock_tableaus.jl")
 
@@ -171,7 +170,6 @@ include("perform_step/explicit_rk_perform_step.jl")
 include("perform_step/rosenbrock_perform_step.jl")
 include("perform_step/imex_multistep_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
-include("perform_step/nordsieck_perform_step.jl")
 
 include("dense/rosenbrock_interpolants.jl")
 include("dense/stiff_addsteps.jl")
@@ -302,6 +300,10 @@ include("../lib/OrdinaryDiffEqAdamsBashforthMoulton/src/OrdinaryDiffEqAdamsBashf
 using ..OrdinaryDiffEqAdamsBashforthMoulton
 export AB3, AB4, AB5, ABM32, ABM43, ABM54, VCAB3, 
        VCAB4, VCAB5, VCABM3, VCABM4, VCABM5, VCABM
+
+include("../lib/OrdinaryDiffEqNordsieck/src/OrdinaryDiffEqNordsieck.jl")
+using ..OrdinaryDiffEqNordsieck
+export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
 include("dense/generic_dense.jl")
 include("solve.jl")
@@ -454,8 +456,6 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
 export SHLDDRK52, SHLDDRK_2N
 
 export CNAB2, CNLF2
-
-export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
