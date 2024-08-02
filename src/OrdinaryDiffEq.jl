@@ -169,6 +169,7 @@ include("derivative_utils.jl")
 include("derivative_wrappers.jl")
 include("iterator_interface.jl")
 include("constants.jl")
+include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
 
