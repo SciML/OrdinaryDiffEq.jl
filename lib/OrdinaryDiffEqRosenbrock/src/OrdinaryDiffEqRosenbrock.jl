@@ -12,9 +12,9 @@ import LinearAlgebra: mul!
 
 include("algorithms.jl")
 include("alg_utils.jl")
+include("generic_rosenbrock.jl")
 include("rosenbrock_caches.jl")
 include("rosenbrock_tableaus.jl")
-include("generic_rosenbrock.jl")
 include("interp_func.jl")
 include("rosenbrock_interpolants.jl")
 include("stiff_addsteps.jl")
