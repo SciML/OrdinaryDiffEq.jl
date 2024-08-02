@@ -30,14 +30,6 @@ function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{
 }
     DiffEqBase.interp_summary(cacheType, interp.dense)
 end
-function DiffEqBase.interp_summary(::Type{cacheType},
-        dense::Bool) where {
-        cacheType <:
-        Union{Rosenbrock5ConstantCache,
-        Rosenbrock5Cache}}
-    dense ? "specialized 4rd order \"free\" stiffness-aware interpolation" :
-    "1st order linear"
-end
 function DiffEqBase.interp_summary(::Type{cacheType}, dense::Bool) where {cacheType}
     dense ? "3rd order Hermite" : "1st order linear"
 end
