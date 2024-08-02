@@ -7,6 +7,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap
                        _vec, _reshape, perform_step!, trivial_limiter!, dolinsolve, OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                        OrdinaryDiffEqRosenbrockAlgorithm
 using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
+import MacroTools: @capture
 import DiffEqBase: @def
 import LinearAlgebra: mul!
 
