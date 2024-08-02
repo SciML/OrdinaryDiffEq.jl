@@ -165,6 +165,8 @@ include("perform_step/exponential_rk_perform_step.jl")
 include("perform_step/imex_multistep_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 
+include("dense/generic_dense.jl")
+
 include("derivative_utils.jl")
 include("derivative_wrappers.jl")
 include("iterator_interface.jl")
