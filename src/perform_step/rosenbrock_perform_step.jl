@@ -130,7 +130,7 @@ end
 
         if mass_matrix !== I
             algvar = reshape(cache.algebraic_vars, size(u))
-            invatol = inv(integrator.opts.atol)
+            invatol = inv(integrator.opts.abstol)
             @.. atmp = ifelse(algvar, fsallast, false) * invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
@@ -234,8 +234,8 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         if mass_matrix !== I
-            @.. broadcast=false atmp=ifelse(cache.algebraic_vars, fsallast, false) /
-                                     integrator.opts.abstol
+            invatol = inv(integrator.opts.abstol)
+            @.. atmp=ifelse(cache.algebraic_vars, fsallast, false) * invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -309,8 +309,8 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         if mass_matrix !== I
-            invabstol = inv(integrator.opts.abstol)
-            atmp = ifelse(!integrator.differential_vars, integrator.fsallast, false) .* invabstol
+            invatol = inv(integrator.opts.abstol)
+            atmp = ifelse(!integrator.differential_vars, integrator.fsallast, false) .* invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
@@ -385,8 +385,8 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
 
         if mass_matrix !== I
-            atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                      integrator.opts.abstol
+            invatol = inv(integrator.opts.abstol)
+            atmp = ifelse(!integrator.differential_vars, integrator.fsallast, false) .* invatol
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
