@@ -40,6 +40,14 @@ alg_adaptive_order(alg::Rosenbrock23) = 3
 isWmethod(alg::Rodas23W) = true
 isWmethod(alg::Rosenbrock23) = true
 isWmethod(alg::Rosenbrock32) = true
+isWmethod(alg::ROS2S) = true
+isWmethod(alg::ROS34PW1a) = true
+isWmethod(alg::ROS34PW1b) = true
+isWmethod(alg::ROS34PW2) = true
+isWmethod(alg::ROS34PW3) = true
+isWmethod(alg::ROS34PRw) = true
+isWmethod(alg::ROK4a) = true
+isWmethod(alg::RosenbrockW6S4OS) = true
 
 isfsal(alg::Rodas3P) = false
 isfsal(alg::Rodas23W) = false

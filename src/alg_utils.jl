@@ -528,14 +528,6 @@ isstandard(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 
 isWmethod(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-isWmethod(alg::ROS2S) = true
-isWmethod(alg::ROS34PW1a) = true
-isWmethod(alg::ROS34PW1b) = true
-isWmethod(alg::ROS34PW2) = true
-isWmethod(alg::ROS34PW3) = true
-isWmethod(alg::ROS34PRw) = true
-isWmethod(alg::ROK4a) = true
-isWmethod(alg::RosenbrockW6S4OS) = true
 
 isesdirk(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 
