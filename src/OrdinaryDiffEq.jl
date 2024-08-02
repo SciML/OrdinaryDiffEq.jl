@@ -131,6 +131,7 @@ import FunctionWrappersWrappers
 import Preferences
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
+isdiscretecache(cache) = false
 
 include("doc_utils.jl")
 include("misc_utils.jl")
@@ -298,7 +299,7 @@ export FunctionMap
 
 include("../lib/OrdinaryDiffEqAdamsBashforthMoulton/src/OrdinaryDiffEqAdamsBashforthMoulton.jl")
 using ..OrdinaryDiffEqAdamsBashforthMoulton
-export AB3, AB4, AB5, ABM32, ABM43, ABM54, VCAB3, 
+export AB3, AB4, AB5, ABM32, ABM43, ABM54, VCAB3,
        VCAB4, VCAB5, VCABM3, VCABM4, VCABM5, VCABM
 
 include("../lib/OrdinaryDiffEqNordsieck/src/OrdinaryDiffEqNordsieck.jl")

@@ -41,6 +41,11 @@ isfirk(alg) = false
 
 get_current_isfsal(alg, cache) = isfsal(alg)
 
+dt_required(alg) = true
+dt_required(alg::LinearExponential) = false
+
+isdiscretealg(alg) = false
+
 # evaluates f(t[i])
 _eval_index(f::F, t::Tuple{A}, _) where {F, A} = f(t[1])
 function _eval_index(f::F, t::Tuple{A, Vararg}, i) where {F, A}

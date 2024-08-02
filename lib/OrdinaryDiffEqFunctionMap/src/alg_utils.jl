@@ -21,3 +21,6 @@ beta1_default(alg::FunctionMap, beta2) = 0
 function FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time}
     scale_by_time
 end
+
+dt_required(alg::FunctionMap) = false
+isdiscretealg(alg::FunctionMap) = true

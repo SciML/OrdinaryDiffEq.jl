@@ -91,7 +91,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 copyat_or_push!(integrator.sol.u, integrator.saveiter,
                     integrator.u[integrator.opts.save_idxs], false)
             end
-            if integrator.alg isa FunctionMap || integrator.opts.dense
+            if isdiscretealg(integrator.alg) || integrator.opts.dense
                 integrator.saveiter_dense += 1
                 if integrator.opts.dense
                     if integrator.opts.save_idxs === nothing
@@ -124,7 +124,7 @@ function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool, Bool}
                 integrator.u[integrator.opts.save_idxs], false)
         end
         copyat_or_push!(integrator.sol.t, integrator.saveiter, integrator.t)
-        if integrator.alg isa FunctionMap || integrator.opts.dense
+        if isdiscretealg(integrator.alg) || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing
@@ -183,7 +183,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
             copyat_or_push!(integrator.sol.u, integrator.saveiter,
                 integrator.u[integrator.opts.save_idxs], false)
         end
-        if integrator.alg isa FunctionMap || integrator.opts.dense
+        if isdiscretealg(integrator.alg) || integrator.opts.dense
             integrator.saveiter_dense += 1
             if integrator.opts.dense
                 if integrator.opts.save_idxs === nothing

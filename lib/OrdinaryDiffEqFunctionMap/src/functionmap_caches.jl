@@ -21,3 +21,5 @@ function alg_cache(alg::FunctionMap, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     FunctionMapConstantCache()
 end
+
+isdiscretecache(cache::Union{FunctionMapCache, FunctionMapConstantCache}) = true
