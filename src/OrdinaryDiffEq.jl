@@ -151,6 +151,7 @@ include("generic_rosenbrock.jl")
 include("caches/basic_caches.jl")
 include("caches/linear_caches.jl")
 include("caches/linear_nonlinear_caches.jl")
+include("caches/imex_multistep_caches.jl")
 include("caches/rosenbrock_caches.jl")
 include("caches/nordsieck_caches.jl")
 
