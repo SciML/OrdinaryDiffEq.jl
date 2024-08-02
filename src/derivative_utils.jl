@@ -1,22 +1,24 @@
 const ROSENBROCK_INV_CUTOFF = 7 # https://github.com/SciML/OrdinaryDiffEq.jl/pull/1539
 
-struct StaticWOperator{isinv, T} <: AbstractSciMLOperator{T}
+struct StaticWOperator{isinv, T, F} <: AbstractSciMLOperator{T}
     W::T
+    F::F
     function StaticWOperator(W::T, callinv = true) where {T}
         isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
 
+        F = lu(W, check=false)
         # when constructing W for the first time for the type
         # inv(W) can be singular
         _W = if isinv && callinv
-            inv(W)
+            F\typeof(W)(I)
         else
             W
         end
-        new{isinv, T}(_W)
+        new{isinv, T, typeof(F)}(_W, F)
     end
 end
 isinv(W::StaticWOperator{S}) where {S} = S
-Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.W \ v
+Base.:\(W::StaticWOperator, v::AbstractArray) = isinv(W) ? W.W * v : W.F \ v
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     @inbounds begin
