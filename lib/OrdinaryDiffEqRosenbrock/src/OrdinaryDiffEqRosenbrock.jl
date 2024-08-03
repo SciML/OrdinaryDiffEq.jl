@@ -90,6 +90,7 @@ include("interp_func.jl")
 include("rosenbrock_interpolants.jl")
 include("stiff_addsteps.jl")
 include("rosenbrock_perform_step.jl")
+include("integrator_interface.jl")
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
