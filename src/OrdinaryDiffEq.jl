@@ -24,10 +24,6 @@ using PrecompileTools
 
 import InteractiveUtils
 
-using LinearSolve, SimpleNonlinearSolve
-
-using LineSearches
-
 import FillArrays: Trues, Falses
 
 # Interfaces
@@ -43,26 +39,16 @@ import SciMLOperators: SciMLOperators, AbstractSciMLOperator, AbstractSciMLScala
                        update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
                        isconstant
 
-using DiffEqBase: TimeGradientWrapper,
-                  UJacobianWrapper, TimeDerivativeWrapper,
-                  UDerivativeWrapper
-
 using DiffEqBase: DEIntegrator
 
 import RecursiveArrayTools: chain, recursivecopy!
 
-using SimpleUnPack, ForwardDiff, RecursiveArrayTools,
-      DataStructures, FiniteDiff, ArrayInterface, ArrayInterface
-
-import ForwardDiff.Dual
+using SimpleUnPack, RecursiveArrayTools,
+      DataStructures, ArrayInterface, ArrayInterface
 
 import TruncatedStacktraces
 
-import PreallocationTools
-
 using ExponentialUtilities
-
-using NonlinearSolve
 
 # Required by temporary fix in not in-place methods with 12+ broadcasts
 # `MVector` is used by Nordsieck forms
@@ -91,16 +77,6 @@ import DiffEqBase: calculate_residuals,
                    calculate_residuals!, unwrap_cache,
                    @tight_loop_macros,
                    islinear, timedepentdtmin
-
-@static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
-    import DiffEqBase: OrdinaryDiffEqTag
-else
-    struct OrdinaryDiffEqTag end
-end
-
-import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
-                        forwarddiff_color_jacobian, ForwardColorJacCache,
-                        default_chunk_size, getsize, JacVec
 
 import ADTypes: AbstractADType,
                 AutoFiniteDiff, AutoForwardDiff, AutoReverseDiff,
@@ -137,12 +113,6 @@ include("composite_algs.jl")
 
 include("alg_utils.jl")
 
-include("nlsolve/type.jl")
-include("nlsolve/utils.jl")
-include("nlsolve/nlsolve.jl")
-include("nlsolve/functional.jl")
-include("nlsolve/newton.jl")
-
 include("caches/basic_caches.jl")
 
 include("integrators/type.jl")
@@ -156,12 +126,16 @@ include("perform_step/composite_perform_step.jl")
 
 include("dense/generic_dense.jl")
 
-include("derivative_utils.jl")
-include("derivative_wrappers.jl")
 include("iterator_interface.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
+
+include("../lib/OrdinaryDiffEqDifferentiation/src/OrdinaryDiffEqDifferentiation.jl")
+using ..OrdinaryDiffEqDifferentiation
+
+include("../lib/OrdinaryDiffEqNonlinearSolve/src/OrdinaryDiffEqNonlinearSolve.jl")
+using ..OrdinaryDiffEqNonlinearSolve
 
 include("../lib/OrdinaryDiffEqExtrapolation/src/OrdinaryDiffEqExtrapolation.jl")
 using ..OrdinaryDiffEqExtrapolation

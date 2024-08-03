@@ -10,7 +10,6 @@ relax(nlsolver::AbstractNLSolver) = relax(nlsolver.alg)
 relax(alg::NLNewton) = alg.relax
 relax(_) = 0 // 1
 
-isnewton(::Any) = false
 isnewton(nlsolver::AbstractNLSolver) = isnewton(nlsolver.cache)
 isnewton(::AbstractNLSolverCache) = false
 isnewton(::Union{NLNewtonCache, NLNewtonConstantCache}) = true

@@ -32,7 +32,7 @@ if VERSION >= v"1.8"
     @test t1 < t3
     @test t2 < t4
     integ = init(lorenzprob, Rosenbrock23())
-    @test integ.f.f isa SciMLBase.FunctionWrappersWrappers.FunctionWrappersWrapper
+    @test integ.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper
 end
 
 solve(prob, EPIRK4s3A(), dt = 1e-1)
