@@ -306,6 +306,7 @@ export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
 include("../lib/OrdinaryDiffEqExplicitRK/src/OrdinaryDiffEqExplicitRK.jl")
 using ..OrdinaryDiffEqExplicitRK
+using ..OrdinaryDiffEqExplicitRK: constructDormandPrince
 export ExplicitRK
 
 PrecompileTools.@compile_workload begin
