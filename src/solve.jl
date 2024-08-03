@@ -31,7 +31,7 @@ function DiffEqBase.__init(
                     isempty(saveat),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
                     (dense) || !isempty(saveat), # and no dense output
-        dt = !dt_required(alg) && isempty(tstops) ?
+        dt = isdiscretealg(alg) && isempty(tstops) ?
              eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
         dtmin = eltype(prob.tspan)(0),
         dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
