@@ -260,7 +260,7 @@ export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
        ROS3PRL2, ROK4a,
        ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
-import OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
+import ..OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 
 include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
 using ..OrdinaryDiffEqDefault
