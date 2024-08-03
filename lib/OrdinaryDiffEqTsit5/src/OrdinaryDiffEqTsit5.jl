@@ -20,6 +20,7 @@ include("alg_utils.jl")
 include("tsit_caches.jl")
 include("tsit_tableaus.jl")
 include("interp_func.jl")
+include("interpolants.jl")
 include("tsit_perform_step.jl")
 
 export Tsit5
