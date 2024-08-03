@@ -17,6 +17,7 @@ using DiffEqBase: @def
 import LinearSolve
 import ForwardDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal
+import ADTypes: AutoForwardDiff
 
 function rosenbrock_wanner_docstring(description::String,
         name::String;
