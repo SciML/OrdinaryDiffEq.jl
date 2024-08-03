@@ -14,6 +14,7 @@ import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
 import LinearSolve
+import ForwardDiff
 using LinearAlgebra: mul!, diag, diagm, I
 
 function rosenbrock_wanner_docstring(description::String,
