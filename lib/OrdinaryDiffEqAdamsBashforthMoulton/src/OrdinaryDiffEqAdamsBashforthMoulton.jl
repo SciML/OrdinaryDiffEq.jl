@@ -2,7 +2,8 @@ module OrdinaryDiffEqAdamsBashforthMoulton
 
 import OrdinaryDiffEq: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, @cache, alg_cache,
                        initialize!, @unpack, perform_step!, alg_order, isstandard, OrdinaryDiffEqAlgorithm,
-                       OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
+                       OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
+                       constvalue
 using MuladdMacro, FastBroadcast
 
 include("algorithms.jl")
