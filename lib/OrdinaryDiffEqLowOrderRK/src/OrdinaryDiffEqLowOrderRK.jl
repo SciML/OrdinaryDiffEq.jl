@@ -7,7 +7,8 @@ import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stab
                        calculate_residuals!, _ode_addsteps!, @OnDemandTableauExtract, constvalue,
                        OrdinaryDiffEqMutableCache, uses_uprev, OrdinaryDiffEqConstantCache, @fold,
                        @cache, CompiledFloats, alg_cache, CompositeAlgorithm, alg_autodiff, copyat_or_push!,
-                       AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache
+                       AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
+                       accept_step_controller
 using DiffEqBase, SciMLBase
 import MuladdMacro: @muladd
 import FastBroadcast: @..

@@ -1,3 +1,15 @@
+function _ode_interpolant(Θ, dt, y₀, y₁, k,
+        cache::Union{DP8ConstantCache, DP8Cache},
+        idxs, T::Type{Val{D}}, differential_vars) where {D}
+    throw(DerivativeOrderNotPossibleError())
+end
+
+function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
+        cache::Union{DP8ConstantCache, DP8Cache},
+        idxs, T::Type{Val{D}}, differential_vars) where {D}
+    throw(DerivativeOrderNotPossibleError())
+end
+
 """
 """
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,

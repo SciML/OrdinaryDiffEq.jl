@@ -5,7 +5,8 @@ import OrdinaryDiffEq: alg_order, qmax_default, qmin_default, beta2_default, bet
                        _ode_addsteps!, @unpack, @cache, OrdinaryDiffEqMutableCache, constvalue,
                        alg_cache, uses_uprev, initialize!, perform_step!, OrdinaryDiffEqConstantCache,
                        calculate_residuals!, calculate_residuals, CompiledFloats, copyat_or_push!,
-                       unwrap_alg, _ode_interpolant, _ode_interpolant!
+                       unwrap_alg, _ode_interpolant, _ode_interpolant!,
+                       DerivativeOrderNotPossibleError
 import Static: False
 import MuladdMacro: @muladd
 using DiffEqBase
