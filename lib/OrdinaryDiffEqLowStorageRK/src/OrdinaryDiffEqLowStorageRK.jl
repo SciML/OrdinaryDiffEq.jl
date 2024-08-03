@@ -14,6 +14,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import Static: False
+import RecursiveArrayTools: recursive_unitless_bottom_eltype
 
 include("algorithms.jl")
 include("alg_utils.jl")
