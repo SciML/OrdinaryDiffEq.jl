@@ -281,6 +281,7 @@ export KuttaPRK2p5
 include("../lib/OrdinaryDiffEqHighOrderRK/src/OrdinaryDiffEqHighOrderRK.jl")
 using ..OrdinaryDiffEqHighOrderRK
 export TanYam7, DP8, PFRK87, TsitPap8
+using ..OrdinaryDiffEqHighOrderRK: DP8ConstantCache
 
 include("../lib/OrdinaryDiffEqLowOrderRK/src/OrdinaryDiffEqLowOrderRK.jl")
 using ..OrdinaryDiffEqLowOrderRK
