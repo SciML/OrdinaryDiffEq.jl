@@ -4,7 +4,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, qsteady_max_default, get_c
                        AbstractController, OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
                        alg_cache, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, initialize!, @unpack,
                        initialize!, perform_step!, stepsize_controller!, step_accept_controller!, step_reject_controller!,
-                       calculate_residuals, calculate_residuals!, Tsit5ConstantCache
+                       calculate_residuals, calculate_residuals!, Tsit5ConstantCache, get_current_adaptive_order, ode_interpolant, ode_interpolant!
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 
 include("algorithms.jl")
