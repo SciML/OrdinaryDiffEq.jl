@@ -7,13 +7,14 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap
                        _vec, _reshape, perform_step!, trivial_limiter!, dolinsolve, OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                        OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring, namify, initialize!, perform_step!,
                        constvalue, TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper,
-                       wrapprecs, alg_autodiff, calc_tderivative, build_grad_config, build_jac_config
+                       wrapprecs, alg_autodiff, calc_tderivative, build_grad_config, build_jac_config,
+                       issuccess_W
 using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
 import LinearSolve
-using LinearAlgebra: mul!, diag, diagm
+using LinearAlgebra: mul!, diag, diagm, I
 
 function rosenbrock_wanner_docstring(description::String,
         name::String;
