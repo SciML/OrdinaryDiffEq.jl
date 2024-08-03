@@ -4,7 +4,8 @@ import OrdinaryDiffEq: alg_order, qmax_default, qmin_default, beta2_default, bet
                        explicit_rk_docstring, OrdinaryDiffEqAdaptiveAlgorithm, trivial_limiter!,
                        _ode_addsteps!, @unpack, @cache, OrdinaryDiffEqMutableCache, constvalue,
                        alg_cache, uses_uprev, initialize!, perform_step!, OrdinaryDiffEqConstantCache,
-                       calculate_residuals!, calculate_residuals, CompiledFloats, copyat_or_push!
+                       calculate_residuals!, calculate_residuals, CompiledFloats, copyat_or_push!,
+                       unwrap_alg
 import Static: False
 import MuladdMacro: @muladd
 using DiffEqBase
