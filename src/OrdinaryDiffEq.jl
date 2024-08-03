@@ -154,7 +154,6 @@ include("integrators/integrator_interface.jl")
 include("integrators/integrator_utils.jl")
 include("cache_utils.jl")
 include("initialize_dae.jl")
-include("wrappers.jl")
 
 include("perform_step/linear_perform_step.jl")
 include("perform_step/exponential_rk_perform_step.jl")
