@@ -3,7 +3,7 @@ module OrdinaryDiffEqNordsieck
 import OrdinaryDiffEq: alg_order, alg_adaptive_order, qsteady_max_default, get_current_alg_order,
                        AbstractController, OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
                        alg_cache, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, initialize!, @unpack,
-                       perform_step!, stepsize_controller!, step_accept_controller!, step_reject_controller!,
+                       initialize!, perform_step!, stepsize_controller!, step_accept_controller!, step_reject_controller!,
                        calculate_residuals, calculate_residuals! 
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 

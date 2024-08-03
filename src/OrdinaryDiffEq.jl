@@ -311,9 +311,6 @@ include("../lib/OrdinaryDiffEqExplicitRK/src/OrdinaryDiffEqExplicitRK.jl")
 using ..OrdinaryDiffEqExplicitRK
 export ExplicitRK
 
-include("dense/generic_dense.jl")
-include("solve.jl")
-
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
         du[1] = 10.0(u[2] - u[1])

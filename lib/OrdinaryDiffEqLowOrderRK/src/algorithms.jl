@@ -389,7 +389,6 @@ function Stepanov5(stage_limiter!, step_limiter! = trivial_limiter!)
     Stepanov5(stage_limiter!, step_limiter!, False())
 end
 
-@inline trivial_limiter!(u, integrator, p, t) = nothing
 """
     SIR54(; stage_limiter! = OrdinaryDiffEq.trivial_limiter!,
              step_limiter! = OrdinaryDiffEq.trivial_limiter!,

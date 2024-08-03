@@ -1,15 +1,78 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val, rosenbrock_wanner_docstring,
+import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
                        DEFAULT_PRECS, OrdinaryDiffEqRosenbrockAlgorithm, @cache, alg_cache, initialize!, @unpack,
                        calc_W, calculate_residuals!, calc_rosenbrock_differentiation!, OrdinaryDiffEqMutableCache,
                        build_J_W, UJacobianWrapper, OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
                        _vec, _reshape, perform_step!, trivial_limiter!, dolinsolve, OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                       OrdinaryDiffEqRosenbrockAlgorithm
+                       OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring, namify, initialize!, perform_step!
 using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
-import MacroTools: @capture
-import DiffEqBase: @def
-import LinearAlgebra: mul!
+import MacroTools
+using MacroTools: @capture
+using DiffEqBase: @def
+using LinearAlgebra: mul!, diag, diagm
+
+function rosenbrock_wanner_docstring(description::String,
+        name::String;
+        references::String = "",
+        extra_keyword_description = "",
+        extra_keyword_default = "",
+        with_step_limiter = false)
+    keyword_default = """
+    autodiff = Val{true}(),
+    concrete_jac = nothing,
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    """ * extra_keyword_default
+
+    keyword_default_description = """
+    - `autodiff`: boolean to control if the Jacobian should be computed via AD or not
+    - `concrete_jac`: function of the form `jac!(J, u, p, t)`
+    - `linsolve`: custom solver for the inner linear systems
+    - `precs`: custom preconditioner for the inner linear solver
+    """ * extra_keyword_description
+
+    if with_step_limiter
+        keyword_default *= "step_limiter! = OrdinaryDiffEq.trivial_limiter!,\n"
+        keyword_default_description *= "- `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`\n"
+    end
+
+    generic_solver_docstring(
+        description, name, "Rosenbrock-Wanner Method. ", references,
+        keyword_default_description, keyword_default
+    )
+end
+
+function rosenbrock_docstring(description::String,
+        name::String;
+        references::String = "",
+        extra_keyword_description = "",
+        extra_keyword_default = "",
+        with_step_limiter = false)
+    keyword_default = """
+    autodiff = Val{true}(),
+    concrete_jac = nothing,
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    """ * extra_keyword_default
+
+    keyword_default_description = """
+    - `autodiff`: boolean to control if the Jacobian should be computed via AD or not
+    - `concrete_jac`: function of the form `jac!(J, u, p, t)`
+    - `linsolve`: custom solver for the inner linear systems
+    - `precs`: custom preconditioner for the inner linear solver
+    """ * extra_keyword_description
+
+    if with_step_limiter
+        keyword_default *= "step_limiter! = OrdinaryDiffEq.trivial_limiter!,\n"
+        keyword_default_description *= "- `step_limiter!`: function of the form `limiter!(u, integrator, p, t)`\n"
+    end
+
+    generic_solver_docstring(
+        description, name, "Rosenbrock Method. ", references,
+        keyword_default_description, keyword_default
+    )
+end
 
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -5,11 +5,13 @@ import OrdinaryDiffEq: alg_order, alg_stability_size, explicit_rk_docstring,
                        OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,
                        constvalue, @unpack, perform_step!, calculate_residuals, @cache,
                        calculate_residuals!, _ode_interpolant, _ode_interpolant!,
-                       CompiledFloats, @OnDemandTableauExtract
+                       CompiledFloats, @OnDemandTableauExtract, initialize!, perform_step!,
+                       CompositeAlgorithm
 import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
-import RecursiveArrayTools: recursivefill!
+import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
+import LinearAlgebra: norm
 using DiffEqBase
 using TruncatedStacktraces
 
