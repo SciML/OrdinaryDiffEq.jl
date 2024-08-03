@@ -7,6 +7,7 @@ import OrdinaryDiffEq: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, 
 import OrdinaryDiffEq: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast
+import Static: False
 
 include("algorithms.jl")
 include("alg_utils.jl")
