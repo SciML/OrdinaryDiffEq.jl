@@ -10,6 +10,7 @@ import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stab
 using DiffEqBase, SciMLBase
 import MuladdMacro: @muladd
 import FastBroadcast: @..
+import LinearAlgebra: norm
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import Static: False
 using DiffEqBase: @def, @tight_loop_macros
