@@ -37,6 +37,7 @@ dt_required(alg::LinearExponential) = false
 isdiscretealg(alg) = false
 
 function alg_stability_size end
+has_stiff_interpolation(alg) = false
 
 # evaluates f(t[i])
 _eval_index(f::F, t::Tuple{A}, _) where {F, A} = f(t[1])

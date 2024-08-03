@@ -57,6 +57,33 @@ function DiffEqBase.reeval_internals_due_to_modification!(
     integrator.reeval_fsal = true
 end
 
+@inline function DiffEqBase.get_du(integrator::ODEIntegrator)
+    isdiscretecache(integrator.cache) &&
+            error("Derivatives are not defined for this stepper.")
+    return if isdefined(integrator, :fsallast)
+        integrator.fsallast
+    else
+        integrator(integrator.t, Val{1})
+    end
+end
+
+@inline function DiffEqBase.get_du!(out, integrator::ODEIntegrator)
+    isdiscretecache(integrator.cache) &&
+            error("Derivatives are not defined for this stepper.")
+    if isdiscretecache(integrator.cache)
+        out .= integrator.cache.tmp
+    else
+        return if isdefined(integrator, :fsallast) &&
+                !has_stiff_interpolation(integrator.alg)
+                # Special stiff interpolations do not store the
+                # right value in fsallast
+            out .= integrator.fsallast
+        else
+            integrator(out, integrator.t, Val{1})
+        end
+    end
+end
+
 function u_modified!(integrator::ODEIntegrator, bool::Bool)
     integrator.u_modified = bool
 end
