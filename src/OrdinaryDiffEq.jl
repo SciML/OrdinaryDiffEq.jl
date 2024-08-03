@@ -28,8 +28,6 @@ using LinearSolve, SimpleNonlinearSolve
 
 using LineSearches
 
-import EnumX
-
 import FillArrays: Trues, Falses
 
 # Interfaces
@@ -84,8 +82,6 @@ import DiffEqBase: resize!, deleteat!, addat!, full_cache, user_cache, u_cache, 
 using DiffEqBase: check_error!, @def, _vec, _reshape
 
 using FastBroadcast: @.., True, False
-
-using IfElse
 
 using SciMLBase: NoInit, _unwrap_val
 
@@ -250,7 +246,7 @@ export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
 
 include("../lib/OrdinaryDiffEqTsit5/src/OrdinaryDiffEqTsit5.jl")
 using ..OrdinaryDiffEqTsit5
-export Tsit5
+export Tsit5, AutoTsit5
 
 include("../lib/OrdinaryDiffEqRosenbrock/src/OrdinaryDiffEqRosenbrock.jl")
 using ..OrdinaryDiffEqRosenbrock
@@ -292,7 +288,7 @@ export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
        BS3, OwrenZen3, OwrenZen4, OwrenZen5, BS5, Tsit5,
        DP5, Anas5, RKO65, FRK65, RKM, MSRK5, MSRK6,
        PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
-       Alshina2, Alshina3, Alshina6
+       Alshina2, Alshina3, Alshina6, AutoDP5
 using ..OrdinaryDiffEqLowOrderRK: BS3Cache, BS3ConstantCache, RK4ConstantCache, RK4Cache
 
 include("../lib/OrdinaryDiffEqFunctionMap/src/OrdinaryDiffEqFunctionMap.jl")

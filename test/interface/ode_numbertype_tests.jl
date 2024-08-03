@@ -27,7 +27,7 @@ sol4 = solve(prob, DP5(), dt = BigInt(1) // BigInt(2)^(3), adaptive = false)
 
 @test eltype(sol4.u) == Rational{BigInt}
 
-tabalg = ExplicitRK(tableau = constructDormandPrince(Rational{BigInt}))
+tabalg = ExplicitRK(tableau = OrdinaryDiffEq.OrdinaryDiffEqExplicitRK.constructDormandPrince(Rational{BigInt}))
 
 integrator = init(prob, tabalg, dt = BigInt(1) // BigInt(2)^(3), abstol = 1, reltol = 0,
     adaptive = false)

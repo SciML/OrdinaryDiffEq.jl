@@ -22,3 +22,5 @@ TruncatedStacktraces.@truncate_stacktrace Tsit5 3
 function Tsit5(stage_limiter!, step_limiter! = trivial_limiter!)
     Tsit5(stage_limiter!, step_limiter!, False())
 end
+
+AutoTsit5(alg; kwargs...) = AutoAlgSwitch(Tsit5(), alg; kwargs...)

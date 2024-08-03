@@ -24,6 +24,6 @@ include("interp_func.jl")
 include("interpolants.jl")
 include("tsit_perform_step.jl")
 
-export Tsit5
+export Tsit5, AutoTsit5
 
 end

@@ -225,6 +225,8 @@ function DP5(stage_limiter!, step_limiter! = trivial_limiter!)
     DP5(stage_limiter!, step_limiter!, False())
 end
 
+AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
+
 @doc explicit_rk_docstring("4th order Runge-Kutta method designed for periodic problems.",
     "Anas5",
     extra_keyword_description = """- `w`: a periodicity estimate, which when accurate the method becomes 5th order

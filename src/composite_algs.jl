@@ -71,6 +71,3 @@ function AutoAlgSwitch(nonstiffalg::Tuple, stiffalg::Tuple; kwargs...)
     AS = AutoSwitch(nonstiffalg, stiffalg; kwargs...)
     CompositeAlgorithm((nonstiffalg..., stiffalg...), AS)
 end
-
-AutoTsit5(alg; kwargs...) = AutoAlgSwitch(Tsit5(), alg; kwargs...)
-AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
