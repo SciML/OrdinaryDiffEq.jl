@@ -12,6 +12,7 @@ using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArr
 import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
+import LinearSolve
 using LinearAlgebra: mul!, diag, diagm
 
 function rosenbrock_wanner_docstring(description::String,
