@@ -246,6 +246,7 @@ export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
 include("../lib/OrdinaryDiffEqTsit5/src/OrdinaryDiffEqTsit5.jl")
 using ..OrdinaryDiffEqTsit5
 export Tsit5, AutoTsit5
+import .OrdinaryDiffEqTsit5: Tsit5ConstantCache
 
 include("../lib/OrdinaryDiffEqRosenbrock/src/OrdinaryDiffEqRosenbrock.jl")
 using ..OrdinaryDiffEqRosenbrock
