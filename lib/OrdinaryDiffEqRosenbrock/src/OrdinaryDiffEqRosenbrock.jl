@@ -7,7 +7,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap
                        _vec, _reshape, perform_step!, trivial_limiter!, dolinsolve, OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                        OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring, namify, initialize!, perform_step!,
                        constvalue, TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper,
-                       wrapprecs, alg_autodiff, calc_tderivative, build_grad_config
+                       wrapprecs, alg_autodiff, calc_tderivative, build_grad_config, build_jac_config
 using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
