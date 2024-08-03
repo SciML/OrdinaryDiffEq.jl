@@ -130,7 +130,7 @@ function DiffEqBase.__init(
     if (((!(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
           !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
           !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
-        dt == tType(0) && isempty(tstops)) && !dt_required(alg)
+        dt == tType(0) && isempty(tstops)) && dt_required(alg)
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
 
