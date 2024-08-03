@@ -14,6 +14,7 @@ import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import LinearAlgebra: norm
 using DiffEqBase
 using TruncatedStacktraces
+import DiffEqBase: @def
 
 include("algorithms.jl")
 include("alg_utils.jl")
