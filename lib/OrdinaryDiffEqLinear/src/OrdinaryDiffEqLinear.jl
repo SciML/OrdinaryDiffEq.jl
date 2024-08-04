@@ -9,7 +9,6 @@ using LinearAlgebra: mul!
 using DiffEqBase
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
-using ExponentialUtilities: _phiv_timestep_caches
 
 include("algorithms.jl")
 include("alg_utils.jl")

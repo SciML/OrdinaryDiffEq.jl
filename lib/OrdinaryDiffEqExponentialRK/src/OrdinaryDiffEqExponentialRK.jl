@@ -10,7 +10,7 @@ using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
 using DiffEqBase, SciMLBase
-using ExponentialUtilities: _phiv_timestep_caches
+using ExponentialUtilities
 
 include("algorithms.jl")
 include("alg_utils.jl")
