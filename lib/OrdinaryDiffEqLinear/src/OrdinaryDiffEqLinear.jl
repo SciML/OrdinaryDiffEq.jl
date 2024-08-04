@@ -10,6 +10,7 @@ using LinearAlgebra: mul!
 using DiffEqBase
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
+using RecursiveArrayTools
 
 include("algorithms.jl")
 include("alg_utils.jl")
