@@ -246,7 +246,7 @@ export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
 include("../lib/OrdinaryDiffEqTsit5/src/OrdinaryDiffEqTsit5.jl")
 using ..OrdinaryDiffEqTsit5
 export Tsit5, AutoTsit5
-import .OrdinaryDiffEqTsit5: Tsit5ConstantCache
+import .OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
 
 include("../lib/OrdinaryDiffEqRosenbrock/src/OrdinaryDiffEqRosenbrock.jl")
 using ..OrdinaryDiffEqRosenbrock
@@ -281,12 +281,12 @@ export KuttaPRK2p5
 include("../lib/OrdinaryDiffEqHighOrderRK/src/OrdinaryDiffEqHighOrderRK.jl")
 using ..OrdinaryDiffEqHighOrderRK
 export TanYam7, DP8, PFRK87, TsitPap8
-using ..OrdinaryDiffEqHighOrderRK: DP8ConstantCache
+using ..OrdinaryDiffEqHighOrderRK: DP8ConstantCache, DP8Cache
 
 include("../lib/OrdinaryDiffEqLowOrderRK/src/OrdinaryDiffEqLowOrderRK.jl")
 using ..OrdinaryDiffEqLowOrderRK
 export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
-       BS3, OwrenZen3, OwrenZen4, OwrenZen5, BS5, Tsit5,
+       BS3, OwrenZen3, OwrenZen4, OwrenZen5, BS5,
        DP5, Anas5, RKO65, FRK65, RKM, MSRK5, MSRK6,
        PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
        Alshina2, Alshina3, Alshina6, AutoDP5
