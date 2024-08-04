@@ -6,7 +6,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, ismultistep, OrdinaryDiffE
                        initialize!, perform_step!, @unpack, unwrap_alg, calc_J, calc_J!,
                        OrdinaryDiffEqAdaptiveExponentialAlgorithm, CompositeAlgorithm,
                        ExponentialAlgorithm
-using RecursiveArrayTools: recursivecopy!
+using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
 using DiffEqBase, SciMLBase
