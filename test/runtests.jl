@@ -23,130 +23,13 @@ function activate_odeinterface_env()
     Pkg.instantiate()
 end
 
-function activate_extrapolation_env()
-    Pkg.activate("../lib/OrdinaryDiffEqExtrapolation")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_stabilized_rk()
-    Pkg.activate("../lib/OrdinaryDiffEqStabilizedRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_stabilized_irk()
-    Pkg.activate("../lib/OrdinaryDiffEqStabilizedIRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_low_storage_rk()
-    Pkg.activate("../lib/OrdinaryDiffEqStabilizedIRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_low_storage_rk()
-    Pkg.activate("../lib/OrdinaryDiffEqLowStorageRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_ssprk()
-    Pkg.activate("../lib/OrdinaryDiffEqSSPRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_feagin()
-    Pkg.activate("../lib/OrdinaryDiffEqFeagin")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_symplectic_rk()
-    Pkg.activate("../lib/OrdinaryDiffEqSymplecticRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_sdirk()
-    Pkg.activate("../lib/OrdinaryDiffEqSDIRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_dae()
-    Pkg.activate("../lib/OrdinaryDiffEqDAE")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_bdf()
-    Pkg.activate("../lib/OrdinaryDiffEqBDF")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_nordsieck()
-    Pkg.activate("../lib/OrdinaryDiffEqNordsieck")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_explicit_rk()
-    Pkg.activate("../lib/OrdinaryDiffEqExplicitRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_rosenbrock()
-    Pkg.activate("../lib/OrdinaryDiffEqRosenbrock")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_functionmap()
-    Pkg.activate("../lib/OrdinaryDiffEqFunctionMap")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_high_order__rk()
-    Pkg.activate("../lib/OrdinaryDiffEqHighOrderRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_low_order_rk()
-    Pkg.activate("../lib/OrdinaryDiffEqLowOrderRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_firk()
-    Pkg.activate("../lib/OrdinaryDiffEqFIRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_pdirk()
-    Pkg.activate("../lib/OrdinaryDiffEqPDIRK")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
-function activate_adams_bashforth_moulton()
-    Pkg.activate("../lib/OrdinaryDiffEqAdamsBashforthMoulton")
-    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
-end
-
 #Start Test Script
 
 @time begin
-    if GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
+    if contains(GROUP, "OrdinaryDiffEq")
+        Pkg.dev("../lib/$GROUP")
+        Pkg.test(GROUP)
+    elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
         @time @safetestset "Tstops Tests" include("interface/ode_tstops_tests.jl")
         @time @safetestset "Backwards Tests" include("interface/ode_backwards_test.jl")
@@ -207,9 +90,9 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
-        @time @safetestset "DAE AD Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_ad_tests.jl")
         @time @safetestset "Newton Tests" include("interface/newton_tests.jl")
-        @time @safetestset "DAE Initialize Integration" include("../lib/OrdinaryDiffEqBDF/test/dae_initialize_integration.jl")
+        @time @safetestset "DAE Initialize Integration" include("interface/dae_initialize_integration.jl")
+        @time @safetestset "DAE Initialization Tests" include("interface/dae_initialize_tests.jl")
     end
 
     if !is_APPVEYOR &&
@@ -233,8 +116,7 @@ end
         @time @safetestset "Reverse Directioned Event Tests" include("integrators/rev_events_tests.jl")
         @time @safetestset "Differentiation Direction Tests" include("integrators/diffdir_tests.jl")
         @time @safetestset "Resize Tests" include("integrators/resize_tests.jl")
-        @time @safetestset "DAE Initialization Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_initialization_tests.jl")
-        @time @safetestset "DAE Event Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_event.jl")
+        @time @safetestset "DAE Initialization Tests" include("integrators/dae_initialization_tests.jl")
         @time @safetestset "Cache Tests" include("integrators/ode_cache_tests.jl")
         @time @safetestset "Add Steps Tests" include("integrators/ode_add_steps_tests.jl")
         @time @safetestset "IMEX Split Function Tests" include("integrators/split_ode_tests.jl")
@@ -245,7 +127,7 @@ end
         @time @safetestset "Special Interp Tests" include("regression/special_interps.jl")
         @time @safetestset "Inplace Tests" include("regression/ode_inplace_tests.jl")
         @time @safetestset "Adaptive Tests" include("regression/ode_adaptive_tests.jl")
-        @time @safetestset "Hard DAE Tests" include("../lib/OrdinaryDiffEqBDF/test/hard_dae.jl")
+        @time @safetestset "Hard DAE Tests" include("regression/hard_dae.jl")
     end
 
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression_II" || GROUP == "Regression")
@@ -257,69 +139,14 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_I"
-        @time @safetestset "Partitioned Methods Tests" include("algconvergence/partitioned_methods_tests.jl")
         @time @safetestset "Convergence Tests" include("algconvergence/ode_convergence_tests.jl")
-        @time @safetestset "DAE Convergence Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_convergence_tests.jl")
         @time @safetestset "Non-autonomous Convergence Tests" include("algconvergence/non-autonomous_convergence_tests.jl")
-        @time @safetestset "Adams Variable Coefficients Tests" include("../lib/OrdinaryDiffEqAdamsBashforthMoulton/test/adams_tests.jl")
-        @time @safetestset "Nordsieck Tests" include("../lib/OrdinaryDiffEqNordsieck/test/nordsieck_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "AlgConvergence_II"
-        @time @safetestset "Runge-Kutta-Chebyshev Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/rkc_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_III"
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
-        @time @safetestset "Rosenbrock Tests" include("algconvergence/ode_rosenbrock_tests.jl")
-        @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
-        @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("../lib/OrdinaryDiffEqExponentialRK/test/linear_nonlinear_krylov_tests.jl")
     end
 
-    if !is_APPVEYOR && GROUP == "Linear"
-        @time @safetestset "Linear Methods Tests" include("../lib/OrdinaryDiffEqLinear/test/linear_method_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "LowOrderRK"
-        @time @safetestset "OwrenZen Tests" include("../lib/OrdinaryDiffEqLowOrderRK/test/owrenzen_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "FIRK"
-        @time @safetestset "FIRK Tests" include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "Symplectic"
-        @time @safetestset "Symplectic Tests" include("../lib/OrdinaryDiffEqSymplecticRK/test/symplectic_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "Extrapolation"
-        @time @safetestset "Extrapolation Tests" include("../lib/OrdinaryDiffEqExtrapolation/test/runtests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "Feagin"
-        @time @safetestset "Feagin Tests" include("../lib/OrdinaryDiffEqFeagin/test/ode_feagin_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "StabilizedRK"
-        @time @safetestset "StabilizedRK Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/runtests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "StabilizedIRK"
-        @time @safetestset "StabilizedIRK Tests" include("../lib/OrdinaryDiffEqStabilizedIRK/test/runtests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "SSPRK"
-        @time @safetestset "SSPRK Tests" include("../lib/OrdinaryDiffEqSSPRK/test/ode_ssprk_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "LowStorageRK"
-        @time @safetestset "Low Storage RK Tests" include("../lib/OrdinaryDiffEqLowStorageRK/test/ode_low_storage_rk_tests.jl")
-    end
-
-    if !is_APPVEYOR && GROUP == "QPRK"
-        @time @safetestset "Quadruple precision Runge-Kutta Tests" include("algconvergence/ode_quadruple_precision_tests.jl")
-    end
-    
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "DelayDiffEq Tests" include("downstream/delaydiffeq.jl")
