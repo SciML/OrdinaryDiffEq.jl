@@ -1,7 +1,7 @@
 module OrdinaryDiffEqLinear
 
 import OrdinaryDiffEq: alg_order, alg_extrapolates, dt_required, OrdinaryDiffEqLinearExponentialAlgorithm,
-                       OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAlgorithm, 
+                       OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAlgorithm,
                        OrdinaryDiffEqExponentialAlgorithm,
                        OrdinaryDiffEqMutableCache, @cache, alg_cache, OrdinaryDiffEqConstantCache,
                        initialize!, perform_step!, @unpack, unwrap_alg, calculate_residuals!
@@ -9,6 +9,7 @@ using LinearAlgebra: mul!
 using DiffEqBase
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
+using ExponentialUtilities: _phiv_timestep_caches
 
 include("algorithms.jl")
 include("alg_utils.jl")
