@@ -33,6 +33,7 @@ jobs:
           - SSPRK
           - LowStorageRK
           - QPRK
+          - Linear
         version:
           - '1'
     steps:
