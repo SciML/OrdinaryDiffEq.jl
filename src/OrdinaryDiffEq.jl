@@ -144,9 +144,6 @@ include("nlsolve/functional.jl")
 include("nlsolve/newton.jl")
 
 include("caches/basic_caches.jl")
-include("caches/linear_caches.jl")
-include("caches/linear_nonlinear_caches.jl")
-include("caches/imex_multistep_caches.jl")
 
 include("integrators/type.jl")
 include("integrators/controllers.jl")
@@ -155,9 +152,6 @@ include("integrators/integrator_utils.jl")
 include("cache_utils.jl")
 include("initialize_dae.jl")
 
-include("perform_step/linear_perform_step.jl")
-include("perform_step/exponential_rk_perform_step.jl")
-include("perform_step/imex_multistep_perform_step.jl")
 include("perform_step/composite_perform_step.jl")
 
 include("dense/generic_dense.jl")
@@ -310,6 +304,22 @@ using ..OrdinaryDiffEqExplicitRK
 using ..OrdinaryDiffEqExplicitRK: constructDormandPrince
 export ExplicitRK
 
+include("../lib/OrdinaryDiffEqLinear/src/OrdinaryDiffEqLinear.jl")
+using ..OrdinaryDiffEqLinear
+export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
+       MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
+       MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3, CG4a
+
+include("../lib/OrdinaryDiffEqIMEXMultistep/src/OrdinaryDiffEqIMEXMultistep.jl")
+using ..OrdinaryDiffEqIMEXMultistep
+export CNAB2, CNLF2
+
+include("../lib/OrdinaryDiffEqExponentialRK/src/OrdinaryDiffEqExponentialRK.jl")
+using ..OrdinaryDiffEqExponentialRK
+export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A,
+       EPIRK4s3B,
+       EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43
+
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
         du[1] = 10.0(u[2] - u[1])
@@ -440,17 +450,7 @@ export constructDormandPrince
 
 export CompositeAlgorithm
 
-export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
-       MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
-       MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3, CG4a
-
-export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A,
-       EPIRK4s3B,
-       EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43
-
 export SHLDDRK52, SHLDDRK_2N
-
-export CNAB2, CNLF2
 
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9

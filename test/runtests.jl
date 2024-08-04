@@ -270,11 +270,14 @@ end
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_III"
-        @time @safetestset "Linear Methods Tests" include("algconvergence/linear_method_tests.jl")
         @time @safetestset "Split Methods Tests" include("algconvergence/split_methods_tests.jl")
         @time @safetestset "Rosenbrock Tests" include("algconvergence/ode_rosenbrock_tests.jl")
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
-        @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
+        @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("../lib/OrdinaryDiffEqExponentialRK/test/linear_nonlinear_krylov_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "Linear"
+        @time @safetestset "Linear Methods Tests" include("../lib/OrdinaryDiffEqLinear/test/linear_method_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "LowOrderRK"

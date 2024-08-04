@@ -1,5 +1,3 @@
-using LinearAlgebra: axpy!
-
 # Helper function to compute the G_nj factors for the classical ExpRK methods
 @inline _compute_nl(f::SplitFunction, u, p, t, A) = f.f2(u, p, t)
 @inline _compute_nl(f, u, p, t, A) = f(u, p, t) - A * u
