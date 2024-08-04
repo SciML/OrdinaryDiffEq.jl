@@ -10,7 +10,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap
                        wrapprecs, alg_autodiff, calc_tderivative, build_grad_config, build_jac_config,
                        issuccess_W, calculate_residuals, has_stiff_interpolation, ODEIntegrator,
                        resize_non_user_cache!, _ode_addsteps!, jacobian2W!, full_cache,
-                       resize_jac_config!, resize_grad_config!
+                       resize_jac_config!, resize_grad_config!, DerivativeOrderNotPossibleError
 using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture

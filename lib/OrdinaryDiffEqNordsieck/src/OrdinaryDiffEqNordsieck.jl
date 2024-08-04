@@ -7,6 +7,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, qsteady_max_default, get_c
                        calculate_residuals, calculate_residuals!, Tsit5ConstantCache, get_current_adaptive_order, 
                        ode_interpolant, ode_interpolant!, trivial_limiter!
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
+import Static: False
 
 include("algorithms.jl")
 include("controllers.jl")
