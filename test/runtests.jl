@@ -83,8 +83,62 @@ function activate_dae()
     Pkg.instantiate()
 end
 
-function activate_dae()
-    Pkg.activate("../lib/OrdinaryDiffEqDAE")
+function activate_bdf()
+    Pkg.activate("../lib/OrdinaryDiffEqBDF")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_nordsieck()
+    Pkg.activate("../lib/OrdinaryDiffEqNordsieck")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_explicit_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqExplicitRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_rosenbrock()
+    Pkg.activate("../lib/OrdinaryDiffEqRosenbrock")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_functionmap()
+    Pkg.activate("../lib/OrdinaryDiffEqFunctionMap")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_high_order__rk()
+    Pkg.activate("../lib/OrdinaryDiffEqHighOrderRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_low_order_rk()
+    Pkg.activate("../lib/OrdinaryDiffEqLowOrderRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_firk()
+    Pkg.activate("../lib/OrdinaryDiffEqFIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_pdirk()
+    Pkg.activate("../lib/OrdinaryDiffEqPDIRK")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.instantiate()
+end
+
+function activate_adams_bashforth_moulton()
+    Pkg.activate("../lib/OrdinaryDiffEqAdamsBashforthMoulton")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     Pkg.instantiate()
 end
@@ -207,12 +261,11 @@ end
         @time @safetestset "Convergence Tests" include("algconvergence/ode_convergence_tests.jl")
         @time @safetestset "DAE Convergence Tests" include("../lib/OrdinaryDiffEqBDF/test/dae_convergence_tests.jl")
         @time @safetestset "Non-autonomous Convergence Tests" include("algconvergence/non-autonomous_convergence_tests.jl")
-        @time @safetestset "Adams Variable Coefficients Tests" include("algconvergence/adams_tests.jl")
-        @time @safetestset "Nordsieck Tests" include("algconvergence/nordsieck_tests.jl")
+        @time @safetestset "Adams Variable Coefficients Tests" include("../lib/OrdinaryDiffEqAdamsBashforthMoulton/test/adams_tests.jl")
+        @time @safetestset "Nordsieck Tests" include("../lib/OrdinaryDiffEqNordsieck/test/nordsieck_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "AlgConvergence_II"
-        @time @safetestset "OwrenZen Tests" include("algconvergence/owrenzen_tests.jl")
         @time @safetestset "Runge-Kutta-Chebyshev Tests" include("../lib/OrdinaryDiffEqStabilizedRK/test/rkc_tests.jl")
     end
 
@@ -222,6 +275,10 @@ end
         @time @safetestset "Rosenbrock Tests" include("algconvergence/ode_rosenbrock_tests.jl")
         @time @safetestset "Linear-Nonlinear Methods Tests" include("algconvergence/linear_nonlinear_convergence_tests.jl")
         @time @safetestset "Linear-Nonlinear Krylov Methods Tests" include("algconvergence/linear_nonlinear_krylov_tests.jl")
+    end
+
+    if !is_APPVEYOR && GROUP == "LowOrderRK"
+        @time @safetestset "OwrenZen Tests" include("../lib/OrdinaryDiffEqLowOrderRK/test/owrenzen_tests.jl")
     end
 
     if !is_APPVEYOR && GROUP == "FIRK"

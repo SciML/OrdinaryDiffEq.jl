@@ -132,7 +132,7 @@
         return tdir * dtmin
     end
 
-    dt₀ = IfElse.ifelse((d₀ < 1 // 10^(5)) |
+    dt₀ = ifelse((d₀ < 1 // 10^(5)) |
                         (d₁ < 1 // 10^(5)), smalldt,
         convert(_tType,
             oneunit_tType * DiffEqBase.value((d₀ / d₁) /
