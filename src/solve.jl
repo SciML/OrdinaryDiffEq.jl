@@ -27,11 +27,11 @@ function DiffEqBase.__init(
         save_end = nothing,
         callback = nothing,
         dense = save_everystep &&
-                    !(alg isa Union{DAEAlgorithm, FunctionMap}) &&
+                    !(alg isa DAEAlgorithm) && !(prob isa DiscreteProblem) &&
                     isempty(saveat),
         calck = (callback !== nothing && callback !== CallbackSet()) ||
                     (dense) || !isempty(saveat), # and no dense output
-        dt = alg isa FunctionMap && isempty(tstops) ?
+        dt = isdiscretealg(alg) && isempty(tstops) ?
              eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
         dtmin = eltype(prob.tspan)(0),
         dtmax = eltype(prob.tspan)((prob.tspan[end] - prob.tspan[1])),
@@ -130,8 +130,7 @@ function DiffEqBase.__init(
     if (((!(alg isa OrdinaryDiffEqAdaptiveAlgorithm) &&
           !(alg isa OrdinaryDiffEqCompositeAlgorithm) &&
           !(alg isa DAEAlgorithm)) || !adaptive || !isadaptive(alg)) &&
-        dt == tType(0) && isempty(tstops)) &&
-       !(alg isa Union{FunctionMap, LinearExponential})
+        dt == tType(0) && isempty(tstops)) && dt_required(alg)
         error("Fixed timestep methods require a choice of dt or choosing the tstops")
     end
 
@@ -186,7 +185,7 @@ function DiffEqBase.__init(
     uEltypeNoUnits = recursive_unitless_eltype(u)
     tTypeNoUnits = typeof(one(tType))
 
-    if _alg isa FunctionMap
+    if prob isa DiscreteProblem
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -200,7 +199,7 @@ function DiffEqBase.__init(
         abstol_internal = real.(abstol)
     end
 
-    if _alg isa FunctionMap
+    if prob isa DiscreteProblem
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
@@ -465,7 +464,7 @@ function DiffEqBase.__init(
     do_error_check = true
     event_last_time = 0
     vector_event_last_time = 1
-    last_event_error = _alg isa FunctionMap ? false : zero(uBottomEltypeNoUnits)
+    last_event_error = prob isa DiscreteProblem ? false : zero(uBottomEltypeNoUnits)
     dtchangeable = isdtchangeable(_alg)
     q11 = QT(1)
     success_iter = 0

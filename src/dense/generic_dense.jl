@@ -520,7 +520,7 @@ end
 
 function evaluate_interpolant(f, Θ, dt, timeseries, i₋, i₊, cache, idxs,
         deriv, ks, ts, id, p, differential_vars)
-    if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
+    if isdiscretecache(cache)
         return ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
             deriv, differential_vars)
     elseif !id.dense
@@ -619,7 +619,7 @@ function ode_interpolation!(vals, tvals, id::I, idxs, deriv::D, p,
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(t) / oneunit(dt) : (t - ts[i₋]) / dt
 
-        if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
+        if isdiscretecache(cache)
             if eltype(vals) <: AbstractArray
                 ode_interpolant!(vals[j], Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache,
                     idxs, deriv, differential_vars)
@@ -768,7 +768,7 @@ function ode_interpolation(tval::Number, id::I, idxs, deriv::D, p,
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
+        if isdiscretecache(cache)
             val = ode_interpolant(Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars)
         elseif !id.dense
@@ -850,7 +850,7 @@ function ode_interpolation!(out, tval::Number, id::I, idxs, deriv::D, p,
         dt = ts[i₊] - ts[i₋]
         Θ = iszero(dt) ? oneunit(tval) / oneunit(dt) : (tval - ts[i₋]) / dt
 
-        if cache isa (FunctionMapCache) || cache isa FunctionMapConstantCache
+        if isdiscretecache(cache)
             ode_interpolant!(out, Θ, dt, timeseries[i₋], timeseries[i₊], 0, cache, idxs,
                 deriv, differential_vars)
         elseif !id.dense

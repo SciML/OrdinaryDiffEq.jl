@@ -1,7 +1,7 @@
 name = "OrdinaryDiffEq"
 uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <mayingbo5@gmail.com>"]
-version = "6.85.0"
+version = "6.87.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -18,7 +18,6 @@ FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 FunctionWrappersWrappers = "77dc65aa-8811-40c2-897b-53d922fa7daf"
-IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -60,7 +59,6 @@ FillArrays = "1.9"
 FiniteDiff = "2"
 ForwardDiff = "0.10.3"
 FunctionWrappersWrappers = "0.1"
-IfElse = "0.1"
 InteractiveUtils = "1.9"
 LineSearches = "7"
 LinearAlgebra = "1.9"
@@ -101,6 +99,7 @@ InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 ODEProblemLibrary = "fdc4e326-1af4-4b90-96e7-779fcce2daa5"
+ParameterizedFunctions = "65888b18-ceab-5e60-b2b9-181511a3b968"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PoissonRandom = "e409e4f3-bfea-5376-8464-e040bb5c01ab"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -114,4 +113,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Calculus", "ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "InteractiveUtils", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve"]
+test = ["Calculus", "ComponentArrays", "Symbolics", "AlgebraicMultigrid", "IncompleteLU", "DiffEqCallbacks", "DiffEqDevTools", "ODEProblemLibrary", "ElasticArrays", "InteractiveUtils", "ParameterizedFunctions", "PoissonRandom", "Printf", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "ModelingToolkit", "Pkg", "NLsolve"]
