@@ -4,7 +4,8 @@ import OrdinaryDiffEq: alg_order, alg_extrapolates, dt_required, OrdinaryDiffEqL
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAlgorithm,
                        OrdinaryDiffEqExponentialAlgorithm,
                        OrdinaryDiffEqMutableCache, @cache, alg_cache, OrdinaryDiffEqConstantCache,
-                       initialize!, perform_step!, @unpack, unwrap_alg, calculate_residuals!
+                       initialize!, perform_step!, @unpack, unwrap_alg, calculate_residuals!,
+                       _vec
 using LinearAlgebra: mul!
 using DiffEqBase
 using SciMLOperators: AbstractSciMLOperator
