@@ -10,8 +10,7 @@ function SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorith
 end
 function SciMLBase.forwarddiffs_model(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm,
         DAEAlgorithm,
-        OrdinaryDiffEqImplicitAlgorithm,
-        ExponentialAlgorithm})
+        OrdinaryDiffEqImplicitAlgorithm})
     alg_autodiff(alg) isa AutoForwardDiff
 end
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
@@ -32,7 +31,6 @@ isfirk(alg) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 
 dt_required(alg) = true
-dt_required(alg::LinearExponential) = false
 
 isdiscretealg(alg) = false
 
@@ -64,7 +62,6 @@ all_fsal(alg::CompositeAlgorithm, cache) = _all_fsal(alg.algs)
 end
 
 issplit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
-issplit(alg::Union{CNAB2, CNLF2}) = true
 
 function _composite_beta1_default(algs::Tuple{T1, T2}, current, ::Val{QT},
         beta2) where {T1, T2, QT}
@@ -113,12 +110,6 @@ end
 function fsal_typeof(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}, rate_prototype)
     typeof(rate_prototype)
 end
-fsal_typeof(alg::ETD2, rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
-function fsal_typeof(alg::CompositeAlgorithm, rate_prototype)
-    fsal = map(x -> fsal_typeof(x, rate_prototype), alg.algs)
-    @assert length(unique(fsal))==1 "`fsal_typeof` must be consistent"
-    return fsal[1]
-end
 
 isimplicit(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
@@ -128,14 +119,8 @@ isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
 
-function isdtchangeable(alg::Union{LawsonEuler, NorsettEuler, LieEuler, MagnusGauss4,
-        CayleyEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2})
-    false
-end # due to caching
-
 ismultistep(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
-ismultistep(alg::ETD2) = true
 
 isadaptive(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
@@ -232,8 +217,7 @@ end
 
 # Linear Exponential doesn't have any of the AD stuff
 function DiffEqBase.prepare_alg(
-        alg::Union{ETD2, LinearExponential,
-            OrdinaryDiffEqLinearExponentialAlgorithm},
+        alg::OrdinaryDiffEqLinearExponentialAlgorithm,
         u0::AbstractArray,
         p, prob)
     alg
@@ -329,8 +313,6 @@ end
 
 alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
-alg_extrapolates(alg::MagnusLeapfrog) = true
-
 function alg_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     error("Order is not defined for this algorithm")
 end
@@ -357,45 +339,6 @@ function get_current_adaptive_order(alg::CompositeAlgorithm, cache)
     _eval_index(alg_adaptive_order, alg.algs, cache.current)::Int
 end
 
-alg_order(alg::LawsonEuler) = 1
-alg_order(alg::NorsettEuler) = 1
-alg_order(alg::LieEuler) = 1
-alg_order(alg::CayleyEuler) = 2
-alg_order(alg::ETDRK2) = 2
-alg_order(alg::ETDRK3) = 3
-alg_order(alg::ETDRK4) = 4
-alg_order(alg::HochOst4) = 4
-alg_order(alg::Exp4) = 4
-alg_order(alg::EPIRK4s3A) = 4
-alg_order(alg::EPIRK4s3B) = 4
-alg_order(alg::EPIRK5s3) = 5
-alg_order(alg::EPIRK5P1) = 5
-alg_order(alg::EPIRK5P2) = 5
-alg_order(alg::EXPRB53s3) = 5
-alg_order(alg::ETD2) = 2
-alg_order(alg::Exprb32) = 3
-alg_order(alg::Exprb43) = 4
-
-alg_order(alg::RKMK2) = 2
-alg_order(alg::RKMK4) = 4
-alg_order(alg::LieRK4) = 4
-alg_order(alg::CG2) = 2
-alg_order(alg::CG3) = 3
-alg_order(alg::CG4a) = 4
-alg_order(alg::MagnusMidpoint) = 2
-alg_order(alg::MagnusGauss4) = 4
-alg_order(alg::MagnusNC6) = 6
-alg_order(alg::MagnusGL6) = 6
-alg_order(alg::MagnusGL8) = 8
-alg_order(alg::MagnusNC8) = 8
-alg_order(alg::MagnusGL4) = 4
-alg_order(alg::MagnusAdapt4) = 4
-alg_order(alg::LinearExponential) = 1
-alg_order(alg::MagnusLeapfrog) = 2
-
-alg_order(alg::CNAB2) = 2
-alg_order(alg::CNLF2) = 2
-
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
 
@@ -405,9 +348,6 @@ alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm}) = alg_orde
 # to track the real error much better
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
-
-alg_adaptive_order(alg::Exprb32) = 2
-alg_adaptive_order(alg::Exprb43) = 4
 
 function default_controller(alg, cache, qoldinit, _beta1 = nothing, _beta2 = nothing)
     if ispredictive(alg)
