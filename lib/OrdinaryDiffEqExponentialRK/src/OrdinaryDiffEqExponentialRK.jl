@@ -7,7 +7,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, ismultistep, OrdinaryDiffE
 using RecursiveArrayTools: recursivecopy!
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
-using DiffEqBase
+using DiffEqBase, SciMLBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
