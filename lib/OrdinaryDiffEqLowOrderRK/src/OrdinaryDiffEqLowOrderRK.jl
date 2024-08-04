@@ -9,6 +9,7 @@ import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stab
                        @cache, CompiledFloats, alg_cache, CompositeAlgorithm, alg_autodiff, copyat_or_push!,
                        AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
                        accept_step_controller, DerivativeOrderNotPossibleError
+                       AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache, DP8ConstantCache, DP8Cache
 using DiffEqBase, SciMLBase
 import MuladdMacro: @muladd
 import FastBroadcast: @..
