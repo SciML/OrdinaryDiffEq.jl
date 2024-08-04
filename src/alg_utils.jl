@@ -10,9 +10,10 @@ function SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorith
 end
 function SciMLBase.forwarddiffs_model(alg::Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm,
         DAEAlgorithm,
-        OrdinaryDiffEqImplicitAlgorithm})
+        OrdinaryDiffEqImplicitAlgorithm, ExponentialAlgorithm})
     alg_autodiff(alg) isa AutoForwardDiff
 end
+
 SciMLBase.forwarddiffs_model_time(alg::RosenbrockAlgorithm) = true
 
 # isadaptive is defined below.
