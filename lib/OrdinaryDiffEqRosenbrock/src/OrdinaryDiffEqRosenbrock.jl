@@ -17,6 +17,7 @@ using MacroTools: @capture
 using DiffEqBase: @def
 import LinearSolve
 import ForwardDiff
+using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
 import ADTypes: AutoForwardDiff
 
