@@ -8,6 +8,7 @@ import OrdinaryDiffEq: alg_order, alg_extrapolates, dt_required, OrdinaryDiffEqL
 using LinearAlgebra: mul!
 using DiffEqBase
 using SciMLOperators: AbstractSciMLOperator
+using ExponentialUtilities
 
 include("algorithms.jl")
 include("alg_utils.jl")
