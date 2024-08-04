@@ -11,6 +11,7 @@ using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
 using DiffEqBase, SciMLBase
 using ExponentialUtilities
+import RecursiveArrayTools: recursivecopy!
 
 include("algorithms.jl")
 include("alg_utils.jl")
