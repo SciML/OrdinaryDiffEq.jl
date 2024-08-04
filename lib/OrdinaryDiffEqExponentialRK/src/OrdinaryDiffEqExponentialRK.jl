@@ -5,7 +5,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, ismultistep, OrdinaryDiffE
                        build_jac_config, UJacobianWrapper, @cache, alg_cache, UDerivativeWrapper,
                        initialize!, perform_step!, @unpack, unwrap_alg, calc_J, calc_J!,
                        OrdinaryDiffEqAdaptiveExponentialAlgorithm, CompositeAlgorithm,
-                       ExponentialAlgorithm, fsal_typeof, isdtchangeable
+                       ExponentialAlgorithm, fsal_typeof, isdtchangeable, calculate_residuals, calculate_residuals!
 using RecursiveArrayTools
 using MuladdMacro, FastBroadcast
 using LinearAlgebra: axpy!, mul!
