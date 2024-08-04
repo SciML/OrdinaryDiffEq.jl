@@ -6,6 +6,7 @@ import OrdinaryDiffEq: alg_order, alg_extrapolates, dt_required, OrdinaryDiffEqL
                        OrdinaryDiffEqMutableCache, @cache, alg_cache, OrdinaryDiffEqConstantCache,
                        initialize!, perform_step!, @unpack, unwrap_alg, calculate_residuals!
 using LinearAlgebra: mul!
+using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")
