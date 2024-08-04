@@ -7,7 +7,7 @@ import OrdinaryDiffEq: alg_order, alg_stability_size, explicit_rk_docstring,
                        calculate_residuals!, _ode_interpolant, _ode_interpolant!,
                        CompiledFloats, @OnDemandTableauExtract, initialize!, perform_step!,
                        CompositeAlgorithm, _ode_addsteps!, copyat_or_push!, AutoAlgSwitch,
-                       full_cache
+                       full_cache, DerivativeOrderNotPossibleError
 import Static: False
 import MuladdMacro: @muladd
 import FastBroadcast: @..
