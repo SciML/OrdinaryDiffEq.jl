@@ -25,13 +25,13 @@ end
 
 function dev_all_sublibs()
     # Manually ensure dependencies are added first
-    Pkg.develop("../lib/OrdinaryDiffEqCore")
-    Pkg.develop("../lib/OrdinaryDiffEqDifferentiation")
-    Pkg.develop("../lib/OrdinaryDiffEqNonlinearSolve")
-    Pkg.develop("../lib/OrdinaryDiffEqLowOrderRK")
-    Pkg.develop("../lib/OrdinaryDiffEqTsit5")
-    Pkg.develop("../lib/OrdinaryDiffEqVerner")
-    Pkg.develop("../lib/OrdinaryDiffEqSDIRK")
+    Pkg.develop(path="../lib/OrdinaryDiffEqCore")
+    Pkg.develop(path="../lib/OrdinaryDiffEqDifferentiation")
+    Pkg.develop(path="../lib/OrdinaryDiffEqNonlinearSolve")
+    Pkg.develop(path="../lib/OrdinaryDiffEqLowOrderRK")
+    Pkg.develop(path="../lib/OrdinaryDiffEqTsit5")
+    Pkg.develop(path="../lib/OrdinaryDiffEqVerner")
+    Pkg.develop(path="../lib/OrdinaryDiffEqSDIRK")
     for pkg in readdir("../lib")
         Pkg.develop(pkg)
     end
