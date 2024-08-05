@@ -12,7 +12,7 @@ using LinearAlgebra: axpy!, mul!
 using DiffEqBase, SciMLBase
 using ExponentialUtilities
 import RecursiveArrayTools: recursivecopy!
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper, calc_J, calc_J!
+using OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper, calc_J, calc_J!
 
 include("algorithms.jl")
 include("alg_utils.jl")

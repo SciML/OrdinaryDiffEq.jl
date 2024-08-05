@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools
+using OrdinaryDiffEqCore, DiffEqDevTools
 using Test, Random
 Random.seed!(100)
 

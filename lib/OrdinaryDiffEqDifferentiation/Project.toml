@@ -4,7 +4,7 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>", "Yingbo Ma <maying
 version = "1.0.0"
 
 [deps]
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 
 [compat]
 julia = "1.10"

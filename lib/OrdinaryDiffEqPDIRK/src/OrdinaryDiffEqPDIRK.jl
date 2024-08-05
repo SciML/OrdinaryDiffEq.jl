@@ -10,8 +10,8 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 using Polyester
 
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: dolinsolve
-using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail, markfirststage!
+using OrdinaryDiffEqDifferentiation: dolinsolve
+using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail, markfirststage!
 
 include("algorithms.jl")
 include("alg_utils.jl")

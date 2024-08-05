@@ -6,8 +6,8 @@ import OrdinaryDiffEq: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _unwra
 
 using FastBroadcast
 
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: dolinsolve
-using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve:  NLNewton,  build_nlsolver,  markfirststage!, nlsolve!, nlsolvefail, du_alias_or_new
+using OrdinaryDiffEqDifferentiation: dolinsolve
+using OrdinaryDiffEqNonlinearSolve:  NLNewton,  build_nlsolver,  markfirststage!, nlsolve!, nlsolvefail, du_alias_or_new
 
 include("algorithms.jl")
 include("alg_utils.jl")

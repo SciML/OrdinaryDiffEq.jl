@@ -12,8 +12,8 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order,
                        alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
                        _reshape, _vec
 
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
-using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver, markfirststage!, du_alias_or_new, get_W
+using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
+using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver, markfirststage!, du_alias_or_new, get_W
 using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 

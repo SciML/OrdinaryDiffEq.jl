@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra
+using OrdinaryDiffEqCore, DiffEqDevTools, Test, LinearAlgebra
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, van
 
 testTol = 0.3

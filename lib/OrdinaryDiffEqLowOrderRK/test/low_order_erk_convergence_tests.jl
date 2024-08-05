@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqCore, ODEProblemLibrary, DiffEqDevTools
 using Test, Random
 Random.seed!(100)
 
@@ -89,4 +89,3 @@ prob_ode_nonlinear = ODEProblem(
     sim160 = test_convergence(dts, prob, Anas5(w = 2))
     @test sim160.𝒪est[:l2]≈4 atol=2 * testTol
 end
-

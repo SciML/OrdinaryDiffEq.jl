@@ -4,7 +4,7 @@ import OrdinaryDiffEq: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, 
                        initialize!, @unpack, perform_step!, alg_order, isstandard, OrdinaryDiffEqAlgorithm,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
                        constvalue, calculate_residuals, calculate_residuals!, trivial_limiter!
-import OrdinaryDiffEq: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
+import OrdinaryDiffEqLowOrderRK: BS3ConstantCache, BS3Cache, RK4ConstantCache, RK4Cache
 import RecursiveArrayTools: recursivefill!
 using MuladdMacro, FastBroadcast
 import Static: False

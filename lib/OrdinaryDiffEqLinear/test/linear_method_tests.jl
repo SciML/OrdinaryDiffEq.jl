@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqDevTools
+using OrdinaryDiffEqCore, Test, DiffEqDevTools
 using LinearAlgebra, Random
 
 # Linear exponential solvers

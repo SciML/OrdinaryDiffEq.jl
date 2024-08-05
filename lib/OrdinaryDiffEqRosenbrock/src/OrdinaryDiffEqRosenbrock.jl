@@ -20,7 +20,7 @@ import ForwardDiff
 using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm
 import ADTypes: AutoForwardDiff
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper,
+using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper,
 wrapprecs, calc_tderivative, build_grad_config, build_jac_config, issuccess_W,  jacobian2W!, resize_jac_config!, resize_grad_config!,
 calc_W, calc_rosenbrock_differentiation!, build_J_W, UJacobianWrapper, dolinsolve
 

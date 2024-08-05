@@ -1,5 +1,5 @@
-using OrdinaryDiffEq, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
-using OrdinaryDiffEq: alg_order
+using OrdinaryDiffEqCore, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
+using OrdinaryDiffEqCore: alg_order
 
 @testset "Caching Out-of-place" begin
     println("Caching Out-of-place")
