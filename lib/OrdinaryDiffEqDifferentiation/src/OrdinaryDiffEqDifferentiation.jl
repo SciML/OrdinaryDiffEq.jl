@@ -20,7 +20,8 @@ using DiffEqBase: TimeGradientWrapper,
 using SciMLBase: AbstractSciMLOperator
 using OrdinaryDiffEq: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm, DAEAlgorithm,
 OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm, OrdinaryDiffEqExponentialAlgorithm,
-OrdinaryDiffEqAdaptiveExponentialAlgorithm, @unpack, AbstractNLSolver
+OrdinaryDiffEqAdaptiveExponentialAlgorithm, @unpack, AbstractNLSolver, nlsolve_f, issplit,
+concrete_jac
 
 import OrdinaryDiffEq: alg_autodiff
 
