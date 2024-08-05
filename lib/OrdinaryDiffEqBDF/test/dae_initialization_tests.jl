@@ -110,6 +110,9 @@ integrator = init(prob, DABDF2(); initializealg = ShampineCollocationInit())
 @test_broken integrator.du[2]≈-1.0 atol=1e-9
 @test_broken integrator.u[3]≈2.0 atol=1e-9
 
+struct UnusedParam
+end
+
 # test iip dae initialization with parameters without eltype/length
 probp = DAEProblem(f, du₀, u₀, tspan, UnusedParam(), differential_vars = differential_vars)
 for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
