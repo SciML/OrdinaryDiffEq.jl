@@ -24,7 +24,7 @@ _reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, i
 
 import OrdinaryDiffEq: _initialize_dae!, resize_nlsolver!, isnewton
 
-import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator
+import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
                      StaticMatrix
 
