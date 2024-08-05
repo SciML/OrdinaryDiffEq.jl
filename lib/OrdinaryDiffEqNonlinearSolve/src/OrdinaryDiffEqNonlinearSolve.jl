@@ -3,7 +3,7 @@ module OrdinaryDiffEqNonlinearSolve
 import ADTypes: AutoFiniteDiff, AutoForwardDiff
 
 import SciMLBase
-import SciMLBase: init, solve, solve!,
+import SciMLBase: init, solve, solve!
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearProblem, NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem, update_coefficients!, get_tmp_cache, AbstractSciMLOperator
 import DiffEqBase
 import PreallocationTools
