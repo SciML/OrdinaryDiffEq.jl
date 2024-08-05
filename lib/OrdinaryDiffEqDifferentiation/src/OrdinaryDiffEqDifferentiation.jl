@@ -32,7 +32,7 @@ using OrdinaryDiffEq: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlg
 OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm, OrdinaryDiffEqExponentialAlgorithm,
 OrdinaryDiffEqAdaptiveExponentialAlgorithm, @unpack, AbstractNLSolver, nlsolve_f, issplit,
 concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag, isnewton, _unwrap_val,
-set_new_W!, set_W_γdt!
+set_new_W!, set_W_γdt!, alg_difftype
 import OrdinaryDiffEq: get_chunksize
 
 import OrdinaryDiffEq: alg_autodiff

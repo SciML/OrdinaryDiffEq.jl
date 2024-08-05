@@ -16,7 +16,7 @@ using LinearSolve: I
 
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
 
-using OrdinaryDiffEq: resize_nlsolver!, OrdinaryDiffEqDifferentiation,
+using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation,
 AbstractNLSolverAlgorithm, AbstractNLSolverCache, AbstractNLSolver, NewtonAlgorithm, @unpack,
 OverrideInit, ShampineCollocationInit, BrownFullBasicInit, _vec, _unwrap_val, DAEAlgorithm,
 _reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, isadaptive
