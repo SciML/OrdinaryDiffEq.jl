@@ -24,16 +24,36 @@ jobs:
           - Downstream
           - ODEInterfaceRegression
           - Multithreading
-          - FIRK
-          - Symplectic
-          - Extrapolation
-          - Feagin
-          - StabilizedRK
-          - StabilizedIRK
-          - SSPRK
-          - LowStorageRK
-          - QPRK
-          - Linear
+
+          - OrdinaryDiffEqAdamsBashforthMoulton
+          - OrdinaryDiffEqBDF
+          - OrdinaryDiffEqDefault
+          - OrdinaryDiffEqDifferentiation
+          - OrdinaryDiffEqExplicitRK
+          - OrdinaryDiffEqExponentialRK
+          - OrdinaryDiffEqExtrapolation
+          - OrdinaryDiffEqFIRK
+          - OrdinaryDiffEqFeagin
+          - OrdinaryDiffEqFunctionMap
+          - OrdinaryDiffEqHighOrderRK
+          - OrdinaryDiffEqIMEXMultistep
+          - OrdinaryDiffEqLinear
+          - OrdinaryDiffEqLowOrderRK
+          - OrdinaryDiffEqLowStorageRK
+          - OrdinaryDiffEqNordsieck
+          - OrdinaryDiffEqPDIRK
+          - OrdinaryDiffEqPRK
+          - OrdinaryDiffEqQPRK
+          - OrdinaryDiffEqRKN
+          - OrdinaryDiffEqRosenbrock
+          - OrdinaryDiffEqSDIRK
+          - OrdinaryDiffEqSSPRK
+          - OrdinaryDiffEqStabilizedIRK
+          - OrdinaryDiffEqStabilizedRK
+          - OrdinaryDiffEqSymplecticRK
+          - OrdinaryDiffEqTsit5
+          - OrdinaryDiffEqVerner
+
         version:
           - '1'
     steps:
