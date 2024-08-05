@@ -15,6 +15,7 @@ import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
 import LinearSolve
+import LinearSolve: UniformScaling
 import ForwardDiff
 using FiniteDiff
 using LinearAlgebra: mul!, diag, diagm, I, Diagonal, norm

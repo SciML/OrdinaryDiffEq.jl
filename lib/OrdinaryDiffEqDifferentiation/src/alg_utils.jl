@@ -35,3 +35,40 @@ Base.@pure function determine_chunksize(u, CS)
         return ForwardDiff.pickchunksize(length(u))
     end
 end
+
+function DiffEqBase.prepare_alg(
+        alg::Union{
+            OrdinaryDiffEqAdaptiveImplicitAlgorithm{0, AD,
+                FDT},
+            OrdinaryDiffEqImplicitAlgorithm{0, AD, FDT},
+            DAEAlgorithm{0, AD, FDT},
+            OrdinaryDiffEqExponentialAlgorithm{0, AD, FDT}},
+        u0::AbstractArray{T},
+        p, prob) where {AD, FDT, T}
+
+    # If not using autodiff or norecompile mode or very large bitsize (like a dual number u0 already)
+    # don't use a large chunksize as it will either error or not be beneficial
+    if !(alg_autodiff(alg) isa AutoForwardDiff) ||
+       (isbitstype(T) && sizeof(T) > 24) ||
+       (prob.f isa ODEFunction &&
+        prob.f.f isa FunctionWrappersWrappers.FunctionWrappersWrapper)
+        return remake(alg, chunk_size = Val{1}())
+    end
+
+    L = StaticArrayInterface.known_length(typeof(u0))
+    if L === nothing # dynamic sized
+        # If chunksize is zero, pick chunksize right at the start of solve and
+        # then do function barrier to infer the full solve
+        x = if prob.f.colorvec === nothing
+            length(u0)
+        else
+            maximum(prob.f.colorvec)
+        end
+
+        cs = ForwardDiff.pickchunksize(x)
+        return remake(alg, chunk_size = Val{cs}())
+    else # statically sized
+        cs = pick_static_chunksize(Val{L}())
+        return remake(alg, chunk_size = cs)
+    end
+end

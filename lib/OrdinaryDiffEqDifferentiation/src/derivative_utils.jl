@@ -626,6 +626,8 @@ function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix,
     return W
 end
 
+is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
+
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
         repeat_step, W_transform = false, newJW = nothing)
     @unpack t, dt, uprev, u, f, p = integrator

@@ -18,8 +18,6 @@ using MuladdMacro, SparseArrays, FastClosures
 
 using LinearAlgebra
 
-import StaticArrayInterface
-
 using PrecompileTools
 
 import FillArrays: Trues, Falses
@@ -83,7 +81,6 @@ import ADTypes: AutoFiniteDiff, AutoForwardDiff
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
 const CompiledFloats = Union{Float32, Float64}
-import FunctionWrappersWrappers
 import Preferences
 
 abstract type AbstractNLSolverCache end
