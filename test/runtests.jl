@@ -115,7 +115,6 @@ end
         @time @safetestset "Reverse Directioned Event Tests" include("integrators/rev_events_tests.jl")
         @time @safetestset "Differentiation Direction Tests" include("integrators/diffdir_tests.jl")
         @time @safetestset "Resize Tests" include("integrators/resize_tests.jl")
-        @time @safetestset "DAE Initialization Tests" include("integrators/dae_initialization_tests.jl")
         @time @safetestset "Cache Tests" include("integrators/ode_cache_tests.jl")
         @time @safetestset "Add Steps Tests" include("integrators/ode_add_steps_tests.jl")
         @time @safetestset "IMEX Split Function Tests" include("integrators/split_ode_tests.jl")

@@ -11,6 +11,9 @@ sol = solve(prob, Tsit5())
 
 # Test array partition outside of symplectic
 
+u0 = fill(0.0, 2)
+v0 = ones(2)
+
 function f_ap(du, u, p, t)
     du.x[1] .= -2u.x[2]
     du.x[2] .= u.x[1]
