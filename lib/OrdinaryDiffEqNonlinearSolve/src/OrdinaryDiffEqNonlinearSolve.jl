@@ -14,6 +14,7 @@ using LinearAlgebra: UniformScaling
 import ArrayInterface
 using LinearSolve: I
 
+import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
 
 using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation,
