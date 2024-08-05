@@ -189,11 +189,11 @@ function DiffEqBase.__init(
         abstol_internal = false
     elseif abstol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            abstol_internal = ForwardDiff.value(real(convert(uBottomEltype,
+            abstol_internal = DiffEqBase.value(real(convert(uBottomEltype,
                 oneunit(uBottomEltype) *
                 1 // 10^6)))
         else
-            abstol_internal = ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^6))
+            abstol_internal = DiffEqBase.value.(real.(oneunit.(u) .* 1 // 10^6))
         end
     else
         abstol_internal = real.(abstol)
@@ -203,10 +203,10 @@ function DiffEqBase.__init(
         reltol_internal = false
     elseif reltol === nothing
         if uBottomEltypeNoUnits == uBottomEltype
-            reltol_internal = ForwardDiff.value(real(convert(uBottomEltype,
+            reltol_internal = DiffEqBase.value(real(convert(uBottomEltype,
                 oneunit(uBottomEltype) * 1 // 10^3)))
         else
-            reltol_internal = ForwardDiff.value.(real.(oneunit.(u) .* 1 // 10^3))
+            reltol_internal = DiffEqBase.value.(real.(oneunit.(u) .* 1 // 10^3))
         end
     else
         reltol_internal = real.(reltol)

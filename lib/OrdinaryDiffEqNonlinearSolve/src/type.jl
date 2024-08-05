@@ -1,6 +1,3 @@
-abstract type AbstractNLSolverCache end
-abstract type AbstractNLSolverAlgorithm end
-
 # Method type
 @enum MethodType begin
     DIRK
@@ -88,8 +85,6 @@ function NonlinearSolveAlg(alg = NewtonRaphson(autodiff = AutoFiniteDiff());
 end
 
 # solver
-
-abstract type AbstractNLSolver{algType, iip} end
 
 mutable struct NLSolver{algType, iip, uType, gamType, tmpType, tType,
     C <: AbstractNLSolverCache, E} <: AbstractNLSolver{algType, iip}

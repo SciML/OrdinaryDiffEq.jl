@@ -55,3 +55,5 @@ function wrapprecs(_Pl, _Pr, weight, u)
     Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(u)) : _Pr
     Pl, Pr
 end
+
+Base.resize!(p::LinearSolve.LinearCache, i) = p

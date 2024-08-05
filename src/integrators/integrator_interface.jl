@@ -218,6 +218,8 @@ function DiffEqBase.add_saveat!(integrator::ODEIntegrator, t)
     push!(integrator.opts.saveat, integrator.tdir * t)
 end
 
+function resize_nlsolver! end
+
 function resize!(integrator::ODEIntegrator, i::Int)
     @unpack cache = integrator
 
@@ -289,7 +291,6 @@ function resize_J_W!(cache, integrator, i)
     nothing
 end
 
-Base.resize!(p::LinearSolve.LinearCache, i) = p
 function resize_non_user_cache!(integrator::ODEIntegrator, i::Int)
     resize_non_user_cache!(integrator, integrator.cache, i)
 end

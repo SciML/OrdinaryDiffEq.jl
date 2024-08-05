@@ -7,7 +7,7 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, CompiledFloats, uses_uprev,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
-                       constvalue, _unwrap_val, du_alias_or_new,
+                       constvalue, _unwrap_val,
                        explicit_rk_docstring, trivial_limiter!,
                        _ode_interpolant!, _ode_addsteps!
 using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools

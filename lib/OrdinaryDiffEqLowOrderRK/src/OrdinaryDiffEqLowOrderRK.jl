@@ -6,7 +6,7 @@ import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stab
                        unwrap_alg, @unpack, initialize!, perform_step!, calculate_residuals,
                        calculate_residuals!, _ode_addsteps!, @OnDemandTableauExtract, constvalue,
                        OrdinaryDiffEqMutableCache, uses_uprev, OrdinaryDiffEqConstantCache, @fold,
-                       @cache, CompiledFloats, alg_cache, CompositeAlgorithm, alg_autodiff, copyat_or_push!,
+                       @cache, CompiledFloats, alg_cache, CompositeAlgorithm, copyat_or_push!,
                        AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
                        accept_step_controller, DerivativeOrderNotPossibleError
 using DiffEqBase, SciMLBase

@@ -179,6 +179,8 @@ function get_chunksize_int(alg::Union{OrdinaryDiffEqExponentialAlgorithm{CS},
 end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
+function alg_autodiff end
+
 function DiffEqBase.prepare_alg(
         alg::Union{
             OrdinaryDiffEqAdaptiveImplicitAlgorithm{0, AD,

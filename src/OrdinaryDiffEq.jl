@@ -22,8 +22,6 @@ import StaticArrayInterface
 
 using PrecompileTools
 
-import InteractiveUtils
-
 import FillArrays: Trues, Falses
 
 # Interfaces
@@ -78,29 +76,19 @@ import DiffEqBase: calculate_residuals,
                    @tight_loop_macros,
                    islinear, timedepentdtmin
 
-import ADTypes: AbstractADType,
-                AutoFiniteDiff, AutoForwardDiff, AutoReverseDiff,
-                AutoTracker, AutoZygote, AutoEnzyme
-
 import Polyester
 using MacroTools, Adapt
+import ADTypes: AutoFiniteDiff, AutoForwardDiff
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-const CompiledFloats = Union{Float32, Float64,
-    ForwardDiff.Dual{
-        ForwardDiff.Tag{T, W},
-        K,
-        N
-    } where {
-        T,
-        W <: Union{Float64, Float32},
-        K <: Union{Float64, Float32},
-        N
-    }}
-
+const CompiledFloats = Union{Float32, Float64}
 import FunctionWrappersWrappers
 import Preferences
+
+abstract type AbstractNLSolverCache end
+abstract type AbstractNLSolverAlgorithm end
+abstract type AbstractNLSolver{algType, iip} end
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
@@ -132,7 +120,7 @@ include("initdt.jl")
 include("interp_func.jl")
 
 include("../lib/OrdinaryDiffEqDifferentiation/src/OrdinaryDiffEqDifferentiation.jl")
-using ..OrdinaryDiffEqDifferentiation
+import ..OrdinaryDiffEqDifferentiation
 
 include("../lib/OrdinaryDiffEqNonlinearSolve/src/OrdinaryDiffEqNonlinearSolve.jl")
 using ..OrdinaryDiffEqNonlinearSolve
