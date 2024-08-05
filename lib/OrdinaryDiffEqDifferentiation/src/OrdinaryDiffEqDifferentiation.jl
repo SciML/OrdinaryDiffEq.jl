@@ -31,7 +31,8 @@ using SciMLBase: AbstractSciMLOperator
 using OrdinaryDiffEq: OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveImplicitAlgorithm, DAEAlgorithm,
 OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm, OrdinaryDiffEqExponentialAlgorithm,
 OrdinaryDiffEqAdaptiveExponentialAlgorithm, @unpack, AbstractNLSolver, nlsolve_f, issplit,
-concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag, isnewton, _unwrap_val
+concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag, isnewton, _unwrap_val,
+set_new_W!, set_W_γdt!
 import OrdinaryDiffEq: get_chunksize
 
 import OrdinaryDiffEq: alg_autodiff
