@@ -3,6 +3,7 @@ module OrdinaryDiffEqNonlinearSolve
 import ADTypes: AutoFiniteDiff, AutoForwardDiff
 
 import SciMLBase
+import SciMLBase: init, solve, solve!,
 using SciMLBase: DAEFunction, DEIntegrator, NonlinearProblem, NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem, update_coefficients!, get_tmp_cache, AbstractSciMLOperator
 import DiffEqBase
 import PreallocationTools
@@ -17,7 +18,6 @@ using LinearSolve: I
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
-import CommonSolve: init, solve, solve!
 
 using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation,
 AbstractNLSolverAlgorithm, AbstractNLSolverCache, AbstractNLSolver, NewtonAlgorithm, @unpack,
