@@ -27,7 +27,7 @@ end
 
 @time begin
     if contains(GROUP, "OrdinaryDiffEq")
-        Pkg.dev("../lib/$GROUP")
+        Pkg.develop("../lib/$GROUP")
         Pkg.test(GROUP)
     elseif GROUP == "All" || GROUP == "InterfaceI" || GROUP == "Interface"
         @time @safetestset "Discrete Algorithm Tests" include("interface/discrete_algorithm_test.jl")
