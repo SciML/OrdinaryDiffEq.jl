@@ -9,7 +9,7 @@ import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap
                        constvalue,
                        calculate_residuals, has_stiff_interpolation, ODEIntegrator,
                        resize_non_user_cache!, _ode_addsteps!,full_cache,
-                       DerivativeOrderNotPossibleError
+                       DerivativeOrderNotPossibleError, get_W
 using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
