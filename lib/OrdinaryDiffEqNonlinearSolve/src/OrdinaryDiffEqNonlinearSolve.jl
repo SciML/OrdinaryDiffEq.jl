@@ -22,11 +22,11 @@ import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
 using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation,
 AbstractNLSolverAlgorithm, AbstractNLSolverCache, AbstractNLSolver, NewtonAlgorithm, @unpack,
 OverrideInit, ShampineCollocationInit, BrownFullBasicInit, _vec, _unwrap_val, DAEAlgorithm,
-_reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, isadaptive, dolinsolve
+_reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, isadaptive
 
 import OrdinaryDiffEq: _initialize_dae!, resize_nlsolver!, isnewton, get_W
 
-import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config
+import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config, dolinsolve
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
                      StaticMatrix
 
