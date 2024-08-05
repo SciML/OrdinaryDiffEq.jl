@@ -22,7 +22,7 @@ using RecursiveArrayTools: recursivecopy!
 import SciMLStructures: canonicalize, Tunable, isscimlstructure
 
 import SciMLOperators: islinear
-import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
+import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
 using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!, OrdinaryDiffEqDifferentiation,
 AbstractNLSolverAlgorithm, AbstractNLSolverCache, AbstractNLSolver, NewtonAlgorithm, @unpack,

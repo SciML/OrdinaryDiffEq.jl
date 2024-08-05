@@ -1,6 +1,6 @@
 module OrdinaryDiffEqHighOrderRK
 
-import OrdinaryDiffEq: alg_order, qmax_default, qmin_default, beta2_default, beta1_default,
+import OrdinaryDiffEqCore: alg_order, qmax_default, qmin_default, beta2_default, beta1_default,
                        explicit_rk_docstring, OrdinaryDiffEqAdaptiveAlgorithm, trivial_limiter!,
                        _ode_addsteps!, @unpack, @cache, OrdinaryDiffEqMutableCache, constvalue,
                        alg_cache, uses_uprev, initialize!, perform_step!, OrdinaryDiffEqConstantCache,

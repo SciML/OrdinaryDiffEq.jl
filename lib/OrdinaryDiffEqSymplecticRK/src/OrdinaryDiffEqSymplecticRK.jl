@@ -1,6 +1,6 @@
 module OrdinaryDiffEqSymplecticRK
 
-import OrdinaryDiffEq: alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals,
                        OrdinaryDiffEqAlgorithm,

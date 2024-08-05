@@ -1,6 +1,6 @@
 module OrdinaryDiffEqQPRK
 
-import OrdinaryDiffEq: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
+import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConstantCache,
                        explicit_rk_docstring, @cache, @unpack, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqAdaptiveAlgorithm, @fold, @OnDemandTableauExtract,
                        trivial_limiter!, alg_cache, alg_order, initialize!, perform_step!,

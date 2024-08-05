@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore, DiffEqDevTools, Test, Random
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
 
 Random.seed!(100)

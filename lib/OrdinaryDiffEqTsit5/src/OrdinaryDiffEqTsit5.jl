@@ -1,6 +1,6 @@
 module OrdinaryDiffEqTsit5
 
-import OrdinaryDiffEq: alg_order, alg_stability_size, explicit_rk_docstring,
+import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache, alg_cache,
                        OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,
                        constvalue, @unpack, perform_step!, calculate_residuals, @cache,

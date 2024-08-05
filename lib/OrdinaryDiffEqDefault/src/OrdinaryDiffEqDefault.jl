@@ -9,7 +9,7 @@ using OrdinaryDiffEqTsit5: Tsit5
 using OrdinaryDiffEqRosenbrock: Rosenbrock23, Rodas5P
 using OrdinaryDiffEqBDF: FBDF
 
-import OrdinaryDiffEq: is_mass_matrix_alg, default_autoswitch
+import OrdinaryDiffEqCore: is_mass_matrix_alg, default_autoswitch
 import LinearSolve
 using LinearAlgebra: I, isdiag
 using EnumX

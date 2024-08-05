@@ -1,6 +1,6 @@
 module OrdinaryDiffEqLowOrderRK
 
-import OrdinaryDiffEq: alg_order, isfsal, beta2_default, beta1_default, alg_stability_size,
+import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default, alg_stability_size,
                        ssp_coefficient, OrdinaryDiffEqAlgorithm, OrdinaryDiffEqExponentialAlgorithm,
                        explicit_rk_docstring, trivial_limiter!, OrdinaryDiffEqAdaptiveAlgorithm,
                        unwrap_alg, @unpack, initialize!, perform_step!, calculate_residuals,

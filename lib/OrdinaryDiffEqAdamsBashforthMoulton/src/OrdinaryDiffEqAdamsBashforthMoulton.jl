@@ -1,6 +1,6 @@
 module OrdinaryDiffEqAdamsBashforthMoulton
 
-import OrdinaryDiffEq: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, @cache, alg_cache,
+import OrdinaryDiffEqCore: OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, @cache, alg_cache,
                        initialize!, @unpack, perform_step!, alg_order, isstandard, OrdinaryDiffEqAlgorithm,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
                        constvalue, calculate_residuals, calculate_residuals!, trivial_limiter!

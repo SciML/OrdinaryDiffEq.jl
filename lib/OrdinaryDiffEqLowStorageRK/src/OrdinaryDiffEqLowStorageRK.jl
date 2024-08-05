@@ -1,6 +1,6 @@
 module OrdinaryDiffEqLowStorageRK
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
                        beta2_default, beta1_default, gamma_default,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals, ssp_coefficient,

@@ -1,6 +1,6 @@
 module OrdinaryDiffEqRosenbrock
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _unwrap_val,
                        DEFAULT_PRECS, OrdinaryDiffEqRosenbrockAlgorithm, @cache, alg_cache, initialize!, @unpack,
                        calculate_residuals!,OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
@@ -24,7 +24,7 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
 wrapprecs, calc_tderivative, build_grad_config, build_jac_config, issuccess_W,  jacobian2W!, resize_jac_config!, resize_grad_config!,
 calc_W, calc_rosenbrock_differentiation!, build_J_W, UJacobianWrapper, dolinsolve
 
-import OrdinaryDiffEq: alg_autodiff
+import OrdinaryDiffEqCore: alg_autodiff
 
 function rosenbrock_wanner_docstring(description::String,
         name::String;

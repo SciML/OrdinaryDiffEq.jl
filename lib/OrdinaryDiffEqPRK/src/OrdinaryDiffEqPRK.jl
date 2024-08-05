@@ -1,6 +1,6 @@
 module OrdinaryDiffEqPRK
 
-import OrdinaryDiffEq: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutableCache,
+import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqConstantCache, constvalue, @unpack, @cache, alg_cache,
                        unwrap_alg, perform_step!, @threaded, initialize!, isthreaded
 import MuladdMacro: @muladd

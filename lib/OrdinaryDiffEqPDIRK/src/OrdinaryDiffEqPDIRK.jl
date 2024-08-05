@@ -1,6 +1,6 @@
 module OrdinaryDiffEqPDIRK
 
-import OrdinaryDiffEq: isfsal, alg_order, _unwrap_val,
+import OrdinaryDiffEqCore: isfsal, alg_order, _unwrap_val,
                        OrdinaryDiffEqNewtonAlgorithm, OrdinaryDiffEqConstantCache,
                        OrdinaryDiffEqMutableCache, constvalue, alg_cache,
                        uses_uprev, @unpack, unwrap_alg, @cache, DEFAULT_PRECS,
