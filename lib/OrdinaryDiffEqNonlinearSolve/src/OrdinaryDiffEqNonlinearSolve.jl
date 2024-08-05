@@ -17,6 +17,7 @@ using LinearSolve: I
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
+import CommonSolve: init, solve, solve!
 
 using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation,
 AbstractNLSolverAlgorithm, AbstractNLSolverCache, AbstractNLSolver, NewtonAlgorithm, @unpack,
