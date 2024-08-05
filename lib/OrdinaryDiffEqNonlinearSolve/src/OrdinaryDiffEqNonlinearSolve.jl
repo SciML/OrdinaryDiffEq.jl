@@ -12,6 +12,7 @@ using MuladdMacro, FastBroadcast
 import FastClosures: @closure
 using LinearAlgebra: UniformScaling
 import ArrayInterface
+import LinearSolve
 using LinearSolve: I
 
 import SciMLOperators: islinear
