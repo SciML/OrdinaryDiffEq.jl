@@ -27,6 +27,7 @@ jobs:
 
           - OrdinaryDiffEqAdamsBashforthMoulton
           - OrdinaryDiffEqBDF
+          - OrdinaryDiffEqCore
           - OrdinaryDiffEqDefault
           - OrdinaryDiffEqDifferentiation
           - OrdinaryDiffEqExplicitRK

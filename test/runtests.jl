@@ -23,6 +23,22 @@ function activate_odeinterface_env()
     Pkg.instantiate()
 end
 
+function dev_all_sublibs()
+    # Manually ensure dependencies are added first
+    Pkg.develop("../lib/OrdinaryDiffEqCore")
+    Pkg.develop("../lib/OrdinaryDiffEqDifferentiation")
+    Pkg.develop("../lib/OrdinaryDiffEqNonlinearSolve")
+    Pkg.develop("../lib/OrdinaryDiffEqLowOrderRK")
+    Pkg.develop("../lib/OrdinaryDiffEqTsit5")
+    Pkg.develop("../lib/OrdinaryDiffEqVerner")
+    Pkg.develop("../lib/OrdinaryDiffEqSDIRK")
+    for pkg in readdir("../lib")
+        Pkg.develop(pkg)
+    end
+    Pkg.develop("OrdinaryDiffEq")
+end
+dev_all_sublibs()
+
 #Start Test Script
 
 @time begin
