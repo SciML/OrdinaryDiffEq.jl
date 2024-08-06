@@ -11,6 +11,9 @@ import FastBroadcast: @..
 import MuladdMacro: @muladd
 import Static: False
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("functionmap_caches.jl")

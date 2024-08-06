@@ -8,6 +8,11 @@ import OrdinaryDiffEqCore: OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqConsta
 using Static: False
 using MuladdMacro, FastBroadcast
 using RecursiveArrayTools: recursive_unitless_bottom_eltype, recursivefill!
+
+using Reexport
+@reexport using DiffEqBase
+
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("qprk_caches.jl")

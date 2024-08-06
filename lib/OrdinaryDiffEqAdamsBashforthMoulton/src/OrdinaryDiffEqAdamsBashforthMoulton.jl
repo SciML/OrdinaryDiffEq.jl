@@ -10,6 +10,9 @@ using MuladdMacro, FastBroadcast
 import Static: False
 import ADTypes: AutoForwardDiff
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("adams_bashforth_moulton_caches.jl")

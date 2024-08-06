@@ -10,8 +10,11 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, calculate_residuals!,
                        OrdinaryDiffEqAdaptiveAlgorithm, calc_dt_propose!,
                        alg_cache, _vec, _reshape, @cache,
                        constvalue, _unwrap_val
-using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

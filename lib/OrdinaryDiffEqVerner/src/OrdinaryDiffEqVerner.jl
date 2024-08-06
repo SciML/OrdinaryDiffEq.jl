@@ -13,11 +13,14 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        _ode_interpolant!, _ode_addsteps!, @fold,
                        @OnDemandTableauExtract, AutoAlgSwitch,
                        DerivativeOrderNotPossibleError
-using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
 using TruncatedStacktraces
 using LinearAlgebra: norm
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

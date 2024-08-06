@@ -9,13 +9,16 @@ import OrdinaryDiffEqCore: alg_order, isfsal, beta2_default, beta1_default, alg_
                        @cache, CompiledFloats, alg_cache, CompositeAlgorithm, copyat_or_push!,
                        AutoAlgSwitch, _ode_interpolant, _ode_interpolant!, full_cache,
                        accept_step_controller, DerivativeOrderNotPossibleError
-using DiffEqBase, SciMLBase
+using SciMLBase
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 import LinearAlgebra: norm
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import Static: False
 using DiffEqBase: @def, @tight_loop_macros
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

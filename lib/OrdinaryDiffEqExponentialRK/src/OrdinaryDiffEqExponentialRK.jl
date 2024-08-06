@@ -14,6 +14,9 @@ using ExponentialUtilities
 import RecursiveArrayTools: recursivecopy!
 using OrdinaryDiffEqDifferentiation: build_jac_config, UJacobianWrapper, UDerivativeWrapper, calc_J, calc_J!
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("exponential_rk_caches.jl")

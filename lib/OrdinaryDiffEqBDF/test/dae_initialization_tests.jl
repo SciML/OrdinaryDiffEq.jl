@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore, StaticArrays, LinearAlgebra, Test
+using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test
 
 f = function (du, u, p, t)
     out1 = -0.04u[1] + 1e4 * u[2] * u[3] - du[1]

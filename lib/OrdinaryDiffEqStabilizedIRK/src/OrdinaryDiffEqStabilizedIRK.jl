@@ -14,8 +14,11 @@ import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
 
 using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
 using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver, markfirststage!, du_alias_or_new, get_W
-using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

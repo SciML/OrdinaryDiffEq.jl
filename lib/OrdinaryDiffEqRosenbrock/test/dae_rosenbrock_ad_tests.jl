@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqRosenbrock, LinearAlgebra, ForwardDiff, Test
 
 function rober(du, u, p, t)
     y₁, y₂, y₃ = u

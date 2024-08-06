@@ -12,6 +12,7 @@ Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
 julia = "1.10"

@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore, DiffEqDevTools, Test, LinearAlgebra, Random
+using OrdinaryDiffEqStabilizedRK, DiffEqDevTools, Test, LinearAlgebra, Random
 using OrdinaryDiffEqCore.OrdinaryDiffEqStabilizedRK: maxeig!
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 probArr = Vector{ODEProblem}(undef, 2)

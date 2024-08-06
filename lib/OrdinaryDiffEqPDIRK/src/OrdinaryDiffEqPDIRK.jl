@@ -10,6 +10,9 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 using Polyester
 
+using Reexport
+@reexport using DiffEqBase
+
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail, markfirststage!
 

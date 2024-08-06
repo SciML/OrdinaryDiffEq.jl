@@ -7,10 +7,12 @@ import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required, OrdinaryDif
                        initialize!, perform_step!, @unpack, unwrap_alg, calculate_residuals!,
                        _vec, isdtchangeable
 using LinearAlgebra: mul!, I
-using DiffEqBase
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities
 using RecursiveArrayTools
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

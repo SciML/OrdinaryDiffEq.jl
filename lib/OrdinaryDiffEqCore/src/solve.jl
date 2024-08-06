@@ -109,7 +109,7 @@ function DiffEqBase.__init(
         end
     end
 
-    if alg isa Union{Rosenbrock23, Rosenbrock32} &&
+    if only_diagonal_mass_matrix(alg) &&
        prob.f.mass_matrix isa AbstractMatrix &&
        !isdiag(prob.f.mass_matrix)
         error("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)")

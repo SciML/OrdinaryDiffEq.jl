@@ -6,11 +6,11 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, isWmethod, isfsal, _un
                        OrdinaryDiffEqConstantCache, _ode_interpolant, _ode_interpolant!,
                        _vec, _reshape, perform_step!, trivial_limiter!, OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                        OrdinaryDiffEqRosenbrockAlgorithm, generic_solver_docstring, namify, initialize!, perform_step!,
-                       constvalue,
+                       constvalue, only_diagonal_mass_matrix,
                        calculate_residuals, has_stiff_interpolation, ODEIntegrator,
                        resize_non_user_cache!, _ode_addsteps!,full_cache,
                        DerivativeOrderNotPossibleError
-using TruncatedStacktraces, MuladdMacro, FastBroadcast, DiffEqBase, RecursiveArrayTools
+using TruncatedStacktraces, MuladdMacro, FastBroadcast, RecursiveArrayTools
 import MacroTools
 using MacroTools: @capture
 using DiffEqBase: @def
@@ -23,6 +23,9 @@ import ADTypes: AutoForwardDiff
 using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper, UDerivativeWrapper, UJacobianWrapper,
 wrapprecs, calc_tderivative, build_grad_config, build_jac_config, issuccess_W,  jacobian2W!, resize_jac_config!, resize_grad_config!,
 calc_W, calc_rosenbrock_differentiation!, build_J_W, UJacobianWrapper, dolinsolve
+
+using Reexport
+@reexport using DiffEqBase
 
 import OrdinaryDiffEqCore: alg_autodiff
 

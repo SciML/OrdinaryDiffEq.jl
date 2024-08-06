@@ -7,6 +7,9 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 using Polyester
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("prk_caches.jl")

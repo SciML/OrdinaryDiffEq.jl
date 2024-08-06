@@ -13,9 +13,12 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        explicit_rk_docstring, trivial_limiter!,
                        _ode_interpolant, _ode_interpolant!,
                        _ode_addsteps!
-using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 using Static: False
+
+using Reexport
+@reexport using DiffEqBase
 
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 

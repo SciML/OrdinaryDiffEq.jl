@@ -13,6 +13,7 @@ SciMLOperators = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
 julia = "1.10"

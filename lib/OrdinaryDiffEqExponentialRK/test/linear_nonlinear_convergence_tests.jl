@@ -1,4 +1,4 @@
-using OrdinaryDiffEqCore, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
+using OrdinaryDiffEqExponentialRK, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
 using OrdinaryDiffEqCore: alg_order
 
 @testset "Caching Out-of-place" begin

@@ -11,8 +11,11 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        alg_cache, _vec, _reshape, @cache, isfsal, full_cache,
                        constvalue, _unwrap_val, _ode_interpolant,
                        trivial_limiter!, _ode_interpolant!, _ode_addsteps!
-using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

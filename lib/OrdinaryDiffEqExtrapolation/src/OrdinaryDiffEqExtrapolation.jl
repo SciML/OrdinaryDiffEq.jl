@@ -19,6 +19,9 @@ using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, Li
 import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, UDerivativeWrapper, calc_J, WOperator, TimeGradientWrapper, UJacobianWrapper,                        build_grad_config,
 build_jac_config, calc_J!, jacobian2W!, dolinsolve
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("controllers.jl")

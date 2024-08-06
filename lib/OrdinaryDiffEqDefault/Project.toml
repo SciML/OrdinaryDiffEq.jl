@@ -11,6 +11,8 @@ OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"

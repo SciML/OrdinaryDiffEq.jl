@@ -29,6 +29,9 @@ using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
 nlsolve!, nlsolvefail, isnewton, markfirststage!, set_new_W!, DIRK,  compute_step!, COEFFICIENT_MULTISTEP
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("bdf_utils.jl")

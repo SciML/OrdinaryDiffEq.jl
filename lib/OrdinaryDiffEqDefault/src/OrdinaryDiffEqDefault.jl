@@ -14,6 +14,9 @@ import LinearSolve
 using LinearAlgebra: I, isdiag
 using EnumX
 
+using Reexport
+@reexport using DiffEqBase
+
 include("default_alg.jl")
 
 export DefaultODEAlgorithm

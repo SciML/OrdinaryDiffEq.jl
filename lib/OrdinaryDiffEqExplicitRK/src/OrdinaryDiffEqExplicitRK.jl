@@ -7,6 +7,9 @@ import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_stability_size, Or
 using TruncatedStacktraces, RecursiveArrayTools, FastBroadcast, MuladdMacro, DiffEqBase
 import LinearAlgebra: norm
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("explicit_rk_caches.jl")

@@ -6,13 +6,16 @@ import OrdinaryDiffEqCore: alg_order, qmax_default, qmin_default, beta2_default,
                        alg_cache, uses_uprev, initialize!, perform_step!, OrdinaryDiffEqConstantCache,
                        calculate_residuals!, calculate_residuals, CompiledFloats, copyat_or_push!,
                        unwrap_alg, _ode_interpolant, _ode_interpolant!,
-                       DerivativeOrderNotPossibleError, full_cache
+                       DerivativeOrderNotPossibleError, full_cache, isdp8
 import Static: False
 import MuladdMacro: @muladd
 using DiffEqBase
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!
 using DiffEqBase: @def, @tight_loop_macros
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

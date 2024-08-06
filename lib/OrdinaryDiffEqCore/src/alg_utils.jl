@@ -138,6 +138,9 @@ dtnew_modification(integrator, alg, dtnew) = dtnew
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
+only_diagonal_mass_matrix(alg) = false
+isdp8(alg) = false
+
 function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 1 // 5 : 0
 end

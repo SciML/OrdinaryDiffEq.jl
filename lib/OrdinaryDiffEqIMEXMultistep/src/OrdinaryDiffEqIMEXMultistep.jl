@@ -9,6 +9,9 @@ using FastBroadcast
 using OrdinaryDiffEqDifferentiation: dolinsolve
 using OrdinaryDiffEqNonlinearSolve:  NLNewton,  build_nlsolver,  markfirststage!, nlsolve!, nlsolvefail, du_alias_or_new
 
+using Reexport
+@reexport using DiffEqBase
+
 include("algorithms.jl")
 include("alg_utils.jl")
 include("imex_multistep_caches.jl")

@@ -5,6 +5,8 @@ version = "1.0.0"
 
 [deps]
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [extras]
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
