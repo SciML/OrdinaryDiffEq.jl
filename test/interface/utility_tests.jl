@@ -1,5 +1,6 @@
-using OrdinaryDiffEq: WOperator, calc_W, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
+using OrdinaryDiffEq: OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, jacobian2W!
 
 @testset "calc_W and calc_W!" begin
     A = [-1.0 0.0; 0.0 -0.5]
@@ -37,7 +38,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
     @test tmp != concrete_W \ u0
 
     # But jacobian2W! will update the cache
-    OrdinaryDiffEq.jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
+    jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
         dtgamma, integrator.cache.nlsolver.cache.W.J.A, false)
     @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
     ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)

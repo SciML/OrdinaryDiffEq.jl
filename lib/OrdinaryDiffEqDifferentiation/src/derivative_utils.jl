@@ -626,6 +626,8 @@ function jacobian2W(mass_matrix, dtgamma::Number, J::AbstractMatrix,
     return W
 end
 
+is_always_new(alg) = isdefined(alg, :always_new) ? alg.always_new : false
+
 function calc_W!(W, integrator, nlsolver::Union{Nothing, AbstractNLSolver}, cache, dtgamma,
         repeat_step, W_transform = false, newJW = nothing)
     @unpack t, dt, uprev, u, f, p = integrator
@@ -920,7 +922,7 @@ function LinearSolve.init_cacheval(
         assumptions::OperatorAssumptions)
 end
 
-for alg in InteractiveUtils.subtypes(OrdinaryDiffEq.LinearSolve.AbstractFactorization)
+for alg in InteractiveUtils.subtypes(LinearSolve.AbstractFactorization)
     @eval function LinearSolve.init_cacheval(alg::$alg, A::WOperator, b, u, Pl, Pr,
             maxiters::Int, abstol, reltol, verbose::Bool,
             assumptions::OperatorAssumptions)
@@ -928,4 +930,40 @@ for alg in InteractiveUtils.subtypes(OrdinaryDiffEq.LinearSolve.AbstractFactoriz
             maxiters::Int, abstol, reltol, verbose::Bool,
             assumptions::OperatorAssumptions)
     end
+end
+
+function resize_J_W!(cache, integrator, i)
+    (isdefined(cache, :J) && isdefined(cache, :W)) || return
+
+    @unpack f = integrator
+
+    if cache.W isa WOperator
+        nf = nlsolve_f(f, integrator.alg)
+        islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
+        if !islin
+            if cache.J isa AbstractSciMLOperator
+                resize!(cache.J, i)
+            elseif f.jac_prototype !== nothing
+                J = similar(f.jac_prototype, i, i)
+                J = MatrixOperator(J; update_func! = f.jac)
+            end
+            if cache.W.jacvec isa AbstractSciMLOperator
+                resize!(cache.W.jacvec, i)
+            end
+            cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
+                integrator.dt,
+                cache.J,
+                integrator.u,
+                cache.W.jacvec;
+                transform = cache.W.transform)
+            cache.J = cache.W.J
+        end
+    else
+        if cache.J !== nothing
+            cache.J = similar(cache.J, i, i)
+        end
+        cache.W = similar(cache.W, i, i)
+    end
+
+    nothing
 end

@@ -1,10 +1,13 @@
 module OrdinaryDiffEqIMEXMultistep
 
-import OrdinaryDiffEq: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _unwrap_val, dolinsolve,
-                       DEFAULT_PRECS, NLNewton, OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
-                       build_nlsolver, @cache, alg_cache, initialize!, perform_step!, @unpack,
-                       markfirststage!, nlsolve!, nlsolvefail, du_alias_or_new
+import OrdinaryDiffEq: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _unwrap_val,
+                       DEFAULT_PRECS, OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
+                       @cache, alg_cache, initialize!, perform_step!, @unpack
+
 using FastBroadcast
+
+using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: dolinsolve
+using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve:  NLNewton,  build_nlsolver,  markfirststage!, nlsolve!, nlsolvefail, du_alias_or_new
 
 include("algorithms.jl")
 include("alg_utils.jl")

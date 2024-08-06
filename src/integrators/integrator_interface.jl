@@ -253,43 +253,8 @@ function resize_f!(f::SplitFunction, i)
     return nothing
 end
 
-function resize_J_W!(cache, integrator, i)
-    (isdefined(cache, :J) && isdefined(cache, :W)) || return
+function resize_J_W! end
 
-    @unpack f = integrator
-
-    if cache.W isa WOperator
-        nf = nlsolve_f(f, integrator.alg)
-        islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
-        if !islin
-            if cache.J isa AbstractSciMLOperator
-                resize!(cache.J, i)
-            elseif f.jac_prototype !== nothing
-                J = similar(f.jac_prototype, i, i)
-                J = MatrixOperator(J; update_func! = f.jac)
-            end
-            if cache.W.jacvec isa AbstractSciMLOperator
-                resize!(cache.W.jacvec, i)
-            end
-            cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
-                integrator.dt,
-                cache.J,
-                integrator.u,
-                cache.W.jacvec;
-                transform = cache.W.transform)
-            cache.J = cache.W.J
-        end
-    else
-        if cache.J !== nothing
-            cache.J = similar(cache.J, i, i)
-        end
-        cache.W = similar(cache.W, i, i)
-    end
-
-    nothing
-end
-
-Base.resize!(p::LinearSolve.LinearCache, i) = p
 function resize_non_user_cache!(integrator::ODEIntegrator, i::Int)
     resize_non_user_cache!(integrator, integrator.cache, i)
 end

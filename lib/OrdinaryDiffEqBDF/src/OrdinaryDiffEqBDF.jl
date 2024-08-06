@@ -9,16 +9,14 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        OrdinaryDiffEqNewtonAlgorithm,
                        AbstractController, DEFAULT_PRECS,
                        CompiledFloats, uses_uprev,
-                       NLNewton, alg_cache, _vec, _reshape, @cache,
-                       isfsal, full_cache, build_nlsolver,
-                       nlsolve!, nlsolvefail, isnewton,
+                       alg_cache, _vec, _reshape, @cache,
+                       isfsal, full_cache,
                        constvalue, isadaptive, error_constant,
-                       DIRK, set_new_W!, has_special_newton_error,
-                       du_alias_or_new, trivial_limiter!,
+                       has_special_newton_error,
+                       trivial_limiter!,
                        ImplicitEulerConstantCache,
-                       compute_step!,
-                       ImplicitEulerCache, COEFFICIENT_MULTISTEP,
-                       markfirststage!, UJacobianWrapper, mul!,
+
+                       ImplicitEulerCache,
                        issplit, qsteady_min_default, qsteady_max_default,
                        get_current_alg_order, get_current_adaptive_order,
                        default_controller, stepsize_controller!, step_accept_controller!,
@@ -26,8 +24,11 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        u_modified!, DAEAlgorithm, _unwrap_val, DummyController
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
-using LinearAlgebra: I
+using LinearAlgebra: mul!, I
 using ArrayInterface
+using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: UJacobianWrapper
+using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
+nlsolve!, nlsolvefail, isnewton, markfirststage!, set_new_W!, DIRK,  compute_step!, COEFFICIENT_MULTISTEP
 
 include("algorithms.jl")
 include("alg_utils.jl")

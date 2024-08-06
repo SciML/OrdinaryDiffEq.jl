@@ -90,7 +90,6 @@ end
     if !is_APPVEYOR && (GROUP == "All" || GROUP == "InterfaceV" || GROUP == "Interface")
         @time @safetestset "Interpolation Derivative Error Tests" include("interface/interpolation_derivative_error_tests.jl")
         @time @safetestset "AD Tests" include("interface/ad_tests.jl")
-        @time @safetestset "Newton Tests" include("interface/newton_tests.jl")
         @time @safetestset "DAE Initialize Integration" include("interface/dae_initialize_integration.jl")
         @time @safetestset "DAE Initialization Tests" include("interface/dae_initialization_tests.jl")
     end

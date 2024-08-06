@@ -18,15 +18,7 @@ using MuladdMacro, SparseArrays, FastClosures
 
 using LinearAlgebra
 
-import StaticArrayInterface
-
 using PrecompileTools
-
-import InteractiveUtils
-
-using LinearSolve, SimpleNonlinearSolve
-
-using LineSearches
 
 import FillArrays: Trues, Falses
 
@@ -43,26 +35,16 @@ import SciMLOperators: SciMLOperators, AbstractSciMLOperator, AbstractSciMLScala
                        update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
                        isconstant
 
-using DiffEqBase: TimeGradientWrapper,
-                  UJacobianWrapper, TimeDerivativeWrapper,
-                  UDerivativeWrapper
-
 using DiffEqBase: DEIntegrator
 
 import RecursiveArrayTools: chain, recursivecopy!
 
-using SimpleUnPack, ForwardDiff, RecursiveArrayTools,
-      DataStructures, FiniteDiff, ArrayInterface, ArrayInterface
-
-import ForwardDiff.Dual
+using SimpleUnPack, RecursiveArrayTools,
+      DataStructures, ArrayInterface, ArrayInterface
 
 import TruncatedStacktraces
 
-import PreallocationTools
-
 using ExponentialUtilities
-
-using NonlinearSolve
 
 # Required by temporary fix in not in-place methods with 12+ broadcasts
 # `MVector` is used by Nordsieck forms
@@ -92,39 +74,44 @@ import DiffEqBase: calculate_residuals,
                    @tight_loop_macros,
                    islinear, timedepentdtmin
 
-@static if isdefined(DiffEqBase, :OrdinaryDiffEqTag)
-    import DiffEqBase: OrdinaryDiffEqTag
-else
-    struct OrdinaryDiffEqTag end
-end
-
-import SparseDiffTools: SparseDiffTools, matrix_colors, forwarddiff_color_jacobian!,
-                        forwarddiff_color_jacobian, ForwardColorJacCache,
-                        default_chunk_size, getsize, JacVec
-
-import ADTypes: AbstractADType,
-                AutoFiniteDiff, AutoForwardDiff, AutoReverseDiff,
-                AutoTracker, AutoZygote, AutoEnzyme
-
 import Polyester
 using MacroTools, Adapt
+import ADTypes: AutoFiniteDiff, AutoForwardDiff
 
 using SciMLStructures: canonicalize, Tunable, isscimlstructure
 
-const CompiledFloats = Union{Float32, Float64,
-    ForwardDiff.Dual{
-        ForwardDiff.Tag{T, W},
-        K,
-        N
-    } where {
-        T,
-        W <: Union{Float64, Float32},
-        K <: Union{Float64, Float32},
-        N
-    }}
-
-import FunctionWrappersWrappers
+const CompiledFloats = Union{Float32, Float64}
 import Preferences
+
+abstract type AbstractNLSolverCache end
+abstract type AbstractNLSolverAlgorithm end
+abstract type AbstractNLSolver{algType, iip} end
+
+function set_new_W! end
+function set_W_γdt! end
+function get_W end
+function isfirstcall end
+function isfirststage end
+function isJcurrent end
+function get_new_W_γdt_cutoff end
+resize_J_W!(args...) = nothing
+resize_nlsolver!(args...) = nothing
+
+@enum MethodType begin
+    DIRK
+    COEFFICIENT_MULTISTEP
+    NORDSIECK_MULTISTEP
+    GLM
+end
+
+@enum NLStatus::Int8 begin
+    FastConvergence = 2
+    Convergence = 1
+    SlowConvergence = 0
+    VerySlowConvergence = -1
+    Divergence = -2
+end
+const TryAgain = SlowConvergence
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
@@ -136,12 +123,6 @@ include("algorithms.jl")
 include("composite_algs.jl")
 
 include("alg_utils.jl")
-
-include("nlsolve/type.jl")
-include("nlsolve/utils.jl")
-include("nlsolve/nlsolve.jl")
-include("nlsolve/functional.jl")
-include("nlsolve/newton.jl")
 
 include("caches/basic_caches.jl")
 
@@ -156,12 +137,18 @@ include("perform_step/composite_perform_step.jl")
 
 include("dense/generic_dense.jl")
 
-include("derivative_utils.jl")
-include("derivative_wrappers.jl")
 include("iterator_interface.jl")
 include("solve.jl")
 include("initdt.jl")
 include("interp_func.jl")
+
+include("../lib/OrdinaryDiffEqDifferentiation/src/OrdinaryDiffEqDifferentiation.jl")
+import ..OrdinaryDiffEqDifferentiation
+using ..OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!
+
+include("../lib/OrdinaryDiffEqNonlinearSolve/src/OrdinaryDiffEqNonlinearSolve.jl")
+using ..OrdinaryDiffEqNonlinearSolve
+using ..OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail, initial_η, NonlinearSolveAlg, compute_step!, NLSolver, nlsolve!, resize_jac_config!, anderson!, build_nlsolver, markfirststage!, anderson
 
 include("../lib/OrdinaryDiffEqExtrapolation/src/OrdinaryDiffEqExtrapolation.jl")
 using ..OrdinaryDiffEqExtrapolation
