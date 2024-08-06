@@ -15,7 +15,7 @@ using DiffEqBase
 
 import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, axpby!
-import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix
+import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros
 
 import InteractiveUtils
 import ArrayInterface

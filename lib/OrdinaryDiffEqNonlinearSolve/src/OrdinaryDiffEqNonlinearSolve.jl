@@ -15,7 +15,7 @@ using LinearAlgebra: UniformScaling
 import LinearAlgebra
 import ArrayInterface
 import LinearSolve
-using LinearSolve: I, rmul!
+using LinearSolve: I, rmul!, norm
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
@@ -29,7 +29,8 @@ SlowConvergence, VerySlowConvergence, Divergence, NLStatus, MethodType, alg_orde
 
 import OrdinaryDiffEq: _initialize_dae!, resize_nlsolver!, isnewton, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff
 
-import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config, dolinsolve
+import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config, dolinsolve, alg_autodiff
+
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
                      StaticMatrix
 
