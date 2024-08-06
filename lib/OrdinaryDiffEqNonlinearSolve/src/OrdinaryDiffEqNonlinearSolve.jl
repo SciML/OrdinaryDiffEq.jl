@@ -30,11 +30,11 @@ OverrideInit, ShampineCollocationInit, BrownFullBasicInit, _vec, _unwrap_val, DA
 _reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, isadaptive,
 TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, FastConvergence, Convergence, 
 SlowConvergence, VerySlowConvergence, Divergence, NLStatus, MethodType, alg_order, error_constant,
-alg_extrapolates, resize_jac_config!
+alg_extrapolates
 
 import OrdinaryDiffEq: _initialize_dae!, resize_nlsolver!, isnewton, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff
 
-import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config, dolinsolve, alg_autodiff
+import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config, dolinsolve, alg_autodiff, resize_jac_config!
 
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
                      StaticMatrix
