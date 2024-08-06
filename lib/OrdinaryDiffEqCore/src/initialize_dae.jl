@@ -153,6 +153,10 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         alg::OverrideInit, isinplace::Union{Val{true}, Val{false}})
     initializeprob = prob.f.initializeprob
 
+    if SciMLBase.has_update_initializeprob!(prob.f)
+        prob.f.update_initializeprob!(initializeprob, prob)
+    end
+
     # If it doesn't have autodiff, assume it comes from symbolic system like ModelingToolkit
     # Since then it's the case of not a DAE but has initializeprob
     # In which case, it should be differentiable
@@ -172,6 +176,12 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
         integrator.u = prob.f.initializeprobmap(nlsol)
     else
         error("Unreachable reached. Report this error.")
+    end
+    if SciMLBase.has_initializeprobpmap(prob.f)
+        integrator.p = prob.f.initializeprobpmap(prob, nlsol)
+        sol = integrator.sol
+        @reset sol.prob.p = integrator.p
+        integrator.sol = sol
     end
 
     if nlsol.retcode != ReturnCode.Success
