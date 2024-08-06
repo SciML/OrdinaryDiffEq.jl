@@ -30,7 +30,7 @@ OverrideInit, ShampineCollocationInit, BrownFullBasicInit, _vec, _unwrap_val, DA
 _reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, isadaptive,
 TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, FastConvergence, Convergence, 
 SlowConvergence, VerySlowConvergence, Divergence, NLStatus, MethodType, alg_order, error_constant,
-alg_extrapolates, resize_J_W!
+alg_extrapolates, resize_J_W!, has_autodiff
 
 import OrdinaryDiffEq: _initialize_dae!, isnewton, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff, resize_nlsolver!
 
