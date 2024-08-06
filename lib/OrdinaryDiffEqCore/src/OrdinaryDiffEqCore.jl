@@ -27,7 +27,7 @@ import DiffEqBase: ODE_DEFAULT_NORM,
                    ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE,
                    ODE_DEFAULT_UNSTABLE_CHECK
 
-import SciMLOperators: SciMLOperators, AbstractSciMLOperator, AbstractSciMLScalarOperator,
+import SciMLOperators: AbstractSciMLOperator, AbstractSciMLScalarOperator,
                        MatrixOperator, FunctionOperator,
                        update_coefficients, update_coefficients!, DEFAULT_UPDATE_FUNC,
                        isconstant
@@ -36,12 +36,9 @@ using DiffEqBase: DEIntegrator
 
 import RecursiveArrayTools: chain, recursivecopy!
 
-using SimpleUnPack, RecursiveArrayTools,
-      DataStructures, ArrayInterface, ArrayInterface
+using SimpleUnPack, RecursiveArrayTools, DataStructures, ArrayInterface
 
 import TruncatedStacktraces
-
-using ExponentialUtilities
 
 # Required by temporary fix in not in-place methods with 12+ broadcasts
 # `MVector` is used by Nordsieck forms
