@@ -93,6 +93,7 @@ function get_W end
 function isfirstcall end
 function isfirststage end
 function isJcurrent end
+function get_new_W_γdt_cutoff end
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
