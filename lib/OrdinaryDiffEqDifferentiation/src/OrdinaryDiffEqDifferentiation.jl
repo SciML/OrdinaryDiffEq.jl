@@ -33,7 +33,8 @@ OrdinaryDiffEqImplicitAlgorithm, CompositeAlgorithm, OrdinaryDiffEqExponentialAl
 OrdinaryDiffEqAdaptiveExponentialAlgorithm, @unpack, AbstractNLSolver, nlsolve_f, issplit,
 concrete_jac, unwrap_alg, OrdinaryDiffEqCache, _vec, standardtag, isnewton, _unwrap_val,
 set_new_W!, set_W_γdt!, alg_difftype, unwrap_cache, diffdir, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
-TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence, NLStatus, MethodType
+TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence, NLStatus, MethodType,
+pick_static_chunksize
 
 import OrdinaryDiffEq: get_chunksize
 
