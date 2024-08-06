@@ -24,7 +24,7 @@ AbstractNLSolverAlgorithm, AbstractNLSolverCache, AbstractNLSolver, NewtonAlgori
 OverrideInit, ShampineCollocationInit, BrownFullBasicInit, _vec, _unwrap_val, DAEAlgorithm,
 _reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, isadaptive,
 TryAgain, DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, FastConvergence, Convergence, 
-SlowConvergence, VerySlowConvergence, Divergence, NLStatus, MethodType, alg_order
+SlowConvergence, VerySlowConvergence, Divergence, NLStatus, MethodType, alg_order, error_constant
 
 import OrdinaryDiffEq: _initialize_dae!, resize_nlsolver!, isnewton, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff
 
