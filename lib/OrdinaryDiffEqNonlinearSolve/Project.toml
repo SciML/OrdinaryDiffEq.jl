@@ -8,6 +8,7 @@ ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 
 [compat]
 julia = "1.10"
