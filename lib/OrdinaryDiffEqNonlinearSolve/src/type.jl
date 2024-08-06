@@ -1,22 +1,4 @@
-# Method type
-@enum MethodType begin
-    DIRK
-    COEFFICIENT_MULTISTEP
-    NORDSIECK_MULTISTEP
-    GLM
-end
-
-@enum NLStatus::Int8 begin
-    FastConvergence = 2
-    Convergence = 1
-    SlowConvergence = 0
-    VerySlowConvergence = -1
-    Divergence = -2
-end
-const TryAgain = SlowConvergence
-
 # algorithms
-
 struct NLFunctional{K, C} <: AbstractNLSolverAlgorithm
     κ::K
     fast_convergence_cutoff::C

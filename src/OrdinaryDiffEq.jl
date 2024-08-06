@@ -95,6 +95,22 @@ function isfirststage end
 function isJcurrent end
 function get_new_W_γdt_cutoff end
 
+@enum MethodType begin
+    DIRK
+    COEFFICIENT_MULTISTEP
+    NORDSIECK_MULTISTEP
+    GLM
+end
+
+@enum NLStatus::Int8 begin
+    FastConvergence = 2
+    Convergence = 1
+    SlowConvergence = 0
+    VerySlowConvergence = -1
+    Divergence = -2
+end
+const TryAgain = SlowConvergence
+
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
 
