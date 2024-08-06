@@ -164,6 +164,9 @@ function _initialize_dae!(integrator, prob::Union{ODEProblem, DAEProblem},
     else
         error("Unreachable reached. Report this error.")
     end
+    if isdefined(prob.f, :initializeprobpmap) && prob.f.initializeprobpmap !== nothing
+        integrator.p = prob.f.initializeprobpmap(prob, nlsol)
+    end
 
     if nlsol.retcode != ReturnCode.Success
         integrator.sol = SciMLBase.solution_new_retcode(integrator.sol,
