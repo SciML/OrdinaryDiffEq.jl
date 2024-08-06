@@ -931,3 +931,39 @@ for alg in InteractiveUtils.subtypes(LinearSolve.AbstractFactorization)
             assumptions::OperatorAssumptions)
     end
 end
+
+function resize_J_W!(cache, integrator, i)
+    (isdefined(cache, :J) && isdefined(cache, :W)) || return
+
+    @unpack f = integrator
+
+    if cache.W isa WOperator
+        nf = nlsolve_f(f, integrator.alg)
+        islin = f isa Union{ODEFunction, SplitFunction} && islinear(nf.f)
+        if !islin
+            if cache.J isa AbstractSciMLOperator
+                resize!(cache.J, i)
+            elseif f.jac_prototype !== nothing
+                J = similar(f.jac_prototype, i, i)
+                J = MatrixOperator(J; update_func! = f.jac)
+            end
+            if cache.W.jacvec isa AbstractSciMLOperator
+                resize!(cache.W.jacvec, i)
+            end
+            cache.W = WOperator{DiffEqBase.isinplace(integrator.sol.prob)}(f.mass_matrix,
+                integrator.dt,
+                cache.J,
+                integrator.u,
+                cache.W.jacvec;
+                transform = cache.W.transform)
+            cache.J = cache.W.J
+        end
+    else
+        if cache.J !== nothing
+            cache.J = similar(cache.J, i, i)
+        end
+        cache.W = similar(cache.W, i, i)
+    end
+
+    nothing
+end
