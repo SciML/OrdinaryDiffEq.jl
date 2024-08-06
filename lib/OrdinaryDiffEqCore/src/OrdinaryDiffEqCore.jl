@@ -11,7 +11,7 @@ using Reexport
 
 using Logging
 
-using MuladdMacro, SparseArrays, FastClosures
+using MuladdMacro, FastClosures
 
 using LinearAlgebra
 
