@@ -14,7 +14,7 @@ import FunctionWrappersWrappers
 using DiffEqBase
 
 import LinearAlgebra
-import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!
+import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, axpby!
 import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix
 
 import InteractiveUtils

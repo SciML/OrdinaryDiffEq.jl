@@ -12,6 +12,7 @@ using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg
 using MuladdMacro, FastBroadcast
 import FastClosures: @closure
 using LinearAlgebra: UniformScaling
+import LinearAlgebra
 import ArrayInterface
 import LinearSolve
 using LinearSolve: I, rmul!
