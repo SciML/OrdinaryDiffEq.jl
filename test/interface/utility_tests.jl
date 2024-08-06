@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, LinearSolve
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentation: WOperator, calc_W, calc_W!
+using OrdinaryDiffEq: OrdinaryDiffEqDifferentation
+using OrdinaryDiffEqDifferentation: WOperator, calc_W, calc_W!
 
 @testset "calc_W and calc_W!" begin
     A = [-1.0 0.0; 0.0 -0.5]
