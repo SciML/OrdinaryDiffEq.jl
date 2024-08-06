@@ -72,3 +72,8 @@ function DiffEqBase.prepare_alg(
         return remake(alg, chunk_size = cs)
     end
 end
+
+@generated function pick_static_chunksize(::Val{chunksize}) where {chunksize}
+    x = ForwardDiff.pickchunksize(chunksize)
+    :(Val{$x}())
+end

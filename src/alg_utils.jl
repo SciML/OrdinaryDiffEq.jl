@@ -189,11 +189,6 @@ function DiffEqBase.prepare_alg(
     alg
 end
 
-@generated function pick_static_chunksize(::Val{chunksize}) where {chunksize}
-    x = ForwardDiff.pickchunksize(chunksize)
-    :(Val{$x}())
-end
-
 function DiffEqBase.prepare_alg(alg::CompositeAlgorithm, u0, p, prob)
     algs = map(alg -> DiffEqBase.prepare_alg(alg, u0, p, prob), alg.algs)
     CompositeAlgorithm(algs, alg.choice_function)
