@@ -14,7 +14,7 @@ import FastClosures: @closure
 using LinearAlgebra: UniformScaling
 import ArrayInterface
 import LinearSolve
-using LinearSolve: I
+using LinearSolve: I, rmul!
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
