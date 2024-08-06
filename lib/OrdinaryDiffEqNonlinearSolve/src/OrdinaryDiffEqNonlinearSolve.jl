@@ -16,7 +16,7 @@ import LinearAlgebra
 import ArrayInterface
 import LinearSolve
 import ForwardDiff
-using LinearSolve: I, rmul!, norm, mul!
+using LinearSolve: I, rmul!, norm, mul!, ldiv!
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
