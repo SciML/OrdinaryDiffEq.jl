@@ -1342,197 +1342,197 @@ end
 
 @muladd function perform_step!(integrator, cache::adaptiveRadauConstantCache,
     repeat_step = false, s::Int64)
-@unpack t, dt, uprev, u, f, p = integrator
-@unpack T, TI, γ, α, β, c, e= cache.tab 
-@unpack κ, cont = cache
-@unpack internalnorm, abstol, reltol, adaptive = integrator.opts
-alg = unwrap_alg(integrator, true)
-@unpack maxiters = alg
-mass_matrix = integrator.f.mass_matrix
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack T, TI, γ, α, β, c, e= cache.tab 
+    @unpack κ, cont = cache
+    @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
+    alg = unwrap_alg(integrator, true)
+    @unpack maxiters = alg
+    mass_matrix = integrator.f.mass_matrix
 
-# precalculations rtol pow is (num stages + 1)/(2*num stages)
-rtol = @.. broadcast=false reltol^(5 / 8)/10
-atol = @.. broadcast=false rtol*(abstol / reltol)
+    # precalculations rtol pow is (num stages + 1)/(2*num stages)
+    rtol = @.. broadcast=false reltol^(5 / 8)/10
+    atol = @.. broadcast=false rtol*(abstol / reltol)
 
-γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
+    γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
 
-J = calc_J(integrator, cache)
-LU = Vector{Any}(undef, (s + 1) / 2)
-if u isa Number
-    LU[1] = -γdt * mass_matrix + J
-    for i in 2 : (s + 1) / 2
-        LU[i] = -(α[i - 1]dt + β[i - 1]dt * im) * mass_matrix + J
-    end
-else
-    LU[1] = lu(-γdt * mass_matrix + J)
-    for i in 2 : (s + 1) / 2
-        LU[i] = lu(-(α[i - 1]dt + β[i - 1]dt * im) * mass_matrix + J)
-    end
-end
-integrator.stats.nw += 1
-
-if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
-    cache.dtprev = one(cache.dtprev)
-    for i in 1:s
-        z[i] = w[i] = map(zero, u)
-    end
-    for i in 1:s-1
-        cont[i] = map(zero, u)
-    end
-else 
-    c' = Vector{eltype(u)}(undef, s) #time stepping
-    c'[s] = dt / cache.dtprev
-    for i in 1 : s-1
-        c'[i] = c[i] * c'[s]
-    end
-    for i in 1 : s # collocation polynomial
-        z[i] = @.. cont[s-1] * (c'[i] - c[1] + 1) + cont[s-1]
-        j = s - 2
-        while j > 0
-            z[i] = @.. z[i] * (c'[i] - c[s-j] + 1) + cont[j]
-        end
-        z[i] = @.. z[i] * c'[i]
-    end
-    w = @.. TI * z
-end
-
-# Newton iteration
-local ndw
-η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
-fail_convergence = true
-iter = 0
-while iter < maxiters
-    iter += 1
-    integrator.stats.nnonliniter += 1
-
-    # evaluate function
-    ff = Vector{eltype(u)}(undef, s)
-    for i in 1:s
-        ff[i] = f(uprev + z[i], p, t + c[i] * dt)
-    end    
-    integrator.stats.nf += 5
-
-    fw = @.. TI * ff
-    Mw = Vector{eltype(u)}(undef, s)
-    if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
-        for i in 1:s
-            Mw[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalues
+    J = calc_J(integrator, cache)
+    LU = Vector{Any}(undef, (s + 1) / 2)
+    if u isa Number
+        LU[1] = -γdt * mass_matrix + J
+        for i in 2 : (s + 1) / 2
+            LU[i] = -(α[i - 1]dt + β[i - 1]dt * im) * mass_matrix + J
         end
     else
-        Mw = mass_matrix * w #standard multiplication
+        LU[1] = lu(-γdt * mass_matrix + J)
+        for i in 2 : (s + 1) / 2
+            LU[i] = lu(-(α[i - 1]dt + β[i - 1]dt * im) * mass_matrix + J)
+        end
+    end
+    integrator.stats.nw += 1
+
+    if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
+        cache.dtprev = one(cache.dtprev)
+        for i in 1:s
+            z[i] = w[i] = map(zero, u)
+        end
+        for i in 1:s-1
+            cont[i] = map(zero, u)
+        end
+    else 
+        c' = Vector{eltype(u)}(undef, s) #time stepping
+        c'[s] = dt / cache.dtprev
+        for i in 1 : s-1
+            c'[i] = c[i] * c'[s]
+        end
+        for i in 1 : s # collocation polynomial
+            z[i] = @.. cont[s-1] * (c'[i] - c[1] + 1) + cont[s-1]
+            j = s - 2
+            while j > 0
+                z[i] = @.. z[i] * (c'[i] - c[s-j] + 1) + cont[j]
+            end
+            z[i] = @.. z[i] * c'[i]
+        end
+        w = @.. TI * z
     end
 
-    rhs = Vector{eltype(u)}(undef, s)
-    rhs[1] = @.. fw[1]-γdt * Mw[1]
-    i = 2
-    while i <= s #block by block multiplication
-        rhs[i] = @.. fw[i] - α[i/2]dt * Mw[i] + β[i/2]dt * Mw[i + 1]
-        rhs[i + 1] = @.. fw[i + 1] - β[i/2]dt * Mw[i] - α[i/2]dt * Mw[i + 1]
-        i += 2
-    end 
+    # Newton iteration
+    local ndw
+    η = max(cache.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+    fail_convergence = true
+    iter = 0
+    while iter < maxiters
+        iter += 1
+        integrator.stats.nnonliniter += 1
 
-    dw = Vector{eltype(u)}(undef, s)
-    dw[1] = LU1 \ rhs[1]
-    for i in 2 : (s + 1) / 2 
-        tmp = LU[i] \ (@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im)
-        dw[2 * i - 2] = real(tmp)
-        dw[2 * i - 1] = imag(tmp)
-    end
-    integrator.stats.nlsolve += (s + 1) / 2
+        # evaluate function
+        ff = Vector{eltype(u)}(undef, s)
+        for i in 1:s
+            ff[i] = f(uprev + z[i], p, t + c[i] * dt)
+        end    
+        integrator.stats.nf += 5
 
-    # compute norm of residuals
-    iter > 1 && (ndwprev = ndw)
-    atmp = Vector{eltype(u)}(undef, s)
-    for i in 1:s
-        atmp[i] = calculate_residuals(dw[i], uprev, u, atol, rtol, internalnorm, t)
-    end
+        fw = @.. TI * ff
+        Mw = Vector{eltype(u)}(undef, s)
+        if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
+            for i in 1:s
+                Mw[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalues
+            end
+        else
+            Mw = mass_matrix * w #standard multiplication
+        end
 
-    ndw = 0
-    for i in 1:s
-        ndw = ndw + internalnorm(atmp[i], t)
-    end
-    # check divergence (not in initial step)
+        rhs = Vector{eltype(u)}(undef, s)
+        rhs[1] = @.. fw[1]-γdt * Mw[1]
+        i = 2
+        while i <= s #block by block multiplication
+            rhs[i] = @.. fw[i] - α[i/2]dt * Mw[i] + β[i/2]dt * Mw[i + 1]
+            rhs[i + 1] = @.. fw[i + 1] - β[i/2]dt * Mw[i] - α[i/2]dt * Mw[i + 1]
+            i += 2
+        end 
 
-    if iter > 1
-        θ = ndw / ndwprev
-        (diverge = θ > 1) && (cache.status = Divergence)
-        (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
-            (cache.status = VerySlowConvergence)
-        if diverge || veryslowconvergence
+        dw = Vector{eltype(u)}(undef, s)
+        dw[1] = LU1 \ rhs[1]
+        for i in 2 : (s + 1) / 2 
+            tmp = LU[i] \ (@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im)
+            dw[2 * i - 2] = real(tmp)
+            dw[2 * i - 1] = imag(tmp)
+        end
+        integrator.stats.nlsolve += (s + 1) / 2
+
+        # compute norm of residuals
+        iter > 1 && (ndwprev = ndw)
+        atmp = Vector{eltype(u)}(undef, s)
+        for i in 1:s
+            atmp[i] = calculate_residuals(dw[i], uprev, u, atol, rtol, internalnorm, t)
+        end
+
+        ndw = 0
+        for i in 1:s
+            ndw = ndw + internalnorm(atmp[i], t)
+        end
+        # check divergence (not in initial step)
+
+        if iter > 1
+            θ = ndw / ndwprev
+            (diverge = θ > 1) && (cache.status = Divergence)
+            (veryslowconvergence = ndw * θ^(maxiters - iter) > κ * (1 - θ)) &&
+                (cache.status = VerySlowConvergence)
+            if diverge || veryslowconvergence
+                break
+            end
+        end
+
+        for i in 1 : s
+            w[i] = @.. w[i] - dw[i]
+        end
+        # transform `w` to `z`
+        z = @.. T * w
+        
+        # check stopping criterion
+        iter > 1 && (η = θ / (1 - θ))
+        if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+            # Newton method converges
+            cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
+                        Convergence
+            fail_convergence = false
             break
         end
     end
 
-    for i in 1 : s
-        w[i] = @.. w[i] - dw[i]
+    if fail_convergence
+        integrator.force_stepfail = true
+        integrator.stats.nnonlinconvfail += 1
+        return
     end
-    # transform `w` to `z`
-    z = @.. T * w
-    
-    # check stopping criterion
-    iter > 1 && (η = θ / (1 - θ))
-    if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
-        # Newton method converges
-        cache.status = η < alg.fast_convergence_cutoff ? FastConvergence :
-                       Convergence
-        fail_convergence = false
-        break
-    end
-end
+    cache.ηold = η
+    cache.iter = iter
 
-if fail_convergence
-    integrator.force_stepfail = true
-    integrator.stats.nnonlinconvfail += 1
-    return
-end
-cache.ηold = η
-cache.iter = iter
+    u = @.. uprev + z[s]
 
-u = @.. uprev + z[s]
-
-if adaptive
-    edt = e ./ dt
-    tmp = @.. dot(edt, z)
-    mass_matrix != I && (tmp = mass_matrix * tmp)
-    utilde = @.. broadcast=false integrator.fsalfirst+tmp
-    alg.smooth_est && (utilde = LU[1] \ utilde; integrator.stats.nsolve += 1)
-    atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
-    integrator.EEst = internalnorm(atmp, t)
-
-    if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
-       integrator.u_modified
-        f0 = f(uprev .+ utilde, p, t)
-        integrator.stats.nf += 1
-        utilde = @.. broadcast=false f0+tmp
+    if adaptive
+        edt = e ./ dt
+        tmp = @.. dot(edt, z)
+        mass_matrix != I && (tmp = mass_matrix * tmp)
+        utilde = @.. broadcast=false integrator.fsalfirst+tmp
         alg.smooth_est && (utilde = LU[1] \ utilde; integrator.stats.nsolve += 1)
         atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
         integrator.EEst = internalnorm(atmp, t)
-    end
-end
 
-if integrator.EEst <= oneunit(integrator.EEst)
-    cache.dtprev = dt
-    if alg.extrapolant != :constant
-        derivatives = Matrix{eltype(u)}(undef, s-1, s-1)
-        for i in 1 : (s - 1)
-            for j in i : (s-1)
-                if i == 1
-                    derivatives[i, j] = @.. (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
-                else
-                    derivatives[i, j] = @.. (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i + 1] - c[j + 1]) #all others
+        if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 ||
+        integrator.u_modified
+            f0 = f(uprev .+ utilde, p, t)
+            integrator.stats.nf += 1
+            utilde = @.. broadcast=false f0+tmp
+            alg.smooth_est && (utilde = LU[1] \ utilde; integrator.stats.nsolve += 1)
+            atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
+            integrator.EEst = internalnorm(atmp, t)
+        end
+    end
+
+    if integrator.EEst <= oneunit(integrator.EEst)
+        cache.dtprev = dt
+        if alg.extrapolant != :constant
+            derivatives = Matrix{eltype(u)}(undef, s-1, s-1)
+            for i in 1 : (s - 1)
+                for j in i : (s-1)
+                    if i == 1
+                        derivatives[i, j] = @.. (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
+                    else
+                        derivatives[i, j] = @.. (derivatives[i - 1, j - 1] - derivatives[i - 1, j]) / (c[j - i + 1] - c[j + 1]) #all others
+                    end
                 end
             end
-        end
-        for i in 1 : (s-1)
-            cache.cont[i] = derivatives[i, i]
+            for i in 1 : (s-1)
+                cache.cont[i] = derivatives[i, i]
+            end
         end
     end
-end
 
-integrator.fsallast = f(u, p, t + dt)
-integrator.stats.nf += 1
-integrator.k[1] = integrator.fsalfirst
-integrator.k[2] = integrator.fsallast
-integrator.u = u
-return
+    integrator.fsallast = f(u, p, t + dt)
+    integrator.stats.nf += 1
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+    return
 end
