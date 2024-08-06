@@ -145,7 +145,7 @@ import ..OrdinaryDiffEqDifferentiation
 
 include("../lib/OrdinaryDiffEqNonlinearSolve/src/OrdinaryDiffEqNonlinearSolve.jl")
 using ..OrdinaryDiffEqNonlinearSolve
-using ..OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, nlsolvefail
+using ..OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail
 
 include("../lib/OrdinaryDiffEqExtrapolation/src/OrdinaryDiffEqExtrapolation.jl")
 using ..OrdinaryDiffEqExtrapolation

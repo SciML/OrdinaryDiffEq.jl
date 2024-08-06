@@ -11,11 +11,12 @@ using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
 using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg
 using MuladdMacro, FastBroadcast
 import FastClosures: @closure
-using LinearAlgebra: UniformScaling
+using LinearAlgebra: UniformScaling, UpperTriangular
 import LinearAlgebra
 import ArrayInterface
 import LinearSolve
-using LinearSolve: I, rmul!, norm
+import ForwardDiff
+using LinearSolve: I, rmul!, norm, mul!
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
