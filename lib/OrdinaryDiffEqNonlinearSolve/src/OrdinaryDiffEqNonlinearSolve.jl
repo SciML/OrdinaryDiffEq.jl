@@ -4,7 +4,7 @@ import ADTypes: AutoFiniteDiff, AutoForwardDiff
 
 import SciMLBase
 import SciMLBase: init, solve, solve!
-using SciMLBase: DAEFunction, DEIntegrator, NonlinearProblem, NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem, update_coefficients!, get_tmp_cache, AbstractSciMLOperator
+using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem, NonlinearLeastSquaresProblem, LinearProblem, ODEProblem, DAEProblem, update_coefficients!, get_tmp_cache, AbstractSciMLOperator
 import DiffEqBase
 import PreallocationTools
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
