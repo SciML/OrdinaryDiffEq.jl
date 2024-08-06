@@ -19,7 +19,7 @@ import ForwardDiff
 using ForwardDiff: Dual
 using LinearSolve: I, rmul!, norm, mul!, ldiv!
 using RecursiveArrayTools: recursivecopy!
-import SciMLStructures: isscimlstructure
+import SciMLStructures: canonicalize, Tunable, isscimlstructure
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!
