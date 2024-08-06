@@ -259,7 +259,7 @@ function RadauIIA9Tableau(T, T2)
         e1, e2, e3, e4, e5)
 end
 
-struct adaptiveRadau(T, T2)
+struct adaptiveRadauTableau(T, T2)
     T:: AbstractMatrix{T}
     TI::AbstractMatrix{T}
     γ::T
@@ -269,9 +269,9 @@ struct adaptiveRadau(T, T2)
     e::AbstractVector{T}
 end
 
-using Polynomials, GenericSchur, GenericLinearAlgebra, LinearAlgebra
+using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur
 
-function adaptiveRadau(T, T2, s::Int64)
+function adaptiveRadauTableau(T, T2, s::Int64)
     tmp = Vector{BigFloat}(undef, s-1)
     for i in 1:(s-1)
         tmp[i] = 0
@@ -300,8 +300,8 @@ function adaptiveRadau(T, T2, s::Int64)
         end
     end
     a = c_q * inverse_c_powers
-    @show a
-    b = eigvals(a)
+    a_inverse = a^(-1)
+    b = eigvals(a_inverse)
     γ = real(b[s])
     α = Vector{BigFloat}(undef, floor(Int, s/2))
     β = Vector{BigFloat}(undef, floor(Int, s/2))
@@ -313,7 +313,41 @@ function adaptiveRadau(T, T2, s::Int64)
         index = index + 1
         i = i + 2
     end
-    f = eigvecs(a)
+    block = Matrix{BigFloat}(undef, s, s)
+    for i in 1 : s
+        for j in 1 : s
+            block[i, j] = 0
+        end
+    end
+    block[1,1] = γ
+    for i in 1 : floor(Int, s/2)
+        block[2i, 2i] = α[i]
+        block[2i, 2i+1] = β[i]
+        block[2i+1, 2i] = -β[i]
+        block[2i+1, 2i+1] = α[i]
+    end
+    @show eigvals(a_inverse)
+    #@show eigvals(-block)
+    #=@show eigvecs(-block)
+    Id = Matrix{BigFloat}(I, s, s)
+    O = zeros(s^2)
+    tmp3 = Base.kron(a_inverse, Id) - Base.kron(Id, transpose(block))
+    @show det(tmp3)
+    prob = LinearProblem(tmp3, O)
+    sol = solve(prob)
+    T = Matrix{BigFloat}(undef, s, s)
+    for i in 1:s
+        for j in 1:s
+            T[i,j] = sol[j + s * (i-1)]
+        end
+    end
+    @show T
+    TI = T^(-1)=#
+
+
+
+    #adaptiveRadauTableau(T, TI, γ, α, β, c, e)
 end
 
-adaptiveRadau(0, 0, 2)
+
+adaptiveRadauTableau(0, 0, 3)
