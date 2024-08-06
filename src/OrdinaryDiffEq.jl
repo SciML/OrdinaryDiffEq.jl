@@ -90,6 +90,7 @@ abstract type AbstractNLSolver{algType, iip} end
 function set_new_W! end
 function set_W_γdt! end
 function get_W end
+function isfirstcall end
 
 DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
