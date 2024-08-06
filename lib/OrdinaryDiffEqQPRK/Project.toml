@@ -9,7 +9,7 @@ MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-
+Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 [compat]
 julia = "1.10"
 
