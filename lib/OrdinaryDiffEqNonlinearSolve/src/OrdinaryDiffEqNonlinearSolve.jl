@@ -8,7 +8,7 @@ using SciMLBase: DAEFunction, DEIntegrator, NonlinearFunction, NonlinearProblem,
 import DiffEqBase
 import PreallocationTools
 using SimpleNonlinearSolve: SimpleTrustRegion, SimpleGaussNewton
-using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg
+using NonlinearSolve: FastShortcutNonlinearPolyalg, FastShortcutNLLSPolyalg, NewtonRaphson
 using MuladdMacro, FastBroadcast
 import FastClosures: @closure
 using LinearAlgebra: UniformScaling, UpperTriangular
@@ -19,6 +19,7 @@ import ForwardDiff
 using ForwardDiff: Dual
 using LinearSolve: I, rmul!, norm, mul!, ldiv!
 using RecursiveArrayTools: recursivecopy!
+import SciMLStructures: isscimlstructure
 
 import SciMLOperators: islinear
 import OrdinaryDiffEq: nlsolve_f, set_new_W!, set_W_γdt!

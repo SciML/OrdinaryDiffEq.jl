@@ -38,7 +38,7 @@ using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: WOperator, calc_W, calc_W!, 
     @test tmp != concrete_W \ u0
 
     # But jacobian2W! will update the cache
-    OrdinaryDiffEq.jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
+    jacobian2W!(integrator.cache.nlsolver.cache.W._concrete_form, mm,
         dtgamma, integrator.cache.nlsolver.cache.W.J.A, false)
     @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
     ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0)
