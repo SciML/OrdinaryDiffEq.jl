@@ -94,6 +94,8 @@ function isfirstcall end
 function isfirststage end
 function isJcurrent end
 function get_new_W_γdt_cutoff end
+resize_J_W!(args...) = nothing
+resize_nlsolver!(args...) = nothing
 
 @enum MethodType begin
     DIRK
