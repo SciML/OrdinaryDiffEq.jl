@@ -1,4 +1,5 @@
 using OrdinaryDiffEqBDF, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 
 function f(out, du, u, p, t)
     out[1] = -p[1] * u[1] + p[3] * u[2] * u[3] - du[1]
