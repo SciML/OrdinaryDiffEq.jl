@@ -28,6 +28,11 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
     pages = [
         "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
         "Usage" => "usage.md",
+        "ODEProblem Solver Libraries" => [
+            "Explicit Solvers" =>[
+                "explicit/Tsit5.md"
+            ],
+        ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicitrk.md",
             "nonstiff/lowstorage_ssprk.md",
