@@ -6,7 +6,7 @@ module OrdinaryDiffEq
 using Reexport
 @reexport using DiffEqBase
 
-import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, ShampineCollocationInit, BrownBasicInit
+import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, ShampineCollocationInit, BrownFullBasicInit
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit
 
 import OrdinaryDiffEqDifferentiation
