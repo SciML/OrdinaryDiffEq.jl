@@ -164,7 +164,7 @@ end
         activate_gpu_env()
         @time @safetestset "Simple GPU" begin
             import OrdinaryDiffEq
-            include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..",
+            include(joinpath(dirname(pathof(OrdinaryDiffEqCore.DiffEqBase)), "..",
                 "test/gpu/simple_gpu.jl"))
         end
         @time @safetestset "Autoswitch GPU" include("gpu/autoswitch.jl")

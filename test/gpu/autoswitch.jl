@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, CUDA, Test
 CUDA.allowscalar(false)
 
-# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1614
+# https://github.com/SciML/OrdinaryDiffEqCore.jl/issues/1614
 function f(du, u, p, t)
     @. du = u
 end

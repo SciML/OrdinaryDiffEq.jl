@@ -6,7 +6,7 @@ module OrdinaryDiffEq
 using Reexport
 @reexport using DiffEqBase
 
-import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm
+import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order
 export CompositeAlgorithm
 
 import OrdinaryDiffEqDifferentiation

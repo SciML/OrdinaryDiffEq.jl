@@ -326,7 +326,7 @@ prob = ODEProblem(f_simple, [1.0], (0.0, 2.0 * t_event))
 sol = solve(prob, Tsit5(), callback = cb, adaptive = false, dt = 10.0)
 @test event_triggered
 
-# https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/issues/328
+# https://github.com/JuliaDiffEq/OrdinaryDiffEqCore.jl/issues/328
 ode = ODEProblem((du, u, p, t) -> (@. du .= -u), ones(5), (0.0, 100.0))
 sol = solve(ode, AutoTsit5(Rosenbrock23()), callback = TerminateSteadyState())
 sol1 = solve(ode, Tsit5(), callback = TerminateSteadyState())
@@ -410,7 +410,7 @@ set_u!(integrator, 2 * ones(2))
 step!(integrator, 1e-5, true)
 @test all(u -> u > 1.5, integrator.u)
 
-# https://github.com/SciML/OrdinaryDiffEq.jl/pull/1777
+# https://github.com/SciML/OrdinaryDiffEqCore.jl/pull/1777
 if VERSION >= v"1.7"
     @testset "Callbacks with LinearExponential" begin
         A = sprand(ComplexF64, 100, 100, 0.5)

@@ -41,7 +41,7 @@ step!(integrator, 0.1, true)
 if VERSION >= v"1.7"
     function handle_allocs(integrator)
         integrator.u[1] = 0.4
-        @allocations OrdinaryDiffEq.handle_callbacks!(integrator)
+        @allocations OrdinaryDiffEqCore.handle_callbacks!(integrator)
     end
     handle_allocs(integrator)
     @test handle_allocs(integrator) == 0

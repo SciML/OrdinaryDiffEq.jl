@@ -42,7 +42,7 @@ sol = solve(ode, Euler(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 sol = solve(ode, ImplicitEuler())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
-sol = solve(ode, ImplicitEuler(nlsolve = OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve.NLAnderson()))
+sol = solve(ode, ImplicitEuler(nlsolve = OrdinaryDiffEqCore.OrdinaryDiffEqNonlinearSolve.NLAnderson()))
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 sol = solve(ode, Tsit5(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
@@ -61,7 +61,7 @@ prob = ODEProblem(lorenz_static, u0, tspan)
 solve(prob, dt = 0.1, Rosenbrock23(autodiff = false))
 
 # Check that ArrayPartitions of static vectors work
-#https://github.com/SciML/OrdinaryDiffEq.jl/issues/1308
+#https://github.com/SciML/OrdinaryDiffEqCore.jl/issues/1308
 function lorenz_static(u::ArrayPartition, p, t)
     dx = 10.0 * (u[2] - u[1])
     dy = u[1] * (28.0 - u[3]) - u[2]
