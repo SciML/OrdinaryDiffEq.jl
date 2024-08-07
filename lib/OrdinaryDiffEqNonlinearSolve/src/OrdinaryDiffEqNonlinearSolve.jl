@@ -24,7 +24,7 @@ import SciMLStructures: canonicalize, Tunable, isscimlstructure
 import SciMLOperators: islinear
 import OrdinaryDiffEqCore: nlsolve_f, set_new_W!, set_W_γdt!
 
-using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!, OrdinaryDiffEqDifferentiation,
+using OrdinaryDiffEqCore: resize_nlsolver!, _initialize_dae!,
 AbstractNLSolverAlgorithm, AbstractNLSolverCache, AbstractNLSolver, NewtonAlgorithm, @unpack,
 OverrideInit, ShampineCollocationInit, BrownFullBasicInit, _vec, _unwrap_val, DAEAlgorithm,
 _reshape, calculate_residuals, calculate_residuals!, has_special_newton_error, isadaptive,
