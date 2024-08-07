@@ -20,9 +20,10 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+OrdinaryDiffEqRKN = "af6ede74-add8-4cfd-b1df-9a4dbb109d7a"
 
 [compat]
 julia = "1.10"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Statistics", "LinearAlgebra", "OrdinaryDiffEqTsit5"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Statistics", "LinearAlgebra", "OrdinaryDiffEqTsit5", "OrdinaryDiffEqRKN"]

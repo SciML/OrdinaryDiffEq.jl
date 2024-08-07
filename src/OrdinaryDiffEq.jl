@@ -6,17 +6,19 @@ module OrdinaryDiffEq
 using Reexport
 @reexport using DiffEqBase
 
-import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, ShampineCollocationInit, BrownFullBasicInit,
+import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, ShampineCollocationInit, BrownFullBasicInit, NoInit,
         set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
         DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
         SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
-        AbstractNLSolverAlgorithm, AbstractNLSolver
+        AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
+        du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch
 
-export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit,
+export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
     set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
     DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
     SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
-    AbstractNLSolverAlgorithm, AbstractNLSolver
+    AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
+    du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch
 
 import OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!
@@ -288,14 +290,9 @@ export constructDormandPrince
 
 export CompositeAlgorithm
 
-export SHLDDRK52, SHLDDRK_2N
-
 export AutoSwitch, AutoTsit5, AutoDP5,
        AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-export ShampineCollocationInit, BrownFullBasicInit, NoInit
-
-export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
-
+import OrdinaryDiffEqCore: IController, PIController, PIDController
 export IController, PIController, PIDController
 end # module
