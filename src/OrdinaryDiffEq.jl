@@ -3,31 +3,25 @@ $(DocStringExtensions.README)
 """
 module OrdinaryDiffEq
 
-include("../lib/OrdinaryDiffEqDifferentiation/src/OrdinaryDiffEqDifferentiation.jl")
-import ..OrdinaryDiffEqDifferentiation
-using ..OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!
+import OrdinaryDiffEqDifferentiation
+using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!
 
-include("../lib/OrdinaryDiffEqNonlinearSolve/src/OrdinaryDiffEqNonlinearSolve.jl")
-using ..OrdinaryDiffEqNonlinearSolve
-using ..OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail, initial_η, NonlinearSolveAlg, compute_step!, NLSolver, nlsolve!, resize_jac_config!, anderson!, build_nlsolver, markfirststage!, anderson
+using OrdinaryDiffEqNonlinearSolve
+using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail, initial_η, NonlinearSolveAlg, compute_step!, NLSolver, nlsolve!, resize_jac_config!, anderson!, build_nlsolver, markfirststage!, anderson
 
-include("../lib/OrdinaryDiffEqExtrapolation/src/OrdinaryDiffEqExtrapolation.jl")
-using ..OrdinaryDiffEqExtrapolation
+using OrdinaryDiffEqExtrapolation
 export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
        ImplicitEulerExtrapolation,
        ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation,
        ImplicitEulerBarycentricExtrapolation
 
-include("../lib/OrdinaryDiffEqStabilizedRK/src/OrdinaryDiffEqStabilizedRK.jl")
-using ..OrdinaryDiffEqStabilizedRK
+using OrdinaryDiffEqStabilizedRK
 export ROCK2, ROCK4, RKC, ESERK4, ESERK5, SERK2
 
-include("../lib/OrdinaryDiffEqStabilizedIRK/src/OrdinaryDiffEqStabilizedIRK.jl")
-using ..OrdinaryDiffEqStabilizedIRK
+using OrdinaryDiffEqStabilizedIRK
 export IRKC
 
-include("../lib/OrdinaryDiffEqLowStorageRK/src/OrdinaryDiffEqLowStorageRK.jl")
-using ..OrdinaryDiffEqLowStorageRK
+using OrdinaryDiffEqLowStorageRK
 export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
        DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
        CFRLDDRK64, TSLDDRK74, CKLLSRK43_2, CKLLSRK54_3C, CKLLSRK95_4S, CKLLSRK95_4C,
@@ -42,36 +36,30 @@ export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK8
        RDPK3Sp35, RDPK3SpFSAL35, RDPK3Sp49, RDPK3SpFSAL49, RDPK3Sp510, RDPK3SpFSAL510,
        KYK2014DGSSPRK_3S2, RK46NL
 
-include("../lib/OrdinaryDiffEqSSPRK/src/OrdinaryDiffEqSSPRK.jl")
-using ..OrdinaryDiffEqSSPRK
+using OrdinaryDiffEqSSPRK
 export SSPRK53_2N2, SSPRK22, SSPRK53, SSPRK63, SSPRK83, SSPRK43, SSPRK432, SSPRKMSVS32,
        SSPRK54, SSPRK53_2N1, SSPRK104, SSPRK932, SSPRKMSVS43, SSPRK73, SSPRK53_H,
        SSPRK33, SHLDDRK_2N, KYKSSPRK42, SHLDDRK52
 
-include("../lib/OrdinaryDiffEqFeagin/src/OrdinaryDiffEqFeagin.jl")
-using ..OrdinaryDiffEqFeagin
+using OrdinaryDiffEqFeagin
 export Feagin10, Feagin12, Feagin14
 
-include("../lib/OrdinaryDiffEqSymplecticRK/src/OrdinaryDiffEqSymplecticRK.jl")
-using ..OrdinaryDiffEqSymplecticRK
+using OrdinaryDiffEqSymplecticRK
 export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
        McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
        CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
 
-include("../lib/OrdinaryDiffEqRKN/src/OrdinaryDiffEqRKN.jl")
-using ..OrdinaryDiffEqRKN
+using OrdinaryDiffEqRKN
 export Nystrom4, FineRKN4, FineRKN5, Nystrom4VelocityIndependent,
        Nystrom5VelocityIndependent,
        IRKN3, IRKN4, DPRKN4, DPRKN5, DPRKN6, DPRKN6FM, DPRKN8, DPRKN12, ERKN4, ERKN5, ERKN7,
        RKN4
 
-include("../lib/OrdinaryDiffEqVerner/src/OrdinaryDiffEqVerner.jl")
-using ..OrdinaryDiffEqVerner
+using OrdinaryDiffEqVerner
 export Vern6, Vern7, Vern8, Vern9
 
-include("../lib/OrdinaryDiffEqSDIRK/src/OrdinaryDiffEqSDIRK.jl")
-using ..OrdinaryDiffEqSDIRK
-import .OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
+using OrdinaryDiffEqSDIRK
+import OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
 export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
        Kvaerno5, KenCarp4, KenCarp47, KenCarp5, KenCarp58, ESDIRK54I8L2SA, SFSDIRK4,
@@ -79,91 +67,74 @@ export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
        SFSDIRK4, SFSDIRK5, CFNLIRK3, SFSDIRK6,
        SFSDIRK7, SFSDIRK8, ESDIRK436L2SA2, ESDIRK437L2SA, ESDIRK547L2SA2, ESDIRK659L2SA
 
-include("../lib/OrdinaryDiffEqBDF/src/OrdinaryDiffEqBDF.jl")
-using ..OrdinaryDiffEqBDF
+using OrdinaryDiffEqBDF
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
        SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,
        DImplicitEuler, DABDF2, DFBDF
 
-include("../lib/OrdinaryDiffEqTsit5/src/OrdinaryDiffEqTsit5.jl")
-using ..OrdinaryDiffEqTsit5
+using OrdinaryDiffEqTsit5
 export Tsit5, AutoTsit5
-import .OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
+import OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
 
-include("../lib/OrdinaryDiffEqRosenbrock/src/OrdinaryDiffEqRosenbrock.jl")
-using ..OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqRosenbrock
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,
        Rodas5, Rodas5P, Rodas5Pe, Rodas5Pr,
        RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3, ROS34PRw, ROS3PRL,
        ROS3PRL2, ROK4a,
        ROS2, ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
-import ..OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
+import OrdinaryDiffEqRosenbrock: RosenbrockMutableCache
 
-include("../lib/OrdinaryDiffEqDefault/src/OrdinaryDiffEqDefault.jl")
-using ..OrdinaryDiffEqDefault
+using OrdinaryDiffEqDefault
 export DefaultODEAlgorithm
 
-include("../lib/OrdinaryDiffEqFIRK/src/OrdinaryDiffEqFIRK.jl")
-using ..OrdinaryDiffEqFIRK
+using OrdinaryDiffEqFIRK
 export RadauIIA3, RadauIIA5, RadauIIA9
 
-include("../lib/OrdinaryDiffEqQPRK/src/OrdinaryDiffEqQPRK.jl")
-using ..OrdinaryDiffEqQPRK
+using OrdinaryDiffEqQPRK
 export QPRK98
 
-include("../lib/OrdinaryDiffEqPDIRK/src/OrdinaryDiffEqPDIRK.jl")
-using ..OrdinaryDiffEqPDIRK
+using OrdinaryDiffEqPDIRK
 export PDIRK44
 
-include("../lib/OrdinaryDiffEqPRK/src/OrdinaryDiffEqPRK.jl")
-using ..OrdinaryDiffEqPRK
+using OrdinaryDiffEqPRK
 export KuttaPRK2p5
 
-include("../lib/OrdinaryDiffEqHighOrderRK/src/OrdinaryDiffEqHighOrderRK.jl")
-using ..OrdinaryDiffEqHighOrderRK
+using OrdinaryDiffEqHighOrderRK
 export TanYam7, DP8, PFRK87, TsitPap8
-using ..OrdinaryDiffEqHighOrderRK: DP8ConstantCache, DP8Cache
+using OrdinaryDiffEqHighOrderRK: DP8ConstantCache, DP8Cache
 
-include("../lib/OrdinaryDiffEqLowOrderRK/src/OrdinaryDiffEqLowOrderRK.jl")
-using ..OrdinaryDiffEqLowOrderRK
+using OrdinaryDiffEqLowOrderRK
 export Euler, SplitEuler, Heun, Ralston, Midpoint, RK4,
        BS3, OwrenZen3, OwrenZen4, OwrenZen5, BS5,
        DP5, Anas5, RKO65, FRK65, RKM, MSRK5, MSRK6,
        PSRK4p7q6, PSRK3p5q4, PSRK3p6q5, Stepanov5, SIR54,
        Alshina2, Alshina3, Alshina6, AutoDP5
-using ..OrdinaryDiffEqLowOrderRK: BS3Cache, BS3ConstantCache, RK4ConstantCache, RK4Cache
+using OrdinaryDiffEqLowOrderRK: BS3Cache, BS3ConstantCache, RK4ConstantCache, RK4Cache
 
-include("../lib/OrdinaryDiffEqFunctionMap/src/OrdinaryDiffEqFunctionMap.jl")
-using ..OrdinaryDiffEqFunctionMap
+using OrdinaryDiffEqFunctionMap
 export FunctionMap
 
-include("../lib/OrdinaryDiffEqAdamsBashforthMoulton/src/OrdinaryDiffEqAdamsBashforthMoulton.jl")
-using ..OrdinaryDiffEqAdamsBashforthMoulton
+using OrdinaryDiffEqAdamsBashforthMoulton
 export AB3, AB4, AB5, ABM32, ABM43, ABM54, VCAB3,
        VCAB4, VCAB5, VCABM3, VCABM4, VCABM5, VCABM
 
-include("../lib/OrdinaryDiffEqNordsieck/src/OrdinaryDiffEqNordsieck.jl")
-using ..OrdinaryDiffEqNordsieck
+using OrdinaryDiffEqNordsieck
 export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
-include("../lib/OrdinaryDiffEqExplicitRK/src/OrdinaryDiffEqExplicitRK.jl")
-using ..OrdinaryDiffEqExplicitRK
-using ..OrdinaryDiffEqExplicitRK: constructDormandPrince
+using OrdinaryDiffEqExplicitRK
+using OrdinaryDiffEqExplicitRK: constructDormandPrince
 export ExplicitRK
 
-include("../lib/OrdinaryDiffEqLinear/src/OrdinaryDiffEqLinear.jl")
-using ..OrdinaryDiffEqLinear
+using OrdinaryDiffEqLinear
 export MagnusMidpoint, LinearExponential, MagnusLeapfrog, LieEuler, CayleyEuler,
        MagnusGauss4, MagnusNC6, MagnusGL6, MagnusGL8, MagnusNC8, MagnusGL4,
        MagnusAdapt4, RKMK2, RKMK4, LieRK4, CG2, CG3, CG4a
 
-include("../lib/OrdinaryDiffEqIMEXMultistep/src/OrdinaryDiffEqIMEXMultistep.jl")
-using ..OrdinaryDiffEqIMEXMultistep
+using OrdinaryDiffEqIMEXMultistep
 export CNAB2, CNLF2
 
-include("../lib/OrdinaryDiffEqExponentialRK/src/OrdinaryDiffEqExponentialRK.jl")
-using ..OrdinaryDiffEqExponentialRK
+using OrdinaryDiffEqExponentialRK
 export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A,
        EPIRK4s3B,
        EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43
