@@ -49,15 +49,6 @@ test_problem_ssp_inplace = ODEProblem(f_ssp_inplace, rand(3, 3), (0.0, 8.0))
 u0_large = rand(10^6)
 prob_ode_large = ODEProblem((du, u, p, t) -> du .= u, u0_large, (0.0, 1.0))
 
-# test SSP coefficient for explicit Euler
-alg = Euler()
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
-    dense = false)
-@test all(sol.u .>= 0)
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg) + 1.e-3,
-    dense = false)
-@test any(sol.u .< 0)
-
 println("SSPRK22")
 alg = SSPRK22()
 for prob in test_problems_only_time

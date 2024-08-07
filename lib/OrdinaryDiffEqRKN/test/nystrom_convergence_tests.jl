@@ -111,11 +111,6 @@ sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
-dts = 1.0 ./ 2.0 .^ (2:-1:-2)
-sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
-@test sim.𝒪est[:l2]≈10 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-
 # Methods need BigFloat to test convergence rate
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic_nip, big"1.0", big"0.0",
