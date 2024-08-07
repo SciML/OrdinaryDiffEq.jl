@@ -25,4 +25,4 @@ OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 julia = "1.10"
 
 [targets]
-test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Statistics", "LinearAlgebra"]
+test = ["DiffEqDevTools", "Random", "SafeTestsets", "Test", "Statistics", "LinearAlgebra", "OrdinaryDiffEqTsit5"]

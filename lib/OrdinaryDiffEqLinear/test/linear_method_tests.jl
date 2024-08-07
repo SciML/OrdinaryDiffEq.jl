@@ -1,5 +1,5 @@
 using OrdinaryDiffEqLinear, Test, DiffEqDevTools
-using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqVerner
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqVerner, OrdinaryDiffEqTsit5
 using LinearAlgebra, Random
 
 # Linear exponential solvers

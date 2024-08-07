@@ -1,5 +1,5 @@
 using OrdinaryDiffEqExponentialRK, Test, DiffEqDevTools, Random, LinearAlgebra, LinearSolve
-using OrdinaryDiffEqVerner
+using OrdinaryDiffEqVerner, OrdinaryDiffEqSDIRK
 using OrdinaryDiffEqCore: alg_order
 
 @testset "Caching Out-of-place" begin

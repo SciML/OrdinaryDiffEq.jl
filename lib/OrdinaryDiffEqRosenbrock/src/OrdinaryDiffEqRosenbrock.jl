@@ -24,6 +24,8 @@ using OrdinaryDiffEqDifferentiation: TimeDerivativeWrapper, TimeGradientWrapper,
 wrapprecs, calc_tderivative, build_grad_config, build_jac_config, issuccess_W,  jacobian2W!, resize_jac_config!, resize_grad_config!,
 calc_W, calc_rosenbrock_differentiation!, build_J_W, UJacobianWrapper, dolinsolve
 
+import OrdinaryDiffEqNonlinearSolve # Required for DAE initialization
+
 using Reexport
 @reexport using DiffEqBase
 

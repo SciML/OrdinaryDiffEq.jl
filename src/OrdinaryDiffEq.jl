@@ -7,7 +7,11 @@ using Reexport
 @reexport using DiffEqBase
 
 import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, ShampineCollocationInit, BrownFullBasicInit
-export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit
+
+export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit,
+    set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
+    DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
+    SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain
 
 import OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!
