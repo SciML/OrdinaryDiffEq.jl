@@ -191,14 +191,10 @@ function build_nlsolver(
             end
             jac_config = build_jac_config(alg, nf, uf, du1, uprev, u, ztmp, dz)
         end
-        linprob = LinearProblem(W, _vec(k); u0 = _vec(dz))
-        Pl, Pr = wrapprecs(
-            alg.precs(W, nothing, u, p, t, nothing, nothing, nothing,
-                nothing)...,
-            weight, dz)
-        linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
-            Pl = Pl, Pr = Pr,
-            assumptions = LinearSolve.OperatorAssumptions(true))
+        linprob = LinearProblem(W, _vec(k), (isdae ? du1 : nothing,u,p,t); u0 = _vec(dz))
+        linsolve = init(linprob,
+                        wrapprecs(alg.linsolve, W, weight),
+                        (isdae ? du1 : nothing,u,p,t); alias_A = true, alias_b = true)
 
         tType = typeof(t)
         invγdt = inv(oneunit(t) * one(uTolType))

@@ -57,38 +57,25 @@ prob_ode_brusselator_2d_sparse = ODEProblem(
         jac_prototype = float.(jac)),
     u0, (0.0, 11.5), p)
 
-function incompletelu(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
-    if newW === nothing || newW
-        Pl = ilu(convert(AbstractMatrix, W), τ = 50.0)
-    else
-        Pl = Plprev
-    end
-    Pl, nothing
+function incompletelu(W, p)
+    Pl = ilu(convert(AbstractMatrix, W), τ = 50.0)
+    Pl, IdentityOperator(size(W, 1))
 end
 
-function algebraicmultigrid(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
-    if newW === nothing || newW
-        Pl = AlgebraicMultigrid.aspreconditioner(AlgebraicMultigrid.ruge_stuben(convert(
-            AbstractMatrix,
-            W)))
-    else
-        Pl = Plprev
-    end
-    Pl, nothing
+function algebraicmultigrid(W, p)
+    A = convert(AbstractMatrix, W)
+    Pl = AlgebraicMultigrid.aspreconditioner(AlgebraicMultigrid.ruge_stuben(A))
+    Pl, IdentityOperator(size(W, 1))
 end
 
-function algebraicmultigrid2(W, du, u, p, t, newW, Plprev, Prprev, solverdata)
-    if newW === nothing || newW
-        A = convert(AbstractMatrix, W)
-        Pl = AlgebraicMultigrid.aspreconditioner(AlgebraicMultigrid.ruge_stuben(A,
-            presmoother = AlgebraicMultigrid.Jacobi(rand(size(A,
-                1))),
-            postsmoother = AlgebraicMultigrid.Jacobi(rand(size(A,
-                1)))))
-    else
-        Pl = Plprev
-    end
-    Pl, nothing
+function algebraicmultigrid2(W, p)
+    A = convert(AbstractMatrix, W)
+    Pl = AlgebraicMultigrid.aspreconditioner(AlgebraicMultigrid.ruge_stuben(A,
+        presmoother = AlgebraicMultigrid.Jacobi(rand(size(A,
+            1))),
+        postsmoother = AlgebraicMultigrid.Jacobi(rand(size(A,
+            1)))))
+    Pl, IdentityOperator(size(W, 1))
 end
 
 iter[] = 0
@@ -97,17 +84,17 @@ sol1 = solve(prob_ode_brusselator_2d, KenCarp47(linsolve = KrylovJL_GMRES()),
 iter1 = iter[];
 iter[] = 0;
 sol2 = solve(prob_ode_brusselator_2d_sparse,
-    KenCarp47(linsolve = KrylovJL_GMRES(), precs = incompletelu,
+    KenCarp47(linsolve = KrylovJL_GMRES(precs = incompletelu),
         concrete_jac = true), save_everystep = false);
 iter2 = iter[];
 iter[] = 0;
 sol3 = solve(prob_ode_brusselator_2d_sparse,
-    KenCarp47(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+    KenCarp47(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid),
         concrete_jac = true), save_everystep = false);
 iter3 = iter[];
 iter[] = 0;
 sol4 = solve(prob_ode_brusselator_2d_sparse,
-    KenCarp47(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+    KenCarp47(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid2),
         concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
@@ -126,17 +113,17 @@ sol1 = solve(prob_ode_brusselator_2d, Rosenbrock23(linsolve = KrylovJL_GMRES()),
 iter1 = iter[];
 iter[] = 0;
 sol2 = solve(prob_ode_brusselator_2d_sparse,
-    Rosenbrock23(linsolve = KrylovJL_GMRES(), precs = incompletelu,
+    Rosenbrock23(linsolve = KrylovJL_GMRES(precs = incompletelu),
         concrete_jac = true), save_everystep = false);
 iter2 = iter[];
 iter[] = 0;
 sol3 = solve(prob_ode_brusselator_2d_sparse,
-    Rosenbrock23(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+    Rosenbrock23(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid),
         concrete_jac = true), save_everystep = false);
 iter3 = iter[];
 iter[] = 0;
 sol4 = solve(prob_ode_brusselator_2d_sparse,
-    Rosenbrock23(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+    Rosenbrock23(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid2),
         concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
@@ -155,17 +142,17 @@ sol1 = solve(prob_ode_brusselator_2d, Rodas4(linsolve = KrylovJL_GMRES()),
 iter1 = iter[];
 iter[] = 0;
 sol2 = solve(prob_ode_brusselator_2d_sparse,
-    Rodas4(linsolve = KrylovJL_GMRES(), precs = incompletelu, concrete_jac = true),
+    Rodas4(linsolve = KrylovJL_GMRES(precs = incompletelu), concrete_jac = true),
     save_everystep = false);
 iter2 = iter[];
 iter[] = 0;
 sol3 = solve(prob_ode_brusselator_2d_sparse,
-    Rodas4(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+    Rodas4(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid),
         concrete_jac = true), save_everystep = false);
 iter3 = iter[];
 iter[] = 0;
 sol4 = solve(prob_ode_brusselator_2d_sparse,
-    Rodas4(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+    Rodas4(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid2),
         concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
@@ -184,17 +171,17 @@ sol1 = solve(prob_ode_brusselator_2d, Rodas5(linsolve = KrylovJL_GMRES()),
 iter1 = iter[];
 iter[] = 0;
 sol2 = solve(prob_ode_brusselator_2d_sparse,
-    Rodas5(linsolve = KrylovJL_GMRES(), precs = incompletelu, concrete_jac = true),
+    Rodas5(linsolve = KrylovJL_GMRES(precs = incompletelu), concrete_jac = true),
     save_everystep = false);
 iter2 = iter[];
 iter[] = 0;
 sol3 = solve(prob_ode_brusselator_2d_sparse,
-    Rodas5(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+    Rodas5(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid),
         concrete_jac = true), save_everystep = false);
 iter3 = iter[];
 iter[] = 0;
 sol4 = solve(prob_ode_brusselator_2d_sparse,
-    Rodas5(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+    Rodas5(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid2),
         concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
@@ -213,17 +200,17 @@ sol1 = solve(prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
 iter1 = iter[];
 iter[] = 0;
 sol2 = solve(prob_ode_brusselator_2d_sparse,
-    TRBDF2(linsolve = KrylovJL_GMRES(), precs = incompletelu, concrete_jac = true),
+    TRBDF2(linsolve = KrylovJL_GMRES(precs = incompletelu), concrete_jac = true),
     save_everystep = false);
 iter2 = iter[];
 iter[] = 0;
 sol3 = solve(prob_ode_brusselator_2d_sparse,
-    TRBDF2(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+    TRBDF2(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid),
         concrete_jac = true), save_everystep = false);
 iter3 = iter[];
 iter[] = 0;
 sol4 = solve(prob_ode_brusselator_2d_sparse,
-    TRBDF2(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+    TRBDF2(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid2),
         concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;
@@ -242,17 +229,17 @@ sol1 = solve(prob_ode_brusselator_2d, TRBDF2(linsolve = KrylovJL_GMRES()),
 iter1 = iter[];
 iter[] = 0;
 sol2 = solve(prob_ode_brusselator_2d_sparse,
-    TRBDF2(linsolve = KrylovJL_GMRES(), precs = incompletelu,
+    TRBDF2(linsolve = KrylovJL_GMRES(precs = incompletelu),
         concrete_jac = true), save_everystep = false);
 iter2 = iter[];
 iter[] = 0;
 sol3 = solve(prob_ode_brusselator_2d_sparse,
-    TRBDF2(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid,
+    TRBDF2(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid),
         concrete_jac = true), save_everystep = false);
 iter3 = iter[];
 iter[] = 0;
 sol4 = solve(prob_ode_brusselator_2d_sparse,
-    TRBDF2(linsolve = KrylovJL_GMRES(), precs = algebraicmultigrid2,
+    TRBDF2(linsolve = KrylovJL_GMRES(precs = algebraicmultigrid2),
         concrete_jac = true), save_everystep = false);
 iter4 = iter[];
 iter[] = 0;

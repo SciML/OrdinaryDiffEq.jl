@@ -156,9 +156,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step = false)
     # The the number of degree for Chebyshev polynomial
     #maxm = max(2,int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
     maxm = 50
-    mdeg = 1 + Int(floor(sqrt(1.54 * abs(dt) * integrator.eigen_est + 1)))
-    mdeg = (mdeg < minm) ? minm : mdeg
-    mdeg = (mdeg >= maxm) ? maxm : mdeg
+    mdeg = 1 + floor(Int, sqrt(1.54 * abs(dt) * integrator.eigen_est + 1))
+    mdeg = clamp(mdeg, minm, maxm)
 
     ω₀ = 1 + 2 / (13 * (mdeg^2))
     temp₁ = ω₀^2 - 1

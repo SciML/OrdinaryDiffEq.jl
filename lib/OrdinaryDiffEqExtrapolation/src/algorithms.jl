@@ -55,10 +55,9 @@ Similar to Hairer's SEULEX.",
     thread = OrdinaryDiffEq.False(),
     sequence = :harmonic
     """)
-struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
+struct ImplicitEulerExtrapolation{CS, AD, F, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
-    precs::P
     max_order::Int
     min_order::Int
     init_order::Int
@@ -69,7 +68,6 @@ end
 function ImplicitEulerExtrapolation(; chunk_size = Val{0}(), autodiff = true,
         standardtag = Val{true}(), concrete_jac = nothing,
         diff_type = Val{:forward}, linsolve = nothing,
-        precs = DEFAULT_PRECS,
         max_order = 12, min_order = 3, init_order = 5,
         threading = false, sequence = :harmonic)
     linsolve = (linsolve === nothing &&
@@ -100,11 +98,10 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
         sequence = :harmonic
     end
     ImplicitEulerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-        typeof(linsolve), typeof(precs), diff_type,
+        typeof(linsolve), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading)}(linsolve, precs, max_order, min_order,
-        init_order,
-        threading, sequence)
+        typeof(threading)}(linsolve, max_order, min_order,
+        init_order, threading, sequence)
 end
 
 @doc generic_solver_docstring("Midpoint extrapolation using Barycentric coordinates.",
@@ -195,10 +192,9 @@ end
     thread = OrdinaryDiffEq.False(),
     sequence = :harmonic,
     """)
-struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
+struct ImplicitDeuflhardExtrapolation{CS, AD, F, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -207,8 +203,7 @@ struct ImplicitDeuflhardExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
 end
 function ImplicitDeuflhardExtrapolation(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(), concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
-        diff_type = Val{:forward},
+        linsolve = nothing, diff_type = Val{:forward},
         min_order = 1, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false)
     # Enforce 1 <=  min_order <= init_order <= max_order:
@@ -243,9 +238,9 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     # Initialize algorithm
     ImplicitDeuflhardExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-        typeof(linsolve), typeof(precs), diff_type,
+        typeof(linsolve), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading)}(linsolve, precs, min_order,
+        typeof(threading)}(linsolve, min_order,
         init_order, max_order,
         sequence, threading)
 end
@@ -342,10 +337,9 @@ end
     thread = OrdinaryDiffEq.False(),
     sequence = :harmonic,
     """)
-struct ImplicitHairerWannerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
+struct ImplicitHairerWannerExtrapolation{CS, AD, F, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -356,7 +350,7 @@ end
 function ImplicitHairerWannerExtrapolation(; chunk_size = Val{0}(), autodiff = Val{true}(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
+        linsolve = nothing,
         diff_type = Val{:forward},
         min_order = 2, init_order = 5, max_order = 10,
         sequence = :harmonic, threading = false)
@@ -392,11 +386,10 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     # Initialize algorithm
     ImplicitHairerWannerExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-        typeof(linsolve), typeof(precs), diff_type,
+        typeof(linsolve), diff_type,
         _unwrap_val(standardtag), _unwrap_val(concrete_jac),
-        typeof(threading)}(linsolve, precs, min_order,
-        init_order,
-        max_order, sequence, threading)
+        typeof(threading)}(linsolve, min_order,
+        init_order, max_order, sequence, threading)
 end
 
 @doc differentiation_rk_docstring("Euler extrapolation using Barycentric coordinates,
@@ -420,10 +413,9 @@ end
     sequence = :harmonic,
     sequence_factor = 2,
     """)
-struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
+struct ImplicitEulerBarycentricExtrapolation{CS, AD, F, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F
-    precs::P
     min_order::Int # Minimal extrapolation order
     init_order::Int # Initial extrapolation order
     max_order::Int # Maximal extrapolation order
@@ -436,7 +428,7 @@ function ImplicitEulerBarycentricExtrapolation(; chunk_size = Val{0}(),
         autodiff = Val{true}(),
         standardtag = Val{true}(),
         concrete_jac = nothing,
-        linsolve = nothing, precs = DEFAULT_PRECS,
+        linsolve = nothing,
         diff_type = Val{:forward},
         min_order = 3, init_order = 5,
         max_order = 12, sequence = :harmonic,
@@ -473,10 +465,9 @@ Initial order: " * lpad(init_order, 2, " ") * " --> " * lpad(init_order, 2, " ")
 
     # Initialize algorithm
     ImplicitEulerBarycentricExtrapolation{_unwrap_val(chunk_size), _unwrap_val(autodiff),
-        typeof(linsolve), typeof(precs), diff_type,
+        typeof(linsolve), diff_type,
         _unwrap_val(standardtag),
         _unwrap_val(concrete_jac), typeof(threading)}(linsolve,
-        precs,
         min_order,
         init_order,
         max_order,

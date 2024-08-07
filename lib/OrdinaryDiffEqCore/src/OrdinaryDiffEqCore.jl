@@ -105,10 +105,10 @@ end
     Divergence = -2
 end
 const TryAgain = SlowConvergence
-
-DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 isdiscretecache(cache) = false
 
+# unused. Delete this once StocasticDiffEq doesn't use it
+DEFAULT_PRECS(W, du, u, p, t, newW, Plprev, Prprev, solverdata) = nothing, nothing
 include("doc_utils.jl")
 include("misc_utils.jl")
 
