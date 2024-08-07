@@ -3,27 +3,19 @@ issuccess_W(W::Number) = !iszero(W)
 issuccess_W(::Any) = true
 
 function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothing,
-        du = nothing, u = nothing, p = nothing, t = nothing,
-        weight = nothing, solverdata = nothing,
         reltol = integrator === nothing ? nothing : integrator.opts.reltol)
     A !== nothing && (linsolve.A = A)
     b !== nothing && (linsolve.b = b)
     linu !== nothing && (linsolve.u = linu)
 
-    Plprev = linsolve.Pl isa LinearSolve.ComposePreconditioner ? linsolve.Pl.outer :
-             linsolve.Pl
-    Prprev = linsolve.Pr isa LinearSolve.ComposePreconditioner ? linsolve.Pr.outer :
-             linsolve.Pr
-
     _alg = unwrap_alg(integrator, true)
 
     _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
         solverdata)
-    if (_Pl !== nothing || _Pr !== nothing)
-        __Pl = _Pl === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pl
-        __Pr = _Pr === nothing ? SciMLOperators.IdentityOperator(length(integrator.u)) : _Pr
-        linsolve.Pl = __Pl
-        linsolve.Pr = __Pr
+    if !isnothing(A)
+        (;du, u, p, t) = integrator
+        p = isnothing(integrator) ? nothing : (du, u, p, t)
+        reinit!(linsolve; A, p)
     end
 
     linres = solve!(linsolve; reltol)
