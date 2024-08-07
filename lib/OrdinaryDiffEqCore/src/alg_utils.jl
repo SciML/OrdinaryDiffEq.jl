@@ -184,6 +184,7 @@ end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 function alg_autodiff end
+has_lazy_interpolation(alg) = false
 
 # Linear Exponential doesn't have any of the AD stuff
 function DiffEqBase.prepare_alg(

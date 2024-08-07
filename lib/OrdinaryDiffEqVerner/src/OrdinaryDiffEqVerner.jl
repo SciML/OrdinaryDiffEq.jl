@@ -12,7 +12,8 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        explicit_rk_docstring, trivial_limiter!, _ode_interpolant,
                        _ode_interpolant!, _ode_addsteps!, @fold,
                        @OnDemandTableauExtract, AutoAlgSwitch,
-                       DerivativeOrderNotPossibleError
+                       DerivativeOrderNotPossibleError,
+                       has_lazy_interpolation
 using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
