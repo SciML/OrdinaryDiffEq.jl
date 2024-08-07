@@ -5,7 +5,8 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
         @unpack tf, uf, d = cache
-        γ = dt * d
+        dtγ = dt * d
+        dto2 = dt / 2
         tf.u = uprev
         if cache.autodiff isa AutoForwardDiff
             dT = ForwardDiff.derivative(tf, t)
@@ -14,16 +15,18 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         end
 
         mass_matrix = f.mass_matrix
-        if uprev isa AbstractArray
-            J = ForwardDiff.jacobian(uf, uprev)
-            W = mass_matrix - γ * J
-        else
+        if uprev isa Number
             J = ForwardDiff.derivative(uf, uprev)
-            W = 1 - γ * J
+            W = 1 - dtγ * J
+        else
+            J = ForwardDiff.jacobian(uf, uprev)
+            W = mass_matrix - dtγ * J
         end
-        k₁ = W \ (f(uprev, p, t) + dt * d * dT)
-        f₁ = f(uprev + dt * k₁ / 2, p, t + dt / 2)
-        k₂ = W \ (f₁ - k₁) + k₁
+        f₀ = f(uprev, p, t)
+        k₁ = W \ (@.. f₀ + dtγ * dT)
+        tmp = @.. uprev + dto2 * k₁
+        f₁ = f(tmp, p, t + dto2)
+        k₂ = (W \ (f₁ - k₁)) + k₁
         copyat_or_push!(k, 1, k₁)
         copyat_or_push!(k, 2, k₂)
     end
@@ -42,15 +45,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         # Assignments
         sizeu = size(u)
         mass_matrix = f.mass_matrix
-        γ = dt * d
+        dtγ = dt * d
         dto2 = dt / 2
-        dto6 = dt / 6
 
-        @.. broadcast=false linsolve_tmp=@muladd fsalfirst + γ * dT
+        @.. linsolve_tmp=@muladd fsalfirst + dtγ * dT
 
         ### Jacobian does not need to be re-evaluated after an event
         ### Since it's unchanged
-        jacobian2W!(W, mass_matrix, γ, J, false)
+        jacobian2W!(W, mass_matrix, dtγ, J, true)
 
         linsolve = cache.linsolve
 
