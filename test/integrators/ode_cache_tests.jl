@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, OrdinaryDiffEqCore, DiffEqBase, Test
 using Random, SparseDiffTools
+using OrdinaryDiffEqDefault
 using ElasticArrays, LinearSolve
 Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK43(), SSPRK104(),
@@ -8,7 +9,7 @@ CACHE_TEST_ALGS = [Euler(), Midpoint(), RK4(), SSPRK22(), SSPRK33(), SSPRK43(), 
     BS3(), BS5(), DP5(), DP8(), Feagin10(), Feagin12(), Feagin14(), TanYam7(),
     Tsit5(), TsitPap8(), Vern6(), Vern7(), Vern8(), Vern9(), OwrenZen3(), OwrenZen4(),
     OwrenZen5(), AutoTsit5(Rosenbrock23()), TRBDF2(), KenCarp4(), ABDF2(),
-    OrdinaryDiffEqCore.DefaultODEAlgorithm()]
+    OrdinaryDiffEqDefault.DefaultODEAlgorithm()]
 broken_CACHE_TEST_ALGS = [
     QNDF(),
     ExtrapolationMidpointHairerWanner(),

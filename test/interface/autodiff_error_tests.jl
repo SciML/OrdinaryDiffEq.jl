@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, Test
-using OrdinaryDiffEqCore
+using OrdinaryDiffEqDifferentiation
 
 const a = Float64[1.0]
 
@@ -13,7 +13,7 @@ end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 1.0)
 prob = ODEProblem(lorenz, u0, tspan)
-@test_throws OrdinaryDiffEqCore.OrdinaryDiffEqDifferentiation.FirstAutodiffJacError solve(prob, Rosenbrock23())
+@test_throws OrdinaryDiffEqDifferentiation.FirstAutodiffJacError solve(prob, Rosenbrock23())
 
 function lorenz(u, p, t)
     du1 = 10.0(u[2] - u[1])
@@ -22,7 +22,7 @@ function lorenz(u, p, t)
     du3 = u[1] * u[2] - (8 / 3) * u[3]
     [du1, du2, du3]
 end
-@test_throws OrdinaryDiffEqCore.OrdinaryDiffEqDifferentiation.FirstAutodiffTgradError solve(prob, Rosenbrock23())
+@test_throws OrdinaryDiffEqDifferentiation.FirstAutodiffTgradError solve(prob, Rosenbrock23())
 
 function lorenz!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
