@@ -7,9 +7,9 @@ test_problem_ssp_long = ODEProblem(f_ssp, 0.1, (0.0, 1.e3))
 
 # test SSP coefficient for explicit Euler
 alg = Euler()
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqLowerOrderRK.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqLowOrderRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqLowerOrderRK.ssp_coefficient(alg) + 1.e-3,
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqLowOrderRK.ssp_coefficient(alg) + 1.e-3,
     dense = false)
 @test any(sol.u .< 0)

@@ -64,7 +64,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
@@ -97,7 +97,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 
@@ -140,7 +140,7 @@ for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     # This corresponds to Simpson's rule; due to symmetric quadrature nodes,
     # it is of degree 4 instead of 3, as would be expected.
-    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
@@ -151,7 +151,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
@@ -184,7 +184,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test storage
@@ -210,7 +210,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test storage
@@ -238,7 +238,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test storage
@@ -265,7 +265,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=0.4
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test storage
@@ -293,7 +293,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 
@@ -312,7 +312,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 
@@ -331,7 +331,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 
@@ -340,7 +340,7 @@ alg = SSPRK43()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     # higher order as pure quadrature
-    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
@@ -351,7 +351,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
@@ -374,7 +374,7 @@ alg = SSPRK432()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     # higher order as pure quadrature
-    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
@@ -385,7 +385,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test SSP property of dense output
@@ -429,7 +429,7 @@ for prob in test_problems_linear
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg) #shows superconvergence to 4th order
-    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - 1 - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 
 println("SSPRK932")
@@ -447,7 +447,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false, maxiters = 1e7)
 @test all(sol.u .>= 0)
 # test storage
@@ -463,7 +463,7 @@ alg = SSPRK54()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
     # convergence order seems to be worse for this problem
-    @test abs(sim.𝒪est[:final] + 0.25 - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] + 0.25 - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
@@ -472,10 +472,10 @@ end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
     # convergence order seems to be better for this problem
-    @test abs(sim.𝒪est[:final] - 0.5 - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - 0.5 - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 
@@ -494,7 +494,7 @@ for prob in test_problems_nonlinear
     @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
 # test storage
@@ -509,17 +509,17 @@ println("KYK2014DGSSPRK_3S2")
 alg = KYK2014DGSSPRK_3S2()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test abs(sim.𝒪est[:final] - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test abs(sim.𝒪est[:final] - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test abs(sim.𝒪est[:final] - OrdinaryDiffEq.alg_order(alg)) < testTol
+    @test abs(sim.𝒪est[:final] - OrdinaryDiffEqSSPRK.alg_order(alg)) < testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEq.ssp_coefficient(alg),
+sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)

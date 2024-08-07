@@ -56,7 +56,7 @@ end
 for prob in test_problems_linear
     sim = test_convergence(BigFloat.(dts), prob, alg)
     sim.𝒪est[:final]
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) + 1 atol=testTol
+    @test sim.𝒪est[:final]OrdinaryDiffEqQPRK.alg_order(alg) + 1 atol=testTol
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
     @test length(sol) < 5
@@ -66,7 +66,7 @@ end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
     sim.𝒪est[:final]
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) + 2.5 atol=testTol
+    @test sim.𝒪est[:final]OrdinaryDiffEqQPRK.alg_order(alg) + 2.5 atol=testTol
     sol = solve(prob, alg, adaptive = true, save_everystep = true)
     sol_exact = prob.f.analytic(prob.u0, prob.p, sol.t[end])
     @test length(sol) < 5

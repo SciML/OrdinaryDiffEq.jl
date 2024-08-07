@@ -1,4 +1,6 @@
 using OrdinaryDiffEqExponentialRK, Test, Random, LinearAlgebra, SparseArrays
+using OrdinaryDiffEqTsit5
+
 let N = 20
     Random.seed!(0)
     u0 = normalize(randn(N))
