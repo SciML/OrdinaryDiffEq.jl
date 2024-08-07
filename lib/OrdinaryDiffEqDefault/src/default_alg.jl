@@ -35,7 +35,7 @@ function DefaultODEAlgorithm(; lazy = true, stiffalgfirst = false, kwargs...)
 end
 
 isdefaultalg(alg::CompositeAlgorithm{
-    <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}) = true
+    <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}) = true
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
     eigen_est, dt = integrator.eigen_est, integrator.dt
