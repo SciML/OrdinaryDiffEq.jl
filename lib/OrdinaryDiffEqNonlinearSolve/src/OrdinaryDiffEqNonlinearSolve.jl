@@ -34,7 +34,7 @@ alg_extrapolates, resize_J_W!, has_autodiff
 
 import OrdinaryDiffEq: _initialize_dae!, isnewton, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff, resize_nlsolver!, apply_step!, postamble!, build_nlsolver
 
-import OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config, dolinsolve, alg_autodiff, resize_jac_config!
+import OrdinaryDiffEqDifferentiation: update_W!, is_always_new, build_uf, build_J_W, WOperator, StaticWOperator, wrapprecs, build_jac_config, dolinsolve, alg_autodiff, resize_jac_config!
 
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA,
                      StaticMatrix
