@@ -140,6 +140,7 @@ isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
 only_diagonal_mass_matrix(alg) = false
 isdp8(alg) = false
+isdefaultalg(alg) = false
 
 function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 1 // 5 : 0
