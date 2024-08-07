@@ -141,6 +141,7 @@ export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, 
 
 import PrecompileTools
 import Preferences
+import DocStringExtensions
 
 PrecompileTools.@compile_workload begin
     function lorenz(du, u, p, t)
