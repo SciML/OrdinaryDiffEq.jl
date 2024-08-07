@@ -61,7 +61,7 @@ prob = ODEProblem(f, u0, tspan, p)
 sol = solve(prob, Tsit5(), callback = cb2)
 @test minimum(Array(sol)) > -40
 
-# https://github.com/SciML/OrdinaryDiffEqCore.jl/issues/2055
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/2055
 for alg in (Rodas4(), Rodas4P(), Rodas5(), Rodas5P())
     sol2 = solve(prob, alg; callback = cb2)
     sol3 = appxtrue(sol, sol2)
@@ -117,7 +117,7 @@ sol2 = solve(prob, Tsit5(), callback = cb2, dt = 1e-3, adaptive = false)
 @test sol.u == sol2.u
 @test z[] == 0
 
-# https://github.com/SciML/OrdinaryDiffEqCore.jl/issues/1273
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1273
 
 function du!(du, u, p, t)
     du[1] = 1

@@ -1,5 +1,5 @@
 using StaticArrays, Test
-using OrdinaryDiffEq
+using OrdinaryDiffEq, OrdinaryDiffEqCore
 using RecursiveArrayTools
 
 u0 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
@@ -61,7 +61,7 @@ prob = ODEProblem(lorenz_static, u0, tspan)
 solve(prob, dt = 0.1, Rosenbrock23(autodiff = false))
 
 # Check that ArrayPartitions of static vectors work
-#https://github.com/SciML/OrdinaryDiffEqCore.jl/issues/1308
+#https://github.com/SciML/OrdinaryDiffEq.jl/issues/1308
 function lorenz_static(u::ArrayPartition, p, t)
     dx = 10.0 * (u[2] - u[1])
     dy = u[1] * (28.0 - u[3]) - u[2]

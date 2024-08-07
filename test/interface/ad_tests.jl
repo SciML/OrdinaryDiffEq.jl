@@ -193,7 +193,7 @@ function difffunc(p)
 end
 ForwardDiff.jacobian(difffunc, ones(5))
 
-# https://github.com/SciML/OrdinaryDiffEqCore.jl/issues/1221
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1221
 
 f_a = function (du, u, p, t)
     du[1] = -p[1] * u[1] + exp(-t)

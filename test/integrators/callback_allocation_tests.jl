@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqCore
 
 # Setup a simple ODE problem with several callbacks (to test LLVM code gen)
 # We will manually trigger the first callback and check its allocations.

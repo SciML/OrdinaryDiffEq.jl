@@ -1,4 +1,6 @@
 using OrdinaryDiffEq, Test, Random
+using OrdinaryDiffEqCore
+
 Random.seed!(100)
 setprecision(400)
 

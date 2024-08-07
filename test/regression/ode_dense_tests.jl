@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, DiffEqBase
+using OrdinaryDiffEqCore
 using ForwardDiff, Printf
 import ODEProblemLibrary: prob_ode_linear,
                           prob_ode_2Dlinear,

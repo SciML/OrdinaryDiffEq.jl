@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqCore
 
 f(u, p, t) = 0.98u
 u0 = 1.0

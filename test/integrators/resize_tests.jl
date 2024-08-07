@@ -187,7 +187,7 @@ runSim(BS3())
 runSim(Rosenbrock23())
 runSim(Rosenbrock23(autodiff = false))
 
-# https://github.com/SciML/OrdinaryDiffEqCore.jl/issues/1990
+# https://github.com/SciML/OrdinaryDiffEq.jl/issues/1990
 @testset "resize! with SplitODEProblem" begin
     f!(du, u, p, t) = du .= u
     ode = SplitODEProblem(f!, f!, [1.0], (0.0, 1.0))
