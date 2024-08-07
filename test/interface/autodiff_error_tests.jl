@@ -33,7 +33,7 @@ end
 u0 = [1.0; 0.0; 0.0]
 tspan = (0.0, 1.0)
 prob = ODEProblem(lorenz!, u0, tspan)
-@test_throws OrdinaryDiffEqCore.OrdinaryDiffEqDifferentiation.FirstAutodiffJacError solve(prob, Rosenbrock23())
+@test_throws OrdinaryDiffEqDifferentiation.FirstAutodiffJacError solve(prob, Rosenbrock23())
 
 function lorenz2!(du, u, p, t)
     du[1] = 10.0(u[2] - u[1])
@@ -42,7 +42,7 @@ function lorenz2!(du, u, p, t)
     du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
 prob = ODEProblem(lorenz2!, u0, tspan)
-@test_throws OrdinaryDiffEqCore.OrdinaryDiffEqDifferentiation.FirstAutodiffTgradError solve(prob, Rosenbrock23())
+@test_throws OrdinaryDiffEqDifferentiation.FirstAutodiffTgradError solve(prob, Rosenbrock23())
 
 ## Test that nothing is using duals when autodiff=false
 ## https://discourse.julialang.org/t/rodas4-using-dual-number-for-time-with-autodiff-false/98256
