@@ -100,7 +100,7 @@ function DiffEqBase.__init(
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
        # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
-       !(alg isa Union{Rosenbrock23, Rosenbrock32}) &&
+       !only_diagonal_mass_matrix(alg) &&
        prob.f.mass_matrix isa AbstractMatrix &&
        all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
