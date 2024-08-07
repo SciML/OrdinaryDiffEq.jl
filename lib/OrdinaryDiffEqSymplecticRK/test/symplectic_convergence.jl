@@ -1,4 +1,5 @@
 using OrdinaryDiffEqSymplecticRK, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
+using OrdinaryDiffEqTsit5
 
 u0 = fill(0.0, 2)
 v0 = ones(2)

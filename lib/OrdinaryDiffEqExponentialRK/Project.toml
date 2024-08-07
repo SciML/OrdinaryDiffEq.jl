@@ -14,6 +14,7 @@ DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 OrdinaryDiffEqDifferentiation = "4302a76b-040a-498a-8c04-15b101fed76b"
+OrdinaryDiffEqVerner = "79d7bb75-1356-48c1-b8c0-6832512096c2"
 
 [compat]
 julia = "1.10"

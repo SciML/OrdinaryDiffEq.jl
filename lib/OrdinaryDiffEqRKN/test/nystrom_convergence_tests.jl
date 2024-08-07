@@ -183,7 +183,7 @@ prob = ODEProblem(
                 exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
                  sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
             ])),
-    OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
+    ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
     DiffEqBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
@@ -220,7 +220,7 @@ prob = ODEProblem(
                 exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
                  sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
             ])),
-    OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
+    ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
     DiffEqBase.NullParameters(), # p
     SecondOrderODEProblem{false}())

@@ -1,5 +1,5 @@
 using OrdinaryDiffEqLinear, Test, DiffEqDevTools
-using OrdinaryDiffEqRosenbrock
+using OrdinaryDiffEqRosenbrock, OrdinaryDiffEqVerner
 using LinearAlgebra, Random
 
 # Linear exponential solvers
@@ -28,8 +28,8 @@ function update_func!(A, u, p, t)
 end
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (10, 50.0))
-sol1 = solve(prob, OrdinaryDiffEq.Vern9(), dt = 1 / 4)
-sol2 = solve(prob, OrdinaryDiffEq.RKMK2(), dt = 1 / 4)
+sol1 = solve(prob, Vern9(), dt = 1 / 4)
+sol2 = solve(prob, RKMK2(), dt = 1 / 4)
 dts = 1 ./ 2 .^ (10:-1:5)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sim = analyticless_test_convergence(dts, prob, RKMK2(), test_setup)
@@ -37,8 +37,8 @@ sim = analyticless_test_convergence(dts, prob, RKMK2(), test_setup)
 
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
-sol1 = solve(prob, OrdinaryDiffEq.Vern9(), dt = 1 / 4)
-sol2 = solve(prob, OrdinaryDiffEq.RKMK4(), dt = 1 / 4)
+sol1 = solve(prob, Vern9(), dt = 1 / 4)
+sol2 = solve(prob, RKMK4(), dt = 1 / 4)
 dts = (0.38) .^ (6:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sim = analyticless_test_convergence(dts, prob, RKMK4(), test_setup)
@@ -46,8 +46,8 @@ sim = analyticless_test_convergence(dts, prob, RKMK4(), test_setup)
 
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
-sol1 = solve(prob, OrdinaryDiffEq.Vern9(), dt = 1 / 4)
-sol2 = solve(prob, OrdinaryDiffEq.LieRK4(), dt = 1 / 4)
+sol1 = solve(prob, Vern9(), dt = 1 / 4)
+sol2 = solve(prob, LieRK4(), dt = 1 / 4)
 dts = 1 ./ 2 .^ (7:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sim = analyticless_test_convergence(dts, prob, LieRK4(), test_setup)
@@ -55,8 +55,8 @@ sim = analyticless_test_convergence(dts, prob, LieRK4(), test_setup)
 
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0, 30.0))
-sol1 = solve(prob, OrdinaryDiffEq.Vern9(), dt = 1 / 4)
-sol2 = solve(prob, OrdinaryDiffEq.CG2(), dt = 1 / 4)
+sol1 = solve(prob, Vern9(), dt = 1 / 4)
+sol2 = solve(prob, CG2(), dt = 1 / 4)
 dts = 1 ./ 2 .^ (7:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
 sim = analyticless_test_convergence(dts, prob, CG2(), test_setup)
@@ -64,8 +64,8 @@ sim = analyticless_test_convergence(dts, prob, CG2(), test_setup)
 
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0, 20.0))
-sol1 = solve(prob, OrdinaryDiffEq.Vern6(), dt = 1 / 8)
-sol2 = solve(prob, OrdinaryDiffEq.CG3(), dt = 1 / 8)
+sol1 = solve(prob, Vern6(), dt = 1 / 8)
+sol2 = solve(prob, CG3(), dt = 1 / 8)
 dts = 1 ./ 2 .^ (10:-1:3)
 test_setup = Dict(:alg => Vern6(), :reltol => 1e-14, :abstol => 1e-14)
 sim = analyticless_test_convergence(dts, prob, CG3(), test_setup)
@@ -102,7 +102,7 @@ end
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0.0, 5.0))
 dts = 1 ./ 2 .^ (10:-1:1)
-sol = solve(prob, OrdinaryDiffEq.MagnusMidpoint(), dt = 1 / 4)
+sol = solve(prob, MagnusMidpoint(), dt = 1 / 4)
 
 dts = 1 ./ 2 .^ (10:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
@@ -114,7 +114,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusMidpoint(krylov = true), te
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0.0, 5.0))
 dts = 1 ./ 2 .^ (10:-1:1)
-sol = solve(prob, OrdinaryDiffEq.MagnusLeapfrog(), dt = 1 / 4)
+sol = solve(prob, MagnusLeapfrog(), dt = 1 / 4)
 
 dts = 1 ./ 2 .^ (10:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
@@ -126,7 +126,7 @@ sim = analyticless_test_convergence(dts, prob, MagnusLeapfrog(krylov = true), te
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0.5, 5.0))
 dts = 1 ./ 2 .^ (10:-1:1)
-sol = solve(prob, OrdinaryDiffEq.LieEuler(), dt = 1 / 4)
+sol = solve(prob, LieEuler(), dt = 1 / 4)
 
 dts = 1 ./ 2 .^ (10:-1:1)
 test_setup = Dict(:alg => Vern9(), :reltol => 1e-14, :abstol => 1e-14)
@@ -195,8 +195,8 @@ sim = analyticless_test_convergence(dts, prob, MagnusGL4(krylov = true), test_se
 
 A = MatrixOperator(ones(2, 2), update_func! = update_func!)
 prob = ODEProblem(A, ones(2), (0, 20.0))
-sol1 = solve(prob, OrdinaryDiffEq.Vern6(), dt = 1 / 8)
-sol2 = solve(prob, OrdinaryDiffEq.CG3(), dt = 1 / 8)
+sol1 = solve(prob, Vern6(), dt = 1 / 8)
+sol2 = solve(prob, CG3(), dt = 1 / 8)
 dts = 1 ./ 2 .^ (10:-1:3)
 test_setup = Dict(:alg => Vern6(), :reltol => 1e-14, :abstol => 1e-14)
 sim = analyticless_test_convergence(dts, prob, CG3(), test_setup)

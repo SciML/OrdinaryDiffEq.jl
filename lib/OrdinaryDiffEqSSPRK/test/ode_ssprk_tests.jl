@@ -53,15 +53,15 @@ println("SSPRK22")
 alg = SSPRK22()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -86,15 +86,15 @@ println("KYKSSPRK42")
 alg = KYKSSPRK42()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -105,15 +105,15 @@ println("SHLDDRK52")
 alg = SHLDDRK52()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test_broken sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 
 println("SHLDDRK_2N")
@@ -144,11 +144,11 @@ for prob in test_problems_only_time
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -173,15 +173,15 @@ println("SSPRK53")
 alg = SSPRK53()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -199,15 +199,15 @@ println("SSPRK53_2N1")
 alg = SSPRK53_2N1()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -227,15 +227,15 @@ println("SSPRK53_2N2")
 alg = SSPRK53_2N2()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -254,15 +254,15 @@ println("SSPRK53_H")
 alg = SSPRK53_H()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=0.4
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=0.4
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=0.4
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=0.4
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=0.4
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=0.4
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -282,15 +282,15 @@ dts = 1 .// 2 .^ (8:-1:4)
 alg = SSPRK63()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -301,15 +301,15 @@ println("SSPRK73")
 alg = SSPRK73()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -320,15 +320,15 @@ println("SSPRK83")
 alg = SSPRK83()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -344,11 +344,11 @@ for prob in test_problems_only_time
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -378,11 +378,11 @@ for prob in test_problems_only_time
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -406,26 +406,26 @@ integ = init(prob_ode_large, alg, dt = 1.e-2, save_start = false, save_end = fal
 alg = SSPRKMSVS32()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 
 println("SSPRKMSVS43")
 alg = SSPRKMSVS43()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg) #shows superconvergence to 4th order
@@ -436,15 +436,15 @@ println("SSPRK932")
 alg = SSPRK932()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
@@ -467,7 +467,7 @@ for prob in test_problems_only_time
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
@@ -483,15 +483,15 @@ println("SSPRK104")
 alg = SSPRK104()
 for prob in test_problems_only_time
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
     sim = test_convergence(dts, prob, alg)
-    @test sim.𝒪est[:final]≈OrdinaryDiffEq.alg_order(alg) atol=testTol
+    @test sim.𝒪est[:final]≈OrdinaryDiffEqSSPRK.alg_order(alg) atol=testTol
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqSSPRK.ssp_coefficient(alg),
