@@ -130,3 +130,16 @@ function get_differential_vars(f, u)
 end
 
 isnewton(::Any) = false
+
+function strip_solution(sol::ODESolution)
+    if has_lazy_interpolation(sol.alg)
+        error("change this to a proper error")
+    end
+
+    interp = strip_interpolation(sol.interp)
+
+    ODESolution(sol.u, sol.u_analytic, sol.errors,
+        sol.t, sol.k, sol.discretes, nothing, nothing,
+        sol.interp, sol.dense, sol.tslocation, sol.stats,
+        sol.alg_choice, sol.retcode, sol.resid, sol.original)
+end
