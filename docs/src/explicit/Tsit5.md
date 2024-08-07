@@ -1,6 +1,6 @@
 # OrdinaryDiffEqTsit5
 
-Recommended solver for most non-stiff problems.
+Recommended solver for most non-stiff problems at default and higher tolerance.
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
