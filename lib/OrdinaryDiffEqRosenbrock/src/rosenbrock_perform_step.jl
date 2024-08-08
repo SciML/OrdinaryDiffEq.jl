@@ -1716,7 +1716,7 @@ end
             else
                 du2 = mass_matrix * du1 - du
             end
-            EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol * norm(k2))
+            EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
             integrator.EEst = max(EEst, integrator.EEst)
         end
     end
@@ -1978,7 +1978,7 @@ end
                 mul!(_vec(du2), mass_matrix, _vec(du1))
                 du2 = du2 - du
             end
-            EEst = norm(du2) / (integrator.opts.abstol + integrator.opts.reltol * norm(k2))
+            EEst = norm(du2) / norm(integrator.opts.abstol .+ integrator.opts.reltol .* k2)
             integrator.EEst = max(EEst, integrator.EEst)
         end
     end
