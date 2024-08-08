@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 using OrdinaryDiffEqCore
+using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
 
 # create mass matrix problems
 function make_mm_probs(mm_A, ::Val{iip}) where {iip}

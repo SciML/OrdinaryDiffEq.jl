@@ -37,6 +37,13 @@ end
 isdefaultalg(alg::CompositeAlgorithm{
     <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}) = true
 
+function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
+end
+function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
+    DiffEqBase.solve(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
+end
+
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg, current)
     eigen_est, dt = integrator.eigen_est, integrator.dt
     stiffness = abs(eigen_est * dt /

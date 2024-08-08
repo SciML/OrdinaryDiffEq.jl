@@ -11,20 +11,21 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
         SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
         AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
-        du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch
+        du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
     set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
     DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
     SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
     AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
-    du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch
+    du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity
 
 import OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!
 
 using OrdinaryDiffEqNonlinearSolve
 using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail, initial_η, NonlinearSolveAlg, compute_step!, NLSolver, nlsolve!, resize_jac_config!, anderson!, build_nlsolver, markfirststage!, anderson
+export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 using OrdinaryDiffEqExtrapolation
 export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner,
