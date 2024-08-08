@@ -9,9 +9,6 @@ function dolinsolve(integrator, linsolve; A = nothing, linu = nothing, b = nothi
     linu !== nothing && (linsolve.u = linu)
 
     _alg = unwrap_alg(integrator, true)
-
-    _Pl, _Pr = _alg.precs(linsolve.A, du, u, p, t, A !== nothing, Plprev, Prprev,
-        solverdata)
     if !isnothing(A)
         (;du, u, p, t) = integrator
         p = isnothing(integrator) ? nothing : (du, u, p, t)
