@@ -19,7 +19,7 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         accept_step_controller, step_accept_controller!, step_reject_controller!,
         DummyController, issplit, calculate_residuals, calculate_residuals!,
         nlsolve_f, unwrap_cache, ode_addsteps!, get_chunksize, handle_callback_modifiers!,
-        unwrap_alg
+        unwrap_alg, apply_step!, initialize_tstops
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
        AutoSwitch
