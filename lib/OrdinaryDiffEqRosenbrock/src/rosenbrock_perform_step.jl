@@ -30,6 +30,11 @@ end
     @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack c₃₂, d = cache.tab
 
+    if cache isa Rosenbrock23ConstantCache
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack c₃₂, d, tf, uf = cache
+    end
+
     # Assignments
     sizeu = size(u)
     mass_matrix = integrator.f.mass_matrix
@@ -188,18 +193,6 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache,
         repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack c₃₂, d, tf, uf = cache
-
-    # Precalculations
-    γ = dt * d
-    dto2 = dt / 2
-    dto6 = dt / 6
-
-    if repeat_step
-        integrator.fsalfirst = f(uprev, p, t)
-        integrator.stats.nf += 1
-    end
 
     mass_matrix = integrator.f.mass_matrix
 
@@ -447,38 +440,32 @@ end
     @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
     # Assignments
-    sizeu = size(u)
-    mass_matrix = integrator.f.mass_matrix
-    utilde = du
     if cache isa Rosenbrock34Cache
         uidx = eachindex(integrator.uprev)
+        sizeu = size(u)
+        mass_matrix = integrator.f.mass_matrix
+        utilde = du
+    end
+    if cache isa Rosenbrock33Cache
+        mass_matrix = integrator.f.mass_matrix
+        sizeu = size(u)
+        utilde = du
     end
 
     # Precalculations
-    if cache isa Rosenbrock33Cache
-        dtC21 = C21 / dt
-        dtC31 = C31 / dt
-        dtC32 = C32 / dt
-
-        dtd1 = dt * d1
-        dtd2 = dt * d2
-        dtd3 = dt * d3
-        dtgamma = dt * gamma
-    end
+    dtC21 = C21 / dt
+    dtC31 = C31 / dt
+    dtC32 = C32 / dt
+    dtd1 = dt * d1
+    dtd2 = dt * d2
+    dtd3 = dt * d3
+    dtgamma = dt * gamma
 
     if cache isa Rosenbrock34Cache
-        dtC21 = C21 / dt
-        dtC31 = C31 / dt
-        dtC32 = C32 / dt
         dtC41 = C41 / dt
         dtC42 = C42 / dt
         dtC43 = C43 / dt
-
-        dtd1 = dt * d1
-        dtd2 = dt * d2
-        dtd3 = dt * d3
         dtd4 = dt * d4
-        dtgamma = dt * gamma
     end
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
@@ -562,7 +549,9 @@ end
 
     if cache isa Rosenbrock33Cache
         f(fsallast, u, p, t + dt)
-    elseif cache isa Rosenbrock34Cache
+    end
+
+    if cache isa Rosenbrock34Cache
         f(du, u, p, t + dt) #-- c4 = 1
     end
 
