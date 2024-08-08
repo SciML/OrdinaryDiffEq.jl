@@ -12,15 +12,16 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
         AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
         du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity,
-        first_discontinuity, pop_discontinuity!, _vec, loopfooter!, _reshape, perform_step!
+        first_discontinuity, pop_discontinuity!, _vec, loopfooter!, _reshape, perform_step!,
+        _ode_addsteps!, get_current_alg_autodiff, default_controller, isstandard,
+        ispredictive, beta2_default, beta1_default, gamma_default, qmin_default,
+        qmax_default, qsteady_min_default, qsteady_max_default, stepsize_controller!,
+        accept_step_controller, step_accept_controller!, step_reject_controller!,
+        DummyController, issplit, calculate_residuals, calculate_residuals!,
+        nlsolve_f, unwrap_cache
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
-    set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
-    DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
-    SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
-    AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
-    du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity,
-    first_discontinuity, pop_discontinuity!, _vec, loopfooter!, _reshape, perform_step!
+       AutoSwitch
 
 import OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!, isnewton
