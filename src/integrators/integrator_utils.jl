@@ -222,7 +222,7 @@ function _loopfooter!(integrator)
         end
         integrator.last_stepfail = true
         integrator.accept_step = false
-    elseif integrator.opts.adaptive
+    else
         q = stepsize_controller!(integrator, integrator.alg)
         integrator.isout = integrator.opts.isoutofdomain(integrator.u, integrator.p, ttmp)
         integrator.accept_step = (!integrator.isout &&
@@ -255,24 +255,6 @@ function _loopfooter!(integrator)
         else # Reject
             integrator.stats.nreject += 1
         end
-    elseif !integrator.opts.adaptive #Not adaptive
-        integrator.stats.naccept += 1
-        integrator.tprev = integrator.t
-        integrator.t = if has_tstop(integrator)
-            tstop = integrator.tdir * first_tstop(integrator)
-            if abs(ttmp - tstop) <
-               100eps(float(integrator.t / oneunit(integrator.t))) * oneunit(integrator.t)
-                tstop
-            else
-                ttmp
-            end
-        else
-            ttmp
-        end
-        integrator.last_stepfail = false
-        integrator.accept_step = true
-        integrator.dtpropose = integrator.dt
-        handle_callbacks!(integrator)
     end
     if integrator.opts.progress && integrator.iter % integrator.opts.progress_steps == 0
         t1, t2 = integrator.sol.prob.tspan

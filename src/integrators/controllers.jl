@@ -1,6 +1,10 @@
 abstract type AbstractController end
 using OrdinaryDiffEq
 
+@inline function accept_step_controller(integrator, ::AbstractController)
+    return integrator.EEst <= 1
+end
+
 @inline function stepsize_controller!(integrator, alg)
     stepsize_controller!(integrator, integrator.opts.controller, alg)
 end
@@ -22,6 +26,30 @@ end
 reset_alg_dependent_opts!(controller::AbstractController, alg1, alg2) = nothing
 
 DiffEqBase.reinit!(integrator::ODEIntegrator, controller::AbstractController) = nothing
+
+"""
+    NonAdaptiveController()
+
+This Controller exists to match the interface when one does not want to use a controller,
+basically if you want to keep a fixed time step.
+"""
+struct NonAdaptiveController <: AbstractController
+end
+
+@inline function stepsize_controller!(integrator, ::NonAdaptiveController, alg)
+    nothing
+end
+
+@inline function accept_step_controller(integrator, ::NonAdaptiveController)
+    return true
+end
+
+function step_accept_controller!(integrator, ::NonAdaptiveController, alg, q)
+    integrator.dt
+end
+
+function step_reject_controller!(integrator, ::NonAdaptiveController, alg)
+end
 
 # Standard integral (I) step size controller
 """
@@ -309,11 +337,6 @@ end
     # See Söderlind, Wang (2006), Section 6.
     integrator.qold = dt_factor
     return dt_factor
-end
-
-# checks whether the controller should accept a step based on the error estimate
-@inline function accept_step_controller(integrator, controller::AbstractController)
-    return integrator.EEst <= 1
 end
 
 @inline function accept_step_controller(integrator, controller::PIDController)
