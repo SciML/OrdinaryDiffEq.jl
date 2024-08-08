@@ -567,9 +567,7 @@ end
 
     if cache isa Rosenbrock33Cache
         f(fsallast, u, p, t + dt)
-    end
-
-    if cache isa Rosenbrock34Cache
+    elseif cache isa Rosenbrock34Cache
         f(du, u, p, t + dt) #-- c4 = 1
     end
 
