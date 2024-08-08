@@ -12,14 +12,15 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
         AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
         du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity,
-        first_discontinuity
+        first_discontinuity, pop_discontinuity!, _vec
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
     set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
     DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
     SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
     AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
-    du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity
+    du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity,
+    first_discontinuity, pop_discontinuity!, _vec
 
 import OrdinaryDiffEqDifferentiation
 using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!, isnewton
