@@ -5,7 +5,7 @@ import OrdinaryDiffEqCore: alg_order, alg_extrapolates, dt_required, OrdinaryDif
                        OrdinaryDiffEqExponentialAlgorithm,
                        OrdinaryDiffEqMutableCache, @cache, alg_cache, OrdinaryDiffEqConstantCache,
                        initialize!, perform_step!, @unpack, unwrap_alg, calculate_residuals!,
-                       _vec, isdtchangeable
+                       _vec, isdtchangeable, full_cache
 using LinearAlgebra: mul!, I
 using SciMLOperators: AbstractSciMLOperator
 using ExponentialUtilities

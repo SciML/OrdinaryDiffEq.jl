@@ -3,7 +3,8 @@ module OrdinaryDiffEqExplicitRK
 import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, alg_stability_size, OrdinaryDiffEqAdaptiveAlgorithm,
                        @cache, alg_cache, OrdinaryDiffEqConstantCache, @unpack, unwrap_alg,
                        OrdinaryDiffEqMutableCache, initialize!, perform_step!, isfsal,
-                       CompositeAlgorithm, calculate_residuals!, calculate_residuals
+                       CompositeAlgorithm, calculate_residuals!, calculate_residuals,
+                       full_cache
 using TruncatedStacktraces, RecursiveArrayTools, FastBroadcast, MuladdMacro, DiffEqBase
 import LinearAlgebra: norm
 

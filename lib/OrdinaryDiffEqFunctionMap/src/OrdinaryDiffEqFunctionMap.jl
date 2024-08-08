@@ -4,7 +4,7 @@ import OrdinaryDiffEqCore: isfsal, beta2_default, beta1_default, OrdinaryDiffEqA
                        initialize!, perform_step!, @unpack, unwrap_alg, OrdinaryDiffEqMutableCache,
                        alg_cache, @cache, _ode_addsteps!, _ode_interpolant!, _ode_interpolant,
                        alg_order, OrdinaryDiffEqConstantCache, dt_required,
-                       isdiscretecache, isdiscretealg
+                       isdiscretecache, isdiscretealg, full_cache
 using DiffEqBase
 import RecursiveArrayTools: recursivecopy!
 import FastBroadcast: @..

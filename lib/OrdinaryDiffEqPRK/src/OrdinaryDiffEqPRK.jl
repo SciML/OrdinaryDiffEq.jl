@@ -2,7 +2,8 @@ module OrdinaryDiffEqPRK
 
 import OrdinaryDiffEqCore: OrdinaryDiffEqAlgorithm, alg_order, OrdinaryDiffEqMutableCache,
                        OrdinaryDiffEqConstantCache, constvalue, @unpack, @cache, alg_cache,
-                       unwrap_alg, perform_step!, @threaded, initialize!, isthreaded
+                       unwrap_alg, perform_step!, @threaded, initialize!, isthreaded,
+                       full_cache
 import MuladdMacro: @muladd
 import FastBroadcast: @..
 using Polyester
