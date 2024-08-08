@@ -61,7 +61,7 @@ function InterpolationData(id::InterpolationData, f)
 end
 
 # strip interpolation of function information
-function strip_interpolation(id::InterpolationData)
+function SciMLBase.strip_interpolation(id::InterpolationData)
     InterpolationData(nothing, id.timeseries,
         id.ts,
         id.ks,
