@@ -2063,9 +2063,9 @@ version = "0.2.0"
 
 [[deps.WeightInitializers]]
 deps = ["ArgCheck", "ChainRulesCore", "ConcreteStructs", "GPUArraysCore", "LinearAlgebra", "Random", "SpecialFunctions", "Statistics"]
-git-tree-sha1 = "58d74e2f95c825935b8307360e66b73359db47fd"
+git-tree-sha1 = "33ce5777ca44b33f708ccbc67ea51b68a68b7bdd"
 uuid = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
-version = "1.0.0"
+version = "1.0.1"
 
     [deps.WeightInitializers.extensions]
     WeightInitializersAMDGPUExt = ["AMDGPU", "GPUArrays"]
