@@ -674,11 +674,11 @@ function initialize!(integrator, cache::Union{Rodas23WConstantCache, Rodas3PCons
 end
 
 @muladd function perform_step!(
-        integrator, cache::Union{Rodas23WConstantCache, Rodas3PConstantCache},
+        integrator, cache::Union{Rodas23WConstantCache, Rodas3PConstantCache, Rodas4ConstantCache},
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
-    @unpack a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3 = cache.tab
+    @unpack a21, a31, a32, a41, a42, a43, a51, a53, a54, a52, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
 
     # Precalculations
     dtC21 = C21 / dt
@@ -691,10 +691,16 @@ end
     dtC52 = C52 / dt
     dtC53 = C53 / dt
     dtC54 = C54 / dt
+    dtC61 = C61 / dt
+    dtC62 = C62 / dt
+    dtC63 = C63 / dt
+    dtC64 = C64 / dt
+    dtC65 = C65 / dt
 
     dtd1 = dt * d1
     dtd2 = dt * d2
     dtd3 = dt * d3
+    dtd4 = dt * d4
     dtgamma = dt * gamma
 
     mass_matrix = integrator.f.mass_matrix
@@ -711,7 +717,9 @@ end
 
     du = f(uprev, p, t)
     integrator.stats.nf += 1
-    k3 = copy(du)  #-- save for stage 3
+    if cache isa Rodas23WConstantCache || Rodas3PConstantCache
+        k3 = copy(du)  #-- save for stage 3
+    end
 
     linsolve_tmp = du + dtd1 * dT
 
@@ -730,6 +738,12 @@ end
     k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
 
+    if cache isa Rodas4ConstantCache
+        u = uprev + a31 * k1 + a32 * k2
+        du = f(u, p, t + c3 * dt)
+        integrator.stats.nf += 1
+    end
+
     if mass_matrix === I
         linsolve_tmp = k3 + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
     else
@@ -739,8 +753,19 @@ end
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
     u = uprev + a41 * k1 + a42 * k2 + a43 * k3
+    if cache isa Rodas4ConstantCache
+        du = f(u, p, t + c4 * dt)
+    end
     du = f(u, p, t + dt)
     integrator.stats.nf += 1
+
+    if cache isa Rodas4ConstantCache
+        if mass_matrix === I
+            linsolve_tmp = du + dtd4 * dT + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
+        else
+            linsolve_tmp = du + dtd4 * dT + mass_matrix * (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
+        end
+    end
 
     if mass_matrix === I
         linsolve_tmp = du + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
@@ -751,6 +776,12 @@ end
     k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
 
+    if cache isa Rodas4ConstantCache
+        u = uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
+        du = f(u, p, t + dt)
+        integrator.stats.nf += 1
+    end
+
     if mass_matrix === I
         linsolve_tmp = du + (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
     else
@@ -760,45 +791,74 @@ end
 
     k5 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
+    if cache isa Rosenbrock4ConstantCache
+        u = u + k5
+        du = f(u, p, t + dt)
+        integrator.stats.nf += 1
+    end
     du = u + k4 #-- solution p=2
     u = u + k5 #-- solution p=3
 
-    EEst = 0.0
-    if integrator.opts.calck
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25 = cache.tab
-        integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
-        integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
-        integrator.k[3] = h2_21 * k1 + h2_22 * k2 + h2_23 * k3 + h2_24 * k4 + h2_25 * k5
-        if integrator.opts.adaptive
-            if isa(linsolve_tmp, AbstractFloat)
-                u_int, u_diff = calculate_interpoldiff(
-                    uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
-            else
-                u_int = linsolve_tmp
-                u_diff = linsolve_tmp .+ 0
-                calculate_interpoldiff!(u_int, u_diff, uprev, du, u, integrator.k[1],
-                    integrator.k[2], integrator.k[3])
-            end
-            atmp = calculate_residuals(u_diff, uprev, u_int, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
-            EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
-        end
-    end
-
-    if (integrator.alg isa Rodas23W)
-        k1 = u .+ 0
-        u = du .+ 0
-        du = k1 .+ 0
+    if cache isa Rodas23WConstantCache || cache isa Rodas3PConstantCache
+        EEst = 0.0
         if integrator.opts.calck
-            integrator.k[1] = integrator.k[3] .+ 0
-            integrator.k[2] = 0 * integrator.k[2]
+            @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25 = cache.tab
+            integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
+            integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
+            integrator.k[3] = h2_21 * k1 + h2_22 * k2 + h2_23 * k3 + h2_24 * k4 + h2_25 * k5
+            if integrator.opts.adaptive
+                if isa(linsolve_tmp, AbstractFloat)
+                    u_int, u_diff = calculate_interpoldiff(
+                    uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
+                else
+                    u_int = linsolve_tmp
+                    u_diff = linsolve_tmp .+ 0
+                    calculate_interpoldiff!(u_int, u_diff, uprev, du, u, integrator.k[1],
+                        integrator.k[2], integrator.k[3])
+                end
+                atmp = calculate_residuals(u_diff, uprev, u_int, integrator.opts.abstol,
+                    integrator.opts.reltol, integrator.opts.internalnorm, t)
+                EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
+            end
+        end
+
+        if (integrator.alg isa Rodas23W)
+            k1 = u .+ 0
+            u = du .+ 0
+            du = k1 .+ 0
+            if integrator.opts.calck
+                integrator.k[1] = integrator.k[3] .+ 0
+                integrator.k[2] = 0 * integrator.k[2]
+            end
         end
     end
 
+    if cache isa Rodas4ConstantCache
+        if mass_matrix === I
+            linsolve_tmp = du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
+        else
+            linsolve_tmp = du +
+                           mass_matrix *
+                           (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
+        end
+    
+        k6 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        integrator.stats.nsolve += 1
+        u = u + k6
+    end
+    
     if integrator.opts.adaptive
         atmp = calculate_residuals(u - du, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = max(EEst, integrator.opts.internalnorm(atmp, t))
+    end
+
+    if cache isa Rodas4ConstantCache
+        if integrator.opts.calck
+            @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
+            integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
+            integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
+        end
     end
 
     integrator.u = u
@@ -1035,133 +1095,6 @@ function initialize!(integrator, cache::Rodas4ConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.k[1] = zero(integrator.u)
     integrator.k[2] = zero(integrator.u)
-end
-
-@muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tf, uf = cache
-    @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
-
-    # Precalculations
-    dtC21 = C21 / dt
-    dtC31 = C31 / dt
-    dtC32 = C32 / dt
-    dtC41 = C41 / dt
-    dtC42 = C42 / dt
-    dtC43 = C43 / dt
-    dtC51 = C51 / dt
-    dtC52 = C52 / dt
-    dtC53 = C53 / dt
-    dtC54 = C54 / dt
-    dtC61 = C61 / dt
-    dtC62 = C62 / dt
-    dtC63 = C63 / dt
-    dtC64 = C64 / dt
-    dtC65 = C65 / dt
-
-    dtd1 = dt * d1
-    dtd2 = dt * d2
-    dtd3 = dt * d3
-    dtd4 = dt * d4
-    dtgamma = dt * gamma
-
-    mass_matrix = integrator.f.mass_matrix
-
-    # Time derivative
-    tf.u = uprev
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-    if !issuccess_W(W)
-        integrator.EEst = 2
-        return nothing
-    end
-
-    du = f(uprev, p, t)
-    integrator.stats.nf += 1
-
-    linsolve_tmp = du + dtd1 * dT
-
-    k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a21 * k1
-    du = f(u, p, t + c2 * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd2 * dT + dtC21 * k1
-    else
-        linsolve_tmp = du + dtd2 * dT + mass_matrix * (dtC21 * k1)
-    end
-
-    k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a31 * k1 + a32 * k2
-    du = f(u, p, t + c3 * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd3 * dT + (dtC31 * k1 + dtC32 * k2)
-    else
-        linsolve_tmp = du + dtd3 * dT + mass_matrix * (dtC31 * k1 + dtC32 * k2)
-    end
-
-    k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a41 * k1 + a42 * k2 + a43 * k3
-    du = f(u, p, t + c4 * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd4 * dT + (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
-    else
-        linsolve_tmp = du + dtd4 * dT + mass_matrix * (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
-    end
-
-    k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
-    du = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
-    else
-        linsolve_tmp = du +
-                       mass_matrix * (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
-    end
-
-    k5 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = u + k5
-    du = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
-    else
-        linsolve_tmp = du +
-                       mass_matrix *
-                       (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 + dtC63 * k3)
-    end
-
-    k6 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = u + k6
-
-    if integrator.opts.adaptive
-        atmp = calculate_residuals(k6, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    if integrator.opts.calck
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        integrator.k[1] = h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 + h25 * k5
-        integrator.k[2] = h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 + h35 * k5
-    end
-    integrator.u = u
-    return nothing
 end
 
 function initialize!(integrator, cache::Rodas4Cache)
