@@ -217,6 +217,11 @@ end
     @unpack  du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
 
+    if cache isa Rosenbrock32ConstantCache
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack c₃₂, d, tf, uf = cache
+    end
+
     if cache isa Rosenbrock23ConstantCache || cache isa Rosenbrock32ConstantCache || cache isa Rosenbrock33ConstantCache
         @unpack c₃₂, d, tf, uf = cache
 
