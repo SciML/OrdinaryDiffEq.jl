@@ -191,8 +191,23 @@ end
     cache.linsolve = linres.cache
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache,
+@muladd function perform_step!(integrator, cache::Union{Rosenbrock23ConstantCache, Rosenbrock32ConstantCache},
         repeat_step = false)
+
+    if cache isa Rosenbrock32ConstantCache
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack c₃₂, d, tf, uf = cache
+
+        # Precalculations
+        γ = dt * d
+        dto2 = dt / 2
+        dto6 = dt / 6
+
+        if repeat_step
+            integrator.fsalfirst = f(uprev, p, t)
+            integrator.stats.nf += 1
+        end
+    end
 
     mass_matrix = integrator.f.mass_matrix
 
@@ -213,12 +228,18 @@ end
     if mass_matrix === I
         k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
     else
+        if cache isa Rosenbrock32ConstantCache
+            linsolve_tmp = f₁ - mass_matrix * k₁
+        end
         k₂ = _reshape(W \ -_vec(f₁ - mass_matrix * k₁), axes(uprev)) + k₁
     end
     integrator.stats.nsolve += 1
     u = uprev + dt * k₂
 
     if integrator.opts.adaptive
+        if cache isa Rosenbrock32ConstantCache
+            integrator.fsallast = f(tmp, p, t + dt)
+        end
         integrator.fsallast = f(u, p, t + dt)
         integrator.stats.nf += 1
 
@@ -235,6 +256,23 @@ end
         end
         integrator.stats.nsolve += 1
 
+        if cache isa Rosenbrock32ConstantCache
+            u = uprev + dto6 * (k₁ + 4k₂ + k₃)
+
+            if integrator.opts.adaptive
+                utilde = dto6 * (k₁ - 2k₂ + k₃)
+                atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                    integrator.opts.reltol, integrator.opts.internalnorm, t)
+                integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        
+                if mass_matrix !== I
+                    atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
+                              integrator.opts.abstol
+                    integrator.EEst += integrator.opts.internalnorm(atmp, t)
+                end
+            end
+        end
+
         if u isa Number
             utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
         else
@@ -250,82 +288,6 @@ end
             integrator.EEst += integrator.opts.internalnorm(atmp, t)
         end
     end
-    integrator.k[1] = k₁
-    integrator.k[2] = k₂
-    integrator.u = u
-    return nothing
-end
-
-@muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache,
-        repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack c₃₂, d, tf, uf = cache
-
-    # Precalculations
-    γ = dt * d
-    dto2 = dt / 2
-    dto6 = dt / 6
-
-    mass_matrix = integrator.f.mass_matrix
-
-    if repeat_step
-        integrator.fsalfirst = f(uprev, p, t)
-        integrator.stats.nf += 1
-    end
-
-    # Time derivative
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, γ, repeat_step)
-    if !issuccess_W(W)
-        integrator.EEst = 2
-        return nothing
-    end
-
-    k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
-    integrator.stats.nsolve += 1
-    f₁ = f(uprev + dto2 * k₁, p, t + dto2)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
-    else
-        linsolve_tmp = f₁ - mass_matrix * k₁
-        k₂ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev)) + k₁
-    end
-
-    integrator.stats.nsolve += 1
-    tmp = uprev + dt * k₂
-    integrator.fsallast = f(tmp, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        k₃ = _reshape(
-            W \
-            -_vec((integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                   2(k₁ - integrator.fsalfirst) + dt * dT)),
-            axes(uprev))
-    else
-        linsolve_tmp = integrator.fsallast - mass_matrix * (c₃₂ * k₂ + 2k₁) + c₃₂ * f₁ +
-                       2 * integrator.fsalfirst + dt * dT
-        k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    end
-    integrator.stats.nsolve += 1
-    u = uprev + dto6 * (k₁ + 4k₂ + k₃)
-
-    if integrator.opts.adaptive
-        utilde = dto6 * (k₁ - 2k₂ + k₃)
-        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-
-        if mass_matrix !== I
-            atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                      integrator.opts.abstol
-            integrator.EEst += integrator.opts.internalnorm(atmp, t)
-        end
-    end
-
     integrator.k[1] = k₁
     integrator.k[2] = k₂
     integrator.u = u
