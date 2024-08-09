@@ -30,6 +30,6 @@ include("firk_tableaus.jl")
 include("firk_perform_step.jl")
 include("integrator_interface.jl")
 
-export RadauIIA3, RadauIIA5, RadauIIA9
+export RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau
 
 end

@@ -1524,7 +1524,7 @@ end
                 end
             end
             for i in 1 : (s-1)
-                cache.cont[i] = derivatives[i, i]
+                cache.cont[i] = derivatives[i, s - 1]
             end
         end
     end

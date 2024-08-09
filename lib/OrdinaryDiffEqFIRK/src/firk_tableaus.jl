@@ -292,7 +292,7 @@ function adaptiveRadauTableau(T, T2, s::Int64)
             c_powers[i,j] = c[i]^(j-1)
         end
     end
-    inverse_c_powers = c_powers^(-1)
+    inverse_c_powers = inv(c_powers)
     c_q = Matrix{BigFloat}(undef, s, s)
     for i in 1:s
         for j in 1:s
@@ -300,7 +300,7 @@ function adaptiveRadauTableau(T, T2, s::Int64)
         end
     end
     a = c_q * inverse_c_powers
-    a_inverse = a^(-1)
+    a_inverse = inv(a)
     b = eigvals(a_inverse)
     γ = real(b[s])
     α = Vector{BigFloat}(undef, floor(Int, s/2))
@@ -309,45 +309,30 @@ function adaptiveRadauTableau(T, T2, s::Int64)
     i = 1
     while i <= (s-1)
         α[index] = real(b[i])
-        β[index] = imag(b[i])
+        β[index] = imag(b[i + 1])
         index = index + 1
         i = i + 2
     end
-    block = Matrix{BigFloat}(undef, s, s)
-    for i in 1 : s
-        for j in 1 : s
-            block[i, j] = 0
-        end
+    eigvec = eigvecs(a)
+    vecs = Vector{Vector{BigFloat}}(undef, s)
+    i = 1
+    index = 2
+    while i < s 
+        vecs[index] = real(eigvec[:, i] ./ eigvec[s,i])
+        vecs[index + 1] = -imag(eigvec[:, i] ./ eigvec[s,i])
+        index += 2
+        i += 2
     end
-    block[1,1] = γ
-    for i in 1 : floor(Int, s/2)
-        block[2i, 2i] = α[i]
-        block[2i, 2i+1] = β[i]
-        block[2i+1, 2i] = -β[i]
-        block[2i+1, 2i+1] = α[i]
-    end
-    @show eigvals(a_inverse)
-    #@show eigvals(-block)
-    #=@show eigvecs(-block)
-    Id = Matrix{BigFloat}(I, s, s)
-    O = zeros(s^2)
-    tmp3 = Base.kron(a_inverse, Id) - Base.kron(Id, transpose(block))
-    @show det(tmp3)
-    prob = LinearProblem(tmp3, O)
-    sol = solve(prob)
+    vecs[1] = real(eigvec[:, s])
+    tmp3 = vcat(vecs)
     T = Matrix{BigFloat}(undef, s, s)
-    for i in 1:s
-        for j in 1:s
-            T[i,j] = sol[j + s * (i-1)]
+    for j in 1 : s
+        for i in 1 : s
+            T[i, j] = tmp3[j][i]
         end
     end
-    @show T
-    TI = T^(-1)=#
-
-
-
+    TI = inv(T)
     #adaptiveRadauTableau(T, TI, γ, α, β, c, e)
 end
 
-
-adaptiveRadauTableau(0, 0, 3)
+adaptiveRadauTableau(0, 0, 1)
