@@ -21,13 +21,22 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
         OrdinaryDiffEq.OrdinaryDiffEqDefault,
         OrdinaryDiffEq.OrdinaryDiffEqFIRK],
-    warnonly = [:docs_block, :missing_docs,  :eval_block],
+    warnonly = [:docs_block, :missing_docs, :eval_block],
     format = Documenter.HTML(analytics = "UA-90474609-3",
         assets = ["assets/favicon.ico"],
         canonical = "https://ordinarydiffeq.sciml.ai/stable/"),
     pages = [
         "OrdinaryDiffEq.jl: ODE solvers and utilities" => "index.md",
         "Usage" => "usage.md",
+        "Explicit Solvers" => [
+            "explicit/Tsit5.md",
+            "explicit/LowOrderRK.md"
+        ],
+        "ODEProblem Solver Libraries" => [
+            "Explicit Solvers" =>[
+                "explicit/Tsit5.md"
+            ],
+        ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicitrk.md",
             "nonstiff/lowstorage_ssprk.md",
