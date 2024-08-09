@@ -194,15 +194,15 @@ end
 @muladd function perform_step!(integrator, cache::Union{Rosenbrock23ConstantCache, Rosenbrock32ConstantCache, Rosenbrock33ConstantCache},
         repeat_step = false)
 
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack c₃₂, d, tf, uf = cache
+    
+    # Precalculations
+    γ = dt * d
+    dto2 = dt / 2
+    dto6 = dt / 6
+
     if cache isa Rosenbrock32ConstantCache
-        @unpack t, dt, uprev, u, f, p = integrator
-        @unpack c₃₂, d, tf, uf = cache
-
-        # Precalculations
-        γ = dt * d
-        dto2 = dt / 2
-        dto6 = dt / 6
-
         if repeat_step
             integrator.fsalfirst = f(uprev, p, t)
             integrator.stats.nf += 1
@@ -210,8 +210,6 @@ end
     end
 
     if cache isa Rosenbrock33ConstantCache
-        @unpack t, dt, uprev, u, f, p = integrator
-        @unpack tf, uf = cache
         @unpack a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3 = cache.tab
 
          # Precalculations
@@ -223,6 +221,8 @@ end
         dtd2 = dt * d2
         dtd3 = dt * d3
         dtgamma = dt * gamma
+
+        W = calc_W(integrator, cache, dtgamma, repeat_step, true)
     end
 
     mass_matrix = integrator.f.mass_matrix
