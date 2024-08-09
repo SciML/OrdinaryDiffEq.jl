@@ -27,7 +27,8 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         OrdinaryDiffEqCompositeAlgorithm, initialize_callbacks!, PredictiveController,
         get_differential_vars, alg_cache, AutoSwitchCache, InterpolationData,
         DEOptions, OrdinaryDiffEqAlgorithm, @cache, fsal_typeof, OrdinaryDiffEqCache,
-        OrdinaryDiffEqAdaptiveAlgorithm, handle_dt!, ode_determine_initdt
+        OrdinaryDiffEqAdaptiveAlgorithm, handle_dt!, ode_determine_initdt,
+        loopheader!
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
        AutoSwitch
