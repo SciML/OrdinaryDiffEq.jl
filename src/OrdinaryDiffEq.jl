@@ -22,7 +22,7 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         unwrap_alg, apply_step!, initialize_tstops, uses_uprev, initialize_saveat,
         isimplicit, initialize_d_discontinuities, isdtchangeable, _searchsortedfirst,
         @unpack, ismultistep, DEFAULT_PRECS, isautoswitch, get_chunksize_int,
-        _unwrap_val
+        _unwrap_val, alg_autodiff, concrete_jac
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
        AutoSwitch
