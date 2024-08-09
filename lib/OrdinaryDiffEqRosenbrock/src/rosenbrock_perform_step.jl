@@ -296,10 +296,11 @@ end
     integrator.stats.nsolve += 1
     u = uprev + dt * k₂
 
+    if cache isa Rosenbrock32ConstantCache
+        integrator.fsallast = f(tmp, p, t + dt)
+    end
+
     if integrator.opts.adaptive
-        if cache isa Rosenbrock32ConstantCache
-            integrator.fsallast = f(tmp, p, t + dt)
-        end
         integrator.fsallast = f(u, p, t + dt)
         integrator.stats.nf += 1
 
