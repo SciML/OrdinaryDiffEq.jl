@@ -21,6 +21,7 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         nlsolve_f, unwrap_cache, ode_addsteps!, get_chunksize, handle_callback_modifiers!,
         unwrap_alg, apply_step!, initialize_tstops, uses_uprev, initialize_saveat,
         isimplicit, initialize_d_discontinuities, isdtchangeable, _searchsortedfirst,
+        _searchsortedlast,
         @unpack, ismultistep, DEFAULT_PRECS, isautoswitch, get_chunksize_int,
         _unwrap_val, alg_autodiff, concrete_jac, alg_difftype, standardtag,
         alg_extrapolates, alg_maximum_order, alg_adaptive_order,
@@ -28,7 +29,7 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         get_differential_vars, alg_cache, AutoSwitchCache, InterpolationData,
         DEOptions, OrdinaryDiffEqAlgorithm, @cache, fsal_typeof, OrdinaryDiffEqCache,
         OrdinaryDiffEqAdaptiveAlgorithm, handle_dt!, ode_determine_initdt,
-        loopheader!
+        loopheader!, OrdinaryDiffEqConstantCache
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
        AutoSwitch
