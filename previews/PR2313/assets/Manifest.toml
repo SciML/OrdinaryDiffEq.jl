@@ -479,16 +479,23 @@ version = "1.0.4"
 
 [[deps.Enzyme]]
 deps = ["CEnum", "EnzymeCore", "Enzyme_jll", "GPUCompiler", "LLVM", "Libdl", "LinearAlgebra", "ObjectFile", "Preferences", "Printf", "Random"]
-git-tree-sha1 = "80135c32f09f1c3d683f9826f695762e8f3f8eba"
+git-tree-sha1 = "10b22404b546fd480954339f87aac82a8185f004"
 uuid = "7da242da-08ed-463a-9acd-ee780be4f1d9"
-version = "0.12.27"
-weakdeps = ["ChainRulesCore", "LogExpFunctions", "SpecialFunctions", "StaticArrays"]
+version = "0.12.28"
 
     [deps.Enzyme.extensions]
+    EnzymeBFloat16sExt = "BFloat16s"
     EnzymeChainRulesCoreExt = "ChainRulesCore"
     EnzymeLogExpFunctionsExt = "LogExpFunctions"
     EnzymeSpecialFunctionsExt = "SpecialFunctions"
     EnzymeStaticArraysExt = "StaticArrays"
+
+    [deps.Enzyme.weakdeps]
+    BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+    LogExpFunctions = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
+    SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [[deps.EnzymeCore]]
 git-tree-sha1 = "8f205a601760f4798a10f138c3940f0451d95188"
@@ -501,9 +508,9 @@ weakdeps = ["Adapt"]
 
 [[deps.Enzyme_jll]]
 deps = ["Artifacts", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
-git-tree-sha1 = "df8ae13c09f187dbb395bd4908c6e097b683f480"
+git-tree-sha1 = "ff7fe176d8af5ea12e07b321132d816e0063449d"
 uuid = "7cc45869-7501-5eee-bdea-0790c847d4ef"
-version = "0.0.141+0"
+version = "0.0.142+0"
 
 [[deps.Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
