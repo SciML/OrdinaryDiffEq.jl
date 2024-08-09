@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqLowOrderRK, ODEProblemLibrary, DiffEqDevTools
 using Test, Random
 Random.seed!(100)
 
@@ -35,20 +35,11 @@ prob_ode_nonlinear = ODEProblem(
     sim3 = test_convergence(dts, prob, RK4())
     @test sim3.𝒪est[:l∞]≈4 atol=testTol
 
-    sim3 = test_convergence(dts2, prob, KuttaPRK2p5(threading = true))
-    @test sim3.𝒪est[:l∞]≈5 atol=testTol
-
-    sim3 = test_convergence(dts2, prob, KuttaPRK2p5(threading = false))
-    @test sim3.𝒪est[:l∞]≈5 atol=testTol
-
     sim3 = test_convergence(dts2, prob, RKO65())
     @test sim3.𝒪est[:l∞]≈5 atol=testTol
 
     sim3 = test_convergence(dts4, prob, FRK65())
     @test sim3.𝒪est[:l∞]≈6 atol=0.6
-
-    sim3 = test_convergence(dts5, prob, PFRK87())
-    @test sim3.𝒪est[:l∞]≈8.4 atol=0.2
 
     sim3 = test_convergence(dts, prob, RKM())
     @test sim3.𝒪est[:l∞]≈4 atol=0.2
@@ -89,4 +80,3 @@ prob_ode_nonlinear = ODEProblem(
     sim160 = test_convergence(dts, prob, Anas5(w = 2))
     @test sim160.𝒪est[:l2]≈4 atol=2 * testTol
 end
-

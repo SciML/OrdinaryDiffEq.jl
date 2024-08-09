@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
+using OrdinaryDiffEqSymplecticRK, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
+using OrdinaryDiffEqTsit5
 
 u0 = fill(0.0, 2)
 v0 = ones(2)
@@ -108,36 +109,6 @@ sim = test_convergence(dts, prob, KahanLi8(), dense_errors = true)
 @test sim.𝒪est[:l2]≈8 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
-sol = solve(prob, Nystrom4(), dt = 1 / 1000)
-
-# Nyström method
-dts = 1 .// 2 .^ (9:-1:6)
-sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
-@test sim.𝒪est[:l2]≈4 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
-@test sim.𝒪est[:l2]≈4 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = true)
-@test sim.𝒪est[:l2]≈4 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, IRKN3(), dense_errors = true)
-@test sim.𝒪est[:l2]≈3 rtol=1e-1
-@test sim.𝒪est[:L2]≈3 rtol=1e-1
-sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
-@test sim.𝒪est[:l2]≈4 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-dts = 1.0 ./ 2.0 .^ (5:-1:0)
-sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
-@test sim.𝒪est[:l2]≈5 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
-@test sim.𝒪est[:l2]≈5 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
-@test sim.𝒪est[:l2]≈6 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-
 dts = 1.0 ./ 2.0 .^ (2:-1:-2)
 sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
 @test sim.𝒪est[:l2]≈10 rtol=1e-1
@@ -225,4 +196,9 @@ sim = test_convergence(dts, prob, McAte8(), dense_errors = true)
 
 sim = test_convergence(dts, prob, KahanLi8(), dense_errors = true)
 @test sim.𝒪est[:l2]≈8 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+
+dts = 1.0 ./ 2.0 .^ (2:-1:-2)
+sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
+@test sim.𝒪est[:l2]≈10 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1

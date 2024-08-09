@@ -36,8 +36,6 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
     stage_limiter!::StageLimiter
 end
 
-TruncatedStacktraces.@truncate_stacktrace Rosenbrock23Cache 1
-
 @cache mutable struct Rosenbrock32Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
@@ -584,7 +582,6 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.stage_limiter!)
 end
 
-TruncatedStacktraces.@truncate_stacktrace Rodas23WCache 1
 function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -628,8 +625,6 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
 end
-
-TruncatedStacktraces.@truncate_stacktrace Rodas3PCache 1
 
 function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -754,8 +749,6 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
 end
-
-TruncatedStacktraces.@truncate_stacktrace Rodas4Cache 1
 
 function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
@@ -1005,8 +998,6 @@ end
     step_limiter!::StepLimiter
     stage_limiter!::StageLimiter
 end
-
-TruncatedStacktraces.@truncate_stacktrace Rosenbrock5Cache 1
 
 function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,

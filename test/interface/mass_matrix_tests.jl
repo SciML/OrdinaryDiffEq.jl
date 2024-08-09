@@ -1,10 +1,12 @@
 using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
+using OrdinaryDiffEqCore
+using OrdinaryDiffEqNonlinearSolve: NLFunctional, NLAnderson, NLNewton
 
 # create mass matrix problems
 function make_mm_probs(mm_A, ::Val{iip}) where {iip}
     # iip
     function mm_f(du, u, p, t)
-        update_coefficients!(mm_A, OrdinaryDiffEq.constvalue.(u), p, t)
+        update_coefficients!(mm_A, OrdinaryDiffEqCore.constvalue.(u), p, t)
         mm_b = vec(sum(mm_A; dims = 2))
         mul!(du, mm_A, u)
         du .+= t * mm_b
@@ -13,7 +15,7 @@ function make_mm_probs(mm_A, ::Val{iip}) where {iip}
     mm_g(du, u, p, t) = (@. du = u + t; nothing)
 
     # oop
-    mm_f(u, p, t) = (update_coefficients!(mm_A, OrdinaryDiffEq.constvalue.(u), p, t);
+    mm_f(u, p, t) = (update_coefficients!(mm_A, OrdinaryDiffEqCore.constvalue.(u), p, t);
     mm_A * (u .+ t))
     mm_g(u, p, t) = u .+ t
 

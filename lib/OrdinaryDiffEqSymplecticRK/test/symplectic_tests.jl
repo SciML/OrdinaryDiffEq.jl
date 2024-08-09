@@ -1,6 +1,7 @@
 
 using Test, LinearAlgebra
-using OrdinaryDiffEq, DiffEqBase
+using OrdinaryDiffEqSymplecticRK, DiffEqBase
+using OrdinaryDiffEqRKN
 
 # algorithm, dq(p) != p, convergence order
 const ALGOS = ((SymplecticEuler, true, 1),

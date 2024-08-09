@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqBase, Test, DiffEqDevTools,
+using OrdinaryDiffEqFeagin, DiffEqBase, Test, DiffEqDevTools,
       Random
 
 import ODEProblemLibrary: prob_ode_bigfloatlinear,

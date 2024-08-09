@@ -25,6 +25,8 @@ alg_order(alg::Alshina2) = 2
 alg_order(alg::Alshina3) = 3
 alg_order(alg::Alshina6) = 6
 
+has_lazy_interpolation(alg::BS5) = true
+
 isfsal(alg::FRK65) = true
 isfsal(alg::RKO65) = false
 isfsal(alg::PSRK3p5q4) = false

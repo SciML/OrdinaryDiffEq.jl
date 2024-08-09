@@ -1,4 +1,4 @@
-using ModelingToolkit, OrdinaryDiffEq, Test
+using ModelingToolkit, OrdinaryDiffEq, NonlinearSolve, Test
 
 @parameters t g e b
 @variables v(t) w(t) F(t)

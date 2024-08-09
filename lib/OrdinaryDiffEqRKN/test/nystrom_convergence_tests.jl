@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
+using OrdinaryDiffEqRKN, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
 
 u0 = fill(0.0, 2)
 v0 = ones(2)
@@ -45,6 +45,36 @@ sim = test_convergence(dts, prob_big, ERKN5(), dense_errors = true)
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 sim = test_convergence(dts, prob_big, ERKN7(), dense_errors = true)
 @test sim.𝒪est[:l2]≈7 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+
+sol = solve(prob, Nystrom4(), dt = 1 / 1000)
+
+# Nyström method
+dts = 1 .// 2 .^ (9:-1:6)
+sim = test_convergence(dts, prob, RKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, Nystrom4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, Nystrom4VelocityIndependent(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, IRKN3(), dense_errors = true)
+@test sim.𝒪est[:l2]≈3 rtol=1e-1
+@test sim.𝒪est[:L2]≈3 rtol=1e-1
+sim = test_convergence(dts, prob, IRKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈4 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+dts = 1.0 ./ 2.0 .^ (5:-1:0)
+sim = test_convergence(dts, prob, Nystrom5VelocityIndependent(), dense_errors = true)
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN4(), dense_errors = true)
+@test sim.𝒪est[:l2]≈5 rtol=1e-1
+@test sim.𝒪est[:L2]≈4 rtol=1e-1
+sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
+@test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
 # Adaptive methods regression test
@@ -111,11 +141,6 @@ sim = test_convergence(dts, prob, FineRKN5(), dense_errors = true)
 @test sim.𝒪est[:l2]≈6 rtol=1e-1
 @test sim.𝒪est[:L2]≈4 rtol=1e-1
 
-dts = 1.0 ./ 2.0 .^ (2:-1:-2)
-sim = test_convergence(dts, prob, SofSpa10(), dense_errors = true)
-@test sim.𝒪est[:l2]≈10 rtol=1e-1
-@test sim.𝒪est[:L2]≈4 rtol=1e-1
-
 # Methods need BigFloat to test convergence rate
 dts = big"1.0" ./ big"2.0" .^ (5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic_nip, big"1.0", big"0.0",
@@ -179,7 +204,7 @@ println("Out of Place")
 prob = ODEProblem(
     DynamicalODEFunction{false}((du, u, p, t) -> -u - 0.5 * du,
         (du, u, p, t) -> du,
-        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition(
+        analytic = (du0_u0, p, t) -> ArrayPartition(
             [
                 exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
                  sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
@@ -188,7 +213,7 @@ prob = ODEProblem(
                 exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
                  sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
             ])),
-    OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
+    ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
     DiffEqBase.NullParameters(), # p
     SecondOrderODEProblem{false}())
@@ -216,7 +241,7 @@ println("In Place")
 prob = ODEProblem(
     DynamicalODEFunction{true}((d_du, du, u, p, t) -> @.(d_du=-u - 0.5 * du),
         (d_u, du, u, p, t) -> d_u .= du,
-        analytic = (du0_u0, p, t) -> OrdinaryDiffEq.SciMLBase.ArrayPartition(
+        analytic = (du0_u0, p, t) -> ArrayPartition(
             [
                 exp(-t / 4) / 15 * (15 * du0_u0[1] * cos(sqrt(15) * t / 4) -
                  sqrt(15) * (du0_u0[1] + 4 * du0_u0[2]) * sin(sqrt(15) * t / 4))
@@ -225,7 +250,7 @@ prob = ODEProblem(
                 exp(-t / 4) / 15 * (15 * du0_u0[2] * cos(sqrt(15) * t / 4) +
                  sqrt(15) * (4 * du0_u0[1] + du0_u0[2]) * sin(sqrt(15) * t / 4))
             ])),
-    OrdinaryDiffEq.SciMLBase.ArrayPartition([0.0], [1.0]), # du0, u0
+    ArrayPartition([0.0], [1.0]), # du0, u0
     (0.0, 10.0), # tspan
     DiffEqBase.NullParameters(), # p
     SecondOrderODEProblem{false}())

@@ -1,5 +1,5 @@
 # Import packages
-using OrdinaryDiffEq, DiffEqDevTools, Test, Random
+using OrdinaryDiffEqExtrapolation, DiffEqDevTools, Test, Random
 
 # Define test problems
 # Note that the time span in ODEProblemLibrary is given by
@@ -175,7 +175,7 @@ testTol = 0.2
                 algp = ImplicitEulerBarycentricExtrapolation(min_order = j,
                     init_order = j, max_order = j,
                     sequence = seq,
-                    threading = OrdinaryDiffEq.PolyesterThreads())
+                    threading = OrdinaryDiffEqExtrapolation.PolyesterThreads())
                 simp = test_convergence(dts, prob, algp)
                 @test simp.𝒪est[:final]≈algp.init_order + 0.5 atol=newTol #Superconvergence
             end
@@ -201,7 +201,7 @@ testTol = 0.2
                 alg = ImplicitDeuflhardExtrapolation(min_order = j,
                     init_order = j, max_order = j,
                     sequence = seq,
-                    threading = OrdinaryDiffEq.Sequential())
+                    threading = OrdinaryDiffEqExtrapolation.Sequential())
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
             end
@@ -233,7 +233,7 @@ testTol = 0.2
             # Regression test
             alg = ImplicitDeuflhardExtrapolation(max_order = 9, min_order = 1,
                 init_order = 9, sequence = seq,
-                threading = OrdinaryDiffEq.BaseThreads())
+                threading = OrdinaryDiffEqExtrapolation.BaseThreads())
             sol = solve(prob, alg, reltol = 1e-3)
             @test length(sol.u) < 10
         end
@@ -273,7 +273,7 @@ testTol = 0.2
                 alg = ImplicitHairerWannerExtrapolation(min_order = j,
                     init_order = j, max_order = j,
                     sequence = seq,
-                    threading = OrdinaryDiffEq.PolyesterThreads())
+                    threading = OrdinaryDiffEqExtrapolation.PolyesterThreads())
                 sim = test_convergence(dts, prob, alg)
                 @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) - 1 atol=testTol
             end
@@ -299,7 +299,7 @@ testTol = 0.2
                     alg = ExtrapolationMidpointDeuflhard(min_order = j,
                         init_order = j, max_order = j,
                         sequence = seq,
-                        threading = OrdinaryDiffEq.Sequential())
+                        threading = OrdinaryDiffEqExtrapolation.Sequential())
                     sim = test_convergence(dts, prob, alg)
                     @test sim.𝒪est[:final]≈2 * (alg.init_order + 1) atol=testTol
                 end

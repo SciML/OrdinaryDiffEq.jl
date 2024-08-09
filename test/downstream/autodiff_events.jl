@@ -56,11 +56,11 @@ g4 = Zygote.gradient(θ -> test_f2(θ, ReverseDiffAdjoint(), PIController(7 // 5
     p)
 g6 = Zygote.gradient(
     θ -> test_f2(θ, ForwardDiffSensitivity(),
-        OrdinaryDiffEq.PredictiveController(), TRBDF2()),
+        OrdinaryDiffEqCore.PredictiveController(), TRBDF2()),
     p)
 @test_broken g7 = Zygote.gradient(
     θ -> test_f2(θ, ReverseDiffAdjoint(),
-        OrdinaryDiffEq.PredictiveController(),
+        OrdinaryDiffEqCore.PredictiveController(),
         TRBDF2()),
     p)
 

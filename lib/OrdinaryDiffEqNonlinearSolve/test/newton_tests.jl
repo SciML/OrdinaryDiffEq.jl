@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEqCore
 using DiffEqDevTools
 using DiffEqBase
 using LineSearches

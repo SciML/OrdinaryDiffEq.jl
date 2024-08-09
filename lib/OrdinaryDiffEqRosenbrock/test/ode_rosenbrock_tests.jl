@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
+using OrdinaryDiffEqRosenbrock, DiffEqDevTools, Test, LinearAlgebra, LinearSolve
 import ODEProblemLibrary: prob_ode_linear,
                           prob_ode_2Dlinear,
                           prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear

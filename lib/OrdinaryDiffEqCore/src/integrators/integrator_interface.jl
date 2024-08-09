@@ -45,8 +45,7 @@ function DiffEqBase.reeval_internals_due_to_modification!(
     if continuous_modification && integrator.opts.calck
         resize!(integrator.k, integrator.kshortsize) # Reset k for next step!
         alg = unwrap_alg(integrator, false)
-        if alg isa BS5 || alg isa Vern6 || alg isa Vern7 ||
-           alg isa Vern8 || alg isa Vern9
+        if has_lazy_interpolation(alg)
             ode_addsteps!(integrator, integrator.f, true, false, !alg.lazy)
         else
             ode_addsteps!(integrator, integrator.f, true, false)

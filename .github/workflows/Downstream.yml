@@ -41,7 +41,15 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
-      - uses: julia-actions/julia-buildpkg@latest
+      # Explicitly develop the libraries first before running the tests for now.
+      # This is necessary since the tests are likely to fail otherwise, given that all
+      # the libs haven't been registered yet.
+      - name: "Develop the libraries since they haven't been registered yet"
+        run: |
+          julia --project=. -e '
+              using Pkg;
+              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
+          '
       - name: Clone Downstream
         uses: actions/checkout@v4
         with:

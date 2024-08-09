@@ -123,8 +123,6 @@ for Alg in [
                 stage_limiter!)
         end
     end
-
-    @eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
 end
 struct GeneralRosenbrock{CS, AD, F, ST, CJ, TabType} <:
        OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS, AD, Val{:forward}, ST, CJ}
@@ -201,6 +199,4 @@ for Alg in [
                 precs)
         end
     end
-
-    @eval TruncatedStacktraces.@truncate_stacktrace $Alg 1 2
 end
