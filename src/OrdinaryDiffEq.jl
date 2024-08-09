@@ -30,7 +30,8 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         DEOptions, OrdinaryDiffEqAlgorithm, @cache, fsal_typeof, OrdinaryDiffEqCache,
         OrdinaryDiffEqAdaptiveAlgorithm, handle_dt!, ode_determine_initdt,
         loopheader!, OrdinaryDiffEqConstantCache, _loopfooter!, isadaptive,
-        OrdinaryDiffEqMutableCache
+        OrdinaryDiffEqMutableCache, current_interpolant!, is_mass_matrix_alg,
+        False, True
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
        AutoSwitch
