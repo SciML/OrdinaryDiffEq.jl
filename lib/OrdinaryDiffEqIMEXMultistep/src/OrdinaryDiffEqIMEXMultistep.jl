@@ -2,7 +2,7 @@ module OrdinaryDiffEqIMEXMultistep
 
 import OrdinaryDiffEqCore: alg_order, issplit, OrdinaryDiffEqNewtonAlgorithm, _unwrap_val,
                        DEFAULT_PRECS, OrdinaryDiffEqConstantCache, OrdinaryDiffEqMutableCache,
-                       @cache, alg_cache, initialize!, perform_step!, @unpack
+                       @cache, alg_cache, initialize!, perform_step!, @unpack, full_cache
 
 using FastBroadcast
 
