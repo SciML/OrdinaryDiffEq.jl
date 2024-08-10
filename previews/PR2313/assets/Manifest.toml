@@ -986,9 +986,9 @@ weakdeps = ["ChainRulesCore", "EnzymeCore", "MLDataDevices"]
 
 [[deps.LuxDeviceUtils]]
 deps = ["Adapt", "ChainRulesCore", "Functors", "LuxCore", "Preferences", "Random", "UnrolledUtilities"]
-git-tree-sha1 = "7d642b28b76946d8d9290c86c39f5c21b3e002d5"
+git-tree-sha1 = "494db99a113c3a5a0b637d788a65494732f4558e"
 uuid = "34f89e08-e1d5-43b4-8944-0b49ac560553"
-version = "0.1.26"
+version = "0.1.27"
 
     [deps.LuxDeviceUtils.extensions]
     LuxDeviceUtilsAMDGPUExt = "AMDGPU"
