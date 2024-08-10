@@ -1,6 +1,6 @@
 module OrdinaryDiffEqBDF
 
-import OrdinaryDiffEq: alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals, alg_extrapolates,
                        OrdinaryDiffEqAlgorithm,
@@ -14,21 +14,23 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        constvalue, isadaptive, error_constant,
                        has_special_newton_error,
                        trivial_limiter!,
-                       ImplicitEulerConstantCache,
-
-                       ImplicitEulerCache,
                        issplit, qsteady_min_default, qsteady_max_default,
                        get_current_alg_order, get_current_adaptive_order,
                        default_controller, stepsize_controller!, step_accept_controller!,
                        step_reject_controller!, post_newton_controller!,
                        u_modified!, DAEAlgorithm, _unwrap_val, DummyController
+using OrdinaryDiffEqSDIRK: ImplicitEulerConstantCache, ImplicitEulerCache
+
 using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: mul!, I
 using ArrayInterface
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: UJacobianWrapper
-using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
+using OrdinaryDiffEqDifferentiation: UJacobianWrapper
+using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
 nlsolve!, nlsolvefail, isnewton, markfirststage!, set_new_W!, DIRK,  compute_step!, COEFFICIENT_MULTISTEP
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

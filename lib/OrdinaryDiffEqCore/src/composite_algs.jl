@@ -33,8 +33,7 @@ function default_autoswitch end
 
 function (AS::AutoSwitchCache)(integrator)
     #horrible awful hack
-    isdefault = integrator.alg isa CompositeAlgorithm{
-        <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}
+    isdefault = isdefaultalg(integrator.alg)
     if isdefault
         return default_autoswitch(AS, integrator)
     end

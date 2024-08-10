@@ -398,8 +398,8 @@ function apply_step!(integrator)
     elseif all_fsal(integrator.alg, integrator.cache) ||
            get_current_isfsal(integrator.alg, integrator.cache)
         if integrator.reeval_fsal || integrator.u_modified ||
-           (integrator.alg isa DP8 && !integrator.opts.calck) ||
-           (integrator.alg isa Union{Rosenbrock23, Rosenbrock32} &&
+           (isdp8(integrator.alg) && !integrator.opts.calck) ||
+           (only_diagonal_mass_matrix(integrator.alg) &&
             !integrator.opts.adaptive)
             reset_fsal!(integrator)
         else # Do not reeval_fsal, instead copyto! over

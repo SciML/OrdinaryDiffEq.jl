@@ -3,6 +3,13 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "1"
+      - staticfloat/metahook:
+          pre-command: |
+            julia --project=. -e '
+              using Pkg;
+              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
+              Pkg.instantiate();
+            '
       - JuliaCI/julia-test#v1:
            coverage: false # 1000x slowdown
     agents:
@@ -33,6 +40,13 @@ steps:
       GROUP: "{{matrix.group}}"
     plugins:
       - JuliaCI/julia#v1
+      - staticfloat/metahook:
+          pre-command: |
+            julia --project=. -e '
+              using Pkg;
+              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
+              Pkg.instantiate();
+            '
       - JuliaCI/julia-test#v1:
           coverage: false
           julia_args: "--threads=auto"

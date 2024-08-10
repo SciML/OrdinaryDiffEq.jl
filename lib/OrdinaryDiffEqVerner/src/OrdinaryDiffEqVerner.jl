@@ -1,6 +1,6 @@
 module OrdinaryDiffEqVerner
 
-import OrdinaryDiffEq: alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals, alg_stability_size,
                        OrdinaryDiffEqAlgorithm,
@@ -12,12 +12,16 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        explicit_rk_docstring, trivial_limiter!, _ode_interpolant,
                        _ode_interpolant!, _ode_addsteps!, @fold,
                        @OnDemandTableauExtract, AutoAlgSwitch,
-                       DerivativeOrderNotPossibleError
-using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+                       DerivativeOrderNotPossibleError,
+                       has_lazy_interpolation
+using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def, @tight_loop_macros
 using Static: False
 using TruncatedStacktraces
 using LinearAlgebra: norm
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

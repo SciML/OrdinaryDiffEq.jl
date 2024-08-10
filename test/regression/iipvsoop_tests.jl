@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using OrdinaryDiffEqCore
 
 f(u, p, t) = 0.98u
 u0 = 1.0
@@ -69,7 +70,7 @@ rk_algs = [Euler(), Midpoint(), Heun(), Ralston(), RK4(), SSPRK104(), SSPRK22(),
 
 @testset "Algorithm $(nameof(typeof(alg)))" for alg in rk_algs
     println(nameof(typeof(alg)))
-    high_order = OrdinaryDiffEq.alg_order(alg) > 5
+    high_order = OrdinaryDiffEqCore.alg_order(alg) > 5
     if high_order
         _prob_ip = remake(prob_ip, tspan = big.(tspan), u0 = [big(1.0)])
         _prob_scalar = remake(prob_scalar, tspan = big.(tspan), u0 = big(1.0))

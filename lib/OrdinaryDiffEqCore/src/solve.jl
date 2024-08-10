@@ -100,7 +100,7 @@ function DiffEqBase.__init(
 
     if alg isa OrdinaryDiffEqRosenbrockAdaptiveAlgorithm &&
        # https://github.com/SciML/OrdinaryDiffEq.jl/pull/2079 fixes this for Rosenbrock23 and 32
-       !(alg isa Union{Rosenbrock23, Rosenbrock32}) &&
+       !only_diagonal_mass_matrix(alg) &&
        prob.f.mass_matrix isa AbstractMatrix &&
        all(isequal(0), prob.f.mass_matrix)
         # technically this should also warn for zero operators but those are hard to check for
@@ -109,7 +109,7 @@ function DiffEqBase.__init(
         end
     end
 
-    if alg isa Union{Rosenbrock23, Rosenbrock32} &&
+    if only_diagonal_mass_matrix(alg) &&
        prob.f.mass_matrix isa AbstractMatrix &&
        !isdiag(prob.f.mass_matrix)
         error("$(typeof(alg).name.name) only works with diagonal mass matrices. Please choose a solver suitable for your problem (e.g. Rodas5P)")
@@ -537,13 +537,6 @@ function DiffEqBase.__init(
 
     handle_dt!(integrator)
     integrator
-end
-
-function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
-end
-function DiffEqBase.__solve(prob::ODEProblem, ::Nothing, args...; kwargs...)
-    DiffEqBase.solve(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)
 end
 
 function DiffEqBase.solve!(integrator::ODEIntegrator)

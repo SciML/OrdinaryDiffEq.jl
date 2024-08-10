@@ -1,6 +1,6 @@
 module OrdinaryDiffEqTsit5
 
-import OrdinaryDiffEq: alg_order, alg_stability_size, explicit_rk_docstring,
+import OrdinaryDiffEqCore: alg_order, alg_stability_size, explicit_rk_docstring,
                        OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqMutableCache, alg_cache,
                        OrdinaryDiffEqConstantCache, @fold, trivial_limiter!,
                        constvalue, @unpack, perform_step!, calculate_residuals, @cache,
@@ -13,9 +13,11 @@ import MuladdMacro: @muladd
 import FastBroadcast: @..
 import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import LinearAlgebra: norm
-using DiffEqBase
 using TruncatedStacktraces
 import DiffEqBase: @def
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

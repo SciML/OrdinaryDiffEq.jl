@@ -2,7 +2,7 @@ using Test
 using OrdinaryDiffEq
 using LinearAlgebra, LinearSolve
 
-import OrdinaryDiffEq.dolinsolve
+import OrdinaryDiffEqCore.dolinsolve
 
 n = 8
 dt = 1 / 1000

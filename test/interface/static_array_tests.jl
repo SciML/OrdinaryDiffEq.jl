@@ -1,5 +1,5 @@
 using StaticArrays, Test
-using OrdinaryDiffEq
+using OrdinaryDiffEq, OrdinaryDiffEqCore, OrdinaryDiffEqNonlinearSolve
 using RecursiveArrayTools
 
 u0 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
@@ -42,7 +42,7 @@ sol = solve(ode, Euler(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 sol = solve(ode, ImplicitEuler())
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
-sol = solve(ode, ImplicitEuler(nlsolve = OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve.NLAnderson()))
+sol = solve(ode, ImplicitEuler(nlsolve = OrdinaryDiffEqNonlinearSolve.NLAnderson()))
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)
 sol = solve(ode, Tsit5(), dt = 1e-2)
 @test !any(iszero.(sol(1.0))) && !any(sol(1.0) .== u0)

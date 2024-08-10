@@ -1,6 +1,6 @@
 module OrdinaryDiffEqSSPRK
 
-import OrdinaryDiffEq: alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals, ssp_coefficient,
                        OrdinaryDiffEqAlgorithm,
@@ -13,9 +13,12 @@ import OrdinaryDiffEq: alg_order, calculate_residuals!,
                        explicit_rk_docstring, trivial_limiter!,
                        _ode_interpolant, _ode_interpolant!,
                        _ode_addsteps!
-using DiffEqBase, FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
+using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools
 using DiffEqBase: @def
 using Static: False
+
+using Reexport
+@reexport using DiffEqBase
 
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 

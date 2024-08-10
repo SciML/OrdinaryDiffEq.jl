@@ -1,16 +1,18 @@
 module OrdinaryDiffEqNordsieck
 
-import OrdinaryDiffEq: alg_order, alg_adaptive_order, qsteady_max_default, get_current_alg_order,
+import OrdinaryDiffEqCore: alg_order, alg_adaptive_order, qsteady_max_default, get_current_alg_order,
                        AbstractController, OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,
                        alg_cache, OrdinaryDiffEqMutableCache, OrdinaryDiffEqConstantCache, initialize!, @unpack,
                        initialize!, perform_step!, stepsize_controller!, step_accept_controller!, step_reject_controller!,
-                       calculate_residuals, calculate_residuals!, Tsit5ConstantCache, get_current_adaptive_order,
-                       ode_interpolant, ode_interpolant!, trivial_limiter!, Tsit5Cache
-                       calculate_residuals, calculate_residuals!, Tsit5ConstantCache, get_current_adaptive_order, 
-                       ode_interpolant, ode_interpolant!, Tsit5Cache
+                       calculate_residuals, calculate_residuals!, get_current_adaptive_order,
+                       ode_interpolant, ode_interpolant!, trivial_limiter!
 using MuladdMacro, FastBroadcast, RecursiveArrayTools
 import LinearAlgebra: rmul!
 import Static: False
+using OrdinaryDiffEqTsit5: Tsit5ConstantCache, Tsit5Cache
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("controllers.jl")

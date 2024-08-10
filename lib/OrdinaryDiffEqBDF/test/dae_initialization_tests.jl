@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, StaticArrays, LinearAlgebra, Test
+using OrdinaryDiffEqBDF, StaticArrays, LinearAlgebra, Test
+using OrdinaryDiffEqNonlinearSolve
 
 f = function (du, u, p, t)
     out1 = -0.04u[1] + 1e4 * u[2] * u[3] - du[1]
@@ -34,7 +35,7 @@ u₀ = [1.0, 0, 0.2]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
 integrator = init(prob, DABDF2())
 @test integrator.u≈[1.0, 0, 0.0] atol=1e-9
-integrator = init(prob, DABDF2(), initializealg = ShampineCollocationInit())
+integrator = init(prob, DABDF2(), initializealg = OrdinaryDiffEqNonlinearSolve.ShampineCollocationInit())
 @test !(integrator.u ≈ [1.0, 0, 0.0])
 
 u₀ = [1.0, 0, 0.2]
@@ -80,7 +81,7 @@ u₀ = [1.0, 0, 0.2]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
 integrator = init(prob, DABDF2())
 @test integrator.u≈[1.0, 0, 0.0] atol=1e-9
-integrator = init(prob, DABDF2(), initializealg = ShampineCollocationInit())
+integrator = init(prob, DABDF2(), initializealg = OrdinaryDiffEqNonlinearSolve.ShampineCollocationInit())
 @test !(integrator.u ≈ [1.0, 0, 0.0])
 
 u₀ = [1.0, 0, 0.2]
@@ -104,7 +105,7 @@ du₀ = [0.0, 0.0, 0.0]
 tspan = (0.0, 1.0)
 differential_vars = [true, true, false]
 prob = DAEProblem(f, du₀, u₀, tspan, differential_vars = differential_vars)
-integrator = init(prob, DABDF2(); initializealg = ShampineCollocationInit())
+integrator = init(prob, DABDF2(); initializealg = OrdinaryDiffEqNonlinearSolve.ShampineCollocationInit())
 
 @test integrator.du[1]≈0.0 atol=1e-9
 @test_broken integrator.du[2]≈-1.0 atol=1e-9
@@ -115,7 +116,7 @@ end
 
 # test iip dae initialization with parameters without eltype/length
 probp = DAEProblem(f, du₀, u₀, tspan, UnusedParam(), differential_vars = differential_vars)
-for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
+for initializealg in (OrdinaryDiffEqNonlinearSolve.ShampineCollocationInit(), OrdinaryDiffEqNonlinearSolve.BrownFullBasicInit())
     @test isapprox(
         init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
 end
@@ -148,7 +149,7 @@ integrator = init(prob, DABDF2())
 @test integrator.du[2]≈1.0 atol=1e-9
 # test oop DAE initialization with parameters without eltype/length
 probp = DAEProblem(f, du₀, u₀, tspan, UnusedParam(), differential_vars = differential_vars)
-for initializealg in (ShampineCollocationInit(), BrownFullBasicInit())
+for initializealg in (OrdinaryDiffEqNonlinearSolve.ShampineCollocationInit(), OrdinaryDiffEqNonlinearSolve.BrownFullBasicInit())
     @test isapprox(
         init(probp, DABDF2(); initializealg).u, init(prob, DABDF2(); initializealg).u)
 end
