@@ -832,143 +832,73 @@ function initialize!(integrator, cache::Union{Rodas23WCache, Rodas3PCache})
     integrator.k[3] = dense3
 end
 
-@muladd function perform_step!(
-        integrator, cache::Union{Rodas23WCache, Rodas3PCache}, repeat_step = false)
+function perform_step!(integrator, cache::Union{Rodas23WCache, Rodas3PCache}, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3 = cache.tab
+    @unpack a, C, h, h2, gamma, c2, d = cache.tab
 
-    # Assignments
     sizeu = size(u)
     uidx = eachindex(integrator.uprev)
     mass_matrix = integrator.f.mass_matrix
 
-    # Precalculations
-    dtC21 = C21 / dt
-    dtC31 = C31 / dt
-    dtC32 = C32 / dt
-    dtC41 = C41 / dt
-    dtC42 = C42 / dt
-    dtC43 = C43 / dt
-    dtC51 = C51 / dt
-    dtC52 = C52 / dt
-    dtC53 = C53 / dt
-    dtC54 = C54 / dt
-
-    dtd1 = dt * d1
-    dtd2 = dt * d2
-    dtd3 = dt * d3
+    dtC = C / dt
+    dtd = dt * d
     dtgamma = dt * gamma
 
-    f(cache.fsalfirst, uprev, p, t) # used in calc_rosenbrock_differentiation!
+    f(cache.fsalfirst, uprev, p, t)
     integrator.stats.nf += 1
 
-    calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step, true)
 
     calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
         integrator.opts.abstol, integrator.opts.reltol,
         integrator.opts.internalnorm, t)
 
-    if repeat_step
-        linres = dolinsolve(
-            integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    end
+    A = repeat_step ? nothing : W
+    linres = dolinsolve(integrator, cache.linsolve; A = A, b = _vec(linsolve_tmp),
+        du = cache.fsalfirst, u = u, p = p, t = t, weight = weight,
+        solverdata = (; gamma = dtgamma))
 
     @.. broadcast=false $(_vec(k1))=-linres.u
-
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false u=uprev + a21 * k1
-    stage_limiter!(u, integrator, p, t + c2 * dt)
-    f(du, u, p, t + c2 * dt)
-    integrator.stats.nf += 1
+    for i in 1:4
+        @.. broadcast=false u=uprev + sum(a[i, j] * k[j] for j in 1:i)
+        stage_limiter!(u, integrator, p, t + c2 * dt)
+        f(du, u, p, t + dt * c2)
+        integrator.stats.nf += 1
 
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + dtd2 * dT + dtC21 * k1
-    else
-        @.. broadcast=false du1=dtC21 * k1
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + dtd2 * dT + du2
+        if mass_matrix === I
+            @.. broadcast=false linsolve_tmp=du + sum(dtC[i, j] * k[j] for j in 1:i) + dtd[i] * dT
+        else
+            @.. broadcast=false du1=sum(dtC[i, j] * k[j] for j in 1:i)
+            mul!(_vec(du2), mass_matrix, _vec(du1))
+            @.. broadcast=false linsolve_tmp=du + du2 + dtd[i] * dT
+        end
+
+        linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
+        @.. broadcast=false $(_vec(k[i + 1]))=-linres.u
+        integrator.stats.nsolve += 1
     end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k2))=-linres.u
-    integrator.stats.nsolve += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=cache.fsalfirst + dtd3 * dT +
-                                         (dtC31 * k1 + dtC32 * k2)
-    else
-        @.. broadcast=false du1=dtC31 * k1 + dtC32 * k2
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=cache.fsalfirst + dtd3 * dT + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k3))=-linres.u
-    integrator.stats.nsolve += 1
-
-    @.. broadcast=false u=uprev + a41 * k1 + a42 * k2 + a43 * k3
-    stage_limiter!(u, integrator, p, t + c2 * dt)
-    f(du, u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du +
-                                         (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
-    else
-        @.. broadcast=false du1=dtC41 * k1 + dtC42 * k2 + dtC43 * k3
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k4))=-linres.u
-    integrator.stats.nsolve += 1
-
-    if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du +
-                                         (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
-    else
-        @.. broadcast=false du1=dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3
-        mul!(_vec(du2), mass_matrix, _vec(du1))
-        @.. broadcast=false linsolve_tmp=du + du2
-    end
-
-    linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-    @.. broadcast=false $(_vec(k5))=-linres.u
-    integrator.stats.nsolve += 1
 
     du = u + k4 #-- p=2 solution
     u .+= k5
-
     step_limiter!(u, integrator, p, t + dt)
 
-    EEst = 0.0
     if integrator.opts.calck
-        @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35, h2_21, h2_22, h2_23, h2_24, h2_25 = cache.tab
-        @.. broadcast=false integrator.k[1]=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 +
-                                            h25 * k5
-        @.. broadcast=false integrator.k[2]=h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 +
-                                            h35 * k5
-        @.. broadcast=false integrator.k[3]=h2_21 * k1 + h2_22 * k2 + h2_23 * k3 +
-                                            h2_24 * k4 + h2_25 * k5
+        for i in 1:3
+            @.. broadcast=false integrator.k[i]=sum(h[i, j] * k[j] for j in 1:5)
+            @.. broadcast=false integrator.k[3]=sum(h2[i, j] * k[j] for j in 1:5)
+        end
         if integrator.opts.adaptive
-            calculate_interpoldiff!(
-                du1, du2, uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
+            calculate_interpoldiff!(du1, du2, uprev, du, u, integrator.k[1], integrator.k[2], integrator.k[3])
             calculate_residuals!(atmp, du2, uprev, du1, integrator.opts.abstol,
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
-            EEst = max(EEst, integrator.opts.internalnorm(atmp, t))  #-- role of t unclear
+            EEst = max(EEst, integrator.opts.internalnorm(atmp, t))
         end
     end
 
-    if (integrator.alg isa Rodas23W)
+    if integrator.alg isa Rodas23W
         du1[:] = u[:]
         u[:] = du[:]
         du[:] = du1[:]
