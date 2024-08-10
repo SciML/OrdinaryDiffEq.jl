@@ -33,10 +33,11 @@ PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
     solver_list = []
+    solver_list_nonadaptive = []
     prob_list = []
 
     low_storage = [
-        SSPRK43(), RDPK3SpFSAL35(), RDPK3SpFSAL49()
+        RDPK3SpFSAL35(), RDPK3SpFSAL49()
     ]
 
     low_storage_nonadaptive = [
