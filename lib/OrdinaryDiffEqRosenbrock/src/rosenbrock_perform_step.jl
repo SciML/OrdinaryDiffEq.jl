@@ -404,6 +404,12 @@ end
         sizeu = size(u)
         mass_matrix = integrator.f.mass_matrix
         utilde = du
+
+        #Precalculations
+        dtC41 = C41 / dt
+        dtC42 = C42 / dt
+        dtC43 = C43 / dt
+        dtd4 = dt * d4
     end
     if cache isa Rosenbrock33Cache
         mass_matrix = integrator.f.mass_matrix
@@ -418,21 +424,6 @@ end
         end
     end
 
-    if cache isa Rosenbrock33ConstantCache
-
-        # Precalculations
-       dtC21 = C21 / dt
-       dtC31 = C31 / dt
-       dtC32 = C32 / dt
-
-       dtd1 = dt * d1
-       dtd2 = dt * d2
-       dtd3 = dt * d3
-       dtgamma = dt * gamma
-
-       W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-    end
-
     # Precalculations
     dtC21 = C21 / dt
     dtC31 = C31 / dt
@@ -442,18 +433,21 @@ end
     dtd3 = dt * d3
     dtgamma = dt * gamma
 
-    if cache isa Rosenbrock34Cache
-        dtC41 = C41 / dt
-        dtC42 = C42 / dt
-        dtC43 = C43 / dt
-        dtd4 = dt * d4
-    end
-
     if cache isa Rosenbrock33ConstantCache
+        # Precalculations
+        dtC21 = C21 / dt
+        dtC31 = C31 / dt
+        dtC32 = C32 / dt
+
+        dtd1 = dt * d1
+        dtd2 = dt * d2
+        dtd3 = dt * d3
+        dtgamma = dt * gamma
+
+        W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+
         linsolve_tmp = integrator.fsalfirst + dtd1 * dT
-    end
 
-    if cache isa Rosenbrock33ConstantCache
         if mass_matrix === I
             linsolve_tmp = du + dtd2 * dT + dtC21 * k1
         else
@@ -484,22 +478,17 @@ end
                 integrator.opts.reltol, integrator.opts.internalnorm, t)
             integrator.EEst = integrator.opts.internalnorm(atmp, t)
         end
+
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+
+        u = uprev + a21 * k1
+        du = f(u, p, t + c2 * dt)
     end
 
     if cache isa Rosenbrock32ConstantCache
         integrator.fsallast = f(tmp, p, t + dt)
     end
-
-    if cache isa Rosenbrock33ConstantCache
-        integrator.k[1] = integrator.fsalfirst
-        integrator.k[2] = integrator.fsallast
-    end
-
-    if cache isa Rosenbrock33ConstantCache
-        u = uprev + a21 * k1
-        du = f(u, p, t + c2 * dt)
-    end
-
 
     calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
