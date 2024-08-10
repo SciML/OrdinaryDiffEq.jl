@@ -212,23 +212,191 @@ function initialize!(integrator,
     integrator.stats.nf += 1
 end
 
-@muladd function perform_step!(integrator, cache::Union{Rosenbrock33Cache, Rosenbrock34Cache, Rosenbrock23ConstantCache, Rosenbrock32ConstantCache, Rosenbrock33ConstantCache}, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack  du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
+@muladd function perform_step!(integrator, cache::Union{Rosenbrock33Cache, Rosenbrock34Cache, Rosenbrock23ConstantCache, Rosenbrock32ConstantCache, Rosenbrock33ConstantCache, Rosenbrock34ConstantCache}, repeat_step = false)
 
-    if cache isa Rosenbrock32ConstantCache
+    if cache isa Rosenbrock33Cache || cache isa Rosenbrock34Cache
         @unpack t, dt, uprev, u, f, p = integrator
-        @unpack c₃₂, d, tf, uf = cache
+        @unpack  du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
+        @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
+    end
+
+    if cache isa Rosenbrock34ConstantCache
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack tf, uf = cache
+        @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
+
+        # Precalculations
+        dtC21 = C21 / dt
+        dtC31 = C31 / dt
+        dtC32 = C32 / dt
+        dtC41 = C41 / dt
+        dtC42 = C42 / dt
+        dtC43 = C43 / dt
+
+        dtd1 = dt * d1
+        dtd2 = dt * d2
+        dtd3 = dt * d3
+        dtd4 = dt * d4
+        dtgamma = dt * gamma
+
+        mass_matrix = integrator.f.mass_matrix
+        # Time derivative
+        tf.u = uprev
+        dT = calc_tderivative(integrator, cache)
+
+        W = calc_W(integrator, cache, dtgamma, repeat_step, true)
+        if !issuccess_W(W)
+            integrator.EEst = 2
+            return nothing
+        end
+
+        linsolve_tmp = integrator.fsalfirst + dtd1 * dT
+
+        k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        integrator.stats.nsolve += 1
+        u = uprev # +a21*k1 a21 == 0
+        # du = f(u, p, t+c2*dt) c2 == 0 and a21 == 0 => du = f(uprev, p, t) == fsalfirst
+
+        if mass_matrix === I
+            linsolve_tmp = integrator.fsalfirst + dtd2 * dT + dtC21 * k1
+        else
+            linsolve_tmp = integrator.fsalfirst + dtd2 * dT + mass_matrix * (dtC21 * k1)
+        end
+
+        k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        integrator.stats.nsolve += 1
+        u = uprev + a31 * k1 + a32 * k2
+        du = f(u, p, t + c3 * dt)
+        integrator.stats.nf += 1
+
+        if mass_matrix === I
+            linsolve_tmp = du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
+        else
+            linsolve_tmp = du + dtd3 * dT + mass_matrix * (dtC31 * k1 + dtC32 * k2)
+        end
+
+        k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        integrator.stats.nsolve += 1
+        u = uprev + a41 * k1 + a42 * k2 + a43 * k3
+        du = f(u, p, t + dt) #-- c4 = 1
+        integrator.stats.nf += 1
+
+        if mass_matrix === I
+            linsolve_tmp = du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 + dtC43 * k3
+        else
+            linsolve_tmp = du + dtd4 * dT + mass_matrix * (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
+        end
+
+        k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+        integrator.stats.nsolve += 1
+        u = uprev + b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4
+        integrator.fsallast = f(u, p, t + dt)
+        integrator.stats.nf += 1
+
+        if integrator.opts.adaptive
+            utilde = btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4
+            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+        end
+
+        integrator.k[1] = integrator.fsalfirst
+        integrator.k[2] = integrator.fsallast
+        integrator.u = u
+        return nothing
     end
 
     if cache isa Rosenbrock23ConstantCache || cache isa Rosenbrock32ConstantCache || cache isa Rosenbrock33ConstantCache
+        @unpack t, dt, uprev, u, f, p = integrator
+        @unpack c₃₂, d, tf, uf = cache
         @unpack c₃₂, d, tf, uf = cache
 
         # Precalculations
         γ = dt * d
         dto2 = dt / 2
         dto6 = dt / 6
+
+        mass_matrix = integrator.f.mass_matrix
+
+        # Time derivative
+        dT = calc_tderivative(integrator, cache)
+
+        W = calc_W(integrator, cache, γ, repeat_step)
+        if !issuccess_W(W)
+            integrator.EEst = 2
+            return nothing
+        end
+
+        k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
+        integrator.stats.nsolve += 1
+        f₁ = f(uprev + dto2 * k₁, p, t + dto2)
+        integrator.stats.nf += 1
+
+        if mass_matrix === I
+            k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
+        else
+            if cache isa Rosenbrock32ConstantCache
+                linsolve_tmp = f₁ - mass_matrix * k₁
+            end
+            k₂ = _reshape(W \ -_vec(f₁ - mass_matrix * k₁), axes(uprev)) + k₁
+        end
+        integrator.stats.nsolve += 1
+        u = uprev + dt * k₂
+
+        if integrator.opts.adaptive
+            integrator.fsallast = f(u, p, t + dt)
+            integrator.stats.nf += 1
+    
+            if mass_matrix === I
+                k₃ = _reshape(
+                    W \
+                    -_vec((integrator.fsallast - c₃₂ * (k₂ - f₁) -
+                           2 * (k₁ - integrator.fsalfirst) + dt * dT)),
+                    axes(uprev))
+            else
+                linsolve_tmp = integrator.fsallast - mass_matrix * (c₃₂ * k₂ + 2 * k₁) +
+                               c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
+                k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
+            end
+            integrator.stats.nsolve += 1
+    
+            if cache isa Rosenbrock32ConstantCache
+                u = uprev + dto6 * (k₁ + 4k₂ + k₃)
+    
+                if integrator.opts.adaptive
+                    utilde = dto6 * (k₁ - 2k₂ + k₃)
+                    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                        integrator.opts.reltol, integrator.opts.internalnorm, t)
+                    integrator.EEst = integrator.opts.internalnorm(atmp, t)
+            
+                    if mass_matrix !== I
+                        atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
+                                  integrator.opts.abstol
+                        integrator.EEst += integrator.opts.internalnorm(atmp, t)
+                    end
+                end
+            end
+    
+            if u isa Number
+                utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
+            else
+                utilde = dto6 * f.mass_matrix * (k₁ - 2 * k₂ + k₃)
+            end
+            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                integrator.opts.reltol, integrator.opts.internalnorm, t)
+            integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    
+            if mass_matrix !== I
+                atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
+                          integrator.opts.abstol
+                integrator.EEst += integrator.opts.internalnorm(atmp, t)
+            end
+        end
+
+        integrator.k[1] = k₁
+        integrator.k[2] = k₂
+        integrator.u = u
+        return nothing
     end
     # Assignments
     if cache isa Rosenbrock34Cache
@@ -281,28 +449,8 @@ end
         dtd4 = dt * d4
     end
 
-    if cache isa Rosenbrock23ConstantCache || cache isa Rosenbrock32ConstantCache || cache isa Rosenbrock33ConstantCache
-        mass_matrix = integrator.f.mass_matrix
-
-        # Time derivative
-        dT = calc_tderivative(integrator, cache)
-
-        W = calc_W(integrator, cache, γ, repeat_step)
-        if !issuccess_W(W)
-            integrator.EEst = 2
-            return nothing
-        end
-    end
-
     if cache isa Rosenbrock33ConstantCache
         linsolve_tmp = integrator.fsalfirst + dtd1 * dT
-    end
-
-    if cache isa Rosenbrock23ConstantCache || cache isa Rosenbrock32ConstantCache || cache isa Rosenbrock33ConstantCache
-        k₁ = _reshape(W \ -_vec((integrator.fsalfirst + γ * dT)), axes(uprev))
-        integrator.stats.nsolve += 1
-        f₁ = f(uprev + dto2 * k₁, p, t + dto2)
-        integrator.stats.nf += 1
     end
 
     if cache isa Rosenbrock33ConstantCache
@@ -338,80 +486,8 @@ end
         end
     end
 
-    if cache isa Rosenbrock23ConstantCache || cache isa Rosenbrock32ConstantCache || cache isa Rosenbrock33ConstantCache
-        if mass_matrix === I
-            k₂ = _reshape(W \ -_vec(f₁ - k₁), axes(uprev)) + k₁
-        else
-            if cache isa Rosenbrock32ConstantCache
-                linsolve_tmp = f₁ - mass_matrix * k₁
-            end
-            k₂ = _reshape(W \ -_vec(f₁ - mass_matrix * k₁), axes(uprev)) + k₁
-        end
-        integrator.stats.nsolve += 1
-        u = uprev + dt * k₂
-    end
-
     if cache isa Rosenbrock32ConstantCache
         integrator.fsallast = f(tmp, p, t + dt)
-    end
-
-    if cache isa Rosenbrock23ConstantCache || cache isa Rosenbrock32ConstantCache || cache isa Rosenbrock33ConstantCache
-        if integrator.opts.adaptive
-            integrator.fsallast = f(u, p, t + dt)
-            integrator.stats.nf += 1
-    
-            if mass_matrix === I
-                k₃ = _reshape(
-                    W \
-                    -_vec((integrator.fsallast - c₃₂ * (k₂ - f₁) -
-                           2 * (k₁ - integrator.fsalfirst) + dt * dT)),
-                    axes(uprev))
-            else
-                linsolve_tmp = integrator.fsallast - mass_matrix * (c₃₂ * k₂ + 2 * k₁) +
-                               c₃₂ * f₁ + 2 * integrator.fsalfirst + dt * dT
-                k₃ = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-            end
-            integrator.stats.nsolve += 1
-    
-            if cache isa Rosenbrock32ConstantCache
-                u = uprev + dto6 * (k₁ + 4k₂ + k₃)
-    
-                if integrator.opts.adaptive
-                    utilde = dto6 * (k₁ - 2k₂ + k₃)
-                    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                        integrator.opts.reltol, integrator.opts.internalnorm, t)
-                    integrator.EEst = integrator.opts.internalnorm(atmp, t)
-            
-                    if mass_matrix !== I
-                        atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                                  integrator.opts.abstol
-                        integrator.EEst += integrator.opts.internalnorm(atmp, t)
-                    end
-                end
-            end
-    
-            if u isa Number
-                utilde = dto6 * f.mass_matrix[1, 1] * (k₁ - 2 * k₂ + k₃)
-            else
-                utilde = dto6 * f.mass_matrix * (k₁ - 2 * k₂ + k₃)
-            end
-            atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                integrator.opts.reltol, integrator.opts.internalnorm, t)
-            integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    
-            if mass_matrix !== I
-                atmp = @. ifelse(!integrator.differential_vars, integrator.fsallast, false) ./
-                          integrator.opts.abstol
-                integrator.EEst += integrator.opts.internalnorm(atmp, t)
-            end
-        end
-    end
-
-    if cache isa Rosenbrock23ConstantCache || cache isa Rosenbrock32ConstantCache || cache isa Rosenbrock33ConstantCache
-        integrator.k[1] = k₁
-        integrator.k[2] = k₂
-        integrator.u = u
-        return nothing
     end
 
     if cache isa Rosenbrock33ConstantCache
@@ -542,95 +618,6 @@ end
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
     end
     cache.linsolve = linres.cache
-end
-
-################################################################################
-
-@muladd function perform_step!(integrator, cache::Rosenbrock34ConstantCache,
-        repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tf, uf = cache
-    @unpack a21, a31, a32, a41, a42, a43, C21, C31, C32, C41, C42, C43, b1, b2, b3, b4, btilde1, btilde2, btilde3, btilde4, gamma, c2, c3, d1, d2, d3, d4 = cache.tab
-
-    # Precalculations
-    dtC21 = C21 / dt
-    dtC31 = C31 / dt
-    dtC32 = C32 / dt
-    dtC41 = C41 / dt
-    dtC42 = C42 / dt
-    dtC43 = C43 / dt
-
-    dtd1 = dt * d1
-    dtd2 = dt * d2
-    dtd3 = dt * d3
-    dtd4 = dt * d4
-    dtgamma = dt * gamma
-
-    mass_matrix = integrator.f.mass_matrix
-    # Time derivative
-    tf.u = uprev
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-    if !issuccess_W(W)
-        integrator.EEst = 2
-        return nothing
-    end
-
-    linsolve_tmp = integrator.fsalfirst + dtd1 * dT
-
-    k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev # +a21*k1 a21 == 0
-    # du = f(u, p, t+c2*dt) c2 == 0 and a21 == 0 => du = f(uprev, p, t) == fsalfirst
-
-    if mass_matrix === I
-        linsolve_tmp = integrator.fsalfirst + dtd2 * dT + dtC21 * k1
-    else
-        linsolve_tmp = integrator.fsalfirst + dtd2 * dT + mass_matrix * (dtC21 * k1)
-    end
-
-    k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a31 * k1 + a32 * k2
-    du = f(u, p, t + c3 * dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd3 * dT + dtC31 * k1 + dtC32 * k2
-    else
-        linsolve_tmp = du + dtd3 * dT + mass_matrix * (dtC31 * k1 + dtC32 * k2)
-    end
-
-    k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a41 * k1 + a42 * k2 + a43 * k3
-    du = f(u, p, t + dt) #-- c4 = 1
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + dtd4 * dT + dtC41 * k1 + dtC42 * k2 + dtC43 * k3
-    else
-        linsolve_tmp = du + dtd4 * dT + mass_matrix * (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
-    end
-
-    k4 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4
-    integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if integrator.opts.adaptive
-        utilde = btilde1 * k1 + btilde2 * k2 + btilde3 * k3 + btilde4 * k4
-        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.u = u
-    return nothing
 end
 
 ################################################################################
