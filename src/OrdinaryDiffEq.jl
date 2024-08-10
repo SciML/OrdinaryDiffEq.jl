@@ -6,45 +6,74 @@ module OrdinaryDiffEq
 using Reexport
 @reexport using DiffEqBase
 
-import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, ShampineCollocationInit, BrownFullBasicInit, NoInit,
-        set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage, isJcurrent, get_new_W_γdt_cutoff,
-        DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM, MethodType, Divergence, VerySlowConvergence,
-        SlowConvergence, Convergence, FastConvergence, NLStatus, TryAgain, AbstractNLSolverCache,
-        AbstractNLSolverAlgorithm, AbstractNLSolver, handle_discontinuities!, copyat_or_push!,
-        du_cache, full_cache, isfsal, ode_interpolant, u_cache, AutoSwitch, has_discontinuity,
-        first_discontinuity, pop_discontinuity!, _vec, loopfooter!, _reshape, perform_step!,
-        _ode_addsteps!, get_current_alg_autodiff, default_controller, isstandard,
-        ispredictive, beta2_default, beta1_default, gamma_default, qmin_default,
-        qmax_default, qsteady_min_default, qsteady_max_default, stepsize_controller!,
-        accept_step_controller, step_accept_controller!, step_reject_controller!,
-        DummyController, issplit, calculate_residuals, calculate_residuals!,
-        nlsolve_f, unwrap_cache, ode_addsteps!, get_chunksize, handle_callback_modifiers!,
-        unwrap_alg, apply_step!, initialize_tstops, uses_uprev, initialize_saveat,
-        isimplicit, initialize_d_discontinuities, isdtchangeable, _searchsortedfirst,
-        _searchsortedlast,
-        @unpack, ismultistep, DEFAULT_PRECS, isautoswitch, get_chunksize_int,
-        _unwrap_val, alg_autodiff, concrete_jac, alg_difftype, standardtag,
-        alg_extrapolates, alg_maximum_order, alg_adaptive_order,
-        OrdinaryDiffEqCompositeAlgorithm, initialize_callbacks!, PredictiveController,
-        get_differential_vars, alg_cache, AutoSwitchCache, InterpolationData,
-        DEOptions, OrdinaryDiffEqAlgorithm, @cache, fsal_typeof, OrdinaryDiffEqCache,
-        OrdinaryDiffEqAdaptiveAlgorithm, handle_dt!, ode_determine_initdt,
-        loopheader!, OrdinaryDiffEqConstantCache, _loopfooter!, isadaptive,
-        OrdinaryDiffEqMutableCache, current_interpolant!, is_mass_matrix_alg,
-        False, True, _savevalues!, postamble!, recursivefill!,
-        _change_t_via_interpolation!, ODEIntegrator, _ode_interpolant!,
-        current_interpolant, resize_nlsolver!, _ode_interpolant,
-        handle_tstop!, _postamble!, update_uprev!, resize_J_W!,
-        DAEAlgorithm
+import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order,
+                           ShampineCollocationInit, BrownFullBasicInit, NoInit,
+                           set_new_W!, set_W_γdt!, get_W, isfirstcall, isfirststage,
+                           isJcurrent, get_new_W_γdt_cutoff,
+                           DIRK, COEFFICIENT_MULTISTEP, NORDSIECK_MULTISTEP, GLM,
+                           MethodType, Divergence, VerySlowConvergence,
+                           SlowConvergence, Convergence, FastConvergence, NLStatus,
+                           TryAgain, AbstractNLSolverCache,
+                           AbstractNLSolverAlgorithm, AbstractNLSolver,
+                           handle_discontinuities!, copyat_or_push!,
+                           du_cache, full_cache, isfsal, ode_interpolant, u_cache,
+                           AutoSwitch, has_discontinuity,
+                           first_discontinuity, pop_discontinuity!, _vec, loopfooter!,
+                           _reshape, perform_step!,
+                           _ode_addsteps!, get_current_alg_autodiff, default_controller,
+                           isstandard,
+                           ispredictive, beta2_default, beta1_default, gamma_default,
+                           qmin_default,
+                           qmax_default, qsteady_min_default, qsteady_max_default,
+                           stepsize_controller!,
+                           accept_step_controller, step_accept_controller!,
+                           step_reject_controller!,
+                           DummyController, issplit, calculate_residuals,
+                           calculate_residuals!,
+                           nlsolve_f, unwrap_cache, ode_addsteps!, get_chunksize,
+                           handle_callback_modifiers!,
+                           unwrap_alg, apply_step!, initialize_tstops, uses_uprev,
+                           initialize_saveat,
+                           isimplicit, initialize_d_discontinuities, isdtchangeable,
+                           _searchsortedfirst,
+                           _searchsortedlast,
+                           @unpack, ismultistep, DEFAULT_PRECS, isautoswitch,
+                           get_chunksize_int,
+                           _unwrap_val, alg_autodiff, concrete_jac, alg_difftype,
+                           standardtag,
+                           alg_extrapolates, alg_maximum_order, alg_adaptive_order,
+                           OrdinaryDiffEqCompositeAlgorithm, initialize_callbacks!,
+                           PredictiveController,
+                           get_differential_vars, alg_cache, AutoSwitchCache,
+                           InterpolationData,
+                           DEOptions, OrdinaryDiffEqAlgorithm, @cache, fsal_typeof,
+                           OrdinaryDiffEqCache,
+                           OrdinaryDiffEqAdaptiveAlgorithm, handle_dt!,
+                           ode_determine_initdt,
+                           loopheader!, OrdinaryDiffEqConstantCache, _loopfooter!,
+                           isadaptive,
+                           OrdinaryDiffEqMutableCache, current_interpolant!,
+                           is_mass_matrix_alg,
+                           False, True, _savevalues!, postamble!, recursivefill!,
+                           _change_t_via_interpolation!, ODEIntegrator, _ode_interpolant!,
+                           current_interpolant, resize_nlsolver!, _ode_interpolant,
+                           handle_tstop!, _postamble!, update_uprev!, resize_J_W!,
+                           DAEAlgorithm
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
-       AutoSwitch
+AutoSwitch
 
 import OrdinaryDiffEqDifferentiation
-using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve, wrapprecs, UJacobianWrapper, build_jac_config, WOperator, FirstAutodiffJacError, calc_J!, calc_W!, calc_J, calc_W, jacobian2W!, isnewton
+using OrdinaryDiffEqDifferentiation: _alg_autodiff, resize_grad_config!, dolinsolve,
+                                     wrapprecs, UJacobianWrapper, build_jac_config,
+                                     WOperator, FirstAutodiffJacError, calc_J!, calc_W!,
+                                     calc_J, calc_W, jacobian2W!, isnewton
 
 using OrdinaryDiffEqNonlinearSolve
-using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail, initial_η, NonlinearSolveAlg, compute_step!, NLSolver, nlsolve!, resize_jac_config!, anderson!, build_nlsolver, markfirststage!, anderson
+using OrdinaryDiffEqNonlinearSolve: NLNewton, NLAnderson, NLFunctional, nlsolvefail,
+                                    initial_η, NonlinearSolveAlg, compute_step!, NLSolver,
+                                    nlsolve!, resize_jac_config!, anderson!, build_nlsolver,
+                                    markfirststage!, anderson
 export NLNewton, NLAnderson, NLFunctional, NonlinearSolveAlg
 
 using OrdinaryDiffEqExtrapolation

@@ -12,8 +12,8 @@ recommended that one has dev'd all of the relevant packages. This can be done vi
 
 ```julia
 pathtolibrary = Pkg.pkgdir(OrdinaryDiffEq)
-sublibs=string.((pathtolibrary,),readdir(pathtolibrary))
-Pkg.develop(map(name->Pkg.PackageSpec.(;path=name), sublibs));
+sublibs = string.((pathtolibrary,), readdir(pathtolibrary))
+Pkg.develop(map(name -> Pkg.PackageSpec.(; path = name), sublibs));
 ```
 
 and then running `Pkg.test("OrdinaryDiffEq")` will run the global tests locally. Each of the

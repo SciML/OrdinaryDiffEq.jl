@@ -34,8 +34,10 @@ function DefaultODEAlgorithm(; lazy = true, stiffalgfirst = false, kwargs...)
     AutoAlgSwitch(nonstiff, stiff; stiffalgfirst)
 end
 
-isdefaultalg(alg::CompositeAlgorithm{
-    <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}}) = true
+function isdefaultalg(alg::CompositeAlgorithm{
+        <:Any, <:Tuple{Tsit5, Vern7, Rosenbrock23, Rodas5P, FBDF, FBDF}})
+    true
+end
 
 function DiffEqBase.__init(prob::ODEProblem, ::Nothing, args...; kwargs...)
     DiffEqBase.init(prob, DefaultODEAlgorithm(autodiff = false), args...; kwargs...)

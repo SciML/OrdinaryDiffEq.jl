@@ -118,7 +118,8 @@ end
 callback_resize3 = ContinuousCallback(condition_resize3, affect!_resize3)
 
 for alg in CACHE_TEST_ALGS
-    (OrdinaryDiffEqCore.isimplicit(alg) || OrdinaryDiffEqCore.alg_order(alg) < 2) && continue
+    (OrdinaryDiffEqCore.isimplicit(alg) || OrdinaryDiffEqCore.alg_order(alg) < 2) &&
+        continue
     @show alg
     local sol = solve(prob_resize3, alg, callback = callback_resize3, dt = 0.125)
     @test size(sol[end]) == (3,)
@@ -144,7 +145,8 @@ callback_adapt = DiscreteCallback(condition_adapt, affect!_adapt,
     save_positions = (false, false))
 
 for alg in CACHE_TEST_ALGS
-    (OrdinaryDiffEqCore.isimplicit(alg) || OrdinaryDiffEqCore.alg_order(alg) < 2) && continue
+    (OrdinaryDiffEqCore.isimplicit(alg) || OrdinaryDiffEqCore.alg_order(alg) < 2) &&
+        continue
     @show alg
     local sol = solve(prob_adapt, alg, callback = callback_adapt, dt = 0.125)
     @test all(idx -> all(isapprox.(sol.u[idx], 0.5 * sol.t[idx]^2, atol = 1.0e-6)),
