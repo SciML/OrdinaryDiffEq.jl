@@ -33,6 +33,8 @@ include("interpolants.jl")
 include("controllers.jl")
 include("verner_rk_perform_step.jl")
 
+import PrecompileTools
+import Preferences
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop

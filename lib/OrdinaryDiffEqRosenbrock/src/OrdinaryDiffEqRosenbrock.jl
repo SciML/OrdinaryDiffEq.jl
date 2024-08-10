@@ -112,6 +112,8 @@ include("stiff_addsteps.jl")
 include("rosenbrock_perform_step.jl")
 include("integrator_interface.jl")
 
+import PrecompileTools
+import Preferences
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop

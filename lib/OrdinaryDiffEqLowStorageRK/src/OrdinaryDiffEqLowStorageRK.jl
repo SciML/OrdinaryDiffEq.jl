@@ -27,6 +27,8 @@ include("alg_utils.jl")
 include("low_storage_rk_caches.jl")
 include("low_storage_rk_perform_step.jl")
 
+import PrecompileTools
+import Preferences
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop

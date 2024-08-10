@@ -20,6 +20,8 @@ using Reexport
 
 include("default_alg.jl")
 
+import PrecompileTools
+import Preferences
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop

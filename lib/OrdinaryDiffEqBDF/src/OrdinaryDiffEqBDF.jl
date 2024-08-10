@@ -44,6 +44,8 @@ include("controllers.jl")
 include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
 
+import PrecompileTools
+import Preferences
 PrecompileTools.@compile_workload begin
     lorenz = OrdinaryDiffEqCore.lorenz
     lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
