@@ -29,7 +29,7 @@ sol = solve(prob_mm_oop, Rodas5P(), reltol = 1e-8, abstol = 1e-8)
 # These tests flex differentiation of the solver and through the initialization
 # To only test the solver part and isolate potential issues, set the initialization to consistent
 @testset "Inplace: $(isinplace(_prob)), DAEProblem: $(_prob isa DAEProblem), BrownBasic: $(initalg isa BrownFullBasicInit), Autodiff: $autodiff" for _prob in [
-    prob_mm, prob_mm_oop],
+        prob_mm, prob_mm_oop],
     initalg in [BrownFullBasicInit(), ShampineCollocationInit()], autodiff in [true, false]
 
     alg = Rodas5P(; autodiff)

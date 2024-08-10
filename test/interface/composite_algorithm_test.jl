@@ -28,13 +28,17 @@ solve!(integrator2)
 
 sol = solve(prob, alg_switch)
 @inferred DiffEqBase.__init(prob, alg_switch)
-v = @inferred OrdinaryDiffEqCore.ode_interpolant(1.0, integrator1, integrator1.opts.save_idxs,
+v = @inferred OrdinaryDiffEqCore.ode_interpolant(
+    1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
-@inferred OrdinaryDiffEqCore.ode_interpolant!(v, 1.0, integrator1, integrator1.opts.save_idxs,
+@inferred OrdinaryDiffEqCore.ode_interpolant!(
+    v, 1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
-v = @inferred OrdinaryDiffEqCore.ode_extrapolant(1.0, integrator1, integrator1.opts.save_idxs,
+v = @inferred OrdinaryDiffEqCore.ode_extrapolant(
+    1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
-@inferred OrdinaryDiffEqCore.ode_extrapolant!(v, 1.0, integrator1, integrator1.opts.save_idxs,
+@inferred OrdinaryDiffEqCore.ode_extrapolant!(
+    v, 1.0, integrator1, integrator1.opts.save_idxs,
     Val{0})
 
 @testset "Mixed adaptivity" begin
