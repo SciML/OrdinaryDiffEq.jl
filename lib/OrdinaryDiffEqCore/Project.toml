@@ -31,7 +31,7 @@ SciMLStructures = "53ae85a6-f571-4167-b2af-e1d143709226"
 SimpleUnPack = "ce78b400-467f-4804-87d8-8f486da07d0a"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StaticArrayInterface = "0d7ed370-da01-4f52-bd93-41d350b8b718"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 
 [compat]
@@ -62,7 +62,7 @@ SciMLStructures = "1"
 SimpleUnPack = "1"
 Static = "0.8, 1"
 StaticArrayInterface = "1.2"
-StaticArrays = "1.0"
+StaticArraysCore = "1.0"
 TruncatedStacktraces = "1.2"
 julia = "1.10"
 
