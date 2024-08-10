@@ -37,6 +37,7 @@ using Reexport
 @reexport using DiffEqBase
 
 import OrdinaryDiffEqCore: alg_autodiff
+import OrdinaryDiffEqCore
 
 function rosenbrock_wanner_docstring(description::String,
         name::String;
@@ -110,6 +111,53 @@ include("rosenbrock_interpolants.jl")
 include("stiff_addsteps.jl")
 include("rosenbrock_perform_step.jl")
 include("integrator_interface.jl")
+
+import PrecompileTools
+import Preferences
+PrecompileTools.@compile_workload begin
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    solver_list = [Rosenbrock23(), Rodas5P()]
+    prob_list = []
+
+    if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileNoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]))
+    end
+
+    for prob in prob_list, solver in solver_list
+        solve(prob, solver)(5.0)
+    end
+
+    prob_list = nothing
+    solver_list = nothing
+end
 
 export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
        Ros4LStab, ROS3P, Rodas3, Rodas23W, Rodas3P, Rodas4, Rodas42, Rodas4P, Rodas4P2,

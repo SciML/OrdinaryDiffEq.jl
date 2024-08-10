@@ -26,6 +26,7 @@ using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArr
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: mul!, I
 using ArrayInterface
+import OrdinaryDiffEqCore
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
                                     nlsolve!, nlsolvefail, isnewton, markfirststage!,
@@ -42,6 +43,53 @@ include("dae_caches.jl")
 include("controllers.jl")
 include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
+
+import PrecompileTools
+import Preferences
+PrecompileTools.@compile_workload begin
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    solver_list = [FBDF()]
+    prob_list = []
+
+    if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileNoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]))
+    end
+
+    for prob in prob_list, solver in solver_list
+        solve(prob, solver)(5.0)
+    end
+
+    prob_list = nothing
+    solver_list = nothing
+end
 
 export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF, FBDF,
        SBDF2, SBDF3, SBDF4, MEBDF2, IMEXEuler, IMEXEulerARK,

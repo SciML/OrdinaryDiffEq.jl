@@ -16,6 +16,7 @@ using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, Adapt
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import Static: False
 import RecursiveArrayTools: recursive_unitless_bottom_eltype
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase
@@ -25,6 +26,71 @@ include("algorithms.jl")
 include("alg_utils.jl")
 include("low_storage_rk_caches.jl")
 include("low_storage_rk_perform_step.jl")
+
+import PrecompileTools
+import Preferences
+PrecompileTools.@compile_workload begin
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    solver_list = []
+    solver_list_nonadaptive = []
+    prob_list = []
+
+    low_storage = [
+        RDPK3SpFSAL35(), RDPK3SpFSAL49()
+    ]
+
+    low_storage_nonadaptive = [
+        CarpenterKennedy2N54(williamson_condition = false)
+    ]
+
+    if Preferences.@load_preference("PrecompileLowStorage", false)
+        append!(solver_list, low_storage)
+        append!(solver_list_nonadaptive, low_storage_nonadaptive)
+    end
+
+    if Preferences.@load_preference("PrecompileDefaultSpecialize", true)
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list, ODEProblem(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileAutoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.AutoSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileFunctionWrapperSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.FunctionWrapperSpecialize}(lorenz, [1.0; 0.0; 0.0],
+                (0.0, 1.0), Float64[]))
+    end
+
+    if Preferences.@load_preference("PrecompileNoSpecialize", false)
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0)))
+        push!(prob_list,
+            ODEProblem{true, SciMLBase.NoSpecialize}(lorenz, [1.0; 0.0; 0.0], (0.0, 1.0),
+                Float64[]))
+    end
+
+    for prob in prob_list, solver in solver_list
+        solve(prob, solver)(5.0)
+    end
+
+    for prob in prob_list, solver in solver_list_nonadaptive
+        solve(prob, solver; dt = 0.5)(5.0)
+    end
+
+    prob_list = nothing
+    solver_list = nothing
+end
 
 export ORK256, CarpenterKennedy2N54, SHLDDRK64, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C,
        DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
