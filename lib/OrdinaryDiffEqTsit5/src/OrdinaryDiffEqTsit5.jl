@@ -18,6 +18,7 @@ import RecursiveArrayTools: recursivefill!, recursive_unitless_bottom_eltype
 import LinearAlgebra: norm
 using TruncatedStacktraces
 import DiffEqBase: @def
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase
@@ -34,8 +35,8 @@ import PrecompileTools
 import Preferences
 
 PrecompileTools.@compile_workload begin
-    const lorenz = OrdinaryDiffEqCore.lorenz
-    const lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
     solver_list = [Tsit5()]
     prob_list = []
 

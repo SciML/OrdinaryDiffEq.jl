@@ -26,6 +26,7 @@ using TruncatedStacktraces, MuladdMacro, MacroTools, FastBroadcast, RecursiveArr
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 using LinearAlgebra: mul!, I
 using ArrayInterface
+import OrdinaryDiffEqCore
 using OrdinaryDiffEqDifferentiation: UJacobianWrapper
 using OrdinaryDiffEqNonlinearSolve: NLNewton, du_alias_or_new, build_nlsolver,
                                     nlsolve!, nlsolvefail, isnewton, markfirststage!,
@@ -44,8 +45,8 @@ include("dae_perform_step.jl")
 include("bdf_perform_step.jl")
 
 PrecompileTools.@compile_workload begin
-    const lorenz = OrdinaryDiffEqCore.lorenz
-    const lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
     solver_list = [FBDF()]
     prob_list = []
 

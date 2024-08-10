@@ -19,7 +19,7 @@ using DiffEqBase: @def, @tight_loop_macros
 using Static: False
 using TruncatedStacktraces
 using LinearAlgebra: norm
-
+import OrdinaryDiffEqCore
 using Reexport
 @reexport using DiffEqBase
 
@@ -34,8 +34,8 @@ include("controllers.jl")
 include("verner_rk_perform_step.jl")
 
 PrecompileTools.@compile_workload begin
-    const lorenz = OrdinaryDiffEqCore.lorenz
-    const lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
     solver_list = [Vern6(), Vern7(), Vern8(), Vern9()]
     prob_list = []
 

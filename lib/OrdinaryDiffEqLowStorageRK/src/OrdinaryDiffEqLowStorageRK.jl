@@ -16,6 +16,7 @@ using FastBroadcast, Polyester, MuladdMacro, RecursiveArrayTools, Adapt
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
 import Static: False
 import RecursiveArrayTools: recursive_unitless_bottom_eltype
+import OrdinaryDiffEqCore
 
 using Reexport
 @reexport using DiffEqBase
@@ -27,8 +28,8 @@ include("low_storage_rk_caches.jl")
 include("low_storage_rk_perform_step.jl")
 
 PrecompileTools.@compile_workload begin
-    const lorenz = OrdinaryDiffEqCore.lorenz
-    const lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
     solver_list = []
     prob_list = []
 

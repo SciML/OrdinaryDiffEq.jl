@@ -37,6 +37,7 @@ using Reexport
 @reexport using DiffEqBase
 
 import OrdinaryDiffEqCore: alg_autodiff
+import OrdinaryDiffEqCore
 
 function rosenbrock_wanner_docstring(description::String,
         name::String;
@@ -112,8 +113,8 @@ include("rosenbrock_perform_step.jl")
 include("integrator_interface.jl")
 
 PrecompileTools.@compile_workload begin
-    const lorenz = OrdinaryDiffEqCore.lorenz
-    const lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
+    lorenz = OrdinaryDiffEqCore.lorenz
+    lorenz_oop = OrdinaryDiffEqCore.lorenz_oop
     solver_list = [Rosenbrock23(), Rodas5P()]
     prob_list = []
 
