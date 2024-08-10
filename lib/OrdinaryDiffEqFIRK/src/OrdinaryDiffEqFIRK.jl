@@ -1,6 +1,6 @@
 module OrdinaryDiffEqFIRK
 
-import OrdinaryDiffEq: alg_order, calculate_residuals!,
+import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                        initialize!, perform_step!, @unpack, unwrap_alg,
                        calculate_residuals,
                        OrdinaryDiffEqAlgorithm, OrdinaryDiffEqNewtonAdaptiveAlgorithm,
@@ -23,9 +23,12 @@ using LinearAlgebra: I, UniformScaling, mul!, lu
 import LinearSolve
 import FastBroadcast: @..
 
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config, UDerivativeWrapper, calc_J!, dolinsolve, calc_J, islinearfunction
-using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergence, NLStatus, VerySlowConvergence,
+using OrdinaryDiffEqDifferentiation: UJacobianWrapper, build_J_W, build_jac_config, UDerivativeWrapper, calc_J!, dolinsolve, calc_J, islinearfunction
+using OrdinaryDiffEqNonlinearSolve: du_alias_or_new, Convergence, FastConvergence, NLStatus, VerySlowConvergence,
 Divergence, get_new_W_γdt_cutoff
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, ODEProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEqAdamsBashforthMoulton, ODEProblemLibrary, DiffEqDevTools
 using Test, Random
 Random.seed!(100)
 

@@ -10,3 +10,4 @@ qmax_default(alg::DP8) = 6
 beta2_default(alg::DP8) = 0 // 1
 
 beta1_default(alg::DP8, beta2) = typeof(beta2)(1 // alg_order(alg)) - beta2 / 5
+isdp8(alg::DP8) = true

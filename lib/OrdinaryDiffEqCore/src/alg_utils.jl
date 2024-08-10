@@ -138,6 +138,10 @@ dtnew_modification(integrator, alg, dtnew) = dtnew
 isautoswitch(alg) = false
 isautoswitch(alg::CompositeAlgorithm) = alg.choice_function isa AutoSwitch
 
+only_diagonal_mass_matrix(alg) = false
+isdp8(alg) = false
+isdefaultalg(alg) = false
+
 function qmin_default(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     isadaptive(alg) ? 1 // 5 : 0
 end
@@ -180,6 +184,7 @@ end
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 function alg_autodiff end
+has_lazy_interpolation(alg) = false
 
 # Linear Exponential doesn't have any of the AD stuff
 function DiffEqBase.prepare_alg(

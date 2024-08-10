@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqRosenbrock, LinearAlgebra, ForwardDiff, Test
+using OrdinaryDiffEqNonlinearSolve: BrownFullBasicInit, ShampineCollocationInit
 
 function rober(du, u, p, t)
     y₁, y₂, y₃ = u

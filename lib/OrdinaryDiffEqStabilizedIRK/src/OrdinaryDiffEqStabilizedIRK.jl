@@ -1,6 +1,6 @@
 module OrdinaryDiffEqStabilizedIRK
 
-import OrdinaryDiffEq: alg_order, alg_maximum_order,
+import OrdinaryDiffEqCore: alg_order, alg_maximum_order,
                        calculate_residuals!,
                        beta2_default, beta1_default, gamma_default, issplit,
                        initialize!, perform_step!, @unpack, unwrap_alg,
@@ -10,12 +10,15 @@ import OrdinaryDiffEq: alg_order, alg_maximum_order,
                        OrdinaryDiffEqAdaptiveAlgorithm,
                        OrdinaryDiffEqAdaptiveImplicitAlgorithm,
                        alg_cache, _unwrap_val, DEFAULT_PRECS, @cache,
-                       _reshape, _vec
+                       _reshape, _vec, full_cache
 
-using OrdinaryDiffEq.OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
-using OrdinaryDiffEq.OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver, markfirststage!, du_alias_or_new, get_W
-using DiffEqBase, FastBroadcast, MuladdMacro, RecursiveArrayTools
+using OrdinaryDiffEqDifferentiation: dolinsolve, update_W!
+using OrdinaryDiffEqNonlinearSolve: NLNewton, nlsolve!, isnewton, build_nlsolver, markfirststage!, du_alias_or_new, get_W
+using FastBroadcast, MuladdMacro, RecursiveArrayTools
 import StaticArrays: SArray, MVector, SVector, @SVector, StaticArray, MMatrix, SA
+
+using Reexport
+@reexport using DiffEqBase
 
 include("algorithms.jl")
 include("alg_utils.jl")

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test
+using OrdinaryDiffEqAdamsBashforthMoulton, DiffEqDevTools, DiffEqBase, Test
 import ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 probArr = Vector{ODEProblem}(undef, 2)
