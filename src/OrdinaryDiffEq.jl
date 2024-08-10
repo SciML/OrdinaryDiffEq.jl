@@ -33,7 +33,8 @@ import OrdinaryDiffEqCore: trivial_limiter!, CompositeAlgorithm, alg_order, Sham
         OrdinaryDiffEqMutableCache, current_interpolant!, is_mass_matrix_alg,
         False, True, _savevalues!, postamble!, recursivefill!,
         _change_t_via_interpolation!, ODEIntegrator, _ode_interpolant!,
-        current_interpolant        
+        current_interpolant, resize_nlsolver!, _ode_interpolant,
+        handle_tstop!        
 
 export CompositeAlgorithm, ShampineCollocationInit, BrownFullBasicInit, NoInit
        AutoSwitch
