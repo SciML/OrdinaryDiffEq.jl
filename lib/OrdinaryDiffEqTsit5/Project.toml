@@ -13,6 +13,8 @@ Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 TruncatedStacktraces = "781d530d-4396-4725-bb49-402e4bee1e77"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 
 [compat]
 julia = "1.10"
