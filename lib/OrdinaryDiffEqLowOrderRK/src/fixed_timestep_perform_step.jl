@@ -53,47 +53,47 @@ function initialize!(integrator, cache::Union{HeunConstantCache, RalstonConstant
 end
 
 @muladd function perform_step!(integrator,
-    cache::Union{HeunConstantCache, RalstonConstantCache},
-    repeat_step = false)
-@unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+        cache::Union{HeunConstantCache, RalstonConstantCache},
+        repeat_step = false)
+    @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
 
-# precalculations
-if cache isa HeunConstantCache
-    a₁ = dt
-    a₂ = dt / 2
-else # Ralston
-    a₁ = 2 * dt / 3
-    a₂ = dt / 4
-    a₃ = 3 * a₂
-end
-
-tmp = @.. broadcast=false uprev+a₁ * fsalfirst
-k2 = f(tmp, p, t + a₁)
-integrator.stats.nf += 1
-
-if cache isa HeunConstantCache
-    u = @.. broadcast=false uprev+a₂ * (fsalfirst + k2)
-else
-    u = @.. broadcast=false uprev+a₂*fsalfirst+a₃*k2
-end
-
-if integrator.opts.adaptive
+    # precalculations
     if cache isa HeunConstantCache
-        tmp = @.. broadcast=false a₂*(k2 - fsalfirst)
-    else
-        tmp = @.. broadcast=false a₃*(k2 - fsalfirst)
+        a₁ = dt
+        a₂ = dt / 2
+    else # Ralston
+        a₁ = 2 * dt / 3
+        a₂ = dt / 4
+        a₃ = 3 * a₂
     end
 
-    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
-        integrator.opts.reltol, integrator.opts.internalnorm, t)
-    integrator.EEst = integrator.opts.internalnorm(atmp, t)
-end
-k = f(u, p, t + dt)
-integrator.stats.nf += 1
-integrator.fsallast = k
-integrator.k[1] = integrator.fsalfirst
-integrator.k[2] = integrator.fsallast
-integrator.u = u
+    tmp = @.. broadcast=false uprev+a₁ * fsalfirst
+    k2 = f(tmp, p, t + a₁)
+    integrator.stats.nf += 1
+
+    if cache isa HeunConstantCache
+        u = @.. broadcast=false uprev+a₂ * (fsalfirst + k2)
+    else
+        u = @.. broadcast=false uprev+a₂*fsalfirst+a₃*k2
+    end
+
+    if integrator.opts.adaptive
+        if cache isa HeunConstantCache
+            tmp = @.. broadcast=false a₂*(k2 - fsalfirst)
+        else
+            tmp = @.. broadcast=false a₃*(k2 - fsalfirst)
+        end
+
+        atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol,
+            integrator.opts.reltol, integrator.opts.internalnorm, t)
+        integrator.EEst = integrator.opts.internalnorm(atmp, t)
+    end
+    k = f(u, p, t + dt)
+    integrator.stats.nf += 1
+    integrator.fsallast = k
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
 end
 
 function initialize!(integrator, cache::Union{HeunCache, RalstonCache})

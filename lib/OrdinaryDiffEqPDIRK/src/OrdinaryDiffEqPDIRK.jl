@@ -1,11 +1,11 @@
 module OrdinaryDiffEqPDIRK
 
 import OrdinaryDiffEqCore: isfsal, alg_order, _unwrap_val,
-                       OrdinaryDiffEqNewtonAlgorithm, OrdinaryDiffEqConstantCache,
-                       OrdinaryDiffEqMutableCache, constvalue, alg_cache,
-                       uses_uprev, @unpack, unwrap_alg, @cache, DEFAULT_PRECS,
-                       @threaded, initialize!, perform_step!, isthreaded,
-                       full_cache
+                           OrdinaryDiffEqNewtonAlgorithm, OrdinaryDiffEqConstantCache,
+                           OrdinaryDiffEqMutableCache, constvalue, alg_cache,
+                           uses_uprev, @unpack, unwrap_alg, @cache, DEFAULT_PRECS,
+                           @threaded, initialize!, perform_step!, isthreaded,
+                           full_cache
 import StaticArrays: SVector
 import MuladdMacro: @muladd
 import FastBroadcast: @..
@@ -15,7 +15,8 @@ using Reexport
 @reexport using DiffEqBase
 
 using OrdinaryDiffEqDifferentiation: dolinsolve
-using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail, markfirststage!
+using OrdinaryDiffEqNonlinearSolve: NLNewton, build_nlsolver, nlsolve!, nlsolvefail,
+                                    markfirststage!
 
 include("algorithms.jl")
 include("alg_utils.jl")

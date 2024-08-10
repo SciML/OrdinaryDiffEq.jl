@@ -10,6 +10,7 @@ alg = Euler()
 sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqLowOrderRK.ssp_coefficient(alg),
     dense = false)
 @test all(sol.u .>= 0)
-sol = solve(test_problem_ssp_long, alg, dt = OrdinaryDiffEqLowOrderRK.ssp_coefficient(alg) + 1.e-3,
+sol = solve(
+    test_problem_ssp_long, alg, dt = OrdinaryDiffEqLowOrderRK.ssp_coefficient(alg) + 1.e-3,
     dense = false)
 @test any(sol.u .< 0)

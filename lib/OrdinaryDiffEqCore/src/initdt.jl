@@ -133,7 +133,7 @@
     end
 
     dt₀ = ifelse((d₀ < 1 // 10^(5)) |
-                        (d₁ < 1 // 10^(5)), smalldt,
+                 (d₁ < 1 // 10^(5)), smalldt,
         convert(_tType,
             oneunit_tType * DiffEqBase.value((d₀ / d₁) /
                                              100)))

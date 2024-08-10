@@ -2,7 +2,8 @@
 function SciMLBase.isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     true
 end
-function SciMLBase.allows_arbitrary_number_types(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})
+function SciMLBase.allows_arbitrary_number_types(alg::Union{
+        OrdinaryDiffEqAlgorithm, DAEAlgorithm})
     true
 end
 function SciMLBase.allowscomplex(alg::Union{OrdinaryDiffEqAlgorithm, DAEAlgorithm})

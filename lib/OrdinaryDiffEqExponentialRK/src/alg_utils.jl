@@ -1,4 +1,5 @@
-function isdtchangeable(alg::Union{LawsonEuler, NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2})
+function isdtchangeable(alg::Union{
+        LawsonEuler, NorsettEuler, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2})
     false
 end # due to caching
 

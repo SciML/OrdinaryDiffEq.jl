@@ -12,7 +12,7 @@ Euler - The canonical forward Euler method. Fixed timestep only.
 struct Euler <: OrdinaryDiffEqAlgorithm end
 
 struct SplitEuler <:
-    OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
+       OrdinaryDiffEqExponentialAlgorithm{0, false, Val{:forward}, Val{true}, nothing} end
 
 @doc explicit_rk_docstring(
     "The second order Heun's method. Uses embedded Euler method for adaptivity.",
