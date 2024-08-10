@@ -269,7 +269,7 @@ struct adaptiveRadauTableau(T, T2)
     e::AbstractVector{T}
 end
 
-using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur
+using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur, BSeries
 
 function adaptiveRadauTableau(T, T2, s::Int64)
     tmp = Vector{BigFloat}(undef, s-1)
@@ -301,15 +301,19 @@ function adaptiveRadauTableau(T, T2, s::Int64)
     end
     a = c_q * inverse_c_powers
     a_inverse = inv(a)
-    b = eigvals(a_inverse)
+    b = Vector{Bigfloat}(undef, s)
+    for i in 1 : s
+        b[i] = a[s, i]
+    end
+    vals = eigvals(a_inverse)
     γ = real(b[s])
     α = Vector{BigFloat}(undef, floor(Int, s/2))
     β = Vector{BigFloat}(undef, floor(Int, s/2))
     index = 1
     i = 1
     while i <= (s-1)
-        α[index] = real(b[i])
-        β[index] = imag(b[i + 1])
+        α[index] = real(vals[i])
+        β[index] = imag(vals[i + 1])
         index = index + 1
         i = i + 2
     end
@@ -332,7 +336,11 @@ function adaptiveRadauTableau(T, T2, s::Int64)
         end
     end
     TI = inv(T)
-    #adaptiveRadauTableau(T, TI, γ, α, β, c, e)
+    b_hat = Vector{BigFloat}(undef, s)
+    embedded = bseries(a, b_hat, c, s - 2)
+
+    #e = b_hat - b
+    #adaptiveRadautableau(T, TI, γ, α, β, c, e)
 end
 
-adaptiveRadauTableau(0, 0, 1)
+adaptiveRadauTableau(0, 0, 3)
