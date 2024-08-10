@@ -1,5 +1,5 @@
 using SciMLSensitivity
-using OrdinaryDiffEq, Calculus, Test
+using OrdinaryDiffEq, OrdinaryDiffEqCore, Calculus, Test
 using Zygote
 
 function f(du, u, p, t)
