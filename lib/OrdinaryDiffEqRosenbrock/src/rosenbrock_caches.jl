@@ -3,6 +3,18 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
+@cache mutable struct RosenbrockConstantCache{T, TF, UF, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+    c₃₂::T
+    d::T
+    tf::TF
+    uf::UF
+    J::JType
+    W::WType
+    linsolve::F
+    autodiff::AD
+    tab::Tab
+end
+
 @cache mutable struct Rosenbrock23Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
     RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
@@ -157,21 +169,9 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!)
 end
 
-struct Rosenbrock23ConstantCache{T, TF, UF, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
-    c₃₂::T
-    d::T
-    tf::TF
-    uf::UF
-    J::JType
-    W::WType
-    linsolve::F
-    autodiff::AD
-end
-
 function Rosenbrock23ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
     tab = Rosenbrock23Tableau(T)
-    Rosenbrock23ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
+    RosenbrockConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
 
 function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -183,25 +183,13 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    Rosenbrock23ConstantCache(constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
+    RosenbrockConstantCache(constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
         alg_autodiff(alg))
-end
-
-struct Rosenbrock32ConstantCache{T, TF, UF, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
-    c₃₂::T
-    d::T
-    tf::TF
-    uf::UF
-    J::JType
-    W::WType
-    linsolve::F
-    autodiff::AD
 end
 
 function Rosenbrock32ConstantCache(::Type{T}, tf, uf, J, W, linsolve, autodiff) where {T}
     tab = Rosenbrock32Tableau(T)
-    Rosenbrock32ConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
+    RosenbrockConstantCache(tab.c₃₂, tab.d, tf, uf, J, W, linsolve, autodiff)
 end
 
 function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
@@ -213,23 +201,13 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     J, W = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(false))
     linprob = nothing #LinearProblem(W,copy(u); u0=copy(u))
     linsolve = nothing #init(linprob,alg.linsolve,alias_A=true,alias_b=true)
-    Rosenbrock32ConstantCache(constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
+    RosenbrockConstantCache(constvalue(uBottomEltypeNoUnits), tf, uf, J, W, linsolve,
         alg_autodiff(alg))
 end
 
 ################################################################################
 
 ### 3rd order specialized Rosenbrocks
-
-struct Rosenbrock33ConstantCache{TF, UF, Tab, JType, WType, F} <:
-       OrdinaryDiffEqConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-end
 
 @cache mutable struct Rosenbrock33Cache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
@@ -390,16 +368,6 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         alg.stage_limiter!)
 end
 
-struct Rosenbrock34ConstantCache{TF, UF, Tab, JType, WType, F} <:
-       OrdinaryDiffEqConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-end
-
 function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
@@ -442,27 +410,6 @@ jac_cache(c::Rosenbrock4Cache) = (c.J, c.W)
 ###############################################################################
 
 ### Rodas methods
-
-struct Rodas23WConstantCache{TF, UF, Tab, JType, WType, F, AD} <:
-       OrdinaryDiffEqConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-    autodiff::AD
-end
-
-struct Rodas3PConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-    autodiff::AD
-end
 
 @cache mutable struct Rodas23WCache{uType, rateType, uNoUnitsType, JType, WType, TabType,
     TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <:
@@ -657,16 +604,6 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
 end
 
 ### Rodas4 methods
-
-struct Rodas4ConstantCache{TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-    autodiff::AD
-end
 
 @cache mutable struct Rodas4Cache{uType, rateType, uNoUnitsType, JType, WType, TabType,
     TFType, UFType, F, JCType, GCType, RTolType, A, StepLimiter, StageLimiter} <:
@@ -948,15 +885,6 @@ end
 ################################################################################
 
 ### Rosenbrock5
-
-struct Rosenbrock5ConstantCache{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqConstantCache
-    tf::TF
-    uf::UF
-    tab::Tab
-    J::JType
-    W::WType
-    linsolve::F
-end
 
 @cache mutable struct Rosenbrock5Cache{
     uType, rateType, uNoUnitsType, JType, WType, TabType,

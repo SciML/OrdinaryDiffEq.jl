@@ -12,8 +12,7 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
 end
 
 function initialize!(integrator,
-        cache::Union{Rosenbrock23ConstantCache,
-            Rosenbrock32ConstantCache})
+        cache::Union{RosenbrockConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -240,7 +239,7 @@ end
     cache.linsolve = linres.cache
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache,
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache,
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack c₃₂, d, tf, uf = cache
@@ -317,7 +316,7 @@ end
     return nothing
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache,
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache,
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack c₃₂, d, tf, uf = cache
@@ -394,9 +393,7 @@ end
 end
 
 function initialize!(integrator,
-        cache::Union{Rosenbrock33ConstantCache,
-            Rosenbrock34ConstantCache,
-            Rosenbrock4ConstantCache})
+        cache::Union{RosenbrockonstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -423,7 +420,7 @@ function initialize!(integrator,
     integrator.stats.nf += 1
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache,
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
@@ -598,7 +595,7 @@ end
 
 ################################################################################
 
-@muladd function perform_step!(integrator, cache::Rosenbrock34ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
     @unpack A, C, b, btilde, gamma, c, d = cache.tab
@@ -765,7 +762,7 @@ end
 
 #### Rodas3P type method
 
-function initialize!(integrator, cache::Union{Rodas23WConstantCache, Rodas3PConstantCache})
+function initialize!(integrator, cache::Union{RosenbrockConstantCache})
     integrator.kshortsize = 3
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
@@ -775,7 +772,7 @@ function initialize!(integrator, cache::Union{Rodas23WConstantCache, Rodas3PCons
 end
 
 @muladd function perform_step!(
-        integrator, cache::Union{Rodas23WConstantCache, Rodas3PConstantCache},
+        integrator, cache::Union{RosenbrockConstantCache},
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
@@ -1130,7 +1127,7 @@ end
 
 #### Rodas4 type method
 
-function initialize!(integrator, cache::Rodas4ConstantCache)
+function initialize!(integrator, cache::RosenbrockConstantCache)
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
@@ -1138,7 +1135,7 @@ function initialize!(integrator, cache::Rodas4ConstantCache)
     integrator.k[2] = zero(integrator.u)
 end
 
-@muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
     @unpack gamma, c, d, C, a = cache.tab
@@ -1393,7 +1390,7 @@ end
 
 ### Rodas5 Method
 
-function initialize!(integrator, cache::Rosenbrock5ConstantCache)
+function initialize!(integrator, cache::RosenbrockConstantCache)
     integrator.kshortsize = 3
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     # Avoid undefined entries if k is an array of arrays
@@ -1402,7 +1399,7 @@ function initialize!(integrator, cache::Rosenbrock5ConstantCache)
     integrator.k[3] = zero(integrator.u)
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock5ConstantCache,
+@muladd function perform_step!(integrator, cache::RosenbrockConstantCache,
         repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack tf, uf = cache
