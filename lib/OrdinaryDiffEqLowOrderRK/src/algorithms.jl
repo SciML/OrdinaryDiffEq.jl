@@ -473,7 +473,7 @@ end
     title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
     journal = {Computational Mathematics and Mathematical Physics}
     }")
-Base.@kwdef struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Alshina6{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
