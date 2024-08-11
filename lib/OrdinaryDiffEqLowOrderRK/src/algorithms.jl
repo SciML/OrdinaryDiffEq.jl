@@ -273,7 +273,20 @@ function FRK65(stage_limiter!, step_limiter! = trivial_limiter!; omega = 0.0)
     FRK65(stage_limiter!, step_limiter!, False(), omega)
 end
 
-@doc explicit_rk_docstring("To be done", "RKM")
+@doc explicit_rk_docstring("""Method designed to have good stability properties
+    when applied to pseudospectral discretizations
+    of hyperbolic partial differential equaitons.""",
+    "RKM",
+    references = """@article{mead1999optimal,
+    title={Optimal Runge--Kutta methods for first order pseudospectral operators},
+    author={Mead, JL and Renaut, RA},
+    journal={Journal of Computational Physics},
+    volume={152},
+    number={1},
+    pages={404--419},
+    year={1999},
+    publisher={Elsevier}
+  }""")
 Base.@kwdef struct RKM{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
