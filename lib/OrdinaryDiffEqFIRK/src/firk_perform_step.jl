@@ -1665,10 +1665,8 @@ end
         # compute norm of residuals
         iter > 1 && (ndwprev = ndw)
         ndws = Vector{BigFloat}(undef, s)
-        calculate_residuals!(atmp, dw[1], uprev, u, atol, rtol, internalnorm, t)
-        ndws[1] = internalnorm(atmp, t)
-        for i in 2:s
-            calculate_residuals!(atmp, dw[i - 1], uprev, u, atol, rtol, internalnorm, t)
+        for i in 1:s
+            calculate_residuals!(atmp, dw[i], uprev, u, atol, rtol, internalnorm, t)
             ndws[i] = internalnorm(atmp, t)
         end
 
