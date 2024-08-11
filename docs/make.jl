@@ -37,7 +37,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/HighOrderRK.md",
             "explicit/Verner.md",
             "explicit/Feagin.md",
-            "explicit/LowStorageRK.md"
+            "explicit/LowStorageRK.md",
+            "explicit/SSPRK.md"
         ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicitrk.md",

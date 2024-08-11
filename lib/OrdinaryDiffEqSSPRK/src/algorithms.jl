@@ -320,7 +320,20 @@ function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("TBD",
+@doc explicit_rk_docstring("To be done", "SHLDDRK_2N")
+Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
+    SHLDDRK_2N(stage_limiter!,
+        step_limiter!,
+        False())
+end
+
+@doc explicit_rk_docstring("To be done",
     "KYKSSPRK42")
 Base.@kwdef struct KYKSSPRK42{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
@@ -334,10 +347,8 @@ function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("TBD",
-    "KYK2014DGSSPRK_3S2")
-Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
-                   OrdinaryDiffEqAlgorithm
+@doc explicit_rk_docstring("To be done", "SHLDDRK52")
+Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
