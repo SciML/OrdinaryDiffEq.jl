@@ -16,7 +16,7 @@ function generic_solver_docstring(description::String,
         # Indent the keywords properly
         indentation = repeat(" ", length(name) + 3)
         # We do not indent the first kw and no newline for the last one
-        if length(keyword_default) > 1
+        if length(keywords_split) > 1
             keywords_split[1] = keywords_split[1] * "\n"
             for i in 2:(length(keywords_split) - 1)
                 keywords_split[i] = indentation * keywords_split[i] * "\n"

@@ -16,6 +16,9 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqFeagin,
         OrdinaryDiffEq.OrdinaryDiffEqSymplecticRK,
         OrdinaryDiffEq.OrdinaryDiffEqRKN,
+        OrdinaryDiffEq.OrdinaryDiffEqTsit5,
+        OrdinaryDiffEq.OrdinaryDiffEqLowOrderRK,
+        OrdinaryDiffEq.OrdinaryDiffEqHighOrderRK,
         OrdinaryDiffEq.OrdinaryDiffEqVerner,
         OrdinaryDiffEq.OrdinaryDiffEqSDIRK,
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
@@ -32,12 +35,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/Tsit5.md",
             "explicit/LowOrderRK.md",
             "explicit/HighOrderRK.md",
-            "explicit/Verner.md"
-        ],
-        "ODEProblem Solver Libraries" => [
-            "Explicit Solvers" =>[
-                "explicit/Tsit5.md"
-            ],
+            "explicit/Verner.md",
+            "explicit/Feagin.md"
         ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicitrk.md",
