@@ -34,14 +34,12 @@ function generic_solver_docstring(description::String,
         ```
 
         $solver_class
-        """ :
-                      """
-                      ```julia
-                      $name()
-                      ```
-
-                      $solver_class
-                  """
+        """ : """
+        ```julia
+        $name()
+        ```
+        $solver_class
+        """
 
     keyword_docstring = """
 
