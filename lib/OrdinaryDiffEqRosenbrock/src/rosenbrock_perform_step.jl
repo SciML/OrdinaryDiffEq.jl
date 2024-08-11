@@ -1140,7 +1140,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tf, uf, stages = cache
+    @unpack tf, uf = cache
     @unpack gamma, c, d, C, a = cache.tab
 
     # Precalculations
