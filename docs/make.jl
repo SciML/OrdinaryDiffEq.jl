@@ -30,7 +30,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         "Usage" => "usage.md",
         "Explicit Solvers" => [
             "explicit/Tsit5.md",
-            "explicit/LowOrderRK.md"
+            "explicit/LowOrderRK.md",
+            "explicit/HighOrderRK.md"
         ],
         "ODEProblem Solver Libraries" => [
             "Explicit Solvers" =>[
