@@ -623,7 +623,7 @@ end
     k[1] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
 
-    for i in 2:eachindex(A)
+    for i in 2:size(A)
         u = uprev + sum(A[i,j] * k[j] for j in 1:(i-1))
         du = f(u, p, t + c[i] * dt)
         integrator.stats.nf += 1
@@ -639,12 +639,12 @@ end
         integrator.stats.nsolve += 1
     end
 
-    u = uprev + sum(b[i] * k[i] for i in 1:eachindex(b))
+    u = uprev + sum(b[i] * k[i] for i in 1:size(b))
     integrator.fsallast = f(u, p, t + dt)
     integrator.stats.nf += 1
 
     if integrator.opts.adaptive
-        utilde = sum(btilde[i] * k[i] for i in 1:eachindex(btilde))
+        utilde = sum(btilde[i] * k[i] for i in 1:size(btilde))
         atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                                    integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
@@ -694,7 +694,7 @@ end
     k = Vector{typeof(k1)}(undef, length(A))
     
     # Stage calculation loop
-    for i in 1:eachindex(A)
+    for i in 1:size(A)
         @.. broadcast=false k[i] = -vecu
         integrator.stats.nsolve += 1
 
@@ -717,14 +717,14 @@ end
     end
 
     # Combine stages to get the final solution
-    u = uprev + sum(b[i] * k[i] for i in 1:eachindex(b))
+    u = uprev + sum(b[i] * k[i] for i in 1:size(b))
     step_limiter!(u, integrator, p, t + dt)
 
     integrator.fsallast = f(u, p, t + dt)
     integrator.stats.nf += 1
 
     if integrator.opts.adaptive
-        utilde = sum(btilde[i] * k[i] for i in 1:eachindex(btilde))
+        utilde = sum(btilde[i] * k[i] for i in 1:size(btilde))
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
             integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(atmp, t)
