@@ -3,7 +3,7 @@
 Preferred solvers for non-stiff problems at low tolerance.
 `Vern6`, `Vern7`, or `Vern8` are good methods for tolerances between `~1e-8-1e-12`,
 and using `Float64` numbers for the state of the differential equation.
-For even lower tolerances,`Vern9` should be used, combined with the more precise `BigFloat` number type. 
+For even lower tolerances,`Vern9` should be used, combined with the more precise `BigFloat` number type.
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")

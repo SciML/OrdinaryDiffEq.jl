@@ -411,7 +411,8 @@ end
     volume={44},
     pages={5210 - 5216}
     }")
-Base.@kwdef struct SIR54{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct SIR54{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -436,7 +437,8 @@ end
     title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
     journal = {Computational Mathematics and Mathematical Physics}
     }")
-Base.@kwdef struct Alshina2{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Alshina2{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
@@ -461,7 +463,8 @@ end
     title = {Optimal first- to sixth-order accurate Runge-Kutta schemes},
     journal = {Computational Mathematics and Mathematical Physics}
     }")
-Base.@kwdef struct Alshina3{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAdaptiveAlgorithm
+Base.@kwdef struct Alshina3{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAdaptiveAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
     thread::Thread = False()
