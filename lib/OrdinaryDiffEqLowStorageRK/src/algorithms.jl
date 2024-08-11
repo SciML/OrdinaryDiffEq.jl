@@ -1,5 +1,5 @@
 @doc explicit_rk_docstring(
-    "A second-order, five-stage explicit Runge-Kutta method for wave propagation
+    "A second-order, five-stage method for wave propagation
 equations. Fixed timestep only.", "ORK256",
     references = "Matteo Bernardini, Sergio Pirozzoli.
     A General Strategy for the Optimization of Runge-Kutta Schemes for Wave
@@ -78,7 +78,7 @@ function SHLDDRK52(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A fourth-order, five-stage explicit low-storage method of Carpenter and Kennedy
+    "A fourth-order, five-stage low-storage method of Carpenter and Kennedy
 (free 3rd order Hermite interpolant). Fixed timestep only. Designed for
 hyperbolic PDEs (stability properties).",
     "CarpenterKennedy2N54",
@@ -251,7 +251,7 @@ function DGLDDRK84_F(stage_limiter!, step_limiter! = trivial_limiter!;
 end
 
 @doc explicit_rk_docstring(
-    "A fourth-order, six-stage explicit low-storage method. Fixed timestep only.",
+    "A fourth-order, six-stage low-storage method. Fixed timestep only.",
     "SHLDDRK64",
     references = "D. Stanescu, W. G. Habashi.
     2N-Storage Low Dissipation and Dispersion Runge-Kutta Schemes for Computational
@@ -737,7 +737,7 @@ function CKLLSRK75_4M_5R(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
+    "A third-order, five-stage method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.",
     "RDPK3Sp35",
     references = "Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -757,7 +757,7 @@ function RDPK3Sp35(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A third-order, five-stage explicit Runge-Kutta method with embedded error estimator
+    "A third-order, five-stage method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.",
     "RDPK3SpFSAL35",
@@ -779,7 +779,7 @@ function RDPK3SpFSAL35(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
+    "A fourth-order, nine-stage method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.",
     "RDPK3Sp49",
     references = "Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -799,7 +799,7 @@ function RDPK3Sp49(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A fourth-order, nine-stage explicit Runge-Kutta method with embedded error estimator
+    "A fourth-order, nine-stage method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.",
     "RDPK3SpFSAL49",
@@ -821,7 +821,7 @@ function RDPK3SpFSAL49(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
+    "A fifth-order, ten-stage method with embedded error estimator
 designed for spectral element discretizations of compressible fluid mechanics.",
     "RDPK3Sp510",
     references = "Ranocha, Dalcin, Parsani, Ketcheson (2021)
@@ -841,7 +841,7 @@ function RDPK3Sp510(stage_limiter!, step_limiter! = trivial_limiter!)
 end
 
 @doc explicit_rk_docstring(
-    "A fifth-order, ten-stage explicit Runge-Kutta method with embedded error estimator
+    "A fifth-order, ten-stage method with embedded error estimator
 using the FSAL property designed for spectral element discretizations of
 compressible fluid mechanics.",
     "RDPK3SpFSAL510",
@@ -915,3 +915,18 @@ function NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!;
 end
 
 #SSP Optimized Runge-Kutta Methods
+
+@doc explicit_rk_docstring("To be done",
+    "KYK2014DGSSPRK_3S2")
+Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function KYK2014DGSSPRK_3S2(stage_limiter!, step_limiter! = trivial_limiter!)
+    KYK2014DGSSPRK_3S2(stage_limiter!,
+        step_limiter!,
+        False())
+end
