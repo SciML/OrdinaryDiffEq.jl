@@ -16,6 +16,7 @@ first_steps("OrdinaryDiffEqLowOrderRK", "BS3")
 ## Full list of solvers
 
 ```@docs
+Euler
 Heun
 Ralston
 Midpoint
