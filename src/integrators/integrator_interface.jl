@@ -113,7 +113,7 @@ end
 end
 
 # avoid method ambiguity
-# for typ in (Union{RadauIIA3, RadauIIA5, RadauIIA9})
+# for typ in (Union{RadauIIA3, RadauIIA5, RadauIIA9, AdaptiveRadau})
 #     @eval @inline function DiffEqBase.get_tmp_cache(integrator, alg::$typ,
 #             cache::OrdinaryDiffEqConstantCache)
 #         nothing
