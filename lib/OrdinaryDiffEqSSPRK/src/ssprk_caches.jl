@@ -216,176 +216,144 @@ function alg_cache(alg::SSPRK53, u, rate_prototype, ::Type{uEltypeNoUnits},
     SSPRK53ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
 end
 
-@cache struct SHLDDRK52Cache{uType, rateType, TabType, StageLimiter, StepLimiter, Thread} <:
+@cache struct KYK2014DGSSPRK_3S2_Cache{uType, rateType, TabType, StageLimiter, StepLimiter,
+    Thread} <:
               OrdinaryDiffEqMutableCache
     u::uType
     uprev::uType
     k::rateType
-    tmp::uType
     fsalfirst::rateType
     tab::TabType
+    #temporary values for Shu-Osher
+    u_1::uType
+    u_2::uType
+    kk_1::rateType
+    kk_2::rateType
     stage_limiter!::StageLimiter
     step_limiter!::StepLimiter
     thread::Thread
 end
 
-struct SHLDDRK52ConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
-    α2::T1
-    α3::T1
-    α4::T1
-    α5::T1
-    β1::T1
-    β2::T1
-    β3::T1
-    β4::T1
-    β5::T1
-    c2::T2
-    c3::T2
-    c4::T2
-    c5::T2
+struct KYK2014DGSSPRK_3S2_ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+    #These are not α and β for RK but for Shu-Osher
+    #see top of page 317 in
+    #Optimal Strong-Stability-Preserving Runge–Kutta Time Discretizations for
+    #Discontinuous Garlekin Methods, Kubatko, Yaeger, Ketcheson 2014
+    α_10::T
+    α_20::T
+    α_21::T
+    α_30::T
+    α_32::T
+    β_10::T
+    β_21::T
+    β_30::T
+    β_32::T
+    #Shu-Osher is normally stated for autonomous systems, the times
+    #are calculated by hand for this scheme
+    c_1::T
+    c_2::T
+
+    function KYK2014DGSSPRK_3S2_ConstantCache(T, T2)
+        α_10 = T(1.0)
+        α_20 = T(0.087353119859156)
+        α_21 = T(0.912646880140844)
+        α_30 = T(0.344956917166841)
+        α_32 = T(0.655043082833159)
+        β_10 = T(0.528005024856522)
+        β_21 = T(0.481882138633993)
+        β_30 = T(0.022826837460491)
+        β_32 = T(0.345866039233415)
+        c_1 = β_10
+        c_2 = α_21 * β_10 + β_21 # ==0.96376427726
+        new{T, T2}(α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2)
+    end
 end
 
-function SHLDDRK52ConstantCache(T1, T2)
-    α2 = T1(-0.6913065)
-    α3 = T1(-2.655155)
-    α4 = T1(-0.8147688)
-    α5 = T1(-0.6686587)
-    β1 = T1(0.1)
-    β2 = T1(0.75)
-    β3 = T1(0.7)
-    β4 = T1(0.479313)
-    β5 = T1(0.310392)
-    c2 = T2(0.1)
-    c3 = T2(0.3315201)
-    c4 = T2(0.4577796)
-    c5 = T2(0.8666528)
-    SHLDDRK52ConstantCache(α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5)
-end
-
-function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SHLDDRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function alg_cache(alg::SHLDDRK52, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
+    u_1 = zero(u)
+    u_2 = zero(u)
+    kk_1 = zero(rate_prototype)
+    kk_2 = zero(rate_prototype)
     k = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
-    tab = SHLDDRK52ConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-    SHLDDRK52Cache(u, uprev, k, tmp, fsalfirst, tab, alg.stage_limiter!, alg.step_limiter!,
-        alg.thread)
-end
-
-@cache mutable struct SHLDDRK_2NCache{uType, rateType, TabType, StageLimiter, StepLimiter,
-    Thread} <:
-                      OrdinaryDiffEqMutableCache
-    u::uType
-    uprev::uType
-    k::rateType
-    tmp::uType
-    fsalfirst::rateType
-    tab::TabType
-    step::Int
-    stage_limiter!::StageLimiter
-    step_limiter!::StepLimiter
-    thread::Thread
-end
-
-mutable struct SHLDDRK_2NConstantCache{T1, T2} <: OrdinaryDiffEqConstantCache
-    α21::T1
-    α31::T1
-    α41::T1
-    α51::T1
-    β11::T1
-    β21::T1
-    β31::T1
-    β41::T1
-    β51::T1
-    c21::T2
-    c31::T2
-    c41::T2
-    c51::T2
-
-    α22::T1
-    α32::T1
-    α42::T1
-    α52::T1
-    α62::T1
-    β12::T1
-    β22::T1
-    β32::T1
-    β42::T1
-    β52::T1
-    β62::T1
-    c22::T2
-    c32::T2
-    c42::T2
-    c52::T2
-    c62::T2
-
-    step::Int
-end
-
-function SHLDDRK_2NConstantCache(T1, T2)
-    α21 = T1(-0.6051226)
-    α31 = T1(-2.0437564)
-    α41 = T1(-0.7406999)
-    α51 = T1(-4.4231765)
-    β11 = T1(0.2687454)
-    β21 = T1(0.8014706)
-    β31 = T1(0.5051570)
-    β41 = T1(0.5623568)
-    β51 = T1(0.0590065)
-    c21 = T2(0.2687454)
-    c31 = T2(0.5852280)
-    c41 = T2(0.6827066)
-    c51 = T2(1.1646854)
-
-    α22 = T1(-0.4412737)
-    α32 = T1(-1.0739820)
-    α42 = T1(-1.7063570)
-    α52 = T1(-2.7979293)
-    α62 = T1(-4.0913537)
-    β12 = T1(0.1158488)
-    β22 = T1(0.3728769)
-    β32 = T1(0.7379536)
-    β42 = T1(0.5798110)
-    β52 = T1(1.0312849)
-    β62 = T1(0.15)
-    c22 = T2(0.1158485)
-    c32 = T2(0.3241850)
-    c42 = T2(0.6193208)
-    c52 = T2(0.8034472)
-    c62 = T2(0.9184166)
-    SHLDDRK_2NConstantCache(
-        α21, α31, α41, α51, β11, β21, β31, β41, β51, c21, c31, c41, c51,
-        α22, α32, α42, α52, α62, β12, β22, β32, β42, β52, β62, c22, c32,
-        c42, c52, c62, 1)
-end
-
-function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits), constvalue(tTypeNoUnits))
-end
-
-function alg_cache(alg::SHLDDRK_2N, u, rate_prototype, ::Type{uEltypeNoUnits},
-        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
-        dt, reltol, p, calck,
-        ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    tmp = zero(u)
-    k = zero(rate_prototype)
-    fsalfirst = zero(rate_prototype)
-    tab = SHLDDRK_2NConstantCache(constvalue(uBottomEltypeNoUnits),
+    tab = KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
         constvalue(tTypeNoUnits))
-    SHLDDRK_2NCache(u, uprev, k, tmp, fsalfirst, tab, 1, alg.stage_limiter!,
-        alg.step_limiter!, alg.thread)
+    KYK2014DGSSPRK_3S2_Cache(u, uprev, k, fsalfirst, tab, u_1, u_2, kk_1, kk_2,
+        alg.stage_limiter!, alg.step_limiter!, alg.thread)
+end
+
+function alg_cache(alg::KYK2014DGSSPRK_3S2, u, rate_prototype, ::Type{uEltypeNoUnits},
+        ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
+        dt, reltol, p, calck,
+        ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
+    KYK2014DGSSPRK_3S2_ConstantCache(constvalue(uBottomEltypeNoUnits),
+        constvalue(tTypeNoUnits))
+end
+
+function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache)
+    integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+    integrator.stats.nf += 1
+    integrator.kshortsize = 2
+    integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    return nothing
+end
+
+@muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_ConstantCache,
+        repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache
+    u_1 = α_10 * uprev + dt * β_10 * integrator.fsalfirst
+    u_2 = (α_20 * uprev +
+           α_21 * u_1 + dt * β_21 * f(u_1, p, t + c_1 * dt))
+    integrator.u = (α_30 * uprev + dt * β_30 * integrator.fsalfirst +
+                    α_32 * u_2 + dt * β_32 * f(u_2, p, t + c_2 * dt))
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = f(integrator.u, p, t + dt) # For interpolation, then FSAL'd
+    integrator.stats.nf += 3
+    integrator.fsallast = integrator.k[2]
+    return nothing
+end
+
+function initialize!(integrator, cache::KYK2014DGSSPRK_3S2_Cache)
+    @unpack k, fsalfirst = cache
+    integrator.fsalfirst = fsalfirst
+    integrator.fsallast = k
+    integrator.kshortsize = 2
+    resize!(integrator.k, integrator.kshortsize)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # FSAL for interpolation
+    integrator.stats.nf += 1
+    return nothing
+end
+
+@muladd function perform_step!(integrator, cache::KYK2014DGSSPRK_3S2_Cache,
+        repeat_step = false)
+    @unpack t, dt, uprev, u, f, p = integrator
+    @unpack k, fsalfirst, u_1, u_2, kk_1, kk_2, stage_limiter!, step_limiter!, thread = cache
+    @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache.tab
+
+    @.. broadcast=false thread=thread u_1=α_10 * uprev + dt * β_10 * integrator.fsalfirst
+    stage_limiter!(u_1, integrator, p, t + c_1 * dt)
+    f(kk_1, u_1, p, t + c_1 * dt)
+    @.. broadcast=false thread=thread u_2=(α_20 * uprev +
+                                           α_21 * u_1 + dt * β_21 * kk_1)
+    stage_limiter!(u_2, integrator, p, t + c_2 * dt)
+    f(kk_2, u_2, p, t + c_2 * dt)
+    @.. broadcast=false thread=thread u=(α_30 * uprev +
+                                         dt * β_30 * integrator.fsalfirst +
+                                         α_32 * u_2 + dt * β_32 * kk_2)
+    stage_limiter!(u, integrator, p, t + dt)
+    step_limiter!(u, integrator, p, t + dt)
+    f(integrator.k[2], u, p, t + dt) # For interpolation, then FSAL'd
+    integrator.stats.nf += 3
+    return nothing
 end
 
 @cache struct SSPRK53_2N1Cache{

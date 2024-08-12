@@ -30,9 +30,9 @@ alg_order(alg::SSPRKMSVS43) = 3
 alg_order(alg::SSPRK932) = 3
 alg_order(alg::SSPRK54) = 4
 alg_order(alg::SSPRK104) = 4
-alg_order(alg::SHLDDRK_2N) = 4
-alg_order(alg::SHLDDRK52) = 2
+alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 
+ssp_coefficient(alg::KYK2014DGSSPRK_3S2) = 0.8417
 ssp_coefficient(alg::SSPRK53_2N1) = 2.18
 ssp_coefficient(alg::SSPRK53_2N2) = 2.148
 ssp_coefficient(alg::SSPRK53) = 2.65
