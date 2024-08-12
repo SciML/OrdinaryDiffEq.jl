@@ -11,5 +11,7 @@ first_steps("OrdinaryDiffEqNordsieck", "AN5")
 
 ```@docs
 AN5
+JVODE
+JVODE_Adams
+JVODE_BDF
 ```
-`JVODE` still needs to be properly documented.
