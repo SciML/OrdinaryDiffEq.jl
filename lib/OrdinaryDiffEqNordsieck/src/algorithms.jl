@@ -8,7 +8,7 @@
 struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 """
 !!! warning "Experimental"
-    `JVODE` is experimental, the solver `FBDF` is generally preferred.
+    `JVODE` is experimental, the solver `VCABM` is generally preferred.
 """
 struct JVODE{bType, aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
     algorithm::Symbol
