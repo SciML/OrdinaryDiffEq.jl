@@ -43,12 +43,11 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/LowStorageRK.md",
             "explicit/SSPRK.md",
             "explicit/AdamsBashforthMoulton.md",
-            "explicit/Nordsieck.md"
+            "explicit/Nordsieck.md",
+            "explicit/RKN.md",
+            "explicit/SymplecticRK.md"
         ],
-        "Misc solvers" => ["misc/RKN.md"],
         "Standard Non-Stiff ODEProblem Solvers" => [
-            "nonstiff/explicitrk.md",
-            "nonstiff/lowstorage_ssprk.md",
             "nonstiff/explicit_extrapolation.md",
             "nonstiff/nonstiff_multistep.md"
         ],
@@ -59,10 +58,6 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "stiff/sdirk.md",
             "stiff/stiff_multistep.md",
             "stiff/implicit_extrapolation.md"
-        ],
-        "Second Order and Dynamical ODE Solvers" => [
-            "dynamical/nystrom.md",
-            "dynamical/symplectic.md"
         ],
         "IMEX Solvers" => [
             "imex/imex_multistep.md",
