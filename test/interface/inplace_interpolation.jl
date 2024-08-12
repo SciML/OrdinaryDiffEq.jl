@@ -37,4 +37,9 @@ out_VMF = vecarrzero(ntt, size(prob_ode_2Dlinear.u0))   # Vector{Matrix{Float64}
         @test sol_ODE_2D(out_VMF, tt) isa Vector{Matrix{Float64}}
         @test sol_ODE_2D_interp.u ≈ out_VMF
     end
+
+    @testset "Interpolation stripping" begin 
+        @test isnothing(strip_interpolation(sol_ODE.interp).f)
+    end
 end
+
