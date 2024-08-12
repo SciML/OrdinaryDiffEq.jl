@@ -21,6 +21,7 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
         OrdinaryDiffEq.OrdinaryDiffEqHighOrderRK,
         OrdinaryDiffEq.OrdinaryDiffEqVerner,
         OrdinaryDiffEq.OrdinaryDiffEqAdamsBashforthMoulton,
+        OrdinaryDiffEq.OrdinaryDiffEqNordsieck,
         OrdinaryDiffEq.OrdinaryDiffEqSDIRK,
         OrdinaryDiffEq.OrdinaryDiffEqBDF,
         OrdinaryDiffEq.OrdinaryDiffEqDefault,
@@ -40,7 +41,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/Feagin.md",
             "explicit/LowStorageRK.md",
             "explicit/SSPRK.md",
-            "explicit/AdamsBashforthMoulton.md"
+            "explicit/AdamsBashforthMoulton.md",
+            "explicit/Nordsieck.md"
         ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicitrk.md",

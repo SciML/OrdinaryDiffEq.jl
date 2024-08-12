@@ -1,8 +1,10 @@
 # Adams/BDF methods in Nordsieck forms
-"""
-AN5: Adaptive step size Adams explicit Method
-An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
-"""
+@doc generic_solver_docstring("An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.",
+    "AN5",
+    "Adaptive step size Adams explicit Method",
+    "",
+    "",
+    "")
 struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE{bType, aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
     algorithm::Symbol
