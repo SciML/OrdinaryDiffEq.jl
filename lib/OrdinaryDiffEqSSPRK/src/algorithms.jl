@@ -320,7 +320,16 @@ function SSPRK33(stage_limiter!, step_limiter! = trivial_limiter!)
         step_limiter!, False())
 end
 
-@doc explicit_rk_docstring("To be done", "SHLDDRK_2N")
+@doc explicit_rk_docstring("Low dissipation and dispersion Runge-Kutta schemes for computational acoustics", "SHLDDRK_2N",
+    references = "@article{stanescu19982n,
+    title={2N-storage low dissipation and dispersion Runge-Kutta schemes for computational acoustics},
+    author={Stanescu, D and Habashi, WG},
+    journal={Journal of Computational Physics},
+    volume={143},
+    number={2},
+    pages={674--681},
+    year={1998},
+    publisher={Elsevier}}")
 Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -333,8 +342,15 @@ function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("To be done",
-    "KYKSSPRK42")
+@doc explicit_rk_docstring("Optimal strong-stability-preserving Runge-Kutta time discretizations for discontinuous Galerkin methods", "KYKSSPRK42",
+    references = "@article{kubatko2014optimal,
+    title={Optimal strong-stability-preserving Runge--Kutta time discretizations for discontinuous Galerkin methods},
+    author={Kubatko, Ethan J and Yeager, Benjamin A and Ketcheson, David I},
+    journal={Journal of Scientific Computing},
+    volume={60},
+    pages={313--344},
+    year={2014},
+    publisher={Springer}}")
 Base.@kwdef struct KYKSSPRK42{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
@@ -347,7 +363,16 @@ function KYKSSPRK42(stage_limiter!, step_limiter! = trivial_limiter!)
         False())
 end
 
-@doc explicit_rk_docstring("To be done", "SHLDDRK52")
+@doc explicit_rk_docstring("Low dissipation and dispersion Runge-Kutta schemes for computational acoustics", "SHLDDRK52",
+    references = "@article{stanescu19982n,
+    title={2N-storage low dissipation and dispersion Runge-Kutta schemes for computational acoustics},
+    author={Stanescu, D and Habashi, WG},
+    journal={Journal of Computational Physics},
+    volume={143},
+    number={2},
+    pages={674--681},
+    year={1998},
+    publisher={Elsevier}}")
 Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
     stage_limiter!::StageLimiter = trivial_limiter!
     step_limiter!::StepLimiter = trivial_limiter!
