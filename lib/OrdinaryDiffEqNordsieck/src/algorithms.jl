@@ -1,5 +1,8 @@
 # Adams/BDF methods in Nordsieck forms
-@doc generic_solver_docstring("An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.",
+@doc generic_solver_docstring("""An adaptive 5th order fixed-leading coefficient Adams method in Nordsieck form.
+    !!! warning "Experimental"
+        `AN5` is experimental, the solver `VCABM` is generally preferred.
+    """,
     "AN5",
     "Adaptive step size Adams explicit Method",
     "",
