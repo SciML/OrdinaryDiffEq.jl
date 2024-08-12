@@ -59,3 +59,15 @@ function InterpolationData(id::InterpolationData, f)
         id.differential_vars,
         id.sensitivitymode)
 end
+
+# strip interpolation of function information
+function SciMLBase.strip_interpolation(id::InterpolationData)
+    InterpolationData(nothing, id.timeseries,
+        id.ts,
+        id.ks,
+        id.alg_choice,
+        id.dense,
+        id.cache,
+        id.differential_vars,
+        id.sensitivitymode)
+end
