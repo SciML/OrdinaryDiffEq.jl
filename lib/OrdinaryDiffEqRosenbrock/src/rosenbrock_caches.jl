@@ -3,7 +3,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-@cache mutable struct RosenbrockConstantCache{T, TF, UF, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
+@cache mutable struct RosenbrockConstantCache{T, TF, UF, Tab, JType, WType, F, AD} <: OrdinaryDiffEqConstantCache
     c₃₂::T
     d::T
     tf::TF
