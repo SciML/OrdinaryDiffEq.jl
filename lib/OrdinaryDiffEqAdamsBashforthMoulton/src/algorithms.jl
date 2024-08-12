@@ -20,9 +20,8 @@ struct AB3 <: OrdinaryDiffEqAlgorithm end
     "",
     "")
 struct AB4 <: OrdinaryDiffEqAlgorithm end
-
-@doc generic_solver_docstring("The 3-step third order multistep method.
-    Ralston's Second Order Method is used to calculate starting values.",
+@doc generic_solver_docstring("The 5-step fifth order multistep method.
+    Ralston's 3rd order Runge-Kutta method is used to calculate starting values.",
     "AB5",
     "Adams-Bashforth Explicit Method",
     reference,
