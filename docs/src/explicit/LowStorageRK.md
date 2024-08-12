@@ -1,6 +1,10 @@
 # OrdinaryDiffEqLowStorageRK
 
-Solvers specialized on certain PDE types.
+These methods are designed to have reduced register requirements, allowing for larger sets of ODEs to more
+easily fit into RAM. For example, while the 5th order Tsit5 requires around 9 concurrent instantiations of the
+ODE state `u`, `RDPK3Sp510` can achieve 5th order with 3 registers, effectively requiring 1/3 of the memory.
+However, there are some efficiency trade-offs used in the design of the low-storage RK methods, and thus they
+are generally only recommended in situations which are RAM bound, like large-scale PDE discretizations.
 
 ```@eval
 first_steps = evalfile("./common_first_steps.jl")
