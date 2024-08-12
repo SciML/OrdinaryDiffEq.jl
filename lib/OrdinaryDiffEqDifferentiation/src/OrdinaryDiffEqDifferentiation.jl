@@ -16,8 +16,6 @@ using DiffEqBase
 import LinearAlgebra
 import LinearAlgebra: Diagonal, I, UniformScaling, diagind, mul!, lmul!, axpby!, opnorm
 import SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros
-
-import InteractiveUtils
 import ArrayInterface
 
 import StaticArrayInterface
@@ -53,6 +51,7 @@ else
     struct OrdinaryDiffEqTag end
 end
 
+include("utils.jl")
 include("alg_utils.jl")
 include("linsolve_utils.jl")
 include("derivative_utils.jl")
