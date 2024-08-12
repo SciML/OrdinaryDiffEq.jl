@@ -1,5 +1,4 @@
-function initialize!(integrator, cache::Union{Rosenbrock23Cache,
-        Rosenbrock32Cache})
+function initialize!(integrator, cache::Union{RosenbrockCache})
     integrator.kshortsize = 2
     @unpack k₁, k₂, fsalfirst, fsallast = cache
     integrator.fsalfirst = fsalfirst
@@ -24,7 +23,7 @@ function initialize!(integrator,
     integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, opts = integrator
     @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack c₃₂, d = cache.tab
@@ -136,7 +135,7 @@ end
     cache.linsolve = linres.cache
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, opts = integrator
     @unpack k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W, tmp, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack c₃₂, d = cache.tab
@@ -393,7 +392,7 @@ end
 end
 
 function initialize!(integrator,
-        cache::Union{RosenbrockonstantCache})
+        cache::Union{RosenbrockConstantCache})
     integrator.kshortsize = 2
     integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -406,9 +405,7 @@ function initialize!(integrator,
 end
 
 function initialize!(integrator,
-        cache::Union{Rosenbrock33Cache,
-            Rosenbrock34Cache,
-            Rosenbrock4Cache})
+        cache::Union{RosenbrockCache})
     integrator.kshortsize = 2
     @unpack fsalfirst, fsallast = cache
     integrator.fsalfirst = fsalfirst
@@ -492,7 +489,7 @@ end
     return nothing
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a21, a31, a32, C21, C31, C32, b1, b2, b3, btilde1, btilde2, btilde3, gamma, c2, c3, d1, d2, d3 = cache.tab
@@ -654,7 +651,7 @@ end
 end
 
 
-@muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack A, C, b, btilde, gamma, c, d = cache.tab  # Coefficients from the tableau
@@ -903,7 +900,7 @@ end
     return nothing
 end
 
-function initialize!(integrator, cache::Union{Rodas23WCache, Rodas3PCache})
+function initialize!(integrator, cache::Union{RosenbrockCache})
     integrator.kshortsize = 3
     @unpack dense1, dense2, dense3 = cache
     resize!(integrator.k, integrator.kshortsize)
@@ -913,7 +910,7 @@ function initialize!(integrator, cache::Union{Rodas23WCache, Rodas3PCache})
 end
 
 @muladd function perform_step!(
-        integrator, cache::Union{Rodas23WCache, Rodas3PCache}, repeat_step = false)
+        integrator, cache::Union{RosenbrockCache}, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a21, a41, a42, a43, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, gamma, c2, c3, d1, d2, d3 = cache.tab
@@ -1213,7 +1210,7 @@ end
     return nothing
 end
 
-function initialize!(integrator, cache::Rodas4Cache)
+function initialize!(integrator, cache::RosenbrockCache)
     integrator.kshortsize = 2
     @unpack dense1, dense2 = cache
     resize!(integrator.k, integrator.kshortsize)
@@ -1221,7 +1218,7 @@ function initialize!(integrator, cache::Rodas4Cache)
     integrator.k[2] = dense2
 end
 
-@muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, dT, J, W, uf, tf, k1, k2, k3, k4, k5, k6, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, gamma, c2, c3, c4, d1, d2, d3, d4 = cache.tab
@@ -1497,7 +1494,7 @@ end
     return nothing
 end
 
-function initialize!(integrator, cache::Rosenbrock5Cache)
+function initialize!(integrator, cache::RosenbrockCache)
     integrator.kshortsize = 3
     @unpack dense1, dense2, dense3 = cache
     resize!(integrator.k, integrator.kshortsize)
@@ -1506,7 +1503,7 @@ function initialize!(integrator, cache::Rosenbrock5Cache)
     integrator.k[3] = dense3
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
