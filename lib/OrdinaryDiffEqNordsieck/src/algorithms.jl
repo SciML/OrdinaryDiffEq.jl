@@ -24,7 +24,7 @@ function JVODE(algorithm = :Adams; bias1 = 6, bias2 = 6, bias3 = 10,
 end
 """
 !!! warning "Experimental"
-    `JVODE` is experimental, the solver `FBDF` is generally preferred.
+    `JVODE` is experimental, the solver `VCABM` is generally preferred.
 """
 JVODE_Adams(; kwargs...) = JVODE(:Adams; kwargs...)
 """
