@@ -84,21 +84,6 @@ uses_uprev(alg::CKLLSRK65_4M_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
 
-"""
-    ssp_coefficient(alg)
-
-Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
-`dt` with `alg` can be written as a convex combination of explicit Euler steps
-with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
-
-# Examples
-
-```julia-repl
-julia> ssp_coefficient(SSPRK104())
-6
-```
-"""
-
 function default_controller(alg::RDPK3Sp35, cache, qoldinit, args...)
     QT = typeof(qoldinit)
     return PIDController(map(Base.Fix1(convert, QT), (0.64, -0.31, 0.04))...)
