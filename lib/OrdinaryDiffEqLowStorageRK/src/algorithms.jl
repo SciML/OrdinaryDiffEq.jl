@@ -22,32 +22,6 @@ function ORK256(stage_limiter!,
     ORK256(stage_limiter!, step_limiter!, False(), williamson_condition)
 end
 
-@doc explicit_rk_docstring("TBD", "SHLDDRK_2N")
-Base.@kwdef struct SHLDDRK_2N{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SHLDDRK_2N(stage_limiter!, step_limiter! = trivial_limiter!)
-    SHLDDRK_2N(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
-@doc explicit_rk_docstring("TBD", "SHLDDRK52")
-Base.@kwdef struct SHLDDRK52{StageLimiter, StepLimiter, Thread} <: OrdinaryDiffEqAlgorithm
-    stage_limiter!::StageLimiter = trivial_limiter!
-    step_limiter!::StepLimiter = trivial_limiter!
-    thread::Thread = False()
-end
-# for backwards compatibility
-function SHLDDRK52(stage_limiter!, step_limiter! = trivial_limiter!)
-    SHLDDRK52(stage_limiter!,
-        step_limiter!,
-        False())
-end
-
 @doc explicit_rk_docstring(
     "7-stage, third order low-storage low-dissipation, low-dispersion scheme for
 discontinuous Galerkin space discretizations applied to wave propagation problems.
@@ -912,4 +886,21 @@ function NDBLSRK134(stage_limiter!, step_limiter! = trivial_limiter!;
     NDBLSRK134(stage_limiter!,
         step_limiter!, False(),
         williamson_condition)
+end
+
+#SSP Optimized Runge-Kutta Methods
+
+@doc explicit_rk_docstring("TBD",
+    "KYK2014DGSSPRK_3S2")
+Base.@kwdef struct KYK2014DGSSPRK_3S2{StageLimiter, StepLimiter, Thread} <:
+                   OrdinaryDiffEqAlgorithm
+    stage_limiter!::StageLimiter = trivial_limiter!
+    step_limiter!::StepLimiter = trivial_limiter!
+    thread::Thread = False()
+end
+# for backwards compatibility
+function KYK2014DGSSPRK_3S2(stage_limiter!, step_limiter! = trivial_limiter!)
+    KYK2014DGSSPRK_3S2(stage_limiter!,
+        step_limiter!,
+        False())
 end
