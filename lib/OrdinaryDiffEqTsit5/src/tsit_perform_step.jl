@@ -141,7 +141,7 @@ end
         g7 = u
         # Hairer II, page 22 modified to use the Inf norm
         integrator.eigen_est = integrator.opts.internalnorm(
-            maximum(abs.(k7 .- k6) ./ (g7 .- g6)), t)
+            maximum(abs.((k7 .- k6) ./ (g7 .- g6))), t)
     end
     if integrator.opts.adaptive
         utilde = dt *
