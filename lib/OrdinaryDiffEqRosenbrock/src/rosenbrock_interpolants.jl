@@ -1,11 +1,6 @@
 ### Fallbacks to capture
 
-ROSENBROCKS_WITH_INTERPOLATIONS = Union{Rosenbrock23ConstantCache, Rosenbrock23Cache,
-    Rosenbrock32ConstantCache, Rosenbrock32Cache,
-    Rodas23WConstantCache, Rodas3PConstantCache,
-    Rodas23WCache, Rodas3PCache,
-    Rodas4ConstantCache, Rosenbrock5ConstantCache,
-    Rodas4Cache, Rosenbrock5Cache}
+ROSENBROCKS_WITH_INTERPOLATIONS = Union{RosenbrockConstantCache, RosenbrockCache}
 
 function _ode_interpolant(Θ, dt, y₀, y₁, k,
         cache::ROSENBROCKS_WITH_INTERPOLATIONS,
