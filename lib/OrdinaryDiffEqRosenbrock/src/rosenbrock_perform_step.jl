@@ -140,6 +140,14 @@ end
         @.. broadcast=false linsolve_tmp=du + dtd2 * dT + du2
     end
 
+    if mass_matrix === I
+        @.. broadcast=false linsolve_tmp=fsalfirst + dtd2 * dT + dtC21 * k1
+    else
+        @.. broadcast=false du1=dtC21 * k1
+        mul!(_vec(du2), mass_matrix, _vec(du1))
+        @.. broadcast=false linsolve_tmp=fsalfirst + dtd2 * dT + du2
+    end
+
     @.. broadcast=false u=uprev + a31 * k1 + a32 * k2
     stage_limiter!(u, integrator, p, t + c3 * dt)
     f(du, u, p, t + c3 * dt)
@@ -190,6 +198,8 @@ end
     veck3 = _vec(k3)
     @.. broadcast=false veck3=-vecu
     integrator.stats.nsolve += 1
+    stage_limiter!(u, integrator, p, t + dt)
+    f(du, u, p, t + dt)
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     @.. broadcast=false $(_vec(k3))=-linres.u
@@ -229,6 +239,12 @@ end
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     @.. broadcast=false $(_vec(k4))=-linres.u
     integrator.stats.nsolve += 1
+
+    @.. broadcast=false u=uprev + b1 * k1 + b2 * k2 + b3 * k3 + b4 * k4
+    step_limiter!(u, integrator, p, t + dt)
+
+    f(fsallast, u, p, t + dt)
+    integrator.stats.nf += 1
 
     @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
     stage_limiter!(u, integrator, p, t + dt)
@@ -825,86 +841,6 @@ end
 
 ################################################################################
 
-
-@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack du, du1, du2, fsalfirst, fsallast, k1, k2, k3, k4, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
-    @unpack A, C, b, btilde, gamma, c, d = cache.tab  # Coefficients from the tableau
-
-    # Assignments
-    sizeu = size(u)
-    mass_matrix = integrator.f.mass_matrix
-    utilde = du
-
-    # Precalculations
-    dtC = C ./ dt
-    dtd = dt .* d
-    dtgamma = dt * gamma
-
-    # Differentiation
-    calc_rosenbrock_differentiation!(integrator, cache, dtd[1], dtgamma, repeat_step, true)
-    
-    calculate_residuals!(weight, fill!(weight, one(eltype(u))), uprev, uprev,
-        integrator.opts.abstol, integrator.opts.reltol,
-        integrator.opts.internalnorm, t)
-
-    # Linear solve setup
-    if repeat_step
-        linres = dolinsolve(integrator, cache.linsolve; A = nothing, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    else
-        linres = dolinsolve(integrator, cache.linsolve; A = W, b = _vec(linsolve_tmp),
-            du = integrator.fsalfirst, u = u, p = p, t = t, weight = weight,
-            solverdata = (; gamma = dtgamma))
-    end
-
-    vecu = _vec(linres.u)
-    k = Vector{typeof(k1)}(undef, length(A))
-    
-    # Stage calculation loop
-    for i in 1:size(A)
-        @.. broadcast=false k[i] = -vecu
-        integrator.stats.nsolve += 1
-
-        if i < length(A)  # Skip the last iteration for k computation
-            u = uprev + sum(A[i,j] * k[j] for j in 1:(i-1))
-            du = f(u, p, t + c[i] * dt)
-            integrator.stats.nf += 1
-
-            if mass_matrix === I
-                linsolve_tmp = du + dtd[i+1] * dT + dtC[i] * k[i]
-            else
-                du1 = dtC[i] * k[i]
-                mul!(_vec(du2), mass_matrix, _vec(du1))
-                linsolve_tmp = du + dtd[i+1] * dT + du2
-            end
-
-            linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
-            vecu = _vec(linres.u)
-        end
-    end
-
-    # Combine stages to get the final solution
-    u = uprev + sum(b[i] * k[i] for i in 1:size(b))
-    step_limiter!(u, integrator, p, t + dt)
-
-    integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if integrator.opts.adaptive
-        utilde = sum(btilde[i] * k[i] for i in 1:size(btilde))
-        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    cache.linsolve = linres.cache
-    return nothing
-end
-
-################################################################################
-
 #### ROS2 type method
 
 @ROS2(:init)
@@ -1019,84 +955,6 @@ function initialize!(integrator, cache::RosenbrockConstantCache)
     # Avoid undefined entries if k is an array of arrays
     integrator.k[1] = zero(integrator.u)
     integrator.k[2] = zero(integrator.u)
-end
-
-@muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tf, uf = cache
-    @unpack gamma, c, d, C, a = cache.tab
-
-    # Precalculations
-    dtC = C / dt
-    dtd = dt * d
-    dtgamma = dt * gamma
-
-    mass_matrix = integrator.f.mass_matrix
-
-    # Time derivative
-    tf.u = uprev
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-    if !issuccess_W(W)
-        integrator.EEst = 2
-        return nothing
-    end
-
-    du = f(uprev, p, t)
-    integrator.stats.nf += 1
-
-    k = Array{typeof(uprev)}(undef, length(d))
-
-    linsolve_tmp = du + dtd1 * dT
-
-    k[1] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u = uprev + a[2, 1] * k[1]
-    du = f(u, p, t + c[2] * dt)
-    integrator.stats.nf += 1
-
-    for i in 2:length(d)
-        if mass_matrix === I
-            linsolve_tmp = du + dtd[i] * dT + sum(dtC[i, 1:i-1] .* k[1:i-1])
-        else
-            linsolve_tmp = du + dtd[i] * dT + mass_matrix * sum(dtC[i, 1:i-1] .* k[1:i-1])
-        end
-
-        k[i] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-        integrator.stats.nsolve += 1
-        u += sum(a[i+1, 1:i] .* k[1:i])
-        du = f(u, p, t + c[i+1] * dt)
-        integrator.stats.nf += 1
-    end
-
-    u += k[end]
-    du = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if mass_matrix === I
-        linsolve_tmp = du + sum(dtC[end, :] .* k)
-    else
-        linsolve_tmp = du + mass_matrix * sum(dtC[end, :] .* k)
-    end
-
-    k[end] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-    u += k[end]
-
-    if integrator.opts.adaptive
-        atmp = calculate_residuals(k[end], uprev, u, integrator.opts.abstol,
-            integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    if integrator.opts.calck
-        @unpack h = cache.tab
-        integrator.k[1] = sum(h[1, :] .* k)
-        integrator.k[2] = sum(h[2, :] .* k)
-    end
-    integrator.u = u
-    return nothing
 end
 
 function initialize!(integrator, cache::RosenbrockCache)
