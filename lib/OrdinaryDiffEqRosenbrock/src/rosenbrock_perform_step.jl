@@ -500,6 +500,7 @@ end
     mass_matrix = integrator.f.mass_matrix
 
     # Time derivative
+    tf.u = uprev
     dT = calc_tderivative(integrator, cache)
 
     W = calc_W(integrator, cache, dtgamma, repeat_step, true)
@@ -696,64 +697,6 @@ end
 end
 
 ################################################################################
-
-@muladd function perform_step!(integrator, cache::RosenbrockConstantCache, repeat_step = false)
-    @unpack t, dt, uprev, u, f, p = integrator
-    @unpack tf, uf = cache
-    @unpack A, C, b, btilde, gamma, c, d = cache.tab
-
-    # Precalculations
-    dtC = C ./ dt
-    dtd = dt .* d
-    dtgamma = dt * gamma
-
-    mass_matrix = integrator.f.mass_matrix
-    tf.u = uprev
-    dT = calc_tderivative(integrator, cache)
-
-    W = calc_W(integrator, cache, dtgamma, repeat_step, true)
-    if !issuccess_W(W)
-        integrator.EEst = 2
-        return nothing
-    end
-
-    k = Vector{typeof(uprev)}(undef, length(A))
-    linsolve_tmp = integrator.fsalfirst + dtd[1] * dT
-    k[1] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-    integrator.stats.nsolve += 1
-
-    for i in 2:size(A)
-        u = uprev + sum(A[i,j] * k[j] for j in 1:(i-1))
-        du = f(u, p, t + c[i] * dt)
-        integrator.stats.nf += 1
-
-        if mass_matrix === I
-            linsolve_tmp = du + dtd[i] * dT + sum(dtC[i,j] * k[j] for j in 1:(i-1))
-        else
-            temp = sum(dtC[i,j] * k[j] for j in 1:(i-1))
-            linsolve_tmp = du + dtd[i] * dT + mass_matrix * temp
-        end
-
-        k[i] = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
-        integrator.stats.nsolve += 1
-    end
-
-    u = uprev + sum(b[i] * k[i] for i in 1:size(b))
-    integrator.fsallast = f(u, p, t + dt)
-    integrator.stats.nf += 1
-
-    if integrator.opts.adaptive
-        utilde = sum(btilde[i] * k[i] for i in 1:size(btilde))
-        atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                   integrator.opts.reltol, integrator.opts.internalnorm, t)
-        integrator.EEst = integrator.opts.internalnorm(atmp, t)
-    end
-
-    integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
-    integrator.u = u
-    return nothing
-end
 
 
 @muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
