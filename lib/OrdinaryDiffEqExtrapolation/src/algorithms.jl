@@ -3,24 +3,62 @@ abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <:
 abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ} <:
               OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS, AD, FDT, ST, CJ} end
 
-"""
-AitkenNeville: Parallelized Explicit Extrapolation Method
-Euler extrapolation using Aitken-Neville with the Romberg Sequence.
-"""
-struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-    max_order::Int
-    min_order::Int
-    init_order::Int
-    threading::TO
+@doc generic_solver_docstring("Euler extrapolation using Aitken-Neville with the Romberg Sequence.",
+    "AitkenNeville",
+    "Parallelized Explicit Extrapolation Method.",
+    "TBD",
+    """
+    - `max_order`: TBD
+    - `min_order`: TBD
+    - `init_order`: TBD
+    - `threading`: TBD
+    """,
+    """
+    max_order::Int = 10,
+    min_order::Int = 1,
+    init_order = 3,
+    threading = false
+    """)
+Base.@kwdef struct AitkenNeville{TO} <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+    max_order::Int = 10
+    min_order::Int = 1
+    init_order::Int = 5
+    threading::TO = false
 end
-function AitkenNeville(; max_order = 10, min_order = 1, init_order = 5, threading = false)
-    AitkenNeville(max_order, min_order, init_order, threading)
-end
-"""
-ImplicitEulerExtrapolation: Parallelized Implicit Extrapolation Method
-Extrapolation of implicit Euler method with Romberg sequence.
-Similar to Hairer's SEULEX.
-"""
+
+@doc generic_solver_docstring("Extrapolation of implicit Euler method with Romberg sequence.
+    Similar to Hairer's SEULEX.",
+    "ImplicitEulerExtrapolation",
+    "Parallelized Explicit Extrapolation Method.",
+    "TBD",
+    """
+    - `chunk_size`: TBD
+    - `autodiff`: TBD
+    - `standardtag`: TBD
+    - `concrete_jac`: TBD
+    - `diff_type`: TBD
+    - `linsolve`: TBD
+    - `precs`: TBD
+    - `max_order`: TBD
+    - `min_order`: TBD
+    - `init_order`: TBD
+    - `threading`: TBD
+    - `sequence`: TBD
+    """,
+    """
+    chunk_size = Val{0}(),
+    autodiff = true,
+    standardtag = Val{true}(),
+    concrete_jac = nothing,
+    diff_type = Val{:forward},
+    linsolve = nothing,
+    precs = DEFAULT_PRECS,
+    max_order = 12,
+    min_order = 3,
+    init_order = 5,
+    threading = false,
+    sequence = :harmonic
+    """)
 struct ImplicitEulerExtrapolation{CS, AD, F, P, FDT, ST, CJ, TO} <:
        OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS, AD, FDT, ST, CJ}
     linsolve::F

@@ -45,7 +45,8 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/AdamsBashforthMoulton.md",
             "explicit/Nordsieck.md",
             "explicit/RKN.md",
-            "explicit/SymplecticRK.md"
+            "explicit/SymplecticRK.md",
+            "explicit/Extrapolation.md",
         ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicit_extrapolation.md",
