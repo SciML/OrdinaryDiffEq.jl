@@ -166,7 +166,7 @@ end
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockConstantCache, RosenbrockCachee},
+        cache::Union{RosenbrockConstantCache, RosenbrockCache},
         idxs, T::Type{Val{1}}, differential_vars)
     @.. broadcast=false (k[1][idxs] +
                          Θ * (-2 * k[1][idxs] + 2 * k[2][idxs] - 3 * k[2][idxs] * Θ) -
@@ -174,7 +174,7 @@ end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockConstantCache, RosenbrockCachee},
+        cache::Union{RosenbrockConstantCache, RosenbrockCache},
         idxs::Nothing, T::Type{Val{1}}, differential_vars)
     @.. broadcast=false out=(k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ + y₁) /
                             dt
@@ -182,7 +182,7 @@ end
 end
 
 @muladd function _ode_interpolant!(out, Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockConstantCache, RosenbrockCachee},
+        cache::Union{RosenbrockConstantCache, RosenbrockCache},
         idxs, T::Type{Val{1}}, differential_vars)
     @views @.. broadcast=false out=(k[1][idxs] +
                                     Θ *
