@@ -68,7 +68,7 @@ end
     @.. veck₁ = vecu * neginvdtγ
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false u=uprev + dto2 * k₁
+    @.. u=uprev + dto2 * k₁
     stage_limiter!(u, integrator, p, t + dto2)
     f(f₁, u, p, t + dto2)
     integrator.stats.nf += 1
@@ -79,17 +79,16 @@ end
         mul!(_vec(tmp), mass_matrix, _vec(k₁))
     end
 
-    @.. broadcast=false linsolve_tmp=f₁ - tmp
+    @.. linsolve_tmp = f₁ - tmp
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
-    veck2 = _vec(k₂)
+    veck₂ = _vec(k₂)
 
-    @.. veck2 = vecu * neginvdtγ
+    @.. veck₂ = vecu * neginvdtγ + veck₁
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false k₂+=k₁
-    @.. broadcast=false u=uprev + dt * k₂
+    @.. u = uprev + dt * k₂
     stage_limiter!(u, integrator, p, t + dt)
     step_limiter!(u, integrator, p, t + dt)
 
@@ -196,13 +195,12 @@ end
 
     linres = dolinsolve(integrator, linres.cache; b = _vec(linsolve_tmp))
     vecu = _vec(linres.u)
-    veck2 = _vec(k₂)
+    veck₂ = _vec(k₂)
 
-    @.. veck2 = vecu * neginvdtγ
+    @.. veck₂ = vecu * neginvdtγ + veck₁
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false k₂+=k₁
-    @.. broadcast=false tmp=uprev + dt * k₂
+    @.. tmp = uprev + dt * k₂
     stage_limiter!(u, integrator, p, t + dt)
     f(fsallast, tmp, p, t + dt)
     integrator.stats.nf += 1

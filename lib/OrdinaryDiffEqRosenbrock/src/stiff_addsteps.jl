@@ -6,6 +6,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
     if length(k) < 2 || always_calc_begin
         @unpack tf, uf, d = cache
         dtγ = dt * d
+        neginvdtγ = -inv(dtγ)
         dto2 = dt / 2
         tf.u = uprev
         if cache.autodiff isa AutoForwardDiff
@@ -17,16 +18,25 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         mass_matrix = f.mass_matrix
         if uprev isa Number
             J = ForwardDiff.derivative(uf, uprev)
-            W = 1 - dtγ * J
+            W = neginvdtγ .+ J
         else
             J = ForwardDiff.jacobian(uf, uprev)
-            W = mass_matrix - dtγ * J
+            if mass_matrix isa UniformScaling
+                W = neginvdtγ*mass_matrix + J
+            else
+                W = @.. neginvdtγ*mass_matrix .+ J
+            end
         end
         f₀ = f(uprev, p, t)
-        k₁ = W \ (@.. f₀ + dtγ * dT)
+        k₁ = _reshape(W \ _vec((f₀ + dtγ * dT)), axes(uprev)) * neginvdtγ
         tmp = @.. uprev + dto2 * k₁
         f₁ = f(tmp, p, t + dto2)
-        k₂ = (W \ (f₁ - k₁)) + k₁
+        if mass_matrix === I
+            k₂ = _reshape(W \ _vec(f₁ - k₁), axes(uprev))
+        else
+            k₂ = _reshape(W \ _vec(f₁ - mass_matrix * k₁), axes(uprev))
+        end
+        k₂ = @.. k₂ * neginvdtγ + k₁
         copyat_or_push!(k, 1, k₁)
         copyat_or_push!(k, 2, k₂)
     end
@@ -46,6 +56,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
         sizeu = size(u)
         mass_matrix = f.mass_matrix
         dtγ = dt * d
+        neginvdtγ = -inv(dtγ)
         dto2 = dt / 2
 
         @.. linsolve_tmp=@muladd fsalfirst + dtγ * dT
@@ -61,10 +72,9 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 
         vecu = _vec(linres.u)
         veck₁ = _vec(k₁)
+        @.. veck₁ = vecu * neginvdtγ
 
-        @.. broadcast=false veck₁=-vecu
-
-        @.. broadcast=false tmp=uprev + dto2 * k₁
+        @.. tmp=uprev + dto2 * k₁
         f(f₁, tmp, p, t + dto2)
 
         if mass_matrix === I
@@ -73,16 +83,14 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
             mul!(_vec(tmp), mass_matrix, _vec(k₁))
         end
 
-        @.. broadcast=false linsolve_tmp=f₁ - tmp
+        @.. linsolve_tmp = f₁ - tmp
 
         linres = dolinsolve(cache, linres.cache; b = _vec(linsolve_tmp),
             reltol = cache.reltol)
         vecu = _vec(linres.u)
-        veck2 = _vec(k₂)
+        veck₂ = _vec(k₂)
 
-        @.. broadcast=false veck2=-vecu
-
-        @.. broadcast=false k₂+=k₁
+        @.. veck₂ = vecu * neginvdtγ + veck₁
 
         copyat_or_push!(k, 1, k₁)
         copyat_or_push!(k, 2, k₂)
