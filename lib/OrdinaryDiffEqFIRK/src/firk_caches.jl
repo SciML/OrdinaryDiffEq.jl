@@ -468,7 +468,7 @@ function alg_cache(alg::RadauIIA9, u, rate_prototype, ::Type{uEltypeNoUnits},
         Convergence, alg.step_limiter!)
 end
 
-mutable struct adaptiveRadauConstantCache{F, Tab, Tol, Dt, U, JType, S} <:
+mutable struct adaptiveRadauConstantCache{S, F, Tab, Tol, Dt, U, JType} <:
     OrdinaryDiffEqConstantCache
 uf::F
 tab::Tab
@@ -482,16 +482,16 @@ status::NLStatus
 J::JType
 end
 
-function alg_cache(alg::adaptiveRadau, s :: Int64, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits},
     ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
     ::Val{false}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
 uf = UDerivativeWrapper(f, t, p)
 uToltype = constvalue(uBottomEltypeNoUnits)
-tab = adaptiveRadau(uToltype, constvalue(tTypeNoUnits), s)
+tab = adaptiveRadau(uToltype, constvalue(tTypeNoUnits), alg.num_stages)
 
-cont = Vector{typeof(u)}(undef, s-1)
-for i in 1:s-1
+cont = Vector{typeof(u)}(undef, num_stages - 1)
+for i in 1: (num_stages - 1)
     cont[i] = zero(u)
 end
 
@@ -539,7 +539,7 @@ mutable struct adaptiveRadauCache{uType, cuType, uNoUnitsType, rateType, JType, 
     step_limiter!::StepLimiter
 end
 
-function alg_cache(alg::adaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
+function alg_cache(alg::AdaptiveRadau, u, rate_prototype, ::Type{uEltypeNoUnits},
     ::Type{uBottomEltypeNoUnits},
     ::Type{tTypeNoUnits}, uprev, uprev2, f, t, dt, reltol, p, calck,
     ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
@@ -549,34 +549,34 @@ tab = RadauIIA9Tableau(uToltype, constvalue(tTypeNoUnits))
 
 κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1 // 100)
 
-z = Vector{typeof(u)}(undef, s)
-w = Vector{typeof(u)}(undef, s)
+z = Vector{typeof(u)}(undef, num_stages)
+w = Vector{typeof(u)}(undef, num_stages)
 for i in 1:s
     z[i] = w[i] = zero(u)
 end
 
 dw1 = zero(u)
 ubuff = zero(u)
-dw2 = Vector{typeof(u)}(undef, floor(Int, s/2))
-for i in 1 : floor(Int, s/2)
+dw2 = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
+for i in 1 : floor(Int, num_stages/2)
     dw2[i] = similar(u, Complex{eltype(u)})
     recursivefill!(dw[i], false)
 end
-cubuff = Vector{typeof(u)}(undef, floor(Int, s/2))
-for i in 1 :floor(Int, s/2)
+cubuff = Vector{typeof(u)}(undef, floor(Int, num_stages/2))
+for i in 1 :floor(Int, num_stages/2)
     cubuff[i] = similar(u, Complex{eltype(u)})
     recursivefill!(cubuff[i], false)
 end
 
-cont = Vector{typeof(u)}(undef, s-1)
-for i in 1:s-1
+cont = Vector{typeof(u)}(undef, num_stages - 1)
+for i in 1: (num_stages - 1)
     cont[i] = zero(u)
 end
 
 fsalfirst = zero(rate_prototype)
-fw = Vector{typeof(rate_prototype)}(undef, s)
-k = Vector{typeof(rate_prototype)}(undef, s)
-for i in 1:s
+fw = Vector{typeof(rate_prototype)}(undef, num_stages)
+k = Vector{typeof(rate_prototype)}(undef, num_stages)
+for i in 1: num_stages
     k[i] = fw[i] = zero(rate_prototype)
 end
 
@@ -584,16 +584,16 @@ J, W1 = build_J_W(alg, u, uprev, p, t, dt, f, uEltypeNoUnits, Val(true))
 if J isa AbstractSciMLOperator
     error("Non-concrete Jacobian not yet supported by RadauIIA5.")
 end
-W2 = vector{typeof(Complex{W1})}(undef, floor(Int, s/2))
-for i in 1 : floor(Int, s/2)
+W2 = vector{typeof(Complex{W1})}(undef, floor(Int, num_stages/2))
+for i in 1 : floor(Int, num_stages/2)
     W2[i] = similar(J, Complex{eltype(W1)})
     recursivefill!(w2[i], false)
 end
 
 du1 = zero(rate_prototype)
 
-tmp = Vector{typeof(u)}(undef, binomial(s,2))
-for i in 1 : binomial(s,2)
+tmp = Vector{typeof(u)}(undef, binomial(num_stages,2))
+for i in 1 : binomial(num_stages,2)
     tmp[i] = zero(u)
 end
 
@@ -606,8 +606,8 @@ linprob = LinearProblem(W1, _vec(ubuff); u0 = _vec(dw1))
 linsolve1 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
     assumptions = LinearSolve.OperatorAssumptions(true))
 
-linsolve2 = Vector{typeof(linsolve1)}(undef, floor(Int, s/2))
-for i in 1 : floor(int, s/2)
+linsolve2 = Vector{typeof(linsolve1)}(undef, floor(Int, num_stages/2))
+for i in 1 : floor(int, num_stages/2)
     linprob = LinearProblem(W2[i], _vec(cubuff[i]); u0 = _vec(dw2[i]))
     linsolve2 = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
     assumptions = LinearSolve.OperatorAssumptions(true))

@@ -259,7 +259,7 @@ function RadauIIA9Tableau(T, T2)
         e1, e2, e3, e4, e5)
 end
 
-struct adaptiveRadauTableau(T, T2)
+struct adaptiveRadauTableau{T, T2, Int}
     T:: AbstractMatrix{T}
     TI::AbstractMatrix{T}
     γ::T
@@ -267,80 +267,81 @@ struct adaptiveRadauTableau(T, T2)
     β::AbstractVector{T}
     c::AbstractVector{T}
     e::AbstractVector{T}
+    S::Int
 end
 
 using Polynomials, GenericLinearAlgebra, LinearAlgebra, LinearSolve, GenericSchur, BSeries
 
-function adaptiveRadauTableau(T, T2, s::Int64)
-    tmp = Vector{BigFloat}(undef, s-1)
-    for i in 1:(s-1)
+function adaptiveRadauTableau(T, T2, num_stages::Int)
+    tmp = Vector{BigFloat}(undef, num_stages - 1)
+    for i in 1:(num_stages - 1)
         tmp[i] = 0
     end
-    tmp2 = Vector{BigFloat}(undef, s+1)
-    for i in 1:(s+1)
-       tmp2[i]=(-1)^(s+1-i) * binomial(s,s+1-i)
+    tmp2 = Vector{BigFloat}(undef, num_stages + 1)
+    for i in 1:(num_stages + 1)
+       tmp2[i]=(-1)^(num_stages + 1 - i) * binomial(num_stages , num_stages + 1 - i)
     end
     p = Polynomial{BigFloat}([tmp; tmp2])
-    for i in 1:s-1
+    for i in 1:(num_stages - 1)
         p = derivative(p)
     end
     c = roots(p)
-    c[s] = 1
-    c_powers = Matrix{BigFloat}(undef, s, s)
-    for i in 1:s
-        for j in 1:s
-            c_powers[i,j] = c[i]^(j-1)
+    c[num_stages] = 1
+    c_powers = Matrix{BigFloat}(undef, num_stages, num_stages)
+    for i in 1 : num_stages
+        for j in 1 : num_stages
+            c_powers[i,j] = c[i]^(j - 1)
         end
     end
     inverse_c_powers = inv(c_powers)
-    c_q = Matrix{BigFloat}(undef, s, s)
-    for i in 1:s
-        for j in 1:s
+    c_q = Matrix{BigFloat}(undef, num_stages, num_stages)
+    for i in 1 : num_stages
+        for j in 1 : num_stages
             c_q[i,j] = c[i]^(j) / j
         end
     end
     a = c_q * inverse_c_powers
     a_inverse = inv(a)
-    b = Vector{Bigfloat}(undef, s)
-    for i in 1 : s
-        b[i] = a[s, i]
+    b = Vector{BigFloat}(undef, num_stages)
+    for i in 1 : num_stages
+        b[i] = a[num_stages, i]
     end
     vals = eigvals(a_inverse)
-    γ = real(b[s])
-    α = Vector{BigFloat}(undef, floor(Int, s/2))
-    β = Vector{BigFloat}(undef, floor(Int, s/2))
+    γ = real(b[num_stages])
+    α = Vector{BigFloat}(undef, floor(Int, num_stages/2))
+    β = Vector{BigFloat}(undef, floor(Int, num_stages/2))
     index = 1
     i = 1
-    while i <= (s-1)
+    while i <= (num_stages - 1)
         α[index] = real(vals[i])
         β[index] = imag(vals[i + 1])
         index = index + 1
         i = i + 2
     end
     eigvec = eigvecs(a)
-    vecs = Vector{Vector{BigFloat}}(undef, s)
+    vecs = Vector{Vector{BigFloat}}(undef, num_stages)
     i = 1
     index = 2
-    while i < s 
-        vecs[index] = real(eigvec[:, i] ./ eigvec[s,i])
-        vecs[index + 1] = -imag(eigvec[:, i] ./ eigvec[s,i])
+    while i < num_stages 
+        vecs[index] = real(eigvec[:, i] ./ eigvec[num_stages, i])
+        vecs[index + 1] = -imag(eigvec[:, i] ./ eigvec[num_stages, i])
         index += 2
         i += 2
     end
-    vecs[1] = real(eigvec[:, s])
+    vecs[1] = real(eigvec[:, num_stages])
     tmp3 = vcat(vecs)
-    T = Matrix{BigFloat}(undef, s, s)
-    for j in 1 : s
-        for i in 1 : s
+    T = Matrix{BigFloat}(undef, num_stages, num_stages)
+    for j in 1 : num_stages
+        for i in 1 : num_stages
             T[i, j] = tmp3[j][i]
         end
     end
     TI = inv(T)
-    b_hat = Vector{BigFloat}(undef, s)
-    embedded = bseries(a, b_hat, c, s - 2)
+    #b_hat = Vector{BigFloat}(undef, num_stages)
+    #embedded = bseries(a, b_hat, c, num_stages - 2)
 
     #e = b_hat - b
-    #adaptiveRadautableau(T, TI, γ, α, β, c, e)
+    #adaptiveRadautableau(T, TI, γ, α, β, c, e, s)
 end
 
 adaptiveRadauTableau(0, 0, 3)

@@ -166,17 +166,18 @@ struct AdaptiveRadau{CS, AD, F, P, FDT, ST, CJ, Tol, C1, C2, StepLimiter} <:
  new_W_γdt_cutoff::C2
  controller::Symbol
  step_limiter!::StepLimiter
+ num_stages::Int
 end
 
 function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
      standardtag = Val{true}(), concrete_jac = nothing,
-     diff_type = Val{:forward},
+     diff_type = Val{:forward}, num_stages = 5, 
      linsolve = nothing, precs = DEFAULT_PRECS,
      extrapolant = :dense, fast_convergence_cutoff = 1 // 5,
      new_W_γdt_cutoff = 1 // 5,
      controller = :Predictive, κ = nothing, maxiters = 10, smooth_est = true,
      step_limiter! = trivial_limiter!)
- RadauIIA9{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
+ AdaptiveRadau{_unwrap_val(chunk_size), _unwrap_val(autodiff), typeof(linsolve),
      typeof(precs), diff_type, _unwrap_val(standardtag), _unwrap_val(concrete_jac),
      typeof(κ), typeof(fast_convergence_cutoff),
      typeof(new_W_γdt_cutoff), typeof(step_limiter!)}(linsolve,
@@ -188,6 +189,6 @@ function AdaptiveRadau(; chunk_size = Val{0}(), autodiff = Val{true}(),
      fast_convergence_cutoff,
      new_W_γdt_cutoff,
      controller,
-     step_limiter!)
+     step_limiter!, num_stages)
 end
 

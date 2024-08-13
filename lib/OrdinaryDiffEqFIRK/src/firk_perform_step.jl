@@ -1341,9 +1341,9 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::adaptiveRadauConstantCache,
-    repeat_step = false, s::Int64)
+    repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
-    @unpack T, TI, γ, α, β, c, e= cache.tab 
+    @unpack T, TI, γ, α, β, c, e, num_stages = cache.tab 
     @unpack κ, cont = cache
     @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
     alg = unwrap_alg(integrator, true)
@@ -1357,39 +1357,39 @@ end
     γdt, αdt, βdt = γ / dt, α ./ dt, β ./ dt
 
     J = calc_J(integrator, cache)
-    LU = Vector{Any}(undef, (s + 1) / 2)
+    LU = Vector{Any}(undef, (num_stages + 1) / 2)
     if u isa Number
         LU[1] = -γdt * mass_matrix + J
-        for i in 2 : (s + 1) / 2
+        for i in 2 : (num_stages + 1) / 2
             LU[i] = -(α[i - 1]dt + β[i - 1]dt * im) * mass_matrix + J
         end
     else
         LU[1] = lu(-γdt * mass_matrix + J)
-        for i in 2 : (s + 1) / 2
+        for i in 2 : (num_stages + 1) / 2
             LU[i] = lu(-(α[i - 1]dt + β[i - 1]dt * im) * mass_matrix + J)
         end
     end
     integrator.stats.nw += 1
-
+    z = w = Vector{BigFloat}(undef, num_stages)
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
-        for i in 1:s
+        for i in 1 : num_stages
             z[i] = w[i] = map(zero, u)
         end
-        for i in 1:(s-1)
+        for i in 1 : (num_stages - 1)
             cont[i] = map(zero, u)
         end
     else 
-        c' = Vector{eltype(u)}(undef, s) #time stepping
-        c'[s] = dt / cache.dtprev
-        for i in 1 : s-1
-            c'[i] = c[i] * c'[s]
+        c' = Vector{eltype(u)}(undef, num_stages) #time stepping
+        c'[num_stages] = dt / cache.dtprev
+        for i in 1 : num_stages - 1
+            c'[i] = c[i] * c'[num_stages]
         end
-        for i in 1 : s # collocation polynomial
-            z[i] = @.. cont[s-1] * (c'[i] - c[1] + 1) + cont[s-1]
+        for i in 1 : num_stages # collocation polynomial
+            z[i] = @.. cont[num_stages-1] * (c'[i] - c[1] + 1) + cont[num_stages - 1]
             j = s - 2
             while j > 0
-                z[i] = @.. z[i] * (c'[i] - c[s-j] + 1) + cont[j]
+                z[i] = @.. z[i] * (c'[i] - c[num_stages-j] + 1) + cont[j]
             end
             z[i] = @.. z[i] * c'[i]
         end
@@ -1406,49 +1406,49 @@ end
         integrator.stats.nnonliniter += 1
 
         # evaluate function
-        ff = Vector{eltype(u)}(undef, s)
-        for i in 1:s
+        ff = Vector{eltype(u)}(undef, num_stages)
+        for i in 1 : num_stages
             ff[i] = f(uprev + z[i], p, t + c[i] * dt)
         end    
         integrator.stats.nf += 5
 
         fw = @.. TI * ff
-        Mw = Vector{eltype(u)}(undef, s)
+        Mw = Vector{eltype(u)}(undef, num_stages)
         if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
-            for i in 1:s
-                Mw[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalues
+            for i in 1 : num_stages
+                Mw[i] = @.. mass_matrix.λ * w[i] #scaling by eigenvalue
             end
         else
             Mw = mass_matrix * w #standard multiplication
         end
 
-        rhs = Vector{eltype(u)}(undef, s)
-        rhs[1] = @.. fw[1]-γdt * Mw[1]
+        rhs = Vector{eltype(u)}(undef, num_stages)
+        rhs[1] = @.. fw[1] - γdt * Mw[1]
         i = 2
-        while i <= s #block by block multiplication
-            rhs[i] = @.. fw[i] - α[i/2]dt * Mw[i] + β[i/2]dt * Mw[i + 1]
-            rhs[i + 1] = @.. fw[i + 1] - β[i/2]dt * Mw[i] - α[i/2]dt * Mw[i + 1]
+        while i <= num_stages #block by block multiplication
+            rhs[i] = @.. fw[i] - αdt[i/2] * Mw[i] + βdt[i/2] * Mw[i + 1]
+            rhs[i + 1] = @.. fw[i + 1] - βdt[i/2] * Mw[i] - αdt[i/2] * Mw[i + 1]
             i += 2
         end 
 
-        dw = Vector{eltype(u)}(undef, s)
+        dw = Vector{eltype(u)}(undef, num_stages)
         dw[1] = LU1 \ rhs[1]
-        for i in 2 : (s + 1) / 2 
+        for i in 2 : (num_stages + 1) / 2 
             tmp = LU[i] \ (@.. rhs[2 * i - 2] + rhs[2 * i - 1] * im)
             dw[2 * i - 2] = real(tmp)
             dw[2 * i - 1] = imag(tmp)
         end
-        integrator.stats.nlsolve += (s + 1) / 2
+        integrator.stats.nlsolve += (num_stages + 1) / 2
 
         # compute norm of residuals
         iter > 1 && (ndwprev = ndw)
-        atmp = Vector{eltype(u)}(undef, s)
-        for i in 1:s
+        atmp = Vector{eltype(u)}(undef, num_stages)
+        for i in 1 : num_stages
             atmp[i] = calculate_residuals(dw[i], uprev, u, atol, rtol, internalnorm, t)
         end
 
         ndw = 0
-        for i in 1:s
+        for i in 1 : num_stages
             ndw = ndw + internalnorm(atmp[i], t)
         end
         # check divergence (not in initial step)
@@ -1487,8 +1487,8 @@ end
     cache.ηold = η
     cache.iter = iter
 
-    u = @.. uprev + z[s]
-
+    u = @.. uprev + z[num_stages]
+    #=
     if adaptive
         edt = e ./ dt
         tmp = @.. dot(edt, z)
@@ -1508,13 +1508,13 @@ end
             integrator.EEst = internalnorm(atmp, t)
         end
     end
-
+    =#
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{eltype(u)}(undef, s-1, s-1)
-            for i in 1 : (s - 1)
-                for j in i : (s-1)
+            derivatives = Matrix{eltype(u)}(undef, num_stages - 1, num_stages - 1)
+            for i in 1 : (num_stages - 1)
+                for j in i : (num_stages - 1)
                     if i == 1
                         derivatives[i, j] = @.. (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
                     else
@@ -1522,8 +1522,8 @@ end
                     end
                 end
             end
-            for i in 1 : (s-1)
-                cache.cont[i] = derivatives[i, s - 1]
+            for i in 1 : (num_stages - 1)
+                cache.cont[i] = derivatives[i, num_stages - 1]
             end
         end
     end
@@ -1538,7 +1538,7 @@ end
 
 @muladd function perform_step!(integrator, cache::adaptiveRadauCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p, fsallast, fsalfirst = integrator
-    @unpack T, TI, γ, α, β, c, e= cache.tab 
+    @unpack T, TI, γ, α, β, c, e, num_stages = cache.tab 
     @unpack κ, cont, z, w = cache
     @unpack dw1, ubuff, dw2, cubuff1, cubuff2 = cache
     @unpack k, fw, J, W1, W2 = cache
@@ -1556,7 +1556,7 @@ end
     if (new_W = do_newW(integrator, alg, new_jac, cache.W_γdt))
         @inbounds for II in CartesianIndices(J)
             W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
-            for i in 1 : (s - 1) / 2
+            for i in 1 : (num_stages - 1) / 2
                 W2[i][II] = -(α[i]dt + β[i]dt * im) * mass_matrix[Tuple(II)...] + J[II]
             end        
         end
@@ -1567,23 +1567,23 @@ end
     if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
         cache.dtprev = one(cache.dtprev)
         uzero = zero(eltype(u))
-        for i in 1:s
+        for i in 1 : num_stages
             @..  z[i] = w[i] = uzero
         end
-        for i in 1:(s-1)
+        for i in 1 : (num_stages-1)
             @.. cache.cont[i] = uzero
         end
     else
-        c' = Vector{eltype(u)}(undef, s) #time stepping
-        c'[s] = dt / cache.dtprev
-        for i in 1 : s-1
-            c'[i] = c[i] * c'[s]
+        c' = Vector{eltype(u)}(undef, num_stages) #time stepping
+        c'[num_stages] = dt / cache.dtprev
+        for i in 1 : (num_stages-1)
+            c'[i] = c[i] * c'[num_stages]
         end
-        for i in 1 : s # collocation polynomial
-            @.. z[i] = cont[s-1] * (c'[i] - c[1] + 1) + cont[s-1]
-            j = s - 2
+        for i in 1 : num_stages # collocation polynomial
+            @.. z[i] = cont[num_stages - 1] * (c'[i] - c[1] + 1) + cont[num_stages - 1]
+            j = num_stages - 2
             while j > 0
-                @.. z[i] = z[i] * (c'[i] - c[s-j] + 1) + cont[j]
+                @.. z[i] = z[i] * (c'[i] - c[num_stages - j] + 1) + cont[j]
             end
             @.. z[i] = z[i] * c'[i]
         end
@@ -1601,22 +1601,22 @@ end
 
         # evaluate function
         k[1] = fsallast
-        for i in 1 : s
+        for i in 1 : num_stages
             @.. tmp = uprev + z[i]
             f(k[i], tmp, p, t + c[i] * dt)
         end
-        integrator.stats.nf += s
+        integrator.stats.nf += num_stages
 
         @.. fw = TI * k
         if mass_matrix === I
             Mw = w
         elseif mass_matrix isa UniformScaling
-            for i in 1 : s
+            for i in 1 : num_stages
                 mul!(z[i], mass_matrix.λ, w[i])
             end
             Mw = z
         else
-            for i in 1 : s
+            for i in 1 : num_stages
                 mul!(z[i], mass_matrix.λ, w[i])
             end
             Mw = z
@@ -1626,7 +1626,7 @@ end
         needfactor = iter == 1 && new_W
 
         linsolve1 = cache.linsolve1
-        linres = Vector{BigFloat}(undef, s)
+        linres = Vector{BigFloat}(undef, num_stages)
         if needfactor
             linres[1] = dolinsolve(integrator, linsolve1; A = W1, b = _vec(ubuff),
                 linu = _vec(dw1))
@@ -1637,9 +1637,9 @@ end
 
         cache.linsolve1 = linres1.cache
 
-        for i in 1 : (s-1)/2
+        for i in 1 : (num_stages - 1)/2
             @.. broadcast=false cubuff[i]=complex(
-            fw2 - α[i]dt * Mw[2*i] + β[i]dt * Mw[2*i + 1], fw3 - β[i]dt * Mw[2*i] - α[i]dt * Mw[2*i + 1])
+            fw2 - αdt[i] * Mw[2 * i] + βdt[i] * Mw[2 * i + 1], fw3 - βdt[i] * Mw[2 * i] - αdt[i] * Mw[2 * i + 1])
             linsolve2[i] = cache.linsolve2[i]
             if needfactor
                 linres[i + 1] = dolinsolve(integrator, linsolve2[i]; A = W2[i], b = _vec(cubuff[i]),
@@ -1651,10 +1651,10 @@ end
             cache.linsolve2[i] = linres[i + 1].cache
         end
 
-        integrator.stats.nsolve += (s+1) / 2
+        integrator.stats.nsolve += (num_stages + 1) / 2
         dw[1] = dw1
         i = 2
-        while i <= s
+        while i <= num_stages
             dw[i] = z[i]
             dw[i + 1] = z[i + 1]
             @.. dw[i] = real(dw2[i - 1])
@@ -1664,14 +1664,14 @@ end
 
         # compute norm of residuals
         iter > 1 && (ndwprev = ndw)
-        ndws = Vector{BigFloat}(undef, s)
-        for i in 1:s
+        ndws = Vector{BigFloat}(undef, num_stages)
+        for i in 1:num_stages
             calculate_residuals!(atmp, dw[i], uprev, u, atol, rtol, internalnorm, t)
             ndws[i] = internalnorm(atmp, t)
         end
 
         ndw = 0
-        for i in 1 : s
+        for i in 1 : num_stages
             ndw += ndws[i]
         end
 
@@ -1714,7 +1714,7 @@ end
     @.. broadcast=false u=uprev + z[s]
 
     step_limiter!(u, integrator, p, t + dt)
-
+    #=
     if adaptive
         utilde = w2
         edt = e./dt
@@ -1752,13 +1752,13 @@ end
             integrator.EEst = internalnorm(atmp, t)
         end
     end
-
+    =#
     if integrator.EEst <= oneunit(integrator.EEst)
         cache.dtprev = dt
         if alg.extrapolant != :constant
-            derivatives = Matrix{eltype(u)}(undef, s-1, s-1)
-            for i in 1 : (s - 1)
-                for j in i : (s-1)
+            derivatives = Matrix{eltype(u)}(undef, num_stages - 1, num_stages - 1)
+            for i in 1 : (num_stages - 1)
+                for j in i : (num_stages - 1)
                     if i == 1
                         @.. derivatives[i, j] = (z[i] - z[i + 1]) / (c[i] - c[i + 1]) #first derivatives
                     else
@@ -1766,8 +1766,8 @@ end
                     end
                 end
             end
-            for i in 1 : (s-1)
-                cache.cont[i] = derivatives[i, s - 1]
+            for i in 1 : (num_stages - 1)
+                cache.cont[i] = derivatives[i, num_stages - 1]
             end
         end
     end
