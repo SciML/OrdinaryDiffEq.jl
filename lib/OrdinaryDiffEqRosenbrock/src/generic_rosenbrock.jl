@@ -164,44 +164,46 @@ Generate cache struct expression emulating those in `caches/rosenbrock_caches.jl
 The length of k1,k2,... in the mutable cache struct is determined by the length of `tab.b`
 because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
-# function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
-#     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-#     constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
-#             tf::TF
-#             uf::UF
-#             tab::Tab
-#             J::JType
-#             W::WType
-#             linsolve::F
-#         end
-#     end
-#     cacheexpr=quote
-#         @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
-#             u::uType
-#             uprev::uType
-#             du::rateType
-#             du1::rateType
-#             du2::rateType
-#             $(kstype...)
-#             fsalfirst::rateType
-#             fsallast::rateType
-#             dT::rateType
-#             J::JType
-#             W::WType
-#             tmp::rateType
-#             atmp::uNoUnitsType
-#             weight::uNoUnitsType
-#             tab::TabType
-#             tf::TFType
-#             uf::UFType
-#             linsolve_tmp::rateType
-#             linsolve::F
-#             jac_config::JCType
-#             grad_config::GCType
-#         end
-#     end
-#     constcacheexpr,cacheexpr
-# end
+function gen_cache_struct(tab::RosenbrockTableau, cachename::Symbol, constcachename::Symbol)
+    kstype = [:( $(Symbol(:k, i))::rateType ) for i in 1:length(tab.b)]
+    
+    constcacheexpr = quote
+        if !isdefined(Main, $constcachename)
+            struct $constcachename{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqConstantCache
+                tf::TF
+                uf::UF
+                tab::Tab
+                J::JType
+                W::WType
+                linsolve::F
+            end
+        end
+    end
+    
+    cacheexpr = quote
+        if !isdefined(Main, $cachename)
+            @cache mutable struct $cachename{uType, rateType, uNoUnitsType, JType, WType, TabType, TFType, UFType, F, JCType, GCType} <: RosenbrockMutableCache
+                u::uType
+                uprev::uType
+                du::rateType
+                du1::rateType
+                du2::rateType
+                $(kstype...)
+                fsalfirst::rateType
+                fsallast::rateType
+                dT::rateType
+                J::JType
+                W::WType
+                tmp::rateType
+                linsolve::F
+                jac_config::JCType
+                grad_config::GCType
+            end
+        end
+    end
+    
+    return constcacheexpr, cacheexpr
+end
 
 """
     gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tabname::Symbol)
