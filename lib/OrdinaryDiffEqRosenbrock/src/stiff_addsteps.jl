@@ -1,5 +1,6 @@
 function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-        cache::RosenbrockConstantCache,
+        cache::Union{Rosenbrock23ConstantCache,
+            Rosenbrock32ConstantCache},
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -30,7 +31,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 end
 
 function _ode_addsteps!(k, t, uprev, u, dt, f, p,
-        cache::RosenbrockCache,
+        cache::Union{Rosenbrock23Cache, Rosenbrock32Cache},
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -89,7 +90,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p,
 end
 
 function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::RosenbrockConstantCache,
+        k, t, uprev, u, dt, f, p, cache::Union{Rodas23WConstantCache, Rodas3PConstantCache},
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -171,7 +172,7 @@ function _ode_addsteps!(
 end
 
 function _ode_addsteps!(
-        k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
+        k, t, uprev, u, dt, f, p, cache::Union{Rodas23WCache, Rodas3PCache},
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -286,7 +287,7 @@ function _ode_addsteps!(
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockConstantCache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -374,7 +375,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockConstantCache
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rodas4Cache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 2 || always_calc_begin
@@ -499,7 +500,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockConstantCache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5ConstantCache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 3 || always_calc_begin
@@ -629,7 +630,7 @@ function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockConstantCache
     nothing
 end
 
-function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::RosenbrockCache,
+function _ode_addsteps!(k, t, uprev, u, dt, f, p, cache::Rosenbrock5Cache,
         always_calc_begin = false, allow_calc_end = true,
         force_calc_end = false)
     if length(k) < 3 || always_calc_begin

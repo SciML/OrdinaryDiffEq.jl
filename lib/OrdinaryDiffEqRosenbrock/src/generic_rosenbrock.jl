@@ -164,51 +164,43 @@ Generate cache struct expression emulating those in `caches/rosenbrock_caches.jl
 The length of k1,k2,... in the mutable cache struct is determined by the length of `tab.b`
 because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
-function gen_cache_struct(tab::RosenbrockTableau, cachename::Symbol, constcachename::Symbol)
-    kstype = [:( $(Symbol(:k, i))::rateType ) for i in 1:length(tab.b)]
-    
-    constcacheexpr = quote
-        if !isdefined(Main, $constcachename)
-            struct $constcachename{TF, UF, Tab, JType, WType, F} <: OrdinaryDiffEqConstantCache
-                tf::TF
-                uf::UF
-                tab::Tab
-                J::JType
-                W::WType
-                linsolve::F
-            end
+function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
+    kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
+    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+            tf::TF
+            uf::UF
+            tab::Tab
+            J::JType
+            W::WType
+            linsolve::F
         end
     end
-    
-    cacheexpr = quote
-        if !isdefined(Main, $cachename)
-            @cache mutable struct $cachename{uType, rateType, uNoUnitsType, JType, WType, TabType, TFType, UFType, F, JCType, GCType} <: RosenbrockMutableCache
-                u::uType
-                uprev::uType
-                du::rateType
-                du1::rateType
-                du2::rateType
-                $(kstype...)
-                fsalfirst::rateType
-                fsallast::rateType
-                dT::rateType
-                J::JType
-                W::WType
-                tmp::rateType
-                atmp::uNoUnitsType
-                weight::uNoUnitsType
-                tab::TabType
-                tf::TFType
-                uf::UFType
-                linsolve_tmp::rateType
-                linsolve::F
-                jac_config::JCType
-                grad_config::GCType
-            end
+    cacheexpr=quote
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+            u::uType
+            uprev::uType
+            du::rateType
+            du1::rateType
+            du2::rateType
+            $(kstype...)
+            fsalfirst::rateType
+            fsallast::rateType
+            dT::rateType
+            J::JType
+            W::WType
+            tmp::rateType
+            atmp::uNoUnitsType
+            weight::uNoUnitsType
+            tab::TabType
+            tf::TFType
+            uf::UFType
+            linsolve_tmp::rateType
+            linsolve::F
+            jac_config::JCType
+            grad_config::GCType
         end
     end
-    
-    return constcacheexpr, cacheexpr
+    constcacheexpr,cacheexpr
 end
 
 """
@@ -540,8 +532,8 @@ macro RosenbrockW6S4OS(part)
     algname=:RosenbrockW6S4OS
     tabname=:RosenbrockW6S4OSTableau
     tabstructname=:RosenbrockW6STableau
-    cachename=:RosenbrockCache
-    constcachename=:RosenbrockConstantCache
+    cachename=:RosenbrockW6SCache
+    constcachename=:RosenbrockW6SConstantCache
     n_normalstep=length(tab.b)-1
     if part.value==:tableau
         #println("Generating const cache")
@@ -739,8 +731,8 @@ calculates `linsolve_tmp` from the previous `du` which reduces a function call.
 """
 macro Rosenbrock4(part)
     tabmask=Ros4dummyTableau()#_masktab(tab)
-    cachename=:RosenbrockCache
-    constcachename=:RosenbrockConstantCache
+    cachename=:Rosenbrock4Cache
+    constcachename=:Rosenbrock4ConstantCache
     RosShamp4tabname=:RosShamp4Tableau
     Veldd4tabname=:Veldd4Tableau
     Velds4tabname=:Velds4Tableau
@@ -1191,8 +1183,8 @@ Generate code for the 2 step ROS methods: ROS2
 """
 macro ROS2(part)
     tabmask=Ros2dummyTableau()
-    cachename=:RsenbrockCache
-    constcachename=:RosenbrockConstantCache
+    cachename=:ROS2Cache
+    constcachename=:ROS2ConstantCache
     ROS2tabname=:ROS2Tableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
@@ -1421,8 +1413,8 @@ Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 """
 macro ROS23(part)
     tabmask=Ros23dummyTableau()
-    cachename=:RosenrbrockCache
-    constcachename=:RosenbrockConstantCache
+    cachename=:ROS23Cache
+    constcachename=:ROS23ConstantCache
     ROS2PRtabname=:ROS2PRTableau
     ROS2Stabname=:ROS2STableau
     ROS3tabname=:ROS3Tableau
@@ -1728,8 +1720,8 @@ Generate code for the 4 steps ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, R
 """
 macro ROS34PW(part)
     tabmask=Ros34dummyTableau()
-    cachename=:RosenbrockCache
-    constcachename=:RosenbrocksConstantCache
+    cachename=:ROS34PWCache
+    constcachename=:ROS34PWConstantCache
     ROS34PW1atabname=:ROS34PW1aTableau
     ROS34PW1btabname=:ROS34PW1bTableau
     ROS34PW2tabname=:ROS34PW2Tableau
