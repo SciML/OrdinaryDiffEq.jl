@@ -731,8 +731,8 @@ calculates `linsolve_tmp` from the previous `du` which reduces a function call.
 """
 macro Rosenbrock4(part)
     tabmask=Ros4dummyTableau()#_masktab(tab)
-    cachename=:Rosenbrock4Cache
-    constcachename=:Rosenbrock4ConstantCache
+    cachename=:RosenbrockCache
+    constcachename=:RosenbrockConstantCache
     RosShamp4tabname=:RosShamp4Tableau
     Veldd4tabname=:Veldd4Tableau
     Velds4tabname=:Velds4Tableau
@@ -1183,8 +1183,8 @@ Generate code for the 2 step ROS methods: ROS2
 """
 macro ROS2(part)
     tabmask=Ros2dummyTableau()
-    cachename=:ROS2Cache
-    constcachename=:ROS2ConstantCache
+    cachename=:RsenbrockCache
+    constcachename=:RosenbrockConstantCache
     ROS2tabname=:ROS2Tableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
@@ -1413,8 +1413,8 @@ Generate code for the 3 step ROS methods: ROS2PR, ROS2S, ROS3, ROS3PR, Scholz4_7
 """
 macro ROS23(part)
     tabmask=Ros23dummyTableau()
-    cachename=:ROS23Cache
-    constcachename=:ROS23ConstantCache
+    cachename=:RosenrbrockCache
+    constcachename=:RosenbrockConstantCache
     ROS2PRtabname=:ROS2PRTableau
     ROS2Stabname=:ROS2STableau
     ROS3tabname=:ROS3Tableau
@@ -1720,8 +1720,8 @@ Generate code for the 4 steps ROS34PW methods: ROS34PW1a, ROS34PW1b, ROS34PW2, R
 """
 macro ROS34PW(part)
     tabmask=Ros34dummyTableau()
-    cachename=:ROS34PWCache
-    constcachename=:ROS34PWConstantCache
+    cachename=:RosenbrockCache
+    constcachename=:RosenbrocksConstantCache
     ROS34PW1atabname=:ROS34PW1aTableau
     ROS34PW1btabname=:ROS34PW1bTableau
     ROS34PW2tabname=:ROS34PW2Tableau
