@@ -34,14 +34,14 @@ end
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockConstantCache}, idxs::Nothing,
+        cache::RosenbrockConstantCache, idxs::Nothing,
         T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @inbounds y₀ + dt * (c1 * k[1] + c2 * k[2])
 end
 
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockCache},
+        cache::RosenbrockCache,
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     @rosenbrock2332pre0
     @inbounds @.. broadcast=false y₀+dt * (c1 * k[1] + c2 * k[2])
@@ -114,14 +114,14 @@ end
 From MATLAB ODE Suite by Shampine
 """
 @muladd function _ode_interpolant(Θ, dt, y₀, y₁, k,
-        cache::Union{RosenbrockConstantCache},
+        cache::RosenbrockConstantCache,
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     @inbounds Θ1 * y₀ + Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
 end
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache},
+        Θ, dt, y₀, y₁, k, cache::RosenbrockCache,
         idxs::Nothing, T::Type{Val{0}}, differential_vars)
     Θ1 = 1 - Θ
     @inbounds @.. broadcast=false Θ1 * y₀+Θ * (y₁ + Θ1 * (k[1] + Θ * k[2]))
@@ -159,7 +159,7 @@ end
 end
 
 @muladd function _ode_interpolant(
-        Θ, dt, y₀, y₁, k, cache::Union{RosenbrockCache},
+        Θ, dt, y₀, y₁, k, cache::RosenbrockCache,
         idxs::Nothing, T::Type{Val{1}}, differential_vars)
     @inbounds @.. broadcast=false (k[1] + Θ * (-2 * k[1] + 2 * k[2] - 3 * k[2] * Θ) - y₀ +
                                    y₁)/dt
