@@ -20,10 +20,10 @@ end
     RTolType, A, AV, AD, TF, UF, T, StepLimiter, StageLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
-    dus::Vector{rateType} # Replacing NTuple{3, rateType} with Array{rateType, 1}
-    ks::Array{rateType, 1}   # Replacing NTuple{8, rateType} with Array{rateType, 1}
+    dus::Vector{rateType}
+    ks::Array{rateType, 1}
     f1::rateType
-    dense::Array{rateType, 1}  # Replacing NTuple{3, rateType} with Array{rateType, 1}
+    dense::Array{rateType, 1}
     fsalfirst::rateType
     fsallast::rateType
     dT::rateType
