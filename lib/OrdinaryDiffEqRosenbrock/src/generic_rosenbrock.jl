@@ -195,6 +195,12 @@ function gen_cache_struct(tab::RosenbrockTableau, cachename::Symbol, constcachen
                 J::JType
                 W::WType
                 tmp::rateType
+                atmp::uNoUnitsType
+                weight::uNoUnitsType
+                tab::TabType
+                tf::TFType
+                uf::UFType
+                linsolve_tmp::rateType
                 linsolve::F
                 jac_config::JCType
                 grad_config::GCType
