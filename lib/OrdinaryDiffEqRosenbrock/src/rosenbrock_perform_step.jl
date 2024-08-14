@@ -1443,9 +1443,9 @@ end
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT +
-                                         (dtC41 * k1 + dtC42 * k2 + dtC43 * k3)
+                                         (dtC41 * ks[1] + dtC42 * ks[2] + dtC43 * ks[3])
     else
-        @.. broadcast=false du1=dtC41 * k1 + dtC42 * k2 + dtC43 * k3
+        @.. broadcast=false du1=dtC41 * ks[1] + dtC42 * ks[2] + dtC43 * ks[3]
         mul!(_vec(du2), mass_matrix, _vec(du1))
         @.. broadcast=false linsolve_tmp=du + dtd4 * dT + du2
     end
@@ -1454,16 +1454,16 @@ end
     @.. broadcast=false $(_vec(k4))=-linres.u
     integrator.stats.nsolve += 1
 
-    @.. broadcast=false u=uprev + a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4
+    @.. broadcast=false u=uprev + a51 * ks[1] + a52 * ks[2] + a53 * ks[3] + a54 * ks[4]
     stage_limiter!(u, integrator, p, t + dt)
     f(du, u, p, t + dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
         @.. broadcast=false linsolve_tmp=du +
-                                         (dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3)
+                                         (dtC52 * ks[2] + dtC54 * ks[4] + dtC51 * ks[1] + dtC53 * ks[3])
     else
-        @.. broadcast=false du1=dtC52 * k2 + dtC54 * k4 + dtC51 * k1 + dtC53 * k3
+        @.. broadcast=false du1=dtC52 * ks[2] + dtC54 * ks[4] + dtC51 * ks[1] + dtC53 * ks[3]
         mul!(_vec(du2), mass_matrix, _vec(du1))
         @.. broadcast=false linsolve_tmp=du + du2
     end
@@ -1477,11 +1477,11 @@ end
     integrator.stats.nf += 1
 
     if mass_matrix === I
-        @.. broadcast=false linsolve_tmp=du + (dtC61 * k1 + dtC62 * k2 + dtC65 * k5 +
-                                          dtC64 * k4 + dtC63 * k3)
+        @.. broadcast=false linsolve_tmp=du + (dtC61 * ks[1] + dtC62 * ks[2] + dtC65 * ks[5] +
+                                          dtC64 * ks[4] + dtC63 * ks[3])
     else
-        @.. broadcast=false du1=dtC61 * k1 + dtC62 * k2 + dtC65 * k5 + dtC64 * k4 +
-                                dtC63 * k3
+        @.. broadcast=false du1=dtC61 * ks[1] + dtC62 * ks[2] + dtC65 * ks[5] + dtC64 * ks[4] +
+                                dtC63 * ks[3]
         mul!(_vec(du2), mass_matrix, _vec(du1))
         @.. broadcast=false linsolve_tmp=du + du2
     end
@@ -1502,10 +1502,10 @@ end
 
     if integrator.opts.calck
         @unpack h21, h22, h23, h24, h25, h31, h32, h33, h34, h35 = cache.tab
-        @.. broadcast=false integrator.k[1]=h21 * k1 + h22 * k2 + h23 * k3 + h24 * k4 +
-                                            h25 * k5
-        @.. broadcast=false integrator.k[2]=h31 * k1 + h32 * k2 + h33 * k3 + h34 * k4 +
-                                            h35 * k5
+        @.. broadcast=false integrator.k[1]=h21 * ks[1] + h22 * ks[2] + h23 * ks[3] + h24 * ks[4] +
+                                            h25 * ks[5]
+        @.. broadcast=false integrator.k[2]=h31 * ks[1] + h32 * ks[2] + h33 * ks[3] + h34 * ks[4] +
+                                            h35 * ks[5]
     end
     cache.linsolve = linres.cache
 end
