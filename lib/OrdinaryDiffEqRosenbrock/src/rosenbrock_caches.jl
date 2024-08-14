@@ -17,7 +17,7 @@ end
 
 @cache mutable struct RosenbrockCache{uType, rateType, uNoUnitsType, JType, WType,
     TabType, TFType, UFType, F, JCType, GCType,
-    RTolType, A, AV, StepLimiter, StageLimiter} <: RosenbrockMutableCache
+    RTolType, A, AV, AD, TF, UF, T, StepLimiter, StageLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
     du::rateType
