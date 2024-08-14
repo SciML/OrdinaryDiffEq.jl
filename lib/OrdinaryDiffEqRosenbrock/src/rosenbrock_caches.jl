@@ -20,21 +20,10 @@ end
     RTolType, A, AV, AD, TF, UF, T, StepLimiter, StageLimiter} <: RosenbrockMutableCache
     u::uType
     uprev::uType
-    du::rateType
-    du1::rateType
-    du2::rateType
-    k1::rateType
-    k2::rateType
-    k3::rateType
-    k4::rateType
-    k5::rateType
-    k6::rateType
-    k7::rateType
-    k8::rateType
+    dus::Array{rateType, 1}  # Replacing NTuple{3, rateType} with Array{rateType, 1}
+    ks::Array{rateType, 1}   # Replacing NTuple{8, rateType} with Array{rateType, 1}
     f1::rateType
-    dense1::rateType
-    dense2::rateType
-    dense3::rateType
+    dense::Array{rateType, 1}  # Replacing NTuple{3, rateType} with Array{rateType, 1}
     fsalfirst::rateType
     fsallast::rateType
     dT::rateType
@@ -61,11 +50,13 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k₁ = zero(rate_prototype)
-    k₂ = zero(rate_prototype)
-    k₃ = zero(rate_prototype)
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    ks = [k1, k2, k3]
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du1, du2]
     # f₀ = zero(u) fsalfirst
     f₁ = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -90,12 +81,12 @@ function alg_cache(alg::Rosenbrock23, u, rate_prototype, ::Type{uEltypeNoUnits},
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
 
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2, Val(false))
+    grad_config = build_grad_config(alg, f, tf, dus[1], t)
+    jac_config = build_jac_config(alg, f, uf, dus[1], uprev, u, tmp, du2, Val(false))
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    RosenbrockCache(u, uprev, k₁, k₂, k₃, du1, du2, f₁,
+    RosenbrockCache(u, uprev, ks[1], ks[2], ks[3], dus[1], dus[2], f₁,
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, algebraic_vars, alg.step_limiter!,
@@ -106,11 +97,13 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Type{uBottomEltypeNoUnits}, ::Type{tTypeNoUnits}, uprev, uprev2, f, t,
         dt, reltol, p, calck,
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
-    k₁ = zero(rate_prototype)
-    k₂ = zero(rate_prototype)
-    k₃ = zero(rate_prototype)
+    k1 = zero(rate_prototype)
+    k2 = zero(rate_prototype)
+    k3 = zero(rate_prototype)
+    ks = [k1, k2, k3]
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du1, du2]
     # f₀ = zero(u) fsalfirst
     f₁ = zero(rate_prototype)
     fsalfirst = zero(rate_prototype)
@@ -140,7 +133,7 @@ function alg_cache(alg::Rosenbrock32, u, rate_prototype, ::Type{uEltypeNoUnits},
     algebraic_vars = f.mass_matrix === I ? nothing :
                      [all(iszero, x) for x in eachcol(f.mass_matrix)]
 
-    RosenbrockCache(u, uprev, k₁, k₂, k₃, du1, du2, f₁, fsalfirst, fsallast, dT, J, W,
+    RosenbrockCache(u, uprev, ks[1], ks[2], ks[3], dus[1], dus[2], f₁, fsalfirst, fsallast, dT, J, W,
         tmp, atmp, weight, tab, tf, uf, linsolve_tmp, linsolve, jac_config,
         grad_config, reltol, alg, algebraic_vars, alg.step_limiter!, alg.stage_limiter!)
 end
@@ -192,10 +185,12 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -218,7 +213,7 @@ function alg_cache(alg::ROS3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    RosenbrockCache(u, uprev, du, du1, du2, k1, k2, k3, k4,
+    RosenbrockCache(u, uprev, dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -246,10 +241,12 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -273,7 +270,7 @@ function alg_cache(alg::Rodas3, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    RosenbrockCache(u, uprev, du, du1, du2, k1, k2, k3, k4,
+    RosenbrockCache(u, uprev, dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, alg.step_limiter!,
@@ -330,14 +327,17 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
     dense3 = zero(rate_prototype)
+    dense = [dense1, dense2, dense3]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -361,7 +361,7 @@ function alg_cache(alg::Rodas23W, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas23WCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
+    Rodas23WCache(u, uprev, dense[1], dense[2], dense[3], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4], ks[5],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
@@ -374,14 +374,17 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
     dense3 = zero(rate_prototype)
+    dense = [dense1, dense2, dense3]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -405,7 +408,7 @@ function alg_cache(alg::Rodas3P, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas3PCache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4, k5,
+    Rodas3PCache(u, uprev, dense[1], dense[2], dense[3], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4], ks[5],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
@@ -449,15 +452,18 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
+    dense = [dense1, dense2]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5, k6]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -481,8 +487,8 @@ function alg_cache(alg::Rodas4, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
+    Rodas4Cache(u, uprev, dense[1], dense[2], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
+        ks[5], ks[6],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
@@ -509,15 +515,18 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
+    dense = [dense1, dense2]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5, k6]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -541,8 +550,8 @@ function alg_cache(alg::Rodas42, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
+    Rodas4Cache(u, uprev, dense[1], dense[2], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
+        ks[5], ks[6],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
@@ -569,15 +578,18 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
+    dense = [dense1, dense2]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5, k6]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -601,8 +613,8 @@ function alg_cache(alg::Rodas4P, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
+    Rodas4Cache(u, uprev, dense[1], dense[2], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
+        ks[5], ks[6],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
@@ -629,15 +641,18 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
         ::Val{true}) where {uEltypeNoUnits, uBottomEltypeNoUnits, tTypeNoUnits}
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
+    dense = [dense1, dense2]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
     k4 = zero(rate_prototype)
     k5 = zero(rate_prototype)
     k6 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5, k6]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -659,10 +674,10 @@ function alg_cache(alg::Rodas4P2, u, rate_prototype, ::Type{uEltypeNoUnits},
     linsolve = init(linprob, alg.linsolve, alias_A = true, alias_b = true,
         Pl = Pl, Pr = Pr,
         assumptions = LinearSolve.OperatorAssumptions(true))
-    grad_config = build_grad_config(alg, f, tf, du1, t)
-    jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rodas4Cache(u, uprev, dense1, dense2, du, du1, du2, k1, k2, k3, k4,
-        k5, k6,
+    grad_config = build_grad_config(alg, f, tf, dus[1], t)
+    jac_config = build_jac_config(alg, f, uf, dus[2], uprev, u, tmp, dus[3])
+    Rodas4Cache(u, uprev, dense[1], dense[2], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
+        ks[5], ks[6],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf, linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
         alg.stage_limiter!)
@@ -693,9 +708,11 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
     dense3 = zero(rate_prototype)
+    dense = [dense1, dense2, dense3]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -704,6 +721,7 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
     k8 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5, k6, k7, k8]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -727,8 +745,8 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rosenbrock5Cache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4,
-        k5, k6, k7, k8,
+    Rosenbrock5Cache(u, uprev, dense[1], dense[2], dense[3], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
+        ks[5], ks[6], ks[7], ks[8],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
@@ -757,9 +775,11 @@ function alg_cache(
     dense1 = zero(rate_prototype)
     dense2 = zero(rate_prototype)
     dense3 = zero(rate_prototype)
+    dense = [dense1, dense2, dense3]
     du = zero(rate_prototype)
     du1 = zero(rate_prototype)
     du2 = zero(rate_prototype)
+    dus = [du, du1, du2]
     k1 = zero(rate_prototype)
     k2 = zero(rate_prototype)
     k3 = zero(rate_prototype)
@@ -768,6 +788,7 @@ function alg_cache(
     k6 = zero(rate_prototype)
     k7 = zero(rate_prototype)
     k8 = zero(rate_prototype)
+    ks = [k1, k2, k3, k4, k5, k6, k7, k8]
     fsalfirst = zero(rate_prototype)
     fsallast = zero(rate_prototype)
     dT = zero(rate_prototype)
@@ -791,8 +812,8 @@ function alg_cache(
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rosenbrock5Cache(u, uprev, dense1, dense2, dense3, du, du1, du2, k1, k2, k3, k4,
-        k5, k6, k7, k8,
+    Rosenbrock5Cache(u, uprev, dense[1], dense[2], dense[3], dus[1], dus[2], dus[3], ks[1], ks[2], ks[3], ks[4],
+        ks[5], ks[6], ks[7], ks[8],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,

@@ -532,8 +532,8 @@ macro RosenbrockW6S4OS(part)
     algname=:RosenbrockW6S4OS
     tabname=:RosenbrockW6S4OSTableau
     tabstructname=:RosenbrockW6STableau
-    cachename=:RosenbrockW6SCache
-    constcachename=:RosenbrockW6SConstantCache
+    cachename=:RosenbrockCache
+    constcachename=:RosenbrockConstantCache
     n_normalstep=length(tab.b)-1
     if part.value==:tableau
         #println("Generating const cache")
