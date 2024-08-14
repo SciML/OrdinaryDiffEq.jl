@@ -16,7 +16,7 @@ import OrdinaryDiffEqCore: alg_order, calculate_residuals!,
                            PredictiveController, alg_can_repeat_jac, NewtonAlgorithm,
                            fac_default_gamma,
                            get_current_adaptive_order, get_fsalfirstlast,
-                           isfirk
+                           isfirk, generic_solver_docstring
 using MuladdMacro, DiffEqBase, RecursiveArrayTools
 using SciMLOperators: AbstractSciMLOperator
 using LinearAlgebra: I, UniformScaling, mul!, lu

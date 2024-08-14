@@ -48,6 +48,9 @@ makedocs(sitename = "OrdinaryDiffEq.jl",
             "explicit/SymplecticRK.md",
             "explicit/Extrapolation.md",
         ],
+        "Iplicit Solvers" => [
+            "implicit/FIRK.md"
+        ],
         "Standard Non-Stiff ODEProblem Solvers" => [
             "nonstiff/explicit_extrapolation.md",
             "nonstiff/nonstiff_multistep.md"
