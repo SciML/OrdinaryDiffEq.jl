@@ -12,7 +12,7 @@ function DiffEqBase.interp_summary(::Type{cacheType},
         dense::Bool) where {
         cacheType <:
         Union{RosenbrockConstantCache, Rodas23WConstantCache, Rodas3PConstantCache,
-        Rodas4Cache, Rodas23WCache, Rodas3PCache}}
+        RosenbrockCache, Rodas23WCache, Rodas3PCache}}
     dense ? "specialized 3rd order \"free\" stiffness-aware interpolation" :
     "1st order linear"
 end
