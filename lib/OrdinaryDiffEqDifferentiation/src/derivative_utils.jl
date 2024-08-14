@@ -4,13 +4,20 @@ struct StaticWOperator{isinv, T, F} <: AbstractSciMLOperator{T}
     W::T
     F::F
     function StaticWOperator(W::T, callinv = true) where {T}
-        isinv = size(W, 1) <= ROSENBROCK_INV_CUTOFF
+        n = size(W, 1)
+        isinv = n <= ROSENBROCK_INV_CUTOFF
 
-        F = lu(W, check=false)
+        F = if isinv && callinv
+            # this should be in ArrayInterface but can't be for silly reasons
+            # doing to how StaticArrays and StaticArraysCore are split up
+            StaticArrays.LU(LowerTriangular(W), UpperTriangular(W), SVector{n}(1:n))
+        else
+            lu(W, check=false)
+        end
         # when constructing W for the first time for the type
         # inv(W) can be singular
         _W = if isinv && callinv
-            F\typeof(W)(I)
+            inv(W)
         else
             W
         end
