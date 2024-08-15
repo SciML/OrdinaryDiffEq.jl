@@ -1042,7 +1042,8 @@ function alg_cache(alg::Rodas5, u, rate_prototype, ::Type{uEltypeNoUnits},
         assumptions = LinearSolve.OperatorAssumptions(true))
     grad_config = build_grad_config(alg, f, tf, du1, t)
     jac_config = build_jac_config(alg, f, uf, du1, uprev, u, tmp, du2)
-    Rosenbrock5Cache(u, uprev, dense, dus, ks,
+    Rosenbrock5Cache(u, uprev, dense[1], dense[2], dense[3], dus[1], dus[2], dus[3], ks[1], 
+        ks[2], ks[3], ks[4], ks[5], ks[6], ks[7], ks[8],
         fsalfirst, fsallast, dT, J, W, tmp, atmp, weight, tab, tf, uf,
         linsolve_tmp,
         linsolve, jac_config, grad_config, reltol, alg, alg.step_limiter!,
