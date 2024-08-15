@@ -1240,7 +1240,7 @@ end
     k1 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
     u = uprev + a[2][1] * k1
-    du = f(u, p, t + c2 * dt)
+    du = f(u, p, t + c[2] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
@@ -1252,7 +1252,7 @@ end
     k2 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
     u = uprev + a[3][1] * k1 + a[3][2] * k2
-    du = f(u, p, t + c3 * dt)
+    du = f(u, p, t + c[3] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
@@ -1264,7 +1264,7 @@ end
     k3 = _reshape(W \ -_vec(linsolve_tmp), axes(uprev))
     integrator.stats.nsolve += 1
     u = uprev + a[4][1] * k1 + a[4][2] * k2 + a[4][3] * k3
-    du = f(u, p, t + c4 * dt)
+    du = f(u, p, t + c[4] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
@@ -1367,8 +1367,8 @@ end
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a[2][1] * ks[1]
-    stage_limiter!(u, integrator, p, t + c2 * dt)
-    f(du, u, p, t + c2 * dt)
+    stage_limiter!(u, integrator, p, t + c[2] * dt)
+    f(du, u, p, t + c[2] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
@@ -1384,8 +1384,8 @@ end
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a[3][1] * ks[1] + a[3][2] * ks[2]
-    stage_limiter!(u, integrator, p, t + c3 * dt)
-    f(du, u, p, t + c3 * dt)
+    stage_limiter!(u, integrator, p, t + c[3] * dt)
+    f(du, u, p, t + c[3] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
@@ -1401,7 +1401,7 @@ end
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a[4][1] * ks[1] + a[4][2] * ks[2] + a[4][3] * ks[3]
-    stage_limiter!(u, integrator, p, t + c4 * dt)
+    stage_limiter!(u, integrator, p, t + c[4] * dt)
     f(du, u, p, t + c4 * dt)
     integrator.stats.nf += 1
 
@@ -1727,8 +1727,8 @@ end
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a[3][1] * ks[1] + a[3][2] * ks[2]
-    stage_limiter!(u, integrator, p, t + c3 * dt)
-    f(du, u, p, t + c3 * dt)
+    stage_limiter!(u, integrator, p, t + c[3] * dt)
+    f(du, u, p, t + c[3] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
@@ -1745,8 +1745,8 @@ end
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a[4][1] * ks[1] + a[4][2] * ks[2] + a[4][3] * ks[3]
-    stage_limiter!(u, integrator, p, t + c4 * dt)
-    f(du, u, p, t + c4 * dt)
+    stage_limiter!(u, integrator, p, t + c[4] * dt)
+    f(du, u, p, t + c[4] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
@@ -1764,8 +1764,8 @@ end
     integrator.stats.nsolve += 1
 
     @.. broadcast=false u=uprev + a[5][1] * ks[1] + a[5][2] * ks[2] + a[5][3] * ks[3] + a[5][4] * ks[4]
-    stage_limiter!(u, integrator, p, t + c5 * dt)
-    f(du, u, p, t + c5 * dt)
+    stage_limiter!(u, integrator, p, t + c[5] * dt)
+    f(du, u, p, t + c[5] * dt)
     integrator.stats.nf += 1
 
     if mass_matrix === I
