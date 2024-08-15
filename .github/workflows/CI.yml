@@ -22,12 +22,39 @@ jobs:
           - AlgConvergence_II
           - AlgConvergence_III
           - Downstream
-          - Symplectic
-          - Extrapolation
-          - StabilizedRK
-          - StabilizedIRK
           - ODEInterfaceRegression
           - Multithreading
+
+          - OrdinaryDiffEqAdamsBashforthMoulton
+          - OrdinaryDiffEqBDF
+          - OrdinaryDiffEqCore
+          - OrdinaryDiffEqDefault
+          - OrdinaryDiffEqDifferentiation
+          - OrdinaryDiffEqExplicitRK
+          - OrdinaryDiffEqExponentialRK
+          - OrdinaryDiffEqExtrapolation
+          - OrdinaryDiffEqFIRK
+          - OrdinaryDiffEqFeagin
+          - OrdinaryDiffEqFunctionMap
+          - OrdinaryDiffEqHighOrderRK
+          - OrdinaryDiffEqIMEXMultistep
+          - OrdinaryDiffEqLinear
+          - OrdinaryDiffEqLowOrderRK
+          - OrdinaryDiffEqLowStorageRK
+          - OrdinaryDiffEqNordsieck
+          - OrdinaryDiffEqPDIRK
+          - OrdinaryDiffEqPRK
+          - OrdinaryDiffEqQPRK
+          - OrdinaryDiffEqRKN
+          - OrdinaryDiffEqRosenbrock
+          - OrdinaryDiffEqSDIRK
+          - OrdinaryDiffEqSSPRK
+          - OrdinaryDiffEqStabilizedIRK
+          - OrdinaryDiffEqStabilizedRK
+          - OrdinaryDiffEqSymplecticRK
+          - OrdinaryDiffEqTsit5
+          - OrdinaryDiffEqVerner
+
         version:
           - '1'
     steps:
@@ -45,7 +72,15 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - uses: julia-actions/julia-buildpkg@v1
+      # Explicitly develop the libraries first before running the tests for now.
+      # This is necessary since the tests are likely to fail otherwise, given that all
+      # the libs haven't been registered yet.
+      - name: "Develop the libraries since they haven't been registered yet"
+        run: |
+          julia --project=. -e '
+              using Pkg;
+              Pkg.develop(map(path ->Pkg.PackageSpec.(;path="$(@__DIR__)/lib/$(path)"), readdir("./lib")));
+          '
       - uses: julia-actions/julia-runtest@v1
         env:
           GROUP: ${{ matrix.group }}

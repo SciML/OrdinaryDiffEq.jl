@@ -161,39 +161,39 @@ end
 using OrdinaryDiffEq, StaticArrays, LinearSolve, ParameterizedFunctions
 
 hires = @ode_def Hires begin
-    dy1 = -1.71*y1 + 0.43*y2 + 8.32*y3 + 0.0007
-    dy2 = 1.71*y1 - 8.75*y2
-    dy3 = -10.03*y3 + 0.43*y4 + 0.035*y5
-    dy4 = 8.32*y2 + 1.71*y3 - 1.12*y4
-    dy5 = -1.745*y5 + 0.43*y6 + 0.43*y7
-    dy6 = -280.0*y6*y8 + 0.69*y4 + 1.71*y5 - 0.43*y6 + 0.69*y7
-    dy7 = 280.0*y6*y8 - 1.81*y7
-    dy8 = -280.0*y6*y8 + 1.81*y7
+    dy1 = -1.71 * y1 + 0.43 * y2 + 8.32 * y3 + 0.0007
+    dy2 = 1.71 * y1 - 8.75 * y2
+    dy3 = -10.03 * y3 + 0.43 * y4 + 0.035 * y5
+    dy4 = 8.32 * y2 + 1.71 * y3 - 1.12 * y4
+    dy5 = -1.745 * y5 + 0.43 * y6 + 0.43 * y7
+    dy6 = -280.0 * y6 * y8 + 0.69 * y4 + 1.71 * y5 - 0.43 * y6 + 0.69 * y7
+    dy7 = 280.0 * y6 * y8 - 1.81 * y7
+    dy8 = -280.0 * y6 * y8 + 1.81 * y7
 end
 
 u0 = zeros(8)
 u0[1] = 1
 u0[8] = 0.0057
 
-probiip = ODEProblem{true}(hires, u0, (0.0,10.0))
-proboop = ODEProblem{false}(hires, u0, (0.0,10.0))
-probstatic = ODEProblem{false}(hires, SVector{8}(u0), (0.0,10.0))
-probs = (;probiip, proboop, probstatic)
+probiip = ODEProblem{true}(hires, u0, (0.0, 10.0))
+proboop = ODEProblem{false}(hires, u0, (0.0, 10.0))
+probstatic = ODEProblem{false}(hires, SVector{8}(u0), (0.0, 10.0))
+probs = (; probiip, proboop, probstatic)
 qndf = QNDF()
-krylov_qndf = QNDF(linsolve=KrylovJL_GMRES())
+krylov_qndf = QNDF(linsolve = KrylovJL_GMRES())
 fbdf = FBDF()
-krylov_fbdf = FBDF(linsolve=KrylovJL_GMRES())
+krylov_fbdf = FBDF(linsolve = KrylovJL_GMRES())
 rodas = Rodas5P()
-krylov_rodas = Rodas5P(linsolve=KrylovJL_GMRES())
-solvers = (;qndf, krylov_qndf, rodas, krylov_rodas, fbdf, krylov_fbdf, )
+krylov_rodas = Rodas5P(linsolve = KrylovJL_GMRES())
+solvers = (; qndf, krylov_qndf, rodas, krylov_rodas, fbdf, krylov_fbdf)
 
-refsol = solve(probiip, FBDF(), abstol=1e-12, reltol=1e-12)
+refsol = solve(probiip, FBDF(), abstol = 1e-12, reltol = 1e-12)
 @testset "Hires calc_W tests" begin
     @testset "$probname" for (probname, prob) in pairs(probs)
         @testset "$solname" for (solname, solver) in pairs(solvers)
-            sol = solve(prob, solver, abstol=1e-12, reltol=1e-12, maxiters=2e4)
+            sol = solve(prob, solver, abstol = 1e-12, reltol = 1e-12, maxiters = 2e4)
             @test sol.retcode == ReturnCode.Success
-            @test isapprox(sol.u[end], refsol.u[end], rtol=1e-8, atol=1e-10)
+            @test isapprox(sol.u[end], refsol.u[end], rtol = 1e-8, atol = 1e-10)
         end
     end
 end
