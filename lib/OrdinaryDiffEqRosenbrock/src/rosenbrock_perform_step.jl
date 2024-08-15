@@ -1725,7 +1725,7 @@ end
     return nothing
 end
 
-function initialize!(integrator, cache::Rosenbrock5Cache)
+function initialize!(integrator, cache::RosenbrockCache)
     integrator.kshortsize = 3
     @unpack dense1, dense2, dense3 = cache
     resize!(integrator.k, integrator.kshortsize)
@@ -1734,7 +1734,7 @@ function initialize!(integrator, cache::Rosenbrock5Cache)
     integrator.k[3] = dense3
 end
 
-@muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step = false)
+@muladd function perform_step!(integrator, cache::RosenbrockCache, repeat_step = false)
     @unpack t, dt, uprev, u, f, p = integrator
     @unpack du, du1, du2, k1, k2, k3, k4, k5, k6, k7, k8, dT, J, W, uf, tf, linsolve_tmp, jac_config, atmp, weight, stage_limiter!, step_limiter! = cache
     @unpack a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, C21, C31, C32, C41, C42, C43, C51, C52, C53, C54, C61, C62, C63, C64, C65, C71, C72, C73, C74, C75, C76, C81, C82, C83, C84, C85, C86, C87, gamma, d1, d2, d3, d4, d5, c2, c3, c4, c5 = cache.tab
